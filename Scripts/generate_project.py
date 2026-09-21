@@ -14,9 +14,10 @@ def add(key, body):
     objects.append(f'{uid(key)} = {{ {body} }};')
 
 sources = sorted(p.relative_to(root).as_posix() for folder in ['App', 'Core', 'DesignSystem', 'Features'] for p in (root / folder).glob('*.swift'))
-resources = ['App/PrivacyInfo.xcprivacy']
+resources = ['App/PrivacyInfo.xcprivacy', 'App/Assets.xcassets']
+resource_kinds = {'App/Assets.xcassets': 'folder.assetcatalog'}
 for path in sources + resources:
-    kind = 'sourcecode.swift' if path.endswith('.swift') else 'text.xml'
+    kind = 'sourcecode.swift' if path.endswith('.swift') else resource_kinds.get(path, 'text.xml')
     add(path, f'isa = PBXFileReference; lastKnownFileType = {kind}; path = {q(path)}; sourceTree = SOURCE_ROOT;')
     add('build:' + path, f'isa = PBXBuildFile; fileRef = {uid(path)};')
 add('product', 'isa = PBXFileReference; explicitFileType = wrapper.application; path = Corres.app; sourceTree = BUILT_PRODUCTS_DIR;')
@@ -26,7 +27,7 @@ for key, kind, paths in [('sources', 'PBXSourcesBuildPhase', sources), ('resourc
     add(key, f'isa = {kind}; buildActionMask = 2147483647; files = (' + ','.join(uid('build:' + p) for p in paths) + (',' if paths else '') + '); runOnlyForDeploymentPostprocessing = 0;')
 for mode in ['Debug', 'Release']:
     project_settings = 'CLANG_ENABLE_MODULES = YES; SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 6.0; SWIFT_STRICT_CONCURRENCY = complete;'
-    target_settings = 'PRODUCT_NAME = Corres; PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = Corres; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity"; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; TARGETED_DEVICE_FAMILY = 1; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; MARKETING_VERSION = 0.1.0; CURRENT_PROJECT_VERSION = 1; CODE_SIGN_STYLE = Automatic; SWIFT_EMIT_LOC_STRINGS = YES;'
+    target_settings = 'PRODUCT_NAME = Corres; PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = Corres; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity"; INFOPLIST_FILE = App/Info.plist; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; TARGETED_DEVICE_FAMILY = 1; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; MARKETING_VERSION = 0.1.0; CURRENT_PROJECT_VERSION = 1; CODE_SIGN_STYLE = Automatic; SWIFT_EMIT_LOC_STRINGS = YES; ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;'
     if mode == 'Debug':
         target_settings += ' SWIFT_OPTIMIZATION_LEVEL = "-Onone"; DEBUG_INFORMATION_FORMAT = dwarf; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;'
     else:

@@ -55,7 +55,7 @@ struct BriefView: View {
                 }.corresSurface()
             }
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "lock.shield").font(.title3)
+                Image(systemName: "lock.shield").font(.title3).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Private by intention.").font(.subheadline.weight(.medium))
                     Text("Fictional mail. No account connected.").font(.footnote)
@@ -74,7 +74,7 @@ struct BriefView: View {
             HStack {
                 Text("CORRES BRIEF").font(CorresType.label).tracking(2.5)
                 Spacer()
-                Image(systemName: "sun.horizon").font(.body)
+                Image(systemName: "sun.horizon").font(.body).accessibilityHidden(true)
             }.foregroundStyle(CorresPalette.champagne)
             HStack(alignment: .center, spacing: 0) {
                 VStack(alignment: .leading, spacing: 12) {

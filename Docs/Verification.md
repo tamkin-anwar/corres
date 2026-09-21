@@ -1,6 +1,17 @@
 # Foundation verification
 
-Final checks: September 18, 2026.
+Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
+
+## Batch 1 sweep (September 21, 2026)
+
+- Added the real App Icon: a flattened, alpha-free 1024x1024 PNG (`App/Assets.xcassets/AppIcon.appiconset`) built from the existing approved sculpture render (`Docs/Previews/sculpture-4k.png`), verified `hasAlpha: no` via `sips` — App Store rejects any icon with an alpha channel. Also added an `AccentColor` set and a `LaunchBackground` color set (light/dark) wired through a small merged `App/Info.plist` (`UILaunchScreen.UIColorName`), replacing the default blank-white launch screen.
+- WCAG contrast audit of every color used as a *fixed white-foreground* background (swipe actions, button fills) — not the same check as the existing porcelain/ink text-contrast table below, which only covers text-on-canvas pairs. Found and fixed three real failures: `CorresPalette.accent` and `.secondary` are adaptive (they flip to light tones in dark mode for text-on-canvas use) but iOS swipe-action buttons always render white icons regardless of appearance, so using them as swipe tints put white-on-near-white in dark mode (Handled 1.6:1, Snooze 1.84:1, both against a 3:1 minimum for UI components). `champagne` failed in both appearances (1.71:1). Replaced with three new fixed, non-adaptive tokens (`swipeHandled` 0x2D5A70, `swipeSnooze` 0x4A5560, `swipePin` 0x8A6A3E) verified at 4.99-7.61:1 against white. `midnight` (used for the Needs You swipe action) was already fixed and safe at 14.26:1.
+- Removed `role: .destructive` from the "Handled" swipe button — marking a conversation handled is not a delete action, and the role affects VoiceOver's announcement.
+- Added missing/incorrect accessibility labels: the "Due soon" clock glyph and "Pinned" pin glyph on list rows had no label (would read as bare SF Symbol names or nothing); hid two purely decorative icons (the Brief card's sun glyph, the privacy section's lock glyph) that duplicated adjacent text.
+- Fixed the welcome screen's "corres" wordmark from a hard-coded `size: 54` font (ignored Dynamic Type entirely) to a relative `.largeTitle` style, capped at `.xxxLarge` so accessibility text sizes don't break the fixed-width hero layout.
+- Fixed the nav bar's icon+wordmark: the system's automatic toolbar layout was compressing "corres" down to a single truncated letter (fixed with `fixedSize()`), and the flat (non-sculpted) mark rendered both arcs in one flat color, reading as a generic sync icon rather than a brand mark — given the gold/silver two-tone the sculpture uses.
+- Fixed real, reproduced on-device scroll jank: `CorrespondentAvatar` and `corresSurface()` each layered 2-3 uncached shadow/gradient passes recomputed every scroll frame; added `.drawingGroup()` to rasterize both once.
+- These fixes were verified by physical-device testing (Tamkin's iPhone) and code-level audit. The iOS Simulator on this Mac crashes on every Corres launch with an identical `MTLSimCommandQueue`/XPC signature both before and after a full Mac restart — see `corres-simulator-environment` — so VoiceOver rotor testing, Dynamic Type at maximum accessibility sizes, and Reduce Motion/Increase Contrast still need a real run-through, either on physical device or once the simulator issue clears.
 
 ## Passed
 

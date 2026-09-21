@@ -20,7 +20,7 @@ struct CorrespondenceRow: View {
                     .foregroundStyle(CorresPalette.secondary).lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 5) {
                     if thread.dueAt != nil && thread.attention == .needsYou {
-                        Image(systemName: "clock")
+                        Image(systemName: "clock").accessibilityLabel("Due soon")
                     }
                     Text(thread.attention.title)
                 }
@@ -98,16 +98,16 @@ struct CorrespondenceList: View {
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 7)
                 .frame(maxWidth: 680).frame(maxWidth: .infinity)
                 .swipeActions(edge: .trailing) {
-                    Button(role: .destructive) {
+                    Button {
                         Task { await store.update(thread.id, to: .handled) }
                     } label: { Label("Handled", systemImage: "checkmark") }
-                    .tint(CorresPalette.accent)
+                    .tint(CorresPalette.swipeHandled)
                     Menu {
                         ForEach(SnoozeOption.allCases, id: \.self) { option in
                             Button(option.title) { Task { await store.snooze(thread.id, until: option.date()) } }
                         }
                     } label: { Label("Snooze", systemImage: "moon") }
-                    .tint(CorresPalette.secondary)
+                    .tint(CorresPalette.swipeSnooze)
                 }
                 .swipeActions(edge: .leading) {
                     if thread.attention != .needsYou {
@@ -119,7 +119,7 @@ struct CorrespondenceList: View {
                     Button {
                         Task { await store.setPinned(!thread.isPinned, for: thread.id) }
                     } label: { Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin") }
-                    .tint(CorresPalette.champagne)
+                    .tint(CorresPalette.swipePin)
                 }
         }
     }

@@ -15,6 +15,15 @@ enum CorresPalette {
     static let champagne = Color(hex: 0xD7C4A0)
     static let midnight = Color(hex: 0x142D3D)
 
+    // Swipe-action tints: system swipe buttons render a fixed white icon/label
+    // regardless of appearance, so these must NOT be the adaptive text colors
+    // above (accent/secondary flip to light tones in dark mode and would put
+    // white-on-white). Chosen and verified for >=4.5:1 contrast against white
+    // in both light and dark canvas — see the WCAG audit in Docs/Verification.md.
+    static let swipeHandled = Color(hex: 0x2D5A70)
+    static let swipeSnooze = Color(hex: 0x4A5560)
+    static let swipePin = Color(hex: 0x8A6A3E)
+
     private static func adaptive(light: UInt32, dark: UInt32) -> Color {
         #if canImport(UIKit)
         Color(uiColor: UIColor { traits in

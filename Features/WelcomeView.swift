@@ -22,7 +22,12 @@ struct WelcomeView: View {
                 }
                 .frame(width: 214, height: 214).padding(.vertical, 20)
                 VStack(spacing: 12) {
-                    Text("corres").font(.system(size: 54, weight: .regular, design: .serif))
+                    Text("corres")
+                        .font(.system(.largeTitle, design: .serif))
+                        // A hero wordmark still deserves to grow with Dynamic
+                        // Type, but capped short of the accessibility sizes
+                        // where 500pt-tall text would break this fixed layout.
+                        .dynamicTypeSize(...(.xxxLarge))
                     Text("Email, considered.").font(CorresType.heading)
                     Text("A quieter place for the decisions,\nrelationships, and promises in your inbox.")
                         .font(.body).foregroundStyle(CorresPalette.secondary).multilineTextAlignment(.center)
