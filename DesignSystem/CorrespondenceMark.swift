@@ -20,31 +20,25 @@ struct CorrespondenceMark: View {
         GeometryReader { geometry in
             let side = min(geometry.size.width, geometry.size.height)
             ZStack {
-                if sculpted {
-                    Circle()
-                        .fill(RadialGradient(colors: [.white.opacity(0.10), .clear],
-                                             center: .center, startRadius: 0, endRadius: side / 2))
-                }
-                arc(side: side, rotation: -32)
-                arc(side: side * 0.61, rotation: 148)
+                // The two-tone gold/silver pairing is what makes the sculpture
+                // read as a brand mark rather than a generic sync/refresh glyph;
+                // the flat version needs the same distinction at small sizes.
+                arc(side: side, rotation: -32, colors: [CorresPalette.champagne, Color(hex: 0xB08A54)])
+                arc(side: side * 0.61, rotation: 148, colors: [Color(hex: 0xE3ECF0), Color(hex: 0x8FA6B2)])
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .accessibilityHidden(true)
     }
 
-    private func arc(side: CGFloat, rotation: Double) -> some View {
+    private func arc(side: CGFloat, rotation: Double, colors: [Color]) -> some View {
         Circle().trim(from: 0.12, to: 0.88)
             .stroke(
-                LinearGradient(colors: sculpted
-                    ? [Color.white, CorresPalette.champagne, Color(hex: 0x798E9B), .white]
-                    : [CorresPalette.accent, CorresPalette.accent],
-                    startPoint: .topLeading, endPoint: .bottomTrailing),
+                LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing),
                 style: StrokeStyle(lineWidth: side * 0.105, lineCap: .round)
             )
             .frame(width: side * 0.76, height: side * 0.76)
             .rotationEffect(.degrees(rotation))
-            .shadow(color: .black.opacity(sculpted ? 0.35 : 0), radius: side * 0.025, x: 0, y: side * 0.045)
     }
 }
 

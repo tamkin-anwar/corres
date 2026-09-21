@@ -70,10 +70,15 @@ struct CorresShell: View {
     }
 
     private var brandLabel: some View {
-        HStack(spacing: 7) {
-            CorrespondenceMark().frame(width: 24, height: 24)
-            Text("corres").font(.system(.title3, design: .serif).weight(.medium))
+        HStack(spacing: 8) {
+            CorrespondenceMark().frame(width: 30, height: 30)
+            Text("corres")
+                .font(.system(.title2, design: .serif).weight(.medium))
+                .lineLimit(1)
+                .fixedSize()
         }
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Corres. Email, considered.")
     }
 
