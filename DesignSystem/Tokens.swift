@@ -13,7 +13,10 @@ enum CorresPalette {
     static let surface = Color("surface")
     static let ink = Color("ink")
     static let secondary = Color("secondary")
-    static let accent = Color("accent")
+    // Named "corresAccent," not "accent" — SwiftUI already generates a
+    // symbol for the built-in Color.accent/accentColor, and reusing that
+    // name collided with it.
+    static let accent = Color("corresAccent")
     static let line = Color("line")
     static let champagne = Color(hex: 0xD7C4A0)
     static let midnight = Color(hex: 0x142D3D)
