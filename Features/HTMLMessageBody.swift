@@ -28,6 +28,14 @@ struct HTMLMessageBody: UIViewRepresentable {
         context.coordinator.parent = self
         if context.coordinator.lastLoadedHTML != html {
             context.coordinator.lastLoadedHTML = html
+            // TEMPORARY diagnostic: print every img src Swift actually sees in
+            // the source HTML, with no dependency on JS evaluation working at
+            // all, so a real report can say whether the markup itself is the
+            // problem (missing/malformed src) versus a WKWebView rendering
+            // issue. Remove once the root cause is confirmed.
+            let srcs = Self.extractImgSrcs(html)
+            print("HTMLMessageBody: \(srcs.count) <img> tag(s) found:")
+            for src in srcs { print("  - \(src.prefix(120))") }
             // baseURL: nil is a well-documented real-device bug (fine in
             // Simulator): without an origin, WKWebView does not establish a
             // proper security/cookie context, and absolute https:// image
@@ -36,6 +44,16 @@ struct HTMLMessageBody: UIViewRepresentable {
             // entirely from loadHTMLString), it exists only to give the page
             // a real https origin.
             webView.loadHTMLString(Self.wrap(html), baseURL: Self.placeholderBaseURL)
+        }
+    }
+
+    /// Diagnostic only (see above); a simple regex, not a real HTML parser.
+    private static func extractImgSrcs(_ html: String) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: #"<img[^>]+src=["']([^"']+)["']"#, options: [.caseInsensitive]) else { return [] }
+        let range = NSRange(html.startIndex..., in: html)
+        return regex.matches(in: html, range: range).compactMap { match in
+            guard let r = Range(match.range(at: 1), in: html) else { return nil }
+            return String(html[r])
         }
     }
 
@@ -66,9 +84,32 @@ struct HTMLMessageBody: UIViewRepresentable {
         init(_ parent: HTMLMessageBody) { self.parent = parent }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            webView.evaluateJavaScript("document.body.scrollHeight") { [weak self] result, _ in
+            webView.evaluateJavaScript("document.body.scrollHeight") { [weak self] result, error in
+                if let error {
+                    // TEMPORARY diagnostic: confirms whether allowsContentJavaScript
+                    // = false also silently blocks host-triggered evaluateJavaScript
+                    // (a real, open question, not previously verified) versus that
+                    // restriction being content-script-only as assumed.
+                    print("HTMLMessageBody: evaluateJavaScript(scrollHeight) failed: \(error)")
+                }
                 guard let self, let measured = result as? CGFloat, measured > 0 else { return }
                 self.parent.height = measured
+            }
+            webView.evaluateJavaScript("""
+                (function() {
+                    var imgs = document.querySelectorAll('img');
+                    var out = [];
+                    for (var i = 0; i < imgs.length; i++) {
+                        out.push(imgs[i].src + ' complete=' + imgs[i].complete + ' naturalWidth=' + imgs[i].naturalWidth);
+                    }
+                    return out.join('\\n');
+                })()
+                """) { result, error in
+                if let error {
+                    print("HTMLMessageBody: img status query failed: \(error)")
+                } else if let text = result as? String {
+                    print("HTMLMessageBody: img status after load:\n\(text.isEmpty ? "(no <img> elements in DOM)" : text)")
+                }
             }
         }
 
