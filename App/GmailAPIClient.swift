@@ -74,7 +74,8 @@ struct GmailAPIClient {
         let receivedAt = message.internalDate.flatMap { Double($0) }.map { Date(timeIntervalSince1970: $0 / 1000) } ?? .now
         let isUnread = (message.labelIds ?? []).contains("UNREAD")
         let plainText = Self.bodyPart(mimeType: "text/plain", from: message.payload)
-        let htmlBody = Self.bodyPart(mimeType: "text/html", from: message.payload)
+        let rawHTML = Self.bodyPart(mimeType: "text/html", from: message.payload)
+        let htmlBody = rawHTML.map { Self.inlineCIDImages(in: $0, from: message.payload) }
         let body = plainText ?? message.snippet ?? ""
         return Correspondence(
             id: ThreadID(account: account, providerID: message.threadId ?? message.id),
@@ -114,10 +115,52 @@ struct GmailAPIClient {
     }
 
     private static func decodeBase64URL(_ value: String) -> String? {
+        guard let data = Data(base64URLEncoded: value) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    /// Many real emails (marketing templates, signatures) embed images as
+    /// MIME parts referenced via "cid:" in the HTML rather than a remote URL
+    /// — every mainstream mail client resolves these locally; a browser
+    /// never sees a bare "cid:" scheme and cannot load it. Without this, any
+    /// inline-embedded image renders as a broken image, which was the
+    /// reported bug. Replaces each cid: reference with a self-contained
+    /// data: URI, so no network fetch is needed for these at all.
+    private static func inlineCIDImages(in html: String, from root: GmailMessagePart?) -> String {
+        var cidParts: [String: (mimeType: String, data: String)] = [:]
+        collectCIDParts(from: root, into: &cidParts)
+        guard !cidParts.isEmpty else { return html }
+        var result = html
+        for (cid, part) in cidParts {
+            guard let base64 = base64URLToStandardBase64(part.data) else { continue }
+            result = result.replacingOccurrences(of: "cid:\(cid)", with: "data:\(part.mimeType);base64,\(base64)")
+        }
+        return result
+    }
+
+    private static func collectCIDParts(from part: GmailMessagePart?, into map: inout [String: (mimeType: String, data: String)]) {
+        guard let part else { return }
+        if let contentID = part.headers?.first(where: { $0.name.lowercased() == "content-id" })?.value,
+           let data = part.body?.data, let mimeType = part.mimeType {
+            map[contentID.trimmingCharacters(in: CharacterSet(charactersIn: "<>"))] = (mimeType, data)
+        }
+        for child in part.parts ?? [] {
+            collectCIDParts(from: child, into: &map)
+        }
+    }
+
+    private static func base64URLToStandardBase64(_ value: String) -> String? {
         var base64 = value.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
         while base64.count % 4 != 0 { base64 += "=" }
-        guard let data = Data(base64Encoded: base64) else { return nil }
-        return String(data: data, encoding: .utf8)
+        return base64
+    }
+}
+
+private extension Data {
+    init?(base64URLEncoded value: String) {
+        var base64 = value.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        while base64.count % 4 != 0 { base64 += "=" }
+        self.init(base64Encoded: base64)
     }
 }
 
