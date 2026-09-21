@@ -73,11 +73,13 @@ struct GmailAPIClient {
         let organization = Self.organization(fromEmail: senderEmail)
         let receivedAt = message.internalDate.flatMap { Double($0) }.map { Date(timeIntervalSince1970: $0 / 1000) } ?? .now
         let isUnread = (message.labelIds ?? []).contains("UNREAD")
-        let body = Self.plainTextBody(from: message.payload) ?? message.snippet ?? ""
+        let plainText = Self.bodyPart(mimeType: "text/plain", from: message.payload)
+        let htmlBody = Self.bodyPart(mimeType: "text/html", from: message.payload)
+        let body = plainText ?? message.snippet ?? ""
         return Correspondence(
             id: ThreadID(account: account, providerID: message.threadId ?? message.id),
             sender: sender, organization: organization, subject: subject,
-            excerpt: message.snippet ?? "", body: body, receivedAt: receivedAt, dueAt: nil,
+            excerpt: message.snippet ?? "", body: body, htmlBody: htmlBody, receivedAt: receivedAt, dueAt: nil,
             reason: isUnread ? "Unread in Gmail." : "Already read in Gmail.",
             attention: isUnread ? .needsYou : .quiet)
     }
@@ -100,16 +102,13 @@ struct GmailAPIClient {
         return name.prefix(1).uppercased() + name.dropFirst()
     }
 
-    /// Depth-first search for the first text/plain part; multipart messages
-    /// nest arbitrarily (plain/html alternatives, inline attachments).
-    private static func plainTextBody(from part: GmailMessagePart?) -> String? {
+    /// Depth-first search for the first part matching `mimeType`; multipart
+    /// messages nest arbitrarily (plain/html alternatives, inline attachments).
+    private static func bodyPart(mimeType: String, from part: GmailMessagePart?) -> String? {
         guard let part else { return nil }
-        if part.mimeType == "text/plain", let data = part.body?.data { return decodeBase64URL(data) }
+        if part.mimeType == mimeType, let data = part.body?.data { return decodeBase64URL(data) }
         for child in part.parts ?? [] {
-            if let found = plainTextBody(from: child) { return found }
-        }
-        if part.parts == nil, let data = part.body?.data, part.mimeType?.hasPrefix("text/") == true {
-            return decodeBase64URL(data)
+            if let found = bodyPart(mimeType: mimeType, from: child) { return found }
         }
         return nil
     }

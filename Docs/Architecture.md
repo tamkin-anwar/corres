@@ -42,7 +42,9 @@ Gmail scope selection and verification must be reviewed against the then-current
 
 ## ADR 006: Safe rendering and accessibility
 
-Accepted for this shell: plain native Text for sample bodies, no HTML or external resources. Planned for real mail: sanitize HTML, disable scripts, block remote images by default, isolate web content, validate URL schemes, and handle attachments as untrusted files. A tracking pixel must not load because a conversation was selected.
+Accepted for sample bodies: plain native Text, no HTML or external resources.
+
+Real mail (2026-09-21): `HTMLMessageBody` (WKWebView) renders a synced message's real HTML when present, plain Text fallback otherwise. Done: JavaScript is always disabled (`allowsContentJavaScript = false`) — mail content is untrusted and never needs to execute code to display correctly; every link tap is intercepted and opened in the system browser rather than navigating inline, after validating the scheme is http/https (blocks a `javascript:` or arbitrary custom-scheme link from doing something unexpected on tap). Not yet done, a known and deliberate gap, not an oversight: remote images are not blocked by default, so a tracking pixel can still load when a real conversation is opened. Blocking that (a `WKContentRuleList` excluding `data:` URIs, which are inline/safe) is the next hardening pass before this is a real privacy guarantee rather than a partial one. Attachments are not handled at all yet (no attachments exist in the synced data).
 
 Use semantic text styles, spoken control labels, minimum 44-point actions, a solid-surface fallback, and no color-only state. Custom navigation paths are decorative alongside native labels. Press motion respects [Reduce Motion](https://developer.apple.com/documentation/swiftui/environmentvalues/accessibilityreducemotion). Real VoiceOver and large-text inspection are release gates, not claims inferred from compilation.
 

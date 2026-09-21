@@ -31,6 +31,10 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     public let subject: String
     public let excerpt: String
     public let body: String
+    /// The message's original rich-text rendering, when the provider sent
+    /// one. `body` is always a plain-text-safe fallback; this is what
+    /// actually renders when present (sanitized, isolated — see ADR 006).
+    public let htmlBody: String?
     public let receivedAt: Date
     public let dueAt: Date?
     /// Human-readable evidence, never an unexplained importance score.
@@ -41,7 +45,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     public var snoozedUntil: Date?
 
     public init(id: ThreadID, sender: String, organization: String, subject: String,
-                excerpt: String, body: String, receivedAt: Date, dueAt: Date?,
+                excerpt: String, body: String, htmlBody: String? = nil, receivedAt: Date, dueAt: Date?,
                 reason: String, attention: Attention, isPinned: Bool = false, snoozedUntil: Date? = nil) {
         self.id = id
         self.sender = sender
@@ -49,6 +53,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.subject = subject
         self.excerpt = excerpt
         self.body = body
+        self.htmlBody = htmlBody
         self.receivedAt = receivedAt
         self.dueAt = dueAt
         self.reason = reason

@@ -4,10 +4,12 @@ struct ConversationView: View {
     let store: MailStore
     let id: ThreadID
     @State private var composeDraft: Draft?
+    @State private var htmlHeight: CGFloat = 200
 
     var body: some View {
         Group {
             if let thread = store.threads.first(where: { $0.id == id }) {
+                let isSample = thread.id.account == "sample"
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
                         Text(thread.subject).font(CorresType.display)
@@ -24,16 +26,24 @@ struct ConversationView: View {
                             Label(thread.attention.title, systemImage: "text.bubble")
                                 .font(.subheadline.weight(.semibold))
                             Text(thread.reason).font(.subheadline).foregroundStyle(CorresPalette.secondary)
-                            Text("Context supplied with this fictional conversation. No AI processing.")
+                            Text(isSample ? "Context supplied with this fictional conversation. No AI processing."
+                                          : "Based on Gmail's own read/unread state. No AI processing.")
                                 .font(.caption).foregroundStyle(CorresPalette.secondary)
                         }
                         .padding(20).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
-                        Text(thread.body).font(.body).lineSpacing(8).textSelection(.enabled)
-                            .padding(24).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
+                        if let html = thread.htmlBody {
+                            HTMLMessageBody(html: html, height: $htmlHeight)
+                                .frame(height: htmlHeight)
+                                .padding(24).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
+                        } else {
+                            Text(thread.body).font(.body).lineSpacing(8).textSelection(.enabled)
+                                .padding(24).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
+                        }
                         Divider()
                         VStack(alignment: .leading, spacing: 14) {
                             Text("Keep it in the right place").font(CorresType.heading)
-                            Text("Changes apply to this sample session only.")
+                            Text(isSample ? "Changes apply to this sample session only."
+                                          : "Saved on this device. Nothing is written back to Gmail yet.")
                                 .font(.footnote).foregroundStyle(CorresPalette.secondary)
                             ForEach(Attention.allCases, id: \.self) { attention in
                                 Button {
@@ -52,7 +62,8 @@ struct ConversationView: View {
                                 .accessibilityValue(thread.attention == attention ? "Selected" : "")
                             }
                         }
-                        Text("Replying, forwarding, and sending stay on this device until Gmail is connected.")
+                        Text(isSample ? "Replying, forwarding, and sending stay on this device until Gmail is connected."
+                                      : "Replying, forwarding, and sending stay on this device — nothing sends through Gmail yet.")
                             .font(.footnote).foregroundStyle(CorresPalette.secondary)
                     }
                     .padding(CorresSpace.page).frame(maxWidth: 680).frame(maxWidth: .infinity)

@@ -16,6 +16,7 @@ public final class PersistedCorrespondence {
     public var subject: String
     public var excerpt: String
     public var body: String
+    public var htmlBody: String?
     public var receivedAt: Date
     public var dueAt: Date?
     public var reason: String
@@ -32,6 +33,7 @@ public final class PersistedCorrespondence {
         self.subject = correspondence.subject
         self.excerpt = correspondence.excerpt
         self.body = correspondence.body
+        self.htmlBody = correspondence.htmlBody
         self.receivedAt = correspondence.receivedAt
         self.dueAt = correspondence.dueAt
         self.reason = correspondence.reason
@@ -40,23 +42,9 @@ public final class PersistedCorrespondence {
         self.snoozedUntil = correspondence.snoozedUntil
     }
 
-    public func apply(_ change: Correspondence) {
-        sender = change.sender
-        organization = change.organization
-        subject = change.subject
-        excerpt = change.excerpt
-        body = change.body
-        receivedAt = change.receivedAt
-        dueAt = change.dueAt
-        reason = change.reason
-        attentionRaw = change.attention.rawValue
-        isPinned = change.isPinned
-        snoozedUntil = change.snoozedUntil
-    }
-
     public var asCorrespondence: Correspondence {
         Correspondence(id: ThreadID(account: account, providerID: providerID), sender: sender, organization: organization,
-                       subject: subject, excerpt: excerpt, body: body, receivedAt: receivedAt, dueAt: dueAt,
+                       subject: subject, excerpt: excerpt, body: body, htmlBody: htmlBody, receivedAt: receivedAt, dueAt: dueAt,
                        reason: reason, attention: Attention(rawValue: attentionRaw) ?? .quiet,
                        isPinned: isPinned, snoozedUntil: snoozedUntil)
     }
