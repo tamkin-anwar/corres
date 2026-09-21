@@ -28,9 +28,18 @@ struct HTMLMessageBody: UIViewRepresentable {
         context.coordinator.parent = self
         if context.coordinator.lastLoadedHTML != html {
             context.coordinator.lastLoadedHTML = html
-            webView.loadHTMLString(Self.wrap(html), baseURL: nil)
+            // baseURL: nil is a well-documented real-device bug (fine in
+            // Simulator): without an origin, WKWebView does not establish a
+            // proper security/cookie context, and absolute https:// image
+            // fetches can silently fail. This domain is never actually
+            // resolved (nothing is loaded from it; the page content comes
+            // entirely from loadHTMLString), it exists only to give the page
+            // a real https origin.
+            webView.loadHTMLString(Self.wrap(html), baseURL: Self.placeholderBaseURL)
         }
     }
+
+    private static let placeholderBaseURL = URL(string: "https://mail.corres.app/")
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
