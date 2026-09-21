@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CorresShell: View {
     @Bindable var store: MailStore
+    var auth: GoogleAuthService
     @State private var selection = Destination.brief
     @State private var showingSettings = false
     @State private var showingWelcome = false
@@ -30,7 +31,7 @@ struct CorresShell: View {
             if !hasExplored { showingWelcome = true }
             if store.state == .idle { await store.load() }
         }
-        .sheet(isPresented: $showingSettings) { PreferencesView(store: store) }
+        .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth) }
         .sheet(item: $composeDraft) { draft in ComposeView(store: store, draft: draft) }
         .fullScreenCover(isPresented: $showingWelcome) {
             WelcomeView {

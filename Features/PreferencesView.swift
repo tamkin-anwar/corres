@@ -2,9 +2,11 @@ import SwiftUI
 
 struct PreferencesView: View {
     let store: MailStore
+    var auth: GoogleAuthService
     @Environment(\.dismiss) private var dismiss
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
     @State private var showingResetConfirmation = false
+    @State private var showingDisconnectConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -14,11 +16,40 @@ struct PreferencesView: View {
                         ForEach(Appearance.allCases) { Text($0.title).tag($0.rawValue) }
                     }
                 }
+                Section("Your Gmail account") {
+                    if let account = auth.account {
+                        Label(account.email, systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(CorresPalette.accent)
+                        Button("Disconnect", role: .destructive) { showingDisconnectConfirmation = true }
+                    } else {
+                        Button {
+                            Task { await auth.signIn() }
+                        } label: {
+                            if auth.isSigningIn {
+                                ProgressView()
+                            } else {
+                                Label("Connect Gmail", systemImage: "envelope.badge")
+                            }
+                        }
+                        .disabled(auth.isSigningIn)
+                    }
+                    Text("Read-only access for now — Corres cannot send, delete, or modify anything in your real mailbox yet. Your Needs You/Waiting/Brief views still show only sample conversations until sync is built.")
+                        .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                }
+                .confirmationDialog("Disconnect Gmail?", isPresented: $showingDisconnectConfirmation, titleVisibility: .visible) {
+                    Button("Disconnect", role: .destructive) { auth.signOut() }
+                    Button("Cancel", role: .cancel) {}
+                }
+                .alert("Could not connect", isPresented: Binding(
+                    get: { auth.errorMessage != nil },
+                    set: { if !$0 { auth.errorMessage = nil } }
+                )) {
+                    Button("OK", role: .cancel) { auth.errorMessage = nil }
+                } message: { Text(auth.errorMessage ?? "Please try again.") }
                 Section("Your privacy, clearly") {
-                    Label("No account connected", systemImage: "person.crop.circle.badge.checkmark")
                     Label("No advertising or analytics SDKs", systemImage: "hand.raised")
                     Label("No AI processing in this build", systemImage: "lock.shield")
-                    Text("Sample conversations are stored only on this device and never leave it. Attention, pins, and snoozes now persist between launches; only Gmail connection itself is still simulated.")
+                    Text("Sample conversations are stored only on this device and never leave it. Attention, pins, and snoozes now persist between launches.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
                 }
                 Section {
@@ -31,7 +62,7 @@ struct PreferencesView: View {
                     Button("Cancel", role: .cancel) {}
                 }
                 Section("The next chapter") {
-                    Text("Gmail will be the first connected account. Connection, reliable sync, offline storage, and sending are planned after this foundation is verified.")
+                    Text("Gmail sign-in is connected, but syncing real mail into Needs You, Waiting, and Brief — and sending — are not built yet. This foundation is being verified first.")
                     Text("Future cloud intelligence will require a clear processing choice. Corres will never silently forward your correspondence to an AI service.")
                 }
                 Section {

@@ -1,9 +1,11 @@
+import GoogleSignIn
 import SwiftData
 import SwiftUI
 
 @main
 struct CorresApp: App {
     @State private var store: MailStore
+    @State private var auth = GoogleAuthService()
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
 
     init() {
@@ -30,9 +32,11 @@ struct CorresApp: App {
 
     var body: some Scene {
         WindowGroup {
-            CorresShell(store: store)
+            CorresShell(store: store, auth: auth)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
+                .task { await auth.restorePreviousSignIn() }
+                .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
         }
     }
 }

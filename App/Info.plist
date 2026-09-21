@@ -9,5 +9,16 @@
 		<key>UIImageName</key>
 		<string>LaunchMark</string>
 	</dict>
+	<key>GIDClientID</key>
+	<string>211980968673-k961lt0jtath3ojt4r7ukb3j3jbn8ecl.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.211980968673-k961lt0jtath3ojt4r7ukb3j3jbn8ecl</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
