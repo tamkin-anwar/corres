@@ -77,7 +77,12 @@ struct CorresSurface: ViewModifier {
                 RoundedRectangle(cornerRadius: CorresSpace.radius)
                     .strokeBorder(CorresPalette.line, lineWidth: contrast == .increased ? 1.5 : 0.5)
             }
+            .compositingGroup()
             .shadow(color: .black.opacity(reduceTransparency ? 0 : 0.035), radius: 16, x: 0, y: 8)
+            // This card shape is reused on every list row and repeats across a
+            // scrolling List; rasterizing it once avoids recomputing the inner
+            // fill shadow, stroke, and outer blur on every scroll frame.
+            .drawingGroup()
     }
 }
 

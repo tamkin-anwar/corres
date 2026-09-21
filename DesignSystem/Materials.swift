@@ -40,7 +40,11 @@ struct SculptedBadge: View {
                 .shadow(color: .black.opacity(0.3), radius: 1, y: 2)
         }
         .frame(width: 46, height: 46)
+        .compositingGroup()
         .shadow(color: CorresPalette.midnight.opacity(0.16), radius: 5, y: 4)
+        // Static, non-animated per Design.md — rasterize once instead of
+        // recomputing three layered shadows/gradients on every scroll frame.
+        .drawingGroup()
         .accessibilityHidden(true)
     }
 }
@@ -58,6 +62,9 @@ struct CorrespondentAvatar: View {
                         .shadow(.inner(color: CorresPalette.accent.opacity(0.1), radius: 4, y: -3)))
                     .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(CorresPalette.line, lineWidth: 0.75))
             }
+            // Rendered once per visible list row; rasterize the inner-shadow
+            // fill so scrolling doesn't recompute it per frame.
+            .drawingGroup()
             .accessibilityHidden(true)
     }
 }
