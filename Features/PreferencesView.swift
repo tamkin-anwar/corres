@@ -1,8 +1,10 @@
 import SwiftUI
 
 struct PreferencesView: View {
+    let store: MailStore
     @Environment(\.dismiss) private var dismiss
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
+    @State private var showingResetConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -16,8 +18,17 @@ struct PreferencesView: View {
                     Label("No account connected", systemImage: "person.crop.circle.badge.checkmark")
                     Label("No advertising or analytics SDKs", systemImage: "hand.raised")
                     Label("No AI processing in this build", systemImage: "lock.shield")
-                    Text("Sample conversations live in memory and reset when the app restarts. Only appearance and introduction preferences are saved on this device.")
+                    Text("Sample conversations are stored only on this device and never leave it. Attention, pins, and snoozes now persist between launches; only Gmail connection itself is still simulated.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                }
+                Section {
+                    Button("Reset Sample Data", role: .destructive) { showingResetConfirmation = true }
+                } footer: {
+                    Text("Returns every sample conversation to its original state. Any attention, pin, or snooze changes you've made are lost.")
+                }
+                .confirmationDialog("Reset all sample data?", isPresented: $showingResetConfirmation, titleVisibility: .visible) {
+                    Button("Reset", role: .destructive) { Task { await store.resetSampleData() } }
+                    Button("Cancel", role: .cancel) {}
                 }
                 Section("The next chapter") {
                     Text("Gmail will be the first connected account. Connection, reliable sync, offline storage, and sending are planned after this foundation is verified.")

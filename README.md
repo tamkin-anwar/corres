@@ -17,11 +17,12 @@ Built by Anwar Creative Studio.
 **Correspondence, not just messages**
 - Compose, reply, reply all, and forward, with the reply/forward action itself moving a conversation to Waiting and recording the evidence ("You replied just now. Waiting for their response.")
 - Swipe-to-triage: mark handled, snooze (later today / tomorrow morning / next week), pin, or flag as Needs You, without opening the thread
-- Snoozed conversations disappear from every view and from Brief's counts until they resurface
+- Snoozed conversations disappear from their curated Needs You/Waiting queue and from Brief's counts until they resurface, but stay visible in Mail and in search — snoozing never makes a conversation unfindable
 - Pinned conversations stay at the top regardless of recency
 - Reversible attention changes with visible evidence — nothing is silently reclassified
 
 **Foundation**
+- Local-first persistence (SwiftData): attention, pins, and snoozes survive relaunch, with a versioned migration plan and an explicit Reset Sample Data action
 - Sample mode with six fictional conversations; no account or credentials required to explore
 - Light, dark, and system appearance, with accessibility (Dynamic Type, Reduce Motion, Increase Contrast) built in from the start
 - An original vector correspondence mark and hand-shaded sculptural artwork, rendered natively at Retina scale, no raster upscaling

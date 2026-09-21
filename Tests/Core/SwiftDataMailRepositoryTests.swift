@@ -1,0 +1,84 @@
+import Foundation
+import SwiftData
+import Testing
+@testable import CorresCore
+
+struct SwiftDataMailRepositoryTests {
+    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func makeContainer() throws -> ModelContainer {
+        let schema = Schema(CorresSchemaV1.models)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        return try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self, configurations: [configuration])
+    }
+
+    @Test func seedIfNeededPopulatesOnceAndIsIdempotent() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        try await repository.seedIfNeeded(now: now)
+        let count = try await repository.threads().count
+        #expect(count > 0)
+        try await repository.setAttention(.handled, for: ThreadID(account: "sample", providerID: "sample-0"))
+        try await repository.seedIfNeeded(now: now) // must not re-seed over the change
+        let unchanged = try await repository.threads().first { $0.id.providerID == "sample-0" }
+        #expect(unchanged?.attention == .handled)
+    }
+
+    @Test func mutationsPersistAcrossANewRepositoryInstanceOnTheSameContainer() async throws {
+        let container = try makeContainer()
+        let first = SwiftDataMailRepository(modelContainer: container)
+        try await first.seedIfNeeded(now: now)
+        let target = try #require(await first.threads().first)
+        try await first.setPinned(true, for: target.id)
+        try await first.snooze(target.id, until: now.addingTimeInterval(3600))
+
+        // A fresh actor over the SAME container simulates relaunching the app.
+        let second = SwiftDataMailRepository(modelContainer: container)
+        let reloaded = try #require(await second.threads().first { $0.id == target.id })
+        #expect(reloaded.isPinned == true)
+        #expect(reloaded.snoozedUntil == now.addingTimeInterval(3600))
+    }
+
+    @Test func replyingPersistsTheWaitingTransitionWithEvidence() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        try await repository.seedIfNeeded(now: now)
+        let original = try #require(await repository.threads().first { $0.attention == .needsYou })
+        let draft = Draft(kind: .reply, threadID: original.id, to: original.sender, subject: "Re: \(original.subject)", body: "On it.")
+        let updated = try await repository.send(draft, sentAt: now)
+        #expect(updated.attention == .waiting)
+        #expect(updated.reason.contains("replied"))
+    }
+
+    @Test func newDraftCreatesATrimmedWaitingConversation() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        try await repository.seedIfNeeded(now: now)
+        let before = try await repository.threads().count
+        let draft = Draft(kind: .new, to: "  Nadia Osei  ", subject: "  Introduction  ", body: "Hello.")
+        let created = try await repository.send(draft, sentAt: now)
+        #expect(created.sender == "Nadia Osei")
+        #expect(created.subject == "Introduction")
+        #expect(created.attention == .waiting)
+        #expect(try await repository.threads().count == before + 1)
+    }
+
+    @Test func sendingToAMissingThreadThrows() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        try await repository.seedIfNeeded(now: now)
+        let ghost = ThreadID(account: "sample", providerID: "does-not-exist")
+        let draft = Draft(kind: .reply, threadID: ghost, to: "Someone", subject: "Re: Gone", body: "")
+        await #expect(throws: RepositoryError.threadNotFound) {
+            _ = try await repository.send(draft, sentAt: now)
+        }
+    }
+
+    @Test func resetToSampleDataDiscardsChangesAndRestoresOriginalState() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        try await repository.seedIfNeeded(now: now)
+        let original = try await repository.threads()
+        let target = try #require(original.first)
+        try await repository.setAttention(.handled, for: target.id)
+        try await repository.resetToSampleData(now: now)
+        let afterReset = try await repository.threads()
+        #expect(afterReset.count == original.count)
+        #expect(afterReset.first { $0.id == target.id }?.attention == target.attention)
+    }
+}

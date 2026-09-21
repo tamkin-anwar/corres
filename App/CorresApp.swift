@@ -1,9 +1,32 @@
+import SwiftData
 import SwiftUI
 
 @main
 struct CorresApp: App {
-    @State private var store = MailStore(repository: SampleMailRepository())
+    @State private var store: MailStore
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
+
+    init() {
+        let container = Self.makeModelContainer()
+        _store = State(initialValue: MailStore(repository: SwiftDataMailRepository(modelContainer: container)))
+    }
+
+    private static func makeModelContainer() -> ModelContainer {
+        let schema = Schema(CorresSchemaV1.models)
+        do {
+            return try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self,
+                                      configurations: [ModelConfiguration(schema: schema)])
+        } catch {
+            // A corrupt/incompatible on-disk store should not brick the app on
+            // launch; fall back to a fresh in-memory container so it still
+            // opens, at the cost of that device's local history this session.
+            let fallbackConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            guard let fallback = try? ModelContainer(for: schema, configurations: [fallbackConfiguration]) else {
+                fatalError("Could not create any Corres local store, including an in-memory fallback: \(error)")
+            }
+            return fallback
+        }
+    }
 
     var body: some Scene {
         WindowGroup {

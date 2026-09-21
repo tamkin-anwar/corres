@@ -10,6 +10,14 @@ public protocol MailRepository: Sendable {
     /// acted and is now the one expecting a response. A new draft opens a thread
     /// in the same state, since nothing has come back yet either way.
     func send(_ draft: Draft, sentAt: Date) async throws -> Correspondence
+    /// Populates fictional starter data on first use. A no-op for a repository
+    /// that is already seeded at construction (SampleMailRepository); real
+    /// work for a persisted, empty store.
+    func seedIfNeeded(now: Date) async throws
+    /// Explicit, user-triggered return to a clean fictional demo state — not
+    /// called automatically. The local-data equivalent of sign-out purge until
+    /// real accounts exist to scope a purge to.
+    func resetToSampleData(now: Date) async throws
 }
 
 public enum RepositoryError: Error, Equatable { case threadNotFound }
@@ -63,5 +71,11 @@ public actor SampleMailRepository: MailRepository {
             throw RepositoryError.threadNotFound
         }
         change(&items[index])
+    }
+
+    public func seedIfNeeded(now: Date) {}
+
+    public func resetToSampleData(now: Date) {
+        items = SampleCorrespondence.make(now: now)
     }
 }

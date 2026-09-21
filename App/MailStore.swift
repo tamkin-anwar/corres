@@ -17,12 +17,22 @@ final class MailStore {
         guard state != .loading else { return }
         state = .loading
         do {
+            try await repository.seedIfNeeded(now: .now)
             threads = try await repository.threads()
             state = .loaded
         } catch is CancellationError {
             state = .idle
         } catch {
             state = .failed
+        }
+    }
+
+    func resetSampleData() async {
+        do {
+            try await repository.resetToSampleData(now: .now)
+            threads = try await repository.threads()
+        } catch {
+            errorMessage = "Could not reset sample data. Please try again."
         }
     }
 
