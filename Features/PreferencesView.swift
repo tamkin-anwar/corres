@@ -36,5 +36,12 @@ struct PreferencesView: View {
             .navigationTitle("Preferences")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
+        // .preferredColorScheme() set on a distant ancestor (here, the app's
+        // WindowGroup root) does not reliably re-trait a .sheet() that is
+        // already presented when the underlying value changes mid-presentation
+        // — a separate SwiftUI quirk from the adaptive-color fix in Tokens.swift.
+        // Applying it directly on this sheet's own content, driven by the same
+        // @AppStorage value it already reads, makes it self-sufficient.
+        .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
     }
 }
