@@ -34,7 +34,7 @@ struct ConversationView: View {
                         if let html = thread.htmlBody {
                             HTMLMessageBody(html: html, height: $htmlHeight)
                                 .frame(height: htmlHeight)
-                                .padding(24).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
+                                .padding(24).frame(maxWidth: .infinity, alignment: .leading).corresSurface(rasterize: false)
                         } else {
                             Text(thread.body).font(.body).lineSpacing(8).textSelection(.enabled)
                                 .padding(24).frame(maxWidth: .infinity, alignment: .leading).corresSurface()

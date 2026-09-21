@@ -53,10 +53,19 @@ enum CorresType {
 }
 
 struct CorresSurface: ViewModifier {
+    /// UIViewRepresentable content that manages its own out-of-process
+    /// compositing (WKWebView above all) cannot be captured by
+    /// .drawingGroup()'s Core Animation snapshotting — SwiftUI silently fails
+    /// to flatten it ("Unable to render flattened version of
+    /// PlatformViewRepresentableAdaptor<...>"), and nothing shows. This was a
+    /// real bug: HTMLMessageBody's images were loading correctly the whole
+    /// time: the card wrapping them was failing to render at all. Callers
+    /// hosting that kind of content must pass rasterize: false.
+    var rasterize = true
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     func body(content: Content) -> some View {
-        content
+        let styled = content
             .background {
                 RoundedRectangle(cornerRadius: CorresSpace.radius, style: .continuous)
                     .fill(CorresPalette.surface.gradient
@@ -68,15 +77,20 @@ struct CorresSurface: ViewModifier {
             }
             .compositingGroup()
             .shadow(color: .black.opacity(reduceTransparency ? 0 : 0.035), radius: 16, x: 0, y: 8)
-            // This card shape is reused on every list row and repeats across a
-            // scrolling List; rasterizing it once avoids recomputing the inner
-            // fill shadow, stroke, and outer blur on every scroll frame.
-            .drawingGroup()
+        // This card shape is reused on every list row and repeats across a
+        // scrolling List; rasterizing it once avoids recomputing the inner
+        // fill shadow, stroke, and outer blur on every scroll frame. Skipped
+        // only where the content can't survive it (see doc comment above).
+        if rasterize {
+            styled.drawingGroup()
+        } else {
+            styled
+        }
     }
 }
 
 extension View {
-    func corresSurface() -> some View { modifier(CorresSurface()) }
+    func corresSurface(rasterize: Bool = true) -> some View { modifier(CorresSurface(rasterize: rasterize)) }
 }
 
 struct CorresButtonStyle: ButtonStyle {
