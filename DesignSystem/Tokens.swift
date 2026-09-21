@@ -1,17 +1,20 @@
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#else
-import AppKit
-#endif
 
+/// Adaptive colors live in Assets.xcassets (light/dark Color Sets), not as
+/// programmatic UIColor(traits:) closures. SwiftUI resolves asset-catalog
+/// colors directly against its own `\.colorScheme` environment, so they
+/// update immediately with .preferredColorScheme(); a UIColor trait-closure
+/// resolves against UIKit's trait collection instead, which lags a full
+/// layout pass behind — the cause of a real bug where switching Appearance
+/// in Preferences updated the sheet's background instantly but left card
+/// backgrounds on the old color until the view was left and revisited.
 enum CorresPalette {
-    static let canvas = adaptive(light: 0xF4F2ED, dark: 0x10171C)
-    static let surface = adaptive(light: 0xFFFEFA, dark: 0x1A252D)
-    static let ink = adaptive(light: 0x192D39, dark: 0xF3F0E8)
-    static let secondary = adaptive(light: 0x5B6870, dark: 0xB6C1C7)
-    static let accent = adaptive(light: 0x274D61, dark: 0xB4D1DF)
-    static let line = adaptive(light: 0xDADDD9, dark: 0x394750)
+    static let canvas = Color("canvas")
+    static let surface = Color("surface")
+    static let ink = Color("ink")
+    static let secondary = Color("secondary")
+    static let accent = Color("accent")
+    static let line = Color("line")
     static let champagne = Color(hex: 0xD7C4A0)
     static let midnight = Color(hex: 0x142D3D)
 
@@ -23,21 +26,6 @@ enum CorresPalette {
     static let swipeHandled = Color(hex: 0x2D5A70)
     static let swipeSnooze = Color(hex: 0x4A5560)
     static let swipePin = Color(hex: 0x8A6A3E)
-
-    private static func adaptive(light: UInt32, dark: UInt32) -> Color {
-        #if canImport(UIKit)
-        Color(uiColor: UIColor { traits in
-            UIColor(rgb: traits.userInterfaceStyle == .dark ? dark : light)
-        })
-        #else
-        Color(nsColor: NSColor(name: nil) { appearance in
-            let rgb = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
-            return NSColor(srgbRed: CGFloat((rgb >> 16) & 255) / 255,
-                           green: CGFloat((rgb >> 8) & 255) / 255,
-                           blue: CGFloat(rgb & 255) / 255, alpha: 1)
-        })
-        #endif
-    }
 }
 
 extension Color {
@@ -46,17 +34,6 @@ extension Color {
                   green: Double((hex >> 8) & 255) / 255, blue: Double(hex & 255) / 255)
     }
 }
-
-#if canImport(UIKit)
-private extension UIColor {
-    convenience init(rgb: UInt32) {
-        self.init(red: CGFloat((rgb >> 16) & 255) / 255,
-                  green: CGFloat((rgb >> 8) & 255) / 255,
-                  blue: CGFloat(rgb & 255) / 255, alpha: 1)
-    }
-}
-
-#endif
 
 enum CorresSpace {
     static let small: CGFloat = 8
