@@ -39,11 +39,14 @@ struct PreferencesView: View {
                         }
                         .disabled(auth.isSigningIn || sync.isSyncing)
                     }
-                    Text("Read-only access for now. Corres cannot send, delete, or modify anything in your real mailbox. Your 25 most recent inbox messages sync into Mail; sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state for now, not real judgment.")
+                    Text("Read-only access for now. Corres cannot send, delete, or modify anything in your real mailbox. Your inbox syncs into Mail, and new messages keep arriving automatically; sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state for now, not real judgment.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
                 }
                 .confirmationDialog("Disconnect Gmail?", isPresented: $showingDisconnectConfirmation, titleVisibility: .visible) {
-                    Button("Disconnect", role: .destructive) { auth.signOut() }
+                    Button("Disconnect", role: .destructive) {
+                        sync.clearCursor(for: auth.account?.email)
+                        auth.signOut()
+                    }
                     Button("Cancel", role: .cancel) {}
                 }
                 .alert("Could not connect", isPresented: Binding(
@@ -70,7 +73,21 @@ struct PreferencesView: View {
                     Text("Returns every sample conversation to its original state. Any attention, pin, or snooze changes you've made are lost.")
                 }
                 .confirmationDialog("Reset all sample data?", isPresented: $showingResetConfirmation, titleVisibility: .visible) {
-                    Button("Reset", role: .destructive) { Task { await store.resetSampleData() } }
+                    Button("Reset", role: .destructive) {
+                        Task {
+                            // Reset deletes every persisted thread, real synced
+                            // mail included. Without also forgetting the history
+                            // cursor, the next sync would be incremental and
+                            // would not re-fetch anything already "seen" before
+                            // the reset, leaving Mail empty until new mail
+                            // arrives. Clear it and resync immediately instead.
+                            sync.clearCursor(for: auth.account?.email)
+                            await store.resetSampleData()
+                            if await sync.syncIfConnected(account: auth.account?.email) {
+                                await store.load()
+                            }
+                        }
+                    }
                     Button("Cancel", role: .cancel) {}
                 }
                 Section("The next chapter") {

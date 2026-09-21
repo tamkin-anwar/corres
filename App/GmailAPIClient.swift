@@ -6,16 +6,47 @@ import GoogleSignIn
 /// that speaks Gmail's wire format; it returns plain Correspondence values,
 /// never its own DTOs, past this boundary (ADR 002).
 struct GmailAPIClient {
-    enum ClientError: Error { case notSignedIn, badResponse, decodingFailed }
+    enum ClientError: Error { case notSignedIn, badResponse, decodingFailed, historyExpired }
 
-    /// Deliberately small and recent-only for this first sync pass, not a
-    /// full mailbox import: matches "do not attempt to support every...
-    /// immediately," and gives a fast first real result to look at.
-    private let maxResults = 25
+    /// One fetch, either a first full sync or a cursor-based catch-up; the
+    /// caller (GmailSyncService) persists `historyId` and passes it back in
+    /// as the starting point for the next call.
+    struct SyncResult { let items: [Correspondence]; let historyId: String? }
 
-    func fetchRecentInbox(account: String) async throws -> [Correspondence] {
+    /// Caps the very first sync at a couple hundred messages, not a full
+    /// mailbox import: matches "do not attempt to support every... immediately,"
+    /// and gives a fast first real result to look at. Every sync after this
+    /// one is incremental via the history cursor and has no such cap.
+    private let initialSyncPageSize = 100
+    private let initialSyncMaxPages = 2
+
+    private let historyPageSize = 100
+
+    /// A full listing of the inbox (paginated), used the first time an
+    /// account syncs, or whenever a stored history cursor has expired.
+    func fetchInitialInbox(account: String) async throws -> SyncResult {
         let token = try await accessToken()
         let ids = try await listMessageIDs(token: token)
+        let items = await fetchMessages(ids: ids, token: token, account: account)
+        // Best-effort: if the profile call fails, the sync itself still
+        // succeeded, just without a cursor for next time. The following
+        // sync falls back to another full listing rather than failing.
+        let historyId = try? await fetchProfile(token: token).historyId
+        return SyncResult(items: items, historyId: historyId)
+    }
+
+    /// Gmail's History API: only what changed since `cursor`, not a re-list
+    /// of the whole inbox. Throws `.historyExpired` when the cursor is older
+    /// than Gmail's retention window (about a week); the caller is expected
+    /// to recover by calling `fetchInitialInbox` instead.
+    func fetchIncremental(account: String, since cursor: String) async throws -> SyncResult {
+        let token = try await accessToken()
+        let (ids, historyId) = try await listHistoryMessageIDs(since: cursor, token: token)
+        let items = await fetchMessages(ids: ids, token: token, account: account)
+        return SyncResult(items: items, historyId: historyId ?? cursor)
+    }
+
+    private func fetchMessages(ids: [String], token: String, account: String) async -> [Correspondence] {
         var results: [Correspondence] = []
         for id in ids {
             if let message = try? await fetchMessage(id: id, token: token) {
@@ -32,15 +63,66 @@ struct GmailAPIClient {
     }
 
     private func listMessageIDs(token: String) async throws -> [String] {
-        var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
-        components.queryItems = [
-            URLQueryItem(name: "labelIds", value: "INBOX"),
-            URLQueryItem(name: "maxResults", value: String(maxResults)),
-        ]
-        let (data, response) = try await authorizedRequest(url: components.url!, token: token)
+        var ids: [String] = []
+        var pageToken: String?
+        var pagesFetched = 0
+        repeat {
+            var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
+            var queryItems = [
+                URLQueryItem(name: "labelIds", value: "INBOX"),
+                URLQueryItem(name: "maxResults", value: String(initialSyncPageSize)),
+            ]
+            if let pageToken { queryItems.append(URLQueryItem(name: "pageToken", value: pageToken)) }
+            components.queryItems = queryItems
+            let (data, response) = try await authorizedRequest(url: components.url!, token: token)
+            try validate(response)
+            let list = try JSONDecoder().decode(MessageListResponse.self, from: data)
+            ids.append(contentsOf: list.messages?.map(\.id) ?? [])
+            pageToken = list.nextPageToken
+            pagesFetched += 1
+        } while pageToken != nil && pagesFetched < initialSyncMaxPages
+        return ids
+    }
+
+    /// Gmail discards history IDs older than roughly a week; a `startHistoryId`
+    /// outside that window 404s, which is the specific, expected signal to
+    /// fall back to a full resync rather than a generic failure.
+    private func listHistoryMessageIDs(since startHistoryId: String, token: String) async throws -> (ids: [String], historyId: String?) {
+        var ids: Set<String> = []
+        var pageToken: String?
+        var latestHistoryId: String?
+        repeat {
+            var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/history")!
+            var queryItems = [
+                URLQueryItem(name: "startHistoryId", value: startHistoryId),
+                URLQueryItem(name: "historyTypes", value: "messageAdded"),
+                URLQueryItem(name: "labelId", value: "INBOX"),
+                URLQueryItem(name: "maxResults", value: String(historyPageSize)),
+            ]
+            if let pageToken { queryItems.append(URLQueryItem(name: "pageToken", value: pageToken)) }
+            components.queryItems = queryItems
+            let (data, response) = try await authorizedRequest(url: components.url!, token: token)
+            if let http = response as? HTTPURLResponse, http.statusCode == 404 {
+                throw ClientError.historyExpired
+            }
+            try validate(response)
+            let page = try JSONDecoder().decode(HistoryListResponse.self, from: data)
+            for record in page.history ?? [] {
+                for added in record.messagesAdded ?? [] {
+                    ids.insert(added.message.id)
+                }
+            }
+            latestHistoryId = page.historyId ?? latestHistoryId
+            pageToken = page.nextPageToken
+        } while pageToken != nil
+        return (Array(ids), latestHistoryId)
+    }
+
+    private func fetchProfile(token: String) async throws -> Profile {
+        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/profile")!
+        let (data, response) = try await authorizedRequest(url: url, token: token)
         try validate(response)
-        let list = try JSONDecoder().decode(MessageListResponse.self, from: data)
-        return list.messages?.map(\.id) ?? []
+        return try JSONDecoder().decode(Profile.self, from: data)
     }
 
     private func fetchMessage(id: String, token: String) async throws -> GmailMessage {
@@ -167,7 +249,23 @@ private extension Data {
 private struct MessageListResponse: Decodable {
     struct Item: Decodable { let id: String }
     let messages: [Item]?
+    let nextPageToken: String?
 }
+
+private struct HistoryListResponse: Decodable {
+    struct HistoryRecord: Decodable {
+        struct MessageAdded: Decodable {
+            struct MessageRef: Decodable { let id: String }
+            let message: MessageRef
+        }
+        let messagesAdded: [MessageAdded]?
+    }
+    let history: [HistoryRecord]?
+    let historyId: String?
+    let nextPageToken: String?
+}
+
+private struct Profile: Decodable { let historyId: String? }
 
 private struct GmailMessage: Decodable {
     let id: String

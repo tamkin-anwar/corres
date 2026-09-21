@@ -6,11 +6,15 @@ import WebKit
 /// display correctly. Every link tap opens in the system browser, never
 /// inline, after validating the scheme is http/https (blocks a tapped
 /// javascript: or arbitrary custom-scheme link from silently doing something
-/// unexpected). Remote image loading is NOT yet blocked by default; ADR 006
-/// calls for that, and it is a documented, deliberate follow-up, not an oversight.
+/// unexpected). Remote `<img>` sources are blocked by default per ADR 006
+/// (marketing mail routinely uses a 1x1 remote image purely to log that the
+/// message was opened); `cid:`-referenced images are inlined as `data:` URIs
+/// by GmailAPIClient before this view ever sees the HTML, so they are real
+/// message content, not a remote fetch, and are unaffected by this.
 struct HTMLMessageBody: UIViewRepresentable {
     let html: String
     @Binding var height: CGFloat
+    var blockRemoteImages = true
 
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -26,8 +30,9 @@ struct HTMLMessageBody: UIViewRepresentable {
 
     func updateUIView(_ webView: WKWebView, context: Context) {
         context.coordinator.parent = self
-        if context.coordinator.lastLoadedHTML != html {
-            context.coordinator.lastLoadedHTML = html
+        let processed = blockRemoteImages ? Self.blockingRemoteImages(in: html) : html
+        if context.coordinator.lastLoadedHTML != processed {
+            context.coordinator.lastLoadedHTML = processed
             // baseURL: nil is a well-documented real-device bug (fine in
             // Simulator): without an origin, WKWebView does not establish a
             // proper security/cookie context, and absolute https:// image
@@ -35,11 +40,35 @@ struct HTMLMessageBody: UIViewRepresentable {
             // resolved (nothing is loaded from it; the page content comes
             // entirely from loadHTMLString), it exists only to give the page
             // a real https origin.
-            webView.loadHTMLString(Self.wrap(html), baseURL: Self.placeholderBaseURL)
+            webView.loadHTMLString(Self.wrap(processed), baseURL: Self.placeholderBaseURL)
         }
     }
 
     private static let placeholderBaseURL = URL(string: "https://mail.corres.app/")
+
+    /// How many `<img>` tags in `html` point at a remote http(s) URL, so a
+    /// caller can show a "N images blocked" banner without needing its own
+    /// WKWebView instance to find out.
+    static func remoteImageCount(in html: String) -> Int {
+        guard let regex = try? NSRegularExpression(pattern: remoteImgSrcPattern, options: [.caseInsensitive]) else { return 0 }
+        return regex.numberOfMatches(in: html, range: NSRange(html.startIndex..., in: html))
+    }
+
+    /// Replaces every remote `<img>` source with an inline transparent pixel,
+    /// so no network request is made at all until the user chooses to load
+    /// images. Deliberately narrow in scope (only `<img src>`, not CSS
+    /// `background-image`): that covers the overwhelming majority of real
+    /// tracking pixels, at a fraction of the false-positive risk of rewriting
+    /// arbitrary inline styles.
+    private static func blockingRemoteImages(in html: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: remoteImgSrcPattern, options: [.caseInsensitive]) else { return html }
+        let range = NSRange(html.startIndex..., in: html)
+        return regex.stringByReplacingMatches(in: html, options: [], range: range,
+                                               withTemplate: "$1$2\(transparentPixelDataURI)$2")
+    }
+
+    private static let remoteImgSrcPattern = #"(<img\b[^>]*\bsrc\s*=\s*)(["'])https?://[^"']*\2"#
+    private static let transparentPixelDataURI = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 

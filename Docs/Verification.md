@@ -2,6 +2,35 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 4: incremental sync and default image blocking (September 21, 2026)
+
+- Replaced the fixed 25-message sync window with Gmail's History API. The first sync per account
+  (or any sync after a stored cursor 404s as expired, which Gmail does to history IDs older than
+  about a week) does a paginated full listing, capped at 200 messages (two pages of 100), and reads
+  the account's current `historyId` from `users.getProfile`. Every sync after that calls
+  `users.history.list?startHistoryId=...&historyTypes=messageAdded&labelId=INBOX`, fetching only
+  messages added since the stored cursor, and advances the cursor to the response's own
+  `historyId`. The cursor lives in `UserDefaults`, keyed by account email, in `GmailSyncService`,
+  not in the SwiftData schema: it is a Gmail-specific sync detail, and ADR 002 keeps provider
+  specifics out of the Core domain layer. Disconnecting an account or using Preferences' "Reset
+  Sample Data" (which deletes every persisted thread, real synced mail included) both clear the
+  cursor; without that, a reset would leave Mail silently empty of real mail until new mail arrived,
+  since an incremental sync would find nothing new to fetch for messages it had already "seen"
+  before the reset. Verified with `swift build` on the actual list/history/profile query
+  construction and a manual read of Gmail's documented History API pagination and 404-on-expired
+  behavior; not yet verified against a real inbox old enough to force the expired-cursor path.
+- Default-blocked remote `<img src="http(s)://...">` tags in HTML mail (ADR 006's tracking-pixel
+  requirement, deliberately deferred in Batch 3 to get images working at all first). Each matching
+  `src` is rewritten to an inline 1x1 transparent GIF `data:` URI before the HTML ever reaches
+  WKWebView, so no network request happens until the user taps "Show Images" on a banner that
+  reports how many were blocked. Scoped narrowly to `<img src>` (not CSS `background-image`), which
+  covers real-world tracking pixels with far less false-positive risk than rewriting arbitrary
+  inline styles. `cid:`-referenced images are unaffected: GmailAPIClient already inlines those as
+  `data:` URIs before this code runs, and the blocking regex only matches `http`/`https` sources.
+  Verified with a standalone six-case Swift script covering plain remote `<img>`, single-quoted
+  attributes, additional attributes before/after `src`, an already-inlined `data:` image (must not
+  match), uppercase `<IMG SRC=...>` (case-insensitive), and non-image HTML (no match) — all passed.
+
 ## Batch 1 sweep (September 21, 2026)
 
 - Added the real App Icon: a flattened, alpha-free 1024x1024 PNG (`App/Assets.xcassets/AppIcon.appiconset`) built from the existing approved sculpture render (`Docs/Previews/sculpture-4k.png`), verified `hasAlpha: no` via `sips` (App Store rejects any icon with an alpha channel). Also added an `AccentColor` set and a `LaunchBackground` color set (light/dark) wired through a small merged `App/Info.plist` (`UILaunchScreen.UIColorName`), replacing the default blank-white launch screen.

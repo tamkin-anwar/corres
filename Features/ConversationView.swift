@@ -5,6 +5,7 @@ struct ConversationView: View {
     let id: ThreadID
     @State private var composeDraft: Draft?
     @State private var htmlHeight: CGFloat = 200
+    @State private var showRemoteImages = false
 
     var body: some View {
         Group {
@@ -32,7 +33,11 @@ struct ConversationView: View {
                         }
                         .padding(20).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
                         if let html = thread.htmlBody {
-                            HTMLMessageBody(html: html, height: $htmlHeight)
+                            let blockedCount = HTMLMessageBody.remoteImageCount(in: html)
+                            if blockedCount > 0 && !showRemoteImages {
+                                remoteImagesBanner(count: blockedCount)
+                            }
+                            HTMLMessageBody(html: html, height: $htmlHeight, blockRemoteImages: !showRemoteImages)
                                 .frame(height: htmlHeight)
                                 .padding(24).frame(maxWidth: .infinity, alignment: .leading).corresSurface(rasterize: false)
                         } else {
@@ -104,6 +109,20 @@ struct ConversationView: View {
         .sheet(item: $composeDraft) { draft in
             ComposeView(store: store, draft: draft)
         }
+    }
+
+    private func remoteImagesBanner(count: Int) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "photo").accessibilityHidden(true)
+            Text(count == 1 ? "1 image blocked" : "\(count) images blocked")
+                .font(.footnote).foregroundStyle(CorresPalette.secondary)
+            Spacer()
+            Button("Show Images") { showRemoteImages = true }
+                .font(.footnote.weight(.semibold))
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(CorresPalette.line, lineWidth: 0.5))
     }
 
     private func replyBar(for thread: Correspondence) -> some View {
