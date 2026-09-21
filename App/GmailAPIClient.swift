@@ -63,7 +63,11 @@ struct GmailAPIClient {
     }
 
     private func map(_ message: GmailMessage, account: String) -> Correspondence {
-        let headers = Dictionary(uniqueKeysWithValues: (message.payload?.headers ?? []).map { ($0.name.lowercased(), $0.value) })
+        // Real messages routinely repeat headers (every mail-server hop adds
+        // its own "Received" header) — uniqueKeysWithValues crashes on any
+        // duplicate, which duplicate headers always are. Keep the first.
+        let headers = Dictionary((message.payload?.headers ?? []).map { ($0.name.lowercased(), $0.value) },
+                                  uniquingKeysWith: { first, _ in first })
         let (sender, senderEmail) = Self.parseFrom(headers["from"] ?? "")
         let subject = headers["subject"] ?? "(no subject)"
         let organization = Self.organization(fromEmail: senderEmail)
