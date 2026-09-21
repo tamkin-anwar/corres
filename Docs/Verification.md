@@ -11,7 +11,31 @@ Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 2
 - Fixed the welcome screen's "corres" wordmark from a hard-coded `size: 54` font (ignored Dynamic Type entirely) to a relative `.largeTitle` style, capped at `.xxxLarge` so accessibility text sizes don't break the fixed-width hero layout.
 - Fixed the nav bar's icon+wordmark: the system's automatic toolbar layout was compressing "corres" down to a single truncated letter (fixed with `fixedSize()`), and the flat (non-sculpted) mark rendered both arcs in one flat color, reading as a generic sync icon rather than a brand mark — given the gold/silver two-tone the sculpture uses.
 - Fixed real, reproduced on-device scroll jank: `CorrespondentAvatar` and `corresSurface()` each layered 2-3 uncached shadow/gradient passes recomputed every scroll frame; added `.drawingGroup()` to rasterize both once.
-- These fixes were verified by physical-device testing (Tamkin's iPhone) and code-level audit. The iOS Simulator on this Mac crashes on every Corres launch with an identical `MTLSimCommandQueue`/XPC signature both before and after a full Mac restart — see `corres-simulator-environment` — so VoiceOver rotor testing, Dynamic Type at maximum accessibility sizes, and Reduce Motion/Increase Contrast still need a real run-through, either on physical device or once the simulator issue clears.
+## Follow-up sweep (same day)
+
+The Preferences theme fix above was necessary but not sufficient — a second, separate cause was
+found: `.preferredColorScheme()` applied at the WindowGroup root does not reliably re-trait a
+`.sheet()`/`.fullScreenCover()` that is already on screen when the value changes mid-presentation.
+Applied the scheme directly on each independently-presented surface's own content
+(PreferencesView, ComposeView, WelcomeView), each reading `@AppStorage("corres.appearance")`
+itself rather than depending on inherited environment propagation across a presentation boundary.
+
+Requested full sweep for the same class of bug turned up three more real issues, all fixed with
+new domain test coverage:
+
+- `MailQuery.filter` unconditionally hid snoozed threads everywhere, including the Mail tab (whose
+  own subtitle promises "every conversation, in its place") and from search results — a snoozed
+  thread became genuinely unfindable until it expired. Snooze now only hides a thread from its
+  curated attention queue (Needs You/Waiting); it stays visible in Mail and in any active search.
+- `ComposeView`'s discard-confirmation used "is anything non-empty" as its check, which is always
+  true for a reply/forward (pre-filled quote) and always false for new — so canceling a forward
+  never asked for confirmation even with real added content, while `.interactiveDismissDisabled`
+  still blocked the swipe gesture in the same case (an inconsistent, self-contradicting state). Now
+  compares the current draft against its own pre-filled starting point.
+- Outbound recipient/subject were stored with untrimmed whitespace if typed with leading/trailing
+  spaces; trimmed at the repository's actual commit point.
+
+These fixes were verified by physical-device testing (Tamkin's iPhone) and code-level audit. The iOS Simulator on this Mac crashes on every Corres launch with an identical `MTLSimCommandQueue`/XPC signature both before and after a full Mac restart — see `corres-simulator-environment` — so VoiceOver rotor testing, Dynamic Type at maximum accessibility sizes, and Reduce Motion/Increase Contrast still need a real run-through, either on physical device or once the simulator issue clears.
 
 ## Passed
 

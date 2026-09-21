@@ -3,11 +3,17 @@ import SwiftUI
 struct WelcomeView: View {
     var scrolls = true
     let onExplore: () -> Void
+    @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
 
     var body: some View {
         Group {
             if scrolls { ScrollView { content } } else { content }
-        }.foregroundStyle(CorresPalette.ink).background(CorresPalette.canvas)
+        }
+        .foregroundStyle(CorresPalette.ink).background(CorresPalette.canvas)
+        // Self-contained, like PreferencesView and ComposeView: a distant
+        // .preferredColorScheme does not reliably re-trait an already-
+        // presented fullScreenCover if Appearance changes while it's open.
+        .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
     }
 
     var content: some View {

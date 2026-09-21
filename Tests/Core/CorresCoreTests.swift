@@ -115,6 +115,19 @@ struct CorresCoreTests {
         #expect(MailQuery.filter(threads, attention: .needsYou, now: now.addingTimeInterval(7200)).contains { $0.id == target.id })
     }
 
+    @Test func snoozedThreadsStayVisibleInMailAndInSearchResults() async throws {
+        let repository = SampleMailRepository(now: now)
+        let target = try #require(await repository.threads().first { $0.attention == .needsYou })
+        try await repository.snooze(target.id, until: now.addingTimeInterval(3600))
+        let threads = await repository.threads()
+
+        // Mail (no attention filter) is the catch-all view: still shows it.
+        #expect(MailQuery.filter(threads, now: now).contains { $0.id == target.id })
+        // Searching within its own curated queue still finds it.
+        #expect(MailQuery.filter(threads, attention: .needsYou, search: target.sender, now: now)
+            .contains { $0.id == target.id })
+    }
+
     @Test func pinnedThreadsSortBeforeUnpinnedRegardlessOfRecency() {
         var threads = SampleCorrespondence.make(now: now)
         let oldestIndex = threads.count - 1

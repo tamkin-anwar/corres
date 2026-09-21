@@ -114,8 +114,13 @@ public enum MailQuery {
     public static func filter(_ threads: [Correspondence], attention: Attention? = nil,
                               search: String = "", now: Date = .now) -> [Correspondence] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Snooze hides a thread from its curated attention queue (that is the
+        // point of snoozing it), but never from the catch-all Mail view and
+        // never from an explicit search — a snoozed thread is still real mail
+        // and must stay findable.
+        let hideSnoozed = attention != nil && query.isEmpty
         return threads.filter { item in
-            !item.isSnoozed(at: now) &&
+            (!hideSnoozed || !item.isSnoozed(at: now)) &&
             (attention == nil || item.attention == attention) &&
             (query.isEmpty || [item.sender, item.organization, item.subject, item.excerpt]
                 .contains { $0.localizedStandardContains(query) })

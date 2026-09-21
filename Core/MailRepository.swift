@@ -37,9 +37,11 @@ public actor SampleMailRepository: MailRepository {
 
     public func send(_ draft: Draft, sentAt: Date) throws -> Correspondence {
         guard let threadID = draft.threadID else {
+            let sender = draft.to.trimmingCharacters(in: .whitespacesAndNewlines)
+            let subject = draft.subject.trimmingCharacters(in: .whitespacesAndNewlines)
             let created = Correspondence(
                 id: ThreadID(account: account, providerID: UUID().uuidString),
-                sender: draft.to, organization: "", subject: draft.subject,
+                sender: sender, organization: "", subject: subject,
                 excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
                 reason: "You started this conversation. Waiting for a response.",
                 attention: .waiting)

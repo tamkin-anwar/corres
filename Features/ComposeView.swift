@@ -3,11 +3,19 @@ import SwiftUI
 struct ComposeView: View {
     let store: MailStore
     @State var draft: Draft
+    private let initialDraft: Draft
     @Environment(\.dismiss) private var dismiss
     @State private var showingDiscardConfirmation = false
     @FocusState private var focusedField: Field?
+    @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
 
     private enum Field { case to, subject, body }
+
+    init(store: MailStore, draft: Draft) {
+        self.store = store
+        self._draft = State(initialValue: draft)
+        self.initialDraft = draft
+    }
 
     var body: some View {
         NavigationStack {
@@ -50,9 +58,13 @@ struct ComposeView: View {
                 Button("Delete Draft", role: .destructive) { dismiss() }
                 Button("Keep Editing", role: .cancel) {}
             }
-            .interactiveDismissDisabled(hasContent)
+            .interactiveDismissDisabled(hasUnsavedChanges)
             .onAppear { focusedField = draft.to.isEmpty ? .to : .body }
         }
+        // Self-contained, like PreferencesView: a distant .preferredColorScheme
+        // does not reliably re-trait an already-presented sheet if Appearance
+        // changes while it's open (e.g. via system auto dark mode).
+        .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
     }
 
     private var title: String {
@@ -65,13 +77,16 @@ struct ComposeView: View {
     }
 
     private var isSending: Bool { store.sending.contains(draft.id) }
-    private var hasContent: Bool {
-        !draft.to.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-        !draft.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    /// Compares against the draft's pre-filled starting point (quoted reply
+    /// text, "Re:"/"Fwd:" subject) rather than just "is anything non-empty" —
+    /// a reply or forward already has non-empty fields before the user types
+    /// a single character, so "has content" alone would nag on every cancel.
+    private var hasUnsavedChanges: Bool {
+        draft.to != initialDraft.to || draft.subject != initialDraft.subject || draft.body != initialDraft.body
     }
 
     private func attemptDismiss() {
-        if hasContent && draft.kind != .forward { showingDiscardConfirmation = true } else { dismiss() }
+        if hasUnsavedChanges { showingDiscardConfirmation = true } else { dismiss() }
     }
 
     private func sendAndDismiss() async {
