@@ -41,6 +41,10 @@ struct CorrespondenceRow: View {
 struct CorrespondenceList: View {
     var scrolls = true
     let store: MailStore
+    /// Optional: nil only for the offline preview-render script, which never
+    /// exercises the scrolls==true/refreshable path that uses these.
+    var sync: GmailSyncService?
+    var auth: GoogleAuthService?
     let destination: Destination
     @State private var search = ""
 
@@ -63,7 +67,10 @@ struct CorrespondenceList: View {
             .scrollContentBackground(.hidden)
             .background(CorresPalette.canvas)
             .searchable(text: $search, prompt: "Search conversations")
-            .refreshable { await store.load() }
+            .refreshable {
+                _ = await sync?.syncIfConnected(account: auth?.account?.email)
+                await store.load()
+            }
         } else {
             ScrollView { staticContent }
         }

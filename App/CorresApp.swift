@@ -5,12 +5,15 @@ import SwiftUI
 @main
 struct CorresApp: App {
     @State private var store: MailStore
+    @State private var sync: GmailSyncService
     @State private var auth = GoogleAuthService()
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
 
     init() {
         let container = Self.makeModelContainer()
-        _store = State(initialValue: MailStore(repository: SwiftDataMailRepository(modelContainer: container)))
+        let repository = SwiftDataMailRepository(modelContainer: container)
+        _store = State(initialValue: MailStore(repository: repository))
+        _sync = State(initialValue: GmailSyncService(repository: repository))
     }
 
     private static func makeModelContainer() -> ModelContainer {
@@ -32,10 +35,15 @@ struct CorresApp: App {
 
     var body: some Scene {
         WindowGroup {
-            CorresShell(store: store, auth: auth)
+            CorresShell(store: store, auth: auth, sync: sync)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
-                .task { await auth.restorePreviousSignIn() }
+                .task {
+                    await auth.restorePreviousSignIn()
+                    if await sync.syncIfConnected(account: auth.account?.email) {
+                        await store.load()
+                    }
+                }
                 .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
         }
     }

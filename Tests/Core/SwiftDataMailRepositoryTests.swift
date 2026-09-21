@@ -81,4 +81,32 @@ struct SwiftDataMailRepositoryTests {
         #expect(afterReset.count == original.count)
         #expect(afterReset.first { $0.id == target.id }?.attention == target.attention)
     }
+
+    @Test func upsertInsertsOnlyPreviouslyUnseenThreadsAndNeverTouchesExisting() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        try await repository.seedIfNeeded(now: now)
+        let existing = try #require(await repository.threads().first)
+        try await repository.setAttention(.handled, for: existing.id)
+        try await repository.setPinned(true, for: existing.id)
+
+        let sameIDDifferentContent = Correspondence(
+            id: existing.id, sender: "Someone Else", organization: "Different", subject: "Changed",
+            excerpt: "changed", body: "changed", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        let brandNew = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "new-1"),
+            sender: "New Sender", organization: "Example", subject: "New Subject",
+            excerpt: "hello", body: "hello", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+
+        let insertedCount = try await repository.upsert([sameIDDifferentContent, brandNew])
+        #expect(insertedCount == 1)
+
+        let afterward = try await repository.threads()
+        let unchanged = try #require(afterward.first { $0.id == existing.id })
+        #expect(unchanged.attention == .handled)
+        #expect(unchanged.isPinned == true)
+        #expect(unchanged.subject == existing.subject)
+        #expect(afterward.contains { $0.id == brandNew.id })
+    }
 }

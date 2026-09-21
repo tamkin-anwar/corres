@@ -21,13 +21,18 @@ Built by Anwar Creative Studio.
 - Pinned conversations stay at the top regardless of recency
 - Reversible attention changes with visible evidence — nothing is silently reclassified
 
+**A real Gmail account, read-only**
+- Sign-in via GoogleSignIn-iOS, `gmail.readonly` scope only — Corres cannot send, delete, or modify anything in your mailbox yet
+- Your 25 most recent inbox messages sync in with real sender, subject, and body content, merged in on pull-to-refresh and right after connecting
+- A synced thread's manual attention/pin/snooze state is never silently overwritten by a later sync — see ADR 002 in [Docs/Architecture.md](Docs/Architecture.md)
+
 **Foundation**
 - Local-first persistence (SwiftData): attention, pins, and snoozes survive relaunch, with a versioned migration plan and an explicit Reset Sample Data action
 - Sample mode with six fictional conversations; no account or credentials required to explore
 - Light, dark, and system appearance, with accessibility (Dynamic Type, Reduce Motion, Increase Contrast) built in from the start
 - An original vector correspondence mark and hand-shaded sculptural artwork, rendered natively at Retina scale, no raster upscaling
 
-Gmail sync, durable local persistence, sending reliability, and the Brief/Ask Corres intelligence layer are the next milestones — see [Docs/Product.md](Docs/Product.md).
+Real incremental sync (a history cursor, not a fixed recent-message window), sending, and the Brief/Ask Corres intelligence layer are the next milestones — see [Docs/Product.md](Docs/Product.md).
 
 ## Tech stack
 - SwiftUI, iOS 17 minimum, Swift 6 strict concurrency

@@ -61,6 +61,23 @@ public actor SwiftDataMailRepository: MailRepository {
         try modelContext.save()
     }
 
+    @discardableResult
+    public func upsert(_ incoming: [Correspondence]) throws -> Int {
+        // A real message's content never changes after it's received — only
+        // new messages need inserting. An existing thread (and any manual
+        // attention/pin/snooze on it) is left completely untouched.
+        let existing = try Set(modelContext.fetch(FetchDescriptor<PersistedCorrespondence>()).map(\.compositeID))
+        var inserted = 0
+        for item in incoming {
+            let compositeID = PersistedCorrespondence.compositeID(account: item.id.account, providerID: item.id.providerID)
+            guard !existing.contains(compositeID) else { continue }
+            modelContext.insert(PersistedCorrespondence(from: item))
+            inserted += 1
+        }
+        if inserted > 0 { try modelContext.save() }
+        return inserted
+    }
+
     private func insertSampleData(now: Date) {
         for item in SampleCorrespondence.make(now: now) {
             modelContext.insert(PersistedCorrespondence(from: item))

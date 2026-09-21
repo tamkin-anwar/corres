@@ -135,4 +135,34 @@ struct CorresCoreTests {
         let sorted = MailQuery.filter(threads, now: now)
         #expect(sorted.first?.id == threads[oldestIndex].id)
     }
+
+    @Test func upsertInsertsOnlyPreviouslyUnseenThreadsAndNeverTouchesExisting() async throws {
+        let repository = SampleMailRepository(now: now)
+        let existing = try #require(await repository.threads().first)
+        try await repository.setAttention(.handled, for: existing.id)
+        try await repository.setPinned(true, for: existing.id)
+
+        // Re-syncing the SAME thread with different incoming content (as a
+        // real Gmail sync would, if it ever fetched a thread already known)
+        // must not touch the user's manual attention/pin decision.
+        let sameIDDifferentContent = Correspondence(
+            id: existing.id, sender: "Someone Else", organization: "Different", subject: "Changed",
+            excerpt: "changed", body: "changed", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        let brandNew = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "new-1"),
+            sender: "New Sender", organization: "Example", subject: "New Subject",
+            excerpt: "hello", body: "hello", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+
+        let insertedCount = try await repository.upsert([sameIDDifferentContent, brandNew])
+        #expect(insertedCount == 1)
+
+        let afterward = try await repository.threads()
+        let unchanged = try #require(afterward.first { $0.id == existing.id })
+        #expect(unchanged.attention == .handled)
+        #expect(unchanged.isPinned == true)
+        #expect(unchanged.subject == existing.subject) // content untouched, not overwritten
+        #expect(afterward.contains { $0.id == brandNew.id })
+    }
 }

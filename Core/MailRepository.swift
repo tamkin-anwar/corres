@@ -18,6 +18,13 @@ public protocol MailRepository: Sendable {
     /// called automatically. The local-data equivalent of sign-out purge until
     /// real accounts exist to scope a purge to.
     func resetToSampleData(now: Date) async throws
+    /// Merges freshly-fetched provider data (e.g. a Gmail sync pass) into the
+    /// store. A real message's content is immutable once received, so this
+    /// only inserts threads not already present — an existing thread (and
+    /// any manual attention/pin/snooze on it) is never touched, let alone
+    /// silently rewritten (ADR 002). Returns the number of threads inserted.
+    @discardableResult
+    func upsert(_ incoming: [Correspondence]) async throws -> Int
 }
 
 public enum RepositoryError: Error, Equatable { case threadNotFound }
@@ -77,5 +84,16 @@ public actor SampleMailRepository: MailRepository {
 
     public func resetToSampleData(now: Date) {
         items = SampleCorrespondence.make(now: now)
+    }
+
+    @discardableResult
+    public func upsert(_ incoming: [Correspondence]) -> Int {
+        // A real message's content never changes after it's received — only
+        // new messages need inserting. An existing thread (and any manual
+        // attention/pin/snooze on it) is left completely untouched.
+        let existingIDs = Set(items.map(\.id))
+        let newItems = incoming.filter { !existingIDs.contains($0.id) }
+        items.append(contentsOf: newItems)
+        return newItems.count
     }
 }
