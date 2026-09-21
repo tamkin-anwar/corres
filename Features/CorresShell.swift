@@ -12,56 +12,14 @@ struct CorresShell: View {
         TabView(selection: $selection) {
             ForEach(Destination.allCases) { destination in
                 NavigationStack {
-                    Group {
-                        switch store.state {
-                        case .idle, .loading:
-                            ProgressView("Preparing your space")
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        case .failed:
-                            ContentUnavailableView {
-                                Label("A moment, please", systemImage: "arrow.clockwise")
-                            } description: {
-                                Text("Your sample conversations could not be opened.")
-                            } actions: {
-                                Button("Try again") { Task { await store.load() } }
-                            }
-                        case .loaded:
-                            if destination == .brief {
-                                BriefView(store: store, selection: $selection)
-                            } else {
-                                CorrespondenceList(store: store, destination: destination)
-                            }
+                    destinationContent(for: destination)
+                        .background(CorresPalette.canvas)
+                        .navigationTitle(destination.rawValue)
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar { toolbarContent }
+                        .navigationDestination(for: ThreadID.self) { id in
+                            ConversationView(store: store, id: id)
                         }
-                    }
-                    .background(CorresPalette.canvas)
-                    .navigationTitle(destination.rawValue)
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            HStack(spacing: 7) {
-                                CorrespondenceMark().frame(width: 24, height: 24)
-                                Text("corres").font(.system(.title3, design: .serif).weight(.medium))
-                            }
-                            .accessibilityLabel("Corres. Email, considered.")
-                        }
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button { composeDraft = Draft(kind: .new, to: "", subject: "") } label: {
-                                Image(systemName: "square.and.pencil")
-                                    .frame(minWidth: 44, minHeight: 44)
-                            }
-                            .accessibilityLabel("New message")
-                        }
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button { showingSettings = true } label: {
-                                Image(systemName: "slider.horizontal.3")
-                                    .frame(minWidth: 44, minHeight: 44)
-                            }
-                            .accessibilityLabel("Preferences and privacy")
-                        }
-                    }
-                    .navigationDestination(for: ThreadID.self) { id in
-                        ConversationView(store: store, id: id)
-                    }
                 }
                 .tabItem { Label { Text(destination.rawValue) } icon: { Image(uiImage: CorresIcon.tabImage(destination.glyph)) } }
                 .tag(destination)
@@ -86,5 +44,64 @@ struct CorresShell: View {
         )) {
             Button("OK", role: .cancel) { store.errorMessage = nil }
         } message: { Text(store.errorMessage ?? "Please try again.") }
+    }
+
+    @ViewBuilder
+    private func destinationContent(for destination: Destination) -> some View {
+        switch store.state {
+        case .idle, .loading:
+            ProgressView("Preparing your space")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        case .failed:
+            ContentUnavailableView {
+                Label("A moment, please", systemImage: "arrow.clockwise")
+            } description: {
+                Text("Your sample conversations could not be opened.")
+            } actions: {
+                Button("Try again") { Task { await store.load() } }
+            }
+        case .loaded:
+            if destination == .brief {
+                BriefView(store: store, selection: $selection)
+            } else {
+                CorrespondenceList(store: store, destination: destination)
+            }
+        }
+    }
+
+    private var brandLabel: some View {
+        HStack(spacing: 7) {
+            CorrespondenceMark().frame(width: 24, height: 24)
+            Text("corres").font(.system(.title3, design: .serif).weight(.medium))
+        }
+        .accessibilityLabel("Corres. Email, considered.")
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        // The system wraps custom toolbar content in an automatic glass
+        // capsule on iOS 26+, which breaks the icon+wordmark brand lockup
+        // apart into separate pills. Opt out where that API exists; on
+        // iOS 17-25 there is no such glass treatment to begin with.
+        if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .topBarLeading) { brandLabel }
+                .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .topBarLeading) { brandLabel }
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button { composeDraft = Draft(kind: .new, to: "", subject: "") } label: {
+                Image(systemName: "square.and.pencil")
+                    .frame(minWidth: 44, minHeight: 44)
+            }
+            .accessibilityLabel("New message")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button { showingSettings = true } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .frame(minWidth: 44, minHeight: 44)
+            }
+            .accessibilityLabel("Preferences and privacy")
+        }
     }
 }
