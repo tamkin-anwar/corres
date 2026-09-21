@@ -5,7 +5,7 @@ import SwiftUI
 /// colors directly against its own `\.colorScheme` environment, so they
 /// update immediately with .preferredColorScheme(); a UIColor trait-closure
 /// resolves against UIKit's trait collection instead, which lags a full
-/// layout pass behind — the cause of a real bug where switching Appearance
+/// layout pass behind, the cause of a real bug where switching Appearance
 /// in Preferences updated the sheet's background instantly but left card
 /// backgrounds on the old color until the view was left and revisited.
 enum CorresPalette {
@@ -13,7 +13,7 @@ enum CorresPalette {
     static let surface = Color("surface")
     static let ink = Color("ink")
     static let secondary = Color("secondary")
-    // Named "corresAccent," not "accent" — SwiftUI already generates a
+    // Named "corresAccent," not "accent": SwiftUI already generates a
     // symbol for the built-in Color.accent/accentColor, and reusing that
     // name collided with it.
     static let accent = Color("corresAccent")
@@ -25,7 +25,7 @@ enum CorresPalette {
     // regardless of appearance, so these must NOT be the adaptive text colors
     // above (accent/secondary flip to light tones in dark mode and would put
     // white-on-white). Chosen and verified for >=4.5:1 contrast against white
-    // in both light and dark canvas — see the WCAG audit in Docs/Verification.md.
+    // in both light and dark canvas; see the WCAG audit in Docs/Verification.md.
     static let swipeHandled = Color(hex: 0x2D5A70)
     static let swipeSnooze = Color(hex: 0x4A5560)
     static let swipePin = Color(hex: 0x8A6A3E)

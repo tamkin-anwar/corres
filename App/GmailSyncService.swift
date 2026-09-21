@@ -2,7 +2,7 @@ import Foundation
 import Observation
 
 /// Orchestrates a Gmail sync pass: fetch via GmailAPIClient, merge via the
-/// repository's upsert. Deliberately does not touch MailStore directly —
+/// repository's upsert. Deliberately does not touch MailStore directly;
 /// callers reload MailStore themselves after a sync completes, keeping this
 /// and MailStore decoupled and each independently testable.
 @MainActor @Observable

@@ -1,7 +1,7 @@
 // Native SwiftUI component renders, not iOS Simulator screenshots.
 //
 // CAUTION: CorresPalette's colors now live in App/Assets.xcassets Color Sets
-// (moved off UIColor trait closures to fix a real dark-mode redraw bug — see
+// (moved off UIColor trait closures to fix a real dark-mode redraw bug; see
 // Tokens.swift). If this script is ever run as a bare executable outside an
 // app bundle with that catalog compiled in, Color("name") lookups will not
 // resolve and previews will render with fallback/incorrect colors. Run it

@@ -2,11 +2,11 @@ import GoogleSignIn
 import Observation
 import UIKit
 
-/// Wraps GoogleSignIn. Kept out of Core deliberately — this is exactly the
+/// Wraps GoogleSignIn. Kept out of Core deliberately, matching the
 /// "Gmail DTOs, OAuth, persistence details must not appear in SwiftUI views"
 /// boundary from ADR 002; views see only `account`/`isSigningIn`/`errorMessage`,
 /// never GIDGoogleUser or a raw token. The session itself (tokens) lives in
-/// GoogleSignIn's own Keychain-backed store — see GmailAccount's doc comment.
+/// GoogleSignIn's own Keychain-backed store; see GmailAccount's doc comment.
 @MainActor @Observable
 final class GoogleAuthService {
     private(set) var account: GmailAccount?
@@ -42,8 +42,8 @@ final class GoogleAuthService {
             account = GmailAccount(email: result.user.profile?.email ?? "")
         } catch {
             let nsError = error as NSError
-            // Cancellation is not an error worth surfacing — the user changed
-            // their mind, that is a normal outcome, not a failure.
+            // Cancellation is not an error worth surfacing: the user changed
+            // their mind, and that is a normal outcome, not a failure.
             if nsError.domain != "com.google.GIDSignIn" || nsError.code != GIDSignInError.canceled.rawValue {
                 errorMessage = "Could not connect Gmail. Please try again."
             }

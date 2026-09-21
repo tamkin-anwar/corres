@@ -78,7 +78,7 @@ struct ComposeView: View {
 
     private var isSending: Bool { store.sending.contains(draft.id) }
     /// Compares against the draft's pre-filled starting point (quoted reply
-    /// text, "Re:"/"Fwd:" subject) rather than just "is anything non-empty" —
+    /// text, "Re:"/"Fwd:" subject) rather than just "is anything non-empty":
     /// a reply or forward already has non-empty fields before the user types
     /// a single character, so "has content" alone would nag on every cancel.
     private var hasUnsavedChanges: Bool {
@@ -112,7 +112,7 @@ struct ComposeView: View {
 
 extension Correspondence {
     func draft(kind: Draft.Kind) -> Draft {
-        let quoted = "\n\n—\n\(sender) wrote:\n\(body.split(separator: "\n").map { "> \($0)" }.joined(separator: "\n"))"
+        let quoted = "\n\n\(sender) wrote:\n\(body.split(separator: "\n").map { "> \($0)" }.joined(separator: "\n"))"
         switch kind {
         case .new:
             return Draft(kind: .new, to: "", subject: "")

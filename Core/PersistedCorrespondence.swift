@@ -3,7 +3,7 @@ import SwiftData
 
 /// The persistence-layer shape of a conversation. Kept deliberately separate
 /// from `Correspondence` (a plain Sendable value type) so persistence details
-/// never leak past the repository boundary — views and MailStore only ever
+/// never leak past the repository boundary; views and MailStore only ever
 /// see `Correspondence`. `attentionRaw` exists because @Model properties must
 /// be primitive/Codable-friendly; `Attention` itself is not stored directly.
 @Model

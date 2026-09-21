@@ -33,7 +33,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     public let body: String
     /// The message's original rich-text rendering, when the provider sent
     /// one. `body` is always a plain-text-safe fallback; this is what
-    /// actually renders when present (sanitized, isolated — see ADR 006).
+    /// actually renders when present (sanitized, isolated; see ADR 006).
     public let htmlBody: String?
     public let receivedAt: Date
     public let dueAt: Date?
@@ -121,7 +121,7 @@ public enum MailQuery {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         // Snooze hides a thread from its curated attention queue (that is the
         // point of snoozing it), but never from the catch-all Mail view and
-        // never from an explicit search — a snoozed thread is still real mail
+        // never from an explicit search: a snoozed thread is still real mail
         // and must stay findable.
         let hideSnoozed = attention != nil && query.isEmpty
         return threads.filter { item in

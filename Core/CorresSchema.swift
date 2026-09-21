@@ -1,7 +1,7 @@
 import SwiftData
 
-/// Versioned from the start even though there is only one version today —
-/// the schema will change once Gmail-backed data lands, and retrofitting a
+/// Versioned from the start even though there is only one version today.
+/// The schema will change once Gmail-backed data lands, and retrofitting a
 /// migration plan after the fact risks the exact "silent data loss on
 /// upgrade" failure Docs/Product.md's local-first milestone exists to avoid.
 public enum CorresSchemaV1: VersionedSchema {

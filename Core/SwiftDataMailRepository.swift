@@ -1,11 +1,12 @@
 import Foundation
 import SwiftData
 
-/// Local-first persisted storage. Survives relaunch; still entirely on-device
-/// and fictional (see PersistedCorrespondence) until a Gmail adapter exists.
-/// @ModelActor gives this its own actor-isolated ModelContext, the documented
-/// safe pattern for using SwiftData under Swift 6 strict concurrency — the
-/// container is Sendable and crosses actor boundaries, the context never does.
+/// Local-first persisted storage. Survives relaunch; holds both the fictional
+/// sample data and, once connected, real synced Gmail messages side by side
+/// (see PersistedCorrespondence). @ModelActor gives this its own
+/// actor-isolated ModelContext, the documented safe pattern for using
+/// SwiftData under Swift 6 strict concurrency: the container is Sendable and
+/// crosses actor boundaries, but the context never does.
 @ModelActor
 public actor SwiftDataMailRepository: MailRepository {
     public func threads() throws -> [Correspondence] {
@@ -28,8 +29,9 @@ public actor SwiftDataMailRepository: MailRepository {
         guard let threadID = draft.threadID else {
             let sender = draft.to.trimmingCharacters(in: .whitespacesAndNewlines)
             let subject = draft.subject.trimmingCharacters(in: .whitespacesAndNewlines)
-            // "sample" until a real Gmail account exists to tag this with —
-            // every thread in this store is still fictional at this stage.
+            // Still "sample": sending is not real yet (read-only Gmail scope,
+            // per Docs/Product.md's V1 order), so a locally-composed draft has
+            // no real account to send from regardless of who is signed in.
             let created = Correspondence(
                 id: ThreadID(account: Self.localAccount, providerID: UUID().uuidString),
                 sender: sender, organization: "", subject: subject,
@@ -63,7 +65,7 @@ public actor SwiftDataMailRepository: MailRepository {
 
     @discardableResult
     public func upsert(_ incoming: [Correspondence]) throws -> Int {
-        // A real message's content never changes after it's received — only
+        // A real message's content never changes after it's received, so only
         // new messages need inserting. An existing thread (and any manual
         // attention/pin/snooze on it) is left completely untouched.
         let existing = try Set(modelContext.fetch(FetchDescriptor<PersistedCorrespondence>()).map(\.compositeID))

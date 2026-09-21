@@ -11,20 +11,20 @@ Built by Anwar Creative Studio.
 **Understanding your inbox, not just listing it**
 - Brief: a situational-awareness summary ("6 need you, 3 are waiting on others, 2 deadlines are approaching"), not a message count
 - Needs You: decisions, invitations, and promises to keep
-- Waiting: conversations where you've already acted and are now expecting a response — including automatically, the moment you reply or forward
+- Waiting: conversations where you've already acted and are now expecting a response, including automatically, the moment you reply or forward
 - A searchable Mail view for everything, in its place
 
 **Correspondence, not just messages**
 - Compose, reply, reply all, and forward, with the reply/forward action itself moving a conversation to Waiting and recording the evidence ("You replied just now. Waiting for their response.")
 - Swipe-to-triage: mark handled, snooze (later today / tomorrow morning / next week), pin, or flag as Needs You, without opening the thread
-- Snoozed conversations disappear from their curated Needs You/Waiting queue and from Brief's counts until they resurface, but stay visible in Mail and in search — snoozing never makes a conversation unfindable
+- Snoozed conversations disappear from their curated Needs You/Waiting queue and from Brief's counts until they resurface, but stay visible in Mail and in search: snoozing never makes a conversation unfindable
 - Pinned conversations stay at the top regardless of recency
-- Reversible attention changes with visible evidence — nothing is silently reclassified
+- Reversible attention changes with visible evidence; nothing is silently reclassified
 
 **A real Gmail account, read-only**
-- Sign-in via GoogleSignIn-iOS, `gmail.readonly` scope only — Corres cannot send, delete, or modify anything in your mailbox yet
+- Sign-in via GoogleSignIn-iOS, `gmail.readonly` scope only. Corres cannot send, delete, or modify anything in your mailbox yet
 - Your 25 most recent inbox messages sync in with real sender, subject, and body content, merged in on pull-to-refresh and right after connecting
-- A synced thread's manual attention/pin/snooze state is never silently overwritten by a later sync — see ADR 002 in [Docs/Architecture.md](Docs/Architecture.md)
+- A synced thread's manual attention/pin/snooze state is never silently overwritten by a later sync; see ADR 002 in [Docs/Architecture.md](Docs/Architecture.md)
 
 **Foundation**
 - Local-first persistence (SwiftData): attention, pins, and snoozes survive relaunch, with a versioned migration plan and an explicit Reset Sample Data action
@@ -32,7 +32,7 @@ Built by Anwar Creative Studio.
 - Light, dark, and system appearance, with accessibility (Dynamic Type, Reduce Motion, Increase Contrast) built in from the start
 - An original vector correspondence mark and hand-shaded sculptural artwork, rendered natively at Retina scale, no raster upscaling
 
-Real incremental sync (a history cursor, not a fixed recent-message window), sending, and the Brief/Ask Corres intelligence layer are the next milestones — see [Docs/Product.md](Docs/Product.md).
+Real incremental sync (a history cursor, not a fixed recent-message window), sending, and the Brief/Ask Corres intelligence layer are the next milestones. See [Docs/Product.md](Docs/Product.md).
 
 ## Tech stack
 - SwiftUI, iOS 17 minimum, Swift 6 strict concurrency
@@ -41,7 +41,7 @@ Real incremental sync (a history cursor, not a fixed recent-message window), sen
 - Swift Testing for the domain test suite
 
 ## Why Corres
-Existing clients mostly answer "what emails did I receive." Corres is built to answer "what actually requires my attention" — fast like Gmail's delivery, calm and considered like Spark, native like Apple Mail, without adopting any of their weaknesses. See [Docs/Product.md](Docs/Product.md) for the full product specification and [Docs/Architecture.md](Docs/Architecture.md) for the engineering decisions behind it.
+Existing clients mostly answer "what emails did I receive." Corres is built to answer "what actually requires my attention": fast like Gmail's delivery, calm and considered like Spark, native like Apple Mail, without adopting any of their weaknesses. See [Docs/Product.md](Docs/Product.md) for the full product specification and [Docs/Architecture.md](Docs/Architecture.md) for the engineering decisions behind it.
 
 ## Running locally
 Open `Corres.xcodeproj` in Xcode 16 or later, select the **Corres** scheme and a simulator or your own iPhone, then Run. The minimum deployment target is iOS 17. No external packages or project generator installation is required.

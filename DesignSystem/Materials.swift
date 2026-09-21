@@ -42,7 +42,7 @@ struct SculptedBadge: View {
         .frame(width: 46, height: 46)
         .compositingGroup()
         .shadow(color: CorresPalette.midnight.opacity(0.16), radius: 5, y: 4)
-        // Static, non-animated per Design.md — rasterize once instead of
+        // Static, non-animated per Design.md; rasterize once instead of
         // recomputing three layered shadows/gradients on every scroll frame.
         .drawingGroup()
         .accessibilityHidden(true)

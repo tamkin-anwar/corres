@@ -1,13 +1,13 @@
 import SwiftUI
 import WebKit
 
-/// Renders a message's real HTML body. JavaScript is always disabled — mail
+/// Renders a message's real HTML body. JavaScript is always disabled: mail
 /// content is untrusted (ADR 002/006) and never needs to execute code to
 /// display correctly. Every link tap opens in the system browser, never
 /// inline, after validating the scheme is http/https (blocks a tapped
 /// javascript: or arbitrary custom-scheme link from silently doing something
-/// unexpected). Remote image loading is NOT yet blocked by default — ADR 006
-/// calls for that; it is a documented, deliberate follow-up, not an oversight.
+/// unexpected). Remote image loading is NOT yet blocked by default; ADR 006
+/// calls for that, and it is a documented, deliberate follow-up, not an oversight.
 struct HTMLMessageBody: UIViewRepresentable {
     let html: String
     @Binding var height: CGFloat

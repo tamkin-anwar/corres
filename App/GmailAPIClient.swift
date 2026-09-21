@@ -1,7 +1,7 @@
 import Foundation
 import GoogleSignIn
 
-/// Raw REST calls against the Gmail API. No third-party HTTP dependency —
+/// Raw REST calls against the Gmail API. No third-party HTTP dependency,
 /// URLSession + the token GoogleSignIn already manages. This is the only file
 /// that speaks Gmail's wire format; it returns plain Correspondence values,
 /// never its own DTOs, past this boundary (ADR 002).
@@ -9,7 +9,7 @@ struct GmailAPIClient {
     enum ClientError: Error { case notSignedIn, badResponse, decodingFailed }
 
     /// Deliberately small and recent-only for this first sync pass, not a
-    /// full mailbox import — matches "do not attempt to support every...
+    /// full mailbox import: matches "do not attempt to support every...
     /// immediately," and gives a fast first real result to look at.
     private let maxResults = 25
 
@@ -64,7 +64,7 @@ struct GmailAPIClient {
 
     private func map(_ message: GmailMessage, account: String) -> Correspondence {
         // Real messages routinely repeat headers (every mail-server hop adds
-        // its own "Received" header) — uniqueKeysWithValues crashes on any
+        // its own "Received" header), and uniqueKeysWithValues crashes on any
         // duplicate, which duplicate headers always are. Keep the first.
         let headers = Dictionary((message.payload?.headers ?? []).map { ($0.name.lowercased(), $0.value) },
                                   uniquingKeysWith: { first, _ in first })

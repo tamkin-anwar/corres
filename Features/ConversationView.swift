@@ -63,7 +63,7 @@ struct ConversationView: View {
                             }
                         }
                         Text(isSample ? "Replying, forwarding, and sending stay on this device until Gmail is connected."
-                                      : "Replying, forwarding, and sending stay on this device — nothing sends through Gmail yet.")
+                                      : "Replying, forwarding, and sending stay on this device. Nothing sends through Gmail yet.")
                             .font(.footnote).foregroundStyle(CorresPalette.secondary)
                     }
                     .padding(CorresSpace.page).frame(maxWidth: 680).frame(maxWidth: .infinity)

@@ -39,7 +39,7 @@ struct PreferencesView: View {
                         }
                         .disabled(auth.isSigningIn || sync.isSyncing)
                     }
-                    Text("Read-only access for now — Corres cannot send, delete, or modify anything in your real mailbox. Your 25 most recent inbox messages sync into Mail; sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state for now, not real judgment.")
+                    Text("Read-only access for now. Corres cannot send, delete, or modify anything in your real mailbox. Your 25 most recent inbox messages sync into Mail; sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state for now, not real judgment.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
                 }
                 .confirmationDialog("Disconnect Gmail?", isPresented: $showingDisconnectConfirmation, titleVisibility: .visible) {
@@ -92,8 +92,8 @@ struct PreferencesView: View {
         }
         // .preferredColorScheme() set on a distant ancestor (here, the app's
         // WindowGroup root) does not reliably re-trait a .sheet() that is
-        // already presented when the underlying value changes mid-presentation
-        // — a separate SwiftUI quirk from the adaptive-color fix in Tokens.swift.
+        // already presented when the underlying value changes mid-presentation,
+        // a separate SwiftUI quirk from the adaptive-color fix in Tokens.swift.
         // Applying it directly on this sheet's own content, driven by the same
         // @AppStorage value it already reads, makes it self-sufficient.
         .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
