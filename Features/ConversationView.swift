@@ -59,7 +59,7 @@ struct ConversationView: View {
                             .padding(.horizontal, CorresSpace.page).padding(.top, 4)
                     }
                     .padding(.vertical, CorresSpace.page)
-                    .frame(maxWidth: 680).frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .leading).frame(maxWidth: 680)
                 }
                 .safeAreaInset(edge: .bottom) { actionBar(for: thread) }
                 .toolbar {

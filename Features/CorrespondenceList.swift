@@ -88,7 +88,14 @@ struct CorrespondenceList: View {
                 .font(CorresType.label).foregroundStyle(CorresPalette.secondary)
         }
         .padding(.horizontal, CorresSpace.page).padding(.top, CorresSpace.page).padding(.bottom, CorresSpace.medium)
-        .frame(maxWidth: 680).frame(maxWidth: .infinity)
+        // Order matters: expand to fill the available width (left-aligned)
+        // FIRST, then cap that already-full-width box at 680pt. The reverse
+        // order (cap first, expand second) caps a box that's still only as
+        // wide as its own text content, then centers that narrow box in the
+        // remaining space by .frame(maxWidth: .infinity)'s own default
+        // alignment, exactly the "header floating in the middle of the
+        // screen while the list below is flush left" bug this was.
+        .frame(maxWidth: .infinity, alignment: .leading).frame(maxWidth: 680)
     }
 
     private var emptyState: some View {
@@ -156,7 +163,8 @@ struct CorrespondenceList: View {
                     }
                 }
                 .corresSurface()
-                .padding(.horizontal, CorresSpace.page).frame(maxWidth: 680).frame(maxWidth: .infinity)
+                .padding(.horizontal, CorresSpace.page)
+                .frame(maxWidth: .infinity, alignment: .leading).frame(maxWidth: 680)
             }
         }
     }

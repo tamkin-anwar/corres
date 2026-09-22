@@ -85,7 +85,8 @@ struct BriefView: View {
                 .font(CorresType.label).tracking(2.5).foregroundStyle(CorresPalette.secondary)
                 .frame(maxWidth: .infinity).padding(.vertical, 8)
         }
-        .padding(CorresSpace.page).frame(maxWidth: 680).frame(maxWidth: .infinity)
+        .padding(CorresSpace.page)
+        .frame(maxWidth: .infinity, alignment: .leading).frame(maxWidth: 680)
     }
 
     private var newSendersCard: some View {

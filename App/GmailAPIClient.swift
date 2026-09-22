@@ -76,15 +76,36 @@ struct GmailAPIClient {
         return bi > ai ? b : a
     }
 
+    /// Fetches up to `messageFetchConcurrency` messages at once instead of
+    /// one at a time. A full sync can mean a couple hundred individual
+    /// `users.messages.get` calls (see `initialSyncMaxPages` x 2 labels);
+    /// awaiting them sequentially means a real network round trip per
+    /// message, one after another, which is the actual reason a sync could
+    /// take a long time and make the app feel like it's dragging while it
+    /// runs, not anything about SwiftUI rendering. A bounded pool, not
+    /// unbounded concurrency, avoids firing hundreds of requests at once
+    /// against Gmail's per-user rate limits.
     private func fetchMessages(ids: [String], token: String, account: String) async -> [Correspondence] {
-        var results: [Correspondence] = []
-        for id in ids {
-            if let message = try? await fetchMessage(id: id, token: token) {
-                results.append(map(message, account: account))
+        await withTaskGroup(of: Correspondence?.self) { group in
+            var pending = ids[...]
+            func addNext() {
+                guard let id = pending.popFirst() else { return }
+                group.addTask {
+                    guard let message = try? await self.fetchMessage(id: id, token: token) else { return nil }
+                    return self.map(message, account: account)
+                }
             }
+            for _ in 0..<Self.messageFetchConcurrency { addNext() }
+            var results: [Correspondence] = []
+            while let next = await group.next() {
+                if let correspondence = next { results.append(correspondence) }
+                addNext()
+            }
+            return results
         }
-        return results
     }
+
+    private static let messageFetchConcurrency = 8
 
     private func accessToken() async throws -> String {
         guard let user = GIDSignIn.sharedInstance.currentUser else { throw ClientError.notSignedIn }
