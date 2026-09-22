@@ -28,6 +28,18 @@ final class GmailSyncService {
         defer { isSyncing = false }
         do {
             let (result, isFullListing) = try await fetch(account: account)
+            // Deliberately ordered, not merely convenient: upsert (SwiftData)
+            // and the cursor write (UserDefaults) are two different stores
+            // and can't share one real transaction without moving the
+            // cursor into SwiftData, reversing ADR 005's choice to keep
+            // Gmail sync mechanics out of the Core domain schema. Writing
+            // the cursor first would risk real data loss if the app died
+            // before upsert ran: the next sync would start from the
+            // advanced cursor and never re-fetch the messages that were
+            // never actually saved. Writing it after, as here, only risks
+            // redundant work (re-fetching and re-upserting messages that
+            // already made it in, which upsert already treats as a no-op)
+            // if the app dies between the two, never data loss.
             try await repository.upsert(result.items, isInitialSync: isFullListing)
             if let historyId = result.historyId {
                 setHistoryCursor(historyId, for: account)

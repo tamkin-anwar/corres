@@ -22,12 +22,22 @@ struct GmailAPIClient {
 
     private let historyPageSize = 100
 
-    /// A full listing of the inbox (paginated), used the first time an
-    /// account syncs, or whenever a stored history cursor has expired.
+    /// Threads that live only in Sent (you started the conversation, no
+    /// inbound reply synced yet) are otherwise invisible to Corres, since
+    /// everything else only ever looked at INBOX. Listed and fetched
+    /// alongside INBOX, not instead of it.
+    private static let syncedLabels = ["INBOX", "SENT"]
+
+    /// A full listing of the inbox and sent mail (paginated per label), used
+    /// the first time an account syncs, or whenever a stored history cursor
+    /// has expired.
     func fetchInitialInbox(account: String) async throws -> SyncResult {
         let token = try await accessToken()
-        let ids = try await listMessageIDs(token: token)
-        let items = await fetchMessages(ids: ids, token: token, account: account)
+        var ids: Set<String> = []
+        for label in Self.syncedLabels {
+            ids.formUnion(try await listMessageIDs(token: token, label: label))
+        }
+        let items = await fetchMessages(ids: Array(ids), token: token, account: account)
         // Best-effort: if the profile call fails, the sync itself still
         // succeeded, just without a cursor for next time. The following
         // sync falls back to another full listing rather than failing.
@@ -38,12 +48,32 @@ struct GmailAPIClient {
     /// Gmail's History API: only what changed since `cursor`, not a re-list
     /// of the whole inbox. Throws `.historyExpired` when the cursor is older
     /// than Gmail's retention window (about a week); the caller is expected
-    /// to recover by calling `fetchInitialInbox` instead.
+    /// to recover by calling `fetchInitialInbox` instead. Queried once per
+    /// label (the History API's own `labelId` filter only accepts one at a
+    /// time), merged into a single result.
     func fetchIncremental(account: String, since cursor: String) async throws -> SyncResult {
         let token = try await accessToken()
-        let (ids, historyId) = try await listHistoryMessageIDs(since: cursor, token: token)
-        let items = await fetchMessages(ids: ids, token: token, account: account)
+        var ids: Set<String> = []
+        var historyId: String?
+        for label in Self.syncedLabels {
+            let page = try await listHistoryMessageIDs(since: cursor, token: token, label: label)
+            ids.formUnion(page.ids)
+            historyId = Self.newerHistoryId(historyId, page.historyId)
+        }
+        let items = await fetchMessages(ids: Array(ids), token: token, account: account)
         return SyncResult(items: items, historyId: historyId ?? cursor)
+    }
+
+    /// Gmail's own `historyId` is a single, whole-mailbox-wide counter (the
+    /// per-label query only filters which history *records* come back, not
+    /// which counter is used), so the two label queries should normally
+    /// agree; comparing numerically (not lexicographically: "100" < "99" as
+    /// strings) picks the more advanced one if they ever don't.
+    private static func newerHistoryId(_ a: String?, _ b: String?) -> String? {
+        guard let a else { return b }
+        guard let b else { return a }
+        guard let ai = UInt64(a), let bi = UInt64(b) else { return a }
+        return bi > ai ? b : a
     }
 
     private func fetchMessages(ids: [String], token: String, account: String) async -> [Correspondence] {
@@ -62,14 +92,14 @@ struct GmailAPIClient {
         return user.accessToken.tokenString
     }
 
-    private func listMessageIDs(token: String) async throws -> [String] {
+    private func listMessageIDs(token: String, label: String) async throws -> [String] {
         var ids: [String] = []
         var pageToken: String?
         var pagesFetched = 0
         repeat {
             var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
             var queryItems = [
-                URLQueryItem(name: "labelIds", value: "INBOX"),
+                URLQueryItem(name: "labelIds", value: label),
                 URLQueryItem(name: "maxResults", value: String(initialSyncPageSize)),
             ]
             if let pageToken { queryItems.append(URLQueryItem(name: "pageToken", value: pageToken)) }
@@ -87,7 +117,7 @@ struct GmailAPIClient {
     /// Gmail discards history IDs older than roughly a week; a `startHistoryId`
     /// outside that window 404s, which is the specific, expected signal to
     /// fall back to a full resync rather than a generic failure.
-    private func listHistoryMessageIDs(since startHistoryId: String, token: String) async throws -> (ids: [String], historyId: String?) {
+    private func listHistoryMessageIDs(since startHistoryId: String, token: String, label: String) async throws -> (ids: [String], historyId: String?) {
         var ids: Set<String> = []
         var pageToken: String?
         var latestHistoryId: String?
@@ -96,7 +126,7 @@ struct GmailAPIClient {
             var queryItems = [
                 URLQueryItem(name: "startHistoryId", value: startHistoryId),
                 URLQueryItem(name: "historyTypes", value: "messageAdded"),
-                URLQueryItem(name: "labelId", value: "INBOX"),
+                URLQueryItem(name: "labelId", value: label),
                 URLQueryItem(name: "maxResults", value: String(historyPageSize)),
             ]
             if let pageToken { queryItems.append(URLQueryItem(name: "pageToken", value: pageToken)) }
