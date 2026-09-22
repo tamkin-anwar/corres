@@ -39,7 +39,7 @@ struct PreferencesView: View {
                         }
                         .disabled(auth.isSigningIn || sync.isSyncing)
                     }
-                    Text("Your inbox syncs into Mail, and new messages keep arriving automatically; sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state for now, not real judgment. Replying, replying all, and forwarding send for real. Corres still cannot delete, label, or otherwise modify anything else in your real mailbox, and starting a brand-new message stays on this device only for now.")
+                    Text("Your inbox syncs into Mail, and new messages keep arriving automatically; sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state for now, not real judgment. Replying, replying all, forwarding, and starting a new message all send for real. Corres still cannot delete, label, or otherwise modify anything else in your real mailbox.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
                 }
                 .confirmationDialog("Disconnect Gmail?", isPresented: $showingDisconnectConfirmation, titleVisibility: .visible) {

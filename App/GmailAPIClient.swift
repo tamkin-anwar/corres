@@ -123,8 +123,14 @@ struct GmailAPIClient {
     /// (`ThreadID.providerID` for a real account) and, together with the
     /// message's In-Reply-To/References headers and a matching Subject, is
     /// what makes Gmail group this send into the existing conversation
-    /// rather than starting a new one.
-    func send(raw: String, threadId: String?) async throws {
+    /// rather than starting a new one. Pass nil for a brand-new message with
+    /// no existing thread to join. Returns the real thread id Gmail assigned
+    /// the sent message (a freshly created one when `threadId` was nil), so
+    /// the caller can file its own local record under Gmail's real identity
+    /// instead of inventing one: a later sync then recognizes the same
+    /// thread instead of creating a duplicate.
+    @discardableResult
+    func send(raw: String, threadId: String?) async throws -> String {
         let token = try await accessToken()
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages/send")!
         var request = URLRequest(url: url)
@@ -134,8 +140,10 @@ struct GmailAPIClient {
         var body: [String: Any] = ["raw": raw]
         if let threadId { body["threadId"] = threadId }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         try validate(response)
+        let sent = try JSONDecoder().decode(SentMessage.self, from: data)
+        return sent.threadId
     }
 
     private func fetchProfile(token: String) async throws -> Profile {
@@ -224,8 +232,8 @@ struct GmailAPIClient {
     }
 
     /// Many real emails (marketing templates, signatures) embed images as
-    /// MIME parts referenced via "cid:" in the HTML rather than a remote URL
-    /// — every mainstream mail client resolves these locally; a browser
+    /// MIME parts referenced via "cid:" in the HTML rather than a remote URL.
+    /// Every mainstream mail client resolves these locally; a browser
     /// never sees a bare "cid:" scheme and cannot load it. Without this, any
     /// inline-embedded image renders as a broken image, which was the
     /// reported bug. Replaces each cid: reference with a self-contained
@@ -288,6 +296,8 @@ private struct HistoryListResponse: Decodable {
 }
 
 private struct Profile: Decodable { let historyId: String? }
+
+private struct SentMessage: Decodable { let threadId: String }
 
 private struct GmailMessage: Decodable {
     let id: String

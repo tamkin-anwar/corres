@@ -25,15 +25,16 @@ public actor SwiftDataMailRepository: MailRepository {
         try mutate(id) { $0.snoozedUntil = until }
     }
 
-    public func send(_ draft: Draft, sentAt: Date) throws -> Correspondence {
+    public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {
         guard let threadID = draft.threadID else {
             let sender = draft.to.trimmingCharacters(in: .whitespacesAndNewlines)
             let subject = draft.subject.trimmingCharacters(in: .whitespacesAndNewlines)
-            // Still "sample": sending is not real yet (read-only Gmail scope,
-            // per Docs/Product.md's V1 order), so a locally-composed draft has
-            // no real account to send from regardless of who is signed in.
+            // realThreadID is the real Gmail account + thread id when
+            // OutboxService already sent this via Gmail; falling back to the
+            // local "sample" account only when it stayed local-only (no
+            // account connected).
             let created = Correspondence(
-                id: ThreadID(account: Self.localAccount, providerID: UUID().uuidString),
+                id: realThreadID ?? ThreadID(account: Self.localAccount, providerID: UUID().uuidString),
                 sender: sender, organization: "", subject: subject,
                 excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
                 reason: "You started this conversation. Waiting for a response.",

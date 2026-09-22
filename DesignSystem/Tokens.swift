@@ -55,7 +55,7 @@ enum CorresType {
 struct CorresSurface: ViewModifier {
     /// UIViewRepresentable content that manages its own out-of-process
     /// compositing (WKWebView above all) cannot be captured by
-    /// .drawingGroup()'s Core Animation snapshotting — SwiftUI silently fails
+    /// .drawingGroup()'s Core Animation snapshotting. SwiftUI silently fails
     /// to flatten it ("Unable to render flattened version of
     /// PlatformViewRepresentableAdaptor<...>"), and nothing shows. This was a
     /// real bug: HTMLMessageBody's images were loading correctly the whole

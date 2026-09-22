@@ -2,6 +2,12 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 9: brand-new compose now really sends (September 21, 2026)
+
+- Closed the last "still local-only" gap from Batch 5: starting a new message from scratch (not a reply) now sends via `users.messages.send` whenever an account is connected, the same as replying/replying all/forwarding already did. `GmailAPIClient.send` now returns the real Gmail thread id the send response reports (a freshly assigned one, since there was no existing thread to join), which `OutboxService` uses to file the local record under `ThreadID(account: <real account>, providerID: <Gmail's real id>)` instead of a synthesized local UUID, via a new `realThreadID` parameter added to `MailStore.send`/`MailRepository.send`. A later sync of that same thread now recognizes it as already-known instead of duplicating it.
+- Domain-tested: a new `CorresCoreTests` case sends a draft with an explicit `realThreadID` and confirms the created `Correspondence` is filed under exactly that id, not an invented one. All 25 domain tests pass (24 prior + 1 new); updated 6 existing test call sites for the new `MailRepository.send` parameter.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and `swift test` (25/25 passed). Not yet verified on-device: sending a genuinely new message to a real address and confirming it both appears correctly in Gmail's Sent folder and reconciles (no duplicate) on the next sync.
+
 ## Batch 8: the Screener (September 21, 2026)
 
 - New `SenderDecision` (`pending`/`approved`/`blocked`) stamped on `Correspondence` at insert time in `MailRepository.upsert`, sourced from any existing thread of that sender rather than a separate registry, and persisted through SwiftData (`PersistedCorrespondence.senderDecisionRaw`). Domain-tested (3 new tests, `CorresCoreTests.swift`, `SampleMailRepository`): an initial-sync insert auto-approves and is immediately visible in ordinary browsing; an incremental-sync insert from a never-seen sender is held `.pending`, excluded from ordinary browsing, but still found by an explicit search; approving or blocking cascades to every thread from that sender at once. All 24 domain tests pass (21 prior + 3 new).
@@ -64,7 +70,7 @@ Fixed by removing those overrides entirely and switching to the technique real m
   `data:` URIs before this code runs, and the blocking regex only matches `http`/`https` sources.
   Verified with a standalone six-case Swift script covering plain remote `<img>`, single-quoted
   attributes, additional attributes before/after `src`, an already-inlined `data:` image (must not
-  match), uppercase `<IMG SRC=...>` (case-insensitive), and non-image HTML (no match) — all passed.
+  match), uppercase `<IMG SRC=...>` (case-insensitive), and non-image HTML (no match); all passed.
 
 ## Batch 1 sweep (September 21, 2026)
 

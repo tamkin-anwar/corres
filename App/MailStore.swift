@@ -70,15 +70,16 @@ final class MailStore {
         }
     }
 
-    /// Returns whether the send succeeded, so the compose sheet knows whether
-    /// it is safe to dismiss. A failure never discards the draft.
+    /// Returns whether the send succeeded. `realThreadID` is the real Gmail
+    /// identity OutboxService already established by actually sending via
+    /// Gmail (nil when the draft stayed local-only); see MailRepository.send.
     @discardableResult
-    func send(_ draft: Draft) async -> Bool {
+    func send(_ draft: Draft, realThreadID: ThreadID? = nil) async -> Bool {
         guard !sending.contains(draft.id) else { return false }
         sending.insert(draft.id)
         defer { sending.remove(draft.id) }
         do {
-            let updated = try await repository.send(draft, sentAt: .now)
+            let updated = try await repository.send(draft, sentAt: .now, realThreadID: realThreadID)
             if let index = threads.firstIndex(where: { $0.id == updated.id }) {
                 threads[index] = updated
             } else {

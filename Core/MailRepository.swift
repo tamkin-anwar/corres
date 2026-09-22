@@ -9,7 +9,15 @@ public protocol MailRepository: Sendable {
     /// Replying or forwarding moves the source thread to Waiting: the user has
     /// acted and is now the one expecting a response. A new draft opens a thread
     /// in the same state, since nothing has come back yet either way.
-    func send(_ draft: Draft, sentAt: Date) async throws -> Correspondence
+    ///
+    /// `realThreadID` is the thread identity a real Gmail send already
+    /// established (the App layer calls `GmailAPIClient.send` before this,
+    /// and passes the real account + Gmail-assigned thread id it returned),
+    /// used instead of inventing a local-only id for a brand-new draft: a
+    /// later sync then recognizes the same thread rather than duplicating
+    /// it. nil for a draft that stayed local-only (no Gmail account
+    /// connected, or replying within an already-local/sample thread).
+    func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) async throws -> Correspondence
     /// Populates fictional starter data on first use. A no-op for a repository
     /// that is already seeded at construction (SampleMailRepository); real
     /// work for a persisted, empty store.
@@ -64,12 +72,12 @@ public actor SampleMailRepository: MailRepository {
         try mutate(id) { $0.snoozedUntil = until }
     }
 
-    public func send(_ draft: Draft, sentAt: Date) throws -> Correspondence {
+    public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {
         guard let threadID = draft.threadID else {
             let sender = draft.to.trimmingCharacters(in: .whitespacesAndNewlines)
             let subject = draft.subject.trimmingCharacters(in: .whitespacesAndNewlines)
             let created = Correspondence(
-                id: ThreadID(account: account, providerID: UUID().uuidString),
+                id: realThreadID ?? ThreadID(account: account, providerID: UUID().uuidString),
                 sender: sender, organization: "", subject: subject,
                 excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
                 reason: "You started this conversation. Waiting for a response.",

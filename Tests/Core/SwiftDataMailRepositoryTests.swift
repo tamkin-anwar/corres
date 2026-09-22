@@ -43,7 +43,7 @@ struct SwiftDataMailRepositoryTests {
         try await repository.seedIfNeeded(now: now)
         let original = try #require(await repository.threads().first { $0.attention == .needsYou })
         let draft = Draft(kind: .reply, threadID: original.id, to: original.sender, subject: "Re: \(original.subject)", body: "On it.")
-        let updated = try await repository.send(draft, sentAt: now)
+        let updated = try await repository.send(draft, sentAt: now, realThreadID: nil)
         #expect(updated.attention == .waiting)
         #expect(updated.reason.contains("replied"))
     }
@@ -53,7 +53,7 @@ struct SwiftDataMailRepositoryTests {
         try await repository.seedIfNeeded(now: now)
         let before = try await repository.threads().count
         let draft = Draft(kind: .new, to: "  Nadia Osei  ", subject: "  Introduction  ", body: "Hello.")
-        let created = try await repository.send(draft, sentAt: now)
+        let created = try await repository.send(draft, sentAt: now, realThreadID: nil)
         #expect(created.sender == "Nadia Osei")
         #expect(created.subject == "Introduction")
         #expect(created.attention == .waiting)
@@ -66,7 +66,7 @@ struct SwiftDataMailRepositoryTests {
         let ghost = ThreadID(account: "sample", providerID: "does-not-exist")
         let draft = Draft(kind: .reply, threadID: ghost, to: "Someone", subject: "Re: Gone", body: "")
         await #expect(throws: RepositoryError.threadNotFound) {
-            _ = try await repository.send(draft, sentAt: now)
+            _ = try await repository.send(draft, sentAt: now, realThreadID: nil)
         }
     }
 
