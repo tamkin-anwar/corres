@@ -104,6 +104,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         """
         <html><head><meta name="viewport" content="width=1024">
         <style>
+        html, body { overflow-x: hidden; }
         body { font: -apple-system-body; font-size: 17px; line-height: 1.5; color: -apple-system-label;
                margin: 0; padding: 0; word-wrap: break-word; -webkit-text-size-adjust: 100%;
                background: transparent; }
@@ -111,6 +112,25 @@ struct HTMLMessageBody: UIViewRepresentable {
         </style></head><body>\(html)</body></html>
         """
     }
+
+    /// WKWebView's first real use in a process pays a measurable, documented
+    /// cold-start cost (spinning up its out-of-process WebContent engine),
+    /// separate from anything about loading a specific page; every
+    /// conversation creates its own fresh WKWebView (`makeUIView`), so
+    /// without this every single tap into an HTML message pays that cost
+    /// again. Creating one throwaway instance here, off the interaction
+    /// path (called once from CorresApp's launch task), pays it once at
+    /// launch instead of on the first real tap into a message.
+    @MainActor
+    static func warmUp() {
+        guard warmupWebView == nil else { return }
+        let webView = WKWebView(frame: .zero)
+        webView.loadHTMLString("<html></html>", baseURL: nil)
+        warmupWebView = webView
+    }
+
+    @MainActor
+    private static var warmupWebView: WKWebView?
 
     @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate {
