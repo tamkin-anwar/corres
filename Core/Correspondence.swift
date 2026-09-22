@@ -27,6 +27,12 @@ public enum Attention: String, Codable, CaseIterable, Sendable {
 public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     public let id: ThreadID
     public let sender: String
+    /// The sender's actual address, when known (real Gmail mail always has
+    /// one; sample/fictional threads do not). `sender` is a display name and
+    /// is not a valid reply-to address on its own, e.g. Gmail formats
+    /// `"Jane Doe" <jane@example.com>`, and only the address half belongs in
+    /// a "To" field.
+    public let senderEmail: String?
     public let organization: String
     public let subject: String
     public let excerpt: String
@@ -35,6 +41,12 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// one. `body` is always a plain-text-safe fallback; this is what
     /// actually renders when present (sanitized, isolated; see ADR 006).
     public let htmlBody: String?
+    /// The RFC 5322 `Message-ID` of this message, without its surrounding
+    /// `<...>`, when the provider sent one. Real Gmail threading of an
+    /// outgoing reply depends on echoing this back as `In-Reply-To`/
+    /// `References` (see ADR 005); nil for sample/fictional threads, which
+    /// never really send.
+    public let messageIdHeader: String?
     public let receivedAt: Date
     public let dueAt: Date?
     /// Human-readable evidence, never an unexplained importance score.
@@ -44,16 +56,19 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// A deliberate deferral, not a due date. Hidden from active views until it passes.
     public var snoozedUntil: Date?
 
-    public init(id: ThreadID, sender: String, organization: String, subject: String,
-                excerpt: String, body: String, htmlBody: String? = nil, receivedAt: Date, dueAt: Date?,
-                reason: String, attention: Attention, isPinned: Bool = false, snoozedUntil: Date? = nil) {
+    public init(id: ThreadID, sender: String, senderEmail: String? = nil, organization: String, subject: String,
+                excerpt: String, body: String, htmlBody: String? = nil, messageIdHeader: String? = nil,
+                receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
+                isPinned: Bool = false, snoozedUntil: Date? = nil) {
         self.id = id
         self.sender = sender
+        self.senderEmail = senderEmail
         self.organization = organization
         self.subject = subject
         self.excerpt = excerpt
         self.body = body
         self.htmlBody = htmlBody
+        self.messageIdHeader = messageIdHeader
         self.receivedAt = receivedAt
         self.dueAt = dueAt
         self.reason = reason

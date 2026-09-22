@@ -13,10 +13,17 @@ final class GoogleAuthService {
     private(set) var isSigningIn = false
     var errorMessage: String?
 
-    /// Read-only is deliberately the starting scope: Corres does not send,
-    /// delete, or modify anything via Gmail yet (see Docs/Product.md's V1
-    /// progression). Widen this only when that capability actually exists.
-    private static let gmailScopes = ["https://www.googleapis.com/auth/gmail.readonly"]
+    /// `gmail.readonly` plus `gmail.send`, and nothing wider: Corres can now
+    /// reply/forward/send but still cannot delete or modify anything else in
+    /// a real mailbox (see Docs/Product.md's V1 progression). Both are
+    /// Google's "sensitive," not "restricted," scopes, so they need standard
+    /// OAuth consent-screen review before general release but not a CASA
+    /// security assessment; see Docs/Architecture.md ADR 005.
+    private static let gmailScopes = [
+        "https://www.googleapis.com/auth/gmail.readonly",
+        "https://www.googleapis.com/auth/gmail.send",
+    ]
+    private static let sendScope = "https://www.googleapis.com/auth/gmail.send"
 
     func restorePreviousSignIn() async {
         guard let user = try? await GIDSignIn.sharedInstance.restorePreviousSignIn() else {
@@ -48,6 +55,20 @@ final class GoogleAuthService {
                 errorMessage = "Could not connect Gmail. Please try again."
             }
         }
+    }
+
+    /// An account connected before `gmail.send` was requested only has
+    /// `gmail.readonly` granted; this asks for the missing scope
+    /// incrementally (another system consent sheet, not a full re-sign-in)
+    /// the first time it's actually needed, rather than forcing every
+    /// existing connection to disconnect and reconnect.
+    @discardableResult
+    func ensureSendScope() async -> Bool {
+        guard let user = GIDSignIn.sharedInstance.currentUser else { return false }
+        if Set(user.grantedScopes ?? []).contains(Self.sendScope) { return true }
+        guard let presenter = Self.rootViewController() else { return false }
+        _ = try? await user.addScopes([Self.sendScope], presenting: presenter)
+        return Set(user.grantedScopes ?? []).contains(Self.sendScope)
     }
 
     func signOut() {

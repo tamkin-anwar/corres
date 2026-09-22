@@ -118,6 +118,26 @@ struct GmailAPIClient {
         return (Array(ids), latestHistoryId)
     }
 
+    /// `raw` is an RFC 5322 message, base64url-encoded (see
+    /// GmailMessageComposer); `threadId` is Gmail's own thread id
+    /// (`ThreadID.providerID` for a real account) and, together with the
+    /// message's In-Reply-To/References headers and a matching Subject, is
+    /// what makes Gmail group this send into the existing conversation
+    /// rather than starting a new one.
+    func send(raw: String, threadId: String?) async throws {
+        let token = try await accessToken()
+        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages/send")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var body: [String: Any] = ["raw": raw]
+        if let threadId { body["threadId"] = threadId }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        try validate(response)
+    }
+
     private func fetchProfile(token: String) async throws -> Profile {
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/profile")!
         let (data, response) = try await authorizedRequest(url: url, token: token)
@@ -159,10 +179,12 @@ struct GmailAPIClient {
         let rawHTML = Self.bodyPart(mimeType: "text/html", from: message.payload)
         let htmlBody = rawHTML.map { Self.inlineCIDImages(in: $0, from: message.payload) }
         let body = plainText ?? message.snippet ?? ""
+        let messageIdHeader = headers["message-id"]?.trimmingCharacters(in: CharacterSet(charactersIn: "<>"))
         return Correspondence(
             id: ThreadID(account: account, providerID: message.threadId ?? message.id),
-            sender: sender, organization: organization, subject: subject,
-            excerpt: message.snippet ?? "", body: body, htmlBody: htmlBody, receivedAt: receivedAt, dueAt: nil,
+            sender: sender, senderEmail: senderEmail, organization: organization, subject: subject,
+            excerpt: message.snippet ?? "", body: body, htmlBody: htmlBody, messageIdHeader: messageIdHeader,
+            receivedAt: receivedAt, dueAt: nil,
             reason: isUnread ? "Unread in Gmail." : "Already read in Gmail.",
             attention: isUnread ? .needsYou : .quiet)
     }

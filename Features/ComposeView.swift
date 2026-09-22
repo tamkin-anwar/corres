@@ -2,6 +2,11 @@ import SwiftUI
 
 struct ComposeView: View {
     let store: MailStore
+    let outbox: OutboxService
+    /// The conversation this draft replies to or forwards, when there is
+    /// one; nil for a brand-new compose. Passed straight through to
+    /// `OutboxService.queueSend`, which needs it for real Gmail threading.
+    let sourceThread: Correspondence?
     @State var draft: Draft
     private let initialDraft: Draft
     @Environment(\.dismiss) private var dismiss
@@ -11,8 +16,10 @@ struct ComposeView: View {
 
     private enum Field { case to, subject, body }
 
-    init(store: MailStore, draft: Draft) {
+    init(store: MailStore, outbox: OutboxService, draft: Draft, sourceThread: Correspondence?) {
         self.store = store
+        self.outbox = outbox
+        self.sourceThread = sourceThread
         self._draft = State(initialValue: draft)
         self.initialDraft = draft
     }
@@ -45,13 +52,9 @@ struct ComposeView: View {
                     Button("Cancel", role: .cancel) { attemptDismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    if isSending {
-                        ProgressView()
-                    } else {
-                        Button("Send") { Task { await sendAndDismiss() } }
-                            .disabled(!draft.isSendable)
-                            .fontWeight(.semibold)
-                    }
+                    Button("Send") { sendAndDismiss() }
+                        .disabled(!draft.isSendable)
+                        .fontWeight(.semibold)
                 }
             }
             .confirmationDialog("Delete this draft?", isPresented: $showingDiscardConfirmation, titleVisibility: .visible) {
@@ -76,7 +79,6 @@ struct ComposeView: View {
         }
     }
 
-    private var isSending: Bool { store.sending.contains(draft.id) }
     /// Compares against the draft's pre-filled starting point (quoted reply
     /// text, "Re:"/"Fwd:" subject) rather than just "is anything non-empty":
     /// a reply or forward already has non-empty fields before the user types
@@ -89,8 +91,14 @@ struct ComposeView: View {
         if hasUnsavedChanges { showingDiscardConfirmation = true } else { dismiss() }
     }
 
-    private func sendAndDismiss() async {
-        if await store.send(draft) { dismiss() }
+    /// Optimistic: the sheet closes the instant Send is tapped, matching the
+    /// speed a premium mail client is expected to feel like. The actual send
+    /// (a real Gmail delivery when replying/forwarding a connected thread,
+    /// plus local bookkeeping) happens in OutboxService after a short undo
+    /// window; see its doc comment and ADR 005.
+    private func sendAndDismiss() {
+        outbox.queueSend(draft, replyingTo: sourceThread)
+        dismiss()
     }
 
     private func field(title: String, text: Binding<String>, isEditable: Bool) -> some View {
@@ -117,7 +125,7 @@ extension Correspondence {
         case .new:
             return Draft(kind: .new, to: "", subject: "")
         case .reply, .replyAll:
-            return Draft(kind: kind, threadID: id, to: sender,
+            return Draft(kind: kind, threadID: id, to: senderEmail ?? sender,
                          subject: subject.hasPrefix("Re: ") ? subject : "Re: \(subject)",
                          body: quoted)
         case .forward:

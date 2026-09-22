@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 5: real Gmail sending (September 21, 2026)
+
+- Replying, replying all, and forwarding within an existing, real synced thread now send for real via `users.messages.send`, instead of staying purely local-only (which a brand-new from-scratch compose still is, honestly, not yet in scope). Widened the OAuth scope from `gmail.readonly` alone to also request `gmail.send`; both are Google's "sensitive" tier (standard consent-screen review, not the CASA-audited "restricted" tier), verified against Google's own scope documentation and OAuth verification guidance. `GoogleAuthService.ensureSendScope()` requests the additional scope incrementally for an account connected before this shipped, rather than requiring a disconnect/reconnect.
+- Correct Gmail threading requires the request's `threadId`, `In-Reply-To`/`References` headers matching the parent message's real `Message-ID`, and a matching `Subject`, confirmed against Gmail's own send/threading documentation. `Correspondence` gained `messageIdHeader` (the parent's real `Message-ID`, captured from sync) and `senderEmail` (the sender's actual address; `sender` alone is a display name and not a safe "To" value for a reply) to make this possible; both persist through SwiftData.
+- `GmailMessageComposer` builds the raw RFC 5322 message and base64url-encodes it per the API's `raw` field contract. Verified with a standalone round-trip script: composed a reply (decoded output showed correct From/To/Subject/In-Reply-To/References headers and body) and a new message with a non-ASCII subject (decoded output showed correct RFC 2047 `=?UTF-8?B?...?=` encoding); both passed.
+- `OutboxService` makes Send feel instant: the compose sheet dismisses the moment Send is tapped (the "premium, has to feel fast" bar this batch was explicitly asked to hit, researched against Superhuman's own public optimistic-UI/undo-send design writeups), and the real work happens after a short undo window shown in a banner. The Gmail call happens before any local state change, not after, so a real failure (network down, scope denied, etc.) surfaces as a Retry/Discard banner rather than a thread silently claiming a message went out that never did.
+- Known, deliberately scoped gaps, not oversights: a brand-new compose (no reply-to thread) is still local-only; no attachments; the outbox is in-memory only and does not survive a force-quit during the undo window (a true durable, restart-recovering outbox is still planned per ADR 005); cursor/local-write atomicity for sync remains open from Batch 4.
+
 ## Batch 4: incremental sync and default image blocking (September 21, 2026)
 
 - Replaced the fixed 25-message sync window with Gmail's History API. The first sync per account

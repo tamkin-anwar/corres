@@ -39,7 +39,7 @@ struct PreferencesView: View {
                         }
                         .disabled(auth.isSigningIn || sync.isSyncing)
                     }
-                    Text("Read-only access for now. Corres cannot send, delete, or modify anything in your real mailbox. Your inbox syncs into Mail, and new messages keep arriving automatically; sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state for now, not real judgment.")
+                    Text("Your inbox syncs into Mail, and new messages keep arriving automatically; sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state for now, not real judgment. Replying, replying all, and forwarding send for real. Corres still cannot delete, label, or otherwise modify anything else in your real mailbox, and starting a brand-new message stays on this device only for now.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
                 }
                 .confirmationDialog("Disconnect Gmail?", isPresented: $showingDisconnectConfirmation, titleVisibility: .visible) {

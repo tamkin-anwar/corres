@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ConversationView: View {
     let store: MailStore
+    let outbox: OutboxService
     let id: ThreadID
     @State private var composeDraft: Draft?
     @State private var htmlHeight: CGFloat = 200
@@ -68,7 +69,7 @@ struct ConversationView: View {
                             }
                         }
                         Text(isSample ? "Replying, forwarding, and sending stay on this device until Gmail is connected."
-                                      : "Replying, forwarding, and sending stay on this device. Nothing sends through Gmail yet.")
+                                      : "Replying, replying all, and forwarding send for real through Gmail.")
                             .font(.footnote).foregroundStyle(CorresPalette.secondary)
                     }
                     .padding(CorresSpace.page).frame(maxWidth: 680).frame(maxWidth: .infinity)
@@ -107,7 +108,8 @@ struct ConversationView: View {
         .navigationTitle("Conversation")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $composeDraft) { draft in
-            ComposeView(store: store, draft: draft)
+            ComposeView(store: store, outbox: outbox, draft: draft,
+                        sourceThread: store.threads.first(where: { $0.id == id }))
         }
     }
 

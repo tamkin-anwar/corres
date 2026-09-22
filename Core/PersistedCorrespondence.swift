@@ -12,11 +12,13 @@ public final class PersistedCorrespondence {
     public var account: String
     public var providerID: String
     public var sender: String
+    public var senderEmail: String?
     public var organization: String
     public var subject: String
     public var excerpt: String
     public var body: String
     public var htmlBody: String?
+    public var messageIdHeader: String?
     public var receivedAt: Date
     public var dueAt: Date?
     public var reason: String
@@ -29,11 +31,13 @@ public final class PersistedCorrespondence {
         self.account = correspondence.id.account
         self.providerID = correspondence.id.providerID
         self.sender = correspondence.sender
+        self.senderEmail = correspondence.senderEmail
         self.organization = correspondence.organization
         self.subject = correspondence.subject
         self.excerpt = correspondence.excerpt
         self.body = correspondence.body
         self.htmlBody = correspondence.htmlBody
+        self.messageIdHeader = correspondence.messageIdHeader
         self.receivedAt = correspondence.receivedAt
         self.dueAt = correspondence.dueAt
         self.reason = correspondence.reason
@@ -43,8 +47,9 @@ public final class PersistedCorrespondence {
     }
 
     public var asCorrespondence: Correspondence {
-        Correspondence(id: ThreadID(account: account, providerID: providerID), sender: sender, organization: organization,
-                       subject: subject, excerpt: excerpt, body: body, htmlBody: htmlBody, receivedAt: receivedAt, dueAt: dueAt,
+        Correspondence(id: ThreadID(account: account, providerID: providerID), sender: sender, senderEmail: senderEmail,
+                       organization: organization, subject: subject, excerpt: excerpt, body: body, htmlBody: htmlBody,
+                       messageIdHeader: messageIdHeader, receivedAt: receivedAt, dueAt: dueAt,
                        reason: reason, attention: Attention(rawValue: attentionRaw) ?? .quiet,
                        isPinned: isPinned, snoozedUntil: snoozedUntil)
     }

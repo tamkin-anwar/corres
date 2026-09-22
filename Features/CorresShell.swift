@@ -4,6 +4,7 @@ struct CorresShell: View {
     @Bindable var store: MailStore
     var auth: GoogleAuthService
     var sync: GmailSyncService
+    @Bindable var outbox: OutboxService
     @State private var selection = Destination.brief
     @State private var showingSettings = false
     @State private var showingWelcome = false
@@ -20,7 +21,7 @@ struct CorresShell: View {
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar { toolbarContent }
                         .navigationDestination(for: ThreadID.self) { id in
-                            ConversationView(store: store, id: id)
+                            ConversationView(store: store, outbox: outbox, id: id)
                         }
                 }
                 .tabItem { Label { Text(destination.rawValue) } icon: { Image(uiImage: CorresIcon.tabImage(destination.glyph)) } }
@@ -28,12 +29,15 @@ struct CorresShell: View {
             }
         }
         .foregroundStyle(CorresPalette.ink)
+        .overlay(alignment: .bottom) { outboxBanner }
+        .animation(.easeOut(duration: 0.22), value: outbox.pending?.id)
+        .animation(.easeOut(duration: 0.22), value: outbox.failed?.id)
         .task {
             if !hasExplored { showingWelcome = true }
             if store.state == .idle { await store.load() }
         }
         .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync) }
-        .sheet(item: $composeDraft) { draft in ComposeView(store: store, draft: draft) }
+        .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, draft: draft, sourceThread: nil) }
         .fullScreenCover(isPresented: $showingWelcome) {
             WelcomeView {
                 hasExplored = true
@@ -46,6 +50,33 @@ struct CorresShell: View {
         )) {
             Button("OK", role: .cancel) { store.errorMessage = nil }
         } message: { Text(store.errorMessage ?? "Please try again.") }
+    }
+
+    @ViewBuilder
+    private var outboxBanner: some View {
+        if let pending = outbox.pending {
+            HStack(spacing: 12) {
+                Text("Sending \u{201C}\(pending.subjectPreview)\u{201D} in \(pending.secondsRemaining)\u{2026}")
+                    .font(.subheadline).lineLimit(1)
+                Spacer(minLength: 8)
+                Button("Undo") { outbox.undo() }.font(.subheadline.weight(.semibold))
+            }
+            .padding(.horizontal, 18).padding(.vertical, 14)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+            .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else if let failed = outbox.failed {
+            HStack(spacing: 12) {
+                Text("Couldn't send \u{201C}\(failed.draft.subject)\u{201D}").font(.subheadline).lineLimit(1)
+                Spacer(minLength: 8)
+                Button("Discard") { outbox.discardFailed() }.font(.subheadline)
+                Button("Retry") { outbox.retryFailed() }.font(.subheadline.weight(.semibold))
+            }
+            .padding(.horizontal, 18).padding(.vertical, 14)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+            .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
     }
 
     @ViewBuilder
