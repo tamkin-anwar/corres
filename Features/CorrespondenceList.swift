@@ -1,38 +1,41 @@
 import SwiftUI
 
+/// A flat, dense row (avatar, sender, date, subject, one-line preview),
+/// matching Mail and Spark's actual list anatomy rather than the card-heavy,
+/// four-line row this replaced: no per-row bordered/shadowed card, no
+/// trailing chevron (neither reference shows one in a plain list), and a
+/// date now shown on every row (previously missing entirely). The attention
+/// text pill is also gone; a destination-filtered list (Needs You, Waiting)
+/// already tells you the attention state by which screen you're on, and
+/// neither Mail nor Spark labels attention with per-row text, they use
+/// color, which corresSurface's list styling doesn't have a slot for yet.
 struct CorrespondenceRow: View {
     let thread: Correspondence
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 12) {
             CorrespondentAvatar(initials: thread.initials)
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(thread.sender).font(.subheadline.weight(.semibold))
+                    Text(thread.sender).font(.subheadline.weight(.semibold)).lineLimit(1)
                     if thread.isPinned {
                         Image(systemName: "pin.fill").font(.caption2).foregroundStyle(CorresPalette.champagne)
                             .accessibilityLabel("Pinned")
                     }
-                }
-                Text(thread.organization).font(.caption).foregroundStyle(CorresPalette.secondary)
-                Text(thread.subject).font(.body.weight(.medium)).fixedSize(horizontal: false, vertical: true)
-                Text(thread.excerpt).font(.subheadline)
-                    .foregroundStyle(CorresPalette.secondary).lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 5) {
+                    Spacer(minLength: 8)
                     if thread.dueAt != nil && thread.attention == .needsYou {
-                        Image(systemName: "clock").accessibilityLabel("Due soon")
+                        Image(systemName: "clock").font(.caption2).foregroundStyle(CorresPalette.secondary)
+                            .accessibilityLabel("Due soon")
                     }
-                    Text(thread.attention.title)
+                    Text(thread.receivedAt, format: .dateTime.month(.abbreviated).day())
+                        .font(.caption).foregroundStyle(CorresPalette.secondary)
                 }
-                .font(.caption.weight(.medium)).foregroundStyle(CorresPalette.accent)
-                .padding(.horizontal, 9).padding(.vertical, 5)
-                .background(CorresPalette.accent.opacity(0.07), in: Capsule()).padding(.top, 3)
+                Text(thread.subject).font(.subheadline.weight(.medium)).lineLimit(1)
+                Text(thread.excerpt).font(.footnote)
+                    .foregroundStyle(CorresPalette.secondary).lineLimit(1)
             }
-            Spacer(minLength: 0)
-            Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
-                .foregroundStyle(CorresPalette.secondary).padding(.top, 6).accessibilityHidden(true)
         }
-        .padding(20)
+        .padding(.horizontal, 20).padding(.vertical, 12)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
@@ -101,12 +104,12 @@ struct CorrespondenceList: View {
         let orderedIDs = results.map(\.id)
         return ForEach(results) { thread in
             NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
-                CorrespondenceRow(thread: thread).corresSurface()
+                CorrespondenceRow(thread: thread)
             }
-                .buttonStyle(CorresRowButtonStyle())
                 .disabled(store.pending.contains(thread.id))
-                .padding(.horizontal, CorresSpace.page).padding(.vertical, 7)
-                .frame(maxWidth: 680).frame(maxWidth: .infinity)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.visible)
+                .listRowSeparatorTint(CorresPalette.line)
                 .swipeActions(edge: .trailing) {
                     Button {
                         Task { await store.update(thread.id, to: .handled) }
@@ -135,21 +138,24 @@ struct CorrespondenceList: View {
     }
 
     /// Used only by the offline preview-render script; List does not render through ImageRenderer.
+    /// Mirrors the same flat, divider-separated look conversationRows gets
+    /// from List's own row separators, since a plain VStack has none built in.
     private var staticContent: some View {
         VStack(alignment: .leading, spacing: 24) {
             header
             if results.isEmpty {
                 emptyState
             } else {
-                VStack(spacing: 14) {
-                    let orderedIDs = results.map(\.id)
-                    ForEach(results) { thread in
+                let orderedIDs = results.map(\.id)
+                VStack(spacing: 0) {
+                    ForEach(Array(results.enumerated()), id: \.element.id) { index, thread in
                         NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
-                            CorrespondenceRow(thread: thread).corresSurface()
+                            CorrespondenceRow(thread: thread)
                         }
-                        .buttonStyle(CorresRowButtonStyle())
+                        if index < results.count - 1 { Divider().padding(.leading, 76) }
                     }
                 }
+                .corresSurface()
                 .padding(.horizontal, CorresSpace.page).frame(maxWidth: 680).frame(maxWidth: .infinity)
             }
         }

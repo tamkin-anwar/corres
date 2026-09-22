@@ -61,7 +61,7 @@ struct BriefView: View {
                             CorrespondenceRow(thread: thread)
                         }
                         .buttonStyle(CorresRowButtonStyle())
-                        if index < shown.count - 1 { Divider().padding(.leading, 78).padding(.trailing, 20) }
+                        if index < shown.count - 1 { Divider().padding(.leading, 76) }
                     }
                 }.corresSurface()
             }
