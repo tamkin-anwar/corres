@@ -2,6 +2,13 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 10: durable outbox (September 21, 2026)
+
+- Closed the outbox's last honestly-documented gap: a queued or failed send now survives the app being force-quit. `MailRepository` gained `outboxEntries`/`saveOutboxEntry`/`removeOutboxEntry`, backed by a new `PersistedOutboxEntry` SwiftData model (Draft stored as one JSON column, not several, since nothing queries by draft content at the persistence layer). `OutboxService.queueSend` persists a `.pending` record before the undo-window timer starts; `resumeAfterRelaunch()`, called once from `CorresApp`'s launch task, finishes sending anything still `.pending` (the app died before the window closed or was cancelled, so there is nothing left to offer undo for) and restores anything `.failed` so its Retry/Discard banner reappears.
+- Found and fixed a real pre-existing bug while rewriting this, not part of the original ask: queueing a second send while a first was still mid-undo-window only cancelled the first's timer, which made it return without ever calling `commit`, silently dropping the first draft, contradicting the code's own comment claiming it "commits immediately." `OutboxService` now actually commits the superseded draft for real when this happens.
+- Domain-tested (new `SwiftDataMailRepositoryTests` case): saves an `OutboxRecord`, opens a fresh repository instance on the same container (simulating relaunch), confirms it's still there with the right status and draft content, confirms re-saving the same id updates in place rather than duplicating, confirms removal actually removes it. All 26 domain tests pass (25 prior + 1 new).
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and `swift test` (26/26 passed). Not yet verified on-device: actually force-quitting the app mid-undo-window on a real send and confirming it resumes and sends correctly on next launch.
+
 ## Batch 9: brand-new compose now really sends (September 21, 2026)
 
 - Closed the last "still local-only" gap from Batch 5: starting a new message from scratch (not a reply) now sends via `users.messages.send` whenever an account is connected, the same as replying/replying all/forwarding already did. `GmailAPIClient.send` now returns the real Gmail thread id the send response reports (a freshly assigned one, since there was no existing thread to join), which `OutboxService` uses to file the local record under `ThreadID(account: <real account>, providerID: <Gmail's real id>)` instead of a synthesized local UUID, via a new `realThreadID` parameter added to `MailStore.send`/`MailRepository.send`. A later sync of that same thread now recognizes it as already-known instead of duplicating it.

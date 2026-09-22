@@ -109,4 +109,31 @@ struct SwiftDataMailRepositoryTests {
         #expect(unchanged.subject == existing.subject)
         #expect(afterward.contains { $0.id == brandNew.id })
     }
+
+    @Test func outboxEntryPersistsAcrossRelaunchAndStatusUpdatesInPlace() async throws {
+        let container = try makeContainer()
+        let first = SwiftDataMailRepository(modelContainer: container)
+        let draft = Draft(kind: .new, to: "someone@example.com", subject: "Kickoff", body: "Hello.")
+        let record = OutboxRecord(draft: draft, status: .pending, createdAt: now)
+        try await first.saveOutboxEntry(record)
+
+        // A fresh actor over the SAME container simulates relaunching the
+        // app: the durable outbox exists precisely to survive that.
+        let second = SwiftDataMailRepository(modelContainer: container)
+        let resumed = try await second.outboxEntries()
+        #expect(resumed.count == 1)
+        #expect(resumed.first?.id == record.id)
+        #expect(resumed.first?.status == .pending)
+        #expect(resumed.first?.draft.subject == "Kickoff")
+
+        // Re-saving the same id (e.g. a failed send) updates in place rather
+        // than duplicating the entry.
+        try await second.saveOutboxEntry(OutboxRecord(id: record.id, draft: draft, status: .failed, createdAt: now))
+        let afterUpdate = try await second.outboxEntries()
+        #expect(afterUpdate.count == 1)
+        #expect(afterUpdate.first?.status == .failed)
+
+        try await second.removeOutboxEntry(id: record.id)
+        #expect(try await second.outboxEntries().isEmpty)
+    }
 }

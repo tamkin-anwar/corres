@@ -47,6 +47,14 @@ public protocol MailRepository: Sendable {
     /// per-sender decision, not per-message). Silent no-op if no thread from
     /// that sender exists yet.
     func setSenderDecision(_ decision: SenderDecision, forSenderEmail senderEmail: String, account: String) async throws
+
+    /// The durable outbox (ADR 005/007): every send still `pending` or
+    /// `failed` as of the last time the repository was read, so it survives
+    /// the app being force-quit mid-undo-window instead of only ever living
+    /// in OutboxService's in-memory state.
+    func outboxEntries() async throws -> [OutboxRecord]
+    func saveOutboxEntry(_ entry: OutboxRecord) async throws
+    func removeOutboxEntry(id: UUID) async throws
 }
 
 public enum RepositoryError: Error, Equatable { case threadNotFound }
@@ -54,11 +62,26 @@ public enum RepositoryError: Error, Equatable { case threadNotFound }
 /// Deliberately transient, fictional data. No mail or credentials are persisted.
 public actor SampleMailRepository: MailRepository {
     private var items: [Correspondence]
+    private var outbox: [OutboxRecord] = []
     private let account = "sample"
 
     public init(now: Date = .now) { items = SampleCorrespondence.make(now: now) }
     public init(items: [Correspondence]) { self.items = items }
     public func threads() -> [Correspondence] { items }
+
+    public func outboxEntries() -> [OutboxRecord] { outbox }
+
+    public func saveOutboxEntry(_ entry: OutboxRecord) {
+        if let index = outbox.firstIndex(where: { $0.id == entry.id }) {
+            outbox[index] = entry
+        } else {
+            outbox.append(entry)
+        }
+    }
+
+    public func removeOutboxEntry(id: UUID) {
+        outbox.removeAll { $0.id == id }
+    }
 
     public func setAttention(_ attention: Attention, for id: ThreadID) throws {
         try mutate(id) { $0.attention = attention }

@@ -6,7 +6,7 @@ import SwiftData
 /// upgrade" failure Docs/Product.md's local-first milestone exists to avoid.
 public enum CorresSchemaV1: VersionedSchema {
     public static var versionIdentifier: Schema.Version { Schema.Version(1, 0, 0) }
-    public static var models: [any PersistentModel.Type] { [PersistedCorrespondence.self] }
+    public static var models: [any PersistentModel.Type] { [PersistedCorrespondence.self, PersistedOutboxEntry.self] }
 }
 
 public enum CorresMigrationPlan: SchemaMigrationPlan {

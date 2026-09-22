@@ -18,7 +18,7 @@ struct CorresApp: App {
         _store = State(initialValue: mailStore)
         _sync = State(initialValue: GmailSyncService(repository: repository))
         _auth = State(initialValue: authService)
-        _outbox = State(initialValue: OutboxService(store: mailStore, auth: authService))
+        _outbox = State(initialValue: OutboxService(store: mailStore, auth: authService, repository: repository))
     }
 
     private static func makeModelContainer() -> ModelContainer {
@@ -44,10 +44,17 @@ struct CorresApp: App {
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
                 .task {
+                    // Loaded first and unconditionally (store.load() is a
+                    // no-op if CorresShell's own load-if-idle task already
+                    // beat it to it): resumeAfterRelaunch below needs
+                    // store.threads populated to re-link a resumed reply
+                    // draft back to its source thread.
+                    await store.load()
                     await auth.restorePreviousSignIn()
                     if await sync.syncIfConnected(account: auth.account?.email) {
                         await store.load()
                     }
+                    await outbox.resumeAfterRelaunch()
                 }
                 .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
         }

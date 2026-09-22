@@ -105,8 +105,10 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// A message the user is composing: a reply/forward in an existing conversation, or a new one.
-public struct Draft: Identifiable, Hashable, Sendable {
-    public enum Kind: Hashable, Sendable { case new, reply, replyAll, forward }
+/// Codable so it can round-trip through the durable outbox (ADR 005/007);
+/// see OutboxRecord.
+public struct Draft: Identifiable, Hashable, Sendable, Codable {
+    public enum Kind: String, Hashable, Sendable, Codable { case new, reply, replyAll, forward }
 
     public let id: UUID
     public let kind: Kind
@@ -128,6 +130,30 @@ public struct Draft: Identifiable, Hashable, Sendable {
     public var isSendable: Bool {
         !to.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !subject.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
+/// A durable record of a queued send, surviving the app being force-quit
+/// mid-undo-window (ADR 005's still-open gap: OutboxService alone only held
+/// this in memory). `pending` means it was queued but never confirmed sent
+/// or failed by the time the app last quit; the safest resolution on next
+/// launch is to finish sending it rather than silently lose a message the
+/// person already asked to send. `failed` means a real Gmail send attempt
+/// already came back with an error, and is restored so the Retry/Discard
+/// banner reappears instead of the failure vanishing unexplained.
+public struct OutboxRecord: Identifiable, Sendable, Codable {
+    public enum Status: String, Sendable, Codable { case pending, failed }
+
+    public let id: UUID
+    public let draft: Draft
+    public var status: Status
+    public let createdAt: Date
+
+    public init(id: UUID = UUID(), draft: Draft, status: Status, createdAt: Date = .now) {
+        self.id = id
+        self.draft = draft
+        self.status = status
+        self.createdAt = createdAt
     }
 }
 

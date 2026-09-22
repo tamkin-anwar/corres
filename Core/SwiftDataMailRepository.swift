@@ -101,6 +101,29 @@ public actor SwiftDataMailRepository: MailRepository {
         try modelContext.save()
     }
 
+    public func outboxEntries() throws -> [OutboxRecord] {
+        try modelContext.fetch(FetchDescriptor<PersistedOutboxEntry>()).compactMap(\.asRecord)
+    }
+
+    public func saveOutboxEntry(_ entry: OutboxRecord) throws {
+        var descriptor = FetchDescriptor<PersistedOutboxEntry>(predicate: #Predicate { $0.id == entry.id })
+        descriptor.fetchLimit = 1
+        if let existing = try modelContext.fetch(descriptor).first {
+            existing.statusRaw = entry.status.rawValue
+        } else {
+            modelContext.insert(PersistedOutboxEntry(from: entry))
+        }
+        try modelContext.save()
+    }
+
+    public func removeOutboxEntry(id: UUID) throws {
+        var descriptor = FetchDescriptor<PersistedOutboxEntry>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        guard let existing = try modelContext.fetch(descriptor).first else { return }
+        modelContext.delete(existing)
+        try modelContext.save()
+    }
+
     private static func senderKey(account: String, senderEmail: String) -> String { "\(account)|\(senderEmail)" }
 
     private static func senderDecisions(in models: [PersistedCorrespondence]) -> [String: SenderDecision] {

@@ -12,6 +12,11 @@ import Observation
 /// if it fails, nothing here claims the message went out. `failed` surfaces
 /// that so the person can retry or give up on it, rather than the thread
 /// silently sitting in "Waiting" for a reply that was never actually sent.
+///
+/// Backed by the durable outbox (`MailRepository.outboxEntries`, ADR 005/007):
+/// every queued or failed send is persisted immediately, not only held in
+/// this instance's memory, so a force-quit mid-undo-window doesn't silently
+/// lose a message the person already asked to send; see `resumeAfterRelaunch`.
 @MainActor @Observable
 final class OutboxService {
     struct Pending: Identifiable {
@@ -23,7 +28,6 @@ final class OutboxService {
     struct FailedSend: Identifiable {
         let id: UUID
         let draft: Draft
-        let thread: Correspondence?
     }
 
     private(set) var pending: Pending?
@@ -31,15 +35,43 @@ final class OutboxService {
 
     private let store: MailStore
     private let auth: GoogleAuthService
+    private let repository: any MailRepository
     private let client = GmailAPIClient()
     private var task: Task<Void, Never>?
+    /// The draft/thread behind the current `pending`, kept alongside it so a
+    /// second `queueSend` while one is still mid-undo-window can commit the
+    /// first for real (matching "the first has already had its chance to be
+    /// undone") instead of just cancelling its timer and losing it, which is
+    /// what merely cancelling the Task alone would otherwise do.
+    private var queuedDraft: Draft?
+    private var queuedThread: Correspondence?
 
     private static let undoWindowSeconds = 6
     private static let sampleAccount = "sample"
 
-    init(store: MailStore, auth: GoogleAuthService) {
+    init(store: MailStore, auth: GoogleAuthService, repository: any MailRepository) {
         self.store = store
         self.auth = auth
+        self.repository = repository
+    }
+
+    /// Called once at app launch. A record still `pending` means the app was
+    /// force-quit before its undo window ever finished or was cancelled; the
+    /// safest resolution is to finish sending it now, not silently drop a
+    /// message the person already asked to send (there is no window left to
+    /// re-offer undo for, since the moment to cancel has already passed). A
+    /// `failed` record is restored so its Retry/Discard banner reappears
+    /// instead of the earlier failure vanishing unexplained.
+    func resumeAfterRelaunch() async {
+        guard let entries = try? await repository.outboxEntries(), !entries.isEmpty else { return }
+        for entry in entries.sorted(by: { $0.createdAt < $1.createdAt }) {
+            switch entry.status {
+            case .pending:
+                await commit(entry.draft, thread: resolveThread(for: entry.draft), id: entry.id)
+            case .failed:
+                failed = FailedSend(id: entry.id, draft: entry.draft)
+            }
+        }
     }
 
     /// `thread` is the conversation being replied to or forwarded, when
@@ -50,12 +82,17 @@ final class OutboxService {
     func queueSend(_ draft: Draft, replyingTo thread: Correspondence?) {
         // Compose is modal, so only one send is ever mid-undo-window at a
         // time; if a second arrives anyway, the first has already had its
-        // chance to be undone and commits immediately rather than being lost.
-        if let previous = task {
-            previous.cancel()
+        // chance to be undone and commits for real right now.
+        if let previousTask = task, let previousDraft = queuedDraft, let previousID = pending?.id {
+            previousTask.cancel()
+            let previousThread = queuedThread
+            Task { await self.commit(previousDraft, thread: previousThread, id: previousID) }
         }
         let id = UUID()
+        queuedDraft = draft
+        queuedThread = thread
         pending = Pending(id: id, subjectPreview: draft.subject, secondsRemaining: Self.undoWindowSeconds)
+        Task { try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .pending)) }
         task = Task { [weak self] in
             guard let self else { return }
             for remaining in stride(from: Self.undoWindowSeconds, through: 1, by: -1) {
@@ -71,35 +108,56 @@ final class OutboxService {
     /// Cancels the pending send entirely; nothing is sent, and the draft is
     /// gone, matching what "undo send" means everywhere else.
     func undo() {
-        guard pending != nil else { return }
+        guard let currentPending = pending else { return }
         task?.cancel()
         task = nil
         pending = nil
+        queuedDraft = nil
+        queuedThread = nil
+        let id = currentPending.id
+        Task { try? await repository.removeOutboxEntry(id: id) }
     }
 
     func retryFailed() {
         guard let failed else { return }
         self.failed = nil
-        queueSend(failed.draft, replyingTo: failed.thread)
+        queueSend(failed.draft, replyingTo: resolveThread(for: failed.draft))
     }
 
     func discardFailed() {
-        failed = nil
+        guard let failed else { return }
+        self.failed = nil
+        let id = failed.id
+        Task { try? await repository.removeOutboxEntry(id: id) }
     }
 
     private func commit(_ draft: Draft, thread: Correspondence?, id: UUID) async {
-        guard pending?.id == id else { return }
-        pending = nil
+        if pending?.id == id {
+            pending = nil
+            queuedDraft = nil
+            queuedThread = nil
+        }
         var realThreadID: ThreadID?
         if shouldSendViaGmail(thread: thread), let account = auth.account?.email {
             do {
                 realThreadID = try await sendViaGmail(draft: draft, thread: thread, account: account)
             } catch {
-                failed = FailedSend(id: id, draft: draft, thread: thread)
+                failed = FailedSend(id: id, draft: draft)
+                try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .failed))
                 return
             }
         }
         await store.send(draft, realThreadID: realThreadID)
+        try? await repository.removeOutboxEntry(id: id)
+    }
+
+    /// Re-derives the source thread from a persisted draft's `threadID`
+    /// (the durable outbox only stores the `Draft`, not a `Correspondence`
+    /// snapshot, since the thread it refers to is already the repository's
+    /// own source of truth and could otherwise drift out of date between
+    /// when it was queued and when it's resumed).
+    private func resolveThread(for draft: Draft) -> Correspondence? {
+        draft.threadID.flatMap { id in store.threads.first { $0.id == id } }
     }
 
     /// A reply/forward to a real (non-sample) thread always sends via Gmail
