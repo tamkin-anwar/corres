@@ -26,6 +26,13 @@ public protocol MailRepository: Sendable {
     /// called automatically. The local-data equivalent of sign-out purge until
     /// real accounts exist to scope a purge to.
     func resetToSampleData(now: Date) async throws
+    /// Removes every fictional sample thread (account == "sample") and
+    /// nothing else, real synced mail included. Called once a Gmail account
+    /// actually connects (ADR 004's "real per-account purge... until real
+    /// accounts exist," now that one does): the demo content served its
+    /// purpose before that and has no business still mixing into Brief/Needs
+    /// You/Waiting counts and copy alongside a person's real mail.
+    func deleteSampleData() async throws
     /// Merges freshly-fetched provider data (e.g. a Gmail sync pass) into the
     /// store. A real message's content is immutable once received, so this
     /// only inserts threads not already present; an existing thread (and
@@ -129,6 +136,10 @@ public actor SampleMailRepository: MailRepository {
 
     public func resetToSampleData(now: Date) {
         items = SampleCorrespondence.make(now: now)
+    }
+
+    public func deleteSampleData() {
+        items.removeAll { $0.id.account == account }
     }
 
     @discardableResult

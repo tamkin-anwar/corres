@@ -82,6 +82,25 @@ struct SwiftDataMailRepositoryTests {
         #expect(afterReset.first { $0.id == target.id }?.attention == target.attention)
     }
 
+    @Test func deleteSampleDataRemovesOnlySampleThreadsRealMailUntouched() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        try await repository.seedIfNeeded(now: now)
+        let sampleCountBefore = try await repository.threads().count
+        #expect(sampleCountBefore > 0)
+        let realThread = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "real-1"),
+            sender: "Real Sender", senderEmail: "real@example.com", organization: "Example", subject: "Real mail",
+            excerpt: "hi", body: "hi", receivedAt: now, dueAt: nil, reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([realThread], isInitialSync: true)
+
+        try await repository.deleteSampleData()
+
+        let afterward = try await repository.threads()
+        #expect(!afterward.contains { $0.id.account == "sample" })
+        #expect(afterward.contains { $0.id == realThread.id })
+        #expect(afterward.count == 1)
+    }
+
     @Test func upsertInsertsOnlyPreviouslyUnseenThreadsAndNeverTouchesExisting() async throws {
         let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
         try await repository.seedIfNeeded(now: now)

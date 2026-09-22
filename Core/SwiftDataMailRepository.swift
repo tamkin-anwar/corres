@@ -64,6 +64,15 @@ public actor SwiftDataMailRepository: MailRepository {
         try modelContext.save()
     }
 
+    public func deleteSampleData() throws {
+        let account = Self.localAccount
+        let descriptor = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.account == account })
+        let matches = try modelContext.fetch(descriptor)
+        guard !matches.isEmpty else { return }
+        for model in matches { modelContext.delete(model) }
+        try modelContext.save()
+    }
+
     @discardableResult
     public func upsert(_ incoming: [Correspondence], isInitialSync: Bool) throws -> Int {
         // A real message's content never changes after it's received, so only

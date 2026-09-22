@@ -29,6 +29,7 @@ struct PreferencesView: View {
                                 if await sync.syncIfConnected(account: auth.account?.email) {
                                     await store.load()
                                 }
+                                await store.deleteSampleDataIfPresent()
                             }
                         } label: {
                             if auth.isSigningIn || sync.isSyncing {
@@ -91,8 +92,8 @@ struct PreferencesView: View {
                     Button("Cancel", role: .cancel) {}
                 }
                 Section("The next chapter") {
-                    Text("Sending, real message threading, and full-mailbox history sync (this brings in your 25 most recent inbox messages only) are not built yet. This foundation is being verified first.")
-                    Text("Future cloud intelligence will require a clear processing choice. Corres will never silently forward your correspondence to an AI service.")
+                    Text("Attachments, and a fully durable outbox with retries, are not built yet. This foundation is being verified first.")
+                    Text("Future cloud intelligence will require a clear processing choice, always disclosed and reviewed by you before anything sends. Corres will never silently forward your correspondence to an AI service.")
                 }
                 Section {
                     VStack(alignment: .leading, spacing: 8) {

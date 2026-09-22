@@ -101,7 +101,7 @@ struct ConversationView: View {
     private func messageHeader(for thread: Correspondence, isSample: Bool) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
-                CorrespondentAvatar(initials: thread.initials).frame(width: 34, height: 34)
+                CorrespondentAvatar(initials: thread.initials, size: CGSize(width: 34, height: 34))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(thread.sender).font(.subheadline.weight(.semibold))
                     Text(thread.organization).font(.caption).foregroundStyle(CorresPalette.secondary)

@@ -54,6 +54,14 @@ struct CorresApp: App {
                     if await sync.syncIfConnected(account: auth.account?.email) {
                         await store.load()
                     }
+                    // Covers relaunching already connected (the connect
+                    // button in Preferences handles the first-connection
+                    // case itself): sample threads from before that
+                    // connection existed have no reason to still be mixed
+                    // into real mail.
+                    if auth.account != nil {
+                        await store.deleteSampleDataIfPresent()
+                    }
                     await outbox.resumeAfterRelaunch()
                 }
                 .onOpenURL { GIDSignIn.sharedInstance.handle($0) }

@@ -30,18 +30,25 @@ struct HTMLMessageBody: UIViewRepresentable {
 
     func updateUIView(_ webView: WKWebView, context: Context) {
         context.coordinator.parent = self
+        // Checked against the raw inputs, not the processed/wrapped output:
+        // SwiftUI re-invokes updateUIView on any state change anywhere this
+        // view observes (e.g. an unrelated background sync mutating
+        // store.threads), not only when html/blockRemoteImages actually
+        // changed. Guarding here first, before ever touching
+        // blockingRemoteImages's regex work, means an unrelated re-render
+        // costs nothing instead of re-running a full-body regex scan.
+        guard context.coordinator.lastHTML != html || context.coordinator.lastBlockRemoteImages != blockRemoteImages else { return }
+        context.coordinator.lastHTML = html
+        context.coordinator.lastBlockRemoteImages = blockRemoteImages
         let processed = blockRemoteImages ? Self.blockingRemoteImages(in: html) : html
-        if context.coordinator.lastLoadedHTML != processed {
-            context.coordinator.lastLoadedHTML = processed
-            // baseURL: nil is a well-documented real-device bug (fine in
-            // Simulator): without an origin, WKWebView does not establish a
-            // proper security/cookie context, and absolute https:// image
-            // fetches can silently fail. This domain is never actually
-            // resolved (nothing is loaded from it; the page content comes
-            // entirely from loadHTMLString), it exists only to give the page
-            // a real https origin.
-            webView.loadHTMLString(Self.wrap(processed), baseURL: Self.placeholderBaseURL)
-        }
+        // baseURL: nil is a well-documented real-device bug (fine in
+        // Simulator): without an origin, WKWebView does not establish a
+        // proper security/cookie context, and absolute https:// image
+        // fetches can silently fail. This domain is never actually
+        // resolved (nothing is loaded from it; the page content comes
+        // entirely from loadHTMLString), it exists only to give the page
+        // a real https origin.
+        webView.loadHTMLString(Self.wrap(processed), baseURL: Self.placeholderBaseURL)
     }
 
     private static let placeholderBaseURL = URL(string: "https://mail.corres.app/")
@@ -50,7 +57,7 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// caller can show a "N images blocked" banner without needing its own
     /// WKWebView instance to find out.
     static func remoteImageCount(in html: String) -> Int {
-        guard let regex = try? NSRegularExpression(pattern: remoteImgSrcPattern, options: [.caseInsensitive]) else { return 0 }
+        guard let regex = remoteImgSrcRegex else { return 0 }
         return regex.numberOfMatches(in: html, range: NSRange(html.startIndex..., in: html))
     }
 
@@ -61,13 +68,18 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// tracking pixels, at a fraction of the false-positive risk of rewriting
     /// arbitrary inline styles.
     private static func blockingRemoteImages(in html: String) -> String {
-        guard let regex = try? NSRegularExpression(pattern: remoteImgSrcPattern, options: [.caseInsensitive]) else { return html }
+        guard let regex = remoteImgSrcRegex else { return html }
         let range = NSRange(html.startIndex..., in: html)
         return regex.stringByReplacingMatches(in: html, options: [], range: range,
                                                withTemplate: "$1$2\(transparentPixelDataURI)$2")
     }
 
-    private static let remoteImgSrcPattern = #"(<img\b[^>]*\bsrc\s*=\s*)(["'])https?://[^"']*\2"#
+    /// Compiled once, not per call: NSRegularExpression pattern compilation
+    /// is real, non-trivial work, and both call sites above could otherwise
+    /// run it on every SwiftUI re-render (`remoteImageCount` is called
+    /// directly from ConversationView's body).
+    private static let remoteImgSrcRegex = try? NSRegularExpression(
+        pattern: #"(<img\b[^>]*\bsrc\s*=\s*)(["'])https?://[^"']*\2"#, options: [.caseInsensitive])
     private static let transparentPixelDataURI = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -103,7 +115,8 @@ struct HTMLMessageBody: UIViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate {
         var parent: HTMLMessageBody
-        var lastLoadedHTML: String?
+        var lastHTML: String?
+        var lastBlockRemoteImages: Bool?
         init(_ parent: HTMLMessageBody) { self.parent = parent }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

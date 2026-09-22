@@ -84,7 +84,7 @@ struct CorrespondenceList: View {
             SculptedBadge(glyph: destination.glyph).padding(.bottom, 8)
             Text(destination.rawValue).font(CorresType.display)
             Text(subtitle).foregroundStyle(CorresPalette.secondary)
-            Text("\(results.count) conversations · Sample mail")
+            Text("\(results.count) conversations" + (auth?.account == nil ? " · Sample mail" : ""))
                 .font(CorresType.label).foregroundStyle(CorresPalette.secondary)
         }
         .padding(.horizontal, CorresSpace.page).padding(.top, CorresSpace.page).padding(.bottom, CorresSpace.medium)

@@ -36,6 +36,21 @@ final class MailStore {
         }
     }
 
+    /// Once a real Gmail account is connected, the fictional sample threads
+    /// have no reason to keep sitting alongside real mail, mixed into the
+    /// same Brief/Needs You/Waiting counts and rows: they existed only to
+    /// give a pre-connection preview. Safe to call unconditionally; a no-op
+    /// once no sample threads remain.
+    func deleteSampleDataIfPresent() async {
+        guard threads.contains(where: { $0.id.account == "sample" }) else { return }
+        do {
+            try await repository.deleteSampleData()
+            threads = try await repository.threads()
+        } catch {
+            errorMessage = "Could not remove sample data. Please try again."
+        }
+    }
+
     func update(_ id: ThreadID, to attention: Attention) async {
         await mutate(id) { try await self.repository.setAttention(attention, for: id) }
     }

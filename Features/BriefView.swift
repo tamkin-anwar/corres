@@ -14,6 +14,7 @@ struct BriefView: View {
     private var snapshot: BriefSnapshot { BriefSnapshot(threads: store.threads, now: .now) }
     private var priorities: [Correspondence] { MailQuery.filter(store.threads, attention: .needsYou) }
     private var pendingSenderCount: Int { Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count }
+    private var isConnected: Bool { auth?.account != nil }
 
     var body: some View {
         if scrolls {
@@ -32,9 +33,11 @@ struct BriefView: View {
                 HStack {
                     Text(Date.now, format: .dateTime.weekday(.wide).month(.abbreviated).day())
                     Spacer(minLength: 8)
-                    Text("SAMPLE").tracking(1.5)
-                        .padding(.horizontal, 8).padding(.vertical, 4)
-                        .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.75))
+                    if !isConnected {
+                        Text("SAMPLE").tracking(1.5)
+                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.75))
+                    }
                 }
                 .font(CorresType.label).foregroundStyle(CorresPalette.secondary)
                 Text("A little clarity.").font(CorresType.display)
@@ -72,7 +75,9 @@ struct BriefView: View {
                 Image(systemName: "lock.shield").font(.title3).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Private by intention.").font(.subheadline.weight(.medium))
-                    Text("Fictional mail. No account connected.").font(.footnote)
+                    Text(isConnected ? "Your Gmail account, synced to this device only."
+                                     : "Fictional mail. No account connected.")
+                        .font(.footnote)
                 }
             }
             .foregroundStyle(CorresPalette.secondary).padding(.horizontal, 6)

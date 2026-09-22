@@ -51,16 +51,25 @@ struct SculptedBadge: View {
 
 struct CorrespondentAvatar: View {
     let initials: String
+    /// Drives the view's own internal frame and corner radius; a caller
+    /// wanting a smaller avatar must pass a smaller `size`, not wrap the
+    /// default-sized view in an external `.frame()`. SwiftUI's `.frame()`
+    /// only changes the layout box a view is given, it never rescales a
+    /// view's own already-fixed internal content to fit a smaller one, so
+    /// an external override on the default 44x48 size would just overflow
+    /// and clip against the smaller declared box instead of shrinking.
+    var size = CGSize(width: 44, height: 48)
+
     var body: some View {
         Text(initials)
             .font(.system(.subheadline, design: .serif).weight(.medium))
             .foregroundStyle(CorresPalette.accent)
-            .frame(width: 44, height: 48)
+            .frame(width: size.width, height: size.height)
             .background {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: size.width * 0.36, style: .continuous)
                     .fill(CorresPalette.surface.gradient
                         .shadow(.inner(color: CorresPalette.accent.opacity(0.1), radius: 4, y: -3)))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(CorresPalette.line, lineWidth: 0.75))
+                    .overlay(RoundedRectangle(cornerRadius: size.width * 0.36).strokeBorder(CorresPalette.line, lineWidth: 0.75))
             }
             // Rendered once per visible list row; rasterize the inner-shadow
             // fill so scrolling doesn't recompute it per frame.

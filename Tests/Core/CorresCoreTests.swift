@@ -175,6 +175,24 @@ struct CorresCoreTests {
         #expect(afterward.contains { $0.id == brandNew.id })
     }
 
+    @Test func deleteSampleDataRemovesOnlySampleThreadsRealMailUntouched() async throws {
+        let repository = SampleMailRepository(now: now)
+        let sampleCountBefore = await repository.threads().count
+        #expect(sampleCountBefore > 0)
+        let realThread = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "real-1"),
+            sender: "Real Sender", senderEmail: "real@example.com", organization: "Example", subject: "Real mail",
+            excerpt: "hi", body: "hi", receivedAt: now, dueAt: nil, reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([realThread], isInitialSync: true)
+
+        try await repository.deleteSampleData()
+
+        let afterward = try await repository.threads()
+        #expect(!afterward.contains { $0.id.account == "sample" })
+        #expect(afterward.contains { $0.id == realThread.id })
+        #expect(afterward.count == 1)
+    }
+
     @Test func initialSyncAutoApprovesEverySenderAlreadyInTheInbox() async throws {
         let repository = SampleMailRepository(items: [])
         let fromNewAccount = Correspondence(
