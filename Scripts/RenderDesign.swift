@@ -20,7 +20,7 @@ struct RenderDesign {
         for scheme in [ColorScheme.light, .dark] {
             let name = scheme == .light ? "light" : "dark"
             NSApplication.shared.appearance = NSAppearance(named: scheme == .light ? .aqua : .darkAqua)
-            try render(BriefView(scrolls: false, store: store, selection: .constant(.brief)),
+            try render(BriefView(scrolls: false, store: store, selection: .constant(.brief), showingScreener: .constant(false)),
                        scheme: scheme, width: 393, height: 1550,
                        to: output.appendingPathComponent("brief-\(name).png"))
             try render(WelcomeView(scrolls: false, onExplore: {}), scheme: scheme, width: 393, height: 1100,
@@ -35,7 +35,7 @@ struct RenderDesign {
         try render(CorrespondenceSculpture(exportQuality: true).padding(180).background(InkMaterial(radius: 0)),
                    scheme: .dark, width: 1280, height: 1280,
                    to: output.appendingPathComponent("sculpture-4k.png"))
-        try render(BriefView(scrolls: false, store: store, selection: .constant(.brief))
+        try render(BriefView(scrolls: false, store: store, selection: .constant(.brief), showingScreener: .constant(false))
             .environment(\.dynamicTypeSize, .accessibility3), scheme: .light,
                    width: 320, height: 1900, to: output.appendingPathComponent("brief-large-text.png"))
         print("Rendered eight SwiftUI component previews at 3x. These exclude iOS system chrome.")

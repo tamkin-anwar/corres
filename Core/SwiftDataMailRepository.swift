@@ -64,20 +64,51 @@ public actor SwiftDataMailRepository: MailRepository {
     }
 
     @discardableResult
-    public func upsert(_ incoming: [Correspondence]) throws -> Int {
+    public func upsert(_ incoming: [Correspondence], isInitialSync: Bool) throws -> Int {
         // A real message's content never changes after it's received, so only
         // new messages need inserting. An existing thread (and any manual
         // attention/pin/snooze on it) is left completely untouched.
-        let existing = try Set(modelContext.fetch(FetchDescriptor<PersistedCorrespondence>()).map(\.compositeID))
+        let existingModels = try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>())
+        let existingIDs = Set(existingModels.map(\.compositeID))
+        var knownSenderDecisions = Self.senderDecisions(in: existingModels)
         var inserted = 0
-        for item in incoming {
+        for var item in incoming {
             let compositeID = PersistedCorrespondence.compositeID(account: item.id.account, providerID: item.id.providerID)
-            guard !existing.contains(compositeID) else { continue }
+            guard !existingIDs.contains(compositeID) else { continue }
+            if let senderEmail = item.senderEmail {
+                let key = Self.senderKey(account: item.id.account, senderEmail: senderEmail)
+                if let known = knownSenderDecisions[key] {
+                    item.senderDecision = known
+                } else {
+                    item.senderDecision = isInitialSync ? .approved : .pending
+                    knownSenderDecisions[key] = item.senderDecision
+                }
+            }
             modelContext.insert(PersistedCorrespondence(from: item))
             inserted += 1
         }
         if inserted > 0 { try modelContext.save() }
         return inserted
+    }
+
+    public func setSenderDecision(_ decision: SenderDecision, forSenderEmail senderEmail: String, account: String) throws {
+        let descriptor = FetchDescriptor<PersistedCorrespondence>(
+            predicate: #Predicate { $0.account == account && $0.senderEmail == senderEmail })
+        let matches = try modelContext.fetch(descriptor)
+        guard !matches.isEmpty else { return }
+        for model in matches { model.senderDecisionRaw = decision.rawValue }
+        try modelContext.save()
+    }
+
+    private static func senderKey(account: String, senderEmail: String) -> String { "\(account)|\(senderEmail)" }
+
+    private static func senderDecisions(in models: [PersistedCorrespondence]) -> [String: SenderDecision] {
+        var map: [String: SenderDecision] = [:]
+        for model in models {
+            guard let senderEmail = model.senderEmail else { continue }
+            map[senderKey(account: model.account, senderEmail: senderEmail)] = SenderDecision(rawValue: model.senderDecisionRaw) ?? .approved
+        }
+        return map
     }
 
     private func insertSampleData(now: Date) {

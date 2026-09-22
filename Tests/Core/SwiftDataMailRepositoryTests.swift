@@ -99,7 +99,7 @@ struct SwiftDataMailRepositoryTests {
             excerpt: "hello", body: "hello", receivedAt: now, dueAt: nil,
             reason: "Unread in Gmail.", attention: .needsYou)
 
-        let insertedCount = try await repository.upsert([sameIDDifferentContent, brandNew])
+        let insertedCount = try await repository.upsert([sameIDDifferentContent, brandNew], isInitialSync: false)
         #expect(insertedCount == 1)
 
         let afterward = try await repository.threads()

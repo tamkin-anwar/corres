@@ -23,8 +23,22 @@ public protocol MailRepository: Sendable {
     /// only inserts threads not already present; an existing thread (and
     /// any manual attention/pin/snooze on it) is never touched, let alone
     /// silently rewritten (ADR 002). Returns the number of threads inserted.
+    ///
+    /// `isInitialSync` is the Screener's baseline (ADR 005/006): true for a
+    /// full-listing sync (an account's first ever sync, or any resync after
+    /// a stored history cursor expired), meaning every sender already in the
+    /// inbox is auto-approved rather than quarantined; false for an ordinary
+    /// incremental sync, where a sender never seen before gets held as
+    /// `.pending` until reviewed. A sender already known from an earlier
+    /// insert keeps whatever decision they already have either way.
     @discardableResult
-    func upsert(_ incoming: [Correspondence]) async throws -> Int
+    func upsert(_ incoming: [Correspondence], isInitialSync: Bool) async throws -> Int
+
+    /// Applies `decision` to every thread from `senderEmail` on `account`,
+    /// approving or blocking them all at once (HEY's Screener is a one-time,
+    /// per-sender decision, not per-message). Silent no-op if no thread from
+    /// that sender exists yet.
+    func setSenderDecision(_ decision: SenderDecision, forSenderEmail senderEmail: String, account: String) async throws
 }
 
 public enum RepositoryError: Error, Equatable { case threadNotFound }
@@ -87,13 +101,43 @@ public actor SampleMailRepository: MailRepository {
     }
 
     @discardableResult
-    public func upsert(_ incoming: [Correspondence]) -> Int {
+    public func upsert(_ incoming: [Correspondence], isInitialSync: Bool) -> Int {
         // A real message's content never changes after it's received, so only
         // new messages need inserting. An existing thread (and any manual
         // attention/pin/snooze on it) is left completely untouched.
         let existingIDs = Set(items.map(\.id))
-        let newItems = incoming.filter { !existingIDs.contains($0.id) }
+        var knownSenderDecisions = Self.senderDecisions(in: items)
+        var newItems: [Correspondence] = []
+        for var item in incoming where !existingIDs.contains(item.id) {
+            if let senderEmail = item.senderEmail {
+                let key = Self.senderKey(account: item.id.account, senderEmail: senderEmail)
+                if let known = knownSenderDecisions[key] {
+                    item.senderDecision = known
+                } else {
+                    item.senderDecision = isInitialSync ? .approved : .pending
+                    knownSenderDecisions[key] = item.senderDecision
+                }
+            }
+            newItems.append(item)
+        }
         items.append(contentsOf: newItems)
         return newItems.count
+    }
+
+    public func setSenderDecision(_ decision: SenderDecision, forSenderEmail senderEmail: String, account: String) {
+        for index in items.indices where items[index].id.account == account && items[index].senderEmail == senderEmail {
+            items[index].senderDecision = decision
+        }
+    }
+
+    private static func senderKey(account: String, senderEmail: String) -> String { "\(account)|\(senderEmail)" }
+
+    private static func senderDecisions(in items: [Correspondence]) -> [String: SenderDecision] {
+        var map: [String: SenderDecision] = [:]
+        for item in items {
+            guard let senderEmail = item.senderEmail else { continue }
+            map[senderKey(account: item.id.account, senderEmail: senderEmail)] = item.senderDecision
+        }
+        return map
     }
 }

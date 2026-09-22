@@ -24,6 +24,21 @@ public enum Attention: String, Codable, CaseIterable, Sendable {
     }
 }
 
+/// The Screener: a sender earns entry once, the same instinct already
+/// applied to remote images (blocked by default, revealed on request),
+/// generalized to who reaches a person's attention at all. `pending` means
+/// this sender has never been decided on and their mail is held out of
+/// Brief/Needs You/Waiting/Mail until reviewed (still findable via explicit
+/// search, matching how a snoozed thread stays findable; see MailQuery).
+/// `approved` is the default for sample/local threads (no real sender to
+/// screen) and, per ADR 005/HEY's own model, for every sender already in an
+/// account's inbox the first time it syncs: only a genuinely new sender
+/// arriving after that baseline gets screened, so connecting Gmail never
+/// quarantines an entire existing mailbox on day one.
+public enum SenderDecision: String, Codable, Sendable {
+    case pending, approved, blocked
+}
+
 public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     public let id: ThreadID
     public let sender: String
@@ -55,11 +70,12 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     public var isPinned: Bool
     /// A deliberate deferral, not a due date. Hidden from active views until it passes.
     public var snoozedUntil: Date?
+    public var senderDecision: SenderDecision
 
     public init(id: ThreadID, sender: String, senderEmail: String? = nil, organization: String, subject: String,
                 excerpt: String, body: String, htmlBody: String? = nil, messageIdHeader: String? = nil,
                 receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
-                isPinned: Bool = false, snoozedUntil: Date? = nil) {
+                isPinned: Bool = false, snoozedUntil: Date? = nil, senderDecision: SenderDecision = .approved) {
         self.id = id
         self.sender = sender
         self.senderEmail = senderEmail
@@ -75,6 +91,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.attention = attention
         self.isPinned = isPinned
         self.snoozedUntil = snoozedUntil
+        self.senderDecision = senderDecision
     }
 
     public var initials: String {
@@ -139,8 +156,13 @@ public enum MailQuery {
         // never from an explicit search: a snoozed thread is still real mail
         // and must stay findable.
         let hideSnoozed = attention != nil && query.isEmpty
+        // Same rule as snooze: held out of ordinary browsing, but still
+        // findable if the person explicitly searches for it, never truly
+        // hidden or deleted.
+        let hideUnscreened = query.isEmpty
         return threads.filter { item in
             (!hideSnoozed || !item.isSnoozed(at: now)) &&
+            (!hideUnscreened || item.senderDecision == .approved) &&
             (attention == nil || item.attention == attention) &&
             (query.isEmpty || [item.sender, item.organization, item.subject, item.excerpt]
                 .contains { $0.localizedStandardContains(query) })

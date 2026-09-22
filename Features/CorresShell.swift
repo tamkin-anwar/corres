@@ -7,6 +7,7 @@ struct CorresShell: View {
     @Bindable var outbox: OutboxService
     @State private var selection = Destination.brief
     @State private var showingSettings = false
+    @State private var showingScreener = false
     @State private var showingWelcome = false
     @State private var composeDraft: Draft?
     @AppStorage("corres.hasExplored") private var hasExplored = false
@@ -37,6 +38,7 @@ struct CorresShell: View {
             if store.state == .idle { await store.load() }
         }
         .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync) }
+        .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
         .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, draft: draft, sourceThread: nil) }
         .fullScreenCover(isPresented: $showingWelcome) {
             WelcomeView {
@@ -95,7 +97,7 @@ struct CorresShell: View {
             }
         case .loaded:
             if destination == .brief {
-                BriefView(store: store, sync: sync, auth: auth, selection: $selection)
+                BriefView(store: store, sync: sync, auth: auth, selection: $selection, showingScreener: $showingScreener)
             } else {
                 CorrespondenceList(store: store, sync: sync, auth: auth, destination: destination)
             }

@@ -48,6 +48,28 @@ final class MailStore {
         await mutate(id) { try await self.repository.snooze(id, until: until) }
     }
 
+    /// Every thread currently held by the Screener, awaiting a one-time
+    /// approve/block decision on its sender. Excluded from Brief/Needs You/
+    /// Waiting/Mail by `MailQuery.filter` until decided.
+    var pendingSenderThreads: [Correspondence] { threads.filter { $0.senderDecision == .pending } }
+
+    func approveSender(_ senderEmail: String, account: String) async {
+        await setSenderDecision(.approved, senderEmail: senderEmail, account: account)
+    }
+
+    func blockSender(_ senderEmail: String, account: String) async {
+        await setSenderDecision(.blocked, senderEmail: senderEmail, account: account)
+    }
+
+    private func setSenderDecision(_ decision: SenderDecision, senderEmail: String, account: String) async {
+        do {
+            try await repository.setSenderDecision(decision, forSenderEmail: senderEmail, account: account)
+            threads = try await repository.threads()
+        } catch {
+            errorMessage = "Could not update this sender. Please try again."
+        }
+    }
+
     /// Returns whether the send succeeded, so the compose sheet knows whether
     /// it is safe to dismiss. A failure never discards the draft.
     @discardableResult

@@ -8,10 +8,12 @@ struct BriefView: View {
     var sync: GmailSyncService?
     var auth: GoogleAuthService?
     @Binding var selection: Destination
+    @Binding var showingScreener: Bool
     @Environment(\.dynamicTypeSize) private var typeSize
 
     private var snapshot: BriefSnapshot { BriefSnapshot(threads: store.threads, now: .now) }
     private var priorities: [Correspondence] { MailQuery.filter(store.threads, attention: .needsYou) }
+    private var pendingSenderCount: Int { Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count }
 
     var body: some View {
         if scrolls {
@@ -39,6 +41,7 @@ struct BriefView: View {
                 Text("Your day, thoughtfully considered.")
                     .foregroundStyle(CorresPalette.secondary)
             }
+            if pendingSenderCount > 0 { newSendersCard }
             briefCard
             attentionCards
             HStack(alignment: .firstTextBaseline) {
@@ -78,6 +81,24 @@ struct BriefView: View {
                 .frame(maxWidth: .infinity).padding(.vertical, 8)
         }
         .padding(CorresSpace.page).frame(maxWidth: 680).frame(maxWidth: .infinity)
+    }
+
+    private var newSendersCard: some View {
+        Button { showingScreener = true } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "shield").font(.title3).foregroundStyle(CorresPalette.accent)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(pendingSenderCount == 1 ? "1 new sender" : "\(pendingSenderCount) new senders")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Held out of Mail until you decide").font(.caption).foregroundStyle(CorresPalette.secondary)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.secondary)
+            }
+            .padding(18).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
+        }
+        .buttonStyle(CorresRowButtonStyle())
+        .accessibilityLabel("\(pendingSenderCount) new senders, held out of Mail until you decide")
     }
 
     private var briefCard: some View {

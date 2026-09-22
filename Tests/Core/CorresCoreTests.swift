@@ -155,7 +155,7 @@ struct CorresCoreTests {
             excerpt: "hello", body: "hello", receivedAt: now, dueAt: nil,
             reason: "Unread in Gmail.", attention: .needsYou)
 
-        let insertedCount = try await repository.upsert([sameIDDifferentContent, brandNew])
+        let insertedCount = try await repository.upsert([sameIDDifferentContent, brandNew], isInitialSync: false)
         #expect(insertedCount == 1)
 
         let afterward = try await repository.threads()
@@ -164,5 +164,59 @@ struct CorresCoreTests {
         #expect(unchanged.isPinned == true)
         #expect(unchanged.subject == existing.subject) // content untouched, not overwritten
         #expect(afterward.contains { $0.id == brandNew.id })
+    }
+
+    @Test func initialSyncAutoApprovesEverySenderAlreadyInTheInbox() async throws {
+        let repository = SampleMailRepository(items: [])
+        let fromNewAccount = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "1"), sender: "Jane Doe", senderEmail: "jane@example.com",
+            organization: "Example", subject: "Hello", excerpt: "hi", body: "hi", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([fromNewAccount], isInitialSync: true)
+        let threads = try await repository.threads()
+        #expect(threads.first?.senderDecision == .approved)
+        // A sender established at the first sync is never quarantined: their
+        // mail must show up in ordinary (non-search) browsing immediately.
+        #expect(MailQuery.filter(threads, now: now).contains { $0.id == fromNewAccount.id })
+    }
+
+    @Test func incrementalSyncHoldsAGenuinelyNewSenderForScreeningButKeepsItSearchable() async throws {
+        let repository = SampleMailRepository(items: [])
+        let fromUnknownSender = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "2"), sender: "New Person", senderEmail: "newperson@example.com",
+            organization: "Example", subject: "First contact", excerpt: "hi", body: "hi", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([fromUnknownSender], isInitialSync: false)
+        let threads = try await repository.threads()
+        #expect(threads.first?.senderDecision == .pending)
+        #expect(!MailQuery.filter(threads, now: now).contains { $0.id == fromUnknownSender.id })
+        #expect(!MailQuery.filter(threads, attention: .needsYou, now: now).contains { $0.id == fromUnknownSender.id })
+        // Held from ordinary browsing, same as HEY's Screener, but never
+        // truly hidden: an explicit search still finds it, matching the
+        // existing snooze precedent.
+        #expect(MailQuery.filter(threads, search: "First contact", now: now).contains { $0.id == fromUnknownSender.id })
+    }
+
+    @Test func approvingOrBlockingASenderAppliesToEveryThreadFromThemAtOnce() async throws {
+        let repository = SampleMailRepository(items: [])
+        let first = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "3"), sender: "New Person", senderEmail: "newperson@example.com",
+            organization: "Example", subject: "First", excerpt: "hi", body: "hi", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        let second = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "4"), sender: "New Person", senderEmail: "newperson@example.com",
+            organization: "Example", subject: "Second", excerpt: "hi", body: "hi", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([first, second], isInitialSync: false)
+
+        try await repository.setSenderDecision(.approved, forSenderEmail: "newperson@example.com", account: "gmail:me@example.com")
+        let approved = try await repository.threads()
+        #expect(approved.allSatisfy { $0.senderDecision == .approved })
+        #expect(MailQuery.filter(approved, now: now).count == 2)
+
+        try await repository.setSenderDecision(.blocked, forSenderEmail: "newperson@example.com", account: "gmail:me@example.com")
+        let blocked = try await repository.threads()
+        #expect(blocked.allSatisfy { $0.senderDecision == .blocked })
+        #expect(MailQuery.filter(blocked, now: now).isEmpty)
     }
 }

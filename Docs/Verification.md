@@ -2,6 +2,17 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 8: the Screener (September 21, 2026)
+
+- New `SenderDecision` (`pending`/`approved`/`blocked`) stamped on `Correspondence` at insert time in `MailRepository.upsert`, sourced from any existing thread of that sender rather than a separate registry, and persisted through SwiftData (`PersistedCorrespondence.senderDecisionRaw`). Domain-tested (3 new tests, `CorresCoreTests.swift`, `SampleMailRepository`): an initial-sync insert auto-approves and is immediately visible in ordinary browsing; an incremental-sync insert from a never-seen sender is held `.pending`, excluded from ordinary browsing, but still found by an explicit search; approving or blocking cascades to every thread from that sender at once. All 24 domain tests pass (21 prior + 3 new).
+- `GmailSyncService.fetch` now reports whether a sync used a full listing (first-ever sync, or any resync forced by an expired history cursor) versus an ordinary incremental one, and passes that through as `isInitialSync` to `upsert`, so reconnecting after a cursor expiry never re-quarantines an already-known sender.
+- `ScreenerView` (new): groups pending threads by sender, one row per sender with Approve/Block, footer copy explaining the mechanic and that neither action touches the real Gmail account. `BriefView` gained a "New Senders" entry card, shown only when at least one sender is pending, matching Spark's placement of the same concept at the top of the inbox.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and `swift test` (24/24 passed). Not yet verified: on-device confirmation that a real second, genuinely-new sender actually lands in the Screener after the account's baseline sync (needs a live test message from an address never emailed before, not yet attempted).
+
+## Batch 7: real research grounding the product thesis (September 21, 2026)
+
+Not a code change: revised `Docs/Product.md`'s Positioning section after researching what actually made Superhuman, HEY, and Shortwave category leaders (their own documentation and 2026 reviews, not assumption), into three named pillars (evidence over inference, recipient-controlled not sender-controlled, funded by the person not their data) and an explicit AI stance (Shortwave's draft/review boundary, not Superhuman's unsupervised-autonomy one). See `Docs/Product.md` for the full revision and sourcing; ADR 007 (Screener) and the AI-drafted-reply feature both trace directly back to this.
+
 ## Batch 6: conversation reading redesign, grounded in Mail/Spark (September 21, 2026)
 
 Prompted by a direct on-device comparison against iOS Mail (screenshots of the same real HTML email open in both apps): the conversation screen was rebuilt against Mail's structure specifically, not redesigned from guesswork.

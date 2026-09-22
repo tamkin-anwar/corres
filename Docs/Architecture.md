@@ -56,6 +56,14 @@ Remote image blocking (2026-09-21): every `<img src="http(s)://...">` is rewritt
 
 Use semantic text styles, spoken control labels, minimum 44-point actions, a solid-surface fallback, and no color-only state. Custom navigation paths are decorative alongside native labels. Press motion respects [Reduce Motion](https://developer.apple.com/documentation/swiftui/environmentvalues/accessibilityreducemotion). Real VoiceOver and large-text inspection are release gates, not claims inferred from compilation.
 
+## ADR 007: The Screener
+
+Accepted (2026-09-21), grounded in HEY's own documented Screener mechanics: a sender earns entry once, not per message. `Correspondence.senderDecision` (`pending`/`approved`/`blocked`, Core) is stamped at insert time in `MailRepository.upsert`, not tracked in a separate registry, so there is exactly one source of truth per thread and nothing to keep in sync: a sender's decision comes from whatever's already persisted for any of their earlier threads, defaulting to `.approved` when `isInitialSync` is true (an account's first sync, or any resync forced by an expired history cursor, both cases where every sender present is an established relationship, not a new arrival) and to `.pending` otherwise. `MailStore.approveSender`/`blockSender` call `MailRepository.setSenderDecision`, which cascades to every existing thread from that sender at once, matching the one-decision-per-sender model, not a per-thread toggle.
+
+`MailQuery.filter` excludes `pending`/`blocked` threads from ordinary browsing (Brief, Needs You, Waiting, Mail) the same way it already excludes a snoozed thread, and for the same reason: still real mail, still recoverable, just not surfacing by default. An explicit search finds it regardless, mirroring the existing snooze precedent exactly rather than inventing a second rule. `ScreenerView` groups a person's `pending` threads by sender (one row per sender, not per message) for the approve/block decision; `BriefView` surfaces a "New Senders" entry point only when at least one is waiting.
+
+Approving or blocking is entirely local to Corres; neither writes anything back to a real Gmail account (ADR 002/005), consistent with the read/reply-only scope Corres holds today.
+
 ## Planned production data flow
 
 SwiftUI features -> main-actor store -> repository -> protected local database.
