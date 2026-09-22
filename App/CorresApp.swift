@@ -44,11 +44,11 @@ struct CorresApp: App {
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
                 .task {
-                    // Fired first, before any await: pays WKWebView's real,
-                    // documented cold-start cost here, off the interaction
-                    // path, instead of on the first real tap into a message
-                    // (see HTMLMessageBody.warmUp's doc comment).
-                    HTMLMessageBody.warmUp()
+                    // Fired first, before any await: pre-creates the whole
+                    // pool of reusable WKWebView instances here, off the
+                    // interaction path, instead of paying to create one on
+                    // the first real tap into a message (see WKWebViewPool).
+                    WKWebViewPool.shared.prewarm()
                     // Loaded first and unconditionally (store.load() is a
                     // no-op if CorresShell's own load-if-idle task already
                     // beat it to it): resumeAfterRelaunch below needs

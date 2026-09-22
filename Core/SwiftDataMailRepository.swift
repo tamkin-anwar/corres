@@ -13,15 +13,18 @@ public actor SwiftDataMailRepository: MailRepository {
         try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>()).map(\.asCorrespondence)
     }
 
-    public func setAttention(_ attention: Attention, for id: ThreadID) throws {
+    @discardableResult
+    public func setAttention(_ attention: Attention, for id: ThreadID) throws -> Correspondence {
         try mutate(id) { $0.attentionRaw = attention.rawValue }
     }
 
-    public func setPinned(_ isPinned: Bool, for id: ThreadID) throws {
+    @discardableResult
+    public func setPinned(_ isPinned: Bool, for id: ThreadID) throws -> Correspondence {
         try mutate(id) { $0.isPinned = isPinned }
     }
 
-    public func snooze(_ id: ThreadID, until: Date?) throws {
+    @discardableResult
+    public func snooze(_ id: ThreadID, until: Date?) throws -> Correspondence {
         try mutate(id) { $0.snoozedUntil = until }
     }
 
@@ -150,10 +153,12 @@ public actor SwiftDataMailRepository: MailRepository {
         }
     }
 
-    private func mutate(_ id: ThreadID, _ change: (PersistedCorrespondence) -> Void) throws {
+    @discardableResult
+    private func mutate(_ id: ThreadID, _ change: (PersistedCorrespondence) -> Void) throws -> Correspondence {
         let model = try fetchOne(id)
         change(model)
         try modelContext.save()
+        return model.asCorrespondence
     }
 
     private func fetchOne(_ id: ThreadID) throws -> PersistedCorrespondence {

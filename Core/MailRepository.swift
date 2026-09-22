@@ -3,9 +3,18 @@ import Foundation
 /// Views never depend on Gmail DTOs or authentication credentials.
 public protocol MailRepository: Sendable {
     func threads() async throws -> [Correspondence]
-    func setAttention(_ attention: Attention, for id: ThreadID) async throws
-    func setPinned(_ isPinned: Bool, for id: ThreadID) async throws
-    func snooze(_ id: ThreadID, until: Date?) async throws
+    /// Each returns the single thread as it now stands, the same pattern
+    /// `send` already used: lets a caller splice just that one item into an
+    /// in-memory list instead of re-fetching every thread just to find the
+    /// one that changed (a real, measured inefficiency `MailStore.mutate`
+    /// used to have, fixed 2026-09-21 to match `send`'s already-correct
+    /// pattern; see Docs/Architecture.md's performance sweep entry).
+    @discardableResult
+    func setAttention(_ attention: Attention, for id: ThreadID) async throws -> Correspondence
+    @discardableResult
+    func setPinned(_ isPinned: Bool, for id: ThreadID) async throws -> Correspondence
+    @discardableResult
+    func snooze(_ id: ThreadID, until: Date?) async throws -> Correspondence
     /// Replying or forwarding moves the source thread to Waiting: the user has
     /// acted and is now the one expecting a response. A new draft opens a thread
     /// in the same state, since nothing has come back yet either way.
@@ -90,15 +99,18 @@ public actor SampleMailRepository: MailRepository {
         outbox.removeAll { $0.id == id }
     }
 
-    public func setAttention(_ attention: Attention, for id: ThreadID) throws {
+    @discardableResult
+    public func setAttention(_ attention: Attention, for id: ThreadID) throws -> Correspondence {
         try mutate(id) { $0.attention = attention }
     }
 
-    public func setPinned(_ isPinned: Bool, for id: ThreadID) throws {
+    @discardableResult
+    public func setPinned(_ isPinned: Bool, for id: ThreadID) throws -> Correspondence {
         try mutate(id) { $0.isPinned = isPinned }
     }
 
-    public func snooze(_ id: ThreadID, until: Date?) throws {
+    @discardableResult
+    public func snooze(_ id: ThreadID, until: Date?) throws -> Correspondence {
         try mutate(id) { $0.snoozedUntil = until }
     }
 
@@ -125,11 +137,13 @@ public actor SampleMailRepository: MailRepository {
         return items[index]
     }
 
-    private func mutate(_ id: ThreadID, _ change: (inout Correspondence) -> Void) throws {
+    @discardableResult
+    private func mutate(_ id: ThreadID, _ change: (inout Correspondence) -> Void) throws -> Correspondence {
         guard let index = items.firstIndex(where: { $0.id == id }) else {
             throw RepositoryError.threadNotFound
         }
         change(&items[index])
+        return items[index]
     }
 
     public func seedIfNeeded(now: Date) {}

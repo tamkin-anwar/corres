@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WebKit
 
 /// Renders a message's real HTML body. JavaScript is always disabled: mail
@@ -17,15 +18,16 @@ struct HTMLMessageBody: UIViewRepresentable {
     var blockRemoteImages = true
 
     func makeUIView(context: Context) -> WKWebView {
-        let configuration = WKWebViewConfiguration()
-        configuration.defaultWebpagePreferences.allowsContentJavaScript = false
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let webView = WKWebViewPool.shared.dequeue()
         webView.navigationDelegate = context.coordinator
-        webView.scrollView.isScrollEnabled = false
-        webView.isOpaque = false
-        webView.backgroundColor = .clear
-        webView.scrollView.backgroundColor = .clear
         return webView
+    }
+
+    /// Returns the instance to the shared pool instead of letting it
+    /// deallocate, so the next conversation opened borrows an already-live
+    /// webview rather than paying to create a new one (see WKWebViewPool).
+    static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
+        WKWebViewPool.shared.enqueue(webView)
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
@@ -41,6 +43,10 @@ struct HTMLMessageBody: UIViewRepresentable {
         context.coordinator.lastHTML = html
         context.coordinator.lastBlockRemoteImages = blockRemoteImages
         let processed = blockRemoteImages ? Self.blockingRemoteImages(in: html) : html
+        // Hidden until didFinish: a pooled instance still shows whatever it
+        // was last displaying until the new load actually finishes, and
+        // revealing immediately would flash that stale content for a frame.
+        webView.alpha = 0
         // baseURL: nil is a well-documented real-device bug (fine in
         // Simulator): without an origin, WKWebView does not establish a
         // proper security/cookie context, and absolute https:// image
@@ -113,25 +119,6 @@ struct HTMLMessageBody: UIViewRepresentable {
         """
     }
 
-    /// WKWebView's first real use in a process pays a measurable, documented
-    /// cold-start cost (spinning up its out-of-process WebContent engine),
-    /// separate from anything about loading a specific page; every
-    /// conversation creates its own fresh WKWebView (`makeUIView`), so
-    /// without this every single tap into an HTML message pays that cost
-    /// again. Creating one throwaway instance here, off the interaction
-    /// path (called once from CorresApp's launch task), pays it once at
-    /// launch instead of on the first real tap into a message.
-    @MainActor
-    static func warmUp() {
-        guard warmupWebView == nil else { return }
-        let webView = WKWebView(frame: .zero)
-        webView.loadHTMLString("<html></html>", baseURL: nil)
-        warmupWebView = webView
-    }
-
-    @MainActor
-    private static var warmupWebView: WKWebView?
-
     @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate {
         var parent: HTMLMessageBody
@@ -144,6 +131,11 @@ struct HTMLMessageBody: UIViewRepresentable {
             // <script> execution; this host-triggered evaluateJavaScript call
             // is unaffected (confirmed on-device: it reliably returns a value).
             webView.evaluateJavaScript("[document.body.scrollWidth, document.body.scrollHeight]") { [weak self] result, _ in
+                // Reveal unconditionally, even if measurement below fails:
+                // updateUIView hid this webview (alpha 0) to avoid flashing a
+                // pooled instance's stale previous content; whatever happens
+                // with sizing, it must not stay invisible forever.
+                defer { UIView.animate(withDuration: 0.12) { webView.alpha = 1 } }
                 guard let self, let dimensions = result as? [Double], dimensions.count == 2,
                       let contentWidth = dimensions.first, let contentHeight = dimensions.last,
                       contentWidth > 0, contentHeight > 0 else { return }
@@ -162,10 +154,12 @@ struct HTMLMessageBody: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             print("HTMLMessageBody: navigation failed: \(error)")
+            webView.alpha = 1 // must not stay hidden forever on a failed load
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             print("HTMLMessageBody: provisional navigation failed: \(error)")
+            webView.alpha = 1
         }
 
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,

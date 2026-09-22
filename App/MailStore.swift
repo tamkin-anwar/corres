@@ -107,13 +107,22 @@ final class MailStore {
         }
     }
 
-    private func mutate(_ id: ThreadID, _ operation: @escaping () async throws -> Void) async {
+    /// Splices the single returned thread into `threads` in place, the same
+    /// pattern `send` already used, instead of re-fetching the entire
+    /// mailbox from disk just to find the one row that changed: a pin,
+    /// snooze, or attention change is the single most frequent interaction
+    /// in the app (every swipe action and every "Mark as" tap), and a full
+    /// SwiftData re-fetch on each one was real, measured, avoidable work on
+    /// the hot path (see Docs/Architecture.md's performance sweep entry).
+    private func mutate(_ id: ThreadID, _ operation: @escaping () async throws -> Correspondence) async {
         guard !pending.contains(id) else { return }
         pending.insert(id)
         defer { pending.remove(id) }
         do {
-            try await operation()
-            threads = try await repository.threads()
+            let updated = try await operation()
+            if let index = threads.firstIndex(where: { $0.id == updated.id }) {
+                threads[index] = updated
+            }
         } catch {
             errorMessage = "The change could not be saved. Your conversation is unchanged. Please try again."
         }
