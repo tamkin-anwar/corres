@@ -26,6 +26,7 @@ public final class PersistedCorrespondence {
     public var isPinned: Bool
     public var snoozedUntil: Date?
     public var senderDecisionRaw: String
+    public var imagesTrusted: Bool
 
     public init(from correspondence: Correspondence) {
         self.compositeID = Self.compositeID(account: correspondence.id.account, providerID: correspondence.id.providerID)
@@ -46,6 +47,7 @@ public final class PersistedCorrespondence {
         self.isPinned = correspondence.isPinned
         self.snoozedUntil = correspondence.snoozedUntil
         self.senderDecisionRaw = correspondence.senderDecision.rawValue
+        self.imagesTrusted = correspondence.imagesTrusted
     }
 
     public var asCorrespondence: Correspondence {
@@ -54,7 +56,8 @@ public final class PersistedCorrespondence {
                        messageIdHeader: messageIdHeader, receivedAt: receivedAt, dueAt: dueAt,
                        reason: reason, attention: Attention(rawValue: attentionRaw) ?? .quiet,
                        isPinned: isPinned, snoozedUntil: snoozedUntil,
-                       senderDecision: SenderDecision(rawValue: senderDecisionRaw) ?? .approved)
+                       senderDecision: SenderDecision(rawValue: senderDecisionRaw) ?? .approved,
+                       imagesTrusted: imagesTrusted)
     }
 
     public static func compositeID(account: String, providerID: String) -> String { "\(account)|\(providerID)" }

@@ -71,11 +71,21 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// A deliberate deferral, not a due date. Hidden from active views until it passes.
     public var snoozedUntil: Date?
     public var senderDecision: SenderDecision
+    /// Not the Screener: this is "do I trust this sender's remote images,"
+    /// not "do I trust this sender at all." Set once per sender (see
+    /// `MailRepository.trustSenderImages`), it stamps this thread and every
+    /// future thread from the same sender, so a newsletter you've already
+    /// chosen to trust never needs a repeat "Show Images" tap. Chosen as
+    /// the smaller, no-infrastructure alternative to Apple's own Mail
+    /// Privacy Protection (a server-side image relay that would need
+    /// Corres to run a real backend, which it deliberately doesn't yet).
+    public var imagesTrusted: Bool
 
     public init(id: ThreadID, sender: String, senderEmail: String? = nil, organization: String, subject: String,
                 excerpt: String, body: String, htmlBody: String? = nil, messageIdHeader: String? = nil,
                 receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
-                isPinned: Bool = false, snoozedUntil: Date? = nil, senderDecision: SenderDecision = .approved) {
+                isPinned: Bool = false, snoozedUntil: Date? = nil, senderDecision: SenderDecision = .approved,
+                imagesTrusted: Bool = false) {
         self.id = id
         self.sender = sender
         self.senderEmail = senderEmail
@@ -92,6 +102,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.isPinned = isPinned
         self.snoozedUntil = snoozedUntil
         self.senderDecision = senderDecision
+        self.imagesTrusted = imagesTrusted
     }
 
     public var initials: String {

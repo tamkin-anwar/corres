@@ -84,6 +84,7 @@ public actor SwiftDataMailRepository: MailRepository {
         let existingModels = try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>())
         let existingIDs = Set(existingModels.map(\.compositeID))
         var knownSenderDecisions = Self.senderDecisions(in: existingModels)
+        let knownImageTrust = Self.imageTrust(in: existingModels)
         var inserted = 0
         for var item in incoming {
             let compositeID = PersistedCorrespondence.compositeID(account: item.id.account, providerID: item.id.providerID)
@@ -96,6 +97,7 @@ public actor SwiftDataMailRepository: MailRepository {
                     item.senderDecision = isInitialSync ? .approved : .pending
                     knownSenderDecisions[key] = item.senderDecision
                 }
+                if knownImageTrust[key] == true { item.imagesTrusted = true }
             }
             modelContext.insert(PersistedCorrespondence(from: item))
             inserted += 1
@@ -110,6 +112,15 @@ public actor SwiftDataMailRepository: MailRepository {
         let matches = try modelContext.fetch(descriptor)
         guard !matches.isEmpty else { return }
         for model in matches { model.senderDecisionRaw = decision.rawValue }
+        try modelContext.save()
+    }
+
+    public func trustSenderImages(forSenderEmail senderEmail: String, account: String) throws {
+        let descriptor = FetchDescriptor<PersistedCorrespondence>(
+            predicate: #Predicate { $0.account == account && $0.senderEmail == senderEmail })
+        let matches = try modelContext.fetch(descriptor)
+        guard !matches.isEmpty else { return }
+        for model in matches { model.imagesTrusted = true }
         try modelContext.save()
     }
 
@@ -143,6 +154,15 @@ public actor SwiftDataMailRepository: MailRepository {
         for model in models {
             guard let senderEmail = model.senderEmail else { continue }
             map[senderKey(account: model.account, senderEmail: senderEmail)] = SenderDecision(rawValue: model.senderDecisionRaw) ?? .approved
+        }
+        return map
+    }
+
+    private static func imageTrust(in models: [PersistedCorrespondence]) -> [String: Bool] {
+        var map: [String: Bool] = [:]
+        for model in models {
+            guard let senderEmail = model.senderEmail, model.imagesTrusted else { continue }
+            map[senderKey(account: model.account, senderEmail: senderEmail)] = true
         }
         return map
     }

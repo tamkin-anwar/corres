@@ -2,6 +2,16 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 16: per-sender image trust (September 22, 2026)
+
+Weighed two real options directly before building either: Apple's Mail Privacy Protection (a server-side image relay masking real open-time/IP, genuinely better UX, but a real backend Corres would have to build and run, contradicting the local-first architecture and premature before any users exist) versus a client-only per-sender remembered choice. Built the latter.
+
+- `Correspondence.imagesTrusted` (new field, persisted via `PersistedCorrespondence`) propagates exactly like `SenderDecision` already does: stamped from any existing thread of that sender at insert time, so a later message from an already-trusted sender arrives already trusted, not just the one you explicitly revealed.
+- `MailRepository.trustSenderImages(forSenderEmail:account:)` cascades to every existing thread from that sender at once (mirrors `setSenderDecision`'s cascade). `MailStore.trustSenderImages` does a full re-fetch, not a spliced single-row update, the same deliberate tradeoff `approveSender`/`blockSender` already made: a rare, deliberate action, not a hot-path one, so the Batch 15 mutate-refetch fix doesn't apply here.
+- `ConversationView`'s "Show Images" button now does both in one tap: reveals this message's images and remembers the sender going forward, rather than adding a separate "always" control nobody asked for.
+- Domain-tested in both repositories (2 new tests, `CorresCoreTests` and `SwiftDataMailRepositoryTests`): trusting a sender flips every existing thread from them, and a subsequent message from the same sender arrives already trusted on the next sync. All 30 domain tests pass (28 prior + 2 new).
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and `swift test` (30/30 passed). Not yet verified on-device: tapping "Show Images" once and confirming a later real message from the same real sender arrives without the banner.
+
 ## Batch 15: full performance sweep, WKWebView pooling and the mutate refetch (September 21, 2026)
 
 Asked directly for a ground-up sweep after Batch 14's warm-up alone wasn't enough. Researched WKWebView reuse specifically rather than guessing further, then separately audited the rest of the app's hot paths for the same class of avoidable work.

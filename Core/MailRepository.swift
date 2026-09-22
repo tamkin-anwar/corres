@@ -64,6 +64,16 @@ public protocol MailRepository: Sendable {
     /// that sender exists yet.
     func setSenderDecision(_ decision: SenderDecision, forSenderEmail senderEmail: String, account: String) async throws
 
+    /// Marks `senderEmail` trusted for remote images, applied to every
+    /// existing thread from them at once and, like `SenderDecision`, looked
+    /// up and stamped onto every future thread from the same sender too
+    /// (see `upsert`'s doc comment; the mechanism is identical, just a
+    /// different per-sender fact). Not the Screener: a sender can be
+    /// image-trusted without being Screener-approved or vice versa, they
+    /// answer different questions. Silent no-op if no thread from that
+    /// sender exists yet.
+    func trustSenderImages(forSenderEmail senderEmail: String, account: String) async throws
+
     /// The durable outbox (ADR 005/007): every send still `pending` or
     /// `failed` as of the last time the repository was read, so it survives
     /// the app being force-quit mid-undo-window instead of only ever living
@@ -163,6 +173,7 @@ public actor SampleMailRepository: MailRepository {
         // attention/pin/snooze on it) is left completely untouched.
         let existingIDs = Set(items.map(\.id))
         var knownSenderDecisions = Self.senderDecisions(in: items)
+        let knownImageTrust = Self.imageTrust(in: items)
         var newItems: [Correspondence] = []
         for var item in incoming where !existingIDs.contains(item.id) {
             if let senderEmail = item.senderEmail {
@@ -173,6 +184,7 @@ public actor SampleMailRepository: MailRepository {
                     item.senderDecision = isInitialSync ? .approved : .pending
                     knownSenderDecisions[key] = item.senderDecision
                 }
+                if knownImageTrust[key] == true { item.imagesTrusted = true }
             }
             newItems.append(item)
         }
@@ -186,6 +198,12 @@ public actor SampleMailRepository: MailRepository {
         }
     }
 
+    public func trustSenderImages(forSenderEmail senderEmail: String, account: String) {
+        for index in items.indices where items[index].id.account == account && items[index].senderEmail == senderEmail {
+            items[index].imagesTrusted = true
+        }
+    }
+
     private static func senderKey(account: String, senderEmail: String) -> String { "\(account)|\(senderEmail)" }
 
     private static func senderDecisions(in items: [Correspondence]) -> [String: SenderDecision] {
@@ -193,6 +211,15 @@ public actor SampleMailRepository: MailRepository {
         for item in items {
             guard let senderEmail = item.senderEmail else { continue }
             map[senderKey(account: item.id.account, senderEmail: senderEmail)] = item.senderDecision
+        }
+        return map
+    }
+
+    private static func imageTrust(in items: [Correspondence]) -> [String: Bool] {
+        var map: [String: Bool] = [:]
+        for item in items {
+            guard let senderEmail = item.senderEmail, item.imagesTrusted else { continue }
+            map[senderKey(account: item.id.account, senderEmail: senderEmail)] = true
         }
         return map
     }

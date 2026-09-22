@@ -38,8 +38,8 @@ struct ConversationView: View {
                             .padding(.horizontal, CorresSpace.page)
                         if let html = thread.htmlBody {
                             let blockedCount = HTMLMessageBody.remoteImageCount(in: html)
-                            if blockedCount > 0 && !showRemoteImages {
-                                remoteImagesBanner(count: blockedCount).padding(.horizontal, CorresSpace.page)
+                            if blockedCount > 0 && !showRemoteImages && !thread.imagesTrusted {
+                                remoteImagesBanner(count: blockedCount, thread: thread).padding(.horizontal, CorresSpace.page)
                             }
                             // Full width, no card: real HTML mail is a
                             // fixed-width table (often 600pt), and wrapping
@@ -47,7 +47,8 @@ struct ConversationView: View {
                             // is what made images/text run off-screen before
                             // (see Docs/Verification.md). Mail and Spark both
                             // render the body edge to edge for this reason.
-                            HTMLMessageBody(html: html, height: $htmlHeight, blockRemoteImages: !showRemoteImages)
+                            HTMLMessageBody(html: html, height: $htmlHeight,
+                                            blockRemoteImages: !(showRemoteImages || thread.imagesTrusted))
                                 .frame(height: htmlHeight)
                         } else {
                             Text(thread.body).font(.body).lineSpacing(8).textSelection(.enabled)
@@ -119,14 +120,25 @@ struct ConversationView: View {
         "\(thread.attention.title): \(thread.reason)"
     }
 
-    private func remoteImagesBanner(count: Int) -> some View {
+    /// Showing images also remembers the sender (`MailStore.trustSenderImages`),
+    /// so a newsletter you've already decided to trust never needs a repeat
+    /// tap: the smaller, no-infrastructure alternative to Apple's own Mail
+    /// Privacy Protection relay (see Docs/Architecture.md). One tap, not a
+    /// separate "always" affordance, matching what was actually proposed and
+    /// agreed on rather than adding a second control nobody asked for.
+    private func remoteImagesBanner(count: Int, thread: Correspondence) -> some View {
         HStack(spacing: 10) {
             Image(systemName: "photo").accessibilityHidden(true)
             Text(count == 1 ? "1 image blocked" : "\(count) images blocked")
                 .font(.footnote).foregroundStyle(CorresPalette.secondary)
             Spacer()
-            Button("Show Images") { showRemoteImages = true }
-                .font(.footnote.weight(.semibold))
+            Button("Show Images") {
+                showRemoteImages = true
+                if let senderEmail = thread.senderEmail {
+                    Task { await store.trustSenderImages(senderEmail, account: thread.id.account) }
+                }
+            }
+            .font(.footnote.weight(.semibold))
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
         .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 14))

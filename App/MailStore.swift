@@ -85,6 +85,22 @@ final class MailStore {
         }
     }
 
+    /// Trusts `senderEmail` for remote images going forward, not just this
+    /// one message: the smaller, no-infrastructure alternative to Apple's
+    /// own Mail Privacy Protection (a server-side relay Corres deliberately
+    /// doesn't run). A full re-fetch, not a spliced single-row update, since
+    /// this can change more than one existing thread at once, the same
+    /// tradeoff `approveSender`/`blockSender` already made for the same
+    /// reason: a rare, deliberate action, not a hot-path one.
+    func trustSenderImages(_ senderEmail: String, account: String) async {
+        do {
+            try await repository.trustSenderImages(forSenderEmail: senderEmail, account: account)
+            threads = try await repository.threads()
+        } catch {
+            errorMessage = "Could not remember this sender. Please try again."
+        }
+    }
+
     /// Returns whether the send succeeded. `realThreadID` is the real Gmail
     /// identity OutboxService already established by actually sending via
     /// Gmail (nil when the draft stayed local-only); see MailRepository.send.

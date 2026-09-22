@@ -155,4 +155,24 @@ struct SwiftDataMailRepositoryTests {
         try await second.removeOutboxEntry(id: record.id)
         #expect(try await second.outboxEntries().isEmpty)
     }
+
+    @Test func trustingASenderForImagesPersistsAndAppliesToLaterThreadsFromThem() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let firstMessage = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "5"), sender: "Newsletter", senderEmail: "news@example.com",
+            organization: "Example", subject: "First issue", excerpt: "hi", body: "hi", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([firstMessage], isInitialSync: true)
+
+        try await repository.trustSenderImages(forSenderEmail: "news@example.com", account: "gmail:me@example.com")
+        #expect(try await repository.threads().first?.imagesTrusted == true)
+
+        let secondMessage = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "6"), sender: "Newsletter", senderEmail: "news@example.com",
+            organization: "Example", subject: "Second issue", excerpt: "hi", body: "hi", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([secondMessage], isInitialSync: false)
+        let afterSecondIssue = try await repository.threads()
+        #expect(afterSecondIssue.first { $0.id == secondMessage.id }?.imagesTrusted == true)
+    }
 }

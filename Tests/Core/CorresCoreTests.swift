@@ -246,4 +246,28 @@ struct CorresCoreTests {
         #expect(blocked.allSatisfy { $0.senderDecision == .blocked })
         #expect(MailQuery.filter(blocked, now: now).isEmpty)
     }
+
+    @Test func trustingASenderForImagesAppliesToExistingAndFutureThreadsFromThem() async throws {
+        let repository = SampleMailRepository(items: [])
+        let firstMessage = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "5"), sender: "Newsletter", senderEmail: "news@example.com",
+            organization: "Example", subject: "First issue", excerpt: "hi", body: "hi", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([firstMessage], isInitialSync: true)
+        #expect(try await repository.threads().first?.imagesTrusted == false)
+
+        try await repository.trustSenderImages(forSenderEmail: "news@example.com", account: "gmail:me@example.com")
+        let afterTrust = try await repository.threads()
+        #expect(afterTrust.first?.imagesTrusted == true)
+
+        // A later issue from the same, already-trusted sender arrives
+        // already trusted, the same propagation SenderDecision already uses.
+        let secondMessage = Correspondence(
+            id: ThreadID(account: "gmail:me@example.com", providerID: "6"), sender: "Newsletter", senderEmail: "news@example.com",
+            organization: "Example", subject: "Second issue", excerpt: "hi", body: "hi", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([secondMessage], isInitialSync: false)
+        let afterSecondIssue = try await repository.threads()
+        #expect(afterSecondIssue.first { $0.id == secondMessage.id }?.imagesTrusted == true)
+    }
 }
