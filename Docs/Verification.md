@@ -2,6 +2,16 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 6: conversation reading redesign, grounded in Mail/Spark (September 21, 2026)
+
+Prompted by a direct on-device comparison against iOS Mail (screenshots of the same real HTML email open in both apps): the conversation screen was rebuilt against Mail's structure specifically, not redesigned from guesswork.
+
+- Real root cause of the image/text clipping visible in that comparison: the HTML body was wrapped in a `corresSurface()` card with 24pt of padding plus a border. Real marketing HTML is a fixed-width table (Jomashop's is ~600pt); shrinking the available width below that makes the table clip instead of scale, which is what the cut-off address/footer text in the screenshots actually was, not a WKWebView or image-loading bug. Fixed by rendering the body edge to edge (no card, no border, no padding) exactly as Mail does, inside the same 680pt max-width column the rest of the app already uses on wide screens.
+- Replaced the stacked avatar/name/organization/date header with one compact row (avatar, name, organization, time) plus a single evidence caption underneath, matching how Mail packs sender/to/time into one line above the body instead of a multi-line block.
+- Removed the standalone "Keep it in the right place" card (four full-width buttons) from the scrolling body entirely. Mark-as/Pin/Snooze moved into menus in a new icon-only bottom action bar (Mark as, Pin, Snooze, Reply, Reply All, Forward, each a 44pt tap target with a VoiceOver label), matching Mail's compact icon toolbar instead of a full-width labeled button bar. All three attention-setting actions remain reachable a second way too, via the existing swipe actions on the Mail list, so nothing became harder to reach.
+- Added message-to-message paging (chevron-up/chevron-down in the nav bar), matching Mail's in-pane next/previous. Introduced `ConversationRoute` (a `ThreadID` plus the ordered id list it was opened from) so paging stays inside whatever list the person actually tapped from, Brief's top-3, a filtered Mail view, or a search result, rather than jumping into an unrelated global order.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) after each step; the offline `Scripts/RenderDesign.swift` preview renderer was not used for this batch since it cannot render `List` or a real `WKWebView`, which is most of what changed. Still needs actual on-device visual confirmation (this Mac's simulator remains broken; see "Environment limitations" below) before this is verified rather than just compiled.
+
 ## Batch 5: real Gmail sending (September 21, 2026)
 
 - Replying, replying all, and forwarding within an existing, real synced thread now send for real via `users.messages.send`, instead of staying purely local-only (which a brand-new from-scratch compose still is, honestly, not yet in scope). Widened the OAuth scope from `gmail.readonly` alone to also request `gmail.send`; both are Google's "sensitive" tier (standard consent-screen review, not the CASA-audited "restricted" tier), verified against Google's own scope documentation and OAuth verification guidance. `GoogleAuthService.ensureSendScope()` requests the additional scope incrementally for an account connected before this shipped, rather than requiring a disconnect/reconnect.

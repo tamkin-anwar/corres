@@ -54,10 +54,14 @@ struct BriefView: View {
                     .padding(24).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array(priorities.prefix(3).enumerated()), id: \.element.id) { index, thread in
-                        NavigationLink(value: thread.id) { CorrespondenceRow(thread: thread) }
-                            .buttonStyle(CorresRowButtonStyle())
-                        if index < min(priorities.count, 3) - 1 { Divider().padding(.leading, 78).padding(.trailing, 20) }
+                    let shown = Array(priorities.prefix(3))
+                    let orderedIDs = shown.map(\.id)
+                    ForEach(Array(shown.enumerated()), id: \.element.id) { index, thread in
+                        NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
+                            CorrespondenceRow(thread: thread)
+                        }
+                        .buttonStyle(CorresRowButtonStyle())
+                        if index < shown.count - 1 { Divider().padding(.leading, 78).padding(.trailing, 20) }
                     }
                 }.corresSurface()
             }

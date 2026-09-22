@@ -1,103 +1,78 @@
 import SwiftUI
 
+/// A conversation plus the ordered list of ids it was opened from (a Brief
+/// card, a filtered Mail list, a search result), so paging to the next/
+/// previous message stays inside whatever the person was actually looking
+/// at rather than jumping into an unrelated global order.
+struct ConversationRoute: Hashable {
+    let id: ThreadID
+    let orderedIDs: [ThreadID]
+}
+
 struct ConversationView: View {
     let store: MailStore
     let outbox: OutboxService
-    let id: ThreadID
+    let orderedIDs: [ThreadID]
+    @State private var currentID: ThreadID
     @State private var composeDraft: Draft?
     @State private var htmlHeight: CGFloat = 200
     @State private var showRemoteImages = false
 
+    init(store: MailStore, outbox: OutboxService, route: ConversationRoute) {
+        self.store = store
+        self.outbox = outbox
+        self.orderedIDs = route.orderedIDs
+        self._currentID = State(initialValue: route.id)
+    }
+
     var body: some View {
         Group {
-            if let thread = store.threads.first(where: { $0.id == id }) {
+            if let thread = store.threads.first(where: { $0.id == currentID }) {
                 let isSample = thread.id.account == "sample"
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
-                        Text(thread.subject).font(CorresType.display)
-                        HStack(spacing: 14) {
-                            CorrespondentAvatar(initials: thread.initials)
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(thread.sender).font(.headline)
-                                Text(thread.organization).font(.subheadline).foregroundStyle(CorresPalette.secondary)
-                            }
-                        }
-                        Text(thread.receivedAt, format: .dateTime.month().day().hour().minute())
-                            .font(.caption).foregroundStyle(CorresPalette.secondary)
-                        VStack(alignment: .leading, spacing: 12) {
-                            Label(thread.attention.title, systemImage: "text.bubble")
-                                .font(.subheadline.weight(.semibold))
-                            Text(thread.reason).font(.subheadline).foregroundStyle(CorresPalette.secondary)
-                            Text(isSample ? "Context supplied with this fictional conversation. No AI processing."
-                                          : "Based on Gmail's own read/unread state. No AI processing.")
-                                .font(.caption).foregroundStyle(CorresPalette.secondary)
-                        }
-                        .padding(20).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
+                    VStack(alignment: .leading, spacing: 18) {
+                        Text(thread.subject).font(.system(.title2, design: .serif).weight(.semibold))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, CorresSpace.page)
+                        messageHeader(for: thread, isSample: isSample)
+                            .padding(.horizontal, CorresSpace.page)
                         if let html = thread.htmlBody {
                             let blockedCount = HTMLMessageBody.remoteImageCount(in: html)
                             if blockedCount > 0 && !showRemoteImages {
-                                remoteImagesBanner(count: blockedCount)
+                                remoteImagesBanner(count: blockedCount).padding(.horizontal, CorresSpace.page)
                             }
+                            // Full width, no card: real HTML mail is a
+                            // fixed-width table (often 600pt), and wrapping
+                            // it in padding narrow enough to clip that table
+                            // is what made images/text run off-screen before
+                            // (see Docs/Verification.md). Mail and Spark both
+                            // render the body edge to edge for this reason.
                             HTMLMessageBody(html: html, height: $htmlHeight, blockRemoteImages: !showRemoteImages)
                                 .frame(height: htmlHeight)
-                                .padding(24).frame(maxWidth: .infinity, alignment: .leading).corresSurface(rasterize: false)
                         } else {
                             Text(thread.body).font(.body).lineSpacing(8).textSelection(.enabled)
-                                .padding(24).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
+                                .padding(.horizontal, CorresSpace.page)
                         }
-                        Divider()
-                        VStack(alignment: .leading, spacing: 14) {
-                            Text("Keep it in the right place").font(CorresType.heading)
-                            Text(isSample ? "Changes apply to this sample session only."
-                                          : "Saved on this device. Nothing is written back to Gmail yet.")
-                                .font(.footnote).foregroundStyle(CorresPalette.secondary)
-                            ForEach(Attention.allCases, id: \.self) { attention in
-                                Button {
-                                    Task { await store.update(id, to: attention) }
-                                } label: {
-                                    HStack {
-                                        Text(attention.title)
-                                        Spacer()
-                                        if thread.attention == attention { Image(systemName: "checkmark") }
-                                    }
-                                    .padding(.horizontal, 18).frame(minHeight: 48)
-                                    .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 14))
-                                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(thread.attention == attention ? CorresPalette.accent : CorresPalette.line, lineWidth: thread.attention == attention ? 1.5 : 0.5))
-                                }
-                                .disabled(store.pending.contains(id))
-                                .accessibilityValue(thread.attention == attention ? "Selected" : "")
-                            }
-                        }
-                        Text(isSample ? "Replying, forwarding, and sending stay on this device until Gmail is connected."
-                                      : "Replying, replying all, and forwarding send for real through Gmail.")
-                            .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                        Text(isSample ? "No AI processing. Replying, forwarding, and sending stay on this device until Gmail is connected."
+                                      : "No AI processing. Replying, replying all, and forwarding send for real through Gmail.")
+                            .font(.caption).foregroundStyle(CorresPalette.secondary)
+                            .padding(.horizontal, CorresSpace.page).padding(.top, 4)
                     }
-                    .padding(CorresSpace.page).frame(maxWidth: 680).frame(maxWidth: .infinity)
+                    .padding(.vertical, CorresSpace.page)
+                    .frame(maxWidth: 680).frame(maxWidth: .infinity)
                 }
-                .safeAreaInset(edge: .bottom) { replyBar(for: thread) }
+                .safeAreaInset(edge: .bottom) { actionBar(for: thread) }
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            Button { composeDraft = thread.draft(kind: .forward) } label: {
-                                Label("Forward", systemImage: "arrowshape.turn.up.right")
-                            }
-                            Button {
-                                Task { await store.setPinned(!thread.isPinned, for: id) }
-                            } label: {
-                                Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin")
-                            }
-                            Menu {
-                                ForEach(SnoozeOption.allCases, id: \.self) { option in
-                                    Button(option.title) { Task { await store.snooze(id, until: option.date()) } }
-                                }
-                            } label: {
-                                Label("Snooze", systemImage: "moon")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle").frame(minWidth: 44, minHeight: 44)
+                        HStack(spacing: 4) {
+                            Button { goToPrevious() } label: { Image(systemName: "chevron.up") }
+                                .disabled(!hasPrevious)
+                                .accessibilityLabel("Previous conversation")
+                            Button { goToNext() } label: { Image(systemName: "chevron.down") }
+                                .disabled(!hasNext)
+                                .accessibilityLabel("Next conversation")
                         }
-                        .accessibilityLabel("More actions")
-                        .disabled(store.pending.contains(id))
+                        .frame(minHeight: 44)
                     }
                 }
             } else {
@@ -105,12 +80,43 @@ struct ConversationView: View {
             }
         }
         .background(CorresPalette.canvas)
-        .navigationTitle("Conversation")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $composeDraft) { draft in
             ComposeView(store: store, outbox: outbox, draft: draft,
-                        sourceThread: store.threads.first(where: { $0.id == id }))
+                        sourceThread: store.threads.first(where: { $0.id == currentID }))
         }
+        .onChange(of: currentID) { htmlHeight = 200 }
+    }
+
+    private var currentIndex: Int? { orderedIDs.firstIndex(of: currentID) }
+    private var hasPrevious: Bool { (currentIndex ?? 0) > 0 }
+    private var hasNext: Bool { let i = currentIndex ?? orderedIDs.count - 1; return i < orderedIDs.count - 1 }
+    private func goToPrevious() { if let i = currentIndex, i > 0 { currentID = orderedIDs[i - 1] } }
+    private func goToNext() { if let i = currentIndex, i < orderedIDs.count - 1 { currentID = orderedIDs[i + 1] } }
+
+    /// A single compact row (avatar, sender, time) instead of the previous
+    /// stacked avatar/name/organization/date block, matching how Mail packs
+    /// this information into one line above the body.
+    private func messageHeader(for thread: Correspondence, isSample: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                CorrespondentAvatar(initials: thread.initials).frame(width: 34, height: 34)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(thread.sender).font(.subheadline.weight(.semibold))
+                    Text(thread.organization).font(.caption).foregroundStyle(CorresPalette.secondary)
+                }
+                Spacer(minLength: 8)
+                Text(thread.receivedAt, format: .dateTime.month().day().hour().minute())
+                    .font(.caption).foregroundStyle(CorresPalette.secondary)
+            }
+            Label(evidenceLine(for: thread), systemImage: "text.bubble")
+                .font(.caption).foregroundStyle(CorresPalette.secondary)
+        }
+    }
+
+    private func evidenceLine(for thread: Correspondence) -> String {
+        "\(thread.attention.title): \(thread.reason)"
     }
 
     private func remoteImagesBanner(count: Int) -> some View {
@@ -127,19 +133,60 @@ struct ConversationView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(CorresPalette.line, lineWidth: 0.5))
     }
 
-    private func replyBar(for thread: Correspondence) -> some View {
-        HStack(spacing: 12) {
+    /// Icon-only, matching Mail/Spark's compact bottom toolbar rather than a
+    /// full-width labeled button bar. Mark-as/pin/snooze (previously a large
+    /// standalone card in the scrolling body) move here as menus; they are
+    /// also always reachable via swipe actions on the Mail list, so nothing
+    /// here is the only way to reach them.
+    private func actionBar(for thread: Correspondence) -> some View {
+        HStack(spacing: 0) {
+            Menu {
+                ForEach(Attention.allCases, id: \.self) { attention in
+                    Button {
+                        Task { await store.update(thread.id, to: attention) }
+                    } label: {
+                        if thread.attention == attention {
+                            Label(attention.title, systemImage: "checkmark")
+                        } else {
+                            Text(attention.title)
+                        }
+                    }
+                }
+            } label: {
+                Image(systemName: "tag").frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .accessibilityLabel("Mark as")
+            Button {
+                Task { await store.setPinned(!thread.isPinned, for: thread.id) }
+            } label: {
+                Image(systemName: thread.isPinned ? "pin.fill" : "pin").frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .accessibilityLabel(thread.isPinned ? "Unpin" : "Pin")
+            Menu {
+                ForEach(SnoozeOption.allCases, id: \.self) { option in
+                    Button(option.title) { Task { await store.snooze(thread.id, until: option.date()) } }
+                }
+            } label: {
+                Image(systemName: "moon").frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .accessibilityLabel("Snooze")
+            Divider().frame(height: 24)
             Button { composeDraft = thread.draft(kind: .reply) } label: {
-                Label("Reply", systemImage: "arrowshape.turn.up.left")
-                    .frame(maxWidth: .infinity, minHeight: 48)
+                Image(systemName: "arrowshape.turn.up.left").frame(maxWidth: .infinity, minHeight: 44)
             }
+            .accessibilityLabel("Reply")
             Button { composeDraft = thread.draft(kind: .replyAll) } label: {
-                Label("Reply All", systemImage: "arrowshape.turn.up.left.2")
-                    .frame(maxWidth: .infinity, minHeight: 48)
+                Image(systemName: "arrowshape.turn.up.left.2").frame(maxWidth: .infinity, minHeight: 44)
             }
+            .accessibilityLabel("Reply All")
+            Button { composeDraft = thread.draft(kind: .forward) } label: {
+                Image(systemName: "arrowshape.turn.up.right").frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .accessibilityLabel("Forward")
         }
-        .font(.subheadline.weight(.semibold))
-        .padding(.horizontal, CorresSpace.page).padding(.vertical, 10)
+        .font(.body)
+        .disabled(store.pending.contains(thread.id))
+        .padding(.horizontal, CorresSpace.medium)
         .background(.bar)
     }
 }

@@ -20,8 +20,8 @@ struct CorresShell: View {
                         .navigationTitle(destination.rawValue)
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar { toolbarContent }
-                        .navigationDestination(for: ThreadID.self) { id in
-                            ConversationView(store: store, outbox: outbox, id: id)
+                        .navigationDestination(for: ConversationRoute.self) { route in
+                            ConversationView(store: store, outbox: outbox, route: route)
                         }
                 }
                 .tabItem { Label { Text(destination.rawValue) } icon: { Image(uiImage: CorresIcon.tabImage(destination.glyph)) } }

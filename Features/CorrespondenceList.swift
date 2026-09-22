@@ -98,8 +98,11 @@ struct CorrespondenceList: View {
     }
 
     private var conversationRows: some View {
-        ForEach(results) { thread in
-            NavigationLink(value: thread.id) { CorrespondenceRow(thread: thread).corresSurface() }
+        let orderedIDs = results.map(\.id)
+        return ForEach(results) { thread in
+            NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
+                CorrespondenceRow(thread: thread).corresSurface()
+            }
                 .buttonStyle(CorresRowButtonStyle())
                 .disabled(store.pending.contains(thread.id))
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 7)
@@ -139,9 +142,12 @@ struct CorrespondenceList: View {
                 emptyState
             } else {
                 VStack(spacing: 14) {
+                    let orderedIDs = results.map(\.id)
                     ForEach(results) { thread in
-                        NavigationLink(value: thread.id) { CorrespondenceRow(thread: thread).corresSurface() }
-                            .buttonStyle(CorresRowButtonStyle())
+                        NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
+                            CorrespondenceRow(thread: thread).corresSurface()
+                        }
+                        .buttonStyle(CorresRowButtonStyle())
                     }
                 }
                 .padding(.horizontal, CorresSpace.page).frame(maxWidth: 680).frame(maxWidth: .infinity)
