@@ -2,6 +2,15 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 28: accessibility audit (September 23, 2026)
+
+First real accessibility pass this session, possible now for the first time since real-device testing only just started working. Researched current SwiftUI accessibility guidance (VoiceOver labels/traits, Dynamic Type, Reduce Motion, 44pt minimum tap targets) before auditing, rather than guessing at gaps.
+
+- Swept every `Image(systemName:)` in `Features/` against whether its enclosing button has an `.accessibilityLabel`: all of them already did. Checked for `.onTapGesture` (a common accessibility anti-pattern, since it bypasses VoiceOver's button semantics entirely): none exists anywhere in the app.
+- Found and fixed: `CorresShell`'s outbox banner didn't respect Reduce Motion (unconditional slide-up animation/transition); `ConversationView`'s previous/next chevrons didn't have their own explicit 44×44 tap target, only the containing stack did, inconsistent with every other icon button in the app.
+- Confirmed already-correct: `DesignSystem/Tokens.swift`'s row-press animation already gated on Reduce Motion; `BriefView`/`WelcomeView` already adapt at accessibility Dynamic Type sizes.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). Explicitly **not** claimed as complete: this was a source-level audit, not a live pass with VoiceOver, maximum Dynamic Type, or Increase Contrast actually enabled on the device. That remains the real test; a source audit can find what's obviously missing but not confirm the experience is actually good.
+
 ## Hotfix: plain replies rendering at a fraction of their intended size (September 23, 2026)
 
 Reported right after the dark-mode fix confirmed working, on the same real message: a short two-line reply's text was tiny, much smaller than intended. Root cause was in the same file, a real side effect of the fixed `width=1024` viewport `HTMLMessageBody.wrap()` used to fix wide marketing HTML overflow (Batches 14/22): a block-level `<body>` with no width of its own fills its containing block regardless of how little text is inside it, so forcing `width=1024` made `scrollWidth` measure ~1024 even for two lines of "Hello," and the shrink-to-fit math divided the whole page, including its font size, down to a fraction of size for content that never needed to shrink.

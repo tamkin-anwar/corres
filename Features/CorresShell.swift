@@ -14,6 +14,7 @@ struct CorresShell: View {
     @State private var showingWelcome = false
     @State private var composeDraft: Draft?
     @AppStorage("corres.hasExplored") private var hasExplored = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         TabView(selection: $selection) {
@@ -35,8 +36,12 @@ struct CorresShell: View {
         }
         .foregroundStyle(CorresPalette.ink)
         .overlay(alignment: .bottom) { outboxBanner }
-        .animation(.easeOut(duration: 0.22), value: outbox.pending?.id)
-        .animation(.easeOut(duration: 0.22), value: outbox.failed?.id)
+        // Reduce Motion, respected: the banner still needs to appear and
+        // disappear (it carries a real, actionable state change: Undo,
+        // Retry, Discard), just without the animated slide a person asked
+        // iOS to minimize.
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.pending?.id)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.failed?.id)
         .task {
             if !hasExplored { showingWelcome = true }
             if store.state == .idle { await store.load() }
@@ -82,7 +87,12 @@ struct CorresShell: View {
             .padding(.horizontal, 18).padding(.vertical, 14)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
             .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
+            // Reduce Motion drops the slide specifically (large-scale
+            // positional movement, what the setting actually targets), not
+            // the whole transition: a plain fade still shows the banner
+            // appearing/disappearing rather than an abrupt, disorienting
+            // instant swap.
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         } else if let failed = outbox.failed {
             HStack(spacing: 12) {
                 Text("Couldn't send \u{201C}\(failed.draft.subject)\u{201D}").font(.subheadline).lineLimit(1)
@@ -93,7 +103,7 @@ struct CorresShell: View {
             .padding(.horizontal, 18).padding(.vertical, 14)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
             .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         }
     }
 

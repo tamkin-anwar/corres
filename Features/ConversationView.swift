@@ -83,14 +83,17 @@ struct ConversationView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         HStack(spacing: 4) {
-                            Button { goToPrevious() } label: { Image(systemName: "chevron.up") }
-                                .disabled(!hasPrevious)
-                                .accessibilityLabel("Previous conversation")
-                            Button { goToNext() } label: { Image(systemName: "chevron.down") }
-                                .disabled(!hasNext)
-                                .accessibilityLabel("Next conversation")
+                            Button { goToPrevious() } label: {
+                                Image(systemName: "chevron.up").frame(minWidth: 44, minHeight: 44)
+                            }
+                            .disabled(!hasPrevious)
+                            .accessibilityLabel("Previous conversation")
+                            Button { goToNext() } label: {
+                                Image(systemName: "chevron.down").frame(minWidth: 44, minHeight: 44)
+                            }
+                            .disabled(!hasNext)
+                            .accessibilityLabel("Next conversation")
                         }
-                        .frame(minHeight: 44)
                     }
                 }
             } else {
