@@ -14,13 +14,15 @@ import UserNotifications
 /// same as any other sync; nothing here ever touches it.
 @MainActor @Observable
 final class PushNotificationService {
-    /// Placeholders. Point these at your own deployment; see
-    /// Server/push-relay/README.md step 5. Every call here fails closed
-    /// (silently does nothing) until they're set to something real, the
-    /// same "no-op rather than crash on unconfigured infrastructure" choice
-    /// already made elsewhere in this app.
-    static let relayBaseURL = URL(string: "https://example.invalid/corres-push-relay")!
-    static let pubsubTopicName = "projects/your-project-id/topics/gmail-push"
+    /// The studio's real deployment (see Server/push-relay/README.md):
+    /// `corres-509320` on GCP, `corres-push-relay` Cloud Function region
+    /// us-central1, `gmail-push` Pub/Sub topic. Every call here still fails
+    /// closed on any network/auth error rather than crashing, the same
+    /// "no-op rather than crash on unconfigured infrastructure" choice
+    /// already made elsewhere in this app, which now just also covers a
+    /// real but temporarily unreachable relay.
+    static let relayBaseURL = URL(string: "https://us-central1-corres-509320.cloudfunctions.net/corres-push-relay")!
+    static let pubsubTopicName = "projects/corres-509320/topics/gmail-push"
 
     private(set) var isEnabled: Bool
     var errorMessage: String?
