@@ -4,12 +4,14 @@ import SwiftUI
 
 @main
 struct CorresApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var store: MailStore
     @State private var sync: GmailSyncService
     @State private var auth: GoogleAuthService
     @State private var outbox: OutboxService
     @State private var threadActions: ThreadActionService
     @State private var labelDirectory = LabelDirectory()
+    @State private var pushService = PushNotificationService()
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
 
     init() {
@@ -43,10 +45,29 @@ struct CorresApp: App {
 
     var body: some Scene {
         WindowGroup {
-            CorresShell(store: store, auth: auth, sync: sync, outbox: outbox, threadActions: threadActions, labelDirectory: labelDirectory)
+            CorresShell(store: store, auth: auth, sync: sync, outbox: outbox, threadActions: threadActions,
+                       labelDirectory: labelDirectory, pushService: pushService)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
                 .task {
+                    // Wired here, not at AppDelegate construction time: the
+                    // delegate exists before this App's own store/sync/auth/
+                    // pushService do (UIApplicationDelegateAdaptor
+                    // constructs it first), so it starts with nil closures
+                    // and this is the first point those can be filled in.
+                    appDelegate.onDeviceToken = { deviceToken in
+                        Task { await pushService.didRegister(deviceToken: deviceToken, account: auth.account?.email) }
+                    }
+                    appDelegate.onRemoteNotification = {
+                        // The push itself carries no content, only a
+                        // "something changed" signal (see
+                        // PushNotificationService's doc comment); this is
+                        // what actually fetches and shows the real mail,
+                        // on-device, exactly like any other sync.
+                        if await sync.syncIfConnected(account: auth.account?.email) {
+                            await store.load()
+                        }
+                    }
                     // Fired first, before any await: pre-creates the whole
                     // pool of reusable WKWebView instances here, off the
                     // interaction path, instead of paying to create one on
@@ -72,6 +93,9 @@ struct CorresApp: App {
                     }
                     await outbox.resumeAfterRelaunch()
                     await labelDirectory.refreshIfConnected(account: auth.account?.email)
+                    if let account = auth.account?.email {
+                        await pushService.renewWatch(account: account)
+                    }
                 }
                 .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
         }

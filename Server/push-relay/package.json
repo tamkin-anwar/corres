@@ -1,0 +1,17 @@
+{
+  "name": "corres-push-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Content-blind Gmail-to-APNs push relay for Corres. Never sees message content: Gmail's Pub/Sub notification carries only an account address and a historyId, and this forwards a silent wake-up push telling the app to sync for itself.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "deploy": "gcloud functions deploy corres-push-relay --gen2 --runtime=nodejs20 --region=us-central1 --source=. --entry-point=corresPushRelay --trigger-http --allow-unauthenticated --set-secrets=APNS_AUTH_KEY=corres-apns-auth-key:latest --set-env-vars=APNS_KEY_ID=$APNS_KEY_ID,APNS_TEAM_ID=$APNS_TEAM_ID,APNS_BUNDLE_ID=$APNS_BUNDLE_ID,APNS_PRODUCTION=$APNS_PRODUCTION"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^7.9.0",
+    "@google-cloud/functions-framework": "^3.4.0"
+  }
+}

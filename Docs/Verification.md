@@ -2,6 +2,17 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 25: push notifications (September 22, 2026)
+
+Researched before building: real push notifications need a server no matter what (Gmail's Pub/Sub mechanism cannot target a device directly, and Apple's own push API is private/iCloud-only), so the actual decision was whether to build the smallest server that could do that job, or stay fully backend-less with weaker `BGAppRefreshTask` background refresh. Chose to build it, made content-blind to keep the privacy story intact.
+
+- `Server/push-relay` (new): a small Node.js Cloud Function, deployed separately from the iOS app. Three routes: `/register`, `/unregister`, `/pubsub` (the actual Pub/Sub push target). Verified the ES256 APNs auth-key JWT signing logic (hand-rolled with Node's built-in `crypto`, no JWT library dependency) against a generated test key pair with a standalone script before committing; the signature verified correctly.
+- `GmailAPIClient.watch(topicName:)`/`stopWatching()` (new): the client, not the relay, establishes and owns Gmail's watch subscription, using the token it already holds. No Gmail credential ever reaches the relay.
+- `PushNotificationService` (new App-layer `@Observable`): Preferences-toggle-driven, not requested at launch. Registers the device token with the relay, renews the watch subscription at launch, and unregisters on sign-out.
+- `AppDelegate` (new, via `@UIApplicationDelegateAdaptor`): minimal bridge for the two callbacks SwiftUI's `App` protocol lacks (device token arrival, silent push arrival), wired with closures from `CorresApp`'s launch task since it's constructed before the app's other services exist.
+- Added push notification capability: `App/Corres.entitlements` (new, `aps-environment`), `UIBackgroundModes: remote-notification` in `Info.plist`, both registered in `Corres.xcodeproj`'s build settings.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`, including manually registering `App/AppDelegate.swift` and `App/PushNotificationService.swift` in the project, the same non-file-system-synchronized-target step every new App-layer file has needed since Batch 18) and a standalone Node script confirming the APNs JWT signs and verifies correctly. No new domain tests: entirely App-layer/infrastructure, no Core-layer logic. **Not deployed or verified end-to-end**: the relay's placeholder URL/topic name in `PushNotificationService` point nowhere real until the studio completes the one-time GCP + Apple Developer setup in `Server/push-relay/README.md`; nothing about actual push delivery has been tested, only that everything compiles and the crypto is correct in isolation.
+
 ## Batch 24: Gmail labels (September 22, 2026)
 
 Closes the last line of Preferences' own scope-description copy: Corres could archive, trash, and mark read/unread, but still could not apply or view a real Gmail label. Real mailbox organization for a lot of Gmail users depends on labels specifically, more than folders.

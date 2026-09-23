@@ -253,6 +253,45 @@ struct GmailAPIClient {
         try validate(response)
     }
 
+    /// Subscribes this account to real-time push: Gmail publishes a
+    /// contentless `{emailAddress, historyId}` notification to `topicName`
+    /// (a Google Cloud Pub/Sub topic the push relay owns, see
+    /// Server/push-relay) whenever the mailbox changes. The token this uses
+    /// is the same one every other call here already has; no separate
+    /// credential or server-side OAuth flow is needed, and no token ever
+    /// leaves the device (the relay never receives it). Expires after about
+    /// 7 days per Gmail's own documented limit; the caller (App layer)
+    /// renews it at launch rather than this client tracking expiry itself.
+    /// Returns the historyId `watch` was established at, mirroring
+    /// `fetchInitialInbox`.
+    @discardableResult
+    func watch(topicName: String) async throws -> String? {
+        let token = try await accessToken()
+        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/watch")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["topicName": topicName, "labelIds": Self.syncedLabels])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response)
+        return try? JSONDecoder().decode(WatchResponse.self, from: data).historyId
+    }
+
+    /// Unsubscribes from push for this account (sign-out, or notifications
+    /// turned off in Preferences): without this, Gmail keeps notifying the
+    /// relay for an account nothing local is listening for anymore until
+    /// the subscription's own 7-day expiry.
+    func stopWatching() async throws {
+        let token = try await accessToken()
+        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/stop")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (_, response) = try await URLSession.shared.data(for: request)
+        try validate(response)
+    }
+
     /// Gmail's label catalog, filtered to user-created labels only (Gmail's
     /// own system ones like INBOX/UNREAD/SENT/CATEGORY_* are excluded via
     /// their own `type: "system"`, since a per-message `labelIds` list, all
@@ -460,6 +499,8 @@ private struct Profile: Decodable { let historyId: String? }
 private struct SentMessage: Decodable { let threadId: String }
 
 private struct AttachmentDataResponse: Decodable { let data: String }
+
+private struct WatchResponse: Decodable { let historyId: String? }
 
 /// A real, user-created Gmail label: `id` is what `Correspondence.labelIds`
 /// and `GmailAPIClient.modifyThread` both traffic in, `name` is what a

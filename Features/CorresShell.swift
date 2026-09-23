@@ -7,6 +7,7 @@ struct CorresShell: View {
     @Bindable var outbox: OutboxService
     @Bindable var threadActions: ThreadActionService
     var labelDirectory: LabelDirectory
+    @Bindable var pushService: PushNotificationService
     @State private var selection = Destination.brief
     @State private var showingSettings = false
     @State private var showingScreener = false
@@ -40,7 +41,7 @@ struct CorresShell: View {
             if !hasExplored { showingWelcome = true }
             if store.state == .idle { await store.load() }
         }
-        .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync) }
+        .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService) }
         .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
         .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, draft: draft, sourceThread: nil) }
         .fullScreenCover(isPresented: $showingWelcome) {
@@ -61,6 +62,12 @@ struct CorresShell: View {
         )) {
             Button("OK", role: .cancel) { threadActions.errorMessage = nil }
         } message: { Text(threadActions.errorMessage ?? "Please try again.") }
+        .alert("Could not turn on notifications", isPresented: Binding(
+            get: { pushService.errorMessage != nil },
+            set: { if !$0 { pushService.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { pushService.errorMessage = nil }
+        } message: { Text(pushService.errorMessage ?? "Please try again.") }
     }
 
     @ViewBuilder

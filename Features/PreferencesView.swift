@@ -4,6 +4,7 @@ struct PreferencesView: View {
     let store: MailStore
     var auth: GoogleAuthService
     var sync: GmailSyncService
+    @Bindable var pushService: PushNotificationService
     @Environment(\.dismiss) private var dismiss
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
     @State private var showingResetConfirmation = false
@@ -42,11 +43,29 @@ struct PreferencesView: View {
                     }
                     Text("Your inbox syncs into Mail, and new messages keep arriving automatically; sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state at first, not real judgment. Replying, replying all, forwarding, starting a new message, archiving, moving to Trash, marking read/unread, and applying your own Gmail labels all act for real.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                    if let account = auth.account {
+                        Toggle("Notify me about new mail", isOn: Binding(
+                            get: { pushService.isEnabled },
+                            set: { newValue in
+                                Task {
+                                    if newValue { await pushService.enable(account: account.email) }
+                                    else { await pushService.disable(account: account.email) }
+                                }
+                            }
+                        ))
+                        Text("A background service tells Corres when new mail arrives so it can check for real, on this device. It never sees your mail's subject, sender, or content, only that something changed.")
+                            .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                    }
                 }
                 .confirmationDialog("Disconnect Gmail?", isPresented: $showingDisconnectConfirmation, titleVisibility: .visible) {
                     Button("Disconnect", role: .destructive) {
-                        sync.clearCursor(for: auth.account?.email)
+                        let account = auth.account?.email
+                        sync.clearCursor(for: account)
                         auth.signOut()
+                        // A stale watch subscription/device registration
+                        // after disconnecting would keep the relay pinging
+                        // for an account nothing local is listening for.
+                        Task { await pushService.disable(account: account) }
                     }
                     Button("Cancel", role: .cancel) {}
                 }

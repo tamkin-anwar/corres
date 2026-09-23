@@ -9,6 +9,10 @@
 		<key>UIImageName</key>
 		<string>LaunchMark</string>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>GIDClientID</key>
 	<string>211980968673-k961lt0jtath3ojt4r7ukb3j3jbn8ecl.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
