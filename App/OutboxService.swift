@@ -176,7 +176,8 @@ final class OutboxService {
     private func sendViaGmail(draft: Draft, thread: Correspondence?, account: String) async throws -> ThreadID {
         guard await auth.ensureSendScope() else { throw GmailAPIClient.ClientError.notSignedIn }
         let raw = GmailMessageComposer.compose(from: account, to: draft.to, subject: draft.subject,
-                                                body: draft.body, inReplyTo: thread?.messageIdHeader)
+                                                body: draft.body, inReplyTo: thread?.messageIdHeader,
+                                                attachments: draft.attachments)
         let threadId = try await client.send(raw: raw, threadId: thread?.id.providerID)
         return ThreadID(account: account, providerID: threadId)
     }

@@ -72,6 +72,18 @@ struct CorresCoreTests {
         #expect(try JSONDecoder().decode([Correspondence].self, from: encoded) == threads)
     }
 
+    /// A picked-but-unsent attachment's raw bytes must survive the exact
+    /// JSON round trip the durable outbox actually performs (`Draft` is
+    /// stored as one JSON-encoded column; see `PersistedOutboxEntry`), not
+    /// just the metadata fields other Codable types on `Correspondence` do.
+    @Test func draftWithAttachmentsRoundTripsWithoutLosingBytes() throws {
+        let attachment = PendingAttachment(filename: "notes.txt", mimeType: "text/plain", data: Data("hello".utf8))
+        let draft = Draft(kind: .new, to: "someone@example.com", subject: "Files", body: "See attached.",
+                          attachments: [attachment])
+        let encoded = try JSONEncoder().encode(draft)
+        #expect(try JSONDecoder().decode(Draft.self, from: encoded) == draft)
+    }
+
     @Test func replyingMovesTheThreadToWaitingWithEvidence() async throws {
         let repository = SampleMailRepository(now: now)
         let original = try #require(await repository.threads().first { $0.attention == .needsYou })

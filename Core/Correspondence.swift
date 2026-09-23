@@ -176,8 +176,34 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
 /// A message the user is composing: a reply/forward in an existing conversation, or a new one.
 /// Codable so it can round-trip through the durable outbox (ADR 005/007);
 /// see OutboxRecord.
+/// A file the person is attaching to an outgoing message, held entirely in
+/// memory (and, for a queued send, JSON-encoded into the durable outbox
+/// alongside the rest of the `Draft`, the same one-column choice
+/// `PersistedOutboxEntry` already made) rather than written through a
+/// separate blob store: attachments are capped small enough (see
+/// `Draft.maxAttachmentsBytes`) that this is simple and correct, not a
+/// deliberate choice to scale to large files.
+public struct PendingAttachment: Identifiable, Hashable, Sendable, Codable {
+    public let id: UUID
+    public let filename: String
+    public let mimeType: String
+    public let data: Data
+
+    public init(id: UUID = UUID(), filename: String, mimeType: String, data: Data) {
+        self.id = id
+        self.filename = filename
+        self.mimeType = mimeType
+        self.data = data
+    }
+}
+
 public struct Draft: Identifiable, Hashable, Sendable, Codable {
     public enum Kind: String, Hashable, Sendable, Codable { case new, reply, replyAll, forward }
+
+    /// Gmail's own real limit on a single outgoing message (25 MB), enforced
+    /// here rather than only discovered as a send failure after the person
+    /// already waited through the undo window.
+    public static let maxAttachmentsBytes = 25_000_000
 
     public let id: UUID
     public let kind: Kind
@@ -185,21 +211,25 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     public var to: String
     public var subject: String
     public var body: String
+    public var attachments: [PendingAttachment]
 
     public init(id: UUID = UUID(), kind: Kind, threadID: ThreadID? = nil,
-                to: String, subject: String, body: String = "") {
+                to: String, subject: String, body: String = "", attachments: [PendingAttachment] = []) {
         self.id = id
         self.kind = kind
         self.threadID = threadID
         self.to = to
         self.subject = subject
         self.body = body
+        self.attachments = attachments
     }
 
     public var isSendable: Bool {
         !to.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !subject.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
+
+    public var attachmentsSizeBytes: Int { attachments.reduce(0) { $0 + $1.data.count } }
 }
 
 /// A durable record of a queued send, surviving the app being force-quit

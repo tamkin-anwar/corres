@@ -2,6 +2,15 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 21: composing with attachments (September 22, 2026)
+
+Closes the gap Batch 19 deliberately left open: you could view/download what someone sent you, but not attach anything of your own when replying or composing new. Real gap for a daily-driver client.
+
+- `Draft.attachments: [PendingAttachment]` (new): picked files held in memory, `Codable` so they ride the durable outbox's existing JSON persistence for free. `Draft.maxAttachmentsBytes` (25 MB, Gmail's real cap) enforced at pick time in `ComposeView`, not discovered later as a send failure.
+- `ComposeView`: a paperclip toolbar menu offers Photo Library (`PhotosPicker`) and Choose File (`.fileImporter`, any type, with the required security-scoped-resource access dance). Picked attachments show as removable chips below the body; the discard-draft confirmation now also fires if only an attachment (no text) was added, closing a real would-be silent-data-loss gap.
+- `GmailMessageComposer.compose` builds a real `multipart/mixed` RFC 2045 message when attachments are present (unchanged single-part plain text otherwise); base64 line-folding verified correct with a standalone script before shipping (`.lineLength76Characters` alone inserts no line breaks at all without also passing an end-line option, an easy silent-mistake in Foundation's API that was caught here, not discovered later against a real Gmail rejection).
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and a standalone script confirming the MIME structure (correct opening/closing boundaries, proper base64 folding). No new domain tests: this is entirely App-layer (picker UI, MIME assembly), matching `GmailMessageComposer`'s existing untested status; `Draft.attachments`' Codable round-trip is exercised implicitly by the same domain-level Codable round-trip test every other `Draft`/`Correspondence` field already goes through. Not yet verified on-device: attaching a real photo and a real file, sending, and confirming the recipient actually receives them intact.
+
 ## Batch 20: search that actually reaches your whole mailbox (September 22, 2026)
 
 Search only ever looked at what had already synced locally (a couple hundred most-recent messages), so searching for anything older came back empty, silently, with no indication anything was even attempted. That is a genuine trust-breaker for a mail app specifically, arguably worse than a missing feature: it looks like the app is broken or losing mail. Fixed by reaching Gmail's own search API when a real account is connected.

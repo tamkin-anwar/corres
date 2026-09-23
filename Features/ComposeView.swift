@@ -1,4 +1,6 @@
+import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ComposeView: View {
     let store: MailStore
@@ -13,6 +15,9 @@ struct ComposeView: View {
     @State private var showingDiscardConfirmation = false
     @FocusState private var focusedField: Field?
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
+    @State private var pickedPhoto: PhotosPickerItem?
+    @State private var showingFileImporter = false
+    @State private var attachmentError: String?
 
     private enum Field { case to, subject, body }
 
@@ -41,6 +46,10 @@ struct ComposeView: View {
                         .frame(minHeight: 260)
                         .padding(.horizontal, CorresSpace.page - 5)
                         .padding(.vertical, 12)
+                    if !draft.attachments.isEmpty {
+                        Divider().padding(.leading, CorresSpace.page)
+                        attachmentChips
+                    }
                 }
                 .padding(.vertical, 12)
             }
@@ -50,6 +59,19 @@ struct ComposeView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", role: .cancel) { attemptDismiss() }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        PhotosPicker(selection: $pickedPhoto, matching: .images) {
+                            Label("Photo Library", systemImage: "photo")
+                        }
+                        Button { showingFileImporter = true } label: {
+                            Label("Choose File", systemImage: "folder")
+                        }
+                    } label: {
+                        Image(systemName: "paperclip").frame(minWidth: 44, minHeight: 44)
+                    }
+                    .accessibilityLabel("Add Attachment")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Send") { sendAndDismiss() }
@@ -63,6 +85,19 @@ struct ComposeView: View {
             }
             .interactiveDismissDisabled(hasUnsavedChanges)
             .onAppear { focusedField = draft.to.isEmpty ? .to : .body }
+            .onChange(of: pickedPhoto) { _, newValue in
+                guard let newValue else { return }
+                Task { await addPhoto(newValue) }
+            }
+            .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
+                if case .success(let urls) = result { addFiles(urls) }
+            }
+            .alert("Could not attach this file", isPresented: Binding(
+                get: { attachmentError != nil },
+                set: { if !$0 { attachmentError = nil } }
+            )) {
+                Button("OK", role: .cancel) { attachmentError = nil }
+            } message: { Text(attachmentError ?? "Please try again.") }
         }
         // Self-contained, like PreferencesView: a distant .preferredColorScheme
         // does not reliably re-trait an already-presented sheet if Appearance
@@ -85,6 +120,7 @@ struct ComposeView: View {
     /// a single character, so "has content" alone would nag on every cancel.
     private var hasUnsavedChanges: Bool {
         draft.to != initialDraft.to || draft.subject != initialDraft.subject || draft.body != initialDraft.body
+            || !draft.attachments.isEmpty
     }
 
     private func attemptDismiss() {
@@ -99,6 +135,69 @@ struct ComposeView: View {
     private func sendAndDismiss() {
         outbox.queueSend(draft, replyingTo: sourceThread)
         dismiss()
+    }
+
+    private var attachmentChips: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(draft.attachments) { attachment in
+                HStack(spacing: 8) {
+                    Image(systemName: "paperclip").font(.footnote).foregroundStyle(CorresPalette.secondary)
+                    Text(attachment.filename).font(.footnote).lineLimit(1)
+                    Spacer(minLength: 8)
+                    Button {
+                        draft.attachments.removeAll { $0.id == attachment.id }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(CorresPalette.secondary)
+                    }
+                    .accessibilityLabel("Remove \(attachment.filename)")
+                }
+            }
+        }
+        .padding(.horizontal, CorresSpace.page).padding(.vertical, 8)
+    }
+
+    /// Gmail's own 25 MB cap (`Draft.maxAttachmentsBytes`) is enforced here,
+    /// before a queued send ever reaches the network, rather than only
+    /// discovered as a send failure after the person already waited through
+    /// the undo window.
+    private func addAttachment(filename: String, mimeType: String, data: Data) {
+        guard draft.attachmentsSizeBytes + data.count <= Draft.maxAttachmentsBytes else {
+            attachmentError = "\(filename) would put this message over Gmail's 25 MB limit."
+            return
+        }
+        draft.attachments.append(PendingAttachment(filename: filename, mimeType: mimeType, data: data))
+    }
+
+    private func addPhoto(_ item: PhotosPickerItem) async {
+        defer { pickedPhoto = nil }
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
+            attachmentError = "Could not load that photo."
+            return
+        }
+        let contentType = item.supportedContentTypes.first
+        let ext = contentType?.preferredFilenameExtension ?? "jpg"
+        let mimeType = contentType?.preferredMIMEType ?? "image/jpeg"
+        addAttachment(filename: "Photo-\(draft.attachments.count + 1).\(ext)", mimeType: mimeType, data: data)
+    }
+
+    /// `.fileImporter` hands back security-scoped URLs: access must be
+    /// explicitly started before reading and stopped afterward, or the read
+    /// fails (or worse, silently succeeds once and then breaks later),
+    /// per Apple's own documented contract for these URLs.
+    private func addFiles(_ urls: [URL]) {
+        for url in urls {
+            guard url.startAccessingSecurityScopedResource() else {
+                attachmentError = "Could not access \(url.lastPathComponent)."
+                continue
+            }
+            defer { url.stopAccessingSecurityScopedResource() }
+            guard let data = try? Data(contentsOf: url) else {
+                attachmentError = "Could not read \(url.lastPathComponent)."
+                continue
+            }
+            let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
+            addAttachment(filename: url.lastPathComponent, mimeType: mimeType, data: data)
+        }
     }
 
     private func field(title: String, text: Binding<String>, isEditable: Bool) -> some View {
