@@ -243,7 +243,7 @@ struct GmailAPIClient {
             id: ThreadID(account: account, providerID: message.threadId ?? message.id),
             sender: sender, senderEmail: senderEmail, organization: organization, subject: subject,
             excerpt: message.snippet ?? "", body: body, htmlBody: htmlBody, messageIdHeader: messageIdHeader,
-            receivedAt: receivedAt, dueAt: nil,
+            latestMessageID: message.id, receivedAt: receivedAt, dueAt: nil,
             reason: isUnread ? "Unread in Gmail." : "Already read in Gmail.",
             attention: isUnread ? .needsYou : .quiet)
     }

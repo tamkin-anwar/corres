@@ -62,6 +62,15 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// `References` (see ADR 005); nil for sample/fictional threads, which
     /// never really send.
     public let messageIdHeader: String?
+    /// The provider's id for the single message this thread currently shows,
+    /// when known (real Gmail mail always has one; sample/fictional threads
+    /// and a just-sent placeholder do not yet). `id.providerID` is the
+    /// *thread* id and never changes; this is what lets `upsert` tell "the
+    /// same message arriving again" apart from "a genuinely new message
+    /// (e.g. a reply) landed in this thread," since a thread keeps one
+    /// providerID for its whole life but gets a new message each time
+    /// someone writes into it (see ADR 005's reply-sync fix).
+    public let latestMessageID: String?
     public let receivedAt: Date
     public let dueAt: Date?
     /// Human-readable evidence, never an unexplained importance score.
@@ -83,7 +92,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
 
     public init(id: ThreadID, sender: String, senderEmail: String? = nil, organization: String, subject: String,
                 excerpt: String, body: String, htmlBody: String? = nil, messageIdHeader: String? = nil,
-                receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
+                latestMessageID: String? = nil, receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
                 isPinned: Bool = false, snoozedUntil: Date? = nil, senderDecision: SenderDecision = .approved,
                 imagesTrusted: Bool = false) {
         self.id = id
@@ -95,6 +104,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.body = body
         self.htmlBody = htmlBody
         self.messageIdHeader = messageIdHeader
+        self.latestMessageID = latestMessageID
         self.receivedAt = receivedAt
         self.dueAt = dueAt
         self.reason = reason
@@ -112,6 +122,29 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     public func isSnoozed(at now: Date) -> Bool {
         guard let snoozedUntil else { return false }
         return snoozedUntil > now
+    }
+
+    /// A genuinely new message landed in this same thread (a real reply, or
+    /// the first real sync of a message this thread's local placeholder was
+    /// only guessing at), used by `upsert` once it has already confirmed
+    /// `incoming.latestMessageID` differs from this thread's. Keeps every
+    /// manual, thread-level fact (pin, snooze, Screener decision, image
+    /// trust) untouched, replaces the content with whatever the new message
+    /// actually says, and updates attention/reason from it too unless
+    /// `preserveAttention` is set: that's for the case where the "new"
+    /// message is only our own sent copy of what we already sent showing up
+    /// in a later sync, which must never downgrade a thread still
+    /// legitimately Waiting on a reply that hasn't arrived yet.
+    public func updatingContent(from incoming: Correspondence, preserveAttention: Bool) -> Correspondence {
+        Correspondence(
+            id: id, sender: incoming.sender, senderEmail: incoming.senderEmail, organization: incoming.organization,
+            subject: incoming.subject, excerpt: incoming.excerpt, body: incoming.body, htmlBody: incoming.htmlBody,
+            messageIdHeader: incoming.messageIdHeader, latestMessageID: incoming.latestMessageID,
+            receivedAt: incoming.receivedAt, dueAt: incoming.dueAt,
+            reason: preserveAttention ? reason : incoming.reason,
+            attention: preserveAttention ? attention : incoming.attention,
+            isPinned: isPinned, snoozedUntil: snoozedUntil,
+            senderDecision: senderDecision, imagesTrusted: imagesTrusted)
     }
 }
 

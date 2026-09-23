@@ -145,16 +145,16 @@ struct CorresCoreTests {
         #expect(sorted.first?.id == threads[oldestIndex].id)
     }
 
-    @Test func upsertInsertsOnlyPreviouslyUnseenThreadsAndNeverTouchesExisting() async throws {
+    @Test func upsertInsertsUnseenThreadsAndIgnoresARefetchOfTheSameMessage() async throws {
         let repository = SampleMailRepository(now: now)
         let existing = try #require(await repository.threads().first)
         try await repository.setAttention(.handled, for: existing.id)
         try await repository.setPinned(true, for: existing.id)
 
-        // Re-syncing the SAME thread with different incoming content (as a
-        // real Gmail sync would, if it ever fetched a thread already known)
-        // must not touch the user's manual attention/pin decision.
-        let sameIDDifferentContent = Correspondence(
+        // No latestMessageID set (matches `existing`'s, both nil), so this is
+        // indistinguishable from a re-fetch of a message already known, not
+        // a genuinely new one, and must not touch the thread.
+        let sameMessageRefetched = Correspondence(
             id: existing.id, sender: "Someone Else", organization: "Different", subject: "Changed",
             excerpt: "changed", body: "changed", receivedAt: now, dueAt: nil,
             reason: "Unread in Gmail.", attention: .needsYou)
@@ -164,7 +164,7 @@ struct CorresCoreTests {
             excerpt: "hello", body: "hello", receivedAt: now, dueAt: nil,
             reason: "Unread in Gmail.", attention: .needsYou)
 
-        let insertedCount = try await repository.upsert([sameIDDifferentContent, brandNew], isInitialSync: false)
+        let insertedCount = try await repository.upsert([sameMessageRefetched, brandNew], isInitialSync: false)
         #expect(insertedCount == 1)
 
         let afterward = try await repository.threads()
@@ -173,6 +173,45 @@ struct CorresCoreTests {
         #expect(unchanged.isPinned == true)
         #expect(unchanged.subject == existing.subject) // content untouched, not overwritten
         #expect(afterward.contains { $0.id == brandNew.id })
+    }
+
+    /// The bug this segment fixes: a reply to a thread Corres started (via
+    /// OutboxService's local placeholder, which has no real latestMessageID
+    /// yet) must actually surface, not sit silently ignored forever.
+    @Test func upsertUpdatesAnExistingThreadWhenAGenuinelyNewMessageArrives() async throws {
+        let repository = SampleMailRepository(items: [])
+        let placeholder = Correspondence(
+            id: ThreadID(account: "me@example.com", providerID: "thread-1"),
+            sender: "Ridu", organization: "", subject: "Hello",
+            excerpt: "Hi Ridu", body: "Hi Ridu", receivedAt: now, dueAt: nil,
+            reason: "You started this conversation. Waiting for a response.", attention: .waiting)
+        try await repository.upsert([placeholder], isInitialSync: true)
+        try await repository.setPinned(true, for: placeholder.id)
+
+        // Our own sent copy shows back up in a later Sent sync: content
+        // should fill in, but Waiting must not be downgraded just because
+        // Gmail says our own sent mail is "read."
+        let ownSentCopy = Correspondence(
+            id: placeholder.id, sender: "Me", senderEmail: "me@example.com", organization: "",
+            subject: "Hello", excerpt: "Hi Ridu", body: "Hi Ridu", latestMessageID: "msg-sent",
+            receivedAt: now, dueAt: nil, reason: "Already read in Gmail.", attention: .quiet)
+        try await repository.upsert([ownSentCopy], isInitialSync: false)
+        let afterSentCopy = try #require(await repository.threads().first { $0.id == placeholder.id })
+        #expect(afterSentCopy.attention == .waiting)
+        #expect(afterSentCopy.isPinned == true)
+
+        // Ridu actually replies: a genuinely new, inbound message. This must
+        // surface as Needs You with her reply's own content, which is
+        // exactly what silently never happened before this fix.
+        let herReply = Correspondence(
+            id: placeholder.id, sender: "Ridu", senderEmail: "ridu@example.com", organization: "",
+            subject: "Re: Hello", excerpt: "Got it, thanks!", body: "Got it, thanks!", latestMessageID: "msg-reply",
+            receivedAt: now.addingTimeInterval(60), dueAt: nil, reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([herReply], isInitialSync: false)
+        let afterReply = try #require(await repository.threads().first { $0.id == placeholder.id })
+        #expect(afterReply.attention == .needsYou)
+        #expect(afterReply.body == "Got it, thanks!")
+        #expect(afterReply.isPinned == true) // manual facts still survive a real content update
     }
 
     @Test func deleteSampleDataRemovesOnlySampleThreadsRealMailUntouched() async throws {

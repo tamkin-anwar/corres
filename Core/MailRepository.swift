@@ -43,10 +43,18 @@ public protocol MailRepository: Sendable {
     /// You/Waiting counts and copy alongside a person's real mail.
     func deleteSampleData() async throws
     /// Merges freshly-fetched provider data (e.g. a Gmail sync pass) into the
-    /// store. A real message's content is immutable once received, so this
-    /// only inserts threads not already present; an existing thread (and
-    /// any manual attention/pin/snooze on it) is never touched, let alone
-    /// silently rewritten (ADR 002). Returns the number of threads inserted.
+    /// store. A given *message* is immutable once received, so a re-fetch of
+    /// one already known (same thread, same `latestMessageID`) never touches
+    /// its thread; but a genuinely new message arriving in an already-known
+    /// thread (a real reply, or the first real content behind a
+    /// locally-created placeholder) does update that thread's content, and
+    /// its attention/reason too unless the new message is only our own sent
+    /// copy showing back up (see `Correspondence.updatingContent`). Manual,
+    /// thread-level facts (pin, snooze, Screener decision, image trust)
+    /// are never touched by this either way (ADR 002/005). Returns the
+    /// number of brand-new threads inserted (updates to existing threads are
+    /// not counted here; callers that care already have the return value of
+    /// `threads()` to compare against).
     ///
     /// `isInitialSync` is the Screener's baseline (ADR 005/006): true for a
     /// full-listing sync (an account's first ever sync, or any resync after
@@ -168,14 +176,20 @@ public actor SampleMailRepository: MailRepository {
 
     @discardableResult
     public func upsert(_ incoming: [Correspondence], isInitialSync: Bool) -> Int {
-        // A real message's content never changes after it's received, so only
-        // new messages need inserting. An existing thread (and any manual
-        // attention/pin/snooze on it) is left completely untouched.
-        let existingIDs = Set(items.map(\.id))
+        var indexByID: [ThreadID: Int] = [:]
+        for (index, item) in items.enumerated() { indexByID[item.id] = index }
         var knownSenderDecisions = Self.senderDecisions(in: items)
         let knownImageTrust = Self.imageTrust(in: items)
-        var newItems: [Correspondence] = []
-        for var item in incoming where !existingIDs.contains(item.id) {
+        var insertedCount = 0
+        for var item in incoming {
+            if let index = indexByID[item.id] {
+                let existing = items[index]
+                guard let incomingMessageID = item.latestMessageID, incomingMessageID != existing.latestMessageID,
+                      item.receivedAt >= existing.receivedAt else { continue }
+                let isFromAccountOwner = item.senderEmail != nil && item.senderEmail == item.id.account
+                items[index] = existing.updatingContent(from: item, preserveAttention: isFromAccountOwner)
+                continue
+            }
             if let senderEmail = item.senderEmail {
                 let key = Self.senderKey(account: item.id.account, senderEmail: senderEmail)
                 if let known = knownSenderDecisions[key] {
@@ -186,10 +200,11 @@ public actor SampleMailRepository: MailRepository {
                 }
                 if knownImageTrust[key] == true { item.imagesTrusted = true }
             }
-            newItems.append(item)
+            indexByID[item.id] = items.count
+            items.append(item)
+            insertedCount += 1
         }
-        items.append(contentsOf: newItems)
-        return newItems.count
+        return insertedCount
     }
 
     public func setSenderDecision(_ decision: SenderDecision, forSenderEmail senderEmail: String, account: String) {

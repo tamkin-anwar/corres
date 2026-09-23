@@ -2,6 +2,17 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 17: fixed replies never appearing (September 22, 2026)
+
+Real bug report from actual usage: sent someone an email through Corres, they replied, the reply never showed up. Root cause was a limitation documented and deliberately left open in Batch 11: `upsert` never touched a thread it already knew about, at all, so a genuinely new message landing in that thread (a real reply, or the real content behind a just-sent local placeholder) was silently and permanently dropped.
+
+- `Correspondence` gained `latestMessageID`: the individual Gmail message id behind whatever a thread is currently showing, distinct from `id.providerID` (the thread id, which never changes). `GmailAPIClient.map` now carries the message's own `id` into it; sample/local-only threads leave it nil.
+- `upsert` in both repositories now compares an incoming item's `latestMessageID` against the already-known thread's: identical means the same message came back again (no-op, unchanged from before); different means a genuinely new message arrived, and the thread's content updates in place while pin/snooze/Screener decision/image trust are never touched either way, matching the standing rule for manual facts.
+- A `receivedAt >= existing.receivedAt` guard makes this correct even when a single sync batch contains more than one new message for the same thread, in either fetch order (our own sent copy and the actual reply can both land since the last sync); the thread always ends up reflecting whichever message is genuinely newest.
+- Distinguished our own sent copy reappearing in a later Sent-label sync (`senderEmail == account`, content updates but attention/reason are deliberately preserved, since Gmail reporting our own sent mail as "read" must never downgrade a thread still legitimately Waiting) from an actual inbound reply (attention/reason both update from the new message, correctly flipping the thread to Needs You).
+- Domain-tested in both repositories (2 new tests, `CorresCoreTests` and `SwiftDataMailRepositoryTests`): a placeholder thread receiving its own sent-copy confirmation stays Waiting, then receiving a real reply flips to Needs You with the reply's own content while pin state survives; a same-message re-fetch remains a no-op. All 32 domain tests pass (30 prior + 2 new).
+- Verified with `swift build` (clean) and `swift test` (32/32 passed). Not yet verified on-device: sending a real message, having someone actually reply, and confirming it now appears without a relaunch.
+
 ## Batch 16: per-sender image trust (September 22, 2026)
 
 Weighed two real options directly before building either: Apple's Mail Privacy Protection (a server-side image relay masking real open-time/IP, genuinely better UX, but a real backend Corres would have to build and run, contradicting the local-first architecture and premature before any users exist) versus a client-only per-sender remembered choice. Built the latter.

@@ -78,17 +78,49 @@ public actor SwiftDataMailRepository: MailRepository {
 
     @discardableResult
     public func upsert(_ incoming: [Correspondence], isInitialSync: Bool) throws -> Int {
-        // A real message's content never changes after it's received, so only
-        // new messages need inserting. An existing thread (and any manual
-        // attention/pin/snooze on it) is left completely untouched.
         let existingModels = try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>())
-        let existingIDs = Set(existingModels.map(\.compositeID))
+        var existingByCompositeID = Dictionary(uniqueKeysWithValues: existingModels.map { ($0.compositeID, $0) })
         var knownSenderDecisions = Self.senderDecisions(in: existingModels)
         let knownImageTrust = Self.imageTrust(in: existingModels)
         var inserted = 0
+        var changed = false
         for var item in incoming {
             let compositeID = PersistedCorrespondence.compositeID(account: item.id.account, providerID: item.id.providerID)
-            guard !existingIDs.contains(compositeID) else { continue }
+            if let existing = existingByCompositeID[compositeID] {
+                // Same thread already known. Only a genuinely new message
+                // (a real reply, or the first real sync of a message a local
+                // placeholder was only guessing at) should touch it; a mere
+                // re-fetch of the same message (same latestMessageID) is a
+                // no-op, and `receivedAt` breaks ties when this very batch
+                // contains more than one new message for the same thread
+                // (e.g. our own sent copy and the recipient's reply both
+                // showed up since the last sync), so the thread always ends
+                // up reflecting whichever message is actually newest
+                // regardless of fetch order.
+                guard let incomingMessageID = item.latestMessageID, incomingMessageID != existing.latestMessageID,
+                      item.receivedAt >= existing.receivedAt else { continue }
+                let isFromAccountOwner = item.senderEmail != nil && item.senderEmail == item.id.account
+                existing.sender = item.sender
+                existing.senderEmail = item.senderEmail
+                existing.organization = item.organization
+                existing.subject = item.subject
+                existing.excerpt = item.excerpt
+                existing.body = item.body
+                existing.htmlBody = item.htmlBody
+                existing.messageIdHeader = item.messageIdHeader
+                existing.latestMessageID = incomingMessageID
+                existing.receivedAt = item.receivedAt
+                if !isFromAccountOwner {
+                    // A genuine inbound message: its own unread state should
+                    // drive attention/reason, same as any new thread. Our
+                    // own sent copy showing back up must never downgrade a
+                    // thread still legitimately Waiting on a reply.
+                    existing.reason = item.reason
+                    existing.attentionRaw = item.attention.rawValue
+                }
+                changed = true
+                continue
+            }
             if let senderEmail = item.senderEmail {
                 let key = Self.senderKey(account: item.id.account, senderEmail: senderEmail)
                 if let known = knownSenderDecisions[key] {
@@ -99,10 +131,13 @@ public actor SwiftDataMailRepository: MailRepository {
                 }
                 if knownImageTrust[key] == true { item.imagesTrusted = true }
             }
-            modelContext.insert(PersistedCorrespondence(from: item))
+            let model = PersistedCorrespondence(from: item)
+            modelContext.insert(model)
+            existingByCompositeID[compositeID] = model
             inserted += 1
+            changed = true
         }
-        if inserted > 0 { try modelContext.save() }
+        if changed { try modelContext.save() }
         return inserted
     }
 
