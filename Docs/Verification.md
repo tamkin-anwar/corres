@@ -2,6 +2,15 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Hotfix: real on-device SwiftData migration crash (September 22, 2026)
+
+Reported directly against a real device with real, already-synced mail: the first bug this whole session that a compile-and-domain-test pass genuinely could not have caught, since it only reproduces against an existing on-disk store, and every verification pass so far has only ever exercised a fresh container.
+
+- Root cause: `PersistedCorrespondence.attachmentsData`/`isUnread`/`labelIds` (Batches 19/23/24) were added as non-optional SwiftData properties with no inline default literal. Lightweight migration needs that literal to backfill old rows; without it, opening a real pre-existing store throws `Cannot migrate store in-place: Validation error missing attribute values on mandatory destination attribute`.
+- Not a hard crash: `CorresApp.makeModelContainer()`'s existing catch silently fell back to an in-memory store, so the app kept launching, but reset all local state (pins, snoozes, Screener decisions) on every single run, invisible without the actual device logs.
+- Fixed the three, then audited every other non-optional property added mid-session for the same gap and found two more (`senderDecisionRaw`, `imagesTrusted`) before they could cause the identical crash later. `PersistedOutboxEntry` confirmed unaffected (a whole new entity, not new columns on an old one).
+- Verified with `swift test` (44/44 passed) and `xcodebuild` (`BUILD SUCCEEDED`). Not yet verified on the actual device that reported this: the fix is logically sound (SwiftData migration backfills a missing column from its declared default) and the general mechanism is well-documented, but this specific device's specific store has not been re-tested against the fix.
+
 ## Batch 25: push notifications (September 22, 2026)
 
 Researched before building: real push notifications need a server no matter what (Gmail's Pub/Sub mechanism cannot target a device directly, and Apple's own push API is private/iCloud-only), so the actual decision was whether to build the smallest server that could do that job, or stay fully backend-less with weaker `BGAppRefreshTask` background refresh. Chose to build it, made content-blind to keep the privacy story intact.

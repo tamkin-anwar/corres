@@ -26,14 +26,33 @@ public final class PersistedCorrespondence {
     public var attentionRaw: String
     public var isPinned: Bool
     public var snoozedUntil: Date?
-    public var senderDecisionRaw: String
-    public var imagesTrusted: Bool
+    /// Defaults to `.approved`'s raw value, not `.pending`: a real row that
+    /// predates this column existing was, by construction, already in the
+    /// account's inbox before the Screener shipped, exactly the case
+    /// `isInitialSync` already treats as auto-approved elsewhere (see
+    /// `SenderDecision`'s doc comment in Correspondence.swift).
+    public var senderDecisionRaw: String = SenderDecision.approved.rawValue
+    public var imagesTrusted: Bool = false
     /// JSON-encoded `[MailAttachment]`, the same one-column choice
     /// `PersistedOutboxEntry.draftData` already made for `Draft`: a small,
     /// self-contained value with no query needs of its own.
-    public var attachmentsData: Data
-    public var isUnread: Bool
-    public var labelIds: [String]
+    ///
+    /// Every non-optional property added to this model after its first
+    /// shipped version needs its own `= <default>` literal, this one
+    /// included: without one, SwiftData's automatic lightweight migration
+    /// has nothing to backfill into existing on-disk rows that predate the
+    /// column, and fails outright ("missing attribute values on mandatory
+    /// destination attribute") the moment a real device with real synced
+    /// mail tries to open the store, rather than a fresh install where no
+    /// migration is ever exercised. Caught live, on a real device, after
+    /// Batch 24 shipped without it on three properties at once
+    /// (`attachmentsData`/`isUnread`/`labelIds`); `senderDecisionRaw` and
+    /// `imagesTrusted` above were missing theirs too and fixed in the same
+    /// pass rather than waiting to hit this again next release. See
+    /// Docs/Architecture.md.
+    public var attachmentsData: Data = Data()
+    public var isUnread: Bool = false
+    public var labelIds: [String] = []
 
     public init(from correspondence: Correspondence) {
         self.compositeID = Self.compositeID(account: correspondence.id.account, providerID: correspondence.id.providerID)
