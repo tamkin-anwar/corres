@@ -6,7 +6,12 @@ import GoogleSignIn
 /// that speaks Gmail's wire format; it returns plain Correspondence values,
 /// never its own DTOs, past this boundary (ADR 002).
 struct GmailAPIClient {
-    enum ClientError: Error { case notSignedIn, badResponse, decodingFailed, historyExpired }
+    /// `badResponse` carries the real HTTP status, not just "it failed":
+    /// `OutboxService`'s retry logic needs to tell a transient failure
+    /// (429/5xx, worth retrying) apart from one Gmail has already fully
+    /// processed and rejected (any other 4xx, retrying just repeats the
+    /// same rejection).
+    enum ClientError: Error { case notSignedIn, badResponse(statusCode: Int), decodingFailed, historyExpired }
 
     /// One fetch, either a first full sync or a cursor-based catch-up; the
     /// caller (GmailSyncService) persists `historyId` and passes it back in
@@ -329,7 +334,8 @@ struct GmailAPIClient {
 
     private func validate(_ response: URLResponse) throws {
         guard let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode else {
-            throw ClientError.badResponse
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw ClientError.badResponse(statusCode: statusCode)
         }
     }
 

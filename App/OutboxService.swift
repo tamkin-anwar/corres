@@ -17,6 +17,17 @@ import Observation
 /// every queued or failed send is persisted immediately, not only held in
 /// this instance's memory, so a force-quit mid-undo-window doesn't silently
 /// lose a message the person already asked to send; see `resumeAfterRelaunch`.
+///
+/// A single send attempt failing no longer means giving up immediately:
+/// `sendViaGmailWithRetry` retries a bounded number of times, with
+/// exponential backoff and jitter, but only for failures where the request
+/// almost certainly never reached or completed on Gmail (see its own doc
+/// comment for exactly which). Two real sends never race each other for the
+/// same account: this whole type is `@MainActor`, `resumeAfterRelaunch`
+/// awaits each queued entry's `commit` one at a time rather than firing
+/// them concurrently, and `queueSend` explicitly commits any still-pending
+/// send before starting a new one, so per-account serialization already
+/// holds structurally rather than needing its own separate queue.
 @MainActor @Observable
 final class OutboxService {
     struct Pending: Identifiable {
@@ -48,6 +59,10 @@ final class OutboxService {
 
     private static let undoWindowSeconds = 6
     private static let sampleAccount = "sample"
+    /// Bounded, not unlimited: a flaky connection gets three real chances
+    /// before the person sees a failure, not an endless silent retry loop.
+    private static let maxSendAttempts = 3
+    private static let baseBackoffMilliseconds = 2000
 
     init(store: MailStore, auth: GoogleAuthService, repository: any MailRepository) {
         self.store = store
@@ -140,7 +155,7 @@ final class OutboxService {
         var realThreadID: ThreadID?
         if shouldSendViaGmail(thread: thread), let account = auth.account?.email {
             do {
-                realThreadID = try await sendViaGmail(draft: draft, thread: thread, account: account)
+                realThreadID = try await sendViaGmailWithRetry(draft: draft, thread: thread, account: account)
             } catch {
                 failed = FailedSend(id: id, draft: draft)
                 try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .failed))
@@ -167,6 +182,54 @@ final class OutboxService {
     private func shouldSendViaGmail(thread: Correspondence?) -> Bool {
         if let thread { return thread.id.account != Self.sampleAccount }
         return auth.account != nil
+    }
+
+    /// Retries only failures where the request almost certainly never
+    /// completed on Gmail's side: a connection-level failure before any
+    /// response arrived, or Gmail's own response explicitly saying "try
+    /// again" (429, or a 5xx). Gmail's send endpoint has no idempotency-key
+    /// mechanism of its own, so there is no way to guarantee a retry can
+    /// never double-send; restricting retries to genuinely
+    /// ambiguous-or-transient failures, and failing fast on anything Gmail
+    /// has already processed and explicitly rejected (any other 4xx,
+    /// where retrying only repeats the identical rejection), is the
+    /// honest, bounded version of safety actually available here, not a
+    /// claim of true exactly-once delivery.
+    private func sendViaGmailWithRetry(draft: Draft, thread: Correspondence?, account: String) async throws -> ThreadID {
+        var lastError: Error = GmailAPIClient.ClientError.badResponse(statusCode: -1)
+        for attempt in 1...Self.maxSendAttempts {
+            do {
+                return try await sendViaGmail(draft: draft, thread: thread, account: account)
+            } catch {
+                lastError = error
+                guard Self.isRetryable(error), attempt < Self.maxSendAttempts else { throw error }
+                // Exponential backoff, plus jitter so a burst of sends that
+                // all failed for the same reason (a brief outage) don't all
+                // retry in lockstep and hit Gmail again at the exact same
+                // moment.
+                let backoffMs = Double(Self.baseBackoffMilliseconds) * pow(2, Double(attempt - 1))
+                let jitterMs = Double.random(in: 0...(backoffMs * 0.5))
+                try? await Task.sleep(for: .milliseconds(Int(backoffMs + jitterMs)))
+            }
+        }
+        throw lastError
+    }
+
+    private static func isRetryable(_ error: Error) -> Bool {
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .timedOut, .cannotConnectToHost, .networkConnectionLost,
+                 .notConnectedToInternet, .dnsLookupFailed, .cannotFindHost,
+                 .dataNotAllowed, .internationalRoamingOff:
+                return true
+            default:
+                return false
+            }
+        }
+        if case GmailAPIClient.ClientError.badResponse(let statusCode) = error {
+            return statusCode == 429 || (500...599).contains(statusCode)
+        }
+        return false
     }
 
     /// Returns the real Gmail thread id the sent message belongs to (a

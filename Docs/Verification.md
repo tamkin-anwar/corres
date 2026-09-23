@@ -2,6 +2,16 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 26: outbox retry hardening (September 23, 2026)
+
+One of the honestly-scoped open gaps from the outbox ADR: a single failed send fell straight to the person-facing Retry/Discard banner, no automatic retry at all. Researched current retry-pattern practice before building (exponential backoff needs jitter or a burst of failures from the same outage all retry in lockstep).
+
+- `OutboxService.sendViaGmailWithRetry`: up to 3 attempts, exponential backoff (2s/4s/8s base) plus up to 50% jitter, before falling through to the existing failed-send UI.
+- Only retries genuinely transient/ambiguous failures (connection-level `URLError`s, or Gmail responding 429/5xx); any other 4xx fails immediately since Gmail already processed and explicitly rejected the request. `GmailAPIClient.ClientError.badResponse` gained a `statusCode` (previously discarded) so this distinction is actually possible.
+- Named honestly: Gmail's send API has no idempotency-key mechanism, so this cannot guarantee zero double-sends, only bound the risk to genuinely ambiguous cases rather than retrying blindly.
+- Per-account serialization (the other open item) turned out to already hold structurally: `@MainActor` isolation plus the existing sequential `resumeAfterRelaunch` loop and `queueSend`'s commit-before-replace behavior, no new code needed.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and a standalone script confirming the retry-classification logic (which errors retry vs. fail fast) and backoff/jitter timing are both correct, matching this session's precedent for App-layer logic with no existing test seam. No new domain tests: no Core-layer counterpart. Not yet verified on-device: actually triggering a real transient failure (e.g. airplane mode mid-send) and confirming the retry sequence runs and eventually recovers or fails cleanly.
+
 ## Push relay deployed; the missing notification itself, fixed (September 23, 2026)
 
 Asked directly whether Corres delivers mail as fast as Gmail's own app. Checking honestly rather than assuming surfaced a real gap: a silent push synced new mail in the background but never told the person it arrived.
