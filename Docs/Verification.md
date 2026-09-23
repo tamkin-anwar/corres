@@ -2,6 +2,17 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 18: Archive and Trash (September 22, 2026)
+
+Asked directly to research and build whatever was missing to make Corres "useful and usable" and closer to "a premium mail app." Audited the codebase first rather than guessing: confirmed Corres could view and reply to real Gmail mail but had no way to archive, delete, or otherwise manage an inbox at all (`Features/PreferencesView.swift` even stated this outright), the single biggest functional gap versus any real mail client. Built Archive and Trash; attachments, push notifications, multi-account, and server-side search remain open (see Docs/Architecture.md's "Not yet done" note).
+
+- `GmailAPIClient.modifyThread`/`trashThread` (new): Gmail's `users.threads.modify` and dedicated `users.threads.trash` endpoints. Needed `gmail.modify`, a new incrementally-requested OAuth scope (`GoogleAuthService.ensureModifyScope()`, sharing a refactored `ensureScope(_:)` helper with the existing send-scope request).
+- `MailRepository.remove(_:)` (new, both repositories): an unconditional single-thread delete, the provider-agnostic Core primitive both actions end with.
+- `ThreadActionService` (new App-layer type, mirrors `OutboxService`'s shape): for a real thread, calls Gmail first and only removes locally on success (nothing here claims a conversation was archived/trashed if the network call failed); a sample thread skips straight to the local remove.
+- Wired into `CorrespondenceList`'s trailing swipe actions (Archive first, Trash second, deliberately not the reverse: SwiftUI triggers whichever action is listed first on a full swipe, and Archive is recoverable from Gmail's All Mail while Trash is not, which matters more than usual given this batch is explicitly trying to build trust) and `ConversationView`'s action bar; either one now dismisses back to the list instead of leaving "Conversation unavailable" as a dead end.
+- Domain-tested in both repositories (4 new tests): removing a thread drops exactly one and leaves the rest untouched; removing an already-gone thread throws `threadNotFound`, same contract every other single-thread operation already has. All 36 domain tests pass (32 prior + 4 new).
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`, full app target including the new `ThreadActionService.swift`, which needed manually registering in `Corres.xcodeproj` since this project is not a file-system-synchronized target) and `swift test` (36/36 passed). Not yet verified on-device: swiping to archive/trash a real message, confirming it actually leaves Gmail's Inbox/moves to Trash, and that the incremental `gmail.modify` consent prompt appears correctly for an account connected before this shipped.
+
 ## Batch 17: fixed replies never appearing (September 22, 2026)
 
 Real bug report from actual usage: sent someone an email through Corres, they replied, the reply never showed up. Root cause was a limitation documented and deliberately left open in Batch 11: `upsert` never touched a thread it already knew about, at all, so a genuinely new message landing in that thread (a real reply, or the real content behind a just-sent local placeholder) was silently and permanently dropped.

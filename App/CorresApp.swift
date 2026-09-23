@@ -8,6 +8,7 @@ struct CorresApp: App {
     @State private var sync: GmailSyncService
     @State private var auth: GoogleAuthService
     @State private var outbox: OutboxService
+    @State private var threadActions: ThreadActionService
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
 
     init() {
@@ -19,6 +20,7 @@ struct CorresApp: App {
         _sync = State(initialValue: GmailSyncService(repository: repository))
         _auth = State(initialValue: authService)
         _outbox = State(initialValue: OutboxService(store: mailStore, auth: authService, repository: repository))
+        _threadActions = State(initialValue: ThreadActionService(store: mailStore, auth: authService))
     }
 
     private static func makeModelContainer() -> ModelContainer {
@@ -40,7 +42,7 @@ struct CorresApp: App {
 
     var body: some Scene {
         WindowGroup {
-            CorresShell(store: store, auth: auth, sync: sync, outbox: outbox)
+            CorresShell(store: store, auth: auth, sync: sync, outbox: outbox, threadActions: threadActions)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
                 .task {

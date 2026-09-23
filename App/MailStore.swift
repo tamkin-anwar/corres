@@ -123,6 +123,23 @@ final class MailStore {
         }
     }
 
+    /// Drops a thread from view entirely: Archive and Trash both end with
+    /// this, once the App layer (`ThreadActionService`) has already told
+    /// Gmail, or there was no Gmail account to tell. Not routed through
+    /// `mutate`, since that splices an updated `Correspondence` back in and
+    /// there is no updated row here, only a removed one.
+    func remove(_ id: ThreadID) async {
+        guard !pending.contains(id) else { return }
+        pending.insert(id)
+        defer { pending.remove(id) }
+        do {
+            try await repository.remove(id)
+            threads.removeAll { $0.id == id }
+        } catch {
+            errorMessage = "Could not update this conversation. Please try again."
+        }
+    }
+
     /// Splices the single returned thread into `threads` in place, the same
     /// pattern `send` already used, instead of re-fetching the entire
     /// mailbox from disk just to find the one row that changed: a pin,

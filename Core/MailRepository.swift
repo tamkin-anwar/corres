@@ -27,6 +27,13 @@ public protocol MailRepository: Sendable {
     /// it. nil for a draft that stayed local-only (no Gmail account
     /// connected, or replying within an already-local/sample thread).
     func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) async throws -> Correspondence
+    /// Removes a single thread outright, unconditionally, regardless of
+    /// account. Used for Archive and Trash: both make a thread disappear
+    /// from Corres entirely, the App layer already told Gmail about it (or
+    /// there is no Gmail account, for a sample thread) before this is ever
+    /// called, so there is nothing provider-specific left to decide here.
+    /// Throws `RepositoryError.threadNotFound` if the thread is already gone.
+    func remove(_ id: ThreadID) async throws
     /// Populates fictional starter data on first use. A no-op for a repository
     /// that is already seeded at construction (SampleMailRepository); real
     /// work for a persisted, empty store.
@@ -162,6 +169,13 @@ public actor SampleMailRepository: MailRepository {
         }
         change(&items[index])
         return items[index]
+    }
+
+    public func remove(_ id: ThreadID) throws {
+        guard let index = items.firstIndex(where: { $0.id == id }) else {
+            throw RepositoryError.threadNotFound
+        }
+        items.remove(at: index)
     }
 
     public func seedIfNeeded(now: Date) {}

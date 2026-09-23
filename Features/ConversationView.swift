@@ -12,15 +12,18 @@ struct ConversationRoute: Hashable {
 struct ConversationView: View {
     let store: MailStore
     let outbox: OutboxService
+    let threadActions: ThreadActionService
     let orderedIDs: [ThreadID]
     @State private var currentID: ThreadID
     @State private var composeDraft: Draft?
     @State private var htmlHeight: CGFloat = 200
     @State private var showRemoteImages = false
+    @Environment(\.dismiss) private var dismiss
 
-    init(store: MailStore, outbox: OutboxService, route: ConversationRoute) {
+    init(store: MailStore, outbox: OutboxService, threadActions: ThreadActionService, route: ConversationRoute) {
         self.store = store
         self.outbox = outbox
+        self.threadActions = threadActions
         self.orderedIDs = route.orderedIDs
         self._currentID = State(initialValue: route.id)
     }
@@ -88,7 +91,17 @@ struct ConversationView: View {
                         sourceThread: store.threads.first(where: { $0.id == currentID }))
         }
         .onChange(of: currentID) { htmlHeight = 200 }
+        .onChange(of: threadExists) { _, stillExists in
+            // Archiving or trashing from inside the conversation itself
+            // removes it from `store.threads` right under this view; pop
+            // back to the list rather than leaving "Conversation
+            // unavailable" as a dead end the person has to back out of
+            // manually.
+            if !stillExists { dismiss() }
+        }
     }
+
+    private var threadExists: Bool { store.threads.contains { $0.id == currentID } }
 
     private var currentIndex: Int? { orderedIDs.firstIndex(of: currentID) }
     private var hasPrevious: Bool { (currentIndex ?? 0) > 0 }
@@ -182,6 +195,14 @@ struct ConversationView: View {
                 Image(systemName: "moon").frame(maxWidth: .infinity, minHeight: 44)
             }
             .accessibilityLabel("Snooze")
+            Button { Task { await threadActions.archive(thread) } } label: {
+                Image(systemName: "archivebox").frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .accessibilityLabel("Archive")
+            Button(role: .destructive) { Task { await threadActions.trash(thread) } } label: {
+                Image(systemName: "trash").frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .accessibilityLabel("Move to Trash")
             Divider().frame(height: 24)
             Button { composeDraft = thread.draft(kind: .reply) } label: {
                 Image(systemName: "arrowshape.turn.up.left").frame(maxWidth: .infinity, minHeight: 44)

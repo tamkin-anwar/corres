@@ -5,6 +5,7 @@ struct CorresShell: View {
     var auth: GoogleAuthService
     var sync: GmailSyncService
     @Bindable var outbox: OutboxService
+    @Bindable var threadActions: ThreadActionService
     @State private var selection = Destination.brief
     @State private var showingSettings = false
     @State private var showingScreener = false
@@ -22,7 +23,7 @@ struct CorresShell: View {
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar { toolbarContent }
                         .navigationDestination(for: ConversationRoute.self) { route in
-                            ConversationView(store: store, outbox: outbox, route: route)
+                            ConversationView(store: store, outbox: outbox, threadActions: threadActions, route: route)
                         }
                 }
                 .tabItem { Label { Text(destination.rawValue) } icon: { Image(uiImage: CorresIcon.tabImage(destination.glyph)) } }
@@ -52,6 +53,12 @@ struct CorresShell: View {
         )) {
             Button("OK", role: .cancel) { store.errorMessage = nil }
         } message: { Text(store.errorMessage ?? "Please try again.") }
+        .alert("Could not complete this action", isPresented: Binding(
+            get: { threadActions.errorMessage != nil },
+            set: { if !$0 { threadActions.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { threadActions.errorMessage = nil }
+        } message: { Text(threadActions.errorMessage ?? "Please try again.") }
     }
 
     @ViewBuilder
@@ -99,7 +106,7 @@ struct CorresShell: View {
             if destination == .brief {
                 BriefView(store: store, sync: sync, auth: auth, selection: $selection, showingScreener: $showingScreener)
             } else {
-                CorrespondenceList(store: store, sync: sync, auth: auth, destination: destination)
+                CorrespondenceList(store: store, sync: sync, auth: auth, threadActions: threadActions, destination: destination)
             }
         }
     }

@@ -113,6 +113,27 @@ struct CorresCoreTests {
         #expect(await repository.threads() == original)
     }
 
+    /// Backs Archive and Trash (App layer): both end with this after telling
+    /// Gmail, or immediately for a sample thread with no Gmail account to tell.
+    @Test func removeDropsExactlyOneThreadAndLeavesEverythingElseUntouched() async throws {
+        let repository = SampleMailRepository(now: now)
+        let before = await repository.threads()
+        let target = try #require(before.first)
+        try await repository.remove(target.id)
+        let after = await repository.threads()
+        #expect(after.count == before.count - 1)
+        #expect(!after.contains { $0.id == target.id })
+        #expect(after.allSatisfy { thread in before.contains { $0.id == thread.id } })
+    }
+
+    @Test func removingAMissingThreadThrows() async throws {
+        let repository = SampleMailRepository(now: now)
+        let ghost = ThreadID(account: "sample", providerID: "does-not-exist")
+        await #expect(throws: RepositoryError.threadNotFound) {
+            try await repository.remove(ghost)
+        }
+    }
+
     @Test func snoozedThreadsAreExcludedFromActiveViewsAndCountsUntilTheyExpire() async throws {
         let repository = SampleMailRepository(now: now)
         let target = try #require(await repository.threads().first { $0.attention == .needsYou })

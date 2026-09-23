@@ -55,6 +55,12 @@ public actor SwiftDataMailRepository: MailRepository {
         return model.asCorrespondence
     }
 
+    public func remove(_ id: ThreadID) throws {
+        let model = try fetchOne(id)
+        modelContext.delete(model)
+        try modelContext.save()
+    }
+
     public func seedIfNeeded(now: Date) throws {
         guard try modelContext.fetchCount(FetchDescriptor<PersistedCorrespondence>()) == 0 else { return }
         insertSampleData(now: now)

@@ -197,6 +197,38 @@ struct GmailAPIClient {
         return sent.threadId
     }
 
+    /// Archive is just removing the `INBOX` label (Gmail's own model: a
+    /// message never really leaves the account, it leaves the Inbox view).
+    /// Marking read/unread is the same call with `UNREAD` instead. One
+    /// shared entry point since both are the same Gmail endpoint.
+    func modifyThread(threadId: String, addLabelIds: [String] = [], removeLabelIds: [String] = []) async throws {
+        let token = try await accessToken()
+        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/threads/\(threadId)/modify")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var body: [String: [String]] = [:]
+        if !addLabelIds.isEmpty { body["addLabelIds"] = addLabelIds }
+        if !removeLabelIds.isEmpty { body["removeLabelIds"] = removeLabelIds }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        try validate(response)
+    }
+
+    /// Gmail's dedicated Trash endpoint, distinct from `modify`: it moves the
+    /// whole thread to Trash (auto-deleted by Gmail after 30 days), rather
+    /// than just changing which labels it carries.
+    func trashThread(threadId: String) async throws {
+        let token = try await accessToken()
+        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/threads/\(threadId)/trash")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (_, response) = try await URLSession.shared.data(for: request)
+        try validate(response)
+    }
+
     private func fetchProfile(token: String) async throws -> Profile {
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/profile")!
         let (data, response) = try await authorizedRequest(url: url, token: token)

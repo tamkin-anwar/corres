@@ -60,6 +60,31 @@ struct SwiftDataMailRepositoryTests {
         #expect(try await repository.threads().count == before + 1)
     }
 
+    /// Backs Archive and Trash (App layer): both end with this after telling
+    /// Gmail, or immediately for a sample thread with no Gmail account to tell.
+    @Test func removeDropsExactlyOneThreadAndPersistsAcrossRelaunch() async throws {
+        let container = try makeContainer()
+        let first = SwiftDataMailRepository(modelContainer: container)
+        try await first.seedIfNeeded(now: now)
+        let before = try await first.threads()
+        let target = try #require(before.first)
+        try await first.remove(target.id)
+
+        let second = SwiftDataMailRepository(modelContainer: container)
+        let after = try await second.threads()
+        #expect(after.count == before.count - 1)
+        #expect(!after.contains { $0.id == target.id })
+    }
+
+    @Test func removingAMissingThreadThrows() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        try await repository.seedIfNeeded(now: now)
+        let ghost = ThreadID(account: "sample", providerID: "does-not-exist")
+        await #expect(throws: RepositoryError.threadNotFound) {
+            try await repository.remove(ghost)
+        }
+    }
+
     @Test func sendingToAMissingThreadThrows() async throws {
         let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
         try await repository.seedIfNeeded(now: now)

@@ -13,17 +13,20 @@ final class GoogleAuthService {
     private(set) var isSigningIn = false
     var errorMessage: String?
 
-    /// `gmail.readonly` plus `gmail.send`, and nothing wider: Corres can now
-    /// reply/forward/send but still cannot delete or modify anything else in
-    /// a real mailbox (see Docs/Product.md's V1 progression). Both are
-    /// Google's "sensitive," not "restricted," scopes, so they need standard
-    /// OAuth consent-screen review before general release but not a CASA
-    /// security assessment; see Docs/Architecture.md ADR 005.
+    /// `gmail.readonly` plus `gmail.send`, and nothing wider at first connect:
+    /// `gmail.modify` (needed for Archive/Trash/read state) is requested
+    /// incrementally, the same pattern `gmail.send` already used, only the
+    /// first time one of those actions is actually attempted (see
+    /// `ensureModifyScope`). All three are Google's "sensitive," not
+    /// "restricted," scopes, so they need standard OAuth consent-screen
+    /// review before general release but not a CASA security assessment;
+    /// see Docs/Architecture.md ADR 005.
     private static let gmailScopes = [
         "https://www.googleapis.com/auth/gmail.readonly",
         "https://www.googleapis.com/auth/gmail.send",
     ]
     private static let sendScope = "https://www.googleapis.com/auth/gmail.send"
+    private static let modifyScope = "https://www.googleapis.com/auth/gmail.modify"
 
     func restorePreviousSignIn() async {
         guard let user = try? await GIDSignIn.sharedInstance.restorePreviousSignIn() else {
@@ -63,12 +66,19 @@ final class GoogleAuthService {
     /// the first time it's actually needed, rather than forcing every
     /// existing connection to disconnect and reconnect.
     @discardableResult
-    func ensureSendScope() async -> Bool {
+    func ensureSendScope() async -> Bool { await ensureScope(Self.sendScope) }
+
+    /// Same incremental pattern as `ensureSendScope`, for Archive/Trash/read
+    /// state, which all need `gmail.modify`, not requested at first connect.
+    @discardableResult
+    func ensureModifyScope() async -> Bool { await ensureScope(Self.modifyScope) }
+
+    private func ensureScope(_ scope: String) async -> Bool {
         guard let user = GIDSignIn.sharedInstance.currentUser else { return false }
-        if Set(user.grantedScopes ?? []).contains(Self.sendScope) { return true }
+        if Set(user.grantedScopes ?? []).contains(scope) { return true }
         guard let presenter = Self.rootViewController() else { return false }
-        _ = try? await user.addScopes([Self.sendScope], presenting: presenter)
-        return Set(user.grantedScopes ?? []).contains(Self.sendScope)
+        _ = try? await user.addScopes([scope], presenting: presenter)
+        return Set(user.grantedScopes ?? []).contains(scope)
     }
 
     func signOut() {

@@ -48,6 +48,9 @@ struct CorrespondenceList: View {
     /// exercises the scrolls==true/refreshable path that uses these.
     var sync: GmailSyncService?
     var auth: GoogleAuthService?
+    /// Optional for the same reason as `sync`/`auth`: nil only for the
+    /// offline preview-render script, which never exercises swipe actions.
+    var threadActions: ThreadActionService?
     let destination: Destination
     @State private var search = ""
 
@@ -118,6 +121,20 @@ struct CorrespondenceList: View {
                 .listRowSeparator(.visible)
                 .listRowSeparatorTint(CorresPalette.line)
                 .swipeActions(edge: .trailing) {
+                    // SwiftUI triggers the FIRST action listed here on a full
+                    // swipe. Archive first, not Trash: matches Apple Mail's
+                    // own default (full swipe archives, recoverable from All
+                    // Mail; trashing needs a deliberate tap), which matters
+                    // more than usual right now given the trust this batch
+                    // is trying to build, not erode with an accidental delete.
+                    Button {
+                        Task { await threadActions?.archive(thread) }
+                    } label: { Label("Archive", systemImage: "archivebox") }
+                    .tint(CorresPalette.swipeArchive)
+                    Button(role: .destructive) {
+                        Task { await threadActions?.trash(thread) }
+                    } label: { Label("Trash", systemImage: "trash") }
+                    .tint(CorresPalette.swipeTrash)
                     Button {
                         Task { await store.update(thread.id, to: .handled) }
                     } label: { Label("Handled", systemImage: "checkmark") }

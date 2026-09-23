@@ -29,6 +29,8 @@ enum CorresPalette {
     static let swipeHandled = Color(hex: 0x2D5A70)
     static let swipeSnooze = Color(hex: 0x4A5560)
     static let swipePin = Color(hex: 0x8A6A3E)
+    static let swipeArchive = Color(hex: 0x5B6B4F) // contrast 5.74:1 against white
+    static let swipeTrash = Color(hex: 0xA33B2E) // contrast 6.51:1 against white
 }
 
 extension Color {
