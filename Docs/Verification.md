@@ -2,6 +2,16 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 20: search that actually reaches your whole mailbox (September 22, 2026)
+
+Search only ever looked at what had already synced locally (a couple hundred most-recent messages), so searching for anything older came back empty, silently, with no indication anything was even attempted. That is a genuine trust-breaker for a mail app specifically, arguably worse than a missing feature: it looks like the app is broken or losing mail. Fixed by reaching Gmail's own search API when a real account is connected.
+
+- `GmailAPIClient.searchMessages(query:account:)` (new): Gmail's `messages.list?q=`, its full search syntax, capped at 25 results, not a second full sync.
+- `GmailSyncService.search(_:account:)` (new): debounced 450ms in `CorrespondenceList` (SwiftUI's `.task(id: search)` cancels automatically on every keystroke, so only a genuine typing pause fires a request), and merges matches through the same `repository.upsert` an ordinary sync uses, so a found result is real, persisted local mail afterward, not a one-off.
+- `MailStore.refresh()` (new): caught and fixed before shipping, not after: the first version reused `MailStore.load()` to pull merged results back in, which flashes the entire list away to a full-screen spinner every time a debounced search fires, because `load()`'s `state = .loading` drives `CorresShell`'s top-level loading switch. `refresh()` re-fetches `threads` without touching `state` at all.
+- A small "Searching Gmail…" indicator (tied to `GmailSyncService.isSearchingRemote`) in the list header gives visible proof the app is actually trying, not just returning nothing.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). No new domain tests: this batch is entirely App-layer network/debounce orchestration with no Core-layer logic change, and `GmailAPIClient` has no existing mock/test seam to unit test against, matching this file's every other Gmail-API method. Not yet verified on-device: typing a real search term for an older, not-yet-synced message and confirming it actually appears.
+
 ## Batch 19: viewing and downloading attachments (September 22, 2026)
 
 The other half of Batch 18's audit: Corres could view and reply to real mail but never showed that a message even had an attachment, let alone let you open one, another real gap versus a usable daily-driver client. Scoped to receiving: tap to download and preview an attachment someone sent. Composing a new message with an attachment of your own is a separate, larger piece of work (a file/photo picker plus a multipart MIME encoder on the send path) and stayed out of this batch.

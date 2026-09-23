@@ -107,6 +107,30 @@ struct GmailAPIClient {
 
     private static let messageFetchConcurrency = 8
 
+    /// Local search (`MailQuery.filter`) only ever sees what's already
+    /// synced, capped at a couple hundred recent messages; typing in an
+    /// older subject or a sender from months ago silently finds nothing,
+    /// which is exactly the kind of "wait, my email app can't find my own
+    /// email" moment that erodes trust in a mail client. Gmail's own search
+    /// (`q=`, its full query syntax, not just a substring match) covers the
+    /// whole real mailbox instead. Capped, not exhaustive: a search result
+    /// list is for finding the one thing you're after, not a second full
+    /// sync of the account.
+    private let searchPageSize = 25
+
+    func searchMessages(query: String, account: String) async throws -> [Correspondence] {
+        let token = try await accessToken()
+        var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
+        components.queryItems = [
+            URLQueryItem(name: "q", value: query),
+            URLQueryItem(name: "maxResults", value: String(searchPageSize)),
+        ]
+        let (data, response) = try await authorizedRequest(url: components.url!, token: token)
+        try validate(response)
+        let list = try JSONDecoder().decode(MessageListResponse.self, from: data)
+        return await fetchMessages(ids: list.messages?.map(\.id) ?? [], token: token, account: account)
+    }
+
     private func accessToken() async throws -> String {
         guard let user = GIDSignIn.sharedInstance.currentUser else { throw ClientError.notSignedIn }
         try await user.refreshTokensIfNeeded()

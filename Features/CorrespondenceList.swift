@@ -77,6 +77,18 @@ struct CorrespondenceList: View {
                 _ = await sync?.syncIfConnected(account: auth?.account?.email)
                 await store.load()
             }
+            // Debounced: fires 450ms after typing pauses, not per keystroke,
+            // and cancels automatically (`.task(id:)`'s own behavior) if the
+            // person keeps typing before that. Reaches past what's already
+            // synced locally; see GmailSyncService.search's doc comment.
+            .task(id: search) {
+                guard let account = auth?.account?.email else { return }
+                try? await Task.sleep(for: .milliseconds(450))
+                guard !Task.isCancelled else { return }
+                if await sync?.search(search, account: account) == true {
+                    await store.refresh()
+                }
+            }
         } else {
             ScrollView { staticContent }
         }
@@ -87,8 +99,17 @@ struct CorrespondenceList: View {
             SculptedBadge(glyph: destination.glyph).padding(.bottom, 8)
             Text(destination.rawValue).font(CorresType.display)
             Text(subtitle).foregroundStyle(CorresPalette.secondary)
-            Text("\(results.count) conversations" + (auth?.account == nil ? " · Sample mail" : ""))
-                .font(CorresType.label).foregroundStyle(CorresPalette.secondary)
+            HStack(spacing: 6) {
+                Text("\(results.count) conversations" + (auth?.account == nil ? " · Sample mail" : ""))
+                    .font(CorresType.label).foregroundStyle(CorresPalette.secondary)
+                // Visible feedback that a search is genuinely reaching past
+                // what's already synced, not just quietly finding nothing:
+                // see GmailSyncService.search's doc comment.
+                if sync?.isSearchingRemote == true {
+                    ProgressView().controlSize(.mini)
+                    Text("Searching Gmail…").font(CorresType.label).foregroundStyle(CorresPalette.secondary)
+                }
+            }
         }
         .padding(.horizontal, CorresSpace.page).padding(.top, CorresSpace.page).padding(.bottom, CorresSpace.medium)
         // Order matters: expand to fill the available width (left-aligned)

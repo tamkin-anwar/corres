@@ -27,6 +27,15 @@ final class MailStore {
         }
     }
 
+    /// Re-fetches `threads` without touching `state`: unlike `load()`, this
+    /// is for refreshing an already-loaded list after something changed
+    /// underneath it (a remote search merging results in), not the initial
+    /// load. `load()`'s `state = .loading` transition would otherwise flash
+    /// the whole list away to a spinner on every debounced search tick.
+    func refresh() async {
+        threads = (try? await repository.threads()) ?? threads
+    }
+
     func resetSampleData() async {
         do {
             try await repository.resetToSampleData(now: .now)

@@ -15,11 +15,38 @@ final class GmailSyncService {
     private let client = GmailAPIClient()
     private let defaults = UserDefaults.standard
     private(set) var isSyncing = false
+    private(set) var isSearchingRemote = false
     var errorMessage: String?
 
     init(repository: any MailRepository) {
         self.repository = repository
     }
+
+    /// Reaches past what's already synced locally (see
+    /// `GmailAPIClient.searchMessages`'s doc comment) and merges any
+    /// matches into the store via the same `upsert` every ordinary sync
+    /// uses, so a found result is not just shown once and forgotten: it's
+    /// now part of the account's local mail like anything else synced.
+    /// Silent on failure, deliberately: a search that came up empty because
+    /// of a network hiccup while the person was mid-keystroke does not
+    /// deserve the same error banner a failed full sync does; whatever
+    /// local results already existed remain valid regardless.
+    /// Returns whether anything was actually merged in, so the caller only
+    /// pays for refreshing `MailStore.threads` when there is something new
+    /// to show.
+    @discardableResult
+    func search(_ query: String, account: String?) async -> Bool {
+        guard let account, !account.isEmpty else { return false }
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= Self.minSearchQueryLength else { return false }
+        isSearchingRemote = true
+        defer { isSearchingRemote = false }
+        guard let matches = try? await client.searchMessages(query: trimmed, account: account), !matches.isEmpty else { return false }
+        let inserted = (try? await repository.upsert(matches, isInitialSync: false)) ?? 0
+        return inserted > 0
+    }
+
+    private static let minSearchQueryLength = 3
 
     @discardableResult
     func syncIfConnected(account: String?) async -> Bool {
