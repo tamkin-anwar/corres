@@ -150,11 +150,33 @@ struct HTMLMessageBody: UIViewRepresentable {
         """
         <html><head><meta name="viewport" content="width=1024">
         <style>
+        :root { color-scheme: light dark; }
         html, body { overflow-x: hidden; }
-        body { font: -apple-system-body; font-size: 17px; line-height: 1.5; color: -apple-system-label;
+        body { font: -apple-system-body; font-size: 17px; line-height: 1.5; color: #1c1c1e !important;
                margin: 0; padding: 0; word-wrap: break-word; -webkit-text-size-adjust: 100%;
                background: transparent; }
-        a { color: #274D61; }
+        a { color: #0a5f8a; }
+        @media (prefers-color-scheme: dark) {
+          /* `!important`, deliberately: real mail HTML (Gmail's own quoted-
+             reply markup included) routinely sets its own inline `color`
+             on individual elements, which would otherwise win over a plain
+             `body` rule regardless of dark mode. An `!important` author
+             rule is the one thing that outranks a non-important inline
+             style in CSS's cascade, so this is what actually makes body
+             text legible instead of only working when nothing in the
+             sender's own HTML happens to set a color. Relying on the
+             literal hex pair here rather than the `-apple-system-label`
+             keyword this used before: that keyword's resolution inside an
+             offline `loadHTMLString` page (no real origin, no live
+             `prefers-color-scheme` media query support confirmed) turned
+             out not to reliably track `overrideUserInterfaceStyle` the way
+             assumed, confirmed unreadable on a real device even after
+             setting it; `prefers-color-scheme` plus real color values is
+             the standards-based mechanism actually documented to respect
+             `overrideUserInterfaceStyle`. */
+          body { color: #f2f2f7 !important; }
+          a { color: #7fc2ef; }
+        }
         </style></head><body>\(html)</body></html>
         """
     }

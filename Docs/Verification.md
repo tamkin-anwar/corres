@@ -2,6 +2,10 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Hotfix: the dark-mode HTML fix didn't actually hold (September 23, 2026)
+
+Reported still broken on the same real message after the first fix shipped. Root-caused properly rather than guessing again: `-apple-system-label`'s CSS resolution inside an offline `loadHTMLString` page didn't reliably track `overrideUserInterfaceStyle`. Replaced with `@media (prefers-color-scheme: dark)` and real hex color pairs, marked `!important` so it actually outranks a sender's own inline `color` styles (a real risk with Gmail's own quoted-reply markup), verified against the CSS Cascade spec rather than assumed. Also did the full sweep asked for: checked every other hardcoded color in the app (`Features/BriefView.swift`, `DesignSystem/Materials.swift`, `DesignSystem/CorrespondenceMark.swift`) and confirmed they're all deliberately-fixed decorative elements paired with their own fixed backgrounds (the Brief hero card, the brand mark), not the same class of bug. Verified with `xcodebuild` (`BUILD SUCCEEDED`). Not yet re-verified on-device: reopening the exact message that was reported broken twice now and confirming it's actually readable this time.
+
 ## Two real bugs found on the first successful push test (September 23, 2026)
 
 Push actually worked end to end for the first time: a real reply from a real sender triggered a real notification immediately. Two real bugs surfaced by that actual use, not by any build/test pass.
