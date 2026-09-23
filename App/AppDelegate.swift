@@ -60,17 +60,41 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     /// Everything a launch needs regardless of whether the app is actually
-    /// visible: restoring the signed-in account, loading local threads, an
+    /// visible: restoring the signed-in accounts, loading local threads, an
     /// initial sync, and renewing the push watch subscription. Runs on
     /// every launch (this method fires for a background-only launch too),
     /// not gated behind the UI ever appearing.
+    ///
+    /// Structured for real parallelism, not just readability (Batch 29's
+    /// full-sweep pass): `store.load()` (reading local SwiftData) and
+    /// `auth.restoreConnectedAccounts()` (Keychain + UserDefaults, no
+    /// dependency on local thread data) don't depend on each other and used
+    /// to run one after another for no reason. Once the connected accounts
+    /// are known, `sync.syncAll` (each account's own Gmail round trip),
+    /// `labelDirectory.refreshIfConnected`, and `pushService.renewWatch`
+    /// are three more independent network operations that don't need to
+    /// wait on each other either, each of which is itself now internally
+    /// concurrent across accounts (see their own doc comments); only
+    /// `store.load()`'s second call (to pick up whatever `sync` just wrote)
+    /// and everything that reads that fresh state (`deleteSampleDataIfPresent`,
+    /// `outbox.resumeAfterRelaunch`, which needs `store.threads` to resolve
+    /// a resumed reply's source thread) still have to wait for `sync` to
+    /// actually finish.
     private func performLaunchWork() async {
-        await store.load()
+        async let storeLoaded: Void = store.load()
         await auth.restoreConnectedAccounts()
+        await storeLoaded
         let accountEmails = auth.accounts.map(\.email)
-        if await sync.syncAll(accounts: accountEmails) {
+
+        async let didSync = sync.syncAll(accounts: accountEmails)
+        async let labelsRefreshed: Void = labelDirectory.refreshIfConnected(accounts: accountEmails)
+        async let watchRenewed: Void = pushService.renewWatch(accounts: accountEmails)
+
+        if await didSync {
             await store.load()
         }
+        _ = await (labelsRefreshed, watchRenewed)
+
         // Covers relaunching already connected (the connect button in
         // Preferences handles the first-connection case itself): sample
         // threads from before that connection existed have no reason to
@@ -79,8 +103,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             await store.deleteSampleDataIfPresent()
         }
         await outbox.resumeAfterRelaunch()
-        await labelDirectory.refreshIfConnected(accounts: accountEmails)
-        await pushService.renewWatch(accounts: accountEmails)
         scheduleBackgroundRefresh()
     }
 

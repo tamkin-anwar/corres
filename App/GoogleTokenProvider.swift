@@ -31,10 +31,32 @@ actor GoogleTokenProvider {
     /// mid-request for a call that started using it right as it lapsed.
     private static let expiryBuffer: TimeInterval = 60
 
+    /// One in-flight refresh per account, not one per caller. Launch alone
+    /// now fires `sync`/`labelDirectory`/`pushService` concurrently for
+    /// every connected account (Batch 29's own performance sweep), and on a
+    /// cold cache all three would otherwise independently notice the same
+    /// account has no valid token yet and each fire their own refresh-token
+    /// POST to Google at once: three real network round trips and three
+    /// separate hits against Google's OAuth token endpoint for what should
+    /// be one. A caller that arrives while a refresh for that account is
+    /// already running awaits that same in-flight `Task` instead of
+    /// starting a second one.
+    private var inFlightRefreshes: [String: Task<String, Error>] = [:]
+
     func accessToken(for email: String) async throws -> String {
         if let cached = cache[email], cached.expiresAt > Date().addingTimeInterval(Self.expiryBuffer) {
             return cached.value
         }
+        if let existing = inFlightRefreshes[email] {
+            return try await existing.value
+        }
+        let task = Task { try await self.refreshAccessToken(for: email) }
+        inFlightRefreshes[email] = task
+        defer { inFlightRefreshes[email] = nil }
+        return try await task.value
+    }
+
+    private func refreshAccessToken(for email: String) async throws -> String {
         guard let refreshToken = Keychain.get(key: Self.keychainKey(for: email)) else {
             throw TokenError.noRefreshToken
         }

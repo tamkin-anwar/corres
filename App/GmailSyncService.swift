@@ -41,36 +41,57 @@ final class GmailSyncService {
         guard trimmed.count >= Self.minSearchQueryLength else { return false }
         isSearchingRemote = true
         defer { isSearchingRemote = false }
-        var anyInserted = false
         // Gmail's search endpoint is scoped to whichever account authorized
         // the call ("me"); reaching every connected account means one call
-        // per account, merged into the same local store the same way an
-        // ordinary sync would.
-        for account in accounts {
-            guard let matches = try? await client.searchMessages(query: trimmed, account: account), !matches.isEmpty else { continue }
-            let inserted = (try? await repository.upsert(matches, isInitialSync: false)) ?? 0
-            anyInserted = anyInserted || inserted > 0
+        // per account. Fired concurrently, not one after another: with more
+        // than one connected account, waiting on each account's round trip
+        // in turn means someone with three accounts waits three times as
+        // long for a search that could otherwise finish in the time of the
+        // slowest single account. `repository` is a `@ModelActor`, already
+        // safe to call concurrently from multiple tasks (calls queue on the
+        // actor rather than racing).
+        return await withTaskGroup(of: Bool.self) { group in
+            for account in accounts {
+                group.addTask {
+                    guard let matches = try? await self.client.searchMessages(query: trimmed, account: account), !matches.isEmpty else { return false }
+                    let inserted = (try? await self.repository.upsert(matches, isInitialSync: false)) ?? 0
+                    return inserted > 0
+                }
+            }
+            var anyInserted = false
+            for await inserted in group where inserted { anyInserted = true }
+            return anyInserted
         }
-        return anyInserted
     }
 
     private static let minSearchQueryLength = 3
 
-    /// Syncs every connected account, one after another (not concurrently:
-    /// `isSyncing` guards the whole pass, matching the old single-account
-    /// behavior of never overlapping two syncs). Returns whether any account
-    /// actually pulled in new data, the same signal `syncOne` already gave
-    /// for a single account.
+    /// Syncs every connected account concurrently, not one after another:
+    /// each account's sync is its own independent Gmail round trip (its own
+    /// history cursor, its own `fetchMessages` call with its own bounded
+    /// concurrency pool), so waiting on them in turn meant someone with
+    /// three connected accounts waited three times as long as someone with
+    /// one for a pull-to-refresh or a launch sync to finish, for no real
+    /// reason. `isSyncing` still guards the whole pass as a single unit
+    /// (never overlapping a second `syncAll`/`syncIfConnected` call while
+    /// one is already running), matching the old single-account behavior;
+    /// only what happens *inside* one pass changed. `repository` is a
+    /// `@ModelActor`: concurrent `upsert` calls from different accounts
+    /// queue on it safely rather than racing. Returns whether any account
+    /// actually pulled in new data.
     @discardableResult
     func syncAll(accounts: [String]) async -> Bool {
         guard !accounts.isEmpty, !isSyncing else { return false }
         isSyncing = true
         defer { isSyncing = false }
-        var anySucceeded = false
-        for account in accounts {
-            if await syncOneLocked(account: account) { anySucceeded = true }
+        return await withTaskGroup(of: Bool.self) { group in
+            for account in accounts {
+                group.addTask { await self.syncOneLocked(account: account) }
+            }
+            var anySucceeded = false
+            for await succeeded in group where succeeded { anySucceeded = true }
+            return anySucceeded
         }
-        return anySucceeded
     }
 
     @discardableResult

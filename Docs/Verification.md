@@ -2,6 +2,15 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 29 follow-up: multi-account performance sweep (September 23, 2026)
+
+Asked directly to make sure Batch 29 was as fast as possible; audited it specifically.
+
+- `GmailSyncService.syncAll`/`.search`, `PushNotificationService.renewWatch`/`.disableAll`/`.didRegister` all switched from a sequential per-account `for` loop to `withTaskGroup`, so N connected accounts' independent network round trips overlap instead of stacking.
+- `AppDelegate.performLaunchWork` restructured with `async let`: `store.load()`/`auth.restoreConnectedAccounts()` now run concurrently, as do `sync.syncAll`/`labelDirectory.refreshIfConnected`/`pushService.renewWatch`; only the parts that genuinely depend on sync having finished still wait for it.
+- Caught while making that change, not separately reported: parallelizing those three meant they could all request the same account's access token at once on a cold cache. `GoogleTokenProvider` now dedupes concurrent same-account refreshes to one in-flight `Task`, so this doesn't turn into three redundant OAuth refresh calls per account per launch.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and `swift build` (Core package). **Not yet verified on-device**: actual wall-clock launch/sync time with two or more real connected accounts, before and after, was not measured on a real device — the changes are correctness-verified (build succeeds, actor-isolation and Sendable checks pass under Swift 6 strict concurrency) and structurally sound, but the real speedup has not been benchmarked, only reasoned about.
+
 ## Batch 29: true simultaneous multi-account, unified + per-account views (September 23, 2026)
 
 Requested explicitly: full simultaneous multi-account (multiple Gmail accounts connected and syncing at once, surviving relaunch), plus both a unified inbox and a per-account switcher view, researched against Apple Mail, Gmail, Spark, and Superhuman's own approaches before designing (see Docs/Architecture.md's Batch 29 entries for the research and the resulting design).

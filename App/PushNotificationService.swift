@@ -58,8 +58,10 @@ final class PushNotificationService {
         isEnabled = false
         defaults.set(false, forKey: Self.enabledKey)
         UIApplication.shared.unregisterForRemoteNotifications()
-        for account in accounts {
-            try? await client.stopWatching(account: account)
+        await withTaskGroup(of: Void.self) { group in
+            for account in accounts {
+                group.addTask { try? await self.client.stopWatching(account: account) }
+            }
         }
         if let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) {
             try? await post(path: "unregister", body: ["deviceToken": deviceTokenHex])
@@ -84,8 +86,10 @@ final class PushNotificationService {
     func didRegister(deviceToken: Data, accounts: [String]) async {
         let hex = deviceToken.map { String(format: "%02x", $0) }.joined()
         defaults.set(hex, forKey: Self.deviceTokenKey)
-        for account in accounts {
-            try? await post(path: "register", body: ["emailAddress": account, "deviceToken": hex])
+        await withTaskGroup(of: Void.self) { group in
+            for account in accounts {
+                group.addTask { try? await self.post(path: "register", body: ["emailAddress": account, "deviceToken": hex]) }
+            }
         }
     }
 
@@ -94,19 +98,33 @@ final class PushNotificationService {
     /// left unopened for a week silently stops getting push until the next
     /// launch. A background-refresh-driven renewal would close that gap;
     /// deliberately not built here, a known and accepted limitation for v1
-    /// (see Server/push-relay/README.md). Loops every connected account: the
-    /// relay's `devices` record now maps one device token to a list of
+    /// (see Server/push-relay/README.md). Covers every connected account:
+    /// the relay's `devices` record now maps one device token to a list of
     /// accounts (see Server/push-relay's own doc comment), so each account
-    /// needs its own `watch` call and its own `register` post.
+    /// needs its own `watch` call and its own `register` post. Fired
+    /// concurrently, not one after another: this runs on every launch (see
+    /// `AppDelegate.performLaunchWork`) and inside a capped-duration
+    /// `BGAppRefreshTask`, so N accounts waiting on each other's network
+    /// round trip in turn is real, avoidable time either way.
     func renewWatch(accounts: [String]) async {
         guard isEnabled else { return }
-        for account in accounts {
-            // `watch` is `@discardableResult` on its own declaration, but that
-            // doesn't propagate through `try?`, which still warns its own
-            // result is unused; discard it explicitly.
-            _ = try? await client.watch(topicName: Self.pubsubTopicName, account: account)
-            if let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) {
-                try? await post(path: "register", body: ["emailAddress": account, "deviceToken": deviceTokenHex])
+        // Read once, on the main actor, before spawning concurrent child
+        // tasks: `UserDefaults` isn't `Sendable`, so a task-group closure
+        // can't reach back across the actor boundary to read `self.defaults`
+        // directly without forcing an await on every access anyway.
+        let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey)
+        await withTaskGroup(of: Void.self) { group in
+            for account in accounts {
+                group.addTask {
+                    // `watch` is `@discardableResult` on its own
+                    // declaration, but that doesn't propagate through
+                    // `try?`, which still warns its own result is unused;
+                    // discard it explicitly.
+                    _ = try? await self.client.watch(topicName: Self.pubsubTopicName, account: account)
+                    if let deviceTokenHex {
+                        try? await self.post(path: "register", body: ["emailAddress": account, "deviceToken": deviceTokenHex])
+                    }
+                }
             }
         }
     }
