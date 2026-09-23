@@ -121,12 +121,24 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// `attention` stops following Gmail's read state the moment a person
     /// makes their own decision about a thread (see ADR 002).
     public var isUnread: Bool
+    /// Gmail's own raw label ids for this thread's latest message,
+    /// unfiltered (system labels like INBOX/UNREAD/SENT/CATEGORY_* are
+    /// mixed in alongside real user-created ones; Gmail's per-message
+    /// resource carries no type info to tell them apart, only the separate
+    /// labels catalog does). Deliberately just opaque provider ids here, the
+    /// same treatment `latestMessageID`/`messageIdHeader` already get,
+    /// rather than a richer type: the App layer's label directory (fetched
+    /// once from Gmail's labels list, which does carry type/name) is what
+    /// turns an id into something displayable, and filters out the system
+    /// ones. Empty for sample/fictional threads.
+    public var labelIds: [String]
 
     public init(id: ThreadID, sender: String, senderEmail: String? = nil, organization: String, subject: String,
                 excerpt: String, body: String, htmlBody: String? = nil, messageIdHeader: String? = nil,
                 latestMessageID: String? = nil, receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
                 isPinned: Bool = false, snoozedUntil: Date? = nil, senderDecision: SenderDecision = .approved,
-                imagesTrusted: Bool = false, attachments: [MailAttachment] = [], isUnread: Bool = false) {
+                imagesTrusted: Bool = false, attachments: [MailAttachment] = [], isUnread: Bool = false,
+                labelIds: [String] = []) {
         self.id = id
         self.sender = sender
         self.senderEmail = senderEmail
@@ -147,6 +159,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.imagesTrusted = imagesTrusted
         self.attachments = attachments
         self.isUnread = isUnread
+        self.labelIds = labelIds
     }
 
     public var initials: String {
@@ -179,7 +192,12 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
             attention: preserveAttention ? attention : incoming.attention,
             isPinned: isPinned, snoozedUntil: snoozedUntil,
             senderDecision: senderDecision, imagesTrusted: imagesTrusted, attachments: incoming.attachments,
-            isUnread: preserveAttention ? isUnread : incoming.isUnread)
+            isUnread: preserveAttention ? isUnread : incoming.isUnread,
+            // Labels reflect genuine Gmail mailbox-organization state, not a
+            // triage decision Corres invented (unlike attention/reason):
+            // always take the freshest known value, regardless of which
+            // side sent the message that happened to trigger this update.
+            labelIds: incoming.labelIds)
     }
 }
 

@@ -95,6 +95,18 @@ struct CorresCoreTests {
         #expect(readAgain.isUnread == false)
     }
 
+    /// Backs the App layer's label-toggle menu: applied after a real Gmail
+    /// label change already succeeded, replacing the full set rather than
+    /// adding/removing a single id, since the caller already recomputed it.
+    @Test func setLabelIdsReplacesTheFullSet() async throws {
+        let repository = SampleMailRepository(now: now)
+        let target = try #require(await repository.threads().first)
+        let updated = try await repository.setLabelIds(["Label_1", "Label_2"], for: target.id)
+        #expect(updated.labelIds == ["Label_1", "Label_2"])
+        let replaced = try await repository.setLabelIds(["Label_2"], for: target.id)
+        #expect(replaced.labelIds == ["Label_2"])
+    }
+
     @Test func replyingMovesTheThreadToWaitingWithEvidence() async throws {
         let repository = SampleMailRepository(now: now)
         let original = try #require(await repository.threads().first { $0.attention == .needsYou })

@@ -9,6 +9,7 @@ struct CorresApp: App {
     @State private var auth: GoogleAuthService
     @State private var outbox: OutboxService
     @State private var threadActions: ThreadActionService
+    @State private var labelDirectory = LabelDirectory()
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
 
     init() {
@@ -42,7 +43,7 @@ struct CorresApp: App {
 
     var body: some Scene {
         WindowGroup {
-            CorresShell(store: store, auth: auth, sync: sync, outbox: outbox, threadActions: threadActions)
+            CorresShell(store: store, auth: auth, sync: sync, outbox: outbox, threadActions: threadActions, labelDirectory: labelDirectory)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
                 .task {
@@ -70,6 +71,7 @@ struct CorresApp: App {
                         await store.deleteSampleDataIfPresent()
                     }
                     await outbox.resumeAfterRelaunch()
+                    await labelDirectory.refreshIfConnected(account: auth.account?.email)
                 }
                 .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
         }

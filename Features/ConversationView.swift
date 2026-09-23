@@ -14,6 +14,7 @@ struct ConversationView: View {
     let store: MailStore
     let outbox: OutboxService
     let threadActions: ThreadActionService
+    let labelDirectory: LabelDirectory
     let orderedIDs: [ThreadID]
     @State private var currentID: ThreadID
     @State private var composeDraft: Draft?
@@ -21,10 +22,12 @@ struct ConversationView: View {
     @State private var showRemoteImages = false
     @Environment(\.dismiss) private var dismiss
 
-    init(store: MailStore, outbox: OutboxService, threadActions: ThreadActionService, route: ConversationRoute) {
+    init(store: MailStore, outbox: OutboxService, threadActions: ThreadActionService,
+        labelDirectory: LabelDirectory, route: ConversationRoute) {
         self.store = store
         self.outbox = outbox
         self.threadActions = threadActions
+        self.labelDirectory = labelDirectory
         self.orderedIDs = route.orderedIDs
         self._currentID = State(initialValue: route.id)
     }
@@ -40,6 +43,12 @@ struct ConversationView: View {
                             .padding(.horizontal, CorresSpace.page)
                         messageHeader(for: thread, isSample: isSample)
                             .padding(.horizontal, CorresSpace.page)
+                        let knownLabels = thread.labelIds.compactMap { id in
+                            labelDirectory.labels.first { $0.id == id }
+                        }
+                        if !knownLabels.isEmpty {
+                            labelChips(knownLabels).padding(.horizontal, CorresSpace.page)
+                        }
                         if let html = thread.htmlBody {
                             let blockedCount = HTMLMessageBody.remoteImageCount(in: html)
                             if blockedCount > 0 && !showRemoteImages && !thread.imagesTrusted {
@@ -147,6 +156,23 @@ struct ConversationView: View {
         "\(thread.attention.title): \(thread.reason)"
     }
 
+    private func labelChips(_ labels: [GmailUserLabel]) -> some View {
+        // A flowing wrap would be nicer for many labels, but a horizontal
+        // scroll matches what's already the established pattern elsewhere in
+        // this view (the action bar itself) and is simpler than SwiftUI's
+        // lack of a built-in flow layout pre-iOS 17's own primitives.
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(labels) { label in
+                    Text(label.name).font(.caption.weight(.medium))
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(CorresPalette.surface, in: Capsule())
+                        .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.5))
+                }
+            }
+        }
+    }
+
     private func attachmentsList(_ attachments: [MailAttachment], messageID: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(attachments) { attachment in
@@ -203,6 +229,25 @@ struct ConversationView: View {
                 Image(systemName: "tag").frame(maxWidth: .infinity, minHeight: 44)
             }
             .accessibilityLabel("Mark as")
+            if !labelDirectory.labels.isEmpty {
+                Menu {
+                    ForEach(labelDirectory.labels) { label in
+                        let isOn = thread.labelIds.contains(label.id)
+                        Button {
+                            Task { await threadActions.toggleLabel(label.id, isOn: !isOn, for: thread) }
+                        } label: {
+                            if isOn {
+                                Label(label.name, systemImage: "checkmark")
+                            } else {
+                                Text(label.name)
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemName: "bookmark").frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .accessibilityLabel("Labels")
+            }
             Button {
                 Task { await store.setPinned(!thread.isPinned, for: thread.id) }
             } label: {

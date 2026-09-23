@@ -33,6 +33,11 @@ public actor SwiftDataMailRepository: MailRepository {
         try mutate(id) { $0.isUnread = isUnread }
     }
 
+    @discardableResult
+    public func setLabelIds(_ labelIds: [String], for id: ThreadID) throws -> Correspondence {
+        try mutate(id) { $0.labelIds = labelIds }
+    }
+
     public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {
         guard let threadID = draft.threadID else {
             let sender = draft.to.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -122,6 +127,11 @@ public actor SwiftDataMailRepository: MailRepository {
                 existing.latestMessageID = incomingMessageID
                 existing.receivedAt = item.receivedAt
                 existing.attachmentsData = (try? JSONEncoder().encode(item.attachments)) ?? Data()
+                // Labels reflect genuine Gmail mailbox-organization state,
+                // not a triage decision Corres invented (unlike
+                // attention/reason below): always take the freshest known
+                // value, regardless of which side sent the triggering message.
+                existing.labelIds = item.labelIds
                 if !isFromAccountOwner {
                     // A genuine inbound message: its own unread state should
                     // drive attention/reason/isUnread, same as any new

@@ -49,6 +49,30 @@ final class ThreadActionService {
         }, local: { await self.store.setUnread(isUnread, for: thread.id) })
     }
 
+    /// Adds or removes a single real Gmail label (from `LabelDirectory`),
+    /// same Gmail-call-then-local-change shape as everything else here.
+    /// `local` recomputes the thread's full label set from what's already
+    /// known rather than trusting a stale copy from before the Gmail call,
+    /// since another toggle could have raced ahead of this one locally.
+    func toggleLabel(_ labelId: String, isOn: Bool, for thread: Correspondence) async {
+        let failureMessage = "Could not update this label. Please try again."
+        await perform(thread, failureMessage: failureMessage, gmailCall: {
+            if isOn {
+                try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: [labelId])
+            } else {
+                try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: [labelId])
+            }
+        }, local: {
+            var labelIds = self.store.threads.first { $0.id == thread.id }?.labelIds ?? thread.labelIds
+            if isOn {
+                if !labelIds.contains(labelId) { labelIds.append(labelId) }
+            } else {
+                labelIds.removeAll { $0 == labelId }
+            }
+            await self.store.setLabelIds(labelIds, for: thread.id)
+        })
+    }
+
     private func perform(_ thread: Correspondence, failureMessage: String,
                          gmailCall: () async throws -> Void, local: () async -> Void) async {
         if thread.id.account != Self.sampleAccount {

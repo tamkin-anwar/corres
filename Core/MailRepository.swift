@@ -21,6 +21,12 @@ public protocol MailRepository: Sendable {
     /// moment a person makes their own decision.
     @discardableResult
     func setUnread(_ isUnread: Bool, for id: ThreadID) async throws -> Correspondence
+    /// Replaces a thread's full label id set after a real Gmail label toggle
+    /// already succeeded (App layer), rather than waiting for the next sync
+    /// to pick it up, matching every other manual action's "reflect
+    /// immediately, not eventually" behavior.
+    @discardableResult
+    func setLabelIds(_ labelIds: [String], for id: ThreadID) async throws -> Correspondence
     /// Replying or forwarding moves the source thread to Waiting: the user has
     /// acted and is now the one expecting a response. A new draft opens a thread
     /// in the same state, since nothing has come back yet either way.
@@ -148,6 +154,11 @@ public actor SampleMailRepository: MailRepository {
     @discardableResult
     public func setUnread(_ isUnread: Bool, for id: ThreadID) throws -> Correspondence {
         try mutate(id) { $0.isUnread = isUnread }
+    }
+
+    @discardableResult
+    public func setLabelIds(_ labelIds: [String], for id: ThreadID) throws -> Correspondence {
+        try mutate(id) { $0.labelIds = labelIds }
     }
 
     public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {

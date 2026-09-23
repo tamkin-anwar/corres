@@ -76,6 +76,10 @@ final class MailStore {
         await mutate(id) { try await self.repository.setUnread(isUnread, for: id) }
     }
 
+    func setLabelIds(_ labelIds: [String], for id: ThreadID) async {
+        await mutate(id) { try await self.repository.setLabelIds(labelIds, for: id) }
+    }
+
     /// Every thread currently held by the Screener, awaiting a one-time
     /// approve/block decision on its sender. Excluded from Brief/Needs You/
     /// Waiting/Mail by `MailQuery.filter` until decided.

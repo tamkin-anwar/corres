@@ -253,6 +253,21 @@ struct GmailAPIClient {
         try validate(response)
     }
 
+    /// Gmail's label catalog, filtered to user-created labels only (Gmail's
+    /// own system ones like INBOX/UNREAD/SENT/CATEGORY_* are excluded via
+    /// their own `type: "system"`, since a per-message `labelIds` list, all
+    /// `Correspondence.labelIds` ever carries, has no type info to tell
+    /// these apart on its own). This is the only place that distinction
+    /// exists; the App layer's label directory is built from this.
+    func fetchUserLabels() async throws -> [GmailUserLabel] {
+        let token = try await accessToken()
+        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/labels")!
+        let (data, response) = try await authorizedRequest(url: url, token: token)
+        try validate(response)
+        let list = try JSONDecoder().decode(LabelListResponse.self, from: data)
+        return (list.labels ?? []).filter { $0.type == "user" }.map { GmailUserLabel(id: $0.id, name: $0.name) }
+    }
+
     private func fetchProfile(token: String) async throws -> Profile {
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/profile")!
         let (data, response) = try await authorizedRequest(url: url, token: token)
@@ -303,7 +318,8 @@ struct GmailAPIClient {
             excerpt: message.snippet ?? "", body: body, htmlBody: htmlBody, messageIdHeader: messageIdHeader,
             latestMessageID: message.id, receivedAt: receivedAt, dueAt: nil,
             reason: isUnread ? "Unread in Gmail." : "Already read in Gmail.",
-            attention: isUnread ? .needsYou : .quiet, attachments: attachments, isUnread: isUnread)
+            attention: isUnread ? .needsYou : .quiet, attachments: attachments, isUnread: isUnread,
+            labelIds: message.labelIds ?? [])
     }
 
     /// A real attachment (something to download) versus an inline image
@@ -444,6 +460,19 @@ private struct Profile: Decodable { let historyId: String? }
 private struct SentMessage: Decodable { let threadId: String }
 
 private struct AttachmentDataResponse: Decodable { let data: String }
+
+/// A real, user-created Gmail label: `id` is what `Correspondence.labelIds`
+/// and `GmailAPIClient.modifyThread` both traffic in, `name` is what a
+/// person actually recognizes.
+struct GmailUserLabel: Identifiable, Hashable, Sendable {
+    let id: String
+    let name: String
+}
+
+private struct LabelListResponse: Decodable {
+    struct Label: Decodable { let id: String; let name: String; let type: String? }
+    let labels: [Label]?
+}
 
 private struct GmailMessage: Decodable {
     let id: String

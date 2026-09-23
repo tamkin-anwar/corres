@@ -95,6 +95,42 @@ struct SwiftDataMailRepositoryTests {
         #expect(reloaded.isUnread == true)
     }
 
+    @Test func setLabelIdsReplacesTheFullSetAndPersistsAcrossRelaunch() async throws {
+        let container = try makeContainer()
+        let first = SwiftDataMailRepository(modelContainer: container)
+        try await first.seedIfNeeded(now: now)
+        let target = try #require(await first.threads().first)
+        try await first.setLabelIds(["Label_1", "Label_2"], for: target.id)
+
+        let second = SwiftDataMailRepository(modelContainer: container)
+        let reloaded = try #require(await second.threads().first { $0.id == target.id })
+        #expect(reloaded.labelIds == ["Label_1", "Label_2"])
+    }
+
+    /// Labels reflect genuine Gmail mailbox-organization state, not a
+    /// triage decision Corres invented (unlike attention/reason): unlike
+    /// isUnread, a genuinely new message updates labelIds regardless of
+    /// whether it's our own sent copy or a real inbound reply.
+    @Test func upsertUpdatesLabelIdsRegardlessOfWhoSentTheMessage() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let placeholder = Correspondence(
+            id: ThreadID(account: "me@example.com", providerID: "thread-labels"),
+            sender: "Ridu", organization: "", subject: "Hello", excerpt: "Hi", body: "Hi",
+            receivedAt: now, dueAt: nil, reason: "You started this conversation. Waiting for a response.",
+            attention: .waiting, labelIds: [])
+        try await repository.upsert([placeholder], isInitialSync: true)
+
+        let ownSentCopy = Correspondence(
+            id: placeholder.id, sender: "Me", senderEmail: "me@example.com", organization: "",
+            subject: "Hello", excerpt: "Hi", body: "Hi", latestMessageID: "msg-sent",
+            receivedAt: now, dueAt: nil, reason: "Already read in Gmail.", attention: .quiet,
+            labelIds: ["SENT", "Label_1"])
+        try await repository.upsert([ownSentCopy], isInitialSync: false)
+
+        let afterSentCopy = try #require(await repository.threads().first { $0.id == placeholder.id })
+        #expect(afterSentCopy.labelIds == ["SENT", "Label_1"])
+    }
+
     /// The reply-sync fix (Batch 17) already covers content/attention
     /// updating on a genuine new message versus our own sent copy
     /// preserving it; this confirms isUnread rides the same two paths.

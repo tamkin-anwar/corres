@@ -2,6 +2,19 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 24: Gmail labels (September 22, 2026)
+
+Closes the last line of Preferences' own scope-description copy: Corres could archive, trash, and mark read/unread, but still could not apply or view a real Gmail label. Real mailbox organization for a lot of Gmail users depends on labels specifically, more than folders.
+
+- `Correspondence.labelIds: [String]` (new): raw Gmail label ids, unfiltered, treated as an opaque provider id like `latestMessageID` already is rather than a richer Core type.
+- `GmailAPIClient.fetchUserLabels()` (new): Gmail's labels catalog, filtered to `type: "user"` only, the one place system labels (INBOX/UNREAD/SENT/CATEGORY_*) are actually distinguished from real ones.
+- `LabelDirectory` (new App-layer `@Observable`): the id-to-name lookup, refreshed once after launch/sync.
+- `ThreadActionService.toggleLabel`: reuses the established Gmail-call-then-local-change shape, no new Gmail endpoint needed (the existing `modifyThread` already generalizes to any label id, not just INBOX/UNREAD).
+- `MailRepository.setLabelIds(_:for:)` (new, both repositories): the Core primitive; `upsert` also carries `labelIds` through unconditionally on any content update, unlike `isUnread`, since labels are genuine Gmail state, not a Corres-invented triage decision with a "don't let our own sent copy downgrade it" concern.
+- `ConversationView`: label chips (filtered through `LabelDirectory` so raw system ids never leak into display) plus a "Labels" toggle menu in the action bar, both hidden when no account is connected or nothing's loaded yet.
+- Domain-tested (3 new tests): `setLabelIds` replaces the full set correctly and persists across a SwiftData relaunch; `upsert` carries `labelIds` through regardless of which side sent the triggering message (unlike `isUnread`). All 44 domain tests pass (41 prior + 3 new).
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`, including manually registering the new `App/LabelDirectory.swift` in `Corres.xcodeproj`, same non-file-system-synchronized-target step every new App-layer file has needed since Batch 18) and `swift test` (44/44 passed). Not yet verified on-device: toggling a real label on a real message and confirming it actually appears/disappears in Gmail, and that the label chips show real label names rather than raw ids.
+
 ## Batch 23: manual read/unread (September 22, 2026)
 
 Real mail apps let you mark something read or unread yourself; Corres only ever followed Gmail's own state, one-way, at sync time. Fixed as its own, orthogonal fact rather than folded into the existing Attention system.

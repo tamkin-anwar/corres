@@ -6,6 +6,7 @@ struct CorresShell: View {
     var sync: GmailSyncService
     @Bindable var outbox: OutboxService
     @Bindable var threadActions: ThreadActionService
+    var labelDirectory: LabelDirectory
     @State private var selection = Destination.brief
     @State private var showingSettings = false
     @State private var showingScreener = false
@@ -23,7 +24,8 @@ struct CorresShell: View {
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar { toolbarContent }
                         .navigationDestination(for: ConversationRoute.self) { route in
-                            ConversationView(store: store, outbox: outbox, threadActions: threadActions, route: route)
+                            ConversationView(store: store, outbox: outbox, threadActions: threadActions,
+                                            labelDirectory: labelDirectory, route: route)
                         }
                 }
                 .tabItem { Label { Text(destination.rawValue) } icon: { Image(uiImage: CorresIcon.tabImage(destination.glyph)) } }
