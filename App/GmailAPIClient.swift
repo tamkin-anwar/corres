@@ -271,13 +271,50 @@ struct GmailAPIClient {
         let htmlBody = rawHTML.map { Self.inlineCIDImages(in: $0, from: message.payload) }
         let body = plainText ?? message.snippet ?? ""
         let messageIdHeader = headers["message-id"]?.trimmingCharacters(in: CharacterSet(charactersIn: "<>"))
+        var attachments: [MailAttachment] = []
+        Self.collectAttachments(from: message.payload, into: &attachments)
         return Correspondence(
             id: ThreadID(account: account, providerID: message.threadId ?? message.id),
             sender: sender, senderEmail: senderEmail, organization: organization, subject: subject,
             excerpt: message.snippet ?? "", body: body, htmlBody: htmlBody, messageIdHeader: messageIdHeader,
             latestMessageID: message.id, receivedAt: receivedAt, dueAt: nil,
             reason: isUnread ? "Unread in Gmail." : "Already read in Gmail.",
-            attention: isUnread ? .needsYou : .quiet)
+            attention: isUnread ? .needsYou : .quiet, attachments: attachments)
+    }
+
+    /// A real attachment (something to download) versus an inline image
+    /// already rendered by `inlineCIDImages` are both MIME parts with a
+    /// `body.attachmentId`, distinguished by whether the part carries a
+    /// `Content-ID` header: an inline image always does (that's how the
+    /// HTML's `cid:` reference finds it) and a real attachment never does.
+    /// Filtering those out here is what stops every embedded logo/signature
+    /// image from also showing up as a downloadable attachment underneath.
+    private static func collectAttachments(from part: GmailMessagePart?, into result: inout [MailAttachment]) {
+        guard let part else { return }
+        let hasContentID = part.headers?.contains { $0.name.lowercased() == "content-id" } ?? false
+        if let filename = part.filename, !filename.isEmpty, !hasContentID,
+           let attachmentId = part.body?.attachmentId {
+            result.append(MailAttachment(id: attachmentId, filename: filename,
+                                          mimeType: part.mimeType ?? "application/octet-stream",
+                                          sizeBytes: part.body?.size ?? 0))
+        }
+        for child in part.parts ?? [] {
+            collectAttachments(from: child, into: &result)
+        }
+    }
+
+    /// Attachment content is never included in `users.messages.get`'s
+    /// response for anything but the smallest parts; this is Gmail's
+    /// dedicated endpoint for fetching the actual bytes, called on demand
+    /// (a tap on the attachment) rather than as part of every sync.
+    func fetchAttachmentData(messageId: String, attachmentId: String) async throws -> Data {
+        let token = try await accessToken()
+        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages/\(messageId)/attachments/\(attachmentId)")!
+        let (data, response) = try await authorizedRequest(url: url, token: token)
+        try validate(response)
+        let attachment = try JSONDecoder().decode(AttachmentDataResponse.self, from: data)
+        guard let decoded = Data(base64URLEncoded: attachment.data) else { throw ClientError.decodingFailed }
+        return decoded
     }
 
     /// "Name" <email@domain.com> or a bare address.
@@ -382,6 +419,8 @@ private struct Profile: Decodable { let historyId: String? }
 
 private struct SentMessage: Decodable { let threadId: String }
 
+private struct AttachmentDataResponse: Decodable { let data: String }
+
 private struct GmailMessage: Decodable {
     let id: String
     let threadId: String?
@@ -393,10 +432,11 @@ private struct GmailMessage: Decodable {
 
 private struct GmailMessagePart: Decodable {
     let mimeType: String?
+    let filename: String?
     let headers: [Header]?
     let body: Body?
     let parts: [GmailMessagePart]?
 
     struct Header: Decodable { let name: String; let value: String }
-    struct Body: Decodable { let data: String? }
+    struct Body: Decodable { let data: String?; let attachmentId: String?; let size: Int? }
 }

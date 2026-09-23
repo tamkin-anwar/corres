@@ -39,6 +39,24 @@ public enum SenderDecision: String, Codable, Sendable {
     case pending, approved, blocked
 }
 
+/// A file attached to a message, identified but not downloaded: `id` is
+/// Gmail's own `attachmentId`, only meaningful together with the parent
+/// message's id (`Correspondence.latestMessageID`), which is what
+/// `GmailAPIClient.fetchAttachmentData` needs to actually fetch the bytes.
+public struct MailAttachment: Codable, Hashable, Sendable, Identifiable {
+    public let id: String
+    public let filename: String
+    public let mimeType: String
+    public let sizeBytes: Int
+
+    public init(id: String, filename: String, mimeType: String, sizeBytes: Int) {
+        self.id = id
+        self.filename = filename
+        self.mimeType = mimeType
+        self.sizeBytes = sizeBytes
+    }
+}
+
 public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     public let id: ThreadID
     public let sender: String
@@ -89,12 +107,18 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// Privacy Protection (a server-side image relay that would need
     /// Corres to run a real backend, which it deliberately doesn't yet).
     public var imagesTrusted: Bool
+    /// What's attached, not the bytes themselves: attachment content can be
+    /// large and is fetched on demand (a single tap, see
+    /// `GmailAPIClient.fetchAttachmentData`), the same "collapsed by
+    /// default, load on request" instinct already applied to remote images.
+    /// Empty for sample/fictional threads, which never really have any.
+    public let attachments: [MailAttachment]
 
     public init(id: ThreadID, sender: String, senderEmail: String? = nil, organization: String, subject: String,
                 excerpt: String, body: String, htmlBody: String? = nil, messageIdHeader: String? = nil,
                 latestMessageID: String? = nil, receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
                 isPinned: Bool = false, snoozedUntil: Date? = nil, senderDecision: SenderDecision = .approved,
-                imagesTrusted: Bool = false) {
+                imagesTrusted: Bool = false, attachments: [MailAttachment] = []) {
         self.id = id
         self.sender = sender
         self.senderEmail = senderEmail
@@ -113,6 +137,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.snoozedUntil = snoozedUntil
         self.senderDecision = senderDecision
         self.imagesTrusted = imagesTrusted
+        self.attachments = attachments
     }
 
     public var initials: String {
@@ -144,7 +169,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
             reason: preserveAttention ? reason : incoming.reason,
             attention: preserveAttention ? attention : incoming.attention,
             isPinned: isPinned, snoozedUntil: snoozedUntil,
-            senderDecision: senderDecision, imagesTrusted: imagesTrusted)
+            senderDecision: senderDecision, imagesTrusted: imagesTrusted, attachments: incoming.attachments)
     }
 }
 

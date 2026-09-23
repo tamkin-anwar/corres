@@ -60,6 +60,27 @@ struct SwiftDataMailRepositoryTests {
         #expect(try await repository.threads().count == before + 1)
     }
 
+    /// Attachments are stored as one JSON-encoded column (`attachmentsData`),
+    /// not individual fields, the same choice `PersistedOutboxEntry` already
+    /// made for `Draft`; this is what actually exercises the encode/decode
+    /// round trip through a real SwiftData save and a fresh actor instance.
+    @Test func attachmentsRoundTripAcrossRelaunch() async throws {
+        let container = try makeContainer()
+        let first = SwiftDataMailRepository(modelContainer: container)
+        let attachment = MailAttachment(id: "att-1", filename: "invoice.pdf", mimeType: "application/pdf", sizeBytes: 48_213)
+        let withAttachment = Correspondence(
+            id: ThreadID(account: "me@example.com", providerID: "thread-att"),
+            sender: "Billing", senderEmail: "billing@example.com", organization: "Example",
+            subject: "Your invoice", excerpt: "Attached", body: "Attached",
+            receivedAt: now, dueAt: nil, reason: "Unread in Gmail.", attention: .needsYou,
+            attachments: [attachment])
+        try await first.upsert([withAttachment], isInitialSync: true)
+
+        let second = SwiftDataMailRepository(modelContainer: container)
+        let reloaded = try #require(await second.threads().first { $0.id == withAttachment.id })
+        #expect(reloaded.attachments == [attachment])
+    }
+
     /// Backs Archive and Trash (App layer): both end with this after telling
     /// Gmail, or immediately for a sample thread with no Gmail account to tell.
     @Test func removeDropsExactlyOneThreadAndPersistsAcrossRelaunch() async throws {

@@ -116,6 +116,7 @@ public actor SwiftDataMailRepository: MailRepository {
                 existing.messageIdHeader = item.messageIdHeader
                 existing.latestMessageID = incomingMessageID
                 existing.receivedAt = item.receivedAt
+                existing.attachmentsData = (try? JSONEncoder().encode(item.attachments)) ?? Data()
                 if !isFromAccountOwner {
                     // A genuine inbound message: its own unread state should
                     // drive attention/reason, same as any new thread. Our

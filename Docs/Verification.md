@@ -2,6 +2,17 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 19: viewing and downloading attachments (September 22, 2026)
+
+The other half of Batch 18's audit: Corres could view and reply to real mail but never showed that a message even had an attachment, let alone let you open one, another real gap versus a usable daily-driver client. Scoped to receiving: tap to download and preview an attachment someone sent. Composing a new message with an attachment of your own is a separate, larger piece of work (a file/photo picker plus a multipart MIME encoder on the send path) and stayed out of this batch.
+
+- `Correspondence.attachments: [MailAttachment]` (new): filename/MIME type/size/Gmail's own attachmentId, never the bytes. `GmailAPIClient.map`'s new `collectAttachments` walks the message's MIME parts the same way the existing inline-image code already does, and excludes any part with a `Content-ID` header so an embedded signature/logo image doesn't also show up as a "downloadable" attachment.
+- `GmailAPIClient.fetchAttachmentData(messageId:attachmentId:)` (new): Gmail's dedicated attachment-bytes endpoint, called only when a person actually taps an attachment, not during sync.
+- Persisted as one JSON-encoded column on `PersistedCorrespondence`, matching `PersistedOutboxEntry`'s existing choice for `Draft`.
+- `ConversationView` lists each attachment (filename, human-readable size, a paperclip icon); tapping one downloads it to a temp file and opens iOS's own QuickLook preview, which already has Share/Save built into its toolbar.
+- Domain-tested (1 new test): an attachment survives a full SwiftData save and reload (a fresh repository actor over the same container, simulating a relaunch) with every field intact. All 37 domain tests pass (36 prior + 1 new).
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and `swift test` (37/37 passed). Not yet verified on-device: tapping a real attachment on a real message and confirming QuickLook actually opens it, for at least a PDF and an image.
+
 ## Batch 18: Archive and Trash (September 22, 2026)
 
 Asked directly to research and build whatever was missing to make Corres "useful and usable" and closer to "a premium mail app." Audited the codebase first rather than guessing: confirmed Corres could view and reply to real Gmail mail but had no way to archive, delete, or otherwise manage an inbox at all (`Features/PreferencesView.swift` even stated this outright), the single biggest functional gap versus any real mail client. Built Archive and Trash; attachments, push notifications, multi-account, and server-side search remain open (see Docs/Architecture.md's "Not yet done" note).

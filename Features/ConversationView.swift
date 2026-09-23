@@ -1,3 +1,4 @@
+import QuickLook
 import SwiftUI
 
 /// A conversation plus the ordered list of ids it was opened from (a Brief
@@ -55,6 +56,10 @@ struct ConversationView: View {
                                 .frame(height: htmlHeight)
                         } else {
                             Text(thread.body).font(.body).lineSpacing(8).textSelection(.enabled)
+                                .padding(.horizontal, CorresSpace.page)
+                        }
+                        if !thread.attachments.isEmpty, let messageID = thread.latestMessageID {
+                            attachmentsList(thread.attachments, messageID: messageID)
                                 .padding(.horizontal, CorresSpace.page)
                         }
                         Text(isSample ? "No AI processing. Replying, forwarding, and sending stay on this device until Gmail is connected."
@@ -131,6 +136,14 @@ struct ConversationView: View {
 
     private func evidenceLine(for thread: Correspondence) -> String {
         "\(thread.attention.title): \(thread.reason)"
+    }
+
+    private func attachmentsList(_ attachments: [MailAttachment], messageID: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(attachments) { attachment in
+                AttachmentRow(attachment: attachment, messageID: messageID)
+            }
+        }
     }
 
     /// Showing images also remembers the sender (`MailStore.trustSenderImages`),
@@ -221,6 +234,71 @@ struct ConversationView: View {
         .disabled(store.pending.contains(thread.id))
         .padding(.horizontal, CorresSpace.medium)
         .background(.bar)
+    }
+}
+
+/// A tap downloads the attachment's bytes on demand (they are never fetched
+/// during sync, see `Correspondence.attachments`) and hands them to iOS's
+/// own QuickLook preview, matching Mail.app's own attachment-tap behavior:
+/// preview inline, with saving/sharing already built into that preview's
+/// own toolbar, rather than Corres inventing a separate save/share flow.
+private struct AttachmentRow: View {
+    let attachment: MailAttachment
+    let messageID: String
+    @State private var isDownloading = false
+    @State private var previewURL: URL?
+    @State private var downloadFailed = false
+    private let client = GmailAPIClient()
+
+    var body: some View {
+        Button {
+            Task { await download() }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "paperclip").foregroundStyle(CorresPalette.secondary)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(attachment.filename).font(.footnote.weight(.medium)).lineLimit(1)
+                    Text(formattedSize).font(.caption2).foregroundStyle(CorresPalette.secondary)
+                }
+                Spacer(minLength: 8)
+                if isDownloading {
+                    ProgressView()
+                } else {
+                    Image(systemName: "arrow.down.circle").foregroundStyle(CorresPalette.secondary)
+                }
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(CorresPalette.line, lineWidth: 0.5))
+        }
+        .disabled(isDownloading)
+        .buttonStyle(.plain)
+        .quickLookPreview($previewURL)
+        .alert("Could not download this attachment", isPresented: $downloadFailed) {
+            Button("OK", role: .cancel) {}
+        } message: { Text("Please try again.") }
+    }
+
+    private var formattedSize: String {
+        ByteCountFormatter.string(fromByteCount: Int64(attachment.sizeBytes), countStyle: .file)
+    }
+
+    private func download() async {
+        isDownloading = true
+        defer { isDownloading = false }
+        do {
+            let data = try await client.fetchAttachmentData(messageId: messageID, attachmentId: attachment.id)
+            // A fresh, uniquely-named subdirectory per download: two
+            // attachments sharing a filename (common with "image.png") must
+            // not silently overwrite each other's temp file.
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let url = directory.appendingPathComponent(attachment.filename)
+            try data.write(to: url)
+            previewURL = url
+        } catch {
+            downloadFailed = true
+        }
     }
 }
 
