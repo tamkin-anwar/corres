@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 22: email content overfilling the screen, fixed for real (September 22, 2026)
+
+Reported directly against a real marketing email: a Disney+ "You May Also Like" promo rendered with an enormous hero image and headline overflowing well past the screen edge, the same failure class earlier batches (14, "hard guarantee against horizontal scroll") were supposed to have already closed. Root-caused two independent, real causes rather than guessing at one.
+
+- **Measurement race**: `HTMLMessageBody.Coordinator` measured `document.body.scrollWidth/scrollHeight` exactly once, at `didFinish`, before every image (especially a slow remote one, or a CSS `background-image`) had necessarily finished loading, then froze the shrink-to-fit scale and reported height against that too-early, too-small measurement. Now re-measures at +350ms and +1000ms after the first pass, using a `loadGeneration` counter to recognize and discard a stale re-measurement scheduled for a webview instance that's since been pooled and reused for a different conversation.
+- **Sender's own embedded viewport meta tag**: `html` is only ever a body fragment, but WebKit's parser still honors a `<meta name="viewport">` found anywhere in the document, including one a sender's own template accidentally left inside their body content. That tag could silently override `wrap()`'s own intended `width=1024` desktop-style viewport with `device-width`, at which point any fixed-pixel-sized element in the sender's HTML (never designed for a phone-width containing block) overflows outright. Now stripped from the sender's HTML before `wrap()` adds its own tag.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). No new domain tests: this is WKWebView rendering/measurement logic with no Core-layer counterpart, matching `HTMLMessageBody`'s existing untested status (Previews/ImageRenderer captures don't exercise a real WKWebView; see "Scope of the previews" below). Not yet verified on-device: reopening the exact Disney+ email that triggered this report and confirming it now renders properly scaled with no overflow.
+
 ## Batch 21: composing with attachments (September 22, 2026)
 
 Closes the gap Batch 19 deliberately left open: you could view/download what someone sent you, but not attach anything of your own when replying or composing new. Real gap for a daily-driver client.

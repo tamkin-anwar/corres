@@ -42,7 +42,12 @@ struct HTMLMessageBody: UIViewRepresentable {
         guard context.coordinator.lastHTML != html || context.coordinator.lastBlockRemoteImages != blockRemoteImages else { return }
         context.coordinator.lastHTML = html
         context.coordinator.lastBlockRemoteImages = blockRemoteImages
-        let processed = blockRemoteImages ? Self.blockingRemoteImages(in: html) : html
+        // Invalidates any re-measurement still scheduled from a previous
+        // load on this same (possibly pooled/reused) webview instance; see
+        // Coordinator.loadGeneration.
+        context.coordinator.loadGeneration += 1
+        var processed = blockRemoteImages ? Self.blockingRemoteImages(in: html) : html
+        processed = Self.strippingEmbeddedViewportMeta(processed)
         // Hidden until didFinish: a pooled instance still shows whatever it
         // was last displaying until the new load actually finishes, and
         // revealing immediately would flash that stale content for a frame.
@@ -88,6 +93,27 @@ struct HTMLMessageBody: UIViewRepresentable {
         pattern: #"(<img\b[^>]*\bsrc\s*=\s*)(["'])https?://[^"']*\2"#, options: [.caseInsensitive])
     private static let transparentPixelDataURI = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
 
+    /// Real HTML mail bodies routinely carry their own
+    /// `<meta name="viewport" content="width=device-width, ...">` (boilerplate
+    /// from whatever template built them), even though `html` here is only
+    /// ever a body fragment, not a full document. WebKit's HTML parser still
+    /// finds and honors a `<meta>` tag wherever it appears, so a sender's
+    /// stray one can silently win over `wrap()`'s own `width=1024` tag
+    /// (added second, after the sender's content). When device-width wins
+    /// instead of the intended desktop-style width, any element the
+    /// template sized in fixed pixels for a real mail client (not a
+    /// percentage width) overflows the narrower device-width containing
+    /// block outright, which is what oversized hero images/headlines
+    /// blowing past the screen edge actually was.
+    private static let embeddedViewportMetaRegex = try? NSRegularExpression(
+        pattern: #"<meta\b[^>]*\bname\s*=\s*["']viewport["'][^>]*>"#, options: [.caseInsensitive])
+
+    private static func strippingEmbeddedViewportMeta(_ html: String) -> String {
+        guard let regex = embeddedViewportMetaRegex else { return html }
+        let range = NSRange(html.startIndex..., in: html)
+        return regex.stringByReplacingMatches(in: html, options: [], range: range, withTemplate: "")
+    }
+
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     /// Wraps the raw body fragment with a stylesheet approximating Corres's
@@ -126,30 +152,64 @@ struct HTMLMessageBody: UIViewRepresentable {
         var lastBlockRemoteImages: Bool?
         init(_ parent: HTMLMessageBody) { self.parent = parent }
 
+        /// A generation counter, bumped every time a fresh load starts
+        /// (`updateUIView`), so a re-measurement scheduled for an earlier
+        /// load can recognize it's stale (the webview has since been reused
+        /// for a different conversation, borrowed back from the pool) and
+        /// bail out instead of stomping a newer conversation's correct size
+        /// with a late measurement of the previous one's.
+        var loadGeneration = 0
+
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            let generation = loadGeneration
+            Task { @MainActor [weak self, weak webView] in
+                guard let self, let webView else { return }
+                // Real marketing HTML routinely finishes its main-frame
+                // navigation before every image has actually finished
+                // loading (a slow remote asset, or a CSS background-image,
+                // which doesn't always gate the navigation "finish" event
+                // the way a plain <img src> does): measuring only once,
+                // right at didFinish, could freeze the shrink-to-fit scale
+                // and WKWebView's own height against a page that then grows
+                // taller/wider a moment later once those finish, which is
+                // exactly what "email content overfilling the screen" looks
+                // like from the outside. Re-measuring a couple more times
+                // shortly after catches that growth and rescales for it;
+                // measuring stops paying off once nothing is still loading.
+                await self.measureAndScale(webView, generation: generation, revealWhenDone: true)
+                try? await Task.sleep(for: .milliseconds(350))
+                guard generation == self.loadGeneration else { return }
+                await self.measureAndScale(webView, generation: generation, revealWhenDone: false)
+                try? await Task.sleep(for: .milliseconds(650))
+                guard generation == self.loadGeneration else { return }
+                await self.measureAndScale(webView, generation: generation, revealWhenDone: false)
+            }
+        }
+
+        private func measureAndScale(_ webView: WKWebView, generation: Int, revealWhenDone: Bool) async {
             // allowsContentJavaScript = false only restricts content-embedded
             // <script> execution; this host-triggered evaluateJavaScript call
             // is unaffected (confirmed on-device: it reliably returns a value).
-            webView.evaluateJavaScript("[document.body.scrollWidth, document.body.scrollHeight]") { [weak self] result, _ in
-                // Reveal unconditionally, even if measurement below fails:
-                // updateUIView hid this webview (alpha 0) to avoid flashing a
-                // pooled instance's stale previous content; whatever happens
-                // with sizing, it must not stay invisible forever.
-                defer { UIView.animate(withDuration: 0.12) { webView.alpha = 1 } }
-                guard let self, let dimensions = result as? [Double], dimensions.count == 2,
-                      let contentWidth = dimensions.first, let contentHeight = dimensions.last,
-                      contentWidth > 0, contentHeight > 0 else { return }
-                let viewportWidth = webView.bounds.width
-                // Uniformly shrink the whole rendered page to fit, rather
-                // than the earlier per-element CSS clamping that broke
-                // proportions (see wrap()'s doc comment). Never scale a
-                // narrower-than-device email UP; only shrink an oversized one.
-                let scale = viewportWidth > 0 && contentWidth > viewportWidth ? viewportWidth / contentWidth : 1
-                webView.scrollView.minimumZoomScale = scale
-                webView.scrollView.maximumZoomScale = scale
-                webView.scrollView.zoomScale = scale
-                self.parent.height = contentHeight * scale
-            }
+            let result = try? await webView.evaluateJavaScript("[document.body.scrollWidth, document.body.scrollHeight]")
+            // Reveal unconditionally on the first pass, even if measurement
+            // below fails: updateUIView hid this webview (alpha 0) to avoid
+            // flashing a pooled instance's stale previous content, and it
+            // must not stay invisible forever regardless of what sizing does.
+            if revealWhenDone { UIView.animate(withDuration: 0.12) { webView.alpha = 1 } }
+            guard generation == loadGeneration,
+                  let dimensions = result as? [Double], dimensions.count == 2,
+                  let contentWidth = dimensions.first, let contentHeight = dimensions.last,
+                  contentWidth > 0, contentHeight > 0 else { return }
+            let viewportWidth = webView.bounds.width
+            // Uniformly shrink the whole rendered page to fit, rather than
+            // per-element CSS clamping that broke proportions (see wrap()'s
+            // doc comment). Never scale a narrower-than-device email UP;
+            // only shrink an oversized one.
+            let scale = viewportWidth > 0 && contentWidth > viewportWidth ? viewportWidth / contentWidth : 1
+            webView.scrollView.minimumZoomScale = scale
+            webView.scrollView.maximumZoomScale = scale
+            webView.scrollView.zoomScale = scale
+            parent.height = contentHeight * scale
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
