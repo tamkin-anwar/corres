@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Hotfix: HTML mail silently clipped mid-content, and the reading view feeling cramped (September 23, 2026)
+
+Reported directly with a side-by-side screenshot comparison against Apple Mail rendering the same real email (a UNIQLO marketing message), plus a broader complaint that Corres reads as "a wrapper for reading emails" rather than a full native surface.
+
+- Root-caused the clip: `HTMLMessageBody`'s height re-measurement stopped at a fixed 1000ms after load, and `WKWebViewPool` disables the webview's own scrolling, so any image still loading past that point silently clipped with no way to see the rest. Replaced the fixed schedule with adaptive polling that keeps checking until the measured height stabilizes (or a ~10s cap), not a guessed fixed delay.
+- `ConversationView` now hides the main tab bar (`.toolbar(.hidden, for: .tabBar)`) while reading a message, and its action bar is now a floating translucent capsule (`.ultraThinMaterial`, inset from the edges) instead of a flat, opaque, edge-to-edge bar — both aimed directly at the "wrapper, not full-screen" complaint, matching Apple Mail's own reading-view chrome.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). **Not verified live in the Simulator this session**: the Simulator launch repeatedly exited immediately after the splash screen with no crash/fault log recorded (`log show` against the process found nothing), consistent with this same sandbox's already-documented environment limitation (see "Environment limitations" below: a CoreSimulator version mismatch reported by Xcode itself), not evidence of a code-level crash — the build itself compiles and links cleanly. Real confirmation that the clip is actually fixed (reopening the same UNIQLO email, or another dense marketing email, and scrolling all the way through it) and that the new chrome looks right needs the user's own device, the same as every other visual/on-device claim in this project.
+
 ## Batch 29 follow-up: multi-account performance sweep (September 23, 2026)
 
 Asked directly to make sure Batch 29 was as fast as possible; audited it specifically.

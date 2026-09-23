@@ -80,6 +80,17 @@ struct ConversationView: View {
                     .frame(maxWidth: .infinity, alignment: .leading).frame(maxWidth: 680)
                 }
                 .safeAreaInset(edge: .bottom) { actionBar(for: thread) }
+                // A reading view competing with the main tab bar for the
+                // same strip of screen (Brief/Needs You/Waiting/Mail
+                // sitting directly under this view's own action bar) was
+                // exactly the "feels like a wrapper around email, not a
+                // full-screen reading experience" gap flagged directly
+                // against a real screenshot, contrasted with Apple Mail's
+                // own message view, which is never double-chromed like
+                // this. The main tab bar has no reason to still be visible
+                // while reading one specific conversation; hiding it here
+                // gives the message the whole screen, the same as Mail.
+                .toolbar(.hidden, for: .tabBar)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         HStack(spacing: 4) {
@@ -296,7 +307,20 @@ struct ConversationView: View {
         .font(.body)
         .disabled(store.pending.contains(thread.id))
         .padding(.horizontal, CorresSpace.medium)
-        .background(.bar)
+        // A floating, inset capsule instead of a full-width, edge-to-edge
+        // opaque bar: matches Apple Mail's own bottom toolbar (a translucent
+        // pill sitting a short margin above the safe area, not a docked
+        // strip flush with the screen edges), part of the same "feels like
+        // a wrapper, not a full native reading surface" gap the tab-bar fix
+        // above addresses. `.ultraThinMaterial` for the frosted-glass
+        // translucency Apple's own floating bars use; a stroke outline
+        // since a translucent capsule floating directly over busy image
+        // content otherwise has no visible edge of its own.
+        .frame(height: 50)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.5))
+        .padding(.horizontal, CorresSpace.page)
+        .padding(.bottom, 8)
     }
 }
 

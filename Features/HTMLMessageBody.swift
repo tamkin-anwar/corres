@@ -209,29 +209,58 @@ struct HTMLMessageBody: UIViewRepresentable {
             let generation = loadGeneration
             Task { @MainActor [weak self, weak webView] in
                 guard let self, let webView else { return }
-                // Real marketing HTML routinely finishes its main-frame
-                // navigation before every image has actually finished
-                // loading (a slow remote asset, or a CSS background-image,
-                // which doesn't always gate the navigation "finish" event
-                // the way a plain <img src> does): measuring only once,
-                // right at didFinish, could freeze the shrink-to-fit scale
-                // and WKWebView's own height against a page that then grows
-                // taller/wider a moment later once those finish, which is
-                // exactly what "email content overfilling the screen" looks
-                // like from the outside. Re-measuring a couple more times
-                // shortly after catches that growth and rescales for it;
-                // measuring stops paying off once nothing is still loading.
                 await self.measureAndScale(webView, generation: generation, revealWhenDone: true)
-                try? await Task.sleep(for: .milliseconds(350))
-                guard generation == self.loadGeneration else { return }
-                await self.measureAndScale(webView, generation: generation, revealWhenDone: false)
-                try? await Task.sleep(for: .milliseconds(650))
-                guard generation == self.loadGeneration else { return }
-                await self.measureAndScale(webView, generation: generation, revealWhenDone: false)
+                await self.pollUntilStable(webView, generation: generation)
             }
         }
 
-        private func measureAndScale(_ webView: WKWebView, generation: Int, revealWhenDone: Bool) async {
+        /// Real marketing HTML routinely finishes its main-frame navigation
+        /// before every image has actually finished loading (a slow remote
+        /// asset over a real, possibly slow connection, or a CSS
+        /// `background-image`, neither of which reliably gates the
+        /// navigation "finish" event the way a plain `<img src>` does).
+        /// Measuring only once at `didFinish` freezes the shrink-to-fit
+        /// scale and the WKWebView's own height against a page that then
+        /// grows taller a moment later once those finish — and because
+        /// `WKWebViewPool` deliberately disables the webview's own internal
+        /// scrolling (content is meant to scroll as one continuous page
+        /// with everything around it, not in a nested scroll view), any
+        /// growth past that locked-in height is silently, invisibly
+        /// clipped with no way to scroll and see the rest. Reported
+        /// directly against a real, image-heavy marketing email on a real
+        /// device: the content visibly stopped mid-image.
+        ///
+        /// A *fixed* number of re-measurements at fixed delays (this used
+        /// to do two, at 350ms/1000ms after `didFinish`) is still only a
+        /// guess at how long images take, and a dense email's images can
+        /// easily take longer than that on a slower connection. Polls
+        /// instead, at a steadily widening interval, until two consecutive
+        /// measurements agree within a point (nothing is still loading) or
+        /// a generous ~10-second cap is reached (a genuinely stuck remote
+        /// resource must not poll forever). A short, fast email with
+        /// nothing left to load stabilizes and stops after the very first
+        /// check; a slow one keeps checking, without wastefully polling at
+        /// a fixed high frequency the whole time.
+        private func pollUntilStable(_ webView: WKWebView, generation: Int) async {
+            var lastHeight: CGFloat?
+            for stepMs in Self.pollIntervalsMs {
+                try? await Task.sleep(for: .milliseconds(stepMs))
+                guard generation == loadGeneration else { return }
+                let measured = await measureAndScale(webView, generation: generation, revealWhenDone: false)
+                guard let measured else { continue }
+                if let lastHeight, abs(measured - lastHeight) < 1 { return }
+                lastHeight = measured
+            }
+        }
+
+        /// Widening on purpose: a page still actively loading images checks
+        /// again soon; one that's taking a while backs off instead of
+        /// polling needlessly often while it waits. Sums to just under 10
+        /// seconds of total worst-case polling.
+        private static let pollIntervalsMs = [150, 200, 300, 450, 650, 900, 1200, 1600, 2000, 2500]
+
+        @discardableResult
+        private func measureAndScale(_ webView: WKWebView, generation: Int, revealWhenDone: Bool) async -> CGFloat? {
             // allowsContentJavaScript = false only restricts content-embedded
             // <script> execution; this host-triggered evaluateJavaScript call
             // is unaffected (confirmed on-device: it reliably returns a value).
@@ -244,7 +273,7 @@ struct HTMLMessageBody: UIViewRepresentable {
             guard generation == loadGeneration,
                   let dimensions = result as? [Double], dimensions.count == 2,
                   let contentWidth = dimensions.first, let contentHeight = dimensions.last,
-                  contentWidth > 0, contentHeight > 0 else { return }
+                  contentWidth > 0, contentHeight > 0 else { return nil }
             let viewportWidth = webView.bounds.width
             // Uniformly shrink the whole rendered page to fit, rather than
             // per-element CSS clamping that broke proportions (see wrap()'s
@@ -254,7 +283,9 @@ struct HTMLMessageBody: UIViewRepresentable {
             webView.scrollView.minimumZoomScale = scale
             webView.scrollView.maximumZoomScale = scale
             webView.scrollView.zoomScale = scale
-            parent.height = contentHeight * scale
+            let scaledHeight = contentHeight * scale
+            parent.height = scaledHeight
+            return scaledHeight
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
