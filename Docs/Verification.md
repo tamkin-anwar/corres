@@ -2,6 +2,15 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Push relay deployed; the missing notification itself, fixed (September 23, 2026)
+
+Asked directly whether Corres delivers mail as fast as Gmail's own app. Checking honestly rather than assuming surfaced a real gap: a silent push synced new mail in the background but never told the person it arrived.
+
+- Relay deployed for real: `corres-509320` on GCP, `corres-push-relay` Cloud Function (us-central1), `gmail-push` Pub/Sub topic and subscription, APNs auth key in Secret Manager. Verified end-to-end with `curl` before wiring the app: `POST /register` confirmed writing to Firestore (checked directly via the Firestore REST API, then cleaned up the test record); `POST /pubsub` confirmed handling a real Pub/Sub-shaped payload correctly (204, no error, correctly no-ops for an unregistered device).
+- `PushNotificationService.relayBaseURL`/`.pubsubTopicName` updated from placeholders to the real deployment.
+- The actual bug: `AppDelegate.onRemoteNotification` only ever called sync + store reload, never posted anything visible. Fixed with `PushNotificationService.notifyAboutNewMail(_:)` (real `UNNotificationRequest`, sender/subject, capped at one notification per wake) plus a before/after unread-state diff in `CorresApp`'s launch task so only genuinely newly-unread, Screener-approved threads trigger it.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`, no new warnings). No new domain tests: entirely App-layer notification/diffing logic with no Core-layer counterpart. Not yet verified on-device: sending a real test email and confirming a real notification banner actually appears, with the right sender/subject, on the phone that deployed and registered for this.
+
 ## Hotfix: real on-device SwiftData migration crash (September 22, 2026)
 
 Reported directly against a real device with real, already-synced mail: the first bug this whole session that a compile-and-domain-test pass genuinely could not have caught, since it only reproduces against an existing on-disk store, and every verification pass so far has only ever exercised a fresh container.

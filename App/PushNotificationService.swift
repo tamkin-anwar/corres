@@ -92,6 +92,33 @@ final class PushNotificationService {
         }
     }
 
+    /// The other half of "push" that was missing: until this, a silent
+    /// wake-up notification synced new mail into local storage without ever
+    /// telling the person it arrived, which defeated the entire point of
+    /// turning notifications on. `threads` should already be filtered to
+    /// genuinely newly-unread, Screener-approved threads (see
+    /// `CorresApp`'s `onRemoteNotification`); this only decides how to
+    /// present them. Capped at one notification per wake, not one per
+    /// message: a person who hasn't opened Corres in a while could have
+    /// dozens of newly-unread threads land in a single sync, and spamming a
+    /// notification per message is exactly the kind of thing that gets a
+    /// mail app's notifications turned back off.
+    func notifyAboutNewMail(_ threads: [Correspondence]) {
+        guard !threads.isEmpty else { return }
+        let content = UNMutableNotificationContent()
+        if threads.count == 1, let thread = threads.first {
+            content.title = thread.sender
+            content.body = thread.subject
+        } else {
+            content.title = "\(threads.count) new messages"
+            let senders = threads.prefix(3).map(\.sender).joined(separator: ", ")
+            content.body = threads.count > 3 ? "\(senders), and more" : senders
+        }
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+
     private func post(path: String, body: [String: String]) async throws {
         var request = URLRequest(url: Self.relayBaseURL.appendingPathComponent(path))
         request.httpMethod = "POST"

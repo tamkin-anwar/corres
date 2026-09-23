@@ -64,8 +64,24 @@ struct CorresApp: App {
                         // PushNotificationService's doc comment); this is
                         // what actually fetches and shows the real mail,
                         // on-device, exactly like any other sync.
+                        //
+                        // A "before" snapshot, not just "is it unread now":
+                        // a thread already unread before this sync (the
+                        // person just hasn't gotten to it yet) must not
+                        // re-trigger a notification every time something
+                        // else in the account also changes.
+                        let previousUnread = Dictionary(uniqueKeysWithValues: store.threads.map { ($0.id, $0.isUnread) })
                         if await sync.syncIfConnected(account: auth.account?.email) {
                             await store.load()
+                            let newlyUnread = store.threads.filter { thread in
+                                thread.isUnread && previousUnread[thread.id] != true
+                                    // Matches the Screener's own rule for
+                                    // ordinary browsing: a pending/blocked
+                                    // sender's first message doesn't belong
+                                    // in a notification either.
+                                    && thread.senderDecision == .approved
+                            }
+                            pushService.notifyAboutNewMail(newlyUnread)
                         }
                     }
                     // Fired first, before any await: pre-creates the whole
