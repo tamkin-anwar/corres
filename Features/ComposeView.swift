@@ -21,6 +21,19 @@ struct ComposeView: View {
 
     private enum Field { case to, subject, body }
 
+    /// Someone typed into "To" can be filled in without spelling out a full
+    /// address, the same convenience Gmail and Apple Mail both offer.
+    /// Deliberately scoped to who has ever emailed *me* (real, already-known
+    /// senders in `store.threads`), not a real contacts-book: Corres has no
+    /// first-class record of who a person has sent *to* that never replied,
+    /// only of who has actually corresponded with them, which is the data
+    /// actually available and the case the request was made against.
+    private struct RecipientSuggestion: Identifiable, Hashable {
+        let name: String
+        let email: String
+        var id: String { email }
+    }
+
     init(store: MailStore, outbox: OutboxService, draft: Draft, sourceThread: Correspondence?) {
         self.store = store
         self.outbox = outbox
@@ -35,6 +48,9 @@ struct ComposeView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     field(title: "To", text: $draft.to, isEditable: draft.kind == .new || draft.kind == .forward)
                         .focused($focusedField, equals: .to)
+                    if !toSuggestions.isEmpty {
+                        recipientSuggestionsList
+                    }
                     Divider().padding(.leading, CorresSpace.page)
                     field(title: "Subject", text: $draft.subject, isEditable: true)
                         .focused($focusedField, equals: .subject)
@@ -135,6 +151,57 @@ struct ComposeView: View {
     private func sendAndDismiss() {
         outbox.queueSend(draft, replyingTo: sourceThread)
         dismiss()
+    }
+
+    /// Most recently corresponded with first, matching how Gmail's own
+    /// suggestions are recency-weighted, not alphabetical.
+    private var knownContacts: [RecipientSuggestion] {
+        var seenEmails: Set<String> = []
+        var contacts: [RecipientSuggestion] = []
+        for thread in store.threads.sorted(by: { $0.receivedAt > $1.receivedAt }) {
+            guard thread.id.account != "sample", let email = thread.senderEmail,
+                  !seenEmails.contains(email) else { continue }
+            seenEmails.insert(email)
+            contacts.append(RecipientSuggestion(name: thread.sender, email: email))
+        }
+        return contacts
+    }
+
+    private var toSuggestions: [RecipientSuggestion] {
+        let query = draft.to.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty, focusedField == .to else { return [] }
+        return Array(knownContacts.filter { $0.name.localizedCaseInsensitiveContains(query) || $0.email.localizedCaseInsensitiveContains(query) }.prefix(5))
+    }
+
+    private var recipientSuggestionsList: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(toSuggestions) { suggestion in
+                Button {
+                    draft.to = suggestion.email
+                    focusedField = .subject
+                } label: {
+                    HStack(spacing: 10) {
+                        CorrespondentAvatar(initials: Self.initials(for: suggestion.name), size: CGSize(width: 34, height: 34))
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(suggestion.name).font(.subheadline.weight(.medium)).foregroundStyle(CorresPalette.ink)
+                            Text(suggestion.email).font(.caption).foregroundStyle(CorresPalette.secondary)
+                        }
+                        Spacer(minLength: 8)
+                    }
+                    .padding(.horizontal, CorresSpace.page).padding(.vertical, 8)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                if suggestion.id != toSuggestions.last?.id {
+                    Divider().padding(.leading, CorresSpace.page + 44)
+                }
+            }
+        }
+        .background(CorresPalette.surface)
+    }
+
+    private static func initials(for name: String) -> String {
+        name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined()
     }
 
     private var attachmentChips: some View {

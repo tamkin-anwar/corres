@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Two real bugs found on the first successful push test (September 23, 2026)
+
+Push actually worked end to end for the first time: a real reply from a real sender triggered a real notification immediately. Two real bugs surfaced by that actual use, not by any build/test pass.
+
+- **Dark-mode HTML rendering, nearly unreadable.** `WKWebView` doesn't know the app's own dark/light mode; `-apple-system-label` in `HTMLMessageBody.wrap()`'s CSS resolved against the webview's own (light) interface style, over a deliberately transparent background showing Corres's dark canvas through it, near-black text on a near-black background. Fixed by explicitly propagating `\.colorScheme` to `webView.overrideUserInterfaceStyle` on every `updateUIView` call, unconditionally (pooled webviews can carry a stale style across differently-styled conversations, so this can't just be set once).
+- **No recipient autocomplete when composing.** Typing "To" required the full address every time. `ComposeView` now suggests from everyone who has ever emailed the account (`store.threads`, deduped by sender email, most recent first), filtered against what's typed, shown only while the field is focused and editable. Named honestly as scoped to "who has emailed me," not a real contacts book.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). No new domain tests: both are App-layer/UI fixes with no Core-layer counterpart. Not yet re-verified on-device: reopening a real HTML message in dark mode and confirming it's actually readable now, and typing a partial name/email in Compose to confirm suggestions actually appear and fill in correctly.
+
 ## Batch 27: background push renewal, and a real reliability bug caught while building it (September 23, 2026)
 
 Asked to build BGAppRefreshTask renewal for the push watch subscription (closing the last known push gap: it only renewed when the app was opened). Building it surfaced something bigger: the existing push-delivery design (closures wired onto AppDelegate from CorresApp's own `.task`) depended on SwiftUI's view actually appearing, which is not guaranteed for a background-only launch after iOS has fully terminated the app, exactly the scenario both push and this new task exist for. Fixed the foundation before adding the feature on top of it.

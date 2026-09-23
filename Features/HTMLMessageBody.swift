@@ -16,6 +16,7 @@ struct HTMLMessageBody: UIViewRepresentable {
     let html: String
     @Binding var height: CGFloat
     var blockRemoteImages = true
+    @Environment(\.colorScheme) private var colorScheme
 
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebViewPool.shared.dequeue()
@@ -32,6 +33,19 @@ struct HTMLMessageBody: UIViewRepresentable {
 
     func updateUIView(_ webView: WKWebView, context: Context) {
         context.coordinator.parent = self
+        // Set unconditionally, even when the guard below skips a reload:
+        // WKWebView has no knowledge of the app's own light/dark mode on
+        // its own, and CSS system colors like `-apple-system-label`
+        // (wrap()'s own stylesheet) resolve against the webview's OWN
+        // interface style, which defaults to light, not the app's. With
+        // `wrap()`'s `background: transparent` letting Corres's dark
+        // canvas show through underneath, the result was near-black text
+        // on a near-black background: real mail rendered essentially
+        // unreadable, reported directly against a real reply. Pooled
+        // instances (WKWebViewPool) make this worse, not better: a reused
+        // webview can carry a stale style into a differently-styled
+        // conversation, so this can't just be set once at creation.
+        webView.overrideUserInterfaceStyle = colorScheme == .dark ? .dark : .light
         // Checked against the raw inputs, not the processed/wrapped output:
         // SwiftUI re-invokes updateUIView on any state change anywhere this
         // view observes (e.g. an unrelated background sync mutating
