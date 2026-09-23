@@ -54,7 +54,7 @@ final class PushNotificationService {
         isEnabled = false
         defaults.set(false, forKey: Self.enabledKey)
         UIApplication.shared.unregisterForRemoteNotifications()
-        if let account {
+        if account != nil {
             try? await client.stopWatching()
         }
         if let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) {
@@ -81,7 +81,10 @@ final class PushNotificationService {
     /// (see Server/push-relay/README.md).
     func renewWatch(account: String) async {
         guard isEnabled else { return }
-        try? await client.watch(topicName: Self.pubsubTopicName)
+        // `watch` is `@discardableResult` on its own declaration, but that
+        // doesn't propagate through `try?`, which still warns its own
+        // result is unused; discard it explicitly.
+        _ = try? await client.watch(topicName: Self.pubsubTopicName)
         if let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) {
             try? await post(path: "register", body: ["emailAddress": account, "deviceToken": deviceTokenHex])
         }
