@@ -108,17 +108,16 @@ struct HTMLMessageBody: UIViewRepresentable {
     private static let transparentPixelDataURI = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
 
     /// Real HTML mail bodies routinely carry their own
-    /// `<meta name="viewport" content="width=device-width, ...">` (boilerplate
-    /// from whatever template built them), even though `html` here is only
-    /// ever a body fragment, not a full document. WebKit's HTML parser still
-    /// finds and honors a `<meta>` tag wherever it appears, so a sender's
-    /// stray one can silently win over `wrap()`'s own `width=1024` tag
-    /// (added second, after the sender's content). When device-width wins
-    /// instead of the intended desktop-style width, any element the
-    /// template sized in fixed pixels for a real mail client (not a
-    /// percentage width) overflows the narrower device-width containing
-    /// block outright, which is what oversized hero images/headlines
-    /// blowing past the screen edge actually was.
+    /// `<meta name="viewport" ...>` (boilerplate from whatever template
+    /// built them, often with `user-scalable=no`/`maximum-scale=1` mixed
+    /// in), even though `html` here is only ever a body fragment, not a
+    /// full document. WebKit's HTML parser still finds and honors a
+    /// `<meta>` tag wherever it appears, so a sender's stray one can
+    /// silently win over `wrap()`'s own tag (added second, after the
+    /// sender's content) and interfere with the zoom-scale Corres manages
+    /// itself (`measureAndScale`, below). Stripped unconditionally so
+    /// `wrap()`'s own tag is always the one that actually applies,
+    /// regardless of what value the sender's own tag would have set.
     private static let embeddedViewportMetaRegex = try? NSRegularExpression(
         pattern: #"<meta\b[^>]*\bname\s*=\s*["']viewport["'][^>]*>"#, options: [.caseInsensitive])
 
@@ -133,22 +132,32 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// Wraps the raw body fragment with a stylesheet approximating Corres's
     /// own reading typography, since the sender's HTML doesn't know it.
     ///
-    /// Deliberately does NOT force `width=device-width` or clamp `<table>`/
-    /// `<img>` to `max-width: 100%`. Real marketing HTML is built for a fixed
-    /// desktop-style width (600-1000pt), with font sizes and column widths
-    /// chosen for that width; clamping only the table's own width while
-    /// leaving those font sizes and inner element widths untouched breaks
-    /// their proportions relative to each other; that was the actual cause
-    /// of oversized, cut-off headline text and broken spacing seen in
-    /// testing, not a loading or image bug. `width=1024` lets the page lay
-    /// out at (or near) its natural width like a real mail client does; the
-    /// Coordinator then measures that natural size and shrinks the whole
-    /// rendered page down uniformly (see `didFinish`), the same "desktop
-    /// site" viewport technique Safari uses for non-mobile-responsive pages,
-    /// which preserves every element's size relative to every other one.
+    /// `width=device-width`, not a fixed `width=1024`: a real, reported
+    /// regression from the earlier fixed-width approach was a genuinely
+    /// simple, short reply (a couple of lines of plain text, no marketing
+    /// layout at all) rendering at a fraction of its intended font size.
+    /// The cause: a block-level `<body>` with no explicit width of its own
+    /// fills its *containing block*, regardless of how little text is
+    /// actually inside it, so forcing `width=1024` made `scrollWidth`
+    /// measure ~1024 even for two lines of "Hello", and the shrink-to-fit
+    /// math (`measureAndScale`, below) divided the whole page, text
+    /// included, down to a small fraction of size for content that never
+    /// needed to shrink at all.
+    ///
+    /// This still correctly handles real wide marketing HTML (fixed-width
+    /// tables/images sized in raw pixels, not percentages): those don't
+    /// shrink to fit `device-width` just because the viewport meta says
+    /// so, they overflow it outright, and `scrollWidth` reports that real
+    /// overflow (the full extent including anything sticking out past the
+    /// viewport, not just the viewport's own width) regardless of which
+    /// width the viewport meta requested. `measureAndScale`'s own
+    /// `contentWidth > viewportWidth` check already only shrinks when
+    /// there's real overflow to correct; the earlier bug was that
+    /// forcing `width=1024` manufactured false overflow for content that
+    /// never had any, not a flaw in that check itself.
     private static func wrap(_ html: String) -> String {
         """
-        <html><head><meta name="viewport" content="width=1024">
+        <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
         :root { color-scheme: light dark; }
         html, body { overflow-x: hidden; }
