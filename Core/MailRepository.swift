@@ -15,6 +15,12 @@ public protocol MailRepository: Sendable {
     func setPinned(_ isPinned: Bool, for id: ThreadID) async throws -> Correspondence
     @discardableResult
     func snooze(_ id: ThreadID, until: Date?) async throws -> Correspondence
+    /// Orthogonal to `attention` (see `Correspondence.isUnread`'s doc
+    /// comment): a manual toggle here is its own fact from then on, the
+    /// same way `attention` already stops following Gmail's own state the
+    /// moment a person makes their own decision.
+    @discardableResult
+    func setUnread(_ isUnread: Bool, for id: ThreadID) async throws -> Correspondence
     /// Replying or forwarding moves the source thread to Waiting: the user has
     /// acted and is now the one expecting a response. A new draft opens a thread
     /// in the same state, since nothing has come back yet either way.
@@ -137,6 +143,11 @@ public actor SampleMailRepository: MailRepository {
     @discardableResult
     public func snooze(_ id: ThreadID, until: Date?) throws -> Correspondence {
         try mutate(id) { $0.snoozedUntil = until }
+    }
+
+    @discardableResult
+    public func setUnread(_ isUnread: Bool, for id: ThreadID) throws -> Correspondence {
+        try mutate(id) { $0.isUnread = isUnread }
     }
 
     public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {

@@ -28,6 +28,11 @@ public actor SwiftDataMailRepository: MailRepository {
         try mutate(id) { $0.snoozedUntil = until }
     }
 
+    @discardableResult
+    public func setUnread(_ isUnread: Bool, for id: ThreadID) throws -> Correspondence {
+        try mutate(id) { $0.isUnread = isUnread }
+    }
+
     public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {
         guard let threadID = draft.threadID else {
             let sender = draft.to.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -119,11 +124,13 @@ public actor SwiftDataMailRepository: MailRepository {
                 existing.attachmentsData = (try? JSONEncoder().encode(item.attachments)) ?? Data()
                 if !isFromAccountOwner {
                     // A genuine inbound message: its own unread state should
-                    // drive attention/reason, same as any new thread. Our
-                    // own sent copy showing back up must never downgrade a
-                    // thread still legitimately Waiting on a reply.
+                    // drive attention/reason/isUnread, same as any new
+                    // thread. Our own sent copy showing back up must never
+                    // downgrade a thread still legitimately Waiting on a
+                    // reply, nor silently mark it read.
                     existing.reason = item.reason
                     existing.attentionRaw = item.attention.rawValue
+                    existing.isUnread = item.isUnread
                 }
                 changed = true
                 continue

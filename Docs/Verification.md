@@ -2,6 +2,18 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 23: manual read/unread (September 22, 2026)
+
+Real mail apps let you mark something read or unread yourself; Corres only ever followed Gmail's own state, one-way, at sync time. Fixed as its own, orthogonal fact rather than folded into the existing Attention system.
+
+- `Correspondence.isUnread` (new): seeded from Gmail's `UNREAD` label like `attention` already was, but independent of it from then on, same as `attention` already stopped following Gmail once a person made their own decision.
+- `ThreadActionService.setUnread(_:for:)`: reuses Archive/Trash's exact Gmail-call-then-local-change shape (generalized `perform`'s hardcoded `store.remove` into a `local` completion closure), toggling the same `UNREAD` label `modifyThread` already knew how to touch, no new Gmail endpoint needed.
+- `upsert` in both repositories carries `isUnread` through the same "genuine inbound message updates it, our own sent copy never does" branch `attention`/`reason` already use (Batch 17's reply-sync fix).
+- Opening a conversation auto-marks it read (every real mail client's own behavior); the explicit "Mark as Unread" toggle in the action bar and the leading swipe action are unaffected by this, since the auto-mark only fires when the viewed conversation itself changes.
+- `CorrespondenceRow` gained an unread dot on the avatar (with its own VoiceOver label) and bolds the sender name.
+- Domain-tested (4 new tests): the toggle flips independently of attention and survives a full SwiftData relaunch; a genuine inbound reply updates `isUnread`, our own sent copy reappearing does not. All 41 domain tests pass (37 prior + 4 new).
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and `swift test` (41/41 passed). Not yet verified on-device: swiping/tapping to toggle a real message's read state and confirming it actually changes in Gmail itself, and that opening a message correctly auto-marks it read.
+
 ## Batch 22: email content overfilling the screen, fixed for real (September 22, 2026)
 
 Reported directly against a real marketing email: a Disney+ "You May Also Like" promo rendered with an enormous hero image and headline overflowing well past the screen edge, the same failure class earlier batches (14, "hard guarantee against horizontal scroll") were supposed to have already closed. Root-caused two independent, real causes rather than guessing at one.

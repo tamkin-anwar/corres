@@ -113,12 +113,20 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// default, load on request" instinct already applied to remote images.
     /// Empty for sample/fictional threads, which never really have any.
     public let attachments: [MailAttachment]
+    /// Read/unread, orthogonal to `attention`: a thread can be Handled and
+    /// still unread, or Needs You and already read. Seeded from Gmail's own
+    /// `UNREAD` label at sync time (real mail always starts here in sync
+    /// with Gmail; sample threads default read), but a manual toggle
+    /// (`MailRepository.setUnread`) is its own fact afterward, the same way
+    /// `attention` stops following Gmail's read state the moment a person
+    /// makes their own decision about a thread (see ADR 002).
+    public var isUnread: Bool
 
     public init(id: ThreadID, sender: String, senderEmail: String? = nil, organization: String, subject: String,
                 excerpt: String, body: String, htmlBody: String? = nil, messageIdHeader: String? = nil,
                 latestMessageID: String? = nil, receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
                 isPinned: Bool = false, snoozedUntil: Date? = nil, senderDecision: SenderDecision = .approved,
-                imagesTrusted: Bool = false, attachments: [MailAttachment] = []) {
+                imagesTrusted: Bool = false, attachments: [MailAttachment] = [], isUnread: Bool = false) {
         self.id = id
         self.sender = sender
         self.senderEmail = senderEmail
@@ -138,6 +146,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.senderDecision = senderDecision
         self.imagesTrusted = imagesTrusted
         self.attachments = attachments
+        self.isUnread = isUnread
     }
 
     public var initials: String {
@@ -169,7 +178,8 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
             reason: preserveAttention ? reason : incoming.reason,
             attention: preserveAttention ? attention : incoming.attention,
             isPinned: isPinned, snoozedUntil: snoozedUntil,
-            senderDecision: senderDecision, imagesTrusted: imagesTrusted, attachments: incoming.attachments)
+            senderDecision: senderDecision, imagesTrusted: imagesTrusted, attachments: incoming.attachments,
+            isUnread: preserveAttention ? isUnread : incoming.isUnread)
     }
 }
 

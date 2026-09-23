@@ -32,6 +32,7 @@ public final class PersistedCorrespondence {
     /// `PersistedOutboxEntry.draftData` already made for `Draft`: a small,
     /// self-contained value with no query needs of its own.
     public var attachmentsData: Data
+    public var isUnread: Bool
 
     public init(from correspondence: Correspondence) {
         self.compositeID = Self.compositeID(account: correspondence.id.account, providerID: correspondence.id.providerID)
@@ -55,6 +56,7 @@ public final class PersistedCorrespondence {
         self.senderDecisionRaw = correspondence.senderDecision.rawValue
         self.imagesTrusted = correspondence.imagesTrusted
         self.attachmentsData = (try? JSONEncoder().encode(correspondence.attachments)) ?? Data()
+        self.isUnread = correspondence.isUnread
     }
 
     public var asCorrespondence: Correspondence {
@@ -65,7 +67,8 @@ public final class PersistedCorrespondence {
                        isPinned: isPinned, snoozedUntil: snoozedUntil,
                        senderDecision: SenderDecision(rawValue: senderDecisionRaw) ?? .approved,
                        imagesTrusted: imagesTrusted,
-                       attachments: (try? JSONDecoder().decode([MailAttachment].self, from: attachmentsData)) ?? [])
+                       attachments: (try? JSONDecoder().decode([MailAttachment].self, from: attachmentsData)) ?? [],
+                       isUnread: isUnread)
     }
 
     public static func compositeID(account: String, providerID: String) -> String { "\(account)|\(providerID)" }

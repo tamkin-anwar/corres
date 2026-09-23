@@ -303,7 +303,7 @@ struct GmailAPIClient {
             excerpt: message.snippet ?? "", body: body, htmlBody: htmlBody, messageIdHeader: messageIdHeader,
             latestMessageID: message.id, receivedAt: receivedAt, dueAt: nil,
             reason: isUnread ? "Unread in Gmail." : "Already read in Gmail.",
-            attention: isUnread ? .needsYou : .quiet, attachments: attachments)
+            attention: isUnread ? .needsYou : .quiet, attachments: attachments, isUnread: isUnread)
     }
 
     /// A real attachment (something to download) versus an inline image

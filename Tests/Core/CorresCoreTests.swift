@@ -84,6 +84,17 @@ struct CorresCoreTests {
         #expect(try JSONDecoder().decode(Draft.self, from: encoded) == draft)
     }
 
+    @Test func setUnreadTogglesIndependentlyOfAttention() async throws {
+        let repository = SampleMailRepository(now: now)
+        let target = try #require(await repository.threads().first)
+        let originalAttention = target.attention
+        let updated = try await repository.setUnread(true, for: target.id)
+        #expect(updated.isUnread == true)
+        #expect(updated.attention == originalAttention) // orthogonal: unread never implies a particular attention
+        let readAgain = try await repository.setUnread(false, for: target.id)
+        #expect(readAgain.isUnread == false)
+    }
+
     @Test func replyingMovesTheThreadToWaitingWithEvidence() async throws {
         let repository = SampleMailRepository(now: now)
         let original = try #require(await repository.threads().first { $0.attention == .needsYou })

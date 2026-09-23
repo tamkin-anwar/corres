@@ -14,10 +14,16 @@ struct CorrespondenceRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            CorrespondentAvatar(initials: thread.initials)
+            ZStack(alignment: .topTrailing) {
+                CorrespondentAvatar(initials: thread.initials)
+                if thread.isUnread {
+                    Circle().fill(CorresPalette.accent).frame(width: 9, height: 9)
+                        .accessibilityLabel("Unread")
+                }
+            }
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(thread.sender).font(.subheadline.weight(.semibold)).lineLimit(1)
+                    Text(thread.sender).font(.subheadline.weight(thread.isUnread ? .bold : .semibold)).lineLimit(1)
                     if thread.isPinned {
                         Image(systemName: "pin.fill").font(.caption2).foregroundStyle(CorresPalette.champagne)
                             .accessibilityLabel("Pinned")
@@ -178,6 +184,13 @@ struct CorrespondenceList: View {
                         Task { await store.setPinned(!thread.isPinned, for: thread.id) }
                     } label: { Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin") }
                     .tint(CorresPalette.swipePin)
+                    Button {
+                        Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
+                    } label: {
+                        Label(thread.isUnread ? "Read" : "Unread",
+                              systemImage: thread.isUnread ? "envelope.open" : "envelope.badge")
+                    }
+                    .tint(CorresPalette.swipeSnooze)
                 }
         }
     }

@@ -96,6 +96,15 @@ struct ConversationView: View {
                         sourceThread: store.threads.first(where: { $0.id == currentID }))
         }
         .onChange(of: currentID) { htmlHeight = 200 }
+        // Opening a conversation is itself the signal that it's been seen,
+        // the same behavior every real mail client already has; without
+        // this, isUnread would only ever change via an explicit swipe/tap,
+        // which is not what "mark as read" means to anyone using a mail app.
+        .task(id: currentID) {
+            if let thread = store.threads.first(where: { $0.id == currentID }), thread.isUnread {
+                await threadActions.setUnread(false, for: thread)
+            }
+        }
         .onChange(of: threadExists) { _, stillExists in
             // Archiving or trashing from inside the conversation itself
             // removes it from `store.threads` right under this view; pop
@@ -208,6 +217,11 @@ struct ConversationView: View {
                 Image(systemName: "moon").frame(maxWidth: .infinity, minHeight: 44)
             }
             .accessibilityLabel("Snooze")
+            Button { Task { await threadActions.setUnread(!thread.isUnread, for: thread) } } label: {
+                Image(systemName: thread.isUnread ? "envelope.open" : "envelope.badge")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .accessibilityLabel(thread.isUnread ? "Mark as Read" : "Mark as Unread")
             Button { Task { await threadActions.archive(thread) } } label: {
                 Image(systemName: "archivebox").frame(maxWidth: .infinity, minHeight: 44)
             }

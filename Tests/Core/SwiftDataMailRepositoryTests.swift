@@ -81,6 +81,49 @@ struct SwiftDataMailRepositoryTests {
         #expect(reloaded.attachments == [attachment])
     }
 
+    @Test func setUnreadTogglesIndependentlyOfAttentionAndPersistsAcrossRelaunch() async throws {
+        let container = try makeContainer()
+        let first = SwiftDataMailRepository(modelContainer: container)
+        try await first.seedIfNeeded(now: now)
+        let target = try #require(await first.threads().first)
+        let updated = try await first.setUnread(true, for: target.id)
+        #expect(updated.isUnread == true)
+        #expect(updated.attention == target.attention)
+
+        let second = SwiftDataMailRepository(modelContainer: container)
+        let reloaded = try #require(await second.threads().first { $0.id == target.id })
+        #expect(reloaded.isUnread == true)
+    }
+
+    /// The reply-sync fix (Batch 17) already covers content/attention
+    /// updating on a genuine new message versus our own sent copy
+    /// preserving it; this confirms isUnread rides the same two paths.
+    @Test func upsertUpdatesIsUnreadOnlyForAGenuineInboundMessage() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let placeholder = Correspondence(
+            id: ThreadID(account: "me@example.com", providerID: "thread-unread"),
+            sender: "Ridu", organization: "", subject: "Hello", excerpt: "Hi", body: "Hi",
+            receivedAt: now, dueAt: nil, reason: "You started this conversation. Waiting for a response.",
+            attention: .waiting, isUnread: false)
+        try await repository.upsert([placeholder], isInitialSync: true)
+
+        let ownSentCopy = Correspondence(
+            id: placeholder.id, sender: "Me", senderEmail: "me@example.com", organization: "",
+            subject: "Hello", excerpt: "Hi", body: "Hi", latestMessageID: "msg-sent",
+            receivedAt: now, dueAt: nil, reason: "Already read in Gmail.", attention: .quiet, isUnread: false)
+        try await repository.upsert([ownSentCopy], isInitialSync: false)
+
+        let herReply = Correspondence(
+            id: placeholder.id, sender: "Ridu", senderEmail: "ridu@example.com", organization: "",
+            subject: "Re: Hello", excerpt: "Got it", body: "Got it", latestMessageID: "msg-reply",
+            receivedAt: now.addingTimeInterval(60), dueAt: nil, reason: "Unread in Gmail.",
+            attention: .needsYou, isUnread: true)
+        try await repository.upsert([herReply], isInitialSync: false)
+
+        let afterReply = try #require(await repository.threads().first { $0.id == placeholder.id })
+        #expect(afterReply.isUnread == true)
+    }
+
     /// Backs Archive and Trash (App layer): both end with this after telling
     /// Gmail, or immediately for a sample thread with no Gmail account to tell.
     @Test func removeDropsExactlyOneThreadAndPersistsAcrossRelaunch() async throws {
