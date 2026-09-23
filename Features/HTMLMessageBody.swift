@@ -165,6 +165,31 @@ struct HTMLMessageBody: UIViewRepresentable {
                margin: 0; padding: 0; word-wrap: break-word; -webkit-text-size-adjust: 100%;
                background: transparent; }
         a { color: #0a5f8a; }
+        /* The actual fix for wide marketing HTML, researched against what
+           real mail clients do (Apple Mail included, both WebKit-based):
+           force every table/image to reflow to the viewport natively,
+           rather than measuring the rendered width in JS after the fact and
+           visually shrinking the whole page with a view-level zoom
+           (`Coordinator.measureAndScale`, below). A multi-column product
+           grid built from fixed-pixel `<td width="...">` cells (routine in
+           real marketing templates, confirmed against a real UNIQLO email
+           reported directly) doesn't reliably get caught by that
+           measure-then-zoom approach once real images finish loading
+           asynchronously after the initial measurement, and can overflow
+           the right edge instead of reflowing, which is exactly the "breaks
+           up the email" bug reported against it, contrasted screenshot-by-
+           screenshot with Apple Mail's own clean, evenly-split rendering of
+           the identical email. `!important` throughout: a sender's own
+           inline `width` attribute (not just a CSS `width` property, which
+           `!important` alone doesn't override) otherwise wins over this.
+           `measureAndScale`'s JS-measured zoom stays as a backstop for
+           whatever this doesn't catch (unbreakable long text in a `<pre>`,
+           for instance), but should rarely need to actually shrink
+           anything now that width overflow is handled at the CSS layer
+           instead. */
+        table { max-width: 100% !important; }
+        td, th { max-width: 100% !important; }
+        img { max-width: 100% !important; height: auto !important; }
         @media (prefers-color-scheme: dark) {
           /* `!important`, deliberately: real mail HTML (Gmail's own quoted-
              reply markup included) routinely sets its own inline `color`

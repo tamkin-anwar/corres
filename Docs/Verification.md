@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Hotfix: wide multi-column HTML "breaking up" instead of reflowing (September 23, 2026)
+
+Reported immediately after the clip/immersion fix below, with a direct screenshot comparison against Apple Mail rendering the identical real email: Corres's two-column product grid rendered one column full-width and pushed the other off the right edge, where Apple Mail split both columns evenly with no gap. Researched how Apple Mail, Gmail, Spark, and Superhuman actually solve this before touching code again.
+
+- Finding: the real, industry-standard technique is CSS-level (force `table`/`img` to `max-width: 100%` so WebKit's own layout reflows natively), not the JS-measure-then-`UIScrollView.zoomScale` approach `HTMLMessageBody` already used, which is a documented, known-fragile workaround (`shrink-to-fit` stopped reliably working in WKWebView after iOS 9.3) and doesn't reliably catch a table whose true width only stabilizes once real images finish loading asynchronously.
+- `wrap()`'s stylesheet now forces `table`/`td`/`th`/`img` to `max-width: 100% !important` (`img` also `height: auto !important`), matching the real technique. The existing JS-measured zoom stays as a backstop, now rarely needed for width at all.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). **Not verified live**: the same Simulator instability noted below blocked an on-device check this session; reopening the same UNIQLO email (or another dense multi-column marketing email) and confirming the product grid now splits evenly like Apple Mail's needs the user's own device.
+
 ## Hotfix: HTML mail silently clipped mid-content, and the reading view feeling cramped (September 23, 2026)
 
 Reported directly with a side-by-side screenshot comparison against Apple Mail rendering the same real email (a UNIQLO marketing message), plus a broader complaint that Corres reads as "a wrapper for reading emails" rather than a full native surface.
