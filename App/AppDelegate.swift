@@ -1,18 +1,122 @@
+import BackgroundTasks
+import SwiftData
 import UIKit
 
-/// A minimal bridge for the two callbacks SwiftUI's `App` protocol has no
-/// direct equivalent for: getting the real APNs device token back, and
-/// waking up for a silent background push. Deliberately thin: it holds no
-/// state and does no work of its own, only forwards to closures `CorresApp`
-/// wires up once its own `store`/`sync`/`auth`/`pushService` exist (this
-/// delegate is constructed by `@UIApplicationDelegateAdaptor` before that
-/// happens, so it cannot hold direct references to them at init time).
+/// Owns every core service Corres needs, not `CorresApp`. This is a
+/// correction, not the original design: a SwiftUI `View`'s `.task`
+/// modifier only reliably runs once the app's UI actually appears, which
+/// is not guaranteed for a background-only launch (a silent push, or the
+/// `BGAppRefreshTask` this file adds, both firing after iOS may have fully
+/// terminated the app between launches). Both need real, live service
+/// instances and an already-restored signed-in account the moment this
+/// delegate is constructed, not whenever SwiftUI's view hierarchy happens
+/// to run its own launch task. `CorresApp` now just reads these back out
+/// and does only genuinely foreground-only setup (pre-warming the
+/// WKWebView pool) in its own `.task`.
 final class AppDelegate: NSObject, UIApplicationDelegate {
-    var onDeviceToken: ((Data) -> Void)?
-    var onRemoteNotification: (() async -> Void)?
+    let store: MailStore
+    let sync: GmailSyncService
+    let auth: GoogleAuthService
+    let outbox: OutboxService
+    let threadActions: ThreadActionService
+    let labelDirectory: LabelDirectory
+    let pushService: PushNotificationService
+
+    /// Must match the identifier declared in `Info.plist`'s
+    /// `BGTaskSchedulerPermittedIdentifiers`; iOS silently refuses to run
+    /// (or even accept registration for) an identifier missing from there.
+    private static let backgroundRefreshIdentifier = "studio.anwarcreative.corres.renewWatch"
+
+    override init() {
+        let container = Self.makeModelContainer()
+        let repository = SwiftDataMailRepository(modelContainer: container)
+        let mailStore = MailStore(repository: repository)
+        let authService = GoogleAuthService()
+        store = mailStore
+        sync = GmailSyncService(repository: repository)
+        auth = authService
+        outbox = OutboxService(store: mailStore, auth: authService, repository: repository)
+        threadActions = ThreadActionService(store: mailStore, auth: authService)
+        labelDirectory = LabelDirectory()
+        pushService = PushNotificationService()
+        super.init()
+    }
+
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Registration must happen before this method returns, for every
+        // launch, background or foreground alike: registering even one
+        // async tick late is a documented source of silent failures where
+        // iOS never runs the task at all.
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundRefreshIdentifier, using: nil) { [weak self] task in
+            guard let self, let refreshTask = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self.handleBackgroundRefresh(refreshTask)
+        }
+        Task { await self.performLaunchWork() }
+        return true
+    }
+
+    /// Everything a launch needs regardless of whether the app is actually
+    /// visible: restoring the signed-in account, loading local threads, an
+    /// initial sync, and renewing the push watch subscription. Runs on
+    /// every launch (this method fires for a background-only launch too),
+    /// not gated behind the UI ever appearing.
+    private func performLaunchWork() async {
+        await store.load()
+        await auth.restorePreviousSignIn()
+        if await sync.syncIfConnected(account: auth.account?.email) {
+            await store.load()
+        }
+        // Covers relaunching already connected (the connect button in
+        // Preferences handles the first-connection case itself): sample
+        // threads from before that connection existed have no reason to
+        // still be mixed into real mail.
+        if auth.account != nil {
+            await store.deleteSampleDataIfPresent()
+        }
+        await outbox.resumeAfterRelaunch()
+        await labelDirectory.refreshIfConnected(account: auth.account?.email)
+        if let account = auth.account?.email {
+            await pushService.renewWatch(account: account)
+        }
+        scheduleBackgroundRefresh()
+    }
+
+    /// iOS decides the actual timing (usage patterns, battery, thermal
+    /// state); `earliestBeginDate` is only a hint of the earliest
+    /// reasonable moment, never a guarantee it runs then or at all. Called
+    /// after every launch and after every background run, since a
+    /// submitted request is consumed the moment it executes; forgetting to
+    /// resubmit here would make this run exactly once per install rather
+    /// than recur.
+    private func scheduleBackgroundRefresh() {
+        let request = BGAppRefreshTaskRequest(identifier: Self.backgroundRefreshIdentifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 4 * 60 * 60)
+        try? BGTaskScheduler.shared.submit(request)
+    }
+
+    private func handleBackgroundRefresh(_ task: BGAppRefreshTask) {
+        scheduleBackgroundRefresh()
+        let work = Task {
+            if let account = auth.account?.email {
+                await pushService.renewWatch(account: account)
+            }
+            task.setTaskCompleted(success: true)
+        }
+        // Ignoring the expiration handler damages this task's standing
+        // with iOS's own scheduling model; an ungracefully-killed task
+        // gets future requests deprioritized.
+        task.expirationHandler = {
+            work.cancel()
+            task.setTaskCompleted(success: false)
+        }
+    }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        onDeviceToken?(deviceToken)
+        Task { await pushService.didRegister(deviceToken: deviceToken, account: auth.account?.email) }
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
@@ -21,9 +125,46 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // an error anywhere a person would see it unprompted.
     }
 
+    /// The push itself carries no content, only a "something changed"
+    /// signal (see `PushNotificationService`'s doc comment); this is what
+    /// actually fetches and shows the real mail, on-device, exactly like
+    /// any other sync. Fires reliably even from a cold background launch,
+    /// since `store`/`sync`/`auth` are real instances owned by this
+    /// delegate, not closures that depend on SwiftUI's view ever running.
     func application(_ application: UIApplication,
                      didReceiveRemoteNotification userInfo: [AnyHashable: Any]) async -> UIBackgroundFetchResult {
-        await onRemoteNotification?()
+        // A "before" snapshot, not just "is it unread now": a thread
+        // already unread before this sync (the person just hasn't gotten
+        // to it yet) must not re-trigger a notification every time
+        // something else in the account also changes.
+        let previousUnread = Dictionary(uniqueKeysWithValues: store.threads.map { ($0.id, $0.isUnread) })
+        guard await sync.syncIfConnected(account: auth.account?.email) else { return .noData }
+        await store.load()
+        let newlyUnread = store.threads.filter { thread in
+            thread.isUnread && previousUnread[thread.id] != true
+                // Matches the Screener's own rule for ordinary browsing: a
+                // pending/blocked sender's first message doesn't belong in
+                // a notification either.
+                && thread.senderDecision == .approved
+        }
+        pushService.notifyAboutNewMail(newlyUnread)
         return .newData
+    }
+
+    private static func makeModelContainer() -> ModelContainer {
+        let schema = Schema(CorresSchemaV1.models)
+        do {
+            return try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self,
+                                      configurations: [ModelConfiguration(schema: schema)])
+        } catch {
+            // A corrupt/incompatible on-disk store should not brick the app on
+            // launch; fall back to a fresh in-memory container so it still
+            // opens, at the cost of that device's local history this session.
+            let fallbackConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            guard let fallback = try? ModelContainer(for: schema, configurations: [fallbackConfiguration]) else {
+                fatalError("Could not create any Corres local store, including an in-memory fallback: \(error)")
+            }
+            return fallback
+        }
     }
 }

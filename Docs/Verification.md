@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 27: background push renewal, and a real reliability bug caught while building it (September 23, 2026)
+
+Asked to build BGAppRefreshTask renewal for the push watch subscription (closing the last known push gap: it only renewed when the app was opened). Building it surfaced something bigger: the existing push-delivery design (closures wired onto AppDelegate from CorresApp's own `.task`) depended on SwiftUI's view actually appearing, which is not guaranteed for a background-only launch after iOS has fully terminated the app, exactly the scenario both push and this new task exist for. Fixed the foundation before adding the feature on top of it.
+
+- `AppDelegate` now owns `store`/`sync`/`auth`/`outbox`/`threadActions`/`labelDirectory`/`pushService` directly (constructed in its own `init()`) and runs the full account-dependent launch sequence itself, on every launch, background or foreground. `CorresApp` shrank to reading these back out and doing only genuinely foreground-only setup.
+- `BGAppRefreshTask` added: registered before `didFinishLaunchingWithOptions` returns (late registration is a documented silent-failure mode), identifier declared in `Info.plist`, resubmits itself after every run. Renews the watch subscription roughly every 4 hours, opportunistically, per iOS's own scheduling.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`, no new warnings) and confirmed the Core package/domain tests are unaffected (no Core-layer files touched). Not yet verified on-device: Simulator cannot run `BGAppRefreshTask` at all, only a real device can, and even there the actual trigger timing is up to iOS, not observable on demand except via Xcode's `simulateLaunchForTaskWithIdentifier` LLDB command while attached.
+
 ## Batch 26: outbox retry hardening (September 23, 2026)
 
 One of the honestly-scoped open gaps from the outbox ADR: a single failed send fell straight to the person-facing Retry/Discard banner, no automatic retry at all. Researched current retry-pattern practice before building (exponential backoff needs jitter or a burst of failures from the same outage all retry in lockstep).
