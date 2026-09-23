@@ -39,8 +39,10 @@ final class PushNotificationService {
     /// Explicit, Preferences-toggle-driven, not asked for at launch: a
     /// permission prompt the person didn't ask for yet is the kind of thing
     /// that erodes trust in exactly the app this session has been trying to
-    /// build trust in.
-    func enable(account: String) async {
+    /// build trust in. One toggle covers every connected account (Batch 29):
+    /// there is no real reason to want new-mail pushes from one connected
+    /// account but not another.
+    func enableAll(accounts: [String]) async {
         let center = UNUserNotificationCenter.current()
         guard let granted = try? await center.requestAuthorization(options: [.alert, .badge, .sound]), granted else {
             errorMessage = "Notifications need permission in iOS Settings to turn on."
@@ -49,15 +51,15 @@ final class PushNotificationService {
         isEnabled = true
         defaults.set(true, forKey: Self.enabledKey)
         UIApplication.shared.registerForRemoteNotifications()
-        await renewWatch(account: account)
+        await renewWatch(accounts: accounts)
     }
 
-    func disable(account: String?) async {
+    func disableAll(accounts: [String]) async {
         isEnabled = false
         defaults.set(false, forKey: Self.enabledKey)
         UIApplication.shared.unregisterForRemoteNotifications()
-        if account != nil {
-            try? await client.stopWatching()
+        for account in accounts {
+            try? await client.stopWatching(account: account)
         }
         if let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) {
             try? await post(path: "unregister", body: ["deviceToken": deviceTokenHex])
@@ -65,14 +67,26 @@ final class PushNotificationService {
         defaults.removeObject(forKey: Self.deviceTokenKey)
     }
 
+    /// Disconnecting a single account (Preferences' own per-row Disconnect)
+    /// only needs that one account's watch/registration torn down, not every
+    /// account's; `disableAll` remains the "turn notifications off entirely"
+    /// path.
+    func disable(account: String) async {
+        try? await client.stopWatching(account: account)
+        if let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) {
+            try? await post(path: "unregister", body: ["deviceToken": deviceTokenHex, "emailAddress": account])
+        }
+    }
+
     /// Called from `AppDelegate.didRegisterForRemoteNotificationsWithDeviceToken`
     /// once APNs actually hands back a real token (arrives asynchronously
     /// after `registerForRemoteNotifications()`, never synchronously).
-    func didRegister(deviceToken: Data, account: String?) async {
+    func didRegister(deviceToken: Data, accounts: [String]) async {
         let hex = deviceToken.map { String(format: "%02x", $0) }.joined()
         defaults.set(hex, forKey: Self.deviceTokenKey)
-        guard let account else { return }
-        try? await post(path: "register", body: ["emailAddress": account, "deviceToken": hex])
+        for account in accounts {
+            try? await post(path: "register", body: ["emailAddress": account, "deviceToken": hex])
+        }
     }
 
     /// Gmail's watch subscription expires after about 7 days; this is the
@@ -80,15 +94,20 @@ final class PushNotificationService {
     /// left unopened for a week silently stops getting push until the next
     /// launch. A background-refresh-driven renewal would close that gap;
     /// deliberately not built here, a known and accepted limitation for v1
-    /// (see Server/push-relay/README.md).
-    func renewWatch(account: String) async {
+    /// (see Server/push-relay/README.md). Loops every connected account: the
+    /// relay's `devices` record now maps one device token to a list of
+    /// accounts (see Server/push-relay's own doc comment), so each account
+    /// needs its own `watch` call and its own `register` post.
+    func renewWatch(accounts: [String]) async {
         guard isEnabled else { return }
-        // `watch` is `@discardableResult` on its own declaration, but that
-        // doesn't propagate through `try?`, which still warns its own
-        // result is unused; discard it explicitly.
-        _ = try? await client.watch(topicName: Self.pubsubTopicName)
-        if let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) {
-            try? await post(path: "register", body: ["emailAddress": account, "deviceToken": deviceTokenHex])
+        for account in accounts {
+            // `watch` is `@discardableResult` on its own declaration, but that
+            // doesn't propagate through `try?`, which still warns its own
+            // result is unused; discard it explicitly.
+            _ = try? await client.watch(topicName: Self.pubsubTopicName, account: account)
+            if let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) {
+                try? await post(path: "register", body: ["emailAddress": account, "deviceToken": deviceTokenHex])
+            }
         }
     }
 

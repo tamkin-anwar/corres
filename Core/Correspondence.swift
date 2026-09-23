@@ -236,16 +236,24 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     public let id: UUID
     public let kind: Kind
     public let threadID: ThreadID?
+    /// Which connected Gmail account this sends as. Always derivable for a
+    /// reply/forward (`threadID.account`); only meaningfully ambiguous for a
+    /// brand-new compose with more than one account connected, which is why
+    /// ComposeView surfaces a "From" picker exactly when this matters. `nil`
+    /// falls back to the first connected account (see `OutboxService`),
+    /// matching pre-multi-account behavior for anyone with just one.
+    public var fromAccount: String?
     public var to: String
     public var subject: String
     public var body: String
     public var attachments: [PendingAttachment]
 
-    public init(id: UUID = UUID(), kind: Kind, threadID: ThreadID? = nil,
+    public init(id: UUID = UUID(), kind: Kind, threadID: ThreadID? = nil, fromAccount: String? = nil,
                 to: String, subject: String, body: String = "", attachments: [PendingAttachment] = []) {
         self.id = id
         self.kind = kind
         self.threadID = threadID
+        self.fromAccount = fromAccount
         self.to = to
         self.subject = subject
         self.body = body

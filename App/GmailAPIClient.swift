@@ -1,10 +1,12 @@
 import Foundation
-import GoogleSignIn
 
 /// Raw REST calls against the Gmail API. No third-party HTTP dependency,
-/// URLSession + the token GoogleSignIn already manages. This is the only file
-/// that speaks Gmail's wire format; it returns plain Correspondence values,
-/// never its own DTOs, past this boundary (ADR 002).
+/// URLSession + a token minted per-account by `GoogleTokenProvider` (Batch
+/// 29: every call here now takes the target account's email explicitly,
+/// rather than implicitly acting on whichever account GoogleSignIn's own
+/// single-slot session currently holds). This is the only file that speaks
+/// Gmail's wire format; it returns plain Correspondence values, never its
+/// own DTOs, past this boundary (ADR 002).
 struct GmailAPIClient {
     /// `badResponse` carries the real HTTP status, not just "it failed":
     /// `OutboxService`'s retry logic needs to tell a transient failure
@@ -37,7 +39,7 @@ struct GmailAPIClient {
     /// the first time an account syncs, or whenever a stored history cursor
     /// has expired.
     func fetchInitialInbox(account: String) async throws -> SyncResult {
-        let token = try await accessToken()
+        let token = try await accessToken(for: account)
         var ids: Set<String> = []
         for label in Self.syncedLabels {
             ids.formUnion(try await listMessageIDs(token: token, label: label))
@@ -57,7 +59,7 @@ struct GmailAPIClient {
     /// label (the History API's own `labelId` filter only accepts one at a
     /// time), merged into a single result.
     func fetchIncremental(account: String, since cursor: String) async throws -> SyncResult {
-        let token = try await accessToken()
+        let token = try await accessToken(for: account)
         var ids: Set<String> = []
         var historyId: String?
         for label in Self.syncedLabels {
@@ -124,7 +126,7 @@ struct GmailAPIClient {
     private let searchPageSize = 25
 
     func searchMessages(query: String, account: String) async throws -> [Correspondence] {
-        let token = try await accessToken()
+        let token = try await accessToken(for: account)
         var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
         components.queryItems = [
             URLQueryItem(name: "q", value: query),
@@ -136,10 +138,12 @@ struct GmailAPIClient {
         return await fetchMessages(ids: list.messages?.map(\.id) ?? [], token: token, account: account)
     }
 
-    private func accessToken() async throws -> String {
-        guard let user = GIDSignIn.sharedInstance.currentUser else { throw ClientError.notSignedIn }
-        try await user.refreshTokensIfNeeded()
-        return user.accessToken.tokenString
+    private func accessToken(for account: String) async throws -> String {
+        do {
+            return try await GoogleTokenProvider.shared.accessToken(for: account)
+        } catch {
+            throw ClientError.notSignedIn
+        }
     }
 
     private func listMessageIDs(token: String, label: String) async throws -> [String] {
@@ -210,8 +214,8 @@ struct GmailAPIClient {
     /// instead of inventing one: a later sync then recognizes the same
     /// thread instead of creating a duplicate.
     @discardableResult
-    func send(raw: String, threadId: String?) async throws -> String {
-        let token = try await accessToken()
+    func send(raw: String, threadId: String?, account: String) async throws -> String {
+        let token = try await accessToken(for: account)
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages/send")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -230,8 +234,8 @@ struct GmailAPIClient {
     /// message never really leaves the account, it leaves the Inbox view).
     /// Marking read/unread is the same call with `UNREAD` instead. One
     /// shared entry point since both are the same Gmail endpoint.
-    func modifyThread(threadId: String, addLabelIds: [String] = [], removeLabelIds: [String] = []) async throws {
-        let token = try await accessToken()
+    func modifyThread(threadId: String, addLabelIds: [String] = [], removeLabelIds: [String] = [], account: String) async throws {
+        let token = try await accessToken(for: account)
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/threads/\(threadId)/modify")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -248,8 +252,8 @@ struct GmailAPIClient {
     /// Gmail's dedicated Trash endpoint, distinct from `modify`: it moves the
     /// whole thread to Trash (auto-deleted by Gmail after 30 days), rather
     /// than just changing which labels it carries.
-    func trashThread(threadId: String) async throws {
-        let token = try await accessToken()
+    func trashThread(threadId: String, account: String) async throws {
+        let token = try await accessToken(for: account)
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/threads/\(threadId)/trash")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -270,8 +274,8 @@ struct GmailAPIClient {
     /// Returns the historyId `watch` was established at, mirroring
     /// `fetchInitialInbox`.
     @discardableResult
-    func watch(topicName: String) async throws -> String? {
-        let token = try await accessToken()
+    func watch(topicName: String, account: String) async throws -> String? {
+        let token = try await accessToken(for: account)
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/watch")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -287,8 +291,8 @@ struct GmailAPIClient {
     /// turned off in Preferences): without this, Gmail keeps notifying the
     /// relay for an account nothing local is listening for anymore until
     /// the subscription's own 7-day expiry.
-    func stopWatching() async throws {
-        let token = try await accessToken()
+    func stopWatching(account: String) async throws {
+        let token = try await accessToken(for: account)
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/stop")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -303,8 +307,8 @@ struct GmailAPIClient {
     /// `Correspondence.labelIds` ever carries, has no type info to tell
     /// these apart on its own). This is the only place that distinction
     /// exists; the App layer's label directory is built from this.
-    func fetchUserLabels() async throws -> [GmailUserLabel] {
-        let token = try await accessToken()
+    func fetchUserLabels(account: String) async throws -> [GmailUserLabel] {
+        let token = try await accessToken(for: account)
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/labels")!
         let (data, response) = try await authorizedRequest(url: url, token: token)
         try validate(response)
@@ -392,8 +396,8 @@ struct GmailAPIClient {
     /// response for anything but the smallest parts; this is Gmail's
     /// dedicated endpoint for fetching the actual bytes, called on demand
     /// (a tap on the attachment) rather than as part of every sync.
-    func fetchAttachmentData(messageId: String, attachmentId: String) async throws -> Data {
-        let token = try await accessToken()
+    func fetchAttachmentData(messageId: String, attachmentId: String, account: String) async throws -> Data {
+        let token = try await accessToken(for: account)
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages/\(messageId)/attachments/\(attachmentId)")!
         let (data, response) = try await authorizedRequest(url: url, token: token)
         try validate(response)

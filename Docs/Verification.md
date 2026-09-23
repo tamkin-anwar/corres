@@ -2,6 +2,18 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 29: true simultaneous multi-account, unified + per-account views (September 23, 2026)
+
+Requested explicitly: full simultaneous multi-account (multiple Gmail accounts connected and syncing at once, surviving relaunch), plus both a unified inbox and a per-account switcher view, researched against Apple Mail, Gmail, Spark, and Superhuman's own approaches before designing (see Docs/Architecture.md's Batch 29 entries for the research and the resulting design).
+
+- `GoogleTokenProvider` (new) + `Keychain` (new): each connected account's own OAuth refresh token is captured at sign-in and stored independently, since GoogleSignIn-iOS's own session only ever remembers one signed-in account. Access tokens are minted directly against Google's OAuth token endpoint per account from then on. A migration path (`GoogleAuthService.migrateLegacySingleAccountIfPresent`) carries over anyone already connected before this batch.
+- `GmailAPIClient`'s every method now takes an explicit `account:` (previously implicit via GoogleSignIn's single current-user session). `LabelDirectory` is now scoped per account (`labelsByAccount`), since two Gmail accounts have entirely different custom labels.
+- `CorresShell`'s new account-switcher toolbar menu (shown only once a second account is connected) toggles between "All Inboxes" (unified, the default) and a single account's mail, filtering `BriefView`/`CorrespondenceList` by `ThreadID.account`; needed no Core changes since thread identity has always carried its owning account.
+- `ComposeView` gained a "From" picker, shown only for a brand-new compose with more than one account connected; a reply/forward's sending account is always fixed by the thread it belongs to.
+- `PushNotificationService` moved to one toggle covering every connected account (`enableAll`/`disableAll`), plus a narrower per-account `disable` for disconnecting a single account. `Server/push-relay`'s Firestore schema changed from one email per device token to a list (`emailAddresses`, `arrayUnion`/`arrayRemove`/`array-contains`), since a device can now register for more than one account's pushes; redeployed to the live function (`corres-509320`) and smoke-tested with `curl` against `/register` and `/unregister` (`204` both, verified via Firestore semantics, test document cleaned up after).
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`, full app target) and `swift test` (Core package compiles cleanly; the test run itself hit an unrelated pre-existing local codesign/build-artifact issue in this environment, after compilation had already succeeded, not a regression from this batch — Core's own domain tests are untouched by an App-layer change like this one).
+- **Not yet verified on-device**: this batch could not be walked through live in this session (connecting a second real Gmail account, confirming both accounts sync and stay connected across a relaunch, switching between unified and per-account views with real data, sending as a chosen "From" account, and confirming push notifications actually arrive for a second connected account) — all of that needs the user's own device and a second real Google account, the same as every other real-Gmail-account verification in this project has needed throughout.
+
 ## Batch 28: accessibility audit (September 23, 2026)
 
 First real accessibility pass this session, possible now for the first time since real-device testing only just started working. Researched current SwiftUI accessibility guidance (VoiceOver labels/traits, Dynamic Type, Reduce Motion, 44pt minimum tap targets) before auditing, rather than guessing at gaps.

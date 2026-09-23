@@ -8,6 +8,9 @@ import Observation
 /// change" rule `OutboxService` already follows for sending. Archive/Trash
 /// began this file (Batch 18); read/unread (Batch 23) reused its exact
 /// Gmail-call-then-local-change shape rather than inventing a new one.
+/// Every Gmail call is scoped to `thread.id.account` (Batch 29): a thread
+/// always already knows which connected account it belongs to, so no
+/// "current account" concept is needed here at all.
 @MainActor @Observable
 final class ThreadActionService {
     var errorMessage: String?
@@ -24,13 +27,13 @@ final class ThreadActionService {
 
     func archive(_ thread: Correspondence) async {
         await perform(thread, failureMessage: "Could not archive this conversation. Please try again.", gmailCall: {
-            try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: ["INBOX"])
+            try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: ["INBOX"], account: thread.id.account)
         }, local: { await self.store.remove(thread.id) })
     }
 
     func trash(_ thread: Correspondence) async {
         await perform(thread, failureMessage: "Could not move this conversation to Trash. Please try again.", gmailCall: {
-            try await self.client.trashThread(threadId: thread.id.providerID)
+            try await self.client.trashThread(threadId: thread.id.providerID, account: thread.id.account)
         }, local: { await self.store.remove(thread.id) })
     }
 
@@ -42,9 +45,9 @@ final class ThreadActionService {
         let failureMessage = "Could not mark this conversation as \(isUnread ? "unread" : "read"). Please try again."
         await perform(thread, failureMessage: failureMessage, gmailCall: {
             if isUnread {
-                try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: ["UNREAD"])
+                try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: ["UNREAD"], account: thread.id.account)
             } else {
-                try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: ["UNREAD"])
+                try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: ["UNREAD"], account: thread.id.account)
             }
         }, local: { await self.store.setUnread(isUnread, for: thread.id) })
     }
@@ -58,9 +61,9 @@ final class ThreadActionService {
         let failureMessage = "Could not update this label. Please try again."
         await perform(thread, failureMessage: failureMessage, gmailCall: {
             if isOn {
-                try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: [labelId])
+                try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: [labelId], account: thread.id.account)
             } else {
-                try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: [labelId])
+                try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: [labelId], account: thread.id.account)
             }
         }, local: {
             var labelIds = self.store.threads.first { $0.id == thread.id }?.labelIds ?? thread.labelIds
@@ -76,7 +79,7 @@ final class ThreadActionService {
     private func perform(_ thread: Correspondence, failureMessage: String,
                          gmailCall: () async throws -> Void, local: () async -> Void) async {
         if thread.id.account != Self.sampleAccount {
-            guard await auth.ensureModifyScope() else {
+            guard auth.isConnected(thread.id.account) else {
                 errorMessage = failureMessage
                 return
             }

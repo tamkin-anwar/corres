@@ -153,7 +153,7 @@ final class OutboxService {
             queuedThread = nil
         }
         var realThreadID: ThreadID?
-        if shouldSendViaGmail(thread: thread), let account = auth.account?.email {
+        if shouldSendViaGmail(thread: thread), let account = resolveSendingAccount(draft: draft, thread: thread) {
             do {
                 realThreadID = try await sendViaGmailWithRetry(draft: draft, thread: thread, account: account)
             } catch {
@@ -181,7 +181,20 @@ final class OutboxService {
     /// hold it back now that a fresh message has somewhere real to go.
     private func shouldSendViaGmail(thread: Correspondence?) -> Bool {
         if let thread { return thread.id.account != Self.sampleAccount }
-        return auth.account != nil
+        return !auth.accounts.isEmpty
+    }
+
+    /// A reply/forward always sends as the thread's own account, regardless
+    /// of `draft.fromAccount` (which only ever matters for a brand-new
+    /// compose): joining an existing Gmail thread as a different account
+    /// than the one that received it isn't a real option. A brand-new
+    /// compose uses whichever account was actually chosen in ComposeView's
+    /// "From" picker (`draft.fromAccount`), falling back to the first
+    /// connected account for anyone with just one, where there was never a
+    /// picker to begin with.
+    private func resolveSendingAccount(draft: Draft, thread: Correspondence?) -> String? {
+        if let thread, thread.id.account != Self.sampleAccount { return thread.id.account }
+        return draft.fromAccount ?? auth.primaryAccount?.email
     }
 
     /// Retries only failures where the request almost certainly never
@@ -237,11 +250,11 @@ final class OutboxService {
     /// the local record under Gmail's actual identity instead of inventing
     /// one.
     private func sendViaGmail(draft: Draft, thread: Correspondence?, account: String) async throws -> ThreadID {
-        guard await auth.ensureSendScope() else { throw GmailAPIClient.ClientError.notSignedIn }
+        guard auth.isConnected(account) else { throw GmailAPIClient.ClientError.notSignedIn }
         let raw = GmailMessageComposer.compose(from: account, to: draft.to, subject: draft.subject,
                                                 body: draft.body, inReplyTo: thread?.messageIdHeader,
                                                 attachments: draft.attachments)
-        let threadId = try await client.send(raw: raw, threadId: thread?.id.providerID)
+        let threadId = try await client.send(raw: raw, threadId: thread?.id.providerID, account: account)
         return ThreadID(account: account, providerID: threadId)
     }
 }

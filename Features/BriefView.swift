@@ -9,17 +9,27 @@ struct BriefView: View {
     var auth: GoogleAuthService?
     @Binding var selection: Destination
     @Binding var showingScreener: Bool
+    /// See `CorresShell`'s doc comment: nil merges every connected account,
+    /// a specific email scopes the whole Brief to just that one.
+    var accountFilter: String?
     @Environment(\.dynamicTypeSize) private var typeSize
 
-    private var snapshot: BriefSnapshot { BriefSnapshot(threads: store.threads, now: .now) }
-    private var priorities: [Correspondence] { MailQuery.filter(store.threads, attention: .needsYou) }
-    private var pendingSenderCount: Int { Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count }
-    private var isConnected: Bool { auth?.account != nil }
+    private var scopedThreads: [Correspondence] {
+        guard let accountFilter else { return store.threads }
+        return store.threads.filter { $0.id.account == accountFilter }
+    }
+    private var snapshot: BriefSnapshot { BriefSnapshot(threads: scopedThreads, now: .now) }
+    private var priorities: [Correspondence] { MailQuery.filter(scopedThreads, attention: .needsYou) }
+    private var pendingSenderCount: Int {
+        let pending = accountFilter == nil ? store.pendingSenderThreads : store.pendingSenderThreads.filter { $0.id.account == accountFilter }
+        return Set(pending.compactMap(\.senderEmail)).count
+    }
+    private var isConnected: Bool { !(auth?.accounts.isEmpty ?? true) }
 
     var body: some View {
         if scrolls {
             ScrollView { content }.refreshable {
-                _ = await sync?.syncIfConnected(account: auth?.account?.email)
+                _ = await sync?.syncAll(accounts: auth?.accounts.map(\.email) ?? [])
                 await store.load()
             }
         } else {

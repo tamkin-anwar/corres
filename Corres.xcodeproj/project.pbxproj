@@ -35,6 +35,8 @@
 		B66A15A79057947ECBB08EFC /* Features/WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A197A2D27A63A32E9B83006 /* Features/WelcomeView.swift */; };
 		B9A73E7D7AC845889F7D3870 /* App/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B16B6325BA8F1CFBCC279108 /* App/Assets.xcassets */; };
 		BB3CA26C51C343ECA59840FF /* App/LabelDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4D571AAED54527AAC57F47 /* App/LabelDirectory.swift */; };
+		23D3AB8DD02A4999883FF6B2 /* App/Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B03773975FDB401CA02B5F15 /* App/Keychain.swift */; };
+		CBAEF7A3115B4335A7A17995 /* App/GoogleTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */; };
 		BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */; };
 		C2D178FA2ECD796F4B6A79A3 /* Features/PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA57480437BE46588460ED61 /* Features/PreferencesView.swift */; };
 		C957750BEBE3C33F032D5D7C /* Features/CorresShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A6D2AECED4C48E4222ADE95 /* Features/CorresShell.swift */; };
@@ -56,6 +58,8 @@
 		3188DDEA4B4112FCE079024F /* Core/CorresSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/CorresSchema.swift; sourceTree = SOURCE_ROOT; };
 		37AEABBF5B1C933392981114 /* DesignSystem/Materials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/Materials.swift; sourceTree = SOURCE_ROOT; };
 		3A4D571AAED54527AAC57F47 /* App/LabelDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/LabelDirectory.swift; sourceTree = SOURCE_ROOT; };
+		B03773975FDB401CA02B5F15 /* App/Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/Keychain.swift; sourceTree = SOURCE_ROOT; };
+		2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GoogleTokenProvider.swift; sourceTree = SOURCE_ROOT; };
 		3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/CorrespondenceMark.swift; sourceTree = SOURCE_ROOT; };
 		447B0387783A4EE385008A6B /* App/AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppDelegate.swift; sourceTree = SOURCE_ROOT; };
 		44B8B11C43712F4DF6C6A4B0 /* App/GmailMessageComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GmailMessageComposer.swift; sourceTree = SOURCE_ROOT; };
@@ -120,6 +124,8 @@
 				DC0B80EE1611396DB315C571 /* App/OutboxService.swift */,
 				89705DCC26384892BF488BA2 /* App/ThreadActionService.swift */,
 				3A4D571AAED54527AAC57F47 /* App/LabelDirectory.swift */,
+				B03773975FDB401CA02B5F15 /* App/Keychain.swift */,
+				2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */,
 				447B0387783A4EE385008A6B /* App/AppDelegate.swift */,
 				916D22A5A98347EDBD6063F8 /* App/PushNotificationService.swift */,
 				3188DDEA4B4112FCE079024F /* Core/CorresSchema.swift */,
@@ -230,6 +236,8 @@
 				7ADE31691A6CE5F5F6B4E8F0 /* App/OutboxService.swift in Sources */,
 				E79A8DBC3229495CA769B912 /* App/ThreadActionService.swift in Sources */,
 				BB3CA26C51C343ECA59840FF /* App/LabelDirectory.swift in Sources */,
+				23D3AB8DD02A4999883FF6B2 /* App/Keychain.swift in Sources */,
+				CBAEF7A3115B4335A7A17995 /* App/GoogleTokenProvider.swift in Sources */,
 				48A5A9377BA4468386749647 /* App/AppDelegate.swift in Sources */,
 				3EC3C3C05C7C482BB226F0F7 /* App/PushNotificationService.swift in Sources */,
 				1729D2B584AB0024ED1C9BB4 /* Core/CorresSchema.swift in Sources */,

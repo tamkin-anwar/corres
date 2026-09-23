@@ -33,9 +33,9 @@ npm run deploy
 ```
 
 This deploys one HTTP Cloud Function (`corres-push-relay`) with three routes:
-- `POST /register`: called by the app once a device grants notification permission.
-- `POST /unregister`: called on sign-out or when notifications are turned off.
-- `POST /pubsub`: the actual Pub/Sub push subscription target (below), never called directly by the app.
+- `POST /register`: called by the app once a device grants notification permission, once per connected account. A `devices` document is keyed by device token and holds an `emailAddresses` array, not a single email: Corres supports multiple simultaneously-connected accounts (Batch 29), and one device can be registered for several accounts' pushes at once.
+- `POST /unregister`: called with just a `deviceToken` when notifications are turned off entirely (removes the whole device record), or with `deviceToken` + `emailAddress` when a single account is disconnected while others stay connected (removes just that account from the list).
+- `POST /pubsub`: the actual Pub/Sub push subscription target (below), never called directly by the app. Looks up devices via `array-contains` on `emailAddresses`.
 
 Note the deployed function's URL; it's the base URL the app needs.
 

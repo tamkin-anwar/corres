@@ -72,23 +72,44 @@ function sendSilentPush(deviceToken) {
   });
 }
 
+// One device can now be signed into more than one Gmail account at once
+// (Corres's own multi-account support), so a device token maps to a list of
+// email addresses, not a single one: `emailAddresses` (array-contains
+// queried in handlePubSub), not the old single `emailAddress` field.
+// Registering the same account twice is a harmless no-op (arrayUnion only
+// adds a value once).
 async function handleRegister(req, res) {
   const { emailAddress, deviceToken } = req.body || {};
   if (!emailAddress || !deviceToken) {
     res.status(400).send('emailAddress and deviceToken are required');
     return;
   }
-  await devices.doc(deviceToken).set({ emailAddress, updatedAt: Firestore.FieldValue.serverTimestamp() });
+  await devices.doc(deviceToken).set({
+    emailAddresses: Firestore.FieldValue.arrayUnion(emailAddress),
+    updatedAt: Firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
   res.status(204).send();
 }
 
+// With `emailAddress`, removes just that one account from the device's
+// list (disconnecting a single account while others stay connected); the
+// document itself is left in place even if the list becomes empty, since an
+// empty `emailAddresses` array-contains-matches nothing anyway, and
+// deleting it isn't necessary for correctness. Without `emailAddress`
+// (turning notifications off entirely), the whole device record is removed.
 async function handleUnregister(req, res) {
-  const { deviceToken } = req.body || {};
+  const { deviceToken, emailAddress } = req.body || {};
   if (!deviceToken) {
     res.status(400).send('deviceToken is required');
     return;
   }
-  await devices.doc(deviceToken).delete();
+  if (emailAddress) {
+    await devices.doc(deviceToken).set({
+      emailAddresses: Firestore.FieldValue.arrayRemove(emailAddress),
+    }, { merge: true });
+  } else {
+    await devices.doc(deviceToken).delete();
+  }
   res.status(204).send();
 }
 
@@ -110,7 +131,7 @@ async function handlePubSub(req, res) {
     return;
   }
   if (emailAddress) {
-    const matches = await devices.where('emailAddress', '==', emailAddress).get();
+    const matches = await devices.where('emailAddresses', 'array-contains', emailAddress).get();
     await Promise.all(matches.docs.map((doc) => sendSilentPush(doc.id)));
   }
   res.status(204).send();

@@ -35,24 +35,56 @@ final class GmailSyncService {
     /// pays for refreshing `MailStore.threads` when there is something new
     /// to show.
     @discardableResult
-    func search(_ query: String, account: String?) async -> Bool {
-        guard let account, !account.isEmpty else { return false }
+    func search(_ query: String, accounts: [String]) async -> Bool {
+        guard !accounts.isEmpty else { return false }
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= Self.minSearchQueryLength else { return false }
         isSearchingRemote = true
         defer { isSearchingRemote = false }
-        guard let matches = try? await client.searchMessages(query: trimmed, account: account), !matches.isEmpty else { return false }
-        let inserted = (try? await repository.upsert(matches, isInitialSync: false)) ?? 0
-        return inserted > 0
+        var anyInserted = false
+        // Gmail's search endpoint is scoped to whichever account authorized
+        // the call ("me"); reaching every connected account means one call
+        // per account, merged into the same local store the same way an
+        // ordinary sync would.
+        for account in accounts {
+            guard let matches = try? await client.searchMessages(query: trimmed, account: account), !matches.isEmpty else { continue }
+            let inserted = (try? await repository.upsert(matches, isInitialSync: false)) ?? 0
+            anyInserted = anyInserted || inserted > 0
+        }
+        return anyInserted
     }
 
     private static let minSearchQueryLength = 3
+
+    /// Syncs every connected account, one after another (not concurrently:
+    /// `isSyncing` guards the whole pass, matching the old single-account
+    /// behavior of never overlapping two syncs). Returns whether any account
+    /// actually pulled in new data, the same signal `syncOne` already gave
+    /// for a single account.
+    @discardableResult
+    func syncAll(accounts: [String]) async -> Bool {
+        guard !accounts.isEmpty, !isSyncing else { return false }
+        isSyncing = true
+        defer { isSyncing = false }
+        var anySucceeded = false
+        for account in accounts {
+            if await syncOneLocked(account: account) { anySucceeded = true }
+        }
+        return anySucceeded
+    }
 
     @discardableResult
     func syncIfConnected(account: String?) async -> Bool {
         guard let account, !account.isEmpty, !isSyncing else { return false }
         isSyncing = true
         defer { isSyncing = false }
+        return await syncOneLocked(account: account)
+    }
+
+    /// Shared body for both entry points above; assumes `isSyncing` is
+    /// already set by the caller (both callers above are the only ones
+    /// allowed to set it, so this never double-guards or double-clears it).
+    private func syncOneLocked(account: String) async -> Bool {
         do {
             let (result, isFullListing) = try await fetch(account: account)
             // Deliberately ordered, not merely convenient: upsert (SwiftData)

@@ -5,6 +5,11 @@ import UniformTypeIdentifiers
 struct ComposeView: View {
     let store: MailStore
     let outbox: OutboxService
+    /// Optional: only needed to offer a "From" picker for a brand-new
+    /// compose when more than one account is connected. Nil for the offline
+    /// preview-render script and for reply/forward, where the account is
+    /// already fixed by the thread being replied to.
+    var auth: GoogleAuthService?
     /// The conversation this draft replies to or forwards, when there is
     /// one; nil for a brand-new compose. Passed straight through to
     /// `OutboxService.queueSend`, which needs it for real Gmail threading.
@@ -34,18 +39,27 @@ struct ComposeView: View {
         var id: String { email }
     }
 
-    init(store: MailStore, outbox: OutboxService, draft: Draft, sourceThread: Correspondence?) {
+    init(store: MailStore, outbox: OutboxService, auth: GoogleAuthService? = nil, draft: Draft, sourceThread: Correspondence?) {
         self.store = store
         self.outbox = outbox
+        self.auth = auth
         self.sourceThread = sourceThread
-        self._draft = State(initialValue: draft)
-        self.initialDraft = draft
+        var initial = draft
+        if initial.kind == .new, initial.fromAccount == nil {
+            initial.fromAccount = auth?.primaryAccount?.email
+        }
+        self._draft = State(initialValue: initial)
+        self.initialDraft = initial
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    if draft.kind == .new, let accounts = auth?.accounts, accounts.count > 1 {
+                        fromPicker(accounts)
+                        Divider().padding(.leading, CorresSpace.page)
+                    }
                     field(title: "To", text: $draft.to, isEditable: draft.kind == .new || draft.kind == .forward)
                         .focused($focusedField, equals: .to)
                     if !toSuggestions.isEmpty {
@@ -267,6 +281,24 @@ struct ComposeView: View {
         }
     }
 
+    /// Only shown for a brand-new compose with more than one account
+    /// connected: a reply/forward already has its account fixed by which
+    /// thread it belongs to, so there is nothing to choose there.
+    private func fromPicker(_ accounts: [GmailAccount]) -> some View {
+        HStack(spacing: 12) {
+            Text("From").font(.subheadline).foregroundStyle(CorresPalette.secondary).frame(width: 64, alignment: .leading)
+            Picker("From", selection: Binding(
+                get: { draft.fromAccount ?? accounts.first?.email ?? "" },
+                set: { draft.fromAccount = $0 }
+            )) {
+                ForEach(accounts) { account in Text(account.email).tag(account.email) }
+            }
+            .labelsHidden()
+            Spacer()
+        }
+        .padding(.horizontal, CorresSpace.page).frame(minHeight: 44)
+    }
+
     private func field(title: String, text: Binding<String>, isEditable: Bool) -> some View {
         HStack(spacing: 12) {
             Text(title).font(.subheadline).foregroundStyle(CorresPalette.secondary).frame(width: 64, alignment: .leading)
@@ -291,11 +323,11 @@ extension Correspondence {
         case .new:
             return Draft(kind: .new, to: "", subject: "")
         case .reply, .replyAll:
-            return Draft(kind: kind, threadID: id, to: senderEmail ?? sender,
+            return Draft(kind: kind, threadID: id, fromAccount: id.account, to: senderEmail ?? sender,
                          subject: subject.hasPrefix("Re: ") ? subject : "Re: \(subject)",
                          body: quoted)
         case .forward:
-            return Draft(kind: .forward, threadID: id, to: "",
+            return Draft(kind: .forward, threadID: id, fromAccount: id.account, to: "",
                          subject: subject.hasPrefix("Fwd: ") ? subject : "Fwd: \(subject)",
                          body: quoted)
         }

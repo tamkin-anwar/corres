@@ -66,22 +66,21 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     /// not gated behind the UI ever appearing.
     private func performLaunchWork() async {
         await store.load()
-        await auth.restorePreviousSignIn()
-        if await sync.syncIfConnected(account: auth.account?.email) {
+        await auth.restoreConnectedAccounts()
+        let accountEmails = auth.accounts.map(\.email)
+        if await sync.syncAll(accounts: accountEmails) {
             await store.load()
         }
         // Covers relaunching already connected (the connect button in
         // Preferences handles the first-connection case itself): sample
         // threads from before that connection existed have no reason to
         // still be mixed into real mail.
-        if auth.account != nil {
+        if !accountEmails.isEmpty {
             await store.deleteSampleDataIfPresent()
         }
         await outbox.resumeAfterRelaunch()
-        await labelDirectory.refreshIfConnected(account: auth.account?.email)
-        if let account = auth.account?.email {
-            await pushService.renewWatch(account: account)
-        }
+        await labelDirectory.refreshIfConnected(accounts: accountEmails)
+        await pushService.renewWatch(accounts: accountEmails)
         scheduleBackgroundRefresh()
     }
 
@@ -101,9 +100,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     private func handleBackgroundRefresh(_ task: BGAppRefreshTask) {
         scheduleBackgroundRefresh()
         let work = Task {
-            if let account = auth.account?.email {
-                await pushService.renewWatch(account: account)
-            }
+            await pushService.renewWatch(accounts: auth.accounts.map(\.email))
             task.setTaskCompleted(success: true)
         }
         // Ignoring the expiration handler damages this task's standing
@@ -116,7 +113,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        Task { await pushService.didRegister(deviceToken: deviceToken, account: auth.account?.email) }
+        Task { await pushService.didRegister(deviceToken: deviceToken, accounts: auth.accounts.map(\.email)) }
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
@@ -138,7 +135,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // to it yet) must not re-trigger a notification every time
         // something else in the account also changes.
         let previousUnread = Dictionary(uniqueKeysWithValues: store.threads.map { ($0.id, $0.isUnread) })
-        guard await sync.syncIfConnected(account: auth.account?.email) else { return .noData }
+        guard await sync.syncAll(accounts: auth.accounts.map(\.email)) else { return .noData }
         await store.load()
         let newlyUnread = store.threads.filter { thread in
             thread.isUnread && previousUnread[thread.id] != true

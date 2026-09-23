@@ -2,40 +2,88 @@ import GoogleSignIn
 import Observation
 import UIKit
 
-/// Wraps GoogleSignIn. Kept out of Core deliberately, matching the
-/// "Gmail DTOs, OAuth, persistence details must not appear in SwiftUI views"
-/// boundary from ADR 002; views see only `account`/`isSigningIn`/`errorMessage`,
-/// never GIDGoogleUser or a raw token. The session itself (tokens) lives in
-/// GoogleSignIn's own Keychain-backed store; see GmailAccount's doc comment.
+/// Wraps GoogleSignIn for the interactive sign-in UI only. Kept out of Core
+/// deliberately, matching the "Gmail DTOs, OAuth, persistence details must
+/// not appear in SwiftUI views" boundary from ADR 002; views see only
+/// `accounts`/`isSigningIn`/`errorMessage`, never GIDGoogleUser or a raw
+/// token.
+///
+/// True simultaneous multi-account (Batch 29) moves where the session itself
+/// lives: each connected account's refresh token is captured the moment it
+/// signs in and stored independently via `GoogleTokenProvider`/`Keychain`,
+/// not left in GoogleSignIn's own single-slot Keychain store, since that
+/// store only ever remembers one signed-in user (see `GoogleTokenProvider`'s
+/// doc comment). This is a deliberate departure from ADR 005's original "the
+/// session lives entirely in GoogleSignIn's own store" stance, accepted
+/// because that stance cannot support more than one account at a time.
 @MainActor @Observable
 final class GoogleAuthService {
-    private(set) var account: GmailAccount?
+    private(set) var accounts: [GmailAccount] = []
     private(set) var isSigningIn = false
     var errorMessage: String?
 
-    /// `gmail.readonly` plus `gmail.send`, and nothing wider at first connect:
-    /// `gmail.modify` (needed for Archive/Trash/read state) is requested
-    /// incrementally, the same pattern `gmail.send` already used, only the
-    /// first time one of those actions is actually attempted (see
-    /// `ensureModifyScope`). All three are Google's "sensitive," not
-    /// "restricted," scopes, so they need standard OAuth consent-screen
-    /// review before general release but not a CASA security assessment;
-    /// see Docs/Architecture.md ADR 005.
+    private let defaults = UserDefaults.standard
+    private static let connectedAccountsKey = "corres.connectedAccounts"
+
+    /// `gmail.readonly`, `gmail.send`, and now `gmail.modify` (Archive/Trash/
+    /// read state) all requested upfront at connect time, one consent
+    /// screen, rather than `gmail.modify`'s old incremental request-on-first-
+    /// use pattern: incremental scope grants need a live `GIDGoogleUser` for
+    /// the account in question, which this design only ever has for
+    /// whichever account GoogleSignIn's own session currently holds, not for
+    /// every connected account. Requesting everything upfront sidesteps that
+    /// entirely. All three remain Google's "sensitive," not "restricted,"
+    /// scopes; see Docs/Architecture.md ADR 005.
     private static let gmailScopes = [
         "https://www.googleapis.com/auth/gmail.readonly",
         "https://www.googleapis.com/auth/gmail.send",
+        "https://www.googleapis.com/auth/gmail.modify",
     ]
-    private static let sendScope = "https://www.googleapis.com/auth/gmail.send"
-    private static let modifyScope = "https://www.googleapis.com/auth/gmail.modify"
 
-    func restorePreviousSignIn() async {
-        guard let user = try? await GIDSignIn.sharedInstance.restorePreviousSignIn() else {
-            account = nil
-            return
+    var primaryAccount: GmailAccount? { accounts.first }
+
+    func isConnected(_ email: String) -> Bool { accounts.contains { $0.email == email } }
+
+    /// Restores every account this device already has a stored refresh token
+    /// for. Also migrates a single pre-Batch-29 GoogleSignIn session
+    /// (someone who connected Gmail before multi-account existed): without
+    /// this, that person's real, existing connection would otherwise vanish
+    /// after updating, since their refresh token only ever lived in
+    /// GoogleSignIn's own store, never in Corres's own Keychain entry.
+    func restoreConnectedAccounts() async {
+        let storedEmails = defaults.stringArray(forKey: Self.connectedAccountsKey) ?? []
+        var restored: [GmailAccount] = []
+        for email in storedEmails where await GoogleTokenProvider.shared.hasRefreshToken(for: email) {
+            restored.append(GmailAccount(email: email))
         }
-        account = GmailAccount(email: user.profile?.email ?? "")
+        if restored.isEmpty {
+            await migrateLegacySingleAccountIfPresent(into: &restored)
+        }
+        accounts = restored
+        persistAccountList()
     }
 
+    /// One-time upgrade path: reads whatever GoogleSignIn's own single-slot
+    /// store still remembers (true for anyone who connected before this
+    /// batch shipped) and captures its refresh token into Corres's own
+    /// storage, so the existing connection carries over instead of silently
+    /// requiring a fresh sign-in.
+    private func migrateLegacySingleAccountIfPresent(into restored: inout [GmailAccount]) async {
+        guard let user = try? await GIDSignIn.sharedInstance.restorePreviousSignIn() else { return }
+        guard let email = user.profile?.email else { return }
+        let granted = Set(user.grantedScopes ?? [])
+        if !granted.isSuperset(of: Self.gmailScopes), let presenter = Self.rootViewController() {
+            _ = try? await user.addScopes(Self.gmailScopes, presenting: presenter)
+        }
+        await GoogleTokenProvider.shared.store(refreshToken: user.refreshToken.tokenString, for: email)
+        restored.append(GmailAccount(email: email))
+    }
+
+    /// Always drives GoogleSignIn's own interactive, account-picker-capable
+    /// flow, then folds the result into `accounts` as an addition, never a
+    /// replacement: signing in a second account must not drop the first, the
+    /// whole point of this batch. Signing in an already-connected account
+    /// again (e.g. to refresh a revoked grant) is a harmless no-op merge.
     func signIn() async {
         guard let presenter = Self.rootViewController() else {
             errorMessage = "Could not find a window to present sign-in from."
@@ -49,7 +97,15 @@ final class GoogleAuthService {
             if !granted.isSuperset(of: Self.gmailScopes) {
                 _ = try await result.user.addScopes(Self.gmailScopes, presenting: presenter)
             }
-            account = GmailAccount(email: result.user.profile?.email ?? "")
+            guard let email = result.user.profile?.email, !email.isEmpty else {
+                errorMessage = "Could not connect Gmail. Please try again."
+                return
+            }
+            await GoogleTokenProvider.shared.store(refreshToken: result.user.refreshToken.tokenString, for: email)
+            if !accounts.contains(where: { $0.email == email }) {
+                accounts.append(GmailAccount(email: email))
+                persistAccountList()
+            }
         } catch {
             let nsError = error as NSError
             // Cancellation is not an error worth surfacing: the user changed
@@ -60,30 +116,24 @@ final class GoogleAuthService {
         }
     }
 
-    /// An account connected before `gmail.send` was requested only has
-    /// `gmail.readonly` granted; this asks for the missing scope
-    /// incrementally (another system consent sheet, not a full re-sign-in)
-    /// the first time it's actually needed, rather than forcing every
-    /// existing connection to disconnect and reconnect.
-    @discardableResult
-    func ensureSendScope() async -> Bool { await ensureScope(Self.sendScope) }
-
-    /// Same incremental pattern as `ensureSendScope`, for Archive/Trash/read
-    /// state, which all need `gmail.modify`, not requested at first connect.
-    @discardableResult
-    func ensureModifyScope() async -> Bool { await ensureScope(Self.modifyScope) }
-
-    private func ensureScope(_ scope: String) async -> Bool {
-        guard let user = GIDSignIn.sharedInstance.currentUser else { return false }
-        if Set(user.grantedScopes ?? []).contains(scope) { return true }
-        guard let presenter = Self.rootViewController() else { return false }
-        _ = try? await user.addScopes([scope], presenting: presenter)
-        return Set(user.grantedScopes ?? []).contains(scope)
+    /// Disconnects exactly one account, leaving any others connected: the
+    /// per-account equivalent of the old single-account `signOut()`.
+    func signOut(_ email: String) async {
+        accounts.removeAll { $0.email == email }
+        persistAccountList()
+        await GoogleTokenProvider.shared.removeRefreshToken(for: email)
+        // GoogleSignIn's own session only ever tracks one account; clearing
+        // it is only meaningful when the disconnected account happens to be
+        // the one it currently holds, but calling it unconditionally when no
+        // accounts remain is a harmless, simple way to also fully clear that
+        // legacy single slot (relevant right after the migration path above).
+        if accounts.isEmpty {
+            GIDSignIn.sharedInstance.signOut()
+        }
     }
 
-    func signOut() {
-        GIDSignIn.sharedInstance.signOut()
-        account = nil
+    private func persistAccountList() {
+        defaults.set(accounts.map(\.email), forKey: Self.connectedAccountsKey)
     }
 
     private static func rootViewController() -> UIViewController? {

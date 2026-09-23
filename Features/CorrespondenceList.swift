@@ -58,10 +58,20 @@ struct CorrespondenceList: View {
     /// offline preview-render script, which never exercises swipe actions.
     var threadActions: ThreadActionService?
     let destination: Destination
+    /// nil shows every connected account's mail merged together (the
+    /// unified view); a specific email filters down to just that account,
+    /// matching Superhuman's per-account view. See `CorresShell`'s account
+    /// switcher.
+    var accountFilter: String?
     @State private var search = ""
 
+    private var scopedThreads: [Correspondence] {
+        guard let accountFilter else { return store.threads }
+        return store.threads.filter { $0.id.account == accountFilter }
+    }
+
     private var results: [Correspondence] {
-        MailQuery.filter(store.threads, attention: destination.attention, search: search)
+        MailQuery.filter(scopedThreads, attention: destination.attention, search: search)
     }
 
     var body: some View {
@@ -80,7 +90,7 @@ struct CorrespondenceList: View {
             .background(CorresPalette.canvas)
             .searchable(text: $search, prompt: "Search conversations")
             .refreshable {
-                _ = await sync?.syncIfConnected(account: auth?.account?.email)
+                _ = await sync?.syncAll(accounts: auth?.accounts.map(\.email) ?? [])
                 await store.load()
             }
             // Debounced: fires 450ms after typing pauses, not per keystroke,
@@ -88,10 +98,11 @@ struct CorrespondenceList: View {
             // person keeps typing before that. Reaches past what's already
             // synced locally; see GmailSyncService.search's doc comment.
             .task(id: search) {
-                guard let account = auth?.account?.email else { return }
+                let accounts = accountFilter.map { [$0] } ?? (auth?.accounts.map(\.email) ?? [])
+                guard !accounts.isEmpty else { return }
                 try? await Task.sleep(for: .milliseconds(450))
                 guard !Task.isCancelled else { return }
-                if await sync?.search(search, account: account) == true {
+                if await sync?.search(search, accounts: accounts) == true {
                     await store.refresh()
                 }
             }
@@ -106,7 +117,7 @@ struct CorrespondenceList: View {
             Text(destination.rawValue).font(CorresType.display)
             Text(subtitle).foregroundStyle(CorresPalette.secondary)
             HStack(spacing: 6) {
-                Text("\(results.count) conversations" + (auth?.account == nil ? " · Sample mail" : ""))
+                Text("\(results.count) conversations" + ((auth?.accounts.isEmpty ?? true) ? " · Sample mail" : ""))
                     .font(CorresType.label).foregroundStyle(CorresPalette.secondary)
                 // Visible feedback that a search is genuinely reaching past
                 // what's already synced, not just quietly finding nothing:

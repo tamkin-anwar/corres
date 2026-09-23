@@ -44,7 +44,7 @@ struct ConversationView: View {
                         messageHeader(for: thread, isSample: isSample)
                             .padding(.horizontal, CorresSpace.page)
                         let knownLabels = thread.labelIds.compactMap { id in
-                            labelDirectory.labels.first { $0.id == id }
+                            labelDirectory.labels(for: thread.id.account).first { $0.id == id }
                         }
                         if !knownLabels.isEmpty {
                             labelChips(knownLabels).padding(.horizontal, CorresSpace.page)
@@ -68,7 +68,7 @@ struct ConversationView: View {
                                 .padding(.horizontal, CorresSpace.page)
                         }
                         if !thread.attachments.isEmpty, let messageID = thread.latestMessageID {
-                            attachmentsList(thread.attachments, messageID: messageID)
+                            attachmentsList(thread.attachments, messageID: messageID, account: thread.id.account)
                                 .padding(.horizontal, CorresSpace.page)
                         }
                         Text(isSample ? "No AI processing. Replying, forwarding, and sending stay on this device until Gmail is connected."
@@ -176,10 +176,10 @@ struct ConversationView: View {
         }
     }
 
-    private func attachmentsList(_ attachments: [MailAttachment], messageID: String) -> some View {
+    private func attachmentsList(_ attachments: [MailAttachment], messageID: String, account: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(attachments) { attachment in
-                AttachmentRow(attachment: attachment, messageID: messageID)
+                AttachmentRow(attachment: attachment, messageID: messageID, account: account)
             }
         }
     }
@@ -232,9 +232,10 @@ struct ConversationView: View {
                 Image(systemName: "tag").frame(maxWidth: .infinity, minHeight: 44)
             }
             .accessibilityLabel("Mark as")
-            if !labelDirectory.labels.isEmpty {
+            let accountLabels = labelDirectory.labels(for: thread.id.account)
+            if !accountLabels.isEmpty {
                 Menu {
-                    ForEach(labelDirectory.labels) { label in
+                    ForEach(accountLabels) { label in
                         let isOn = thread.labelIds.contains(label.id)
                         Button {
                             Task { await threadActions.toggleLabel(label.id, isOn: !isOn, for: thread) }
@@ -307,6 +308,7 @@ struct ConversationView: View {
 private struct AttachmentRow: View {
     let attachment: MailAttachment
     let messageID: String
+    let account: String
     @State private var isDownloading = false
     @State private var previewURL: URL?
     @State private var downloadFailed = false
@@ -349,7 +351,7 @@ private struct AttachmentRow: View {
         isDownloading = true
         defer { isDownloading = false }
         do {
-            let data = try await client.fetchAttachmentData(messageId: messageID, attachmentId: attachment.id)
+            let data = try await client.fetchAttachmentData(messageId: messageID, attachmentId: attachment.id, account: account)
             // A fresh, uniquely-named subdirectory per download: two
             // attachments sharing a filename (common with "image.png") must
             // not silently overwrite each other's temp file.

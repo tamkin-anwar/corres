@@ -13,6 +13,13 @@ struct CorresShell: View {
     @State private var showingScreener = false
     @State private var showingWelcome = false
     @State private var composeDraft: Draft?
+    /// nil is the unified view (every connected account merged, chronological,
+    /// matching Apple Mail's "All Inboxes"/Spark's Smart Inbox); a specific
+    /// email switches to that one account only, matching Superhuman's
+    /// per-account view. Both are real view modes over the same underlying
+    /// `store.threads`, not separate data: Core's `ThreadID.account` already
+    /// scopes every thread, so this needed no Core changes at all.
+    @State private var accountFilter: String?
     @AppStorage("corres.hasExplored") private var hasExplored = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -46,9 +53,18 @@ struct CorresShell: View {
             if !hasExplored { showingWelcome = true }
             if store.state == .idle { await store.load() }
         }
+        // A filtered-to-one-account view whose account was just disconnected
+        // would otherwise keep silently showing nothing, with no visible
+        // explanation; falling back to "All Inboxes" is the same recovery
+        // Preferences' own disconnect flow already expects.
+        .onChange(of: auth.accounts) { _, accounts in
+            if let accountFilter, !accounts.contains(where: { $0.email == accountFilter }) {
+                self.accountFilter = nil
+            }
+        }
         .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService) }
         .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
-        .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, draft: draft, sourceThread: nil) }
+        .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, auth: auth, draft: draft, sourceThread: nil) }
         .fullScreenCover(isPresented: $showingWelcome) {
             WelcomeView {
                 hasExplored = true
@@ -123,11 +139,41 @@ struct CorresShell: View {
             }
         case .loaded:
             if destination == .brief {
-                BriefView(store: store, sync: sync, auth: auth, selection: $selection, showingScreener: $showingScreener)
+                BriefView(store: store, sync: sync, auth: auth, selection: $selection, showingScreener: $showingScreener,
+                          accountFilter: accountFilter)
             } else {
-                CorrespondenceList(store: store, sync: sync, auth: auth, threadActions: threadActions, destination: destination)
+                CorrespondenceList(store: store, sync: sync, auth: auth, threadActions: threadActions,
+                                   destination: destination, accountFilter: accountFilter)
             }
         }
+    }
+
+    /// "All Inboxes" (Apple Mail/Spark's unified view, this app's default)
+    /// plus one row per connected account (Superhuman's per-account view).
+    /// Both are real modes over the same already-synced local threads; see
+    /// `accountFilter`'s doc comment.
+    private var accountSwitcher: some View {
+        Menu {
+            Button {
+                accountFilter = nil
+            } label: {
+                if accountFilter == nil { Label("All Inboxes", systemImage: "checkmark") }
+                else { Text("All Inboxes") }
+            }
+            Divider()
+            ForEach(auth.accounts) { account in
+                Button {
+                    accountFilter = account.email
+                } label: {
+                    if accountFilter == account.email { Label(account.email, systemImage: "checkmark") }
+                    else { Text(account.email) }
+                }
+            }
+        } label: {
+            Image(systemName: accountFilter == nil ? "tray.2" : "person.crop.circle")
+                .frame(minWidth: 44, minHeight: 44)
+        }
+        .accessibilityLabel(accountFilter == nil ? "All Inboxes" : accountFilter ?? "")
     }
 
     private var brandLabel: some View {
@@ -154,6 +200,13 @@ struct CorresShell: View {
                 .sharedBackgroundVisibility(.hidden)
         } else {
             ToolbarItem(placement: .topBarLeading) { brandLabel }
+        }
+        // Only worth showing once there is an actual choice to make: one
+        // connected account (or none, sample mail) has nothing to switch
+        // between, matching Superhuman's own account switcher only mattering
+        // once a second account exists.
+        if auth.accounts.count > 1 {
+            ToolbarItem(placement: .topBarTrailing) { accountSwitcher }
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button { composeDraft = Draft(kind: .new, to: "", subject: "") } label: {

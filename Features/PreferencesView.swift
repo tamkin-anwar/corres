@@ -8,7 +8,7 @@ struct PreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
     @State private var showingResetConfirmation = false
-    @State private var showingDisconnectConfirmation = false
+    @State private var accountPendingDisconnect: GmailAccount?
 
     var body: some View {
         NavigationStack {
@@ -18,57 +18,69 @@ struct PreferencesView: View {
                         ForEach(Appearance.allCases) { Text($0.title).tag($0.rawValue) }
                     }
                 }
-                Section("Your Gmail account") {
-                    if let account = auth.account {
+                Section("Your Gmail accounts") {
+                    ForEach(auth.accounts) { account in
                         Label(account.email, systemImage: "checkmark.circle.fill")
                             .foregroundStyle(CorresPalette.accent)
-                        Button("Disconnect", role: .destructive) { showingDisconnectConfirmation = true }
-                    } else {
-                        Button {
-                            Task {
-                                await auth.signIn()
-                                if await sync.syncIfConnected(account: auth.account?.email) {
+                            .swipeActions(edge: .trailing) {
+                                Button("Disconnect", role: .destructive) { accountPendingDisconnect = account }
+                            }
+                    }
+                    Button {
+                        Task {
+                            let previousCount = auth.accounts.count
+                            await auth.signIn()
+                            // Only the newly-added account needs a fresh
+                            // sync; the others, if any, are already current.
+                            if auth.accounts.count > previousCount, let newAccount = auth.accounts.last {
+                                if await sync.syncIfConnected(account: newAccount.email) {
                                     await store.load()
                                 }
-                                await store.deleteSampleDataIfPresent()
                             }
-                        } label: {
-                            if auth.isSigningIn || sync.isSyncing {
-                                ProgressView()
-                            } else {
-                                Label("Connect Gmail", systemImage: "envelope.badge")
-                            }
+                            await store.deleteSampleDataIfPresent()
                         }
-                        .disabled(auth.isSigningIn || sync.isSyncing)
+                    } label: {
+                        if auth.isSigningIn || sync.isSyncing {
+                            ProgressView()
+                        } else {
+                            Label(auth.accounts.isEmpty ? "Connect Gmail" : "Connect another account", systemImage: "envelope.badge")
+                        }
                     }
-                    Text("Your inbox syncs into Mail, and new messages keep arriving automatically; sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state at first, not real judgment. Replying, replying all, forwarding, starting a new message, archiving, moving to Trash, marking read/unread, and applying your own Gmail labels all act for real.")
+                    .disabled(auth.isSigningIn || sync.isSyncing)
+                    Text("Every connected account syncs into Mail at once. Switch between a single merged inbox and one account at a time from the toolbar. Sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state at first, not real judgment. Replying, replying all, forwarding, starting a new message, archiving, moving to Trash, marking read/unread, and applying your own Gmail labels all act for real.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
-                    if let account = auth.account {
+                    if !auth.accounts.isEmpty {
                         Toggle("Notify me about new mail", isOn: Binding(
                             get: { pushService.isEnabled },
                             set: { newValue in
                                 Task {
-                                    if newValue { await pushService.enable(account: account.email) }
-                                    else { await pushService.disable(account: account.email) }
+                                    if newValue { await pushService.enableAll(accounts: auth.accounts.map(\.email)) }
+                                    else { await pushService.disableAll(accounts: auth.accounts.map(\.email)) }
                                 }
                             }
                         ))
-                        Text("A background service tells Corres when new mail arrives so it can check for real, on this device. It never sees your mail's subject, sender, or content, only that something changed.")
+                        Text("A background service tells Corres when new mail arrives on any connected account so it can check for real, on this device. It never sees your mail's subject, sender, or content, only that something changed.")
                             .font(.footnote).foregroundStyle(CorresPalette.secondary)
                     }
                 }
-                .confirmationDialog("Disconnect Gmail?", isPresented: $showingDisconnectConfirmation, titleVisibility: .visible) {
+                .confirmationDialog("Disconnect this account?", isPresented: Binding(
+                    get: { accountPendingDisconnect != nil },
+                    set: { if !$0 { accountPendingDisconnect = nil } }
+                ), titleVisibility: .visible) {
                     Button("Disconnect", role: .destructive) {
-                        let account = auth.account?.email
-                        sync.clearCursor(for: account)
-                        auth.signOut()
+                        guard let account = accountPendingDisconnect else { return }
+                        accountPendingDisconnect = nil
+                        sync.clearCursor(for: account.email)
                         // A stale watch subscription/device registration
                         // after disconnecting would keep the relay pinging
                         // for an account nothing local is listening for.
-                        Task { await pushService.disable(account: account) }
+                        Task {
+                            await pushService.disable(account: account.email)
+                            await auth.signOut(account.email)
+                        }
                     }
-                    Button("Cancel", role: .cancel) {}
-                }
+                    Button("Cancel", role: .cancel) { accountPendingDisconnect = nil }
+                } message: { Text(accountPendingDisconnect?.email ?? "") }
                 .alert("Could not connect", isPresented: Binding(
                     get: { auth.errorMessage != nil },
                     set: { if !$0 { auth.errorMessage = nil } }
@@ -101,9 +113,10 @@ struct PreferencesView: View {
                             // would not re-fetch anything already "seen" before
                             // the reset, leaving Mail empty until new mail
                             // arrives. Clear it and resync immediately instead.
-                            sync.clearCursor(for: auth.account?.email)
+                            let accounts = auth.accounts.map(\.email)
+                            for account in accounts { sync.clearCursor(for: account) }
                             await store.resetSampleData()
-                            if await sync.syncIfConnected(account: auth.account?.email) {
+                            if await sync.syncAll(accounts: accounts) {
                                 await store.load()
                             }
                         }
