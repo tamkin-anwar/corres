@@ -15,19 +15,24 @@ struct ConversationView: View {
     let outbox: OutboxService
     let threadActions: ThreadActionService
     let labelDirectory: LabelDirectory
+    let unsubscribeService: UnsubscribeService
     let orderedIDs: [ThreadID]
     @State private var currentID: ThreadID
     @State private var composeDraft: Draft?
     @State private var htmlHeight: CGFloat = 200
     @State private var showRemoteImages = false
+    @State private var showingUnsubscribeConfirmation = false
+    @State private var isUnsubscribing = false
+    @State private var unsubscribeOpened = false
     @Environment(\.dismiss) private var dismiss
 
     init(store: MailStore, outbox: OutboxService, threadActions: ThreadActionService,
-        labelDirectory: LabelDirectory, route: ConversationRoute) {
+        labelDirectory: LabelDirectory, unsubscribeService: UnsubscribeService, route: ConversationRoute) {
         self.store = store
         self.outbox = outbox
         self.threadActions = threadActions
         self.labelDirectory = labelDirectory
+        self.unsubscribeService = unsubscribeService
         self.orderedIDs = route.orderedIDs
         self._currentID = State(initialValue: route.id)
     }
@@ -43,6 +48,22 @@ struct ConversationView: View {
                             .padding(.horizontal, CorresSpace.page)
                         messageHeader(for: thread, isSample: isSample)
                             .padding(.horizontal, CorresSpace.page)
+                        if unsubscribeService.canUnsubscribe(thread) && !thread.senderUnsubscribed {
+                            VStack(alignment: .leading, spacing: 6) {
+                                unsubscribeBanner(for: thread)
+                                // No real signal this actually finished (no
+                                // one-click POST or mailto send happened,
+                                // just a handoff to a webpage), so this
+                                // stays a one-time note rather than the
+                                // banner disappearing the way it does when
+                                // Corres itself could confirm success.
+                                if unsubscribeOpened {
+                                    Text("Opened in Safari. Finish unsubscribing there.")
+                                        .font(.caption).foregroundStyle(CorresPalette.secondary)
+                                }
+                            }
+                            .padding(.horizontal, CorresSpace.page)
+                        }
                         let knownLabels = thread.labelIds.compactMap { id in
                             labelDirectory.labels(for: thread.id.account).first { $0.id == id }
                         }
@@ -107,6 +128,25 @@ struct ConversationView: View {
                         }
                     }
                 }
+                .confirmationDialog("Unsubscribe from \(thread.sender)?", isPresented: $showingUnsubscribeConfirmation, titleVisibility: .visible) {
+                    Button("Unsubscribe", role: .destructive) {
+                        Task {
+                            isUnsubscribing = true
+                            let outcome = await unsubscribeService.unsubscribe(from: thread, store: store)
+                            isUnsubscribing = false
+                            unsubscribeOpened = outcome == .opened
+                        }
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("You won't receive future mail from this sender. This can't be undone from Corres.")
+                }
+                .alert("Could not unsubscribe", isPresented: Binding(
+                    get: { unsubscribeService.errorMessage != nil },
+                    set: { if !$0 { unsubscribeService.errorMessage = nil } }
+                )) {
+                    Button("OK", role: .cancel) { unsubscribeService.errorMessage = nil }
+                } message: { Text(unsubscribeService.errorMessage ?? "Please try again.") }
             } else {
                 ContentUnavailableView("Conversation unavailable", systemImage: "text.bubble")
             }
@@ -193,6 +233,33 @@ struct ConversationView: View {
                 AttachmentRow(attachment: attachment, messageID: messageID, account: account)
             }
         }
+    }
+
+    /// Shown whenever a message actually offers a real way to stop hearing
+    /// from its sender (`List-Unsubscribe`/`List-Unsubscribe-Post`, RFC
+    /// 2369/8058), same placement and visual weight as `remoteImagesBanner`
+    /// right below it: both are "here's a real, safe action available on
+    /// this specific message," not a persistent chrome element. Disappears
+    /// permanently for this sender's future mail the moment it's actually
+    /// acted on (`Correspondence.senderUnsubscribed`, stamped by
+    /// `UnsubscribeService` through `MailStore.markSenderUnsubscribed`),
+    /// the same one-decision-per-sender model `imagesTrusted` already uses.
+    private func unsubscribeBanner(for thread: Correspondence) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "person.fill.badge.minus").accessibilityHidden(true)
+            Text("You get mail from \(thread.sender) often").font(.footnote).foregroundStyle(CorresPalette.secondary)
+            Spacer()
+            if isUnsubscribing {
+                ProgressView().controlSize(.small)
+            } else {
+                Button("Unsubscribe") { showingUnsubscribeConfirmation = true }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.red)
+            }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(CorresPalette.line, lineWidth: 0.5))
     }
 
     /// Showing images also remembers the sender (`MailStore.trustSenderImages`),

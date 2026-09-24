@@ -53,6 +53,12 @@ public final class PersistedCorrespondence {
     public var attachmentsData: Data = Data()
     public var isUnread: Bool = false
     public var labelIds: [String] = []
+    /// New in the unsubscribe batch; all four need their own `= <default>`
+    /// literal for the same lightweight-migration reason documented above.
+    public var listUnsubscribeMailto: String? = nil
+    public var listUnsubscribeURL: String? = nil
+    public var listUnsubscribeOneClick: Bool = false
+    public var senderUnsubscribed: Bool = false
 
     public init(from correspondence: Correspondence) {
         self.compositeID = Self.compositeID(account: correspondence.id.account, providerID: correspondence.id.providerID)
@@ -78,6 +84,10 @@ public final class PersistedCorrespondence {
         self.attachmentsData = (try? JSONEncoder().encode(correspondence.attachments)) ?? Data()
         self.isUnread = correspondence.isUnread
         self.labelIds = correspondence.labelIds
+        self.listUnsubscribeMailto = correspondence.listUnsubscribeMailto
+        self.listUnsubscribeURL = correspondence.listUnsubscribeURL
+        self.listUnsubscribeOneClick = correspondence.listUnsubscribeOneClick
+        self.senderUnsubscribed = correspondence.senderUnsubscribed
     }
 
     public var asCorrespondence: Correspondence {
@@ -89,7 +99,9 @@ public final class PersistedCorrespondence {
                        senderDecision: SenderDecision(rawValue: senderDecisionRaw) ?? .approved,
                        imagesTrusted: imagesTrusted,
                        attachments: (try? JSONDecoder().decode([MailAttachment].self, from: attachmentsData)) ?? [],
-                       isUnread: isUnread, labelIds: labelIds)
+                       isUnread: isUnread, labelIds: labelIds,
+                       listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
+                       listUnsubscribeOneClick: listUnsubscribeOneClick, senderUnsubscribed: senderUnsubscribed)
     }
 
     public static func compositeID(account: String, providerID: String) -> String { "\(account)|\(providerID)" }

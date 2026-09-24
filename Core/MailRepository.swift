@@ -101,6 +101,15 @@ public protocol MailRepository: Sendable {
     /// sender exists yet.
     func trustSenderImages(forSenderEmail senderEmail: String, account: String) async throws
 
+    /// Marks `senderEmail` unsubscribed, the same one-time, per-sender,
+    /// stamp-and-propagate mechanism as `trustSenderImages`/`setSenderDecision`
+    /// (see `upsert`'s doc comment): applied to every existing thread from
+    /// them at once, and looked up and stamped onto every future thread from
+    /// the same sender too, so `UnsubscribeService` having actually acted on
+    /// one message is remembered and the banner doesn't keep asking on their
+    /// next newsletter. Silent no-op if no thread from that sender exists yet.
+    func markSenderUnsubscribed(forSenderEmail senderEmail: String, account: String) async throws
+
     /// The durable outbox (ADR 005/007): every send still `pending` or
     /// `failed` as of the last time the repository was read, so it survives
     /// the app being force-quit mid-undo-window instead of only ever living
@@ -216,6 +225,7 @@ public actor SampleMailRepository: MailRepository {
         for (index, item) in items.enumerated() { indexByID[item.id] = index }
         var knownSenderDecisions = Self.senderDecisions(in: items)
         let knownImageTrust = Self.imageTrust(in: items)
+        let knownUnsubscribed = Self.unsubscribed(in: items)
         var insertedCount = 0
         for var item in incoming {
             if let index = indexByID[item.id] {
@@ -235,6 +245,7 @@ public actor SampleMailRepository: MailRepository {
                     knownSenderDecisions[key] = item.senderDecision
                 }
                 if knownImageTrust[key] == true { item.imagesTrusted = true }
+                if knownUnsubscribed[key] == true { item.senderUnsubscribed = true }
             }
             indexByID[item.id] = items.count
             items.append(item)
@@ -255,6 +266,12 @@ public actor SampleMailRepository: MailRepository {
         }
     }
 
+    public func markSenderUnsubscribed(forSenderEmail senderEmail: String, account: String) {
+        for index in items.indices where items[index].id.account == account && items[index].senderEmail == senderEmail {
+            items[index].senderUnsubscribed = true
+        }
+    }
+
     private static func senderKey(account: String, senderEmail: String) -> String { "\(account)|\(senderEmail)" }
 
     private static func senderDecisions(in items: [Correspondence]) -> [String: SenderDecision] {
@@ -270,6 +287,15 @@ public actor SampleMailRepository: MailRepository {
         var map: [String: Bool] = [:]
         for item in items {
             guard let senderEmail = item.senderEmail, item.imagesTrusted else { continue }
+            map[senderKey(account: item.id.account, senderEmail: senderEmail)] = true
+        }
+        return map
+    }
+
+    private static func unsubscribed(in items: [Correspondence]) -> [String: Bool] {
+        var map: [String: Bool] = [:]
+        for item in items {
+            guard let senderEmail = item.senderEmail, item.senderUnsubscribed else { continue }
             map[senderKey(account: item.id.account, senderEmail: senderEmail)] = true
         }
         return map

@@ -98,6 +98,7 @@ public actor SwiftDataMailRepository: MailRepository {
         var existingByCompositeID = Dictionary(uniqueKeysWithValues: existingModels.map { ($0.compositeID, $0) })
         var knownSenderDecisions = Self.senderDecisions(in: existingModels)
         let knownImageTrust = Self.imageTrust(in: existingModels)
+        let knownUnsubscribed = Self.unsubscribed(in: existingModels)
         var inserted = 0
         var changed = false
         for var item in incoming {
@@ -127,6 +128,11 @@ public actor SwiftDataMailRepository: MailRepository {
                 existing.latestMessageID = incomingMessageID
                 existing.receivedAt = item.receivedAt
                 existing.attachmentsData = (try? JSONEncoder().encode(item.attachments)) ?? Data()
+                // Per-message, like attachments: whatever the latest
+                // message actually offers, not frozen from an earlier one.
+                existing.listUnsubscribeMailto = item.listUnsubscribeMailto
+                existing.listUnsubscribeURL = item.listUnsubscribeURL
+                existing.listUnsubscribeOneClick = item.listUnsubscribeOneClick
                 // Labels reflect genuine Gmail mailbox-organization state,
                 // not a triage decision Corres invented (unlike
                 // attention/reason below): always take the freshest known
@@ -154,6 +160,7 @@ public actor SwiftDataMailRepository: MailRepository {
                     knownSenderDecisions[key] = item.senderDecision
                 }
                 if knownImageTrust[key] == true { item.imagesTrusted = true }
+                if knownUnsubscribed[key] == true { item.senderUnsubscribed = true }
             }
             let model = PersistedCorrespondence(from: item)
             modelContext.insert(model)
@@ -180,6 +187,15 @@ public actor SwiftDataMailRepository: MailRepository {
         let matches = try modelContext.fetch(descriptor)
         guard !matches.isEmpty else { return }
         for model in matches { model.imagesTrusted = true }
+        try modelContext.save()
+    }
+
+    public func markSenderUnsubscribed(forSenderEmail senderEmail: String, account: String) throws {
+        let descriptor = FetchDescriptor<PersistedCorrespondence>(
+            predicate: #Predicate { $0.account == account && $0.senderEmail == senderEmail })
+        let matches = try modelContext.fetch(descriptor)
+        guard !matches.isEmpty else { return }
+        for model in matches { model.senderUnsubscribed = true }
         try modelContext.save()
     }
 
@@ -221,6 +237,15 @@ public actor SwiftDataMailRepository: MailRepository {
         var map: [String: Bool] = [:]
         for model in models {
             guard let senderEmail = model.senderEmail, model.imagesTrusted else { continue }
+            map[senderKey(account: model.account, senderEmail: senderEmail)] = true
+        }
+        return map
+    }
+
+    private static func unsubscribed(in models: [PersistedCorrespondence]) -> [String: Bool] {
+        var map: [String: Bool] = [:]
+        for model in models {
+            guard let senderEmail = model.senderEmail, model.senderUnsubscribed else { continue }
             map[senderKey(account: model.account, senderEmail: senderEmail)] = true
         }
         return map

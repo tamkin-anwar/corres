@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     let threadActions: ThreadActionService
     let labelDirectory: LabelDirectory
     let pushService: PushNotificationService
+    let unsubscribeService: UnsubscribeService
 
     /// Must match the identifier declared in `Info.plist`'s
     /// `BGTaskSchedulerPermittedIdentifiers`; iOS silently refuses to run
@@ -39,6 +40,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         threadActions = ThreadActionService(store: mailStore, auth: authService)
         labelDirectory = LabelDirectory()
         pushService = PushNotificationService()
+        unsubscribeService = UnsubscribeService()
         super.init()
     }
 

@@ -10,7 +10,8 @@ struct CorresApp: App {
         WindowGroup {
             CorresShell(store: appDelegate.store, auth: appDelegate.auth, sync: appDelegate.sync,
                        outbox: appDelegate.outbox, threadActions: appDelegate.threadActions,
-                       labelDirectory: appDelegate.labelDirectory, pushService: appDelegate.pushService)
+                       labelDirectory: appDelegate.labelDirectory, pushService: appDelegate.pushService,
+                       unsubscribeService: appDelegate.unsubscribeService)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
                 .task {

@@ -8,6 +8,7 @@ struct CorresShell: View {
     @Bindable var threadActions: ThreadActionService
     var labelDirectory: LabelDirectory
     @Bindable var pushService: PushNotificationService
+    @Bindable var unsubscribeService: UnsubscribeService
     @State private var selection = Destination.brief
     @State private var showingSettings = false
     @State private var showingScreener = false
@@ -34,7 +35,8 @@ struct CorresShell: View {
                         .toolbar { toolbarContent }
                         .navigationDestination(for: ConversationRoute.self) { route in
                             ConversationView(store: store, outbox: outbox, threadActions: threadActions,
-                                            labelDirectory: labelDirectory, route: route)
+                                            labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
+                                            route: route)
                         }
                 }
                 .tabItem { Label { Text(destination.rawValue) } icon: { Image(uiImage: CorresIcon.tabImage(destination.glyph)) } }

@@ -361,6 +361,15 @@ struct GmailAPIClient {
         let messageIdHeader = headers["message-id"]?.trimmingCharacters(in: CharacterSet(charactersIn: "<>"))
         var attachments: [MailAttachment] = []
         Self.collectAttachments(from: message.payload, into: &attachments)
+        let (listUnsubscribeMailto, listUnsubscribeURL) = Self.parseListUnsubscribe(headers["list-unsubscribe"] ?? "")
+        // RFC 8058: present only when the sender is explicitly vouching the
+        // https URL above is safe to POST to automatically, no page visit
+        // needed. The header's value is literally the string
+        // "List-Unsubscribe=One-Click"; case folded defensively since
+        // nothing in the RFC guarantees senders get the casing exactly
+        // right.
+        let listUnsubscribeOneClick = listUnsubscribeURL != nil
+            && (headers["list-unsubscribe-post"]?.lowercased().contains("one-click") ?? false)
         return Correspondence(
             id: ThreadID(account: account, providerID: message.threadId ?? message.id),
             sender: sender, senderEmail: senderEmail, organization: organization, subject: subject,
@@ -368,7 +377,9 @@ struct GmailAPIClient {
             latestMessageID: message.id, receivedAt: receivedAt, dueAt: nil,
             reason: isUnread ? "Unread in Gmail." : "Already read in Gmail.",
             attention: isUnread ? .needsYou : .quiet, attachments: attachments, isUnread: isUnread,
-            labelIds: message.labelIds ?? [])
+            labelIds: message.labelIds ?? [],
+            listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
+            listUnsubscribeOneClick: listUnsubscribeOneClick)
     }
 
     /// A real attachment (something to download) versus an inline image
@@ -416,6 +427,32 @@ struct GmailAPIClient {
         }
         let email = raw.trimmingCharacters(in: .whitespaces)
         return (email, email)
+    }
+
+    /// `List-Unsubscribe` (RFC 2369): one or more comma-separated URIs, each
+    /// wrapped in angle brackets, e.g. `<mailto:x@y.com?subject=unsub>,
+    /// <https://y.com/unsub?id=1>`. Extracted via the angle brackets
+    /// themselves rather than a naive comma-split: a URI's own query string
+    /// can legally contain a comma, which a plain split would wrongly treat
+    /// as a second entry.
+    private static let angleBracketURIRegex = try? NSRegularExpression(pattern: #"<([^>]+)>"#)
+
+    private static func parseListUnsubscribe(_ raw: String) -> (mailto: String?, url: String?) {
+        guard let regex = angleBracketURIRegex, !raw.isEmpty else { return (nil, nil) }
+        let range = NSRange(raw.startIndex..., in: raw)
+        var mailto: String?
+        var url: String?
+        for match in regex.matches(in: raw, range: range) {
+            guard let uriRange = Range(match.range(at: 1), in: raw) else { continue }
+            let uri = String(raw[uriRange]).trimmingCharacters(in: .whitespaces)
+            let lowercased = uri.lowercased()
+            if mailto == nil, lowercased.hasPrefix("mailto:") {
+                mailto = uri
+            } else if url == nil, lowercased.hasPrefix("https://") || lowercased.hasPrefix("http://") {
+                url = uri
+            }
+        }
+        return (mailto, url)
     }
 
     private static func organization(fromEmail email: String) -> String {

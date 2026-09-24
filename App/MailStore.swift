@@ -118,6 +118,20 @@ final class MailStore {
         }
     }
 
+    /// Called by `UnsubscribeService` once it has actually acted (a real
+    /// one-click POST or opt-out email), never speculatively: this is what
+    /// makes the unsubscribe banner stop asking again for this sender's
+    /// future mail, the same propagate-to-every-thread mechanism
+    /// `trustSenderImages` already uses for its own per-sender fact.
+    func markSenderUnsubscribed(_ senderEmail: String, account: String) async {
+        do {
+            try await repository.markSenderUnsubscribed(forSenderEmail: senderEmail, account: account)
+            threads = try await repository.threads()
+        } catch {
+            errorMessage = "Could not remember this unsubscribe. Please try again."
+        }
+    }
+
     /// Returns whether the send succeeded. `realThreadID` is the real Gmail
     /// identity OutboxService already established by actually sending via
     /// Gmail (nil when the draft stayed local-only); see MailRepository.send.

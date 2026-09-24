@@ -2,6 +2,16 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Built-in unsubscribe (September 23, 2026)
+
+Requested explicitly, "I want us to have it the best." Researched RFC 2369/8058 and what Apple Mail and Gmail actually implement (Apple Mail: `mailto:` only; Gmail: `mailto:`/`https:`, neither found to do the RFC 8058 one-click POST client-side) before building, so Corres's ordering is grounded, not guessed: one-click POST first (genuinely faster/more certain than either incumbent offers), a real `mailto:` opt-out send second, opening the link in Safari only as a last resort.
+
+- `Correspondence` gained `listUnsubscribeMailto`/`listUnsubscribeURL`/`listUnsubscribeOneClick` (per-message, parsed by `GmailAPIClient.map` from the real headers) and `senderUnsubscribed` (per-sender, propagated through `upsert` the same mechanism `imagesTrusted` already uses).
+- `UnsubscribeService` (new) tries one-click POST, then `mailto:` send, then opens the URL; only the first two ever mark the sender unsubscribed, since only those two give Corres a real signal the action actually completed.
+- `ConversationView` shows the banner (same slot/style as the remote-images banner) with a confirmation dialog before acting.
+- `PersistedCorrespondence`/`SwiftDataMailRepository`/`MailRepository` (both the SwiftData and in-memory sample implementations) all updated in lockstep, following the same pattern `imagesTrusted` already established, including the migration-safe `= <default>` literals on every new SwiftData column.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and `swift build` (Core package). `swift test`'s actual test run hit the same pre-existing local codesign/build-artifact issue in this environment noted earlier this session (compilation itself succeeds, the failure is after that, at code-signing the test bundle) — not a regression from this change. **Not yet verified on-device**: no real message with a `List-Unsubscribe` header has been opened in the running app this session (the Simulator instability noted below blocked that); confirming a real one-click POST actually reaches a real sender's endpoint, a real mailto opt-out send goes through Gmail, and the banner correctly stops appearing afterward all need the user's own device and real mail.
+
 ## Hotfix: wide multi-column HTML "breaking up" instead of reflowing (September 23, 2026)
 
 Reported immediately after the clip/immersion fix below, with a direct screenshot comparison against Apple Mail rendering the identical real email: Corres's two-column product grid rendered one column full-width and pushed the other off the right edge, where Apple Mail split both columns evenly with no gap. Researched how Apple Mail, Gmail, Spark, and Superhuman actually solve this before touching code again.

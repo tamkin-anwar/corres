@@ -132,13 +132,34 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// turns an id into something displayable, and filters out the system
     /// ones. Empty for sample/fictional threads.
     public var labelIds: [String]
+    /// `List-Unsubscribe` (RFC 2369), split into its two possible forms: a
+    /// `mailto:` URI (the address plus any `?subject=...` query already
+    /// attached, exactly as the sender wrote it) and/or an `https://` URL. A
+    /// message can carry either, both, or neither; per-message, not
+    /// per-sender, so refreshed from whichever message is currently latest
+    /// (see `updatingContent`), same as `attachments`.
+    public let listUnsubscribeMailto: String?
+    public let listUnsubscribeURL: String?
+    /// `List-Unsubscribe-Post` (RFC 8058): present means the sender is
+    /// explicitly vouching that `listUnsubscribeURL` is safe to POST to
+    /// automatically, no page visit or confirmation needed on their end.
+    /// This is what lets `UnsubscribeService` prefer a real one-click POST
+    /// over sending a `mailto:` opt-out message, when both are offered.
+    public let listUnsubscribeOneClick: Bool
+    /// A per-sender fact, stamped and propagated the same way
+    /// `imagesTrusted`/`senderDecision` already are (see
+    /// `MailRepository.markSenderUnsubscribed`): once acted on for one
+    /// message from a sender, the unsubscribe banner has no reason to keep
+    /// asking again for that sender's future mail.
+    public var senderUnsubscribed: Bool
 
     public init(id: ThreadID, sender: String, senderEmail: String? = nil, organization: String, subject: String,
                 excerpt: String, body: String, htmlBody: String? = nil, messageIdHeader: String? = nil,
                 latestMessageID: String? = nil, receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
                 isPinned: Bool = false, snoozedUntil: Date? = nil, senderDecision: SenderDecision = .approved,
                 imagesTrusted: Bool = false, attachments: [MailAttachment] = [], isUnread: Bool = false,
-                labelIds: [String] = []) {
+                labelIds: [String] = [], listUnsubscribeMailto: String? = nil, listUnsubscribeURL: String? = nil,
+                listUnsubscribeOneClick: Bool = false, senderUnsubscribed: Bool = false) {
         self.id = id
         self.sender = sender
         self.senderEmail = senderEmail
@@ -160,6 +181,10 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.attachments = attachments
         self.isUnread = isUnread
         self.labelIds = labelIds
+        self.listUnsubscribeMailto = listUnsubscribeMailto
+        self.listUnsubscribeURL = listUnsubscribeURL
+        self.listUnsubscribeOneClick = listUnsubscribeOneClick
+        self.senderUnsubscribed = senderUnsubscribed
     }
 
     public var initials: String {
@@ -197,7 +222,14 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
             // triage decision Corres invented (unlike attention/reason):
             // always take the freshest known value, regardless of which
             // side sent the message that happened to trigger this update.
-            labelIds: incoming.labelIds)
+            labelIds: incoming.labelIds,
+            // Per-message, like attachments: whatever the latest message
+            // actually offers, not frozen from an earlier one.
+            listUnsubscribeMailto: incoming.listUnsubscribeMailto, listUnsubscribeURL: incoming.listUnsubscribeURL,
+            listUnsubscribeOneClick: incoming.listUnsubscribeOneClick,
+            // Per-sender, like imagesTrusted/senderDecision: once acted on,
+            // stays acted on regardless of what a later message offers.
+            senderUnsubscribed: senderUnsubscribed)
     }
 }
 
