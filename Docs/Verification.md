@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Smoothness sweep: read/unread and label toggle made optimistic (September 23, 2026)
+
+Asked directly, right after the archive/trash fix below, to make sure everything else was smooth too. Audited every other `ThreadActionService` action for the same network-before-any-visible-change pattern.
+
+- Found it in `setUnread` and `toggleLabel`: both waited for a full Gmail round trip before the unread dot or label chip changed at all. Unlike Archive/Trash, reverting these on a rare failure is a trivial, harmless correction (flip the dot/chip back), not re-inserting a removed row into a screen the person already left — so these were made genuinely optimistic (`ThreadActionService.performOptimistic`: apply locally now, confirm with Gmail in the background, revert + show the existing error alert on failure), unlike Archive/Trash which stays network-first on purpose.
+- Confirmed already-instant and needing no change: pin, snooze, attention/"Mark as", and Screener approve/block — all local-only Corres state that never touched the network to begin with.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). **Not yet verified on-device**: needs a real swipe-to-mark-unread and a real label toggle on a real connected account to confirm the dot/chip actually flips instantly rather than just being correct on paper.
+
 ## Hotfix: archiving/trashing from a conversation reset scroll position and felt laggy (September 23, 2026)
 
 Reported directly: deleting an email while reading it (via the conversation's own action bar, not a list swipe) sent the list back to its top instead of holding position, and the whole interaction was asked to feel "instant smooth premium," not like it was "waiting for refreshing."
