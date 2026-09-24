@@ -93,7 +93,8 @@ final class UnsubscribeService {
         guard let parsed = Self.parseMailto(mailtoRaw) else { return false }
         let raw = GmailMessageComposer.compose(from: account, to: parsed.address,
                                                 subject: parsed.subject.isEmpty ? "unsubscribe" : parsed.subject,
-                                                body: parsed.body, inReplyTo: nil)
+                                                body: parsed.body, inReplyTo: nil,
+                                                messageID: "\(UUID().uuidString)@corres.app")
         return (try? await client.send(raw: raw, threadId: nil, account: account)) != nil
     }
 

@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## External review, verified and acted on (September 24, 2026)
+
+Asked another AI (ChatGPT) for a second-opinion code review; checked every one of its five claims against the actual source (file/line evidence, not just re-reading the claim) before treating any of it as real. Four held up exactly as stated, one (triage's prompt inputs) was slightly narrower than described. Fixed the two most severe now.
+
+- **Duplicate-send risk (Archive/Trash-adjacent, but in `OutboxService`'s retry path): fixed.** A self-generated, stable `Message-ID` per outbox entry, plus a Gmail lookup by that id before actually retrying an ambiguous failure or resuming a `.pending` entry after a relaunch. Verified with `xcodebuild` (`BUILD SUCCEEDED`). **Not yet verified on-device**: needs a real flaky-connection scenario (airplane mode toggled mid-send, or a proxy that drops the response but lets the request through) to confirm the lookup actually finds the already-sent message and skips the duplicate, not just that the code compiles.
+- **Semantic-triage race condition: fixed.** `applySemanticTriage` no longer overwrites a decision made while the on-device model was still inferring. Two new tests added directly (`semanticTriageDoesNotOverwriteADecisionMadeWhileItWasThinking`, `semanticTriageDowngradesAttentionWhenTheThreadIsStillUntouched`), both passing (`swift test`, 46/46 total). This one is actually well-verified, not just build-checked, since the race is reproducible in a fast, deterministic unit test — unlike most of this app's real-device-only concerns.
+- **Confirmed but not yet fixed** (tracked for later, listed honestly rather than silently dropped): triage's missing confidence threshold, sync silently dropping individual failed message fetches while still advancing its cursor, a silent SwiftData-to-in-memory storage fallback, the push relay's total lack of request authentication, and a test suite that hasn't grown alongside two weeks of real feature work.
+
 ## Native-feel sweep of PremiumSwipeRow (September 24, 2026)
 
 Asked directly to sweep the swipe gesture again, specifically for whether it acts as natively as iOS Mail's own swipe — smoothly, seamlessly, fast — not for correctness this time. Traced the actual call chain rather than assuming, since a background agent's independent check of exactly when `store.pending` gets set relative to a swipe firing was what surfaced the real finding below.

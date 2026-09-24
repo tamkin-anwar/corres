@@ -11,8 +11,16 @@ enum GmailMessageComposer {
     /// threadId, the In-Reply-To/References headers, and the Subject all
     /// agree (see ADR 005); the threadId itself is passed separately to
     /// `GmailAPIClient.send`, not part of this message.
+    ///
+    /// `messageID` (without `<...>`, same convention as `inReplyTo`) is
+    /// `OutboxService`'s own stable, deterministic id for this specific
+    /// outbox entry, not something Gmail assigns — stamping it into the
+    /// outgoing `Message-ID` header ourselves is what lets
+    /// `GmailAPIClient.findMessage` later look this exact send up by it, to
+    /// tell "never sent" apart from "sent, but the response was lost"
+    /// before a retry.
     static func compose(from: String, to: String, cc: String? = nil, subject: String, body: String, inReplyTo: String?,
-                        attachments: [PendingAttachment] = []) -> String {
+                        messageID: String, attachments: [PendingAttachment] = []) -> String {
         var headers = [
             "From: \(from)",
             "To: \(to)",
@@ -21,6 +29,7 @@ enum GmailMessageComposer {
             headers.append("Cc: \(cc)")
         }
         headers.append("Subject: \(encodedSubject(subject))")
+        headers.append("Message-ID: <\(messageID)>")
         headers.append("MIME-Version: 1.0")
         if let inReplyTo {
             let reference = "<\(inReplyTo)>"

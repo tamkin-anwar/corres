@@ -38,10 +38,25 @@ public actor SwiftDataMailRepository: MailRepository {
         try mutate(id) { $0.labelIds = labelIds }
     }
 
+    /// `SemanticTriageService` snapshots a thread's attention before handing
+    /// it to the on-device model, and on-device inference is not
+    /// instantaneous — real enough latency that the person can act on that
+    /// same thread while it's still thinking (mark it Handled, move it to
+    /// Waiting, snooze it). `mutate` re-fetches the model fresh from
+    /// SwiftData right here, inside this actor's own serialized access, so
+    /// `model.attentionRaw` at this point is the true current state, not
+    /// the stale snapshot the model was given; the downgrade to `.quiet`
+    /// only applies if the thread is *still* sitting exactly where triage
+    /// found it (`.needsYou`), never overwriting whatever the person
+    /// decided in the meantime. `reason`/`triagedMessageID` still update
+    /// unconditionally either way, so this message isn't re-triaged
+    /// forever just because its result arrived too late to apply.
     @discardableResult
     public func applySemanticTriage(_ id: ThreadID, needsReply: Bool, reason: String, messageID: String) throws -> Correspondence {
         try mutate(id) { model in
-            if !needsReply { model.attentionRaw = Attention.quiet.rawValue }
+            if !needsReply && model.attentionRaw == Attention.needsYou.rawValue {
+                model.attentionRaw = Attention.quiet.rawValue
+            }
             model.reason = reason
             model.triagedMessageID = messageID
         }

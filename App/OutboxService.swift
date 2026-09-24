@@ -82,7 +82,16 @@ final class OutboxService {
         for entry in entries.sorted(by: { $0.createdAt < $1.createdAt }) {
             switch entry.status {
             case .pending:
-                await commit(entry.draft, thread: resolveThread(for: entry.draft), id: entry.id)
+                // A `.pending` record surviving to the next launch means the
+                // app was force-quit before this entry's send ever resolved
+                // locally — genuinely ambiguous, not just "never sent": the
+                // real Gmail send could have gone out and been accepted
+                // moments before the process died, with only the local
+                // bookkeeping after it lost. `checkForExistingSendFirst`
+                // resolves that the same way a mid-retry ambiguous failure
+                // does, before this ever calls `sendViaGmailWithRetry` fresh
+                // and risks a real duplicate.
+                await commit(entry.draft, thread: resolveThread(for: entry.draft), id: entry.id, checkForExistingSendFirst: true)
             case .failed:
                 failed = FailedSend(id: entry.id, draft: entry.draft)
             }
@@ -146,7 +155,7 @@ final class OutboxService {
         Task { try? await repository.removeOutboxEntry(id: id) }
     }
 
-    private func commit(_ draft: Draft, thread: Correspondence?, id: UUID) async {
+    private func commit(_ draft: Draft, thread: Correspondence?, id: UUID, checkForExistingSendFirst: Bool = false) async {
         if pending?.id == id {
             pending = nil
             queuedDraft = nil
@@ -155,7 +164,12 @@ final class OutboxService {
         var realThreadID: ThreadID?
         if shouldSendViaGmail(thread: thread), let account = resolveSendingAccount(draft: draft, thread: thread) {
             do {
-                realThreadID = try await sendViaGmailWithRetry(draft: draft, thread: thread, account: account)
+                if checkForExistingSendFirst,
+                   let existing = try? await client.findMessage(rfc822MessageID: Self.rfc822MessageID(for: id), account: account) {
+                    realThreadID = existing
+                } else {
+                    realThreadID = try await sendViaGmailWithRetry(draft: draft, thread: thread, account: account, id: id)
+                }
             } catch {
                 failed = FailedSend(id: id, draft: draft)
                 try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .failed))
@@ -165,6 +179,13 @@ final class OutboxService {
         await store.send(draft, realThreadID: realThreadID)
         try? await repository.removeOutboxEntry(id: id)
     }
+
+    /// Stable for the lifetime of one outbox entry — derived from its own
+    /// `id`, not regenerated per attempt — so a retry, or a resume after a
+    /// relaunch, is asking Gmail about the exact same `Message-ID` an
+    /// earlier attempt for this same entry would have stamped on the
+    /// message it sent, not a fresh one Gmail could never have seen before.
+    private static func rfc822MessageID(for id: UUID) -> String { "\(id.uuidString)@corres.app" }
 
     /// Re-derives the source thread from a persisted draft's `threadID`
     /// (the durable outbox only stores the `Draft`, not a `Correspondence`
@@ -200,22 +221,42 @@ final class OutboxService {
     /// Retries only failures where the request almost certainly never
     /// completed on Gmail's side: a connection-level failure before any
     /// response arrived, or Gmail's own response explicitly saying "try
-    /// again" (429, or a 5xx). Gmail's send endpoint has no idempotency-key
-    /// mechanism of its own, so there is no way to guarantee a retry can
-    /// never double-send; restricting retries to genuinely
-    /// ambiguous-or-transient failures, and failing fast on anything Gmail
-    /// has already processed and explicitly rejected (any other 4xx,
-    /// where retrying only repeats the identical rejection), is the
-    /// honest, bounded version of safety actually available here, not a
-    /// claim of true exactly-once delivery.
-    private func sendViaGmailWithRetry(draft: Draft, thread: Correspondence?, account: String) async throws -> ThreadID {
+    /// again" (429, or a 5xx). Failing fast on anything Gmail has already
+    /// processed and explicitly rejected (any other 4xx, where retrying
+    /// only repeats the identical rejection) is still the right call.
+    ///
+    /// Gmail's send endpoint has no idempotency-key mechanism of its own,
+    /// but a self-generated one does exist now: `GmailMessageComposer`
+    /// stamps a stable `Message-ID` (`rfc822MessageID(for:)`, derived from
+    /// this entry's own `id`) onto every attempt for the same outbox entry,
+    /// and this now checks `GmailAPIClient.findMessage` for that exact id
+    /// before actually retrying — if Gmail already has it, the earlier
+    /// attempt's response was lost, not the send itself, and this returns
+    /// that thread instead of sending a real duplicate. Not a platform
+    /// guarantee the way a server-issued idempotency key would be (Gmail
+    /// could theoretically be slow to index a just-sent message before the
+    /// very next `findMessage` call runs), but a real, working mitigation
+    /// for the exact class of failure this retry logic exists to handle,
+    /// not just a bound on how many times it can go wrong.
+    private func sendViaGmailWithRetry(draft: Draft, thread: Correspondence?, account: String, id: UUID) async throws -> ThreadID {
         var lastError: Error = GmailAPIClient.ClientError.badResponse(statusCode: -1)
         for attempt in 1...Self.maxSendAttempts {
             do {
-                return try await sendViaGmail(draft: draft, thread: thread, account: account)
+                return try await sendViaGmail(draft: draft, thread: thread, account: account, id: id)
             } catch {
                 lastError = error
                 guard Self.isRetryable(error), attempt < Self.maxSendAttempts else { throw error }
+                // `isRetryable` only admits failures where the request may
+                // never have reached Gmail at all *or* Gmail's response
+                // itself was lost after accepting it — genuinely ambiguous,
+                // not "definitely failed." Checking here, before blindly
+                // retrying, is what tells those two apart: if Gmail already
+                // has a message with this exact attempt's Message-ID, the
+                // earlier try actually landed and this returns its thread
+                // instead of sending a real duplicate.
+                if let existing = try? await client.findMessage(rfc822MessageID: Self.rfc822MessageID(for: id), account: account) {
+                    return existing
+                }
                 // Exponential backoff, plus jitter so a burst of sends that
                 // all failed for the same reason (a brief outage) don't all
                 // retry in lockstep and hit Gmail again at the exact same
@@ -249,10 +290,11 @@ final class OutboxService {
     /// freshly created one for a brand-new compose), so `commit` can file
     /// the local record under Gmail's actual identity instead of inventing
     /// one.
-    private func sendViaGmail(draft: Draft, thread: Correspondence?, account: String) async throws -> ThreadID {
+    private func sendViaGmail(draft: Draft, thread: Correspondence?, account: String, id: UUID) async throws -> ThreadID {
         guard auth.isConnected(account) else { throw GmailAPIClient.ClientError.notSignedIn }
         let raw = GmailMessageComposer.compose(from: account, to: draft.to, cc: draft.cc, subject: draft.subject,
                                                 body: draft.body, inReplyTo: thread?.messageIdHeader,
+                                                messageID: Self.rfc822MessageID(for: id),
                                                 attachments: draft.attachments)
         let threadId = try await client.send(raw: raw, threadId: thread?.id.providerID, account: account)
         return ThreadID(account: account, providerID: threadId)

@@ -138,6 +138,37 @@ struct GmailAPIClient {
         return await fetchMessages(ids: list.messages?.map(\.id) ?? [], token: token, account: account)
     }
 
+    /// Looks up a message this client itself composed, by the `Message-ID`
+    /// header `GmailMessageComposer` stamped onto it (see `OutboxService`'s
+    /// own doc comment on why: Gmail's send endpoint has no idempotency-key
+    /// mechanism, so a send whose HTTP response was lost to a timeout or a
+    /// dropped connection is genuinely ambiguous — it may have gone through
+    /// anyway. This is how a caller resolves that ambiguity before deciding
+    /// whether to retry, instead of guessing. Returns the thread it landed
+    /// in if Gmail has it, nil if it genuinely never arrived.
+    ///
+    /// Gmail's own documentation examples for `rfc822msgid:` show the value
+    /// without angle brackets, but not every source agrees; tried
+    /// bracket-less first (matching every other place this codebase already
+    /// stores a Message-ID, see `Correspondence.messageIdHeader`) and falls
+    /// back to the bracketed form rather than assuming one is definitely
+    /// right and silently missing a real match.
+    func findMessage(rfc822MessageID: String, account: String) async throws -> ThreadID? {
+        if let found = try await searchByRFC822MessageID(rfc822MessageID, account: account) { return found }
+        return try await searchByRFC822MessageID("<\(rfc822MessageID)>", account: account)
+    }
+
+    private func searchByRFC822MessageID(_ value: String, account: String) async throws -> ThreadID? {
+        let token = try await accessToken(for: account)
+        var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
+        components.queryItems = [URLQueryItem(name: "q", value: "rfc822msgid:\(value)")]
+        let (data, response) = try await authorizedRequest(url: components.url!, token: token)
+        try validate(response)
+        let list = try JSONDecoder().decode(MessageListResponse.self, from: data)
+        guard let match = list.messages?.first, let threadId = match.threadId else { return nil }
+        return ThreadID(account: account, providerID: threadId)
+    }
+
     private func accessToken(for account: String) async throws -> String {
         do {
             return try await GoogleTokenProvider.shared.accessToken(for: account)
@@ -558,7 +589,7 @@ private extension Data {
 }
 
 private struct MessageListResponse: Decodable {
-    struct Item: Decodable { let id: String }
+    struct Item: Decodable { let id: String; let threadId: String? }
     let messages: [Item]?
     let nextPageToken: String?
 }

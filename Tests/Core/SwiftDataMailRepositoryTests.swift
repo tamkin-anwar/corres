@@ -347,4 +347,54 @@ struct SwiftDataMailRepositoryTests {
         let afterSecondIssue = try await repository.threads()
         #expect(afterSecondIssue.first { $0.id == secondMessage.id }?.imagesTrusted == true)
     }
+
+    /// Regression test for a real race: `SemanticTriageService` snapshots a
+    /// thread's attention, then hands it to an on-device model whose
+    /// inference is genuinely slow enough that the person can act on the
+    /// same thread before the result comes back — mark it Handled, move it
+    /// to Waiting. `applySemanticTriage` must not blindly stomp that
+    /// decision back to `.quiet` just because the (now-stale) model result
+    /// says the message didn't need a reply; it should only ever apply the
+    /// downgrade if the thread is still sitting exactly where triage found
+    /// it (`.needsYou`).
+    @Test func semanticTriageDoesNotOverwriteADecisionMadeWhileItWasThinking() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let id = ThreadID(account: "gmail:me@example.com", providerID: "7")
+        let message = Correspondence(
+            id: id, sender: "Newsletter", organization: "Example", subject: "Marketing blast",
+            excerpt: "hi", body: "hi", latestMessageID: "msg-1", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([message], isInitialSync: true)
+
+        // The person acts on the thread — moves it to Handled — while
+        // inference is still in flight for the same thread.
+        try await repository.setAttention(.handled, for: id)
+
+        // The (now-stale) triage result arrives and says it didn't need a
+        // reply, which would normally downgrade a `.needsYou` thread to
+        // `.quiet`.
+        try await repository.applySemanticTriage(id, needsReply: false, reason: "Marketing newsletter, no action needed.", messageID: "msg-1")
+
+        let updated = try await repository.threads().first { $0.id == id }
+        #expect(updated?.attention == .handled)
+        // The bookkeeping still applies regardless, so this exact message
+        // isn't re-triaged forever just because its result arrived too late.
+        #expect(updated?.triagedMessageID == "msg-1")
+    }
+
+    @Test func semanticTriageDowngradesAttentionWhenTheThreadIsStillUntouched() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let id = ThreadID(account: "gmail:me@example.com", providerID: "8")
+        let message = Correspondence(
+            id: id, sender: "Newsletter", organization: "Example", subject: "Marketing blast",
+            excerpt: "hi", body: "hi", latestMessageID: "msg-1", receivedAt: now, dueAt: nil,
+            reason: "Unread in Gmail.", attention: .needsYou)
+        try await repository.upsert([message], isInitialSync: true)
+
+        try await repository.applySemanticTriage(id, needsReply: false, reason: "Marketing newsletter, no action needed.", messageID: "msg-1")
+
+        let updated = try await repository.threads().first { $0.id == id }
+        #expect(updated?.attention == .quiet)
+        #expect(updated?.reason == "Marketing newsletter, no action needed.")
+    }
 }
