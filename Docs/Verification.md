@@ -2,6 +2,15 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Real Spark-style short/long swipe (September 23, 2026)
+
+Requested directly, with research, after clarifying "half swipe" meant Spark's actual four-slot model (Left Short/Left Long/Right Short/Right Long, each a specific action firing directly on release) — a model Apple's own `.swipeActions` API has no way to express at all, confirmed before building anything.
+
+- `PremiumSwipeRow` (new): hand-built `DragGesture` replacement for `.swipeActions`, two thresholds, a scaling colored reveal panel that switches icon/tint at the long threshold, haptic tick per threshold crossing via `.sensoryFeedback`.
+- Four independent `@AppStorage` slots replace the single "primary" swipe preference from the entry below; matching Preferences pickers.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`).
+- **Explicitly flagged, not just "not yet verified" like most other entries**: this is genuinely higher-risk than almost everything else shipped this session. A hand-rolled horizontal drag gesture inside a scrolling `List` competing with that List's own native scroll recognizer, and with `NavigationLink`'s own tap recognition, is exactly the class of interaction that can look correct in code and still misbehave on a real device — the same lesson the `.swipeActions`/`ForEach` bug (two entries below) just taught, here applied proactively rather than discovered the same way. Specifically needs real-device confirmation that: (1) an ordinary vertical scroll through the Mail list is completely unaffected — no stutter, no accidental horizontal capture; (2) a short swipe fires the short action and snaps back; (3) a longer swipe fires the long action instead, with the icon visibly switching at the crossover; (4) tapping a row (no real drag) still navigates normally; (5) the haptic actually fires once per threshold crossing, not zero or many times. None of this can be confirmed from a build succeeding.
+
 ## Hotfix: customizable swipe actions broke the partial-swipe reveal (September 23, 2026)
 
 Reported directly on a real device: full swipe worked, but a partial swipe never revealed the row of buttons at all — confirmed as a real, on-device regression from the swipe-customization preferences, not a simulator artifact.

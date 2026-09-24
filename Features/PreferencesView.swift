@@ -7,8 +7,10 @@ struct PreferencesView: View {
     @Bindable var pushService: PushNotificationService
     @Environment(\.dismiss) private var dismiss
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
-    @AppStorage("corres.primarySwipeAction") private var primarySwipeActionRaw = PrimarySwipeAction.archive.rawValue
-    @AppStorage("corres.primaryLeadingSwipeAction") private var primaryLeadingSwipeActionRaw = LeadingSwipeAction.pin.rawValue
+    @AppStorage("corres.trailingShortSwipeAction") private var trailingShortRaw = PrimarySwipeAction.archive.rawValue
+    @AppStorage("corres.trailingLongSwipeAction") private var trailingLongRaw = PrimarySwipeAction.trash.rawValue
+    @AppStorage("corres.leadingShortSwipeAction") private var leadingShortRaw = LeadingSwipeAction.pin.rawValue
+    @AppStorage("corres.leadingLongSwipeAction") private var leadingLongRaw = LeadingSwipeAction.unread.rawValue
     @AppStorage("corres.notifyOnlyNeedsYou") private var notifyOnlyNeedsYou = false
     @State private var showingResetConfirmation = false
     @State private var accountPendingDisconnect: GmailAccount?
@@ -22,16 +24,22 @@ struct PreferencesView: View {
                     }
                 }
                 Section {
-                    Picker("Full swipe right", selection: $primarySwipeActionRaw) {
+                    Picker("Short swipe right", selection: $trailingShortRaw) {
                         ForEach(PrimarySwipeAction.allCases) { Text($0.title).tag($0.rawValue) }
                     }
-                    Picker("Full swipe left", selection: $primaryLeadingSwipeActionRaw) {
+                    Picker("Long swipe right", selection: $trailingLongRaw) {
+                        ForEach(PrimarySwipeAction.allCases) { Text($0.title).tag($0.rawValue) }
+                    }
+                    Picker("Short swipe left", selection: $leadingShortRaw) {
+                        ForEach(LeadingSwipeAction.allCases) { Text($0.settingsTitle).tag($0.rawValue) }
+                    }
+                    Picker("Long swipe left", selection: $leadingLongRaw) {
                         ForEach(LeadingSwipeAction.allCases) { Text($0.settingsTitle).tag($0.rawValue) }
                     }
                 } header: {
                     Text("Swipe Actions")
                 } footer: {
-                    Text("What a full swipe does on a Mail row, without needing to tap a specific button first. Every other swipe action stays reachable with a partial swipe.")
+                    Text("A short swipe on a Mail row fires one action right away; swiping further fires a different one, matching Spark's own swipe model. Snooze and marking Needs You stay one tap away in a conversation's own toolbar.")
                 }
                 Section("Your Gmail accounts") {
                     ForEach(auth.accounts) { account in

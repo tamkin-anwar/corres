@@ -64,13 +64,22 @@ struct CorrespondenceList: View {
     /// switcher.
     var accountFilter: String?
     @State private var search = ""
-    /// Same `UserDefaults` key `PreferencesView`'s own picker reads/writes;
-    /// `@AppStorage` keeps both in sync automatically, the same pattern
-    /// `corres.appearance` already uses across multiple independent views.
-    @AppStorage("corres.primarySwipeAction") private var primarySwipeActionRaw = PrimarySwipeAction.archive.rawValue
-    private var primarySwipeAction: PrimarySwipeAction { PrimarySwipeAction(rawValue: primarySwipeActionRaw) ?? .archive }
-    @AppStorage("corres.primaryLeadingSwipeAction") private var primaryLeadingSwipeActionRaw = LeadingSwipeAction.pin.rawValue
-    private var primaryLeadingSwipeAction: LeadingSwipeAction { LeadingSwipeAction(rawValue: primaryLeadingSwipeActionRaw) ?? .pin }
+    /// Same four `UserDefaults` keys `PreferencesView`'s own pickers
+    /// read/write; `@AppStorage` keeps both in sync automatically, the same
+    /// pattern `corres.appearance` already uses across multiple independent
+    /// views. Four independent slots, not one: Spark's own short/long swipe
+    /// model (researched directly before building `PremiumSwipeRow`) means
+    /// a short and a long swipe in the same direction can fire two
+    /// genuinely different actions, not just "the same action, sooner or
+    /// later."
+    @AppStorage("corres.trailingShortSwipeAction") private var trailingShortRaw = PrimarySwipeAction.archive.rawValue
+    @AppStorage("corres.trailingLongSwipeAction") private var trailingLongRaw = PrimarySwipeAction.trash.rawValue
+    @AppStorage("corres.leadingShortSwipeAction") private var leadingShortRaw = LeadingSwipeAction.pin.rawValue
+    @AppStorage("corres.leadingLongSwipeAction") private var leadingLongRaw = LeadingSwipeAction.unread.rawValue
+    private var trailingShortAction: PrimarySwipeAction { PrimarySwipeAction(rawValue: trailingShortRaw) ?? .archive }
+    private var trailingLongAction: PrimarySwipeAction { PrimarySwipeAction(rawValue: trailingLongRaw) ?? .trash }
+    private var leadingShortAction: LeadingSwipeAction { LeadingSwipeAction(rawValue: leadingShortRaw) ?? .pin }
+    private var leadingLongAction: LeadingSwipeAction { LeadingSwipeAction(rawValue: leadingLongRaw) ?? .unread }
     /// Tracks whichever thread is currently anchoring the visible scroll
     /// position (SwiftUI keeps this in sync as the person scrolls). Needed
     /// because archiving/trashing from *inside* a conversation removes the
@@ -184,134 +193,66 @@ struct CorrespondenceList: View {
         .padding(.horizontal, CorresSpace.page)
     }
 
-    // Archive/Trash/Handled/Pin/Unread are each their own `@ViewBuilder`
-    // property (not one switch-based helper called through a `ForEach`,
-    // which is how these were first written): reported directly against a
-    // real device that only the full-swipe trigger worked and the partial
-    // swipe never revealed the row of buttons at all. `ForEach`-generated
-    // swipe actions are a documented-fragile pattern — SwiftUI's own
-    // swipe-action recognition wants literal `Button` values directly in
-    // the `.swipeActions` closure, not values produced through a dynamic
-    // `ForEach`/indirection, even when the type-checker is perfectly happy
-    // with it. `orderedTrailingActions`/`orderedLeadingActions` below still
-    // decide the order; `.swipeActions` just gets each button written out
-    // directly per branch instead of iterated.
-    @ViewBuilder
-    private func archiveButton(_ thread: Correspondence) -> some View {
-        Button {
-            Task { await threadActions?.archive(thread) }
-        } label: { Label("Archive", systemImage: "archivebox") }
-        .tint(CorresPalette.swipeArchive)
-    }
-
-    @ViewBuilder
-    private func trashButton(_ thread: Correspondence) -> some View {
-        Button(role: .destructive) {
-            Task { await threadActions?.trash(thread) }
-        } label: { Label("Trash", systemImage: "trash") }
-        .tint(CorresPalette.swipeTrash)
-    }
-
-    @ViewBuilder
-    private func handledButton(_ thread: Correspondence) -> some View {
-        Button {
-            Task { await store.update(thread.id, to: .handled) }
-        } label: { Label("Handled", systemImage: "checkmark") }
-        .tint(CorresPalette.swipeHandled)
-    }
-
-    @ViewBuilder
-    private func pinButton(_ thread: Correspondence) -> some View {
-        Button {
-            Task { await store.setPinned(!thread.isPinned, for: thread.id) }
-        } label: { Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin") }
-        .tint(CorresPalette.swipePin)
-    }
-
-    @ViewBuilder
-    private func unreadButton(_ thread: Correspondence) -> some View {
-        Button {
-            Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
-        } label: {
-            Label(thread.isUnread ? "Read" : "Unread",
-                  systemImage: thread.isUnread ? "envelope.open" : "envelope.badge")
-        }
-        .tint(CorresPalette.swipeSnooze)
-    }
-
-    @ViewBuilder
-    private func trailingSwipeButtons(for thread: Correspondence) -> some View {
-        // Each branch lists the same three buttons directly, just
-        // reordered, rather than looking the order up dynamically: see the
-        // doc comment above these buttons for why.
-        switch primarySwipeAction {
-        case .archive:
-            archiveButton(thread)
-            trashButton(thread)
-            handledButton(thread)
-        case .trash:
-            trashButton(thread)
-            archiveButton(thread)
-            handledButton(thread)
-        case .handled:
-            handledButton(thread)
-            archiveButton(thread)
-            trashButton(thread)
-        }
-    }
-
-    @ViewBuilder
-    private func leadingSwipeButtons(for thread: Correspondence) -> some View {
-        switch primaryLeadingSwipeAction {
+    /// `PrimarySwipeAction`'s title/icon/tint are fixed, state-independent
+    /// (see `SwipePreferences.swift`); `LeadingSwipeAction`'s aren't (Pin
+    /// needs to say "Unpin" once already pinned, the same way the row's own
+    /// old swipe buttons already did), so this one needs the thread.
+    private func leadingVisual(for action: LeadingSwipeAction, thread: Correspondence) -> SwipeVisual {
+        switch action {
         case .pin:
-            pinButton(thread)
-            unreadButton(thread)
+            SwipeVisual(title: thread.isPinned ? "Unpin" : "Pin",
+                       systemImage: thread.isPinned ? "pin.slash.fill" : "pin.fill", tint: CorresPalette.swipePin)
         case .unread:
-            unreadButton(thread)
-            pinButton(thread)
+            SwipeVisual(title: thread.isUnread ? "Read" : "Unread",
+                       systemImage: thread.isUnread ? "envelope.open.fill" : "envelope.badge.fill",
+                       tint: CorresPalette.swipeSnooze)
         }
     }
 
+    private func perform(_ action: PrimarySwipeAction, on thread: Correspondence) {
+        switch action {
+        case .archive: Task { await threadActions?.archive(thread) }
+        case .trash: Task { await threadActions?.trash(thread) }
+        case .handled: Task { await store.update(thread.id, to: .handled) }
+        }
+    }
+
+    private func perform(_ action: LeadingSwipeAction, on thread: Correspondence) {
+        switch action {
+        case .pin: Task { await store.setPinned(!thread.isPinned, for: thread.id) }
+        case .unread: Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
+        }
+    }
+
+    /// Snooze (a menu of options, not a single action) and "mark as Needs
+    /// You" both lost their old place in the reveal-then-tap swipe when it
+    /// was replaced by `PremiumSwipeRow`'s real Spark-style short/long
+    /// model: a swipe fires exactly one action immediately on release, with
+    /// no room for a submenu, the same real constraint Spark's own swipe
+    /// design has. Both stay one tap away regardless, in the conversation's
+    /// own Mark As/Snooze menus — a deliberate trade for matching the
+    /// requested interaction model, not an oversight.
     private var conversationRows: some View {
         let orderedIDs = results.map(\.id)
         return ForEach(results) { thread in
-            NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
-                CorrespondenceRow(thread: thread)
+            PremiumSwipeRow(
+                leadingShort: leadingVisual(for: leadingShortAction, thread: thread),
+                leadingLong: leadingVisual(for: leadingLongAction, thread: thread),
+                trailingShort: SwipeVisual(title: trailingShortAction.title, systemImage: trailingShortAction.systemImage, tint: trailingShortAction.tint),
+                trailingLong: SwipeVisual(title: trailingLongAction.title, systemImage: trailingLongAction.systemImage, tint: trailingLongAction.tint),
+                onLeadingShort: { perform(leadingShortAction, on: thread) },
+                onLeadingLong: { perform(leadingLongAction, on: thread) },
+                onTrailingShort: { perform(trailingShortAction, on: thread) },
+                onTrailingLong: { perform(trailingLongAction, on: thread) }
+            ) {
+                NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
+                    CorrespondenceRow(thread: thread)
+                }
             }
-                .disabled(store.pending.contains(thread.id))
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.visible)
-                .listRowSeparatorTint(CorresPalette.line)
-                .swipeActions(edge: .trailing) {
-                    // SwiftUI triggers whichever action is listed FIRST on a
-                    // full swipe; `trailingSwipeButtons` puts the person's
-                    // own chosen primary action there (Preferences → Swipe
-                    // Actions), defaulting to Archive, matching Apple Mail's
-                    // own default (recoverable from All Mail, unlike a full
-                    // swipe defaulting straight to Trash).
-                    trailingSwipeButtons(for: thread)
-                    Menu {
-                        ForEach(SnoozeOption.allCases, id: \.self) { option in
-                            Button(option.title) { Task { await store.snooze(thread.id, until: option.date()) } }
-                        }
-                    } label: { Label("Snooze", systemImage: "moon") }
-                    .tint(CorresPalette.swipeSnooze)
-                }
-                .swipeActions(edge: .leading) {
-                    // The person's chosen primary (Preferences → Swipe
-                    // Actions) always leads, so it's genuinely what a full
-                    // swipe does; "Needs You" moves to last rather than
-                    // first (its old fixed position) specifically so it
-                    // never silently overrides that choice on a full swipe
-                    // whenever it happens to be showing.
-                    leadingSwipeButtons(for: thread)
-                    if thread.attention != .needsYou {
-                        Button {
-                            Task { await store.update(thread.id, to: .needsYou) }
-                        } label: { Label("Needs You", systemImage: "exclamationmark.circle") }
-                        .tint(CorresPalette.midnight)
-                    }
-                }
+            .disabled(store.pending.contains(thread.id))
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.visible)
+            .listRowSeparatorTint(CorresPalette.line)
         }
     }
 

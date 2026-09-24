@@ -1,14 +1,10 @@
-import Foundation
+import SwiftUI
 
-/// Which action fires on a full swipe (not a partial reveal-then-tap) on a
-/// Mail row's trailing edge — the single most repeated gesture in the whole
-/// app, and, per research grounding this, exactly what Gmail's own
-/// well-known "Archive vs Delete on swipe" setting, Apple Mail's per-account
-/// swipe configuration, and Spark's customizable swipe actions all treat as
-/// a first-class preference, never buried. `CorrespondenceList` reorders its
-/// existing trailing swipe buttons so whichever this is set to comes first;
-/// Snooze stays fixed, always last, since it opens its own submenu rather
-/// than firing directly and wouldn't make sense as a bare full-swipe.
+/// The two actions available on a Mail row's trailing edge (Archive/Trash/
+/// Handled), assignable independently to the short and long swipe distance
+/// (see `PremiumSwipeRow`). Kept as one shared enum for both distances
+/// rather than two separate types, since the set of sensible trailing
+/// actions doesn't change based on which distance is being configured.
 enum PrimarySwipeAction: String, CaseIterable, Identifiable {
     case archive, trash, handled
     var id: String { rawValue }
@@ -19,23 +15,32 @@ enum PrimarySwipeAction: String, CaseIterable, Identifiable {
         case .handled: "Handled"
         }
     }
+    var systemImage: String {
+        switch self {
+        case .archive: "archivebox.fill"
+        case .trash: "trash.fill"
+        case .handled: "checkmark.circle.fill"
+        }
+    }
+    var tint: Color {
+        switch self {
+        case .archive: CorresPalette.swipeArchive
+        case .trash: CorresPalette.swipeTrash
+        case .handled: CorresPalette.swipeHandled
+        }
+    }
 }
 
-/// The same "one clear full-swipe default" preference, for a Mail row's
-/// leading edge. Deliberately just these two, not "Needs You" too: that
-/// button only ever appears conditionally (a thread already marked Needs
-/// You has no reason to offer it again), so it was never a sensible
-/// candidate for "the one thing a full swipe always does" the way Pin and
-/// Unread/Read, always present, are. "Needs You" stays reachable on a
-/// partial swipe, just never promoted to the full-swipe trigger.
+/// The leading-edge counterpart to `PrimarySwipeAction`: Pin and Mark
+/// Read/Unread, assignable to the leading edge's short and long distance.
 enum LeadingSwipeAction: String, CaseIterable, Identifiable {
     case pin, unread
     var id: String { rawValue }
-    /// The label shown in Preferences' picker; the swipe button itself
-    /// still shows a state-dependent label ("Pin"/"Unpin",
+    /// The label shown in Preferences' picker; the swipe row's own visual
+    /// still shows a state-dependent label/icon ("Pin"/"Unpin",
     /// "Unread"/"Read") the same way it always has, since a thread already
-    /// pinned or already unread needs the button to say what tapping it
-    /// will *do*, not just name the fixed category of action.
+    /// pinned or already unread needs the gesture to show what it will
+    /// *do*, not just name the fixed category of action.
     var settingsTitle: String {
         switch self {
         case .pin: "Pin"
