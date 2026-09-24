@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Hotfix: customizable swipe actions broke the partial-swipe reveal (September 23, 2026)
+
+Reported directly on a real device: full swipe worked, but a partial swipe never revealed the row of buttons at all — confirmed as a real, on-device regression from the swipe-customization preferences, not a simulator artifact.
+
+- Root cause, confirmed against research rather than guessed: both swipe edges built their buttons via `ForEach(orderedActions) { action in someHelper(action, for: thread) }` inside `.swipeActions`, a documented-fragile pattern — the closure wants literal `Button` values written directly in it, and `ForEach`-driven generation is known to silently break the partial-swipe reveal specifically, while the full-swipe trigger (which doesn't rely on the same recognition) kept working, masking the bug from casual testing.
+- Fixed: each swipe button is now its own `@ViewBuilder` property, reordered by a plain `switch` over the chosen primary action with three explicit branches (one per possible primary), no `ForEach`/indirection between the closure and the literal `Button` declarations.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). **Not yet verified on-device**: needs a real partial swipe on a real Mail row, with each of the three (trailing) and two (leading) settings picked, to confirm the reveal actually works now and the right button leads each ordering.
+
 ## Real AI: on-device semantic triage (September 23, 2026)
 
 Requested explicitly after the honest "Needs You is currently just unread state" assessment: real AI, on-device via Apple's Foundation Models framework, chosen over a cloud model specifically because it needed no API key, no cost, no network call, and no privacy-architecture reversal.

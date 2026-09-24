@@ -69,18 +69,8 @@ struct CorrespondenceList: View {
     /// `corres.appearance` already uses across multiple independent views.
     @AppStorage("corres.primarySwipeAction") private var primarySwipeActionRaw = PrimarySwipeAction.archive.rawValue
     private var primarySwipeAction: PrimarySwipeAction { PrimarySwipeAction(rawValue: primarySwipeActionRaw) ?? .archive }
-    /// Whichever action is currently primary, first; the other two follow
-    /// in their fixed declared order. SwiftUI triggers whichever swipe
-    /// button is listed first on a full swipe, so this ordering is what
-    /// actually makes the preference take effect, not just cosmetic.
-    private var orderedTrailingActions: [PrimarySwipeAction] {
-        [primarySwipeAction] + PrimarySwipeAction.allCases.filter { $0 != primarySwipeAction }
-    }
     @AppStorage("corres.primaryLeadingSwipeAction") private var primaryLeadingSwipeActionRaw = LeadingSwipeAction.pin.rawValue
     private var primaryLeadingSwipeAction: LeadingSwipeAction { LeadingSwipeAction(rawValue: primaryLeadingSwipeActionRaw) ?? .pin }
-    private var orderedLeadingActions: [LeadingSwipeAction] {
-        [primaryLeadingSwipeAction] + LeadingSwipeAction.allCases.filter { $0 != primaryLeadingSwipeAction }
-    }
     /// Tracks whichever thread is currently anchoring the visible scroll
     /// position (SwiftUI keeps this in sync as the person scrolls). Needed
     /// because archiving/trashing from *inside* a conversation removes the
@@ -194,43 +184,91 @@ struct CorrespondenceList: View {
         .padding(.horizontal, CorresSpace.page)
     }
 
+    // Archive/Trash/Handled/Pin/Unread are each their own `@ViewBuilder`
+    // property (not one switch-based helper called through a `ForEach`,
+    // which is how these were first written): reported directly against a
+    // real device that only the full-swipe trigger worked and the partial
+    // swipe never revealed the row of buttons at all. `ForEach`-generated
+    // swipe actions are a documented-fragile pattern — SwiftUI's own
+    // swipe-action recognition wants literal `Button` values directly in
+    // the `.swipeActions` closure, not values produced through a dynamic
+    // `ForEach`/indirection, even when the type-checker is perfectly happy
+    // with it. `orderedTrailingActions`/`orderedLeadingActions` below still
+    // decide the order; `.swipeActions` just gets each button written out
+    // directly per branch instead of iterated.
     @ViewBuilder
-    private func trailingSwipeButton(_ action: PrimarySwipeAction, for thread: Correspondence) -> some View {
-        switch action {
+    private func archiveButton(_ thread: Correspondence) -> some View {
+        Button {
+            Task { await threadActions?.archive(thread) }
+        } label: { Label("Archive", systemImage: "archivebox") }
+        .tint(CorresPalette.swipeArchive)
+    }
+
+    @ViewBuilder
+    private func trashButton(_ thread: Correspondence) -> some View {
+        Button(role: .destructive) {
+            Task { await threadActions?.trash(thread) }
+        } label: { Label("Trash", systemImage: "trash") }
+        .tint(CorresPalette.swipeTrash)
+    }
+
+    @ViewBuilder
+    private func handledButton(_ thread: Correspondence) -> some View {
+        Button {
+            Task { await store.update(thread.id, to: .handled) }
+        } label: { Label("Handled", systemImage: "checkmark") }
+        .tint(CorresPalette.swipeHandled)
+    }
+
+    @ViewBuilder
+    private func pinButton(_ thread: Correspondence) -> some View {
+        Button {
+            Task { await store.setPinned(!thread.isPinned, for: thread.id) }
+        } label: { Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin") }
+        .tint(CorresPalette.swipePin)
+    }
+
+    @ViewBuilder
+    private func unreadButton(_ thread: Correspondence) -> some View {
+        Button {
+            Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
+        } label: {
+            Label(thread.isUnread ? "Read" : "Unread",
+                  systemImage: thread.isUnread ? "envelope.open" : "envelope.badge")
+        }
+        .tint(CorresPalette.swipeSnooze)
+    }
+
+    @ViewBuilder
+    private func trailingSwipeButtons(for thread: Correspondence) -> some View {
+        // Each branch lists the same three buttons directly, just
+        // reordered, rather than looking the order up dynamically: see the
+        // doc comment above these buttons for why.
+        switch primarySwipeAction {
         case .archive:
-            Button {
-                Task { await threadActions?.archive(thread) }
-            } label: { Label("Archive", systemImage: "archivebox") }
-            .tint(CorresPalette.swipeArchive)
+            archiveButton(thread)
+            trashButton(thread)
+            handledButton(thread)
         case .trash:
-            Button(role: .destructive) {
-                Task { await threadActions?.trash(thread) }
-            } label: { Label("Trash", systemImage: "trash") }
-            .tint(CorresPalette.swipeTrash)
+            trashButton(thread)
+            archiveButton(thread)
+            handledButton(thread)
         case .handled:
-            Button {
-                Task { await store.update(thread.id, to: .handled) }
-            } label: { Label("Handled", systemImage: "checkmark") }
-            .tint(CorresPalette.swipeHandled)
+            handledButton(thread)
+            archiveButton(thread)
+            trashButton(thread)
         }
     }
 
     @ViewBuilder
-    private func leadingSwipeButton(_ action: LeadingSwipeAction, for thread: Correspondence) -> some View {
-        switch action {
+    private func leadingSwipeButtons(for thread: Correspondence) -> some View {
+        switch primaryLeadingSwipeAction {
         case .pin:
-            Button {
-                Task { await store.setPinned(!thread.isPinned, for: thread.id) }
-            } label: { Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin") }
-            .tint(CorresPalette.swipePin)
+            pinButton(thread)
+            unreadButton(thread)
         case .unread:
-            Button {
-                Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
-            } label: {
-                Label(thread.isUnread ? "Read" : "Unread",
-                      systemImage: thread.isUnread ? "envelope.open" : "envelope.badge")
-            }
-            .tint(CorresPalette.swipeSnooze)
+            unreadButton(thread)
+            pinButton(thread)
         }
     }
 
@@ -246,14 +284,12 @@ struct CorrespondenceList: View {
                 .listRowSeparatorTint(CorresPalette.line)
                 .swipeActions(edge: .trailing) {
                     // SwiftUI triggers whichever action is listed FIRST on a
-                    // full swipe; `orderedTrailingActions` puts the person's
+                    // full swipe; `trailingSwipeButtons` puts the person's
                     // own chosen primary action there (Preferences → Swipe
                     // Actions), defaulting to Archive, matching Apple Mail's
                     // own default (recoverable from All Mail, unlike a full
                     // swipe defaulting straight to Trash).
-                    ForEach(orderedTrailingActions) { action in
-                        trailingSwipeButton(action, for: thread)
-                    }
+                    trailingSwipeButtons(for: thread)
                     Menu {
                         ForEach(SnoozeOption.allCases, id: \.self) { option in
                             Button(option.title) { Task { await store.snooze(thread.id, until: option.date()) } }
@@ -268,9 +304,7 @@ struct CorrespondenceList: View {
                     // first (its old fixed position) specifically so it
                     // never silently overrides that choice on a full swipe
                     // whenever it happens to be showing.
-                    ForEach(orderedLeadingActions) { action in
-                        leadingSwipeButton(action, for: thread)
-                    }
+                    leadingSwipeButtons(for: thread)
                     if thread.attention != .needsYou {
                         Button {
                             Task { await store.update(thread.id, to: .needsYou) }
