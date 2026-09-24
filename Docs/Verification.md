@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Hotfix: OAuth refresh percent-encoding (September 24, 2026)
+
+Reported directly against a real device: "Could not mark this conversation as read" recurring consistently. Root cause traced to `GoogleTokenProvider.refreshAccessToken` using the wrong character set (`.urlQueryAllowed`, meant for URL query strings, not form bodies) when building its `application/x-www-form-urlencoded` POST body — a refresh token containing `+`, `&`, or `=` would get silently corrupted, breaking every subsequent Gmail call for that account, not just the one that happened to surface the alert first.
+
+- Fixed with a real RFC 3986 unreserved-set encoder in place of the borrowed one.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and `swift test` (46/46, unaffected).
+- **Not covered by an automated test**: this lives in the App target, which isn't wired into this environment's `xcodebuild test` action (`error: Scheme Corres is not currently configured for the test action`) — only the `CorresCore` Swift package (tested via `swift test`) has a working automated suite here. **The real confirmation this needs is on the actual device that was failing**: reopen an unread conversation on the account that was showing the alert and confirm it now marks read cleanly, repeatedly, not just once (a one-time success wouldn't rule out an intermittent, character-dependent failure recurring on a different message).
+
 ## External review, verified and acted on (September 24, 2026)
 
 Asked another AI (ChatGPT) for a second-opinion code review; checked every one of its five claims against the actual source (file/line evidence, not just re-reading the claim) before treating any of it as real. Four held up exactly as stated, one (triage's prompt inputs) was slightly narrower than described. Fixed the two most severe now.

@@ -68,7 +68,7 @@ actor GoogleTokenProvider {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         let params = ["client_id": clientID, "grant_type": "refresh_token", "refresh_token": refreshToken]
         request.httpBody = params
-            .map { "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")" }
+            .map { "\($0.key)=\(Self.formURLEncode($0.value))" }
             .joined(separator: "&")
             .data(using: .utf8)
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -96,6 +96,39 @@ actor GoogleTokenProvider {
 
     private static func keychainKey(for email: String) -> String {
         "studio.anwarcreative.corres.refreshToken.\(email)"
+    }
+
+    /// A real, live bug, found by tracing a reported "Could not mark this
+    /// conversation as read" alert back to its actual cause rather than
+    /// guessing: this request body used to be built with
+    /// `.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)`,
+    /// which is the *wrong* character set for an
+    /// `application/x-www-form-urlencoded` body — it's RFC 3986's generic
+    /// URL query set, which deliberately leaves `+`, `&`, and `=` unescaped
+    /// because those are all legal, meaningful characters in a URL's query
+    /// string. In a form body they mean something else entirely: `&`
+    /// separates parameters, `=` separates a key from its value, and `+`
+    /// decodes back to a literal space. Google's OAuth refresh tokens are
+    /// base64-derived and can genuinely contain any of those three
+    /// characters; when one did, that one character silently truncated or
+    /// corrupted the `refresh_token` field of every single refresh request
+    /// for that account, Google's token endpoint rejected it, and every
+    /// Gmail call for that account that needed a fresh token — not just
+    /// "mark as read," anything: archive, trash, send, sync — failed with
+    /// whatever generic error message that call surfaces, repeatedly and
+    /// consistently, since the token never changes between attempts.
+    /// RFC 3986's *unreserved* set (letters, digits, `-`, `.`, `_`, `~`) is
+    /// what's actually safe to leave unescaped in a form body; everything
+    /// else, including `+`/`&`/`=`, is percent-encoded here instead of
+    /// assumed safe.
+    private static let formURLEncodeAllowed: CharacterSet = {
+        var allowed = CharacterSet.alphanumerics
+        allowed.insert(charactersIn: "-._~")
+        return allowed
+    }()
+
+    private static func formURLEncode(_ value: String) -> String {
+        value.addingPercentEncoding(withAllowedCharacters: formURLEncodeAllowed) ?? value
     }
 
     private struct TokenResponse: Decodable { let access_token: String; let expires_in: Int }
