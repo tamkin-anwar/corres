@@ -24,7 +24,7 @@ struct ComposeView: View {
     @State private var showingFileImporter = false
     @State private var attachmentError: String?
 
-    private enum Field { case to, subject, body }
+    private enum Field { case to, cc, subject, body }
 
     /// Someone typed into "To" can be filled in without spelling out a full
     /// address, the same convenience Gmail and Apple Mail both offer.
@@ -65,6 +65,9 @@ struct ComposeView: View {
                     if !toSuggestions.isEmpty {
                         recipientSuggestionsList
                     }
+                    Divider().padding(.leading, CorresSpace.page)
+                    field(title: "Cc", text: Binding(get: { draft.cc ?? "" }, set: { draft.cc = $0 }), isEditable: true)
+                        .focused($focusedField, equals: .cc)
                     Divider().padding(.leading, CorresSpace.page)
                     field(title: "Subject", text: $draft.subject, isEditable: true)
                         .focused($focusedField, equals: .subject)
@@ -149,8 +152,8 @@ struct ComposeView: View {
     /// a reply or forward already has non-empty fields before the user types
     /// a single character, so "has content" alone would nag on every cancel.
     private var hasUnsavedChanges: Bool {
-        draft.to != initialDraft.to || draft.subject != initialDraft.subject || draft.body != initialDraft.body
-            || !draft.attachments.isEmpty
+        draft.to != initialDraft.to || draft.cc != initialDraft.cc || draft.subject != initialDraft.subject
+            || draft.body != initialDraft.body || !draft.attachments.isEmpty
     }
 
     private func attemptDismiss() {
@@ -303,10 +306,11 @@ struct ComposeView: View {
         HStack(spacing: 12) {
             Text(title).font(.subheadline).foregroundStyle(CorresPalette.secondary).frame(width: 64, alignment: .leading)
             if isEditable {
-                TextField(title == "To" ? "Recipient" : "Subject", text: text)
-                    .textInputAutocapitalization(title == "To" ? .never : .sentences)
-                    .keyboardType(title == "To" ? .emailAddress : .default)
-                    .autocorrectionDisabled(title == "To")
+                let isAddressField = title == "To" || title == "Cc"
+                TextField(title == "To" ? "Recipient" : title == "Cc" ? "Optional" : "Subject", text: text)
+                    .textInputAutocapitalization(isAddressField ? .never : .sentences)
+                    .keyboardType(isAddressField ? .emailAddress : .default)
+                    .autocorrectionDisabled(isAddressField)
             } else {
                 Text(text.wrappedValue).foregroundStyle(CorresPalette.secondary)
                 Spacer()
@@ -322,8 +326,13 @@ extension Correspondence {
         switch kind {
         case .new:
             return Draft(kind: .new, to: "", subject: "")
-        case .reply, .replyAll:
+        case .reply:
             return Draft(kind: kind, threadID: id, fromAccount: id.account, to: senderEmail ?? sender,
+                         subject: subject.hasPrefix("Re: ") ? subject : "Re: \(subject)",
+                         body: quoted)
+        case .replyAll:
+            return Draft(kind: kind, threadID: id, fromAccount: id.account, to: senderEmail ?? sender,
+                         cc: replyAllCc.isEmpty ? nil : replyAllCc.joined(separator: ", "),
                          subject: subject.hasPrefix("Re: ") ? subject : "Re: \(subject)",
                          body: quoted)
         case .forward:
@@ -331,5 +340,24 @@ extension Correspondence {
                          subject: subject.hasPrefix("Fwd: ") ? subject : "Fwd: \(subject)",
                          body: quoted)
         }
+    }
+
+    /// Everyone who was on the original message besides the sender (already
+    /// in `to`) and the account reading it (no reason to Cc yourself): a
+    /// real fix, not a new feature. `toRecipients`/`ccRecipients` weren't
+    /// captured at all before this, which meant "Reply All" silently
+    /// behaved exactly like "Reply" — reported and root-caused directly.
+    private var replyAllCc: [String] {
+        let me = id.account.lowercased()
+        let originalSender = (senderEmail ?? "").lowercased()
+        var seen = Set([me, originalSender])
+        var result: [String] = []
+        for email in toRecipients + ccRecipients {
+            let lowered = email.lowercased()
+            guard !seen.contains(lowered) else { continue }
+            seen.insert(lowered)
+            result.append(email)
+        }
+        return result
     }
 }

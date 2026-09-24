@@ -124,7 +124,6 @@ struct PreferencesView: View {
                     Button("Cancel", role: .cancel) {}
                 }
                 Section("The next chapter") {
-                    Text("Attachments, and a fully durable outbox with retries, are not built yet. This foundation is being verified first.")
                     Text("Future cloud intelligence will require a clear processing choice, always disclosed and reviewed by you before anything sends. Corres will never silently forward your correspondence to an AI service.")
                 }
                 Section {

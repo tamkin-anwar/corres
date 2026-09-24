@@ -132,6 +132,16 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// turns an id into something displayable, and filters out the system
     /// ones. Empty for sample/fictional threads.
     public var labelIds: [String]
+    /// The original message's other recipients (bare addresses, lowercased),
+    /// parsed from Gmail's own `To`/`Cc` headers. Per-message, like
+    /// `attachments`: whichever message is currently latest is the one that
+    /// matters. Exists for exactly one reason: `draft(kind: .replyAll)`
+    /// cannot correctly reply to everyone without knowing who else was on
+    /// the original message, and until this was added, Corres never
+    /// captured that at all — "Reply All" silently behaved exactly like
+    /// "Reply," a real, reported correctness bug, not a missing feature.
+    public let toRecipients: [String]
+    public let ccRecipients: [String]
     /// `List-Unsubscribe` (RFC 2369), split into its two possible forms: a
     /// `mailto:` URI (the address plus any `?subject=...` query already
     /// attached, exactly as the sender wrote it) and/or an `https://` URL. A
@@ -158,7 +168,8 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
                 latestMessageID: String? = nil, receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
                 isPinned: Bool = false, snoozedUntil: Date? = nil, senderDecision: SenderDecision = .approved,
                 imagesTrusted: Bool = false, attachments: [MailAttachment] = [], isUnread: Bool = false,
-                labelIds: [String] = [], listUnsubscribeMailto: String? = nil, listUnsubscribeURL: String? = nil,
+                labelIds: [String] = [], toRecipients: [String] = [], ccRecipients: [String] = [],
+                listUnsubscribeMailto: String? = nil, listUnsubscribeURL: String? = nil,
                 listUnsubscribeOneClick: Bool = false, senderUnsubscribed: Bool = false) {
         self.id = id
         self.sender = sender
@@ -181,6 +192,8 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.attachments = attachments
         self.isUnread = isUnread
         self.labelIds = labelIds
+        self.toRecipients = toRecipients
+        self.ccRecipients = ccRecipients
         self.listUnsubscribeMailto = listUnsubscribeMailto
         self.listUnsubscribeURL = listUnsubscribeURL
         self.listUnsubscribeOneClick = listUnsubscribeOneClick
@@ -223,6 +236,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
             // always take the freshest known value, regardless of which
             // side sent the message that happened to trigger this update.
             labelIds: incoming.labelIds,
+            toRecipients: incoming.toRecipients, ccRecipients: incoming.ccRecipients,
             // Per-message, like attachments: whatever the latest message
             // actually offers, not frozen from an earlier one.
             listUnsubscribeMailto: incoming.listUnsubscribeMailto, listUnsubscribeURL: incoming.listUnsubscribeURL,
@@ -276,17 +290,27 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     /// matching pre-multi-account behavior for anyone with just one.
     public var fromAccount: String?
     public var to: String
+    /// Comma-separated, matching `to`'s own shape; empty/nil both mean "no
+    /// Cc." `Optional`, not a plain `String = ""`, specifically so an
+    /// already-queued outbox entry's persisted JSON (from before this field
+    /// existed) still decodes: a non-optional property with only an
+    /// initializer default still needs the key present to decode
+    /// successfully, but Swift's synthesized `Decodable` treats a missing
+    /// key as `nil` automatically for a genuinely `Optional` property (the
+    /// same reasoning already applied to `fromAccount` above).
+    public var cc: String?
     public var subject: String
     public var body: String
     public var attachments: [PendingAttachment]
 
     public init(id: UUID = UUID(), kind: Kind, threadID: ThreadID? = nil, fromAccount: String? = nil,
-                to: String, subject: String, body: String = "", attachments: [PendingAttachment] = []) {
+                to: String, cc: String? = nil, subject: String, body: String = "", attachments: [PendingAttachment] = []) {
         self.id = id
         self.kind = kind
         self.threadID = threadID
         self.fromAccount = fromAccount
         self.to = to
+        self.cc = cc
         self.subject = subject
         self.body = body
         self.attachments = attachments

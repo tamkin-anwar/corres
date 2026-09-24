@@ -133,6 +133,8 @@ public actor SwiftDataMailRepository: MailRepository {
                 existing.listUnsubscribeMailto = item.listUnsubscribeMailto
                 existing.listUnsubscribeURL = item.listUnsubscribeURL
                 existing.listUnsubscribeOneClick = item.listUnsubscribeOneClick
+                existing.toRecipients = item.toRecipients
+                existing.ccRecipients = item.ccRecipients
                 // Labels reflect genuine Gmail mailbox-organization state,
                 // not a triage decision Corres invented (unlike
                 // attention/reason below): always take the freshest known

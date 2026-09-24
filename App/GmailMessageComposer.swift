@@ -11,14 +11,17 @@ enum GmailMessageComposer {
     /// threadId, the In-Reply-To/References headers, and the Subject all
     /// agree (see ADR 005); the threadId itself is passed separately to
     /// `GmailAPIClient.send`, not part of this message.
-    static func compose(from: String, to: String, subject: String, body: String, inReplyTo: String?,
+    static func compose(from: String, to: String, cc: String? = nil, subject: String, body: String, inReplyTo: String?,
                         attachments: [PendingAttachment] = []) -> String {
         var headers = [
             "From: \(from)",
             "To: \(to)",
-            "Subject: \(encodedSubject(subject))",
-            "MIME-Version: 1.0",
         ]
+        if let cc, !cc.trimmingCharacters(in: .whitespaces).isEmpty {
+            headers.append("Cc: \(cc)")
+        }
+        headers.append("Subject: \(encodedSubject(subject))")
+        headers.append("MIME-Version: 1.0")
         if let inReplyTo {
             let reference = "<\(inReplyTo)>"
             headers.append("In-Reply-To: \(reference)")

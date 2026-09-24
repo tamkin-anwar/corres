@@ -45,7 +45,7 @@ struct WelcomeView: View {
                 }
                 .padding(24).corresSurface()
                 Button("Explore Corres", action: onExplore).buttonStyle(CorresButtonStyle())
-                Text("An interactive preview with fictional mail.\nGmail connection is coming in a later build.")
+                Text("Explore with fictional mail first, or connect your real Gmail account anytime from Preferences.")
                     .font(.footnote).foregroundStyle(CorresPalette.secondary).multilineTextAlignment(.center)
             }
             .padding(28).frame(maxWidth: 520).frame(maxWidth: .infinity)

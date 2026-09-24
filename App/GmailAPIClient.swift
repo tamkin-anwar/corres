@@ -361,6 +361,12 @@ struct GmailAPIClient {
         let messageIdHeader = headers["message-id"]?.trimmingCharacters(in: CharacterSet(charactersIn: "<>"))
         var attachments: [MailAttachment] = []
         Self.collectAttachments(from: message.payload, into: &attachments)
+        // Who else was actually on this message: without this, "Reply All"
+        // has no way to know who to include besides the sender, and would
+        // silently behave exactly like a plain "Reply" (a real, reported
+        // bug, not a hypothetical).
+        let toRecipients = Self.parseAddressList(headers["to"] ?? "")
+        let ccRecipients = Self.parseAddressList(headers["cc"] ?? "")
         let (listUnsubscribeMailto, listUnsubscribeURL) = Self.parseListUnsubscribe(headers["list-unsubscribe"] ?? "")
         // RFC 8058: present only when the sender is explicitly vouching the
         // https URL above is safe to POST to automatically, no page visit
@@ -378,6 +384,7 @@ struct GmailAPIClient {
             reason: isUnread ? "Unread in Gmail." : "Already read in Gmail.",
             attention: isUnread ? .needsYou : .quiet, attachments: attachments, isUnread: isUnread,
             labelIds: message.labelIds ?? [],
+            toRecipients: toRecipients, ccRecipients: ccRecipients,
             listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
             listUnsubscribeOneClick: listUnsubscribeOneClick)
     }
@@ -427,6 +434,34 @@ struct GmailAPIClient {
         }
         let email = raw.trimmingCharacters(in: .whitespaces)
         return (email, email)
+    }
+
+    /// A `To`/`Cc` header is a comma-separated list of the same
+    /// "Name" <email> / bare-address entries `parseFrom` already handles
+    /// one at a time; splits on top-level commas only (a display name can
+    /// legally contain one inside quotes, e.g. `"Doe, Jane" <jane@x.com>`,
+    /// which a naive `.split(separator: ",")` would wrongly treat as two
+    /// entries), then reuses `parseFrom` per entry. Returns bare, lowercased
+    /// addresses, ready for direct use in a `To`/`Cc` field.
+    private static func parseAddressList(_ raw: String) -> [String] {
+        guard !raw.isEmpty else { return [] }
+        var entries: [String] = []
+        var current = ""
+        var insideQuotes = false
+        for character in raw {
+            if character == "\"" { insideQuotes.toggle() }
+            if character == "," && !insideQuotes {
+                entries.append(current)
+                current = ""
+            } else {
+                current.append(character)
+            }
+        }
+        if !current.trimmingCharacters(in: .whitespaces).isEmpty { entries.append(current) }
+        return entries.compactMap { entry in
+            let email = parseFrom(entry).email.trimmingCharacters(in: .whitespaces).lowercased()
+            return email.isEmpty ? nil : email
+        }
     }
 
     /// `List-Unsubscribe` (RFC 2369): one or more comma-separated URIs, each

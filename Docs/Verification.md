@@ -2,6 +2,16 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Full codebase sweep (September 23, 2026)
+
+Asked directly to sweep the whole codebase for bugs, redesigns included, not just the areas already touched today. Read through every Core/App/Features file.
+
+- **Fixed: "Reply All" was functionally identical to "Reply."** Corres never captured a message's other recipients at sync time. `Correspondence` gained `toRecipients`/`ccRecipients` (parsed from the real `To`/`Cc` headers); `Draft` gained `cc`; `ComposeView` now shows an always-editable Cc field (not just for reply-all); `GmailMessageComposer`/`OutboxService` send a real `Cc:` header.
+- **Fixed: two stale copy blocks contradicted real, shipped capability** — `WelcomeView` still said Gmail was "coming in a later build," `PreferencesView` still said attachments/outbox retries "are not built yet." Both corrected.
+- **Fixed: downloaded attachment temp files were never cleaned up.** Now removed on re-download and on view disappear.
+- **Flagged, not changed**: a blocked sender's mail still surfaces via explicit search (a real product judgment call about what "blocked" should mean, not an obvious bug); `OutboxService.resumeAfterRelaunch` resumes queued sends sequentially even across unrelated accounts (same class of thing Batch 29's performance sweep fixed elsewhere, but only matters for multiple sends surviving a simultaneous force-quit, a rare case).
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and `swift build`/`swift build --build-tests` (Core package and its tests both compile; the actual test *run* still hits this environment's pre-existing codesign issue, unrelated to these changes). **Not yet verified on-device**: needs a real "Reply All" on a real multi-recipient thread to confirm the Cc line actually lands correctly in Gmail.
+
 ## Smoothness sweep: read/unread and label toggle made optimistic (September 23, 2026)
 
 Asked directly, right after the archive/trash fix below, to make sure everything else was smooth too. Audited every other `ThreadActionService` action for the same network-before-any-visible-change pattern.

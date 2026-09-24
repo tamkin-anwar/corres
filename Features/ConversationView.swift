@@ -446,6 +446,19 @@ private struct AttachmentRow: View {
         .alert("Could not download this attachment", isPresented: $downloadFailed) {
             Button("OK", role: .cancel) {}
         } message: { Text("Please try again.") }
+        // Each download writes to a fresh, uniquely-named directory (see
+        // `download()`) and nothing ever removed the previous one: viewing
+        // several attachments in a long session left them all sitting in
+        // the temp directory indefinitely rather than only until this row
+        // no longer needs them. iOS does eventually reclaim `tmp/` under
+        // its own storage pressure, but that's a backstop, not a reason for
+        // Corres to litter it freely within a single session.
+        .onDisappear { cleanUpDownloadedFile() }
+    }
+
+    private func cleanUpDownloadedFile() {
+        guard let url = previewURL else { return }
+        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
     }
 
     private var formattedSize: String {
@@ -453,6 +466,10 @@ private struct AttachmentRow: View {
     }
 
     private func download() async {
+        // Tapping the same attachment again re-downloads rather than
+        // reusing the previous file; nothing else needs that first copy
+        // anymore.
+        cleanUpDownloadedFile()
         isDownloading = true
         defer { isDownloading = false }
         do {
