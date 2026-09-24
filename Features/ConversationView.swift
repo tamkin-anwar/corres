@@ -349,11 +349,25 @@ struct ConversationView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
             .accessibilityLabel(thread.isUnread ? "Mark as Read" : "Mark as Unread")
-            Button { Task { await threadActions.archive(thread) } } label: {
+            Button {
+                // Returns to the list instantly, not after Gmail's round
+                // trip: waiting on the network before anything visible
+                // happens is exactly the "not instant, not smooth" gap
+                // reported directly. The real Gmail call and the local
+                // removal still both happen exactly as before, in the
+                // background; only *when the list pops back into view*
+                // changed, not whether the network is trusted before the
+                // row actually disappears from data.
+                dismiss()
+                Task { await threadActions.archive(thread) }
+            } label: {
                 Image(systemName: "archivebox").frame(maxWidth: .infinity, minHeight: 44)
             }
             .accessibilityLabel("Archive")
-            Button(role: .destructive) { Task { await threadActions.trash(thread) } } label: {
+            Button(role: .destructive) {
+                dismiss()
+                Task { await threadActions.trash(thread) }
+            } label: {
                 Image(systemName: "trash").frame(maxWidth: .infinity, minHeight: 44)
             }
             .accessibilityLabel("Move to Trash")

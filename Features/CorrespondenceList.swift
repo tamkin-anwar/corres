@@ -64,6 +64,20 @@ struct CorrespondenceList: View {
     /// switcher.
     var accountFilter: String?
     @State private var search = ""
+    /// Tracks whichever thread is currently anchoring the visible scroll
+    /// position (SwiftUI keeps this in sync as the person scrolls). Needed
+    /// because archiving/trashing from *inside* a conversation removes the
+    /// thread from `store.threads` while this list isn't the active screen,
+    /// and a plain data reload has no anchor left to restore to once that
+    /// exact thread is gone, so it silently falls back to the top. Reported
+    /// directly: deleting from a conversation's own action bar sent the
+    /// list back to its very top instead of staying where the person was,
+    /// losing their place in whatever they were triaging. Swiping to
+    /// archive/trash a row directly in this list, by contrast, never had
+    /// this problem: the list is already the visible, live view when that
+    /// happens, so its own row-removal animation naturally keeps everything
+    /// else in place.
+    @State private var scrollPosition: ThreadID?
 
     private var scopedThreads: [Correspondence] {
         guard let accountFilter else { return store.threads }
@@ -88,6 +102,21 @@ struct CorrespondenceList: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .background(CorresPalette.canvas)
+            .scrollPosition(id: $scrollPosition)
+            .onChange(of: results) { oldValue, newValue in
+                guard let anchor = scrollPosition, !newValue.contains(where: { $0.id == anchor }),
+                      let oldIndex = oldValue.firstIndex(where: { $0.id == anchor }) else { return }
+                // Whatever the disappeared thread's own former neighbor is
+                // now sits at (or near) the same index; re-anchor to it so
+                // the list holds its position instead of resetting, the
+                // same "next email is right where I left it" continuity a
+                // premium mail client is expected to have.
+                if newValue.indices.contains(oldIndex) {
+                    scrollPosition = newValue[oldIndex].id
+                } else {
+                    scrollPosition = newValue.last?.id
+                }
+            }
             .searchable(text: $search, prompt: "Search conversations")
             .refreshable {
                 _ = await sync?.syncAll(accounts: auth?.accounts.map(\.email) ?? [])

@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Hotfix: archiving/trashing from a conversation reset scroll position and felt laggy (September 23, 2026)
+
+Reported directly: deleting an email while reading it (via the conversation's own action bar, not a list swipe) sent the list back to its top instead of holding position, and the whole interaction was asked to feel "instant smooth premium," not like it was "waiting for refreshing."
+
+- `CorrespondenceList` now uses `.scrollPosition(id:)` (iOS 17+) to track whichever thread anchors the visible scroll region, and re-anchors to whatever thread takes the removed one's place the moment it notices its tracked anchor disappeared (only fires when the anchor itself vanished; an ordinary swipe-to-delete inside the visible list is unaffected, since that path never had this problem).
+- `ConversationView`'s Archive/Trash buttons now call `dismiss()` immediately, before the (unchanged) network-call-then-local-removal sequence runs in the background, so tapping either one pops back to the list right away instead of waiting on Gmail's round trip first. The correctness guarantee itself didn't change: `store.remove` still only runs once Gmail actually confirms, so a failed call still leaves the thread in place with the existing error alert, not silently lost.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). **Not yet verified on-device**: needs a real archive/trash from inside a real conversation, scrolled partway down a real inbox, to confirm the list actually holds position and the pop-back genuinely feels instant, not just correct on paper.
+
 ## Hotfix: push notification content missing subtitle and body preview (September 23, 2026)
 
 Reported with a real three-way lock-screen screenshot comparison (Apple Mail, Corres, a third mail app) of the identical incoming email: Apple Mail showed sender, subject, and several lines of body preview; Corres showed only sender and subject.
