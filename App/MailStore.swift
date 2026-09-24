@@ -173,16 +173,41 @@ final class MailStore {
     /// Gmail, or there was no Gmail account to tell. Not routed through
     /// `mutate`, since that splices an updated `Correspondence` back in and
     /// there is no updated row here, only a removed one.
+    ///
+    /// Deliberately does NOT manage `pending` itself: its only caller,
+    /// `ThreadActionService.perform`, reserves the thread with
+    /// `beginPending` *before* the Gmail network call that precedes this,
+    /// not just around this method. Archive/Trash go over the network
+    /// first and only call this on success (see that method's own doc
+    /// comment); guarding `pending` here, after the fact, would leave the
+    /// row fully swipeable for the entire round trip, letting a second
+    /// swipe fire a second, conflicting Gmail call on the same thread.
     func remove(_ id: ThreadID) async {
-        guard !pending.contains(id) else { return }
-        pending.insert(id)
-        defer { pending.remove(id) }
         do {
             try await repository.remove(id)
             threads.removeAll { $0.id == id }
         } catch {
             errorMessage = "Could not update this conversation. Please try again."
         }
+    }
+
+    /// Reserves `id` as in-flight, for a caller (currently only
+    /// `ThreadActionService.perform`) that needs the reservation held
+    /// across work `mutate`/`remove` don't see themselves — specifically, a
+    /// Gmail network call that happens *before* either of those run.
+    /// Returns whether the reservation was actually acquired (false if
+    /// something else already holds it), the same fail-silent semantics
+    /// `mutate`/`remove`'s own internal guards already use. Every caller
+    /// must release with `endPending`, success or failure alike.
+    @discardableResult
+    func beginPending(_ id: ThreadID) -> Bool {
+        guard !pending.contains(id) else { return false }
+        pending.insert(id)
+        return true
+    }
+
+    func endPending(_ id: ThreadID) {
+        pending.remove(id)
     }
 
     /// Splices the single returned thread into `threads` in place, the same

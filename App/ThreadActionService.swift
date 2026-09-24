@@ -92,8 +92,21 @@ final class ThreadActionService {
     /// far worse correction than a chip or a dot flipping back. `ConversationView`
     /// still makes the *screen transition* feel instant by dismissing before
     /// this resolves; this method's own ordering is unchanged.
+    ///
+    /// Reserves the thread with `store.beginPending` for the *entire*
+    /// call, network round trip included, not just the `local()` write at
+    /// the end. Found in a swipe-gesture sweep: `local` (`store.remove`)
+    /// used to be the only thing that set `pending`, which meant a row
+    /// stayed fully swipeable for as long as the Gmail call was in flight
+    /// — real dead air a fast second swipe (or an impatient second try
+    /// after a slow network) could land in, firing a second, conflicting
+    /// Archive/Trash call on the same thread. Native Mail's own swipe
+    /// buttons lock the row the instant a swipe commits, not once a
+    /// network call happens to finish; this matches that.
     private func perform(_ thread: Correspondence, failureMessage: String,
                          gmailCall: () async throws -> Void, local: () async -> Void) async {
+        guard store.beginPending(thread.id) else { return }
+        defer { store.endPending(thread.id) }
         if thread.id.account != Self.sampleAccount {
             guard auth.isConnected(thread.id.account) else {
                 errorMessage = failureMessage

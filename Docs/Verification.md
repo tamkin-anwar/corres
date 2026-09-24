@@ -2,6 +2,15 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Native-feel sweep of PremiumSwipeRow (September 24, 2026)
+
+Asked directly to sweep the swipe gesture again, specifically for whether it acts as natively as iOS Mail's own swipe — smoothly, seamlessly, fast — not for correctness this time. Traced the actual call chain rather than assuming, since a background agent's independent check of exactly when `store.pending` gets set relative to a swipe firing was what surfaced the real finding below.
+
+- **Found and fixed a real correctness bug, not a feel nit**: `ThreadActionService.perform` (Archive/Trash's network-first path) only reserved the thread in `MailStore.pending` once `store.remove` ran, which only happens *after* the Gmail network call already succeeded. For the whole round trip before that, the row stayed fully swipeable — a fast second swipe on the same row, or a retry during a slow connection, could fire a second, conflicting Archive/Trash call on the same thread. `setUnread`/`toggleLabel`'s optimistic path was already safe (it reserves `pending` before touching the network); Archive/Trash's non-optimistic path wasn't. Fixed with `MailStore.beginPending(_:)`/`endPending(_:)`, reserved by `ThreadActionService.perform` around the entire gmailCall-then-local sequence.
+- `PremiumSwipeRow.onEnded` rechecked `isHorizontalDrag` but never `isEnabled` before committing — a row disabled mid-gesture (by another swipe's own pending guard) could still commit through a drag that was already in progress when that happened. Now rechecks `isEnabled` at commit time too, matching how a real `Button` behaves.
+- The drag offset hard-clamped at `maxDrag`, which reads as the gesture abruptly stopping past the long-swipe distance. Replaced with a damped, quarter-rate offset past the long threshold — the same elastic over-drag give UIKit's own `.swipeActions` has built in, that a from-scratch `DragGesture` doesn't get for free.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). **Not yet verified on-device**: the pending-reservation fix specifically needs confirming that (1) a fast double-swipe on the same row during Archive/Trash's network round trip no longer does anything on the second swipe, and (2) the row still visibly locks/disables the instant the first swipe commits, not after the network call resolves. The resistance curve and `isEnabled` recheck need the same real-finger confirmation every other swipe behavior in this file still needs — code review alone doesn't confirm gesture feel.
+
 ## Full sweep of PremiumSwipeRow (September 23, 2026)
 
 Asked directly, immediately after the swipe gesture shipped, whether it was implemented the best it could be. Read the new code critically rather than re-skimming it.

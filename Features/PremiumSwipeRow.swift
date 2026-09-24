@@ -122,7 +122,7 @@ struct PremiumSwipeRow<Content: View>: View {
                 var next = value.translation.width
                 if next > 0 && !allowsPositive { next = 0 }
                 if next < 0 && !allowsNegative { next = 0 }
-                offset = max(-SwipeMetrics.maxDrag, min(SwipeMetrics.maxDrag, next))
+                offset = Self.resistedOffset(for: next)
                 zone = Self.zone(for: offset)
             }
             .onEnded { _ in
@@ -130,12 +130,35 @@ struct PremiumSwipeRow<Content: View>: View {
                     isHorizontalDrag = nil
                     zone = .none
                 }
-                guard isHorizontalDrag == true else { return }
+                // `onChanged` already bails out on `isEnabled` while
+                // dragging, but a real `Button` also refuses to fire if it
+                // goes disabled between being pressed and being released —
+                // rechecked here so a row that's disabled mid-gesture (e.g.
+                // another swipe on it just started committing) can't still
+                // commit a second action through the gesture that was
+                // already in progress when that happened.
+                guard isEnabled, isHorizontalDrag == true else { return }
                 commit(offset)
                 withAnimation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.82)) {
                     offset = 0
                 }
             }
+    }
+
+    /// Below `longThreshold`, the row tracks the finger exactly 1:1, same
+    /// as before. Past it, movement is damped to a quarter rate instead of
+    /// being hard-clamped at `maxDrag`: a real finger dragging further than
+    /// the long action still needs somewhere to go, and UIKit's own
+    /// `.swipeActions` gives it that same elastic "still moving, just
+    /// working against you" give rather than a wall that feels like the
+    /// gesture stopped responding. Still hard-capped at `maxDrag` so a
+    /// determined drag can't send the row flying arbitrarily far.
+    private static func resistedOffset(for translation: CGFloat) -> CGFloat {
+        let magnitude = abs(translation)
+        guard magnitude > SwipeMetrics.longThreshold else { return translation }
+        let extra = magnitude - SwipeMetrics.longThreshold
+        let damped = min(SwipeMetrics.longThreshold + extra * 0.25, SwipeMetrics.maxDrag)
+        return translation < 0 ? -damped : damped
     }
 
     private static func zone(for offset: CGFloat) -> Zone {
