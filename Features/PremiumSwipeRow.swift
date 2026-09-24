@@ -68,6 +68,13 @@ struct PremiumSwipeRow<Content: View>: View {
     // a row mid-action (`store.pending`, preventing a double-fire) exactly
     // like before.
     @Environment(\.isEnabled) private var isEnabled
+    // Matches `CorresShell`'s own outbox banner and `DesignSystem/Tokens.swift`'s
+    // row-press animation, the established convention throughout this app:
+    // Reduce Motion drops the animated spring specifically (the large,
+    // springy positional movement Reduce Motion's own guidance targets),
+    // never the state change itself — the row still snaps back to flat
+    // instantly, just without the bounce.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var offset: CGFloat = 0
     /// nil until the first meaningful movement of a given gesture, then
@@ -79,7 +86,12 @@ struct PremiumSwipeRow<Content: View>: View {
 
     var body: some View {
         ZStack {
-            background
+            // Purely decorative: the real actions it previews are exposed
+            // to VoiceOver as proper named accessibility actions (see
+            // `CorrespondenceList`'s use of this view), not by making
+            // VoiceOver stumble onto this icon as its own, separate,
+            // context-free element while navigating the row.
+            background.accessibilityHidden(true)
             content
                 .offset(x: offset)
         }
@@ -120,7 +132,7 @@ struct PremiumSwipeRow<Content: View>: View {
                 }
                 guard isHorizontalDrag == true else { return }
                 commit(offset)
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.82)) {
                     offset = 0
                 }
             }

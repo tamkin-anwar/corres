@@ -253,6 +253,40 @@ struct CorrespondenceList: View {
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.visible)
             .listRowSeparatorTint(CorresPalette.line)
+            // A hand-built drag gesture gets none of what Apple's own
+            // `.swipeActions` gave VoiceOver for free: every button it
+            // exposes is automatically reachable through the accessibility
+            // rotor's Actions menu, with no swipe gesture required at all.
+            // `PremiumSwipeRow` replacing that API outright, on its own,
+            // would have silently taken away the *only* way a VoiceOver
+            // user could reach Archive/Trash/Pin/etc. from this list —
+            // found in the same full-sweep pass that shipped the gesture
+            // itself, not discovered later. These four actions mirror
+            // exactly what the swipe gesture does, so a VoiceOver user and
+            // a sighted swiping user reach the same four outcomes.
+            // `.disabled()` above stops the drag gesture from firing while
+            // this row is already mid-action (`store.pending`), but that
+            // guard doesn't automatically extend to custom
+            // `.accessibilityAction`s the same way it does for a real
+            // `Button` — checked explicitly here so a VoiceOver user can't
+            // double-fire an action through the accessibility path in the
+            // same narrow window a sighted swipe is already blocked from.
+            .accessibilityAction(named: Text(leadingShortAction.settingsTitle)) {
+                guard !store.pending.contains(thread.id) else { return }
+                perform(leadingShortAction, on: thread)
+            }
+            .accessibilityAction(named: Text(leadingLongAction.settingsTitle)) {
+                guard !store.pending.contains(thread.id) else { return }
+                perform(leadingLongAction, on: thread)
+            }
+            .accessibilityAction(named: Text(trailingShortAction.title)) {
+                guard !store.pending.contains(thread.id) else { return }
+                perform(trailingShortAction, on: thread)
+            }
+            .accessibilityAction(named: Text(trailingLongAction.title)) {
+                guard !store.pending.contains(thread.id) else { return }
+                perform(trailingLongAction, on: thread)
+            }
         }
     }
 

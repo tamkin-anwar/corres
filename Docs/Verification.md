@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Full sweep of PremiumSwipeRow (September 23, 2026)
+
+Asked directly, immediately after the swipe gesture shipped, whether it was implemented the best it could be. Read the new code critically rather than re-skimming it.
+
+- **Found and fixed a real regression, not a nit**: replacing `.swipeActions` with a custom `DragGesture` silently removed VoiceOver's only way to reach Archive/Trash/Pin/etc. from the Mail list — Apple's own API exposed those automatically through the accessibility rotor; a hand-built gesture doesn't, for free. Four `.accessibilityAction(named:)` entries per row now mirror exactly what the swipe gesture does.
+- The decorative reveal-panel icon wasn't hidden from VoiceOver (now `.accessibilityHidden(true)`); the new accessibility actions didn't inherit the drag gesture's own `store.pending` double-fire guard (`.disabled()` doesn't automatically extend to custom accessibility actions), now checked explicitly; the snap-back spring animation didn't respect Reduce Motion, the one place in this file that hadn't matched the app's own established convention elsewhere.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). **Not yet verified on-device**: needs VoiceOver actually turned on, navigated to a real Mail row, and each of the four accessibility actions actually triggered, to confirm the announcement and behavior are both right — a design review of the code is not the same as confirming it reads and works correctly with VoiceOver live.
+
 ## Real Spark-style short/long swipe (September 23, 2026)
 
 Requested directly, with research, after clarifying "half swipe" meant Spark's actual four-slot model (Left Short/Left Long/Right Short/Right Long, each a specific action firing directly on release) — a model Apple's own `.swipeActions` API has no way to express at all, confirmed before building anything.
