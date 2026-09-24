@@ -2,6 +2,13 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Customizable swipe actions (September 23, 2026)
+
+The first real "customize your experience" preference, researched against Gmail/Apple Mail/Spark's own swipe-customization settings before building.
+
+- `PrimarySwipeAction` (Archive/Trash/Handled) stored via `@AppStorage("corres.primarySwipeAction")`; `CorrespondenceList` reorders its existing trailing swipe buttons so the chosen one fires on a full swipe, matching the exact thing Gmail's own well-known swipe setting controls. `PreferencesView` gained a matching Picker under a new "Swipe Actions" section.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). **Not yet verified on-device**: needs a real full-swipe on a real Mail row with each of the three settings picked to confirm the right action actually fires first.
+
 ## Full codebase sweep (September 23, 2026)
 
 Asked directly to sweep the whole codebase for bugs, redesigns included, not just the areas already touched today. Read through every Core/App/Features file.

@@ -37,6 +37,7 @@
 		BB3CA26C51C343ECA59840FF /* App/LabelDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4D571AAED54527AAC57F47 /* App/LabelDirectory.swift */; };
 		23D3AB8DD02A4999883FF6B2 /* App/Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B03773975FDB401CA02B5F15 /* App/Keychain.swift */; };
 		BCCDE07485714DBCB3F6052B /* App/UnsubscribeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A4AE45C4BB42BBAE8BE735 /* App/UnsubscribeService.swift */; };
+		81962B22B15B4C5CA3957CD5 /* Features/SwipePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CABE04674E546E4B8928799 /* Features/SwipePreferences.swift */; };
 		CBAEF7A3115B4335A7A17995 /* App/GoogleTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */; };
 		BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */; };
 		C2D178FA2ECD796F4B6A79A3 /* Features/PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA57480437BE46588460ED61 /* Features/PreferencesView.swift */; };
@@ -61,6 +62,7 @@
 		3A4D571AAED54527AAC57F47 /* App/LabelDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/LabelDirectory.swift; sourceTree = SOURCE_ROOT; };
 		B03773975FDB401CA02B5F15 /* App/Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/Keychain.swift; sourceTree = SOURCE_ROOT; };
 		C3A4AE45C4BB42BBAE8BE735 /* App/UnsubscribeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/UnsubscribeService.swift; sourceTree = SOURCE_ROOT; };
+		2CABE04674E546E4B8928799 /* Features/SwipePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SwipePreferences.swift; sourceTree = SOURCE_ROOT; };
 		2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GoogleTokenProvider.swift; sourceTree = SOURCE_ROOT; };
 		3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/CorrespondenceMark.swift; sourceTree = SOURCE_ROOT; };
 		447B0387783A4EE385008A6B /* App/AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppDelegate.swift; sourceTree = SOURCE_ROOT; };
@@ -128,6 +130,7 @@
 				3A4D571AAED54527AAC57F47 /* App/LabelDirectory.swift */,
 				B03773975FDB401CA02B5F15 /* App/Keychain.swift */,
 				C3A4AE45C4BB42BBAE8BE735 /* App/UnsubscribeService.swift */,
+				2CABE04674E546E4B8928799 /* Features/SwipePreferences.swift */,
 				2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */,
 				447B0387783A4EE385008A6B /* App/AppDelegate.swift */,
 				916D22A5A98347EDBD6063F8 /* App/PushNotificationService.swift */,
@@ -241,6 +244,7 @@
 				BB3CA26C51C343ECA59840FF /* App/LabelDirectory.swift in Sources */,
 				23D3AB8DD02A4999883FF6B2 /* App/Keychain.swift in Sources */,
 				BCCDE07485714DBCB3F6052B /* App/UnsubscribeService.swift in Sources */,
+				81962B22B15B4C5CA3957CD5 /* Features/SwipePreferences.swift in Sources */,
 				CBAEF7A3115B4335A7A17995 /* App/GoogleTokenProvider.swift in Sources */,
 				48A5A9377BA4468386749647 /* App/AppDelegate.swift in Sources */,
 				3EC3C3C05C7C482BB226F0F7 /* App/PushNotificationService.swift in Sources */,

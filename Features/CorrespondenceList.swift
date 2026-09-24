@@ -64,6 +64,18 @@ struct CorrespondenceList: View {
     /// switcher.
     var accountFilter: String?
     @State private var search = ""
+    /// Same `UserDefaults` key `PreferencesView`'s own picker reads/writes;
+    /// `@AppStorage` keeps both in sync automatically, the same pattern
+    /// `corres.appearance` already uses across multiple independent views.
+    @AppStorage("corres.primarySwipeAction") private var primarySwipeActionRaw = PrimarySwipeAction.archive.rawValue
+    private var primarySwipeAction: PrimarySwipeAction { PrimarySwipeAction(rawValue: primarySwipeActionRaw) ?? .archive }
+    /// Whichever action is currently primary, first; the other two follow
+    /// in their fixed declared order. SwiftUI triggers whichever swipe
+    /// button is listed first on a full swipe, so this ordering is what
+    /// actually makes the preference take effect, not just cosmetic.
+    private var orderedTrailingActions: [PrimarySwipeAction] {
+        [primarySwipeAction] + PrimarySwipeAction.allCases.filter { $0 != primarySwipeAction }
+    }
     /// Tracks whichever thread is currently anchoring the visible scroll
     /// position (SwiftUI keeps this in sync as the person scrolls). Needed
     /// because archiving/trashing from *inside* a conversation removes the
@@ -177,6 +189,27 @@ struct CorrespondenceList: View {
         .padding(.horizontal, CorresSpace.page)
     }
 
+    @ViewBuilder
+    private func trailingSwipeButton(_ action: PrimarySwipeAction, for thread: Correspondence) -> some View {
+        switch action {
+        case .archive:
+            Button {
+                Task { await threadActions?.archive(thread) }
+            } label: { Label("Archive", systemImage: "archivebox") }
+            .tint(CorresPalette.swipeArchive)
+        case .trash:
+            Button(role: .destructive) {
+                Task { await threadActions?.trash(thread) }
+            } label: { Label("Trash", systemImage: "trash") }
+            .tint(CorresPalette.swipeTrash)
+        case .handled:
+            Button {
+                Task { await store.update(thread.id, to: .handled) }
+            } label: { Label("Handled", systemImage: "checkmark") }
+            .tint(CorresPalette.swipeHandled)
+        }
+    }
+
     private var conversationRows: some View {
         let orderedIDs = results.map(\.id)
         return ForEach(results) { thread in
@@ -188,24 +221,15 @@ struct CorrespondenceList: View {
                 .listRowSeparator(.visible)
                 .listRowSeparatorTint(CorresPalette.line)
                 .swipeActions(edge: .trailing) {
-                    // SwiftUI triggers the FIRST action listed here on a full
-                    // swipe. Archive first, not Trash: matches Apple Mail's
-                    // own default (full swipe archives, recoverable from All
-                    // Mail; trashing needs a deliberate tap), which matters
-                    // more than usual right now given the trust this batch
-                    // is trying to build, not erode with an accidental delete.
-                    Button {
-                        Task { await threadActions?.archive(thread) }
-                    } label: { Label("Archive", systemImage: "archivebox") }
-                    .tint(CorresPalette.swipeArchive)
-                    Button(role: .destructive) {
-                        Task { await threadActions?.trash(thread) }
-                    } label: { Label("Trash", systemImage: "trash") }
-                    .tint(CorresPalette.swipeTrash)
-                    Button {
-                        Task { await store.update(thread.id, to: .handled) }
-                    } label: { Label("Handled", systemImage: "checkmark") }
-                    .tint(CorresPalette.swipeHandled)
+                    // SwiftUI triggers whichever action is listed FIRST on a
+                    // full swipe; `orderedTrailingActions` puts the person's
+                    // own chosen primary action there (Preferences → Swipe
+                    // Actions), defaulting to Archive, matching Apple Mail's
+                    // own default (recoverable from All Mail, unlike a full
+                    // swipe defaulting straight to Trash).
+                    ForEach(orderedTrailingActions) { action in
+                        trailingSwipeButton(action, for: thread)
+                    }
                     Menu {
                         ForEach(SnoozeOption.allCases, id: \.self) { option in
                             Button(option.title) { Task { await store.snooze(thread.id, until: option.date()) } }

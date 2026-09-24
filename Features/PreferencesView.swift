@@ -7,6 +7,7 @@ struct PreferencesView: View {
     @Bindable var pushService: PushNotificationService
     @Environment(\.dismiss) private var dismiss
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
+    @AppStorage("corres.primarySwipeAction") private var primarySwipeActionRaw = PrimarySwipeAction.archive.rawValue
     @State private var showingResetConfirmation = false
     @State private var accountPendingDisconnect: GmailAccount?
 
@@ -17,6 +18,15 @@ struct PreferencesView: View {
                     Picker("Appearance", selection: $appearance) {
                         ForEach(Appearance.allCases) { Text($0.title).tag($0.rawValue) }
                     }
+                }
+                Section {
+                    Picker("Full swipe on a conversation", selection: $primarySwipeActionRaw) {
+                        ForEach(PrimarySwipeAction.allCases) { Text($0.title).tag($0.rawValue) }
+                    }
+                } header: {
+                    Text("Swipe Actions")
+                } footer: {
+                    Text("What a full swipe does on a Mail row, without needing to tap a specific button first. Every other swipe action stays reachable with a partial swipe.")
                 }
                 Section("Your Gmail accounts") {
                     ForEach(auth.accounts) { account in
