@@ -18,7 +18,21 @@ struct GmailAPIClient {
     /// One fetch, either a first full sync or a cursor-based catch-up; the
     /// caller (GmailSyncService) persists `historyId` and passes it back in
     /// as the starting point for the next call.
-    struct SyncResult { let items: [Correspondence]; let historyId: String? }
+    ///
+    /// `failedMessageIDs`: individual `users.messages.get` calls that still
+    /// failed after `fetchMessages`'s own bounded retries — a real, found
+    /// gap (not hypothetical): `historyId` advances for the whole batch
+    /// regardless of which individual messages actually came back, since
+    /// Gmail's history cursor is a single whole-mailbox counter with no way
+    /// to partially advance it. Silently dropping these here, the way this
+    /// used to, meant a message caught in a transient failure during sync
+    /// was gone for good the moment the cursor moved past it — the next
+    /// incremental sync only asks Gmail what changed *after* that point,
+    /// never re-offering something already inside the window just
+    /// consumed. `GmailSyncService` is what actually closes the loop: it
+    /// persists these ids and retries fetching them by id directly on every
+    /// later sync, independent of the cursor, until they succeed.
+    struct SyncResult { let items: [Correspondence]; let historyId: String?; let failedMessageIDs: [String] }
 
     /// Caps the very first sync at a couple hundred messages, not a full
     /// mailbox import: matches "do not attempt to support every... immediately,"
@@ -44,12 +58,12 @@ struct GmailAPIClient {
         for label in Self.syncedLabels {
             ids.formUnion(try await listMessageIDs(token: token, label: label))
         }
-        let items = await fetchMessages(ids: Array(ids), token: token, account: account)
+        let (items, failedIDs) = await fetchMessages(ids: Array(ids), token: token, account: account)
         // Best-effort: if the profile call fails, the sync itself still
         // succeeded, just without a cursor for next time. The following
         // sync falls back to another full listing rather than failing.
         let historyId = try? await fetchProfile(token: token).historyId
-        return SyncResult(items: items, historyId: historyId)
+        return SyncResult(items: items, historyId: historyId, failedMessageIDs: failedIDs)
     }
 
     /// Gmail's History API: only what changed since `cursor`, not a re-list
@@ -67,8 +81,20 @@ struct GmailAPIClient {
             ids.formUnion(page.ids)
             historyId = Self.newerHistoryId(historyId, page.historyId)
         }
-        let items = await fetchMessages(ids: Array(ids), token: token, account: account)
-        return SyncResult(items: items, historyId: historyId ?? cursor)
+        let (items, failedIDs) = await fetchMessages(ids: Array(ids), token: token, account: account)
+        return SyncResult(items: items, historyId: historyId ?? cursor, failedMessageIDs: failedIDs)
+    }
+
+    /// Re-attempts specific message ids directly, independent of the
+    /// history cursor or any label listing — the retry path
+    /// `GmailSyncService` uses for ids a previous sync's `failedMessageIDs`
+    /// already reported, since by the time it tries again the cursor has
+    /// long since moved past the point where the ordinary sync path would
+    /// ever offer them again.
+    func fetchMessages(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
+        guard !ids.isEmpty else { return ([], []) }
+        let token = try await accessToken(for: account)
+        return await fetchMessages(ids: ids, token: token, account: account)
     }
 
     /// Gmail's own `historyId` is a single, whole-mailbox-wide counter (the
@@ -92,27 +118,47 @@ struct GmailAPIClient {
     /// runs, not anything about SwiftUI rendering. A bounded pool, not
     /// unbounded concurrency, avoids firing hundreds of requests at once
     /// against Gmail's per-user rate limits.
-    private func fetchMessages(ids: [String], token: String, account: String) async -> [Correspondence] {
-        await withTaskGroup(of: Correspondence?.self) { group in
+    ///
+    /// A single message's own `fetchMessage` gets a couple of real retries
+    /// before this gives up on it (`messageFetchAttempts`, a short fixed
+    /// delay rather than `OutboxService`'s longer exponential backoff —
+    /// this runs for every message in a sync, not once for a person
+    /// waiting on a send, so it needs to stay cheap even though it's the
+    /// same class of transient-failure problem). Whatever's still failing
+    /// after that comes back in `failedIDs` instead of silently vanishing;
+    /// see `SyncResult.failedMessageIDs`'s doc comment for why that
+    /// distinction matters here specifically.
+    private func fetchMessages(ids: [String], token: String, account: String) async -> (items: [Correspondence], failedIDs: [String]) {
+        await withTaskGroup(of: (Correspondence?, String).self) { group in
             var pending = ids[...]
             func addNext() {
                 guard let id = pending.popFirst() else { return }
                 group.addTask {
-                    guard let message = try? await self.fetchMessage(id: id, token: token) else { return nil }
-                    return self.map(message, account: account)
+                    for attempt in 1...Self.messageFetchAttempts {
+                        if let message = try? await self.fetchMessage(id: id, token: token) {
+                            return (self.map(message, account: account), id)
+                        }
+                        if attempt < Self.messageFetchAttempts {
+                            try? await Task.sleep(for: .milliseconds(Self.messageFetchRetryDelayMs))
+                        }
+                    }
+                    return (nil, id)
                 }
             }
             for _ in 0..<Self.messageFetchConcurrency { addNext() }
             var results: [Correspondence] = []
-            while let next = await group.next() {
-                if let correspondence = next { results.append(correspondence) }
+            var failedIDs: [String] = []
+            while let (correspondence, id) = await group.next() {
+                if let correspondence { results.append(correspondence) } else { failedIDs.append(id) }
                 addNext()
             }
-            return results
+            return (results, failedIDs)
         }
     }
 
     private static let messageFetchConcurrency = 8
+    private static let messageFetchAttempts = 3
+    private static let messageFetchRetryDelayMs = 400
 
     /// Local search (`MailQuery.filter`) only ever sees what's already
     /// synced, capped at a couple hundred recent messages; typing in an
@@ -135,7 +181,7 @@ struct GmailAPIClient {
         let (data, response) = try await authorizedRequest(url: components.url!, token: token)
         try validate(response)
         let list = try JSONDecoder().decode(MessageListResponse.self, from: data)
-        return await fetchMessages(ids: list.messages?.map(\.id) ?? [], token: token, account: account)
+        return await fetchMessages(ids: list.messages?.map(\.id) ?? [], token: token, account: account).items
     }
 
     /// Looks up a message this client itself composed, by the `Message-ID`

@@ -30,11 +30,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     private static let backgroundRefreshIdentifier = "studio.anwarcreative.corres.renewWatch"
 
     override init() {
-        let container = Self.makeModelContainer()
+        let (container, usedInMemoryFallback) = Self.makeModelContainer()
         let repository = SwiftDataMailRepository(modelContainer: container)
         let mailStore = MailStore(repository: repository)
         let authService = GoogleAuthService()
         store = mailStore
+        // A real, silent-until-now failure mode, found in a review sweep:
+        // this used to fall back to an in-memory store with nothing telling
+        // the person their mail had stopped actually being saved. Reusing
+        // `MailStore.errorMessage` (the same alert `CorresShell` already
+        // shows for every other save failure) rather than inventing a
+        // second, separate banner mechanism just for this one case.
+        if usedInMemoryFallback {
+            mailStore.errorMessage = "Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app — please restart Corres. If this keeps happening, your device may be low on storage."
+        }
         sync = GmailSyncService(repository: repository)
         auth = authService
         outbox = OutboxService(store: mailStore, auth: authService, repository: repository)
@@ -193,11 +202,22 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return .newData
     }
 
-    private static func makeModelContainer() -> ModelContainer {
+    /// The `Bool` is whether this had to fall back to the in-memory
+    /// configuration — found in a review sweep to matter a lot more than
+    /// the original comment here assumed: "at the cost of that device's
+    /// local history this session" undersold it. The in-memory fallback
+    /// doesn't just lose history that already existed; it silently stops
+    /// persisting anything new for the rest of this launch, with nothing
+    /// telling the person their mail isn't actually being saved until they
+    /// relaunch and it's gone. `init` surfaces this via the same
+    /// `MailStore.errorMessage` alert every other save failure already
+    /// uses, rather than failing quietly the way this did before.
+    private static func makeModelContainer() -> (container: ModelContainer, usedInMemoryFallback: Bool) {
         let schema = Schema(CorresSchemaV1.models)
         do {
-            return try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self,
-                                      configurations: [ModelConfiguration(schema: schema)])
+            let container = try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self,
+                                               configurations: [ModelConfiguration(schema: schema)])
+            return (container, false)
         } catch {
             // A corrupt/incompatible on-disk store should not brick the app on
             // launch; fall back to a fresh in-memory container so it still
@@ -206,7 +226,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             guard let fallback = try? ModelContainer(for: schema, configurations: [fallbackConfiguration]) else {
                 fatalError("Could not create any Corres local store, including an in-memory fallback: \(error)")
             }
-            return fallback
+            return (fallback, true)
         }
     }
 }

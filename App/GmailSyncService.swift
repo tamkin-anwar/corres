@@ -108,6 +108,31 @@ final class GmailSyncService {
     private func syncOneLocked(account: String) async -> Bool {
         do {
             let (result, isFullListing) = try await fetch(account: account)
+            var items = result.items
+            var stillMissing = Set(result.failedMessageIDs)
+
+            // Ids a previous sync's own `failedMessageIDs` couldn't fetch,
+            // retried here independent of the cursor/history window: by now
+            // the cursor has already moved past the point where the
+            // ordinary sync path above would ever offer them again (see
+            // `SyncResult.failedMessageIDs`'s doc comment for why that
+            // matters). This is what actually closes the loop rather than
+            // just shrinking the window a single message can be lost in.
+            let previouslyMissed = missedMessageIDs(for: account)
+            if !previouslyMissed.isEmpty {
+                if let retried = try? await client.fetchMessages(ids: previouslyMissed, account: account) {
+                    items.append(contentsOf: retried.items)
+                    stillMissing.formUnion(retried.failedIDs)
+                } else {
+                    // The retry call itself failed outright (e.g. a token
+                    // refresh failure), not just individual messages within
+                    // it — keep every previously-missed id exactly as
+                    // missing as it already was, rather than assuming
+                    // success or silently losing track of them.
+                    stillMissing.formUnion(previouslyMissed)
+                }
+            }
+
             // Deliberately ordered, not merely convenient: upsert (SwiftData)
             // and the cursor write (UserDefaults) are two different stores
             // and can't share one real transaction without moving the
@@ -120,10 +145,11 @@ final class GmailSyncService {
             // redundant work (re-fetching and re-upserting messages that
             // already made it in, which upsert already treats as a no-op)
             // if the app dies between the two, never data loss.
-            try await repository.upsert(result.items, isInitialSync: isFullListing)
+            try await repository.upsert(items, isInitialSync: isFullListing)
             if let historyId = result.historyId {
                 setHistoryCursor(historyId, for: account)
             }
+            setMissedMessageIDs(stillMissing, for: account)
             return true
         } catch {
             errorMessage = "Could not sync Gmail. Please check your connection and try again."
@@ -136,6 +162,7 @@ final class GmailSyncService {
     func clearCursor(for account: String?) {
         guard let account else { return }
         defaults.removeObject(forKey: Self.cursorKey(for: account))
+        defaults.removeObject(forKey: Self.missedIDsKey(for: account))
     }
 
     /// The second value is true whenever this fetch was a full inbox
@@ -163,4 +190,30 @@ final class GmailSyncService {
     }
 
     private static func cursorKey(for account: String) -> String { "corres.gmail.historyId.\(account)" }
+
+    private func missedMessageIDs(for account: String) -> [String] {
+        defaults.stringArray(forKey: Self.missedIDsKey(for: account)) ?? []
+    }
+
+    /// Bounded, not unlimited: a message that's still failing after many
+    /// syncs in a row (a real Gmail-side 404, say — deleted before this
+    /// ever managed to fetch it, not just unlucky timing) would otherwise
+    /// be retried forever, at the cost of one wasted API call per sync
+    /// indefinitely. `Set` has no defined iteration order, so this can't
+    /// honestly claim to drop the *oldest* entries past the cap — only
+    /// that the set never grows past a hard ceiling regardless of which
+    /// ids that leaves in it; anything genuinely still recoverable
+    /// succeeds within the first few retries anyway, well under this cap.
+    private static let maxTrackedMissedIDs = 200
+
+    private func setMissedMessageIDs(_ ids: Set<String>, for account: String) {
+        let key = Self.missedIDsKey(for: account)
+        guard !ids.isEmpty else {
+            defaults.removeObject(forKey: key)
+            return
+        }
+        defaults.set(Array(ids.prefix(Self.maxTrackedMissedIDs)), forKey: key)
+    }
+
+    private static func missedIDsKey(for account: String) -> String { "corres.gmail.missedMessageIDs.\(account)" }
 }
