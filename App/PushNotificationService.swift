@@ -140,12 +140,25 @@ final class PushNotificationService {
     /// dozens of newly-unread threads land in a single sync, and spamming a
     /// notification per message is exactly the kind of thing that gets a
     /// mail app's notifications turned back off.
+    /// Structured `title`/`subtitle`/`body` (Apple's own documented pattern:
+    /// title is who, subtitle is what, body is a preview), not subject
+    /// squeezed into `body` alone with nothing else: reported directly
+    /// against a side-by-side comparison with Apple Mail's own notification
+    /// for the identical email, which showed sender, subject, *and* several
+    /// lines of body preview, next to Corres's showing only sender and
+    /// subject with nothing else — "not enough info to be useful." A single
+    /// notification's `body` still has to fit in a few lines on the lock
+    /// screen regardless of how much text is passed to it, so `excerpt`
+    /// (Gmail's own short snippet, already computed at sync time, not the
+    /// full message body) is exactly the right length for this, the same
+    /// value `CorrespondenceRow`'s list preview already uses.
     func notifyAboutNewMail(_ threads: [Correspondence]) {
         guard !threads.isEmpty else { return }
         let content = UNMutableNotificationContent()
         if threads.count == 1, let thread = threads.first {
             content.title = thread.sender
-            content.body = thread.subject
+            content.subtitle = thread.subject
+            content.body = thread.excerpt
         } else {
             content.title = "\(threads.count) new messages"
             let senders = threads.prefix(3).map(\.sender).joined(separator: ", ")

@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Hotfix: push notification content missing subtitle and body preview (September 23, 2026)
+
+Reported with a real three-way lock-screen screenshot comparison (Apple Mail, Corres, a third mail app) of the identical incoming email: Apple Mail showed sender, subject, and several lines of body preview; Corres showed only sender and subject.
+
+- Root cause: `PushNotificationService.notifyAboutNewMail` never used `UNMutableNotificationContent.subtitle`, and put the subject in `body` instead of a real content preview.
+- Fixed: `title = sender`, `subtitle = subject`, `body = excerpt` (Gmail's own short snippet, already computed at sync time), matching Apple's documented title/subtitle/body notification pattern.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). **Not yet verified on-device**: needs a real push notification to actually arrive and be inspected on the lock screen, the same as every other push-related item in this project.
+
 ## Built-in unsubscribe (September 23, 2026)
 
 Requested explicitly, "I want us to have it the best." Researched RFC 2369/8058 and what Apple Mail and Gmail actually implement (Apple Mail: `mailto:` only; Gmail: `mailto:`/`https:`, neither found to do the RFC 8058 one-click POST client-side) before building, so Corres's ordering is grounded, not guessed: one-click POST first (genuinely faster/more certain than either incumbent offers), a real `mailto:` opt-out send second, opening the link in Safari only as a last resort.
