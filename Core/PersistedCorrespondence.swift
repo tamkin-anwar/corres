@@ -61,6 +61,7 @@ public final class PersistedCorrespondence {
     public var senderUnsubscribed: Bool = false
     public var toRecipients: [String] = []
     public var ccRecipients: [String] = []
+    public var triagedMessageID: String? = nil
 
     public init(from correspondence: Correspondence) {
         self.compositeID = Self.compositeID(account: correspondence.id.account, providerID: correspondence.id.providerID)
@@ -92,6 +93,7 @@ public final class PersistedCorrespondence {
         self.senderUnsubscribed = correspondence.senderUnsubscribed
         self.toRecipients = correspondence.toRecipients
         self.ccRecipients = correspondence.ccRecipients
+        self.triagedMessageID = correspondence.triagedMessageID
     }
 
     public var asCorrespondence: Correspondence {
@@ -104,7 +106,7 @@ public final class PersistedCorrespondence {
                        imagesTrusted: imagesTrusted,
                        attachments: (try? JSONDecoder().decode([MailAttachment].self, from: attachmentsData)) ?? [],
                        isUnread: isUnread, labelIds: labelIds,
-                       toRecipients: toRecipients, ccRecipients: ccRecipients,
+                       toRecipients: toRecipients, ccRecipients: ccRecipients, triagedMessageID: triagedMessageID,
                        listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
                        listUnsubscribeOneClick: listUnsubscribeOneClick, senderUnsubscribed: senderUnsubscribed)
     }

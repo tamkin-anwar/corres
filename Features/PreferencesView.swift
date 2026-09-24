@@ -122,8 +122,8 @@ struct PreferencesView: View {
                 } message: { Text(sync.errorMessage ?? "Please try again.") }
                 Section("Your privacy, clearly") {
                     Label("No advertising or analytics SDKs", systemImage: "hand.raised")
-                    Label("No AI processing in this build", systemImage: "lock.shield")
-                    Text("Sample conversations are stored only on this device and never leave it. Attention, pins, and snoozes now persist between launches.")
+                    Label("AI runs entirely on your device", systemImage: "lock.shield")
+                    Text("Needs You is refined by Apple Intelligence, running on your device with Apple's on-device model. Nothing about your mail is ever sent to a server Corres runs, or to any AI provider, to make that judgment. Sample conversations are stored only on this device and never leave it. Attention, pins, and snoozes now persist between launches.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
                 }
                 Section {

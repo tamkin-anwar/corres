@@ -27,6 +27,16 @@ public protocol MailRepository: Sendable {
     /// immediately, not eventually" behavior.
     @discardableResult
     func setLabelIds(_ labelIds: [String], for id: ThreadID) async throws -> Correspondence
+    /// Records `SemanticTriageService`'s on-device assessment of one
+    /// message: `needsReply == false` downgrades `attention` from
+    /// `.needsYou` to `.quiet` with the model's own short reason (never a
+    /// raw score, matching `reason`'s existing "human-readable evidence"
+    /// rule); `needsReply == true` leaves `attention` exactly as Gmail's
+    /// own unread state already set it, refining only the reason shown.
+    /// `messageID` is stamped as `triagedMessageID` either way, so this
+    /// exact message is never re-assessed.
+    @discardableResult
+    func applySemanticTriage(_ id: ThreadID, needsReply: Bool, reason: String, messageID: String) async throws -> Correspondence
     /// Replying or forwarding moves the source thread to Waiting: the user has
     /// acted and is now the one expecting a response. A new draft opens a thread
     /// in the same state, since nothing has come back yet either way.
@@ -168,6 +178,15 @@ public actor SampleMailRepository: MailRepository {
     @discardableResult
     public func setLabelIds(_ labelIds: [String], for id: ThreadID) throws -> Correspondence {
         try mutate(id) { $0.labelIds = labelIds }
+    }
+
+    @discardableResult
+    public func applySemanticTriage(_ id: ThreadID, needsReply: Bool, reason: String, messageID: String) throws -> Correspondence {
+        try mutate(id) { item in
+            if !needsReply { item.attention = .quiet }
+            item.reason = reason
+            item.triagedMessageID = messageID
+        }
     }
 
     public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {

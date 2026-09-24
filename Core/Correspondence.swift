@@ -142,6 +142,15 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// "Reply," a real, reported correctness bug, not a missing feature.
     public let toRecipients: [String]
     public let ccRecipients: [String]
+    /// The `latestMessageID` semantic triage (`SemanticTriageService`) was
+    /// last actually run against for this thread, or nil if it never has
+    /// been. Deliberately left out of `updatingContent`'s explicit field
+    /// list below: a genuinely new message arriving always builds its
+    /// `Correspondence` fresh from Gmail (via `GmailAPIClient.map`), which
+    /// never sets this itself, so it naturally comes back `nil` exactly
+    /// when a new message means "this needs triage again" — the same
+    /// signal already needed, for free, with no extra bookkeeping.
+    public var triagedMessageID: String?
     /// `List-Unsubscribe` (RFC 2369), split into its two possible forms: a
     /// `mailto:` URI (the address plus any `?subject=...` query already
     /// attached, exactly as the sender wrote it) and/or an `https://` URL. A
@@ -169,6 +178,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
                 isPinned: Bool = false, snoozedUntil: Date? = nil, senderDecision: SenderDecision = .approved,
                 imagesTrusted: Bool = false, attachments: [MailAttachment] = [], isUnread: Bool = false,
                 labelIds: [String] = [], toRecipients: [String] = [], ccRecipients: [String] = [],
+                triagedMessageID: String? = nil,
                 listUnsubscribeMailto: String? = nil, listUnsubscribeURL: String? = nil,
                 listUnsubscribeOneClick: Bool = false, senderUnsubscribed: Bool = false) {
         self.id = id
@@ -193,6 +203,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.isUnread = isUnread
         self.labelIds = labelIds
         self.toRecipients = toRecipients
+        self.triagedMessageID = triagedMessageID
         self.ccRecipients = ccRecipients
         self.listUnsubscribeMailto = listUnsubscribeMailto
         self.listUnsubscribeURL = listUnsubscribeURL
@@ -207,6 +218,27 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     public func isSnoozed(at now: Date) -> Bool {
         guard let snoozedUntil else { return false }
         return snoozedUntil > now
+    }
+
+    /// Real, RFC-grounded signals this message is bulk/automated mail
+    /// rather than personal correspondence, not a guess: a `List-Unsubscribe`
+    /// header (RFC 2369, already captured for the unsubscribe feature) is a
+    /// near-certain marker, and a `no-reply@`/`noreply@`-style sender
+    /// address is the same heuristic automated-reply-suppression systems
+    /// already use industry-wide. Fed to `SemanticTriageService` as real
+    /// context alongside the message itself, not used to decide anything on
+    /// its own.
+    public var looksAutomated: Bool {
+        if listUnsubscribeMailto != nil || listUnsubscribeURL != nil { return true }
+        guard let senderEmail else { return false }
+        return senderEmail.lowercased().range(of: #"^no.?reply@"#, options: .regularExpression) != nil
+    }
+
+    /// Whether `account` was addressed directly (`To`) rather than only
+    /// copied (`Cc`) on this message — a real signal of whether a reply is
+    /// actually expected of them, not a guess.
+    public var isDirectRecipient: Bool {
+        toRecipients.contains(id.account.lowercased())
     }
 
     /// A genuinely new message landed in this same thread (a real reply, or

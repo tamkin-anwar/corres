@@ -38,6 +38,15 @@ public actor SwiftDataMailRepository: MailRepository {
         try mutate(id) { $0.labelIds = labelIds }
     }
 
+    @discardableResult
+    public func applySemanticTriage(_ id: ThreadID, needsReply: Bool, reason: String, messageID: String) throws -> Correspondence {
+        try mutate(id) { model in
+            if !needsReply { model.attentionRaw = Attention.quiet.rawValue }
+            model.reason = reason
+            model.triagedMessageID = messageID
+        }
+    }
+
     public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {
         guard let threadID = draft.threadID else {
             let sender = draft.to.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -135,6 +144,16 @@ public actor SwiftDataMailRepository: MailRepository {
                 existing.listUnsubscribeOneClick = item.listUnsubscribeOneClick
                 existing.toRecipients = item.toRecipients
                 existing.ccRecipients = item.ccRecipients
+                // A genuinely new message means whatever triage ran against
+                // the old one no longer applies; nil signals "needs triage
+                // again" to SemanticTriageService, the same as a brand-new
+                // thread. `item.triagedMessageID` is always already nil here
+                // (only local triage itself ever sets it, never a
+                // freshly-mapped Gmail item), so this is really just making
+                // that explicit for this hand-rolled update path, which
+                // doesn't go through `Correspondence.updatingContent`
+                // (where the same reset already happens implicitly).
+                existing.triagedMessageID = nil
                 // Labels reflect genuine Gmail mailbox-organization state,
                 // not a triage decision Corres invented (unlike
                 // attention/reason below): always take the freshest known

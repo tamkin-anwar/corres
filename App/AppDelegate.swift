@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     let labelDirectory: LabelDirectory
     let pushService: PushNotificationService
     let unsubscribeService: UnsubscribeService
+    let semanticTriageService: SemanticTriageService
 
     /// Must match the identifier declared in `Info.plist`'s
     /// `BGTaskSchedulerPermittedIdentifiers`; iOS silently refuses to run
@@ -41,6 +42,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         labelDirectory = LabelDirectory()
         pushService = PushNotificationService()
         unsubscribeService = UnsubscribeService()
+        semanticTriageService = SemanticTriageService()
         super.init()
     }
 
@@ -94,6 +96,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
         if await didSync {
             await store.load()
+            // Runs after the fresh sync is actually in `store.threads`, not
+            // concurrently with it: triage needs real, current
+            // `latestMessageID`/`attention` values to know what's actually
+            // new, and silently assessing stale pre-sync data would just
+            // mean redoing the same work again moments later anyway.
+            await semanticTriageService.triageIfNeeded(store: store)
         }
         _ = await (labelsRefreshed, watchRenewed)
 
@@ -161,6 +169,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         let previousUnread = Dictionary(uniqueKeysWithValues: store.threads.map { ($0.id, $0.isUnread) })
         guard await sync.syncAll(accounts: auth.accounts.map(\.email)) else { return .noData }
         await store.load()
+        // Before filtering for notification purposes, not after: this is
+        // exactly what lets "Only notify for what needs me" (below) act on
+        // a real, refined judgment rather than just Gmail's raw unread
+        // state — a newsletter triage has already downgraded to `.quiet`
+        // correctly gets excluded, not just anything still unread.
+        await semanticTriageService.triageIfNeeded(store: store)
         let newlyUnread = store.threads.filter { thread in
             thread.isUnread && previousUnread[thread.id] != true
                 // Matches the Screener's own rule for ordinary browsing: a

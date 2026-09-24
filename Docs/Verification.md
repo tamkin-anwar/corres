@@ -2,6 +2,17 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Real AI: on-device semantic triage (September 23, 2026)
+
+Requested explicitly after the honest "Needs You is currently just unread state" assessment: real AI, on-device via Apple's Foundation Models framework, chosen over a cloud model specifically because it needed no API key, no cost, no network call, and no privacy-architecture reversal.
+
+- `SemanticTriageService` (new): refines, never invents — only ever downgrades an already-`.needsYou` thread to `.quiet` when the on-device model is confident a reply isn't genuinely expected; never promotes a read thread. Fed real signals (`isDirectRecipient` from `toRecipients`/`ccRecipients`, `looksAutomated` from `List-Unsubscribe`/no-reply sender patterns) as prompt context, not just raw subject/body text.
+- `Correspondence.triagedMessageID` (new) tracks what's already been assessed; a new message naturally resets it to nil by construction, no separate bookkeeping.
+- Gated for a min-iOS-17 app: all Foundation Models APIs behind `@available(iOS 26.0, *)` and a runtime `SystemLanguageModel.default.availability` check; every public entry point no-ops cleanly when unavailable (older devices, Apple Intelligence off, or still downloading).
+- Runs as a bounded-concurrency (3 at a time) background pass after a sync lands new data, both at launch and after a push-triggered sync; fails closed on any error.
+- Preferences' "No AI processing in this build" claim and `ConversationView`'s own per-message disclosure were both rewritten to be accurate, not left stale — shipping this under copy that explicitly promised no AI would have been a real trust violation.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`) and `swift build --build-tests` (Core package and tests both compile; the actual test run still hits this environment's pre-existing codesign issue, unrelated). **Not yet verified on-device**: needs a real device with Apple Intelligence actually enabled to confirm `isAvailable` resolves true, a real triage pass actually runs and produces sensible `needsReply`/`reason` values, and that Needs You genuinely gets more accurate in practice, not just compiles.
+
 ## Two more preferences: leading swipe primary, notify-only-Needs-You (September 23, 2026)
 
 Continuing down the same preferences list.

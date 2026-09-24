@@ -93,7 +93,7 @@ struct ConversationView: View {
                                 .padding(.horizontal, CorresSpace.page)
                         }
                         Text(isSample ? "No AI processing. Replying, forwarding, and sending stay on this device until Gmail is connected."
-                                      : "No AI processing. Replying, replying all, and forwarding send for real through Gmail.")
+                                      : "Needs You may be refined by Apple Intelligence, entirely on your device. Nothing else here is processed by AI. Replying, replying all, and forwarding send for real through Gmail.")
                             .font(.caption).foregroundStyle(CorresPalette.secondary)
                             .padding(.horizontal, CorresSpace.page).padding(.top, 4)
                     }

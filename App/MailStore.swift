@@ -80,6 +80,20 @@ final class MailStore {
         await mutate(id) { try await self.repository.setLabelIds(labelIds, for: id) }
     }
 
+    /// Called by `SemanticTriageService` once it has actually assessed one
+    /// message on-device. Deliberately not routed through `mutate`: nothing
+    /// the person did caused this write, so a failure has no business
+    /// surfacing `mutate`'s own user-visible error banner; the thread just
+    /// keeps whatever Gmail-unread-state-derived reason it already had,
+    /// correct even if not yet refined, and gets naturally retried the next
+    /// time `SemanticTriageService` finds it still untriaged.
+    func applySemanticTriage(_ id: ThreadID, needsReply: Bool, reason: String, messageID: String) async {
+        guard let updated = try? await repository.applySemanticTriage(id, needsReply: needsReply, reason: reason, messageID: messageID) else { return }
+        if let index = threads.firstIndex(where: { $0.id == updated.id }) {
+            threads[index] = updated
+        }
+    }
+
     /// Every thread currently held by the Screener, awaiting a one-time
     /// approve/block decision on its sender. Excluded from Brief/Needs You/
     /// Waiting/Mail by `MailQuery.filter` until decided.
