@@ -8,6 +8,8 @@ struct PreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
     @AppStorage("corres.primarySwipeAction") private var primarySwipeActionRaw = PrimarySwipeAction.archive.rawValue
+    @AppStorage("corres.primaryLeadingSwipeAction") private var primaryLeadingSwipeActionRaw = LeadingSwipeAction.pin.rawValue
+    @AppStorage("corres.notifyOnlyNeedsYou") private var notifyOnlyNeedsYou = false
     @State private var showingResetConfirmation = false
     @State private var accountPendingDisconnect: GmailAccount?
 
@@ -20,8 +22,11 @@ struct PreferencesView: View {
                     }
                 }
                 Section {
-                    Picker("Full swipe on a conversation", selection: $primarySwipeActionRaw) {
+                    Picker("Full swipe right", selection: $primarySwipeActionRaw) {
                         ForEach(PrimarySwipeAction.allCases) { Text($0.title).tag($0.rawValue) }
+                    }
+                    Picker("Full swipe left", selection: $primaryLeadingSwipeActionRaw) {
+                        ForEach(LeadingSwipeAction.allCases) { Text($0.settingsTitle).tag($0.rawValue) }
                     }
                 } header: {
                     Text("Swipe Actions")
@@ -71,6 +76,18 @@ struct PreferencesView: View {
                         ))
                         Text("A background service tells Corres when new mail arrives on any connected account so it can check for real, on this device. It never sees your mail's subject, sender, or content, only that something changed.")
                             .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                        // Only worth offering once notifications are
+                        // actually on; "less noise, more perspective" is
+                        // Corres's own stated thesis (see BriefView), so
+                        // this is a direct extension of it, not a bolted-on
+                        // setting: every new message ringing your phone is
+                        // exactly the noise Brief/Needs You/Waiting already
+                        // exist to cut through.
+                        if pushService.isEnabled {
+                            Toggle("Only notify for what needs me", isOn: $notifyOnlyNeedsYou)
+                            Text("Skips a notification for mail Corres would file under Waiting or quiet reading, the same distinction Needs You already makes. You'll still see everything the moment you open Corres.")
+                                .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                        }
                     }
                 }
                 .confirmationDialog("Disconnect this account?", isPresented: Binding(

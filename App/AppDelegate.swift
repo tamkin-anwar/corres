@@ -168,7 +168,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                 // a notification either.
                 && thread.senderDecision == .approved
         }
-        pushService.notifyAboutNewMail(newlyUnread)
+        // Preferences → "Only notify for what needs me": a direct extension
+        // of Corres's own stated thesis ("less noise, more perspective"),
+        // not a bolted-on setting. Read straight from UserDefaults, not
+        // @AppStorage: AppDelegate is not a View, and the key is the same
+        // one PreferencesView's own @AppStorage toggle writes to.
+        let notifyOnlyNeedsYou = UserDefaults.standard.bool(forKey: "corres.notifyOnlyNeedsYou")
+        let toNotify = notifyOnlyNeedsYou ? newlyUnread.filter { $0.attention == .needsYou } : newlyUnread
+        pushService.notifyAboutNewMail(toNotify)
         return .newData
     }
 

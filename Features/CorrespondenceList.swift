@@ -76,6 +76,11 @@ struct CorrespondenceList: View {
     private var orderedTrailingActions: [PrimarySwipeAction] {
         [primarySwipeAction] + PrimarySwipeAction.allCases.filter { $0 != primarySwipeAction }
     }
+    @AppStorage("corres.primaryLeadingSwipeAction") private var primaryLeadingSwipeActionRaw = LeadingSwipeAction.pin.rawValue
+    private var primaryLeadingSwipeAction: LeadingSwipeAction { LeadingSwipeAction(rawValue: primaryLeadingSwipeActionRaw) ?? .pin }
+    private var orderedLeadingActions: [LeadingSwipeAction] {
+        [primaryLeadingSwipeAction] + LeadingSwipeAction.allCases.filter { $0 != primaryLeadingSwipeAction }
+    }
     /// Tracks whichever thread is currently anchoring the visible scroll
     /// position (SwiftUI keeps this in sync as the person scrolls). Needed
     /// because archiving/trashing from *inside* a conversation removes the
@@ -210,6 +215,25 @@ struct CorrespondenceList: View {
         }
     }
 
+    @ViewBuilder
+    private func leadingSwipeButton(_ action: LeadingSwipeAction, for thread: Correspondence) -> some View {
+        switch action {
+        case .pin:
+            Button {
+                Task { await store.setPinned(!thread.isPinned, for: thread.id) }
+            } label: { Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin") }
+            .tint(CorresPalette.swipePin)
+        case .unread:
+            Button {
+                Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
+            } label: {
+                Label(thread.isUnread ? "Read" : "Unread",
+                      systemImage: thread.isUnread ? "envelope.open" : "envelope.badge")
+            }
+            .tint(CorresPalette.swipeSnooze)
+        }
+    }
+
     private var conversationRows: some View {
         let orderedIDs = results.map(\.id)
         return ForEach(results) { thread in
@@ -238,23 +262,21 @@ struct CorrespondenceList: View {
                     .tint(CorresPalette.swipeSnooze)
                 }
                 .swipeActions(edge: .leading) {
+                    // The person's chosen primary (Preferences → Swipe
+                    // Actions) always leads, so it's genuinely what a full
+                    // swipe does; "Needs You" moves to last rather than
+                    // first (its old fixed position) specifically so it
+                    // never silently overrides that choice on a full swipe
+                    // whenever it happens to be showing.
+                    ForEach(orderedLeadingActions) { action in
+                        leadingSwipeButton(action, for: thread)
+                    }
                     if thread.attention != .needsYou {
                         Button {
                             Task { await store.update(thread.id, to: .needsYou) }
                         } label: { Label("Needs You", systemImage: "exclamationmark.circle") }
                         .tint(CorresPalette.midnight)
                     }
-                    Button {
-                        Task { await store.setPinned(!thread.isPinned, for: thread.id) }
-                    } label: { Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin") }
-                    .tint(CorresPalette.swipePin)
-                    Button {
-                        Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
-                    } label: {
-                        Label(thread.isUnread ? "Read" : "Unread",
-                              systemImage: thread.isUnread ? "envelope.open" : "envelope.badge")
-                    }
-                    .tint(CorresPalette.swipeSnooze)
                 }
         }
     }

@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Two more preferences: leading swipe primary, notify-only-Needs-You (September 23, 2026)
+
+Continuing down the same preferences list.
+
+- `LeadingSwipeAction` (Pin/Mark Read-Unread), same shape as the trailing one; "Needs You" moved from first to last position among leading swipe buttons so it can't silently override the person's chosen full-swipe default when it happens to show.
+- "Only notify for what needs me": Preferences toggle (shown once notifications are on), filters push-triggered notifications down to `attention == .needsYou` threads only, read from `UserDefaults` directly in `AppDelegate` against the same key the Preferences `@AppStorage` toggle writes.
+- Verified with `xcodebuild` (`BUILD SUCCEEDED`). **Not yet verified on-device**: needs a real leading full-swipe with each setting, and a real push notification with the "only Needs You" toggle on, to confirm both actually behave as intended.
+
 ## Customizable swipe actions (September 23, 2026)
 
 The first real "customize your experience" preference, researched against Gmail/Apple Mail/Spark's own swipe-customization settings before building.

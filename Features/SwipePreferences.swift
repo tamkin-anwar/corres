@@ -20,3 +20,26 @@ enum PrimarySwipeAction: String, CaseIterable, Identifiable {
         }
     }
 }
+
+/// The same "one clear full-swipe default" preference, for a Mail row's
+/// leading edge. Deliberately just these two, not "Needs You" too: that
+/// button only ever appears conditionally (a thread already marked Needs
+/// You has no reason to offer it again), so it was never a sensible
+/// candidate for "the one thing a full swipe always does" the way Pin and
+/// Unread/Read, always present, are. "Needs You" stays reachable on a
+/// partial swipe, just never promoted to the full-swipe trigger.
+enum LeadingSwipeAction: String, CaseIterable, Identifiable {
+    case pin, unread
+    var id: String { rawValue }
+    /// The label shown in Preferences' picker; the swipe button itself
+    /// still shows a state-dependent label ("Pin"/"Unpin",
+    /// "Unread"/"Read") the same way it always has, since a thread already
+    /// pinned or already unread needs the button to say what tapping it
+    /// will *do*, not just name the fixed category of action.
+    var settingsTitle: String {
+        switch self {
+        case .pin: "Pin"
+        case .unread: "Mark Read/Unread"
+        }
+    }
+}
