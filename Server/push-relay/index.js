@@ -72,6 +72,26 @@ function sendSilentPush(deviceToken) {
   });
 }
 
+// A real APNs device token is a 64-character hex string (32 raw bytes,
+// hex-encoded — see PushNotificationService.didRegister's own
+// `map { String(format: "%02x", $0) }`); rejecting anything else up front
+// stops obviously-junk or malformed input from ever reaching Firestore.
+// Not authentication — anyone can still send a syntactically valid-looking
+// token for a device they don't own, since these endpoints have no way to
+// verify who's actually calling them (see this file's own header comment)
+// — but it closes off the cheapest, laziest abuse (garbage bodies, wrong
+// types, SQL/NoSQL-injection-shaped strings) for free.
+const DEVICE_TOKEN_PATTERN = /^[0-9a-f]{64}$/i;
+// RFC 5322 is far more permissive than this, but every real Gmail address
+// this actually needs to match fits comfortably inside it; deliberately
+// simple over exhaustively correct for a validation check, not a parser.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// A generous cap, not a realistic expectation: nobody has 50 Gmail accounts
+// connected to one phone, but an unbounded array is an unbounded amount of
+// Firestore document growth from repeated `register` calls against the same
+// device token, whether malicious or just a client-side bug looping.
+const MAX_EMAIL_ADDRESSES_PER_DEVICE = 50;
+
 // One device can now be signed into more than one Gmail account at once
 // (Corres's own multi-account support), so a device token maps to a list of
 // email addresses, not a single one: `emailAddresses` (array-contains
@@ -82,6 +102,16 @@ async function handleRegister(req, res) {
   const { emailAddress, deviceToken } = req.body || {};
   if (!emailAddress || !deviceToken) {
     res.status(400).send('emailAddress and deviceToken are required');
+    return;
+  }
+  if (!DEVICE_TOKEN_PATTERN.test(deviceToken) || !EMAIL_PATTERN.test(emailAddress)) {
+    res.status(400).send('emailAddress or deviceToken is malformed');
+    return;
+  }
+  const existing = await devices.doc(deviceToken).get();
+  const currentCount = (existing.exists && existing.data().emailAddresses) ? existing.data().emailAddresses.length : 0;
+  if (currentCount >= MAX_EMAIL_ADDRESSES_PER_DEVICE) {
+    res.status(429).send('Too many accounts registered for this device');
     return;
   }
   await devices.doc(deviceToken).set({
@@ -99,8 +129,8 @@ async function handleRegister(req, res) {
 // (turning notifications off entirely), the whole device record is removed.
 async function handleUnregister(req, res) {
   const { deviceToken, emailAddress } = req.body || {};
-  if (!deviceToken) {
-    res.status(400).send('deviceToken is required');
+  if (!deviceToken || !DEVICE_TOKEN_PATTERN.test(deviceToken)) {
+    res.status(400).send('deviceToken is required and must be a valid device token');
     return;
   }
   if (emailAddress) {
@@ -137,6 +167,23 @@ async function handlePubSub(req, res) {
   res.status(204).send();
 }
 
+// Deliberately two separate Cloud Functions sharing this one source file,
+// not one function routing on `req.path` the way this used to. A single
+// Cloud Function/Cloud Run service has exactly one IAM invoker policy for
+// its *entire* URL — there is no way to require authentication on one path
+// and leave another public on the same deployed service. `/register` and
+// `/unregister` have to stay reachable by any anonymous app install (there
+// is no user-login system to authenticate them against); `/pubsub` should
+// only ever be reachable by Gmail's own Pub/Sub push subscription. Splitting
+// them into `corresPushRelay` (still `--allow-unauthenticated`) and
+// `corresPushRelayPubSub` (deployed *without* it, invoker access granted
+// only to the Pub/Sub push subscription's own service account, which Google
+// Cloud's own IAM layer enforces before this code ever runs — no hand-rolled
+// JWT verification needed) is what actually makes that possible. Found and
+// fixed in a review sweep: the single combined function had no request
+// authentication on any route, meaning anyone who found the URL could POST
+// directly to `/pubsub` and trigger a real APNs push to an arbitrary
+// registered device.
 functions.http('corresPushRelay', async (req, res) => {
   if (req.method !== 'POST') {
     res.status(405).send('POST only');
@@ -145,7 +192,14 @@ functions.http('corresPushRelay', async (req, res) => {
   switch (req.path) {
     case '/register': return handleRegister(req, res);
     case '/unregister': return handleUnregister(req, res);
-    case '/pubsub': return handlePubSub(req, res);
     default: res.status(404).send('Unknown route');
   }
+});
+
+functions.http('corresPushRelayPubSub', async (req, res) => {
+  if (req.method !== 'POST') {
+    res.status(405).send('POST only');
+    return;
+  }
+  return handlePubSub(req, res);
 });

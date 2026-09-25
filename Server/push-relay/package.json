@@ -8,7 +8,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "deploy": "gcloud functions deploy corres-push-relay --gen2 --runtime=nodejs20 --region=us-central1 --source=. --entry-point=corresPushRelay --trigger-http --allow-unauthenticated --set-secrets=APNS_AUTH_KEY=corres-apns-auth-key:latest --set-env-vars=APNS_KEY_ID=$APNS_KEY_ID,APNS_TEAM_ID=$APNS_TEAM_ID,APNS_BUNDLE_ID=$APNS_BUNDLE_ID,APNS_PRODUCTION=$APNS_PRODUCTION"
+    "deploy": "gcloud functions deploy corres-push-relay --gen2 --runtime=nodejs20 --region=us-central1 --source=. --entry-point=corresPushRelay --trigger-http --allow-unauthenticated --set-secrets=APNS_AUTH_KEY=corres-apns-auth-key:latest --set-env-vars=APNS_KEY_ID=$APNS_KEY_ID,APNS_TEAM_ID=$APNS_TEAM_ID,APNS_BUNDLE_ID=$APNS_BUNDLE_ID,APNS_PRODUCTION=$APNS_PRODUCTION",
+    "deploy:pubsub": "gcloud functions deploy corres-push-relay-pubsub --gen2 --runtime=nodejs20 --region=us-central1 --source=. --entry-point=corresPushRelayPubSub --trigger-http --no-allow-unauthenticated --set-secrets=APNS_AUTH_KEY=corres-apns-auth-key:latest --set-env-vars=APNS_KEY_ID=$APNS_KEY_ID,APNS_TEAM_ID=$APNS_TEAM_ID,APNS_BUNDLE_ID=$APNS_BUNDLE_ID,APNS_PRODUCTION=$APNS_PRODUCTION"
   },
   "dependencies": {
     "@google-cloud/firestore": "^7.9.0",

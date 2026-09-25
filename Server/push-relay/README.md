@@ -32,19 +32,59 @@ export APNS_PRODUCTION=false   # true only for an App Store / TestFlight build
 npm run deploy
 ```
 
-This deploys one HTTP Cloud Function (`corres-push-relay`) with three routes:
+This deploys one HTTP Cloud Function (`corres-push-relay`) with two routes:
 - `POST /register`: called by the app once a device grants notification permission, once per connected account. A `devices` document is keyed by device token and holds an `emailAddresses` array, not a single email: Corres supports multiple simultaneously-connected accounts (Batch 29), and one device can be registered for several accounts' pushes at once.
 - `POST /unregister`: called with just a `deviceToken` when notifications are turned off entirely (removes the whole device record), or with `deviceToken` + `emailAddress` when a single account is disconnected while others stay connected (removes just that account from the list).
-- `POST /pubsub`: the actual Pub/Sub push subscription target (below), never called directly by the app. Looks up devices via `array-contains` on `emailAddresses`.
+
+Both routes stay `--allow-unauthenticated`: there is no user-login system in Corres to authenticate these calls against, so they have to stay reachable by any anonymous app install. Real input validation (device-token/email format, a cap on how many accounts one device token can register) closes off the cheapest abuse, but this is *not* authentication — see "What this deliberately does not do" below.
 
 Note the deployed function's URL; it's the base URL the app needs.
 
-## 4. Point the Pub/Sub topic at the deployed function
+## 4. Deploy the Pub/Sub push target as its own, authenticated function
+
+The actual Gmail Pub/Sub push subscription target is a **separate** Cloud Function, `corres-push-relay-pubsub`, deployed *without* `--allow-unauthenticated` — found and fixed in a review sweep, this used to be a third route (`/pubsub`) on the same public function above, reachable by anyone who found the URL, with nothing checking the request actually came from Gmail's own Pub/Sub subscription. A single Cloud Function has one IAM invoker policy for its whole URL, so protecting just this one route meant giving it its own function.
 
 ```bash
+npm run deploy:pubsub
+
+# A dedicated service account Pub/Sub will sign its push requests as —
+# not your own user account, and not the function's default runtime
+# identity (which real callers could otherwise impersonate just by
+# knowing its email).
+gcloud iam service-accounts create gmail-push-invoker \
+  --display-name="Gmail Pub/Sub push invoker"
+
+# Only this service account may invoke the pubsub function; Google
+# Cloud's own IAM layer enforces this before the function code ever
+# runs — no hand-rolled JWT verification needed.
+gcloud run services add-iam-policy-binding corres-push-relay-pubsub \
+  --region=us-central1 \
+  --member="serviceAccount:gmail-push-invoker@<PROJECT_ID>.iam.gserviceaccount.com" \
+  --role="roles/run.invoker"
+
+# Pub/Sub itself needs permission to mint OIDC tokens *as* that service
+# account, granted to Pub/Sub's own service agent
+# (service-<PROJECT_NUMBER>@gcp-sa-pubsub.iam.gserviceaccount.com —
+# `gcloud projects describe <PROJECT_ID> --format="value(projectNumber)"`
+# to find the project number).
+gcloud iam service-accounts add-iam-policy-binding gmail-push-invoker@<PROJECT_ID>.iam.gserviceaccount.com \
+  --member="serviceAccount:service-<PROJECT_NUMBER>@gcp-sa-pubsub.iam.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountTokenCreator"
+
+# Point (or create) the subscription at the *pubsub* function's own URL,
+# with --push-auth-service-account: this is what makes Pub/Sub attach a
+# signed OIDC token to every push, which the IAM binding above then
+# requires.
 gcloud pubsub subscriptions create gmail-push-sub \
   --topic=gmail-push \
-  --push-endpoint="<function URL>/pubsub"
+  --push-endpoint="<pubsub function URL>" \
+  --push-auth-service-account="gmail-push-invoker@<PROJECT_ID>.iam.gserviceaccount.com"
+```
+
+Verify it actually rejects an unauthenticated caller before trusting it:
+```bash
+curl -o /dev/null -w "%{http_code}\n" -X POST "<pubsub function URL>" -d '{}'
+# 403 — good. 204/404 means the function is still public; check the IAM binding above.
 ```
 
 ## 5. Wire the app to your deployment
@@ -56,3 +96,4 @@ Set `PushNotificationService.relayBaseURL` and `.pubsubTopicName` (in `App/PushN
 - No message content ever passes through this service, in either direction. The push it sends carries no alert text, subject, sender, or body, `content-available` only. The app fetches and displays the real content itself, on-device, exactly like any other sync.
 - No Gmail OAuth token ever reaches this service. The app itself calls `users.watch` (it already holds the token for every other Gmail API call); this relay only needs to know which device token belongs to which email address to route Gmail's contentless ping.
 - Does not renew Gmail's watch subscription on its own. `users.watch` expires after 7 days; the app renews it at launch. An account that isn't opened for a week silently stops getting push until the next launch, a known, accepted gap, not a bug (see Docs/Architecture.md).
+- **Does not, and currently cannot, verify that a `/register`/`/unregister` call actually came from a genuine Corres install**, not just something shaped like one. Real authentication for these two routes — proving the caller is a real, unmodified copy of the app on genuine Apple hardware, without requiring a user-login system this app doesn't have — is what Apple's **App Attest** framework exists for, and would be the correct fix; it's real client-side + server-side work (a per-device attested key, a server-side verification call against Apple's attestation service) deliberately not built as part of this pass. Until then, the format validation and per-device registration cap in `index.js` raise the cost of casual abuse but are not a substitute for actual authentication — worth treating as a known, open gap, not a solved one.
