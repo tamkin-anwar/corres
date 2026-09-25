@@ -2,6 +2,15 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Mark-read still failing: permission diagnosis and Reconnect (September 25, 2026)
+
+Reported again on a real device after the OAuth-encoding hotfix: "Could not mark this conversation as read" on opening mail, while sync keeps working. That pattern (reading works, every change fails) points at a login without `gmail.modify`. Two ways that happens: Google's consent screen lets each permission be unchecked, and the pre-multi-account migration requested modify silently and skipped it entirely when no window was ready at launch. Not confirmed from the device; the code now makes it visible instead of guessing.
+
+- `GoogleTokenProvider` keeps the scopes Google reports on each token refresh (previously discarded).
+- Changes skip the network when the login is known to lack modify; a 403 (or known-missing scope) shows an alert with **Reconnect**, which re-runs sign-in pre-selected to that account with all Gmail scopes requested in one consent screen; any other failure now shows Gmail's status code.
+- Sign-in warns immediately if modify was unchecked.
+- Verified with `xcodebuild` and `swift test` (59/59). **On-device**: open an unread message. If the alert now says Corres doesn't have permission, tap Reconnect, keep every permission checked, then confirm mark-read, archive, and flag work. If it shows a Gmail error code instead, that code is the next lead.
+
 ## Metadata-first batched sync, flags, restores (September 25, 2026)
 
 - Sync lists metadata in batches of 50 and shows each batch as it lands; first sync reaches 500 Inbox + 200 Sent; Mail pages older mail on scroll; bodies backfill for the newest 200 and load on open for the rest.

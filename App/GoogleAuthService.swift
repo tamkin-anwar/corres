@@ -84,7 +84,14 @@ final class GoogleAuthService {
     /// replacement: signing in a second account must not drop the first, the
     /// whole point of this batch. Signing in an already-connected account
     /// again (e.g. to refresh a revoked grant) is a harmless no-op merge.
-    func signIn() async {
+    static let modifyScope = "https://www.googleapis.com/auth/gmail.modify"
+
+    /// `hint` pre-selects an account in Google's picker, for reconnecting
+    /// one whose permissions are incomplete. Gmail scopes are requested in
+    /// the sign-in itself, one consent screen, rather than a basic sign-in
+    /// followed by a separate `addScopes` prompt, so the refresh token
+    /// stored below is the one that actually carries them.
+    func signIn(hint: String? = nil) async {
         guard let presenter = Self.rootViewController() else {
             errorMessage = "Could not find a window to present sign-in from."
             return
@@ -92,14 +99,17 @@ final class GoogleAuthService {
         isSigningIn = true
         defer { isSigningIn = false }
         do {
-            let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presenter)
-            let granted = Set(result.user.grantedScopes ?? [])
-            if !granted.isSuperset(of: Self.gmailScopes) {
-                _ = try await result.user.addScopes(Self.gmailScopes, presenting: presenter)
-            }
+            let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presenter, hint: hint,
+                                                                   additionalScopes: Self.gmailScopes)
             guard let email = result.user.profile?.email, !email.isEmpty else {
                 errorMessage = "Could not connect Gmail. Please try again."
                 return
+            }
+            // Google's consent screen lets each permission be unchecked.
+            // Without modify, reading works but read/unread, archive, trash,
+            // flags, and labels all fail — say so now, not on the first tap.
+            if !Set(result.user.grantedScopes ?? []).contains(Self.modifyScope) {
+                errorMessage = "Corres can read \(email) but wasn't allowed to manage it, so marking read, archiving, and flagging won't work. Reconnect and leave every Gmail permission checked."
             }
             await GoogleTokenProvider.shared.store(refreshToken: result.user.refreshToken.tokenString, for: email)
             if !accounts.contains(where: { $0.email == email }) {

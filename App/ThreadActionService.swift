@@ -132,9 +132,10 @@ final class ThreadActionService {
                 return
             }
             do {
+                try await guardModifyPermission(for: thread.id.account)
                 try await gmailCall()
             } catch {
-                errorMessage = failureMessage
+                await report(error, failureMessage: failureMessage, account: thread.id.account)
                 return
             }
         }
@@ -158,10 +159,57 @@ final class ThreadActionService {
             return
         }
         do {
+            try await guardModifyPermission(for: thread.id.account)
             try await gmailCall()
         } catch {
-            errorMessage = failureMessage
+            await report(error, failureMessage: failureMessage, account: thread.id.account)
             await revert()
         }
+    }
+
+    /// Set when Gmail refused a change because this account's login lacks
+    /// permission to modify mail; `CorresShell`'s alert offers Reconnect.
+    var reconnectAccount: String?
+
+    private struct MissingModifyPermission: Error {}
+
+    /// Skips a call already known to fail: if the last token refresh
+    /// reported this login's scopes and `gmail.modify` isn't among them,
+    /// every read/archive/flag/label change will be refused.
+    private func guardModifyPermission(for account: String) async throws {
+        if let scopes = await GoogleTokenProvider.shared.grantedScopes(for: account),
+           !scopes.contains(GoogleAuthService.modifyScope) {
+            throw MissingModifyPermission()
+        }
+    }
+
+    /// Replaces a single generic "please try again" with something that
+    /// points at the cause. Found live: mark-read failed on every open for
+    /// an account whose login could read mail but not change it, and
+    /// "try again" could never succeed. A 403 is treated as missing
+    /// permission unless the login is known to have it (Gmail also uses
+    /// 403 for rate limits); anything else keeps the plain message plus
+    /// Gmail's status code, so the next unexplained failure is diagnosable.
+    private func report(_ error: Error, failureMessage: String, account: String) async {
+        let scopes = await GoogleTokenProvider.shared.grantedScopes(for: account)
+        let hasModify = scopes?.contains(GoogleAuthService.modifyScope)
+        switch error {
+        case is MissingModifyPermission:
+            askToReconnect(account)
+        case GmailAPIClient.ClientError.badResponse(let status) where status == 403 && hasModify != true:
+            askToReconnect(account)
+        case GmailAPIClient.ClientError.notSignedIn:
+            reconnectAccount = account
+            errorMessage = "\(account) needs to sign in again before Corres can change its mail."
+        case GmailAPIClient.ClientError.badResponse(let status):
+            errorMessage = "\(failureMessage) (Gmail error \(status))"
+        default:
+            errorMessage = failureMessage
+        }
+    }
+
+    private func askToReconnect(_ account: String) {
+        reconnectAccount = account
+        errorMessage = "Corres can read \(account) but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and leave every Gmail permission checked."
     }
 }

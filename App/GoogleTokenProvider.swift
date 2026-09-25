@@ -77,12 +77,27 @@ actor GoogleTokenProvider {
         }
         let decoded = try JSONDecoder().decode(TokenResponse.self, from: data)
         cache[email] = CachedToken(value: decoded.access_token, expiresAt: Date().addingTimeInterval(TimeInterval(decoded.expires_in)))
+        if let scope = decoded.scope {
+            grantedScopes[email] = Set(scope.split(separator: " ").map(String.init))
+        }
         return decoded.access_token
     }
+
+    /// What this account's stored login actually allows, as Google reported
+    /// it on the last token refresh; nil until one has happened this launch.
+    /// Exists because a login can be missing `gmail.modify` while reading
+    /// still works: Google's consent screen lets each permission be
+    /// unchecked, and the pre-multi-account migration requested it
+    /// silently, skipping the request entirely when no window was ready at
+    /// launch. Sync then works and every change (read, archive, flag) fails.
+    private var grantedScopes: [String: Set<String>] = [:]
+
+    func grantedScopes(for email: String) -> Set<String>? { grantedScopes[email] }
 
     func store(refreshToken: String, for email: String) {
         Keychain.set(refreshToken, key: Self.keychainKey(for: email))
         cache[email] = nil
+        grantedScopes[email] = nil
     }
 
     func removeRefreshToken(for email: String) {
@@ -131,5 +146,5 @@ actor GoogleTokenProvider {
         value.addingPercentEncoding(withAllowedCharacters: formURLEncodeAllowed) ?? value
     }
 
-    private struct TokenResponse: Decodable { let access_token: String; let expires_in: Int }
+    private struct TokenResponse: Decodable { let access_token: String; let expires_in: Int; let scope: String? }
 }

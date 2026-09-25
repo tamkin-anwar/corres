@@ -83,8 +83,28 @@ struct CorresShell: View {
             get: { threadActions.errorMessage != nil },
             set: { if !$0 { threadActions.errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) { threadActions.errorMessage = nil }
+            if let account = threadActions.reconnectAccount {
+                Button("Reconnect") {
+                    threadActions.errorMessage = nil
+                    threadActions.reconnectAccount = nil
+                    Task { await auth.signIn(hint: account) }
+                }
+                Button("Not Now", role: .cancel) {
+                    threadActions.errorMessage = nil
+                    threadActions.reconnectAccount = nil
+                }
+            } else {
+                Button("OK", role: .cancel) { threadActions.errorMessage = nil }
+            }
         } message: { Text(threadActions.errorMessage ?? "Please try again.") }
+        // Reconnect can start from the action-failure alert above, outside
+        // Preferences, so its outcome has to be visible here too.
+        .alert("Gmail connection", isPresented: Binding(
+            get: { auth.errorMessage != nil && !showingSettings },
+            set: { if !$0 { auth.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { auth.errorMessage = nil }
+        } message: { Text(auth.errorMessage ?? "Please try again.") }
         .alert("Could not turn on notifications", isPresented: Binding(
             get: { pushService.errorMessage != nil },
             set: { if !$0 { pushService.errorMessage = nil } }
