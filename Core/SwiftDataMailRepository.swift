@@ -89,6 +89,26 @@ public actor SwiftDataMailRepository: MailRepository {
         return changed
     }
 
+    @discardableResult
+    public func applyLoadedContent(_ items: [Correspondence]) throws -> Int {
+        guard !items.isEmpty else { return 0 }
+        var filled = 0
+        for item in items {
+            let compositeID = PersistedCorrespondence.compositeID(account: item.id.account, providerID: item.id.providerID)
+            var descriptor = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.compositeID == compositeID })
+            descriptor.fetchLimit = 1
+            guard let model = try modelContext.fetch(descriptor).first,
+                  model.latestMessageID == item.latestMessageID else { continue }
+            model.body = item.body
+            model.htmlBody = item.htmlBody
+            model.attachmentsData = (try? JSONEncoder().encode(item.attachments)) ?? Data()
+            model.isBodyLoaded = true
+            filled += 1
+        }
+        if filled > 0 { try modelContext.save() }
+        return filled
+    }
+
     /// Only touches threads whose attention is still a pure rule decision:
     /// `.needsYou`/`.quiet` with one of `InboxClassifier.ruleReasons`
     /// (including the old "every unread message" default), never triaged.
@@ -112,12 +132,14 @@ public actor SwiftDataMailRepository: MailRepository {
                                                        senderEmail: model.senderEmail)
             var (attention, reason) = InboxClassifier.initialAttention(isUnread: model.isUnread,
                                                                       labelIds: model.labelIds,
-                                                                      looksAutomated: automated)
+                                                                      looksAutomated: automated,
+                                                                      receivedAt: model.receivedAt)
             if let senderEmail = model.senderEmail?.lowercased(), senderEmail != model.account.lowercased(),
                let override = InboxClassifier.correspondentOverride(
                    isUnread: model.isUnread,
                    hasListUnsubscribe: model.listUnsubscribeMailto != nil || model.listUnsubscribeURL != nil,
-                   isCorrespondent: correspondents.contains(Self.senderKey(account: model.account, senderEmail: senderEmail))) {
+                   isCorrespondent: correspondents.contains(Self.senderKey(account: model.account, senderEmail: senderEmail)),
+                   isStale: InboxClassifier.isStale(receivedAt: model.receivedAt, now: .now)) {
                 (attention, reason) = override
             }
             if attention.rawValue != model.attentionRaw { changed += 1 }
@@ -197,7 +219,8 @@ public actor SwiftDataMailRepository: MailRepository {
                let override = InboxClassifier.correspondentOverride(
                    isUnread: item.isUnread,
                    hasListUnsubscribe: item.listUnsubscribeMailto != nil || item.listUnsubscribeURL != nil,
-                   isCorrespondent: correspondents.contains(Self.senderKey(account: item.id.account, senderEmail: senderEmail))) {
+                   isCorrespondent: correspondents.contains(Self.senderKey(account: item.id.account, senderEmail: senderEmail)),
+                   isStale: InboxClassifier.isStale(receivedAt: item.receivedAt, now: .now)) {
                 item.attention = override.attention
                 item.reason = override.reason
             }
@@ -223,6 +246,7 @@ public actor SwiftDataMailRepository: MailRepository {
                 existing.excerpt = item.excerpt
                 existing.body = item.body
                 existing.htmlBody = item.htmlBody
+                existing.isBodyLoaded = item.isBodyLoaded
                 existing.messageIdHeader = item.messageIdHeader
                 existing.latestMessageID = incomingMessageID
                 existing.receivedAt = item.receivedAt

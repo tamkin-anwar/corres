@@ -28,6 +28,10 @@ struct CorrespondenceRow: View {
                         Image(systemName: "pin.fill").font(.caption2).foregroundStyle(CorresPalette.champagne)
                             .accessibilityLabel("Pinned")
                     }
+                    if thread.isFlagged {
+                        Image(systemName: "flag.fill").font(.caption2).foregroundStyle(CorresPalette.flag)
+                            .accessibilityLabel("Flagged")
+                    }
                     Spacer(minLength: 8)
                     if thread.dueAt != nil && thread.attention == .needsYou {
                         Image(systemName: "clock").font(.caption2).foregroundStyle(CorresPalette.secondary)
@@ -110,6 +114,7 @@ struct CorrespondenceList: View {
                 Section {
                     header
                     if results.isEmpty { emptyState } else { conversationRows }
+                    olderMailFooter
                 }
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
@@ -206,6 +211,10 @@ struct CorrespondenceList: View {
             SwipeVisual(title: thread.isUnread ? "Read" : "Unread",
                        systemImage: thread.isUnread ? "envelope.open.fill" : "envelope.badge.fill",
                        tint: CorresPalette.swipeSnooze)
+        case .flag:
+            SwipeVisual(title: thread.isFlagged ? "Unflag" : "Flag",
+                       systemImage: thread.isFlagged ? "flag.slash.fill" : "flag.fill",
+                       tint: CorresPalette.swipeFlag)
         }
     }
 
@@ -221,6 +230,7 @@ struct CorrespondenceList: View {
         switch action {
         case .pin: Task { await store.setPinned(!thread.isPinned, for: thread.id) }
         case .unread: Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
+        case .flag: Task { await threadActions?.setFlagged(!thread.isFlagged, for: thread) }
         }
     }
 
@@ -253,6 +263,9 @@ struct CorrespondenceList: View {
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.visible)
             .listRowSeparatorTint(CorresPalette.line)
+            .onAppear {
+                if pagesOlderMail, thread.id == results.last?.id { loadOlderMail() }
+            }
             // A hand-built drag gesture gets none of what Apple's own
             // `.swipeActions` gave VoiceOver for free: every button it
             // exposes is automatically reachable through the accessibility
@@ -287,6 +300,34 @@ struct CorrespondenceList: View {
                 guard !store.pending.contains(thread.id) else { return }
                 perform(trailingLongAction, on: thread)
             }
+        }
+    }
+
+    /// Mail is the everything view, so it keeps going past what the first
+    /// sync pulled: reaching the bottom pages older Inbox mail in, the way
+    /// Gmail's own app does, instead of the list simply ending at however
+    /// far back the first sync happened to reach. Not during a search,
+    /// which already reaches the whole mailbox through Gmail's own search.
+    private var pagesOlderMail: Bool { destination == .mail && search.isEmpty && sync != nil }
+
+    private func loadOlderMail() {
+        guard let sync, let auth else { return }
+        let accounts = accountFilter.map { [$0] } ?? auth.accounts.map(\.email)
+        guard sync.hasOlderMail(accounts: accounts) else { return }
+        Task {
+            if await sync.loadOlder(accounts: accounts) { await store.refresh() }
+        }
+    }
+
+    @ViewBuilder
+    private var olderMailFooter: some View {
+        if pagesOlderMail, sync?.isLoadingOlder == true {
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Loading older mail…").font(.footnote).foregroundStyle(CorresPalette.secondary)
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 16)
+            .listRowSeparator(.hidden)
         }
     }
 

@@ -487,6 +487,42 @@ struct SwiftDataMailRepositoryTests {
         #expect(byID["t3"] != nil)
     }
 
+    /// Metadata-first sync stores the snippet as the body until the full
+    /// message loads; loading fills it in, unless a newer message arrived
+    /// in the meantime.
+    @Test func loadedContentFillsMetadataOnlyThreadsButNotStaleOnes() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        func thread(_ n: Int, messageID: String, body: String, loaded: Bool) -> Correspondence {
+            Correspondence(id: ThreadID(account: "me@example.com", providerID: "t\(n)"), sender: "S", organization: "",
+                           subject: "s", excerpt: "snippet", body: body, latestMessageID: messageID, receivedAt: now,
+                           dueAt: nil, reason: "r", attention: .quiet, isBodyLoaded: loaded)
+        }
+        try await repository.upsert([thread(1, messageID: "m1", body: "snippet", loaded: false),
+                                     thread(2, messageID: "m2-new", body: "snippet", loaded: false)], isInitialSync: true)
+
+        let filled = try await repository.applyLoadedContent([thread(1, messageID: "m1", body: "Full body", loaded: true),
+                                                              thread(2, messageID: "m2-old", body: "Old body", loaded: true)])
+
+        let byID = Dictionary(uniqueKeysWithValues: try await repository.threads().map { ($0.id.providerID, $0) })
+        #expect(filled == 1)
+        #expect(byID["t1"]?.body == "Full body")
+        #expect(byID["t1"]?.isBodyLoaded == true)
+        #expect(byID["t2"]?.isBodyLoaded == false)
+    }
+
+    /// A flag set in iOS Mail or Gmail arrives as a STARRED label change.
+    @Test func remoteStarShowsAsFlag() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let id = ThreadID(account: "me@example.com", providerID: "t1")
+        try await repository.upsert([Correspondence(id: id, sender: "S", organization: "", subject: "s", excerpt: "",
+                                                    body: "", latestMessageID: "m1", receivedAt: now, dueAt: nil,
+                                                    reason: "r", attention: .quiet, labelIds: ["INBOX"])],
+                                    isInitialSync: true)
+        try await repository.applyRemoteChanges([RemoteMessageChange(threadID: id, messageID: "m1",
+                                                                     currentLabelIds: ["INBOX", "STARRED"], removed: false)])
+        #expect(try await repository.threads().first?.isFlagged == true)
+    }
+
     /// The one-time repair for mailboxes synced under the old "every unread
     /// message is Needs You" rule: bulk mail still carrying that untouched
     /// default moves out, personal mail stays, and anything the person or

@@ -88,6 +88,15 @@ struct ConversationView: View {
                             Text(thread.body).font(.body).lineSpacing(8).textSelection(.enabled)
                                 .padding(.horizontal, CorresSpace.page)
                         }
+                        if !thread.isBodyLoaded {
+                            // Synced metadata-first: the preview is showing
+                            // while the full message loads (see `.task` below).
+                            HStack(spacing: 8) {
+                                ProgressView().controlSize(.small)
+                                Text("Loading the full message…").font(.footnote).foregroundStyle(CorresPalette.secondary)
+                            }
+                            .padding(.horizontal, CorresSpace.page)
+                        }
                         if !thread.attachments.isEmpty, let messageID = thread.latestMessageID {
                             attachmentsList(thread.attachments, messageID: messageID, account: thread.id.account)
                                 .padding(.horizontal, CorresSpace.page)
@@ -164,9 +173,14 @@ struct ConversationView: View {
         // this, isUnread would only ever change via an explicit swipe/tap,
         // which is not what "mark as read" means to anyone using a mail app.
         .task(id: currentID) {
-            if let thread = store.threads.first(where: { $0.id == currentID }), thread.isUnread {
+            guard let thread = store.threads.first(where: { $0.id == currentID }) else { return }
+            // Loading the body and marking read are independent network
+            // calls; neither should wait on the other.
+            async let loaded: Void = threadActions.loadContent(for: thread)
+            if thread.isUnread {
                 await threadActions.setUnread(false, for: thread)
             }
+            await loaded
         }
         .onChange(of: threadExists) { _, stillExists in
             // Archiving or trashing from inside the conversation itself
@@ -292,6 +306,21 @@ struct ConversationView: View {
     /// standalone card in the scrolling body) move here as menus; they are
     /// also always reachable via swipe actions on the Mail list, so nothing
     /// here is the only way to reach them.
+    /// A reply or forward quotes the original, so it needs the real body,
+    /// not the snippet a metadata-first sync stored. Opening the thread
+    /// already started loading it; this only waits in the rare case the
+    /// person taps Reply before that finishes.
+    private func compose(_ kind: Draft.Kind, from thread: Correspondence) {
+        guard !thread.isBodyLoaded else {
+            composeDraft = thread.draft(kind: kind)
+            return
+        }
+        Task {
+            await threadActions.loadContent(for: thread)
+            composeDraft = (store.threads.first { $0.id == thread.id } ?? thread).draft(kind: kind)
+        }
+    }
+
     private func actionBar(for thread: Correspondence) -> some View {
         HStack(spacing: 0) {
             Menu {
@@ -305,6 +334,14 @@ struct ConversationView: View {
                             Text(attention.title)
                         }
                     }
+                }
+                Divider()
+                // Pin lives here now that Flag took its bar slot: Flag syncs
+                // with iOS Mail and Gmail, Pin is Corres-only "keep at top".
+                Button {
+                    Task { await store.setPinned(!thread.isPinned, for: thread.id) }
+                } label: {
+                    Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin")
                 }
             } label: {
                 Image(systemName: "tag").frame(maxWidth: .infinity, minHeight: 44)
@@ -331,11 +368,13 @@ struct ConversationView: View {
                 .accessibilityLabel("Labels")
             }
             Button {
-                Task { await store.setPinned(!thread.isPinned, for: thread.id) }
+                Task { await threadActions.setFlagged(!thread.isFlagged, for: thread) }
             } label: {
-                Image(systemName: thread.isPinned ? "pin.fill" : "pin").frame(maxWidth: .infinity, minHeight: 44)
+                Image(systemName: thread.isFlagged ? "flag.fill" : "flag")
+                    .foregroundStyle(thread.isFlagged ? AnyShapeStyle(CorresPalette.flag) : AnyShapeStyle(.tint))
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
-            .accessibilityLabel(thread.isPinned ? "Unpin" : "Pin")
+            .accessibilityLabel(thread.isFlagged ? "Unflag" : "Flag")
             Menu {
                 ForEach(SnoozeOption.allCases, id: \.self) { option in
                     Button(option.title) { Task { await store.snooze(thread.id, until: option.date()) } }
@@ -372,15 +411,15 @@ struct ConversationView: View {
             }
             .accessibilityLabel("Move to Trash")
             Divider().frame(height: 24)
-            Button { composeDraft = thread.draft(kind: .reply) } label: {
+            Button { compose(.reply, from: thread) } label: {
                 Image(systemName: "arrowshape.turn.up.left").frame(maxWidth: .infinity, minHeight: 44)
             }
             .accessibilityLabel("Reply")
-            Button { composeDraft = thread.draft(kind: .replyAll) } label: {
+            Button { compose(.replyAll, from: thread) } label: {
                 Image(systemName: "arrowshape.turn.up.left.2").frame(maxWidth: .infinity, minHeight: 44)
             }
             .accessibilityLabel("Reply All")
-            Button { composeDraft = thread.draft(kind: .forward) } label: {
+            Button { compose(.forward, from: thread) } label: {
                 Image(systemName: "arrowshape.turn.up.right").frame(maxWidth: .infinity, minHeight: 44)
             }
             .accessibilityLabel("Forward")

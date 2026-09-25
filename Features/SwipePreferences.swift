@@ -34,7 +34,7 @@ enum PrimarySwipeAction: String, CaseIterable, Identifiable {
 /// The leading-edge counterpart to `PrimarySwipeAction`: Pin and Mark
 /// Read/Unread, assignable to the leading edge's short and long distance.
 enum LeadingSwipeAction: String, CaseIterable, Identifiable {
-    case pin, unread
+    case pin, unread, flag
     var id: String { rawValue }
     /// The label shown in Preferences' picker; the swipe row's own visual
     /// still shows a state-dependent label/icon ("Pin"/"Unpin",
@@ -45,6 +45,7 @@ enum LeadingSwipeAction: String, CaseIterable, Identifiable {
         switch self {
         case .pin: "Pin"
         case .unread: "Mark Read/Unread"
+        case .flag: "Flag"
         }
     }
 }

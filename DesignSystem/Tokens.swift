@@ -31,6 +31,11 @@ enum CorresPalette {
     static let swipePin = Color(hex: 0x8A6A3E)
     static let swipeArchive = Color(hex: 0x5B6B4F) // contrast 5.74:1 against white
     static let swipeTrash = Color(hex: 0xA33B2E) // contrast 6.51:1 against white
+    /// iOS Mail's own flag orange (#FF9500) is only 2.2:1 against white, too
+    /// faint for a white swipe icon or a row indicator on the light canvas.
+    /// 5.18:1 against white, 3.76:1 against the dark canvas (icons need 3:1).
+    static let flag = Color(hex: 0xC2410C)
+    static let swipeFlag = flag
 }
 
 extension Color {

@@ -115,52 +115,71 @@ final class GmailSyncService {
     /// Shared body for both entry points above; assumes `isSyncing` is
     /// already set by the caller (both callers above are the only ones
     /// allowed to set it, so this never double-guards or double-clears it).
+    ///
+    /// Metadata first, newest first, in batches of `GmailAPIClient.batchSize`,
+    /// each saved the moment it lands (`syncProgress` tells the UI to
+    /// refresh): the first screenful appears after one round trip instead
+    /// of after the whole listing, which on a first sync is the difference
+    /// between about a second and the better part of a minute. Bodies are
+    /// filled in afterwards by `backfillContent`, off this path, so a
+    /// silent-push sync inside iOS's short background window never waits on
+    /// them.
     private func syncOneLocked(account: String) async -> Bool {
         do {
-            let (result, isFullListing) = try await fetch(account: account)
-            var items = result.items
-            var stillMissing = Set(result.failedMessageIDs)
+            let (plan, isFullListing) = try await planSync(account: account)
+            var stillMissing = Set<String>()
 
-            // Ids a previous sync's own `failedMessageIDs` couldn't fetch,
-            // retried here independent of the cursor/history window: by now
-            // the cursor has already moved past the point where the
-            // ordinary sync path above would ever offer them again (see
-            // `SyncResult.failedMessageIDs`'s doc comment for why that
-            // matters). This is what actually closes the loop rather than
-            // just shrinking the window a single message can be lost in.
+            for (index, chunk) in plan.messageIDs.chunked(into: GmailAPIClient.batchSize).enumerated() {
+                if index > 0 { try? await Task.sleep(for: GmailAPIClient.batchInterval) }
+                let fetched = try await client.fetchMetadata(ids: chunk, account: account)
+                stillMissing.formUnion(fetched.failedIDs)
+                try await repository.upsert(fetched.items, isInitialSync: isFullListing)
+                syncProgress += 1
+            }
+
+            // Moved back into the Inbox elsewhere. Upserted as baseline
+            // (`isInitialSync: true`): restoring mail you already had isn't
+            // a new sender arriving, so it never lands in the Screener.
+            if !plan.restoredMessageIDs.isEmpty {
+                let restored = try await client.fetchMessages(ids: plan.restoredMessageIDs, account: account)
+                stillMissing.formUnion(restored.failedIDs)
+                try await repository.upsert(restored.items, isInitialSync: true)
+            }
+
+            // After upsert, so a message that arrived and was then archived
+            // elsewhere within the same window ends up removed, not re-added.
+            try await repository.applyRemoteChanges(plan.remoteChanges)
+
+            // Ids a previous sync couldn't fetch, retried here independent
+            // of the cursor/history window: by now the cursor has already
+            // moved past the point where the ordinary sync path would ever
+            // offer them again (see `GmailAPIClient.SyncPlan`).
             let previouslyMissed = missedMessageIDs(for: account)
             if !previouslyMissed.isEmpty {
                 if let retried = try? await client.fetchMessages(ids: previouslyMissed, account: account) {
-                    items.append(contentsOf: retried.items)
+                    try await repository.upsert(retried.items, isInitialSync: isFullListing)
                     stillMissing.formUnion(retried.failedIDs)
                 } else {
                     // The retry call itself failed outright (e.g. a token
-                    // refresh failure), not just individual messages within
-                    // it — keep every previously-missed id exactly as
-                    // missing as it already was, rather than assuming
-                    // success or silently losing track of them.
+                    // refresh failure) — keep every previously-missed id
+                    // exactly as missing as it already was.
                     stillMissing.formUnion(previouslyMissed)
                 }
             }
 
-            // Deliberately ordered, not merely convenient: upsert (SwiftData)
-            // and the cursor write (UserDefaults) are two different stores
-            // and can't share one real transaction without moving the
-            // cursor into SwiftData, reversing ADR 005's choice to keep
-            // Gmail sync mechanics out of the Core domain schema. Writing
-            // the cursor first would risk real data loss if the app died
-            // before upsert ran: the next sync would start from the
-            // advanced cursor and never re-fetch the messages that were
-            // never actually saved. Writing it after, as here, only risks
-            // redundant work (re-fetching and re-upserting messages that
-            // already made it in, which upsert already treats as a no-op)
-            // if the app dies between the two, never data loss.
-            try await repository.upsert(items, isInitialSync: isFullListing)
-            // After upsert, so a message that arrived and was then archived
-            // elsewhere within the same window ends up removed, not re-added.
-            try await repository.applyRemoteChanges(result.remoteChanges)
-            if let historyId = result.historyId {
+            // Deliberately last: upsert (SwiftData) and the cursor write
+            // (UserDefaults) are two different stores and can't share one
+            // transaction without moving Gmail sync mechanics into the Core
+            // schema (ADR 005). Writing the cursor first would risk real
+            // data loss if the app died before every batch was saved: the
+            // next sync would start past messages never stored. Writing it
+            // after only risks redundant work (a re-fetch upsert treats as
+            // a no-op), never data loss.
+            if let historyId = plan.historyId {
                 setHistoryCursor(historyId, for: account)
+            }
+            if isFullListing {
+                setOlderInboxPageToken(plan.olderInboxPageToken, for: account)
             }
             setMissedMessageIDs(stillMissing, for: account)
             return true
@@ -170,29 +189,127 @@ final class GmailSyncService {
         }
     }
 
+    /// Increments after every batch a sync or older-mail load saves;
+    /// `CorresApp` observes it to refresh the visible lists progressively.
+    private(set) var syncProgress = 0
+    private(set) var isLoadingOlder = false
+
+    /// Fills in real bodies for the newest `backfillLimit` threads synced
+    /// metadata-first, in paced batches, so they read offline just as every
+    /// synced message did before metadata-first sync existed. Anything
+    /// older loads the moment it's opened (`ThreadActionService.loadContent`).
+    /// Runs in the foreground after a sync, never inside a silent-push window.
+    func backfillContent() async {
+        guard let threads = try? await repository.threads() else { return }
+        let pending = threads
+            .filter { !$0.isBodyLoaded && $0.latestMessageID != nil && $0.id.account != "sample" }
+            .sorted { $0.receivedAt > $1.receivedAt }
+            .prefix(Self.backfillLimit)
+        for (account, accountThreads) in Dictionary(grouping: pending, by: \.id.account) {
+            let ids = accountThreads.compactMap(\.latestMessageID)
+            for (index, chunk) in ids.chunked(into: GmailAPIClient.batchSize).enumerated() {
+                if index > 0 { try? await Task.sleep(for: GmailAPIClient.batchInterval) }
+                guard let fetched = try? await client.fetchFull(ids: chunk, account: account) else { break }
+                if (try? await repository.applyLoadedContent(fetched.items)) ?? 0 > 0 { syncProgress += 1 }
+            }
+        }
+    }
+
+    private static let backfillLimit = 200
+
+    /// The Mail tab's scroll-to-load: pages older Inbox mail in from where
+    /// the first sync stopped. Skips threads already stored before spending
+    /// quota fetching them, which also lets an account synced before this
+    /// existed (no stored page token) page from the top without
+    /// re-downloading what it has. Returns whether anything new arrived.
+    @discardableResult
+    func loadOlder(accounts: [String]) async -> Bool {
+        guard !isLoadingOlder, !accounts.isEmpty else { return false }
+        isLoadingOlder = true
+        defer { isLoadingOlder = false }
+        let known = Set(((try? await repository.threads()) ?? []).map { "\($0.id.account)|\($0.id.providerID)" })
+        var anyLoaded = false
+        for account in accounts where !isOlderInboxExhausted(for: account) {
+            var pageToken = olderInboxPageToken(for: account)
+            var newIDs: [String] = []
+            var pagesScanned = 0
+            do {
+                repeat {
+                    let page = try await client.listOlderInbox(account: account, pageToken: pageToken)
+                    newIDs += page.ids.filter { !known.contains("\(account)|\($0.threadId ?? $0.id)") }.map(\.id)
+                    pageToken = page.nextPageToken
+                    pagesScanned += 1
+                } while newIDs.isEmpty && pageToken != nil && pagesScanned < Self.maxOlderPagesScanned
+                for (index, chunk) in newIDs.chunked(into: GmailAPIClient.batchSize).enumerated() {
+                    if index > 0 { try? await Task.sleep(for: GmailAPIClient.batchInterval) }
+                    let fetched = try await client.fetchMetadata(ids: chunk, account: account)
+                    // Older mail predates anything the Screener should hold.
+                    try await repository.upsert(fetched.items, isInitialSync: true)
+                    anyLoaded = anyLoaded || !fetched.items.isEmpty
+                    syncProgress += 1
+                }
+                setOlderInboxPageToken(pageToken, for: account)
+            } catch {
+                continue
+            }
+        }
+        return anyLoaded
+    }
+
+    private static let maxOlderPagesScanned = 10
+
+    func hasOlderMail(accounts: [String]) -> Bool {
+        accounts.contains { !isOlderInboxExhausted(for: $0) }
+    }
+
     /// Forgets the stored cursor so the next connected account starts with a
     /// full sync rather than resuming a previous account's history.
     func clearCursor(for account: String?) {
         guard let account else { return }
         defaults.removeObject(forKey: Self.cursorKey(for: account))
         defaults.removeObject(forKey: Self.missedIDsKey(for: account))
+        defaults.removeObject(forKey: Self.olderTokenKey(for: account))
+        defaults.removeObject(forKey: Self.olderExhaustedKey(for: account))
     }
 
-    /// The second value is true whenever this fetch was a full inbox
-    /// listing, whether because it's the account's first ever sync or
-    /// because a stored cursor expired and forced a resync, both the
-    /// Screener's baseline case: every sender already in the inbox is
-    /// established relationship, not a new arrival to be screened.
-    private func fetch(account: String) async throws -> (result: GmailAPIClient.SyncResult, isFullListing: Bool) {
+    /// The second value is true whenever this was a full inbox listing,
+    /// whether because it's the account's first ever sync or because a
+    /// stored cursor expired and forced a resync, both the Screener's
+    /// baseline case: every sender already in the inbox is established
+    /// relationship, not a new arrival to be screened.
+    private func planSync(account: String) async throws -> (plan: GmailAPIClient.SyncPlan, isFullListing: Bool) {
         guard let cursor = historyCursor(for: account) else {
-            return (try await client.fetchInitialInbox(account: account), true)
+            return (try await client.planFullListing(account: account), true)
         }
         do {
-            return (try await client.fetchIncremental(account: account, since: cursor), false)
+            return (try await client.planIncremental(account: account, since: cursor), false)
         } catch GmailAPIClient.ClientError.historyExpired {
-            return (try await client.fetchInitialInbox(account: account), true)
+            return (try await client.planFullListing(account: account), true)
         }
     }
+
+    private func olderInboxPageToken(for account: String) -> String? {
+        defaults.string(forKey: Self.olderTokenKey(for: account))
+    }
+
+    private func isOlderInboxExhausted(for account: String) -> Bool {
+        defaults.bool(forKey: Self.olderExhaustedKey(for: account))
+    }
+
+    /// A nil token after a load means Gmail has nothing older: remembered,
+    /// so scrolling to the bottom again doesn't re-scan the whole Inbox.
+    private func setOlderInboxPageToken(_ token: String?, for account: String) {
+        if let token {
+            defaults.set(token, forKey: Self.olderTokenKey(for: account))
+            defaults.set(false, forKey: Self.olderExhaustedKey(for: account))
+        } else {
+            defaults.removeObject(forKey: Self.olderTokenKey(for: account))
+            defaults.set(true, forKey: Self.olderExhaustedKey(for: account))
+        }
+    }
+
+    private static func olderTokenKey(for account: String) -> String { "corres.gmail.olderInboxPageToken.\(account)" }
+    private static func olderExhaustedKey(for account: String) -> String { "corres.gmail.olderInboxExhausted.\(account)" }
 
     private func historyCursor(for account: String) -> String? {
         defaults.string(forKey: Self.cursorKey(for: account))

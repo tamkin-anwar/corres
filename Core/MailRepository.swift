@@ -55,6 +55,12 @@ public protocol MailRepository: Sendable {
     /// Returns how many threads changed.
     @discardableResult
     func applyRemoteChanges(_ changes: [RemoteMessageChange]) async throws -> Int
+    /// Fills in `body`/`htmlBody`/`attachments` for threads synced
+    /// metadata-first, marking them loaded. Applies only where the item's
+    /// `latestMessageID` still matches the thread's; a newer message that
+    /// arrived meanwhile wins. Returns how many threads were filled.
+    @discardableResult
+    func applyLoadedContent(_ items: [Correspondence]) async throws -> Int
     /// Replying or forwarding moves the source thread to Waiting: the user has
     /// acted and is now the one expecting a response. A new draft opens a thread
     /// in the same state, since nothing has come back yet either way.
@@ -216,6 +222,9 @@ public actor SampleMailRepository: MailRepository {
 
     /// Sample threads never exist in Gmail, so nothing remote can change them.
     public func applyRemoteChanges(_ changes: [RemoteMessageChange]) -> Int { 0 }
+
+    /// Sample threads always carry their full body.
+    public func applyLoadedContent(_ items: [Correspondence]) -> Int { 0 }
 
     public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {
         guard let threadID = draft.threadID else {

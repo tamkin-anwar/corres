@@ -2,6 +2,19 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Metadata-first batched sync, flags, restores (September 25, 2026)
+
+- Sync lists metadata in batches of 50 and shows each batch as it lands; first sync reaches 500 Inbox + 200 Sent; Mail pages older mail on scroll; bodies backfill for the newest 200 and load on open for the rest.
+- Flags mirror both ways with iOS Mail and Gmail (Gmail's STARRED label); un-archive and restore-from-Trash elsewhere bring threads back.
+- Unread mail older than 30 days stays out of Needs You.
+- Verified with `swift test` (59/59, 5 new) and `xcodebuild` (`BUILD SUCCEEDED`).
+- **Needs on-device confirmation**:
+  - Fresh sign-in: the first screen of mail appears within a couple of seconds.
+  - Scrolling to the bottom of Mail loads older mail.
+  - Opening an old message shows "Loading the full message…" and then the body.
+  - Flag a message in iOS Mail, then pull to refresh in Corres: it shows flagged. Flag one in Corres: iOS Mail shows it flagged.
+  - Un-archive a message in Gmail: it comes back in Corres.
+
 ## Needs You integration review (September 25, 2026)
 
 Checked every sync and triage trigger path, not just launch. Fixed: no "people you've written to" signal; changes made in other mail apps (read, archive, delete) never reached Corres; pull-to-refresh never triaged; push notifications waited on the whole triage backlog; triage availability was checked only at launch.

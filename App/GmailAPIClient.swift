@@ -15,39 +15,39 @@ struct GmailAPIClient {
     /// same rejection).
     enum ClientError: Error { case notSignedIn, badResponse(statusCode: Int), decodingFailed, historyExpired }
 
-    /// One fetch, either a first full sync or a cursor-based catch-up; the
-    /// caller (GmailSyncService) persists `historyId` and passes it back in
-    /// as the starting point for the next call.
+    /// What a sync pass needs to fetch, newest first, without fetching it
+    /// yet: `GmailSyncService` pulls these down in batches and saves each
+    /// batch the moment it lands, so the first screenful of mail appears
+    /// within a round trip instead of after the whole listing downloads.
     ///
-    /// `failedMessageIDs`: individual `users.messages.get` calls that still
-    /// failed after `fetchMessages`'s own bounded retries — a real, found
-    /// gap (not hypothetical): `historyId` advances for the whole batch
-    /// regardless of which individual messages actually came back, since
-    /// Gmail's history cursor is a single whole-mailbox counter with no way
-    /// to partially advance it. Silently dropping these here, the way this
-    /// used to, meant a message caught in a transient failure during sync
-    /// was gone for good the moment the cursor moved past it — the next
-    /// incremental sync only asks Gmail what changed *after* that point,
-    /// never re-offering something already inside the window just
-    /// consumed. `GmailSyncService` is what actually closes the loop: it
-    /// persists these ids and retries fetching them by id directly on every
-    /// later sync, independent of the cursor, until they succeed.
-    struct SyncResult {
-        let items: [Correspondence]
+    /// Ids that still fail after `fetchMetadata`'s bounded retries come back
+    /// from that call as `failedIDs` rather than vanishing: Gmail's history
+    /// cursor is one whole-mailbox counter that can't be partially
+    /// advanced, so a message dropped once the cursor moves past it would
+    /// otherwise be gone for good. `GmailSyncService` persists and retries
+    /// those by id on later syncs.
+    struct SyncPlan {
+        let messageIDs: [String]
+        /// Moved back into the Inbox elsewhere (un-archived, restored from
+        /// Trash), which Gmail reports as a label change, not a new message.
+        var restoredMessageIDs: [String] = []
         let historyId: String?
-        let failedMessageIDs: [String]
         /// Read/unread, label, archive, and delete changes made outside
         /// Corres since the last cursor. Always empty for a full listing,
         /// which already reflects current state.
         var remoteChanges: [RemoteMessageChange] = []
+        /// Where "load older mail" continues from after a full listing;
+        /// nil once the whole Inbox fit.
+        var olderInboxPageToken: String? = nil
     }
 
-    /// Caps the very first sync at a couple hundred messages, not a full
-    /// mailbox import: matches "do not attempt to support every... immediately,"
-    /// and gives a fast first real result to look at. Every sync after this
-    /// one is incremental via the history cursor and has no such cap.
-    private let initialSyncPageSize = 100
-    private let initialSyncMaxPages = 2
+    /// First sync reaches 500 Inbox and 200 Sent messages deep, up from 200
+    /// total: listing metadata in batches makes that fast enough, and the
+    /// rest of the Inbox pages in on demand (`listOlderInbox`) as the Mail
+    /// tab scrolls. Every later sync is incremental via the history cursor.
+    private static let initialInboxLimit = 500
+    private static let initialSentLimit = 200
+    static let olderPageSize = 100
 
     private let historyPageSize = 100
 
@@ -57,43 +57,58 @@ struct GmailAPIClient {
     /// alongside INBOX, not instead of it.
     private static let syncedLabels = ["INBOX", "SENT"]
 
-    /// A full listing of the inbox and sent mail (paginated per label), used
-    /// the first time an account syncs, or whenever a stored history cursor
-    /// has expired.
-    func fetchInitialInbox(account: String) async throws -> SyncResult {
+    /// Google recommends no more than 50 calls per batch, and each
+    /// `messages.get` costs 5 of a user's 250 quota units per second, so a
+    /// full batch is a second's worth of quota: callers space batches by
+    /// `batchInterval` rather than firing them back to back into 429s.
+    static let batchSize = 50
+    static let batchInterval: Duration = .seconds(1)
+
+    /// A full listing of the inbox and sent mail, used the first time an
+    /// account syncs, or whenever a stored history cursor has expired.
+    /// Inbox ids come first (newest first), so the mail people actually
+    /// look at lands before older Sent-only threads.
+    func planFullListing(account: String) async throws -> SyncPlan {
         let token = try await accessToken(for: account)
-        var ids: Set<String> = []
-        for label in Self.syncedLabels {
-            ids.formUnion(try await listMessageIDs(token: token, label: label))
-        }
-        let (items, failedIDs) = await fetchMessages(ids: Array(ids), token: token, account: account)
+        let inbox = try await listMessageIDs(token: token, label: "INBOX", limit: Self.initialInboxLimit)
+        let sent = try await listMessageIDs(token: token, label: "SENT", limit: Self.initialSentLimit)
+        var seen = Set<String>()
+        let ids = (inbox.ids + sent.ids).map(\.id).filter { seen.insert($0).inserted }
         // Best-effort: if the profile call fails, the sync itself still
         // succeeded, just without a cursor for next time. The following
         // sync falls back to another full listing rather than failing.
         let historyId = try? await fetchProfile(token: token).historyId
-        return SyncResult(items: items, historyId: historyId, failedMessageIDs: failedIDs)
+        return SyncPlan(messageIDs: ids, historyId: historyId, olderInboxPageToken: inbox.nextPageToken)
     }
 
     /// Gmail's History API: only what changed since `cursor`, not a re-list
     /// of the whole inbox. Throws `.historyExpired` when the cursor is older
     /// than Gmail's retention window (about a week); the caller is expected
-    /// to recover by calling `fetchInitialInbox` instead. Queried once per
-    /// label (the History API's own `labelId` filter only accepts one at a
-    /// time), merged into a single result.
-    func fetchIncremental(account: String, since cursor: String) async throws -> SyncResult {
+    /// to recover with `planFullListing` instead. New messages are queried
+    /// once per label (the History API's `labelId` filter only accepts one
+    /// at a time); changes to existing ones in a single unfiltered query.
+    func planIncremental(account: String, since cursor: String) async throws -> SyncPlan {
         let token = try await accessToken(for: account)
-        var ids: Set<String> = []
+        var ids: [String] = []
+        var seen = Set<String>()
         var historyId: String?
         for label in Self.syncedLabels {
             let page = try await listHistoryMessageIDs(since: cursor, token: token, label: label)
-            ids.formUnion(page.ids)
+            ids += page.ids.filter { seen.insert($0).inserted }
             historyId = Self.newerHistoryId(historyId, page.historyId)
         }
         let changes = try await listHistoryChanges(since: cursor, token: token, account: account)
         historyId = Self.newerHistoryId(historyId, changes.historyId)
-        let (items, failedIDs) = await fetchMessages(ids: Array(ids), token: token, account: account)
-        return SyncResult(items: items, historyId: historyId ?? cursor, failedMessageIDs: failedIDs,
-                          remoteChanges: changes.changes)
+        return SyncPlan(messageIDs: ids.reversed(), restoredMessageIDs: changes.restored.filter { !seen.contains($0) },
+                        historyId: historyId ?? cursor, remoteChanges: changes.changes)
+    }
+
+    /// The next page of older Inbox mail, for the Mail tab's scroll-to-load.
+    /// Returns message and thread ids so the caller can skip threads it
+    /// already has before spending quota fetching them.
+    func listOlderInbox(account: String, pageToken: String?) async throws -> (ids: [(id: String, threadId: String?)], nextPageToken: String?) {
+        let token = try await accessToken(for: account)
+        return try await listMessageIDs(token: token, label: "INBOX", limit: Self.olderPageSize, pageToken: pageToken)
     }
 
     /// Changes to messages Corres already has, made somewhere else: read in
@@ -104,11 +119,14 @@ struct GmailAPIClient {
     /// `listHistoryMessageIDs`: filtering on INBOX would drop exactly the
     /// events that matter most, since an archived message no longer
     /// carries INBOX. Records come back oldest first, so the last one seen
-    /// for a message reflects its current state.
+    /// for a message reflects its current state. `restored` is anything
+    /// moved back into the Inbox, which the caller fetches like new mail
+    /// since Corres removed it when it was archived or trashed.
     private func listHistoryChanges(since startHistoryId: String, token: String,
-                                    account: String) async throws -> (changes: [RemoteMessageChange], historyId: String?) {
+                                    account: String) async throws -> (changes: [RemoteMessageChange], restored: [String], historyId: String?) {
         var latest: [String: RemoteMessageChange] = [:]
         var order: [String] = []
+        var restored: [String: Bool] = [:]
         var pageToken: String?
         var latestHistoryId: String?
         func record(_ ref: HistoryListResponse.HistoryRecord.MessageRef, removed: Bool) {
@@ -116,6 +134,8 @@ struct GmailAPIClient {
             if latest[ref.id] == nil { order.append(ref.id) }
             latest[ref.id] = RemoteMessageChange(threadID: ThreadID(account: account, providerID: threadId),
                                                  messageID: ref.id, currentLabelIds: ref.labelIds, removed: removed)
+            let labels = Set(ref.labelIds ?? [])
+            restored[ref.id] = !removed && labels.contains("INBOX")
         }
         repeat {
             var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/history")!
@@ -135,12 +155,21 @@ struct GmailAPIClient {
             try validate(response)
             let page = try JSONDecoder().decode(HistoryListResponse.self, from: data)
             for entry in page.history ?? [] {
-                for change in (entry.labelsAdded ?? []) + (entry.labelsRemoved ?? []) {
+                for change in entry.labelsAdded ?? [] {
                     let labels = Set(change.message.labelIds ?? [])
-                    let removedFromInbox = (entry.labelsRemoved ?? []).contains { $0.message.id == change.message.id && ($0.labelIds ?? []).contains("INBOX") }
+                    let trashed = labels.contains("TRASH") || labels.contains("SPAM")
+                    record(change.message, removed: trashed)
+                    // Only an explicit move *into* the Inbox counts as a
+                    // restore, not any label added to a message already there.
+                    if !(change.labelIds ?? []).contains("INBOX") { restored[change.message.id] = false }
+                }
+                for change in entry.labelsRemoved ?? [] {
+                    let labels = Set(change.message.labelIds ?? [])
+                    let removedFromInbox = (change.labelIds ?? []).contains("INBOX")
                         && !labels.contains("INBOX") && !labels.contains("SENT")
                     let trashed = labels.contains("TRASH") || labels.contains("SPAM")
                     record(change.message, removed: removedFromInbox || trashed)
+                    restored[change.message.id] = false
                 }
                 for deleted in entry.messagesDeleted ?? [] {
                     record(deleted.message, removed: true)
@@ -149,19 +178,7 @@ struct GmailAPIClient {
             latestHistoryId = page.historyId ?? latestHistoryId
             pageToken = page.nextPageToken
         } while pageToken != nil
-        return (order.compactMap { latest[$0] }, latestHistoryId)
-    }
-
-    /// Re-attempts specific message ids directly, independent of the
-    /// history cursor or any label listing — the retry path
-    /// `GmailSyncService` uses for ids a previous sync's `failedMessageIDs`
-    /// already reported, since by the time it tries again the cursor has
-    /// long since moved past the point where the ordinary sync path would
-    /// ever offer them again.
-    func fetchMessages(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
-        guard !ids.isEmpty else { return ([], []) }
-        let token = try await accessToken(for: account)
-        return await fetchMessages(ids: ids, token: token, account: account)
+        return (order.compactMap { latest[$0] }, order.filter { restored[$0] == true }, latestHistoryId)
     }
 
     /// Gmail's own `historyId` is a single, whole-mailbox-wide counter (the
@@ -176,66 +193,97 @@ struct GmailAPIClient {
         return bi > ai ? b : a
     }
 
-    /// Fetches up to `messageFetchConcurrency` messages at once instead of
-    /// one at a time. A full sync can mean a couple hundred individual
-    /// `users.messages.get` calls (see `initialSyncMaxPages` x 2 labels);
-    /// awaiting them sequentially means a real network round trip per
-    /// message, one after another, which is the actual reason a sync could
-    /// take a long time and make the app feel like it's dragging while it
-    /// runs, not anything about SwiftUI rendering. A bounded pool, not
-    /// unbounded concurrency, avoids firing hundreds of requests at once
-    /// against Gmail's per-user rate limits.
-    ///
-    /// A single message's own `fetchMessage` gets a couple of real retries
-    /// before this gives up on it (`messageFetchAttempts`, a short fixed
-    /// delay rather than `OutboxService`'s longer exponential backoff —
-    /// this runs for every message in a sync, not once for a person
-    /// waiting on a send, so it needs to stay cheap even though it's the
-    /// same class of transient-failure problem). Whatever's still failing
-    /// after that comes back in `failedIDs` instead of silently vanishing;
-    /// see `SyncResult.failedMessageIDs`'s doc comment for why that
-    /// distinction matters here specifically.
-    private func fetchMessages(ids: [String], token: String, account: String) async -> (items: [Correspondence], failedIDs: [String]) {
-        await withTaskGroup(of: (Correspondence?, String).self) { group in
-            var pending = ids[...]
-            func addNext() {
-                guard let id = pending.popFirst() else { return }
-                group.addTask {
-                    for attempt in 1...Self.messageFetchAttempts {
-                        if let message = try? await self.fetchMessage(id: id, token: token) {
-                            return (self.map(message, account: account), id)
-                        }
-                        if attempt < Self.messageFetchAttempts {
-                            try? await Task.sleep(for: .milliseconds(Self.messageFetchRetryDelayMs))
-                        }
-                    }
-                    return (nil, id)
-                }
-            }
-            for _ in 0..<Self.messageFetchConcurrency { addNext() }
-            var results: [Correspondence] = []
-            var failedIDs: [String] = []
-            while let (correspondence, id) = await group.next() {
-                if let correspondence { results.append(correspondence) } else { failedIDs.append(id) }
-                addNext()
-            }
-            return (results, failedIDs)
-        }
+    /// Only the headers Corres actually reads: sender, recipients (Reply
+    /// All, correspondent signal), subject, threading, and unsubscribe.
+    /// Metadata plus Gmail's own snippet is everything a row, triage, a
+    /// notification, and local search need; the body comes later.
+    private static let metadataHeaders = ["From", "To", "Cc", "Subject", "Message-ID", "List-Unsubscribe", "List-Unsubscribe-Post"]
+
+    /// Sender, subject, snippet, labels, and headers for up to `batchSize`
+    /// messages in one HTTP round trip. Returned threads have
+    /// `isBodyLoaded == false`; see `fetchFull`.
+    func fetchMetadata(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
+        let query = "format=metadata" + Self.metadataHeaders.map { "&metadataHeaders=\($0)" }.joined()
+        return try await batchFetch(ids: ids, query: query, bodyLoaded: false, account: account)
     }
 
-    private static let messageFetchConcurrency = 8
-    private static let messageFetchAttempts = 3
-    private static let messageFetchRetryDelayMs = 400
+    /// The complete message (body, HTML, attachment list), for filling in
+    /// threads synced metadata-first, or loading one the moment it's opened.
+    func fetchFull(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
+        try await batchFetch(ids: ids, query: "format=full", bodyLoaded: true, account: account)
+    }
+
+    /// Re-attempts specific message ids directly, independent of the
+    /// history cursor — the path `GmailSyncService` uses for ids a previous
+    /// sync reported as failed. Paced across batches like any other fetch.
+    func fetchMessages(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
+        var items: [Correspondence] = []
+        var failed: [String] = []
+        for (index, chunk) in ids.chunked(into: Self.batchSize).enumerated() {
+            if index > 0 { try? await Task.sleep(for: Self.batchInterval) }
+            let result = try await fetchMetadata(ids: chunk, account: account)
+            items += result.items
+            failed += result.failedIDs
+        }
+        return (items, failed)
+    }
+
+    private static let batchAttempts = 3
+
+    /// One Gmail batch request, retried for whatever parts didn't come back
+    /// 200: a transient 429/5xx on one message shouldn't cost the rest of
+    /// the batch, and a whole-request network failure retries everything.
+    /// A 404 part means the message was deleted in the meantime; it's
+    /// dropped rather than retried forever.
+    private func batchFetch(ids: [String], query: String, bodyLoaded: Bool,
+                            account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
+        guard !ids.isEmpty else { return ([], []) }
+        let token = try await accessToken(for: account)
+        var pending = Array(ids.prefix(Self.batchSize))
+        var items: [Correspondence] = []
+        for attempt in 1...Self.batchAttempts {
+            guard !pending.isEmpty else { break }
+            let boundary = "corres_batch_\(UUID().uuidString)"
+            var request = URLRequest(url: URL(string: "https://gmail.googleapis.com/batch/gmail/v1")!)
+            request.httpMethod = "POST"
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("multipart/mixed; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            request.httpBody = HTTPBatch.body(paths: pending.map { "/gmail/v1/users/me/messages/\($0)?\(query)" },
+                                              boundary: boundary)
+            var retry: [String] = []
+            if let (data, response) = try? await URLSession.shared.data(for: request),
+               let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode,
+               let contentType = http.value(forHTTPHeaderField: "Content-Type"),
+               let responseBoundary = HTTPBatch.boundary(fromContentType: contentType) {
+                let parts = HTTPBatch.parse(data, boundary: responseBoundary)
+                for (index, id) in pending.enumerated() {
+                    guard let part = parts[index] else { retry.append(id); continue }
+                    if part.status == 404 { continue }
+                    guard part.status == 200, let message = try? JSONDecoder().decode(GmailMessage.self, from: part.body) else {
+                        retry.append(id)
+                        continue
+                    }
+                    items.append(map(message, account: account, bodyLoaded: bodyLoaded))
+                }
+            } else {
+                retry = pending
+            }
+            pending = retry
+            if !pending.isEmpty && attempt < Self.batchAttempts {
+                try? await Task.sleep(for: .seconds(attempt))
+            }
+        }
+        return (items, pending)
+    }
 
     /// Local search (`MailQuery.filter`) only ever sees what's already
-    /// synced, capped at a couple hundred recent messages; typing in an
-    /// older subject or a sender from months ago silently finds nothing,
-    /// which is exactly the kind of "wait, my email app can't find my own
-    /// email" moment that erodes trust in a mail client. Gmail's own search
-    /// (`q=`, its full query syntax, not just a substring match) covers the
-    /// whole real mailbox instead. Capped, not exhaustive: a search result
-    /// list is for finding the one thing you're after, not a second full
-    /// sync of the account.
+    /// synced; typing in an older subject or a sender from months ago
+    /// silently finds nothing, which is exactly the kind of "wait, my email
+    /// app can't find my own email" moment that erodes trust in a mail
+    /// client. Gmail's own search (`q=`, its full query syntax, not just a
+    /// substring match) covers the whole real mailbox instead. Capped, not
+    /// exhaustive: a search result list is for finding the one thing you're
+    /// after, not a second full sync of the account.
     private let searchPageSize = 25
 
     func searchMessages(query: String, account: String) async throws -> [Correspondence] {
@@ -248,7 +296,7 @@ struct GmailAPIClient {
         let (data, response) = try await authorizedRequest(url: components.url!, token: token)
         try validate(response)
         let list = try JSONDecoder().decode(MessageListResponse.self, from: data)
-        return await fetchMessages(ids: list.messages?.map(\.id) ?? [], token: token, account: account).items
+        return try await fetchMetadata(ids: list.messages?.map(\.id) ?? [], account: account).items
     }
 
     /// Looks up a message this client itself composed, by the `Message-ID`
@@ -290,26 +338,27 @@ struct GmailAPIClient {
         }
     }
 
-    private func listMessageIDs(token: String, label: String) async throws -> [String] {
-        var ids: [String] = []
-        var pageToken: String?
-        var pagesFetched = 0
+    /// Newest first, up to `limit`, continuing from `pageToken` when given.
+    /// Gmail allows up to 500 per page.
+    private func listMessageIDs(token: String, label: String, limit: Int,
+                                pageToken startToken: String? = nil) async throws -> (ids: [(id: String, threadId: String?)], nextPageToken: String?) {
+        var ids: [(id: String, threadId: String?)] = []
+        var pageToken = startToken
         repeat {
             var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
             var queryItems = [
                 URLQueryItem(name: "labelIds", value: label),
-                URLQueryItem(name: "maxResults", value: String(initialSyncPageSize)),
+                URLQueryItem(name: "maxResults", value: String(min(limit - ids.count, 500))),
             ]
             if let pageToken { queryItems.append(URLQueryItem(name: "pageToken", value: pageToken)) }
             components.queryItems = queryItems
             let (data, response) = try await authorizedRequest(url: components.url!, token: token)
             try validate(response)
             let list = try JSONDecoder().decode(MessageListResponse.self, from: data)
-            ids.append(contentsOf: list.messages?.map(\.id) ?? [])
+            ids += (list.messages ?? []).map { (id: $0.id, threadId: $0.threadId) }
             pageToken = list.nextPageToken
-            pagesFetched += 1
-        } while pageToken != nil && pagesFetched < initialSyncMaxPages
-        return ids
+        } while pageToken != nil && ids.count < limit
+        return (ids, pageToken)
     }
 
     /// Gmail discards history IDs older than roughly a week; a `startHistoryId`
@@ -467,13 +516,6 @@ struct GmailAPIClient {
         return try JSONDecoder().decode(Profile.self, from: data)
     }
 
-    private func fetchMessage(id: String, token: String) async throws -> GmailMessage {
-        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages/\(id)?format=full")!
-        let (data, response) = try await authorizedRequest(url: url, token: token)
-        try validate(response)
-        return try JSONDecoder().decode(GmailMessage.self, from: data)
-    }
-
     private func authorizedRequest(url: URL, token: String) async throws -> (Data, URLResponse) {
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -487,7 +529,7 @@ struct GmailAPIClient {
         }
     }
 
-    private func map(_ message: GmailMessage, account: String) -> Correspondence {
+    private func map(_ message: GmailMessage, account: String, bodyLoaded: Bool) -> Correspondence {
         // Real messages routinely repeat headers (every mail-server hop adds
         // its own "Received" header), and uniqueKeysWithValues crashes on any
         // duplicate, which duplicate headers always are. Keep the first.
@@ -523,7 +565,7 @@ struct GmailAPIClient {
         let automated = Correspondence.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto,
                                                    listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail)
         let (attention, reason) = InboxClassifier.initialAttention(isUnread: isUnread, labelIds: message.labelIds ?? [],
-                                                                  looksAutomated: automated)
+                                                                  looksAutomated: automated, receivedAt: receivedAt)
         return Correspondence(
             id: ThreadID(account: account, providerID: message.threadId ?? message.id),
             sender: sender, senderEmail: senderEmail, organization: organization, subject: subject,
@@ -533,7 +575,7 @@ struct GmailAPIClient {
             labelIds: message.labelIds ?? [],
             toRecipients: toRecipients, ccRecipients: ccRecipients,
             listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
-            listUnsubscribeOneClick: listUnsubscribeOneClick)
+            listUnsubscribeOneClick: listUnsubscribeOneClick, isBodyLoaded: bodyLoaded)
     }
 
     /// A real attachment (something to download) versus an inline image
@@ -764,4 +806,10 @@ private struct GmailMessagePart: Decodable {
 
     struct Header: Decodable { let name: String; let value: String }
     struct Body: Decodable { let data: String?; let attachmentId: String?; let size: Int? }
+}
+
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        stride(from: 0, to: count, by: size).map { Array(self[$0..<Swift.min($0 + size, count)]) }
+    }
 }

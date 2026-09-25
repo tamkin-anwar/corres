@@ -171,6 +171,18 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// message from a sender, the unsubscribe banner has no reason to keep
     /// asking again for that sender's future mail.
     public var senderUnsubscribed: Bool
+    /// Whether `body`/`htmlBody`/`attachments` hold the real message yet.
+    /// Sync lists metadata first (sender, subject, snippet, labels) so the
+    /// inbox appears in a second, then fills bodies in behind it; until
+    /// then `body` is the snippet. Opening an unloaded thread loads it
+    /// immediately.
+    public var isBodyLoaded: Bool
+
+    /// Flagged in iOS Mail, starred in Gmail: the same thing underneath, a
+    /// Gmail `STARRED` label, so it mirrors both ways through the labels
+    /// Corres already syncs. Distinct from `isPinned`, which is Corres's
+    /// own "keep at top" and never leaves the device.
+    public var isFlagged: Bool { labelIds.contains("STARRED") }
 
     public init(id: ThreadID, sender: String, senderEmail: String? = nil, organization: String, subject: String,
                 excerpt: String, body: String, htmlBody: String? = nil, messageIdHeader: String? = nil,
@@ -180,7 +192,8 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
                 labelIds: [String] = [], toRecipients: [String] = [], ccRecipients: [String] = [],
                 triagedMessageID: String? = nil,
                 listUnsubscribeMailto: String? = nil, listUnsubscribeURL: String? = nil,
-                listUnsubscribeOneClick: Bool = false, senderUnsubscribed: Bool = false) {
+                listUnsubscribeOneClick: Bool = false, senderUnsubscribed: Bool = false,
+                isBodyLoaded: Bool = true) {
         self.id = id
         self.sender = sender
         self.senderEmail = senderEmail
@@ -209,6 +222,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.listUnsubscribeURL = listUnsubscribeURL
         self.listUnsubscribeOneClick = listUnsubscribeOneClick
         self.senderUnsubscribed = senderUnsubscribed
+        self.isBodyLoaded = isBodyLoaded
     }
 
     public var initials: String {
@@ -279,7 +293,8 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
             listUnsubscribeOneClick: incoming.listUnsubscribeOneClick,
             // Per-sender, like imagesTrusted/senderDecision: once acted on,
             // stays acted on regardless of what a later message offers.
-            senderUnsubscribed: senderUnsubscribed)
+            senderUnsubscribed: senderUnsubscribed,
+            isBodyLoaded: incoming.isBodyLoaded)
     }
 }
 
@@ -464,14 +479,25 @@ public enum InboxClassifier {
     public static let legacyUnreadReason = "Unread in Gmail."
     public static let personalUnreadReason = "Unread, from a person."
     public static let correspondentReason = "Unread, from someone you've written to."
+    public static let staleReason = "Unread for over a month. Kept out of Needs You."
     public static let readReason = "Already read in Gmail."
 
     /// Every reason these rules can produce for unread mail: a thread
     /// carrying one of these (and never triaged) still reflects a pure rule
     /// decision nobody has overridden, so re-running the rules is safe.
-    public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason,
+    public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason, staleReason,
                                                   BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,
                                                   BulkKind.updates.reason, BulkKind.automated.reason]
+
+    /// Sync now reaches hundreds of messages back; an unread personal email
+    /// from months ago is history, not a decision waiting on you, and would
+    /// otherwise flood Needs You on first sync. Still in Mail, still
+    /// searchable.
+    public static let staleAfter: TimeInterval = 30 * 86_400
+
+    public static func isStale(receivedAt: Date, now: Date) -> Bool {
+        now.timeIntervalSince(receivedAt) > staleAfter
+    }
 
     /// Gmail Priority Inbox's own strongest signal is who you email, and
     /// Apple Mail's Primary favors your contacts; this is the local
@@ -480,9 +506,9 @@ public enum InboxClassifier {
     /// Updates, as it sometimes does with person-to-person mail. A
     /// `List-Unsubscribe` header still wins: replying once to a company's
     /// support address shouldn't let its newsletters through.
-    public static func correspondentOverride(isUnread: Bool, hasListUnsubscribe: Bool,
-                                             isCorrespondent: Bool) -> (attention: Attention, reason: String)? {
-        guard isUnread, isCorrespondent, !hasListUnsubscribe else { return nil }
+    public static func correspondentOverride(isUnread: Bool, hasListUnsubscribe: Bool, isCorrespondent: Bool,
+                                             isStale: Bool = false) -> (attention: Attention, reason: String)? {
+        guard isUnread, isCorrespondent, !hasListUnsubscribe, !isStale else { return nil }
         return (.needsYou, correspondentReason)
     }
 
@@ -501,10 +527,14 @@ public enum InboxClassifier {
         return nil
     }
 
-    public static func initialAttention(isUnread: Bool, labelIds: [String], looksAutomated: Bool) -> (attention: Attention, reason: String) {
+    public static func initialAttention(isUnread: Bool, labelIds: [String], looksAutomated: Bool,
+                                        receivedAt: Date? = nil, now: Date = .now) -> (attention: Attention, reason: String) {
         guard isUnread else { return (.quiet, readReason) }
         if let kind = bulkKind(labelIds: labelIds, looksAutomated: looksAutomated) {
             return (.quiet, kind.reason)
+        }
+        if let receivedAt, isStale(receivedAt: receivedAt, now: now) {
+            return (.quiet, staleReason)
         }
         return (.needsYou, personalUnreadReason)
     }

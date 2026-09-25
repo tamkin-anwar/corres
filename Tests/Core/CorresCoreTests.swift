@@ -387,6 +387,70 @@ struct CorresCoreTests {
         #expect(InboxClassifier.bulkKind(labelIds: ["CATEGORY_SOCIAL"], looksAutomated: false)?.isPromotable == false)
     }
 
+    /// Deeper sync reaches months back; old unread personal mail stays in
+    /// Mail instead of flooding Needs You, and a correspondent's does too.
+    @Test func staleUnreadMailStaysOutOfNeedsYou() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let recent = now.addingTimeInterval(-2 * 86_400)
+        let old = now.addingTimeInterval(-45 * 86_400)
+        #expect(InboxClassifier.initialAttention(isUnread: true, labelIds: [], looksAutomated: false,
+                                                 receivedAt: recent, now: now).attention == .needsYou)
+        let stale = InboxClassifier.initialAttention(isUnread: true, labelIds: [], looksAutomated: false, receivedAt: old, now: now)
+        #expect(stale.attention == .quiet)
+        #expect(stale.reason == InboxClassifier.staleReason)
+        #expect(InboxClassifier.correspondentOverride(isUnread: true, hasListUnsubscribe: false, isCorrespondent: true,
+                                                      isStale: true) == nil)
+    }
+
+    @Test func flagMirrorsGmailStar() {
+        let base = Correspondence(id: ThreadID(account: "a", providerID: "1"), sender: "S", organization: "", subject: "s",
+                                  excerpt: "", body: "", receivedAt: now, dueAt: nil, reason: "r", attention: .quiet,
+                                  labelIds: ["INBOX"])
+        #expect(!base.isFlagged)
+        var starred = base
+        starred.labelIds.append("STARRED")
+        #expect(starred.isFlagged)
+    }
+
+    /// Round-trips Google's batch format as it actually arrives: CRLF line
+    /// endings, a quoted boundary, parts out of order, and a 404 for a
+    /// message deleted in the meantime.
+    @Test func batchRequestsAndResponsesRoundTrip() {
+        let request = String(decoding: HTTPBatch.body(paths: ["/gmail/v1/users/me/messages/a?format=metadata",
+                                                              "/gmail/v1/users/me/messages/b?format=metadata"],
+                                                      boundary: "B"), as: UTF8.self)
+        #expect(request.contains("--B\r\nContent-Type: application/http\r\nContent-ID: <item-0>\r\n\r\nGET /gmail/v1/users/me/messages/a?format=metadata"))
+        #expect(request.hasSuffix("--B--\r\n"))
+
+        #expect(HTTPBatch.boundary(fromContentType: "multipart/mixed; boundary=\"batch_xyz\"") == "batch_xyz")
+        #expect(HTTPBatch.boundary(fromContentType: "multipart/mixed; boundary=batch_abc") == "batch_abc")
+
+        let response = [
+            "--batch_xyz",
+            "Content-Type: application/http",
+            "Content-ID: <response-item-1>",
+            "",
+            "HTTP/1.1 404 Not Found",
+            "Content-Type: application/json; charset=UTF-8",
+            "",
+            "{\"error\":{\"code\":404}}",
+            "--batch_xyz",
+            "Content-Type: application/http",
+            "Content-ID: <response-item-0>",
+            "",
+            "HTTP/1.1 200 OK",
+            "Content-Type: application/json; charset=UTF-8",
+            "",
+            "{\"id\":\"a\",\"threadId\":\"t\"}",
+            "--batch_xyz--",
+        ].joined(separator: "\r\n")
+        let parts = HTTPBatch.parse(Data(response.utf8), boundary: "batch_xyz")
+        #expect(parts[0]?.status == 200)
+        #expect(parts[0].map { String(decoding: $0.body, as: UTF8.self) } == "{\"id\":\"a\",\"threadId\":\"t\"}")
+        #expect(parts[1]?.status == 404)
+        #expect(parts.count == 2)
+    }
+
     @Test func automatedSignalsComeFromRealHeaders() {
         #expect(Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: "https://x.test/u", senderEmail: "a@x.test"))
         #expect(Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: "no-reply@x.test"))

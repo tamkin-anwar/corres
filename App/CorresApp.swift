@@ -35,6 +35,15 @@ struct CorresApp: App {
                         await appDelegate.store.refresh()
                         await appDelegate.semanticTriageService.triageIfNeeded(store: appDelegate.store)
                     }
+                    // Network-bound, independent of the on-device model, so
+                    // it runs alongside triage rather than after it.
+                    Task { await appDelegate.sync.backfillContent() }
+                }
+                // Each batch of 50 a sync saves shows up as it lands, so the
+                // first screenful appears within a round trip, not after the
+                // whole first sync finishes.
+                .onChange(of: appDelegate.sync.syncProgress) {
+                    Task { await appDelegate.store.refresh() }
                 }
                 .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
         }

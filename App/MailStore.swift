@@ -96,10 +96,18 @@ final class MailStore {
         }
     }
 
+    /// A body fetched for a thread synced metadata-first. Not routed through
+    /// `mutate`: nothing the person decided changed, so a failure has no
+    /// business showing a save-error alert; the thread just stays unloaded.
+    func applyLoadedContent(_ items: [Correspondence]) async {
+        guard (try? await repository.applyLoadedContent(items)) ?? 0 > 0 else { return }
+        await refresh()
+    }
+
     /// Bump the version whenever `InboxClassifier`'s rules change, so
     /// already-synced threads get re-sorted under the new rules too (v2
-    /// added the "someone you've written to" signal).
-    private static let attentionRulesMigrationKey = "corres.migration.inboxClassifier.v2"
+    /// added the "someone you've written to" signal, v3 the 30-day limit).
+    private static let attentionRulesMigrationKey = "corres.migration.inboxClassifier.v3"
 
     /// Runs `MailRepository.reclassifyLegacySyncDefaults` once per rules
     /// version. Only marks itself done on success, so a failed attempt

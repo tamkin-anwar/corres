@@ -56,6 +56,25 @@ final class ThreadActionService {
            revert: { await self.store.setUnread(!isUnread, for: thread.id) })
     }
 
+    /// Flag here, flagged in iOS Mail and starred in Gmail: all three are
+    /// Gmail's `STARRED` label, so this is just that label, optimistic like
+    /// any other, and the same label arriving from elsewhere via sync is
+    /// what shows a flag set in another app.
+    func setFlagged(_ isFlagged: Bool, for thread: Correspondence) async {
+        await toggleLabel("STARRED", isOn: isFlagged, for: thread)
+    }
+
+    /// Fetches the full message for a thread synced metadata-first, the
+    /// moment it's opened, rather than waiting for background backfill to
+    /// reach it. Silent on failure: the snippet is already showing, and
+    /// the next open or backfill pass simply tries again.
+    func loadContent(for thread: Correspondence) async {
+        guard !thread.isBodyLoaded, thread.id.account != Self.sampleAccount,
+              let messageID = thread.latestMessageID,
+              let fetched = try? await client.fetchFull(ids: [messageID], account: thread.id.account) else { return }
+        await store.applyLoadedContent(fetched.items)
+    }
+
     /// Adds or removes a single real Gmail label (from `LabelDirectory`),
     /// optimistic for the same reason `setUnread` is: a chip toggling back
     /// off on a rare failure is a trivial correction, not a lost row.
