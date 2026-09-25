@@ -38,14 +38,23 @@ public protocol MailRepository: Sendable {
     @discardableResult
     func applySemanticTriage(_ id: ThreadID, from expected: Attention, to result: Attention,
                              reason: String?, messageID: String) async throws -> Correspondence
-    /// One-time repair for threads synced under the old "every unread
-    /// message is Needs You" default: re-sorts only threads still carrying
-    /// that untouched default (`InboxClassifier.legacyUnreadReason`, never
-    /// triaged), using `InboxClassifier`'s current rules against the labels
-    /// and headers already stored, and decodes the HTML entities Gmail left
-    /// in every stored preview. Returns how many threads changed attention.
+    /// Re-sorts already-synced threads under `InboxClassifier`'s current
+    /// rules, using the labels and headers already stored. Only threads
+    /// still carrying a pure rule decision (one of
+    /// `InboxClassifier.ruleReasons`, never triaged) are touched, so a
+    /// person's own moves and AI refinements always survive. Also decodes
+    /// the HTML entities Gmail left in stored previews. Returns how many
+    /// threads changed attention.
     @discardableResult
     func reclassifyLegacySyncDefaults() async throws -> Int
+    /// Mirrors changes made outside Corres onto threads already synced:
+    /// read state and labels update in place, and a thread archived,
+    /// trashed, or deleted elsewhere is removed. Applies only when the
+    /// change is for the thread's current latest message (the only one
+    /// stored); anything else, including threads never synced, is ignored.
+    /// Returns how many threads changed.
+    @discardableResult
+    func applyRemoteChanges(_ changes: [RemoteMessageChange]) async throws -> Int
     /// Replying or forwarding moves the source thread to Waiting: the user has
     /// acted and is now the one expecting a response. A new draft opens a thread
     /// in the same state, since nothing has come back yet either way.
@@ -204,6 +213,9 @@ public actor SampleMailRepository: MailRepository {
     /// Sample threads carry hand-written editorial reasons, never the old
     /// Gmail sync default, so there's nothing here to reclassify.
     public func reclassifyLegacySyncDefaults() -> Int { 0 }
+
+    /// Sample threads never exist in Gmail, so nothing remote can change them.
+    public func applyRemoteChanges(_ changes: [RemoteMessageChange]) -> Int { 0 }
 
     public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {
         guard let threadID = draft.threadID else {

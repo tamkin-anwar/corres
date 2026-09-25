@@ -25,6 +25,17 @@ struct CorresApp: App {
                     // into a message (see WKWebViewPool).
                     WKWebViewPool.shared.prewarm()
                 }
+                // One place covers every foreground sync path (pull-to-refresh
+                // on Brief or a list, connecting an account in Preferences),
+                // instead of each view needing its own triage call. Unawaited
+                // by the refresh itself, so the pull-to-refresh spinner ends
+                // when mail arrives, not when the on-device model finishes.
+                .onChange(of: appDelegate.sync.lastCompletedSync) {
+                    Task {
+                        await appDelegate.store.refresh()
+                        await appDelegate.semanticTriageService.triageIfNeeded(store: appDelegate.store)
+                    }
+                }
                 .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
         }
     }

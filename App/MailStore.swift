@@ -96,11 +96,13 @@ final class MailStore {
         }
     }
 
-    private static let attentionRulesMigrationKey = "corres.migration.inboxClassifier.v1"
+    /// Bump the version whenever `InboxClassifier`'s rules change, so
+    /// already-synced threads get re-sorted under the new rules too (v2
+    /// added the "someone you've written to" signal).
+    private static let attentionRulesMigrationKey = "corres.migration.inboxClassifier.v2"
 
-    /// Runs `MailRepository.reclassifyLegacySyncDefaults` once per install,
-    /// the first launch after Needs You stopped meaning "every unread
-    /// message." Only marks itself done on success, so a failed attempt
+    /// Runs `MailRepository.reclassifyLegacySyncDefaults` once per rules
+    /// version. Only marks itself done on success, so a failed attempt
     /// simply runs again next launch.
     func migrateAttentionRulesIfNeeded() async {
         let defaults = UserDefaults.standard

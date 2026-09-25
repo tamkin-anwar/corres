@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Needs You integration review (September 25, 2026)
+
+Checked every sync and triage trigger path, not just launch. Fixed: no "people you've written to" signal; changes made in other mail apps (read, archive, delete) never reached Corres; pull-to-refresh never triaged; push notifications waited on the whole triage backlog; triage availability was checked only at launch.
+
+- Verified with `swift test` (54/54, 2 new) and `xcodebuild` (`BUILD SUCCEEDED`).
+- **Needs on-device confirmation**: read an email in Gmail's own app, then pull to refresh in Corres and confirm it shows read; archive one in Gmail and confirm it disappears from Corres; reply to someone, then check their next email lands in Needs You.
+- Open: batching Gmail fetches and loading message bodies on open, the largest remaining first-sync speed wins.
+
 ## Needs You rebuilt as opt-in (September 25, 2026)
 
 Reported from a real device: Needs You held 110 mostly-promotional conversations. Every unread message used to start there. Now `InboxClassifier` keeps Gmail's Promotions/Social/Forums/Updates and any mailing-list/no-reply mail out by rule, and on-device triage refines both ways (drop personal mail that needs nothing; pull in an update carrying a real obligation, high confidence only).

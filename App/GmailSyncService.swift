@@ -16,6 +16,12 @@ final class GmailSyncService {
     private let defaults = UserDefaults.standard
     private(set) var isSyncing = false
     private(set) var isSearchingRemote = false
+    /// Bumped whenever a sync pass pulls in data, from any entry point.
+    /// `CorresApp` observes it to run on-device triage after *every* sync
+    /// (pull-to-refresh, connecting an account), not just the launch and
+    /// push paths that used to be the only ones calling it — new mail from
+    /// a manual refresh otherwise sat untriaged until the next cold launch.
+    private(set) var lastCompletedSync: Date?
     var errorMessage: String?
 
     init(repository: any MailRepository) {
@@ -84,7 +90,7 @@ final class GmailSyncService {
         guard !accounts.isEmpty, !isSyncing else { return false }
         isSyncing = true
         defer { isSyncing = false }
-        return await withTaskGroup(of: Bool.self) { group in
+        let anySucceeded = await withTaskGroup(of: Bool.self) { group in
             for account in accounts {
                 group.addTask { await self.syncOneLocked(account: account) }
             }
@@ -92,6 +98,8 @@ final class GmailSyncService {
             for await succeeded in group where succeeded { anySucceeded = true }
             return anySucceeded
         }
+        if anySucceeded { lastCompletedSync = .now }
+        return anySucceeded
     }
 
     @discardableResult
@@ -99,7 +107,9 @@ final class GmailSyncService {
         guard let account, !account.isEmpty, !isSyncing else { return false }
         isSyncing = true
         defer { isSyncing = false }
-        return await syncOneLocked(account: account)
+        let succeeded = await syncOneLocked(account: account)
+        if succeeded { lastCompletedSync = .now }
+        return succeeded
     }
 
     /// Shared body for both entry points above; assumes `isSyncing` is
@@ -146,6 +156,9 @@ final class GmailSyncService {
             // already made it in, which upsert already treats as a no-op)
             // if the app dies between the two, never data loss.
             try await repository.upsert(items, isInitialSync: isFullListing)
+            // After upsert, so a message that arrived and was then archived
+            // elsewhere within the same window ends up removed, not re-added.
+            try await repository.applyRemoteChanges(result.remoteChanges)
             if let historyId = result.historyId {
                 setHistoryCursor(historyId, for: account)
             }

@@ -32,7 +32,15 @@ struct GmailAPIClient {
     /// consumed. `GmailSyncService` is what actually closes the loop: it
     /// persists these ids and retries fetching them by id directly on every
     /// later sync, independent of the cursor, until they succeed.
-    struct SyncResult { let items: [Correspondence]; let historyId: String?; let failedMessageIDs: [String] }
+    struct SyncResult {
+        let items: [Correspondence]
+        let historyId: String?
+        let failedMessageIDs: [String]
+        /// Read/unread, label, archive, and delete changes made outside
+        /// Corres since the last cursor. Always empty for a full listing,
+        /// which already reflects current state.
+        var remoteChanges: [RemoteMessageChange] = []
+    }
 
     /// Caps the very first sync at a couple hundred messages, not a full
     /// mailbox import: matches "do not attempt to support every... immediately,"
@@ -81,8 +89,67 @@ struct GmailAPIClient {
             ids.formUnion(page.ids)
             historyId = Self.newerHistoryId(historyId, page.historyId)
         }
+        let changes = try await listHistoryChanges(since: cursor, token: token, account: account)
+        historyId = Self.newerHistoryId(historyId, changes.historyId)
         let (items, failedIDs) = await fetchMessages(ids: Array(ids), token: token, account: account)
-        return SyncResult(items: items, historyId: historyId ?? cursor, failedMessageIDs: failedIDs)
+        return SyncResult(items: items, historyId: historyId ?? cursor, failedMessageIDs: failedIDs,
+                          remoteChanges: changes.changes)
+    }
+
+    /// Changes to messages Corres already has, made somewhere else: read in
+    /// Gmail's own app, archived on the web, deleted in Apple Mail. Used to
+    /// be missing entirely — sync only ever asked for `messageAdded`, so a
+    /// message read or archived elsewhere stayed unread and in Needs You
+    /// here indefinitely. Queried once without a `labelId` filter, unlike
+    /// `listHistoryMessageIDs`: filtering on INBOX would drop exactly the
+    /// events that matter most, since an archived message no longer
+    /// carries INBOX. Records come back oldest first, so the last one seen
+    /// for a message reflects its current state.
+    private func listHistoryChanges(since startHistoryId: String, token: String,
+                                    account: String) async throws -> (changes: [RemoteMessageChange], historyId: String?) {
+        var latest: [String: RemoteMessageChange] = [:]
+        var order: [String] = []
+        var pageToken: String?
+        var latestHistoryId: String?
+        func record(_ ref: HistoryListResponse.HistoryRecord.MessageRef, removed: Bool) {
+            guard let threadId = ref.threadId else { return }
+            if latest[ref.id] == nil { order.append(ref.id) }
+            latest[ref.id] = RemoteMessageChange(threadID: ThreadID(account: account, providerID: threadId),
+                                                 messageID: ref.id, currentLabelIds: ref.labelIds, removed: removed)
+        }
+        repeat {
+            var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/history")!
+            var queryItems = [
+                URLQueryItem(name: "startHistoryId", value: startHistoryId),
+                URLQueryItem(name: "historyTypes", value: "labelAdded"),
+                URLQueryItem(name: "historyTypes", value: "labelRemoved"),
+                URLQueryItem(name: "historyTypes", value: "messageDeleted"),
+                URLQueryItem(name: "maxResults", value: String(historyPageSize)),
+            ]
+            if let pageToken { queryItems.append(URLQueryItem(name: "pageToken", value: pageToken)) }
+            components.queryItems = queryItems
+            let (data, response) = try await authorizedRequest(url: components.url!, token: token)
+            if let http = response as? HTTPURLResponse, http.statusCode == 404 {
+                throw ClientError.historyExpired
+            }
+            try validate(response)
+            let page = try JSONDecoder().decode(HistoryListResponse.self, from: data)
+            for entry in page.history ?? [] {
+                for change in (entry.labelsAdded ?? []) + (entry.labelsRemoved ?? []) {
+                    let labels = Set(change.message.labelIds ?? [])
+                    let removedFromInbox = (entry.labelsRemoved ?? []).contains { $0.message.id == change.message.id && ($0.labelIds ?? []).contains("INBOX") }
+                        && !labels.contains("INBOX") && !labels.contains("SENT")
+                    let trashed = labels.contains("TRASH") || labels.contains("SPAM")
+                    record(change.message, removed: removedFromInbox || trashed)
+                }
+                for deleted in entry.messagesDeleted ?? [] {
+                    record(deleted.message, removed: true)
+                }
+            }
+            latestHistoryId = page.historyId ?? latestHistoryId
+            pageToken = page.nextPageToken
+        } while pageToken != nil
+        return (order.compactMap { latest[$0] }, latestHistoryId)
     }
 
     /// Re-attempts specific message ids directly, independent of the
@@ -645,11 +712,13 @@ private struct MessageListResponse: Decodable {
 
 private struct HistoryListResponse: Decodable {
     struct HistoryRecord: Decodable {
-        struct MessageAdded: Decodable {
-            struct MessageRef: Decodable { let id: String }
-            let message: MessageRef
-        }
+        struct MessageRef: Decodable { let id: String; let threadId: String?; let labelIds: [String]? }
+        struct MessageAdded: Decodable { let message: MessageRef }
+        struct LabelChange: Decodable { let message: MessageRef; let labelIds: [String]? }
         let messagesAdded: [MessageAdded]?
+        let labelsAdded: [LabelChange]?
+        let labelsRemoved: [LabelChange]?
+        let messagesDeleted: [MessageAdded]?
     }
     let history: [HistoryRecord]?
     let historyId: String?

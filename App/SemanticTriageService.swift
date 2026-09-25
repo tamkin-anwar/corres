@@ -1,3 +1,4 @@
+import Foundation
 import FoundationModels
 import Observation
 
@@ -36,12 +37,17 @@ import Observation
 /// and stays true here, not a new promise.
 @MainActor @Observable
 final class SemanticTriageService {
-    /// Whether Apple Intelligence is actually usable on this device right
-    /// now (device eligible, feature enabled in Settings, model finished
-    /// downloading). Checked once at launch; `triageIfNeeded` no-ops
-    /// entirely when false, so every caller can call it unconditionally
-    /// without its own availability check.
-    private(set) var isAvailable: Bool
+    /// Whether Apple Intelligence is usable right now (device eligible,
+    /// enabled in Settings, model downloaded). Checked on every pass, not
+    /// once at launch: the model often finishes downloading, or the person
+    /// turns Apple Intelligence on, while the app is already running, and a
+    /// launch-time snapshot would leave triage off until the next cold start.
+    private var isAvailable: Bool {
+        if #available(iOS 26.0, *) {
+            return SystemLanguageModel.default.availability == .available
+        }
+        return false
+    }
 
     /// Bounded, not unlimited: an on-device model call has real latency,
     /// and firing dozens at once would compete with whatever else is
@@ -50,14 +56,15 @@ final class SemanticTriageService {
     /// applied to network fetches.
     private static let concurrency = 3
     private static let sampleAccount = "sample"
+    /// Pulling an update *into* Needs You is about something due soon (a
+    /// bill, a sign-in, a travel change); a week-old unread update's moment
+    /// has almost always passed. Bounding the pool also keeps a first run
+    /// over a large backlog of unread notifications from occupying the
+    /// on-device model for minutes.
+    private static let promotionWindow: TimeInterval = 7 * 86_400
 
-    init() {
-        if #available(iOS 26.0, *) {
-            isAvailable = SystemLanguageModel.default.availability == .available
-        } else {
-            isAvailable = false
-        }
-    }
+    private var isRunning = false
+    private var rerunRequested = false
 
     /// Two pools, assessed in both directions. `InboxClassifier` already
     /// sorted every message by rule at sync time; this only refines the
@@ -70,15 +77,45 @@ final class SemanticTriageService {
     ///   Apple Mail does when time-sensitive mail surfaces in Primary.
     /// Promotions, social, and mailing-list mail are never candidates.
     /// Screener-held senders aren't either: they're not shown anywhere yet.
-    func triageIfNeeded(store: MailStore) async {
+    ///
+    /// Called after every successful sync, from any path (launch, push,
+    /// pull-to-refresh, connecting an account). Overlapping full passes
+    /// coalesce into one follow-up pass instead of assessing the same
+    /// threads twice. `only` scopes a pass to specific threads regardless
+    /// of any pass already running — the push path uses it to assess just
+    /// the mail that arrived, inside iOS's ~30-second background window,
+    /// before posting a notification, rather than the whole backlog.
+    func triageIfNeeded(store: MailStore, only ids: Set<ThreadID>? = nil) async {
         guard isAvailable else { return }
+        if let ids {
+            await runPass(store: store, only: ids)
+            return
+        }
+        guard !isRunning else {
+            rerunRequested = true
+            return
+        }
+        isRunning = true
+        defer { isRunning = false }
+        repeat {
+            rerunRequested = false
+            await runPass(store: store, only: nil)
+        } while rerunRequested
+    }
+
+    private func runPass(store: MailStore, only ids: Set<ThreadID>?) async {
+        let now = Date.now
+        // Newest first: what just arrived is what the person is about to
+        // look at, so it gets assessed before an older backlog does.
         let candidates = store.threads.filter { thread in
-            guard thread.id.account != Self.sampleAccount,
+            guard ids?.contains(thread.id) ?? true,
+                  thread.id.account != Self.sampleAccount,
                   thread.senderDecision == .approved,
                   thread.latestMessageID != nil,
                   thread.triagedMessageID != thread.latestMessageID else { return false }
-            return thread.attention == .needsYou || Self.isPromotionCandidate(thread)
-        }
+            if thread.attention == .needsYou { return true }
+            return Self.isPromotionCandidate(thread) && now.timeIntervalSince(thread.receivedAt) < Self.promotionWindow
+        }.sorted { $0.receivedAt > $1.receivedAt }
         guard !candidates.isEmpty else { return }
         await withTaskGroup(of: Void.self) { group in
             var pending = candidates[...]

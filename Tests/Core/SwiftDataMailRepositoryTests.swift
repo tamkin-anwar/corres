@@ -424,6 +424,69 @@ struct SwiftDataMailRepositoryTests {
         #expect(threads.first { $0.id == alertID }?.attention == .handled)
     }
 
+    /// Someone this account has written to lands in Needs You even when
+    /// Gmail filed their mail under Updates; their newsletter doesn't, and a
+    /// stranger's automated update doesn't either.
+    @Test func mailFromSomeoneYouveWrittenToIsCorrespondence() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let me = "me@example.com"
+        func message(_ n: Int, from sender: String, to: [String] = ["me@example.com"], labels: [String] = [],
+                     unsubscribe: String? = nil, unread: Bool = true) -> Correspondence {
+            let automated = Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: unsubscribe, senderEmail: sender)
+            let (attention, reason) = InboxClassifier.initialAttention(isUnread: unread, labelIds: labels, looksAutomated: automated)
+            return Correspondence(id: ThreadID(account: me, providerID: "\(n)"), sender: sender, senderEmail: sender,
+                                  organization: "", subject: "s\(n)", excerpt: "", body: "", latestMessageID: "m\(n)",
+                                  receivedAt: now, dueAt: nil, reason: reason, attention: attention, isUnread: unread,
+                                  labelIds: labels, toRecipients: to, listUnsubscribeURL: unsubscribe)
+        }
+        try await repository.upsert([message(1, from: me, to: ["Friend@Example.com"], labels: ["SENT"], unread: false)], isInitialSync: true)
+        try await repository.upsert([
+            message(2, from: "friend@example.com", labels: ["INBOX", "UNREAD", "CATEGORY_UPDATES"]),
+            message(3, from: "friend@example.com", labels: ["INBOX", "UNREAD"], unsubscribe: "https://example.com/u"),
+            message(4, from: "alerts@stranger.com", labels: ["INBOX", "UNREAD", "CATEGORY_UPDATES"]),
+        ], isInitialSync: true)
+
+        let byID = Dictionary(uniqueKeysWithValues: try await repository.threads().map { ($0.id.providerID, $0) })
+        #expect(byID["2"]?.attention == .needsYou)
+        #expect(byID["2"]?.reason == InboxClassifier.correspondentReason)
+        #expect(byID["3"]?.attention == .quiet)
+        #expect(byID["4"]?.attention == .quiet)
+    }
+
+    /// Changes made in Gmail's own app, on the web, or in another client
+    /// show up here: read state mirrors in place without moving the thread
+    /// out of Needs You, an archive elsewhere removes it, and a change to
+    /// an older message or an unknown thread is ignored.
+    @Test func remoteChangesMirrorReadArchiveAndIgnoreStaleMessages() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let account = "me@example.com"
+        func thread(_ n: Int) -> Correspondence {
+            Correspondence(id: ThreadID(account: account, providerID: "t\(n)"), sender: "S", senderEmail: "s@x.test",
+                           organization: "", subject: "s", excerpt: "", body: "", latestMessageID: "m\(n)",
+                           receivedAt: now, dueAt: nil, reason: InboxClassifier.personalUnreadReason,
+                           attention: .needsYou, isUnread: true, labelIds: ["INBOX", "UNREAD"])
+        }
+        try await repository.upsert([thread(1), thread(2), thread(3)], isInitialSync: true)
+
+        let changed = try await repository.applyRemoteChanges([
+            RemoteMessageChange(threadID: ThreadID(account: account, providerID: "t1"), messageID: "m1",
+                                currentLabelIds: ["INBOX"], removed: false),
+            RemoteMessageChange(threadID: ThreadID(account: account, providerID: "t2"), messageID: "m2",
+                                currentLabelIds: [], removed: true),
+            RemoteMessageChange(threadID: ThreadID(account: account, providerID: "t3"), messageID: "older",
+                                currentLabelIds: [], removed: true),
+            RemoteMessageChange(threadID: ThreadID(account: account, providerID: "unknown"), messageID: "x",
+                                currentLabelIds: [], removed: true),
+        ])
+
+        let byID = Dictionary(uniqueKeysWithValues: try await repository.threads().map { ($0.id.providerID, $0) })
+        #expect(changed == 2)
+        #expect(byID["t1"]?.isUnread == false)
+        #expect(byID["t1"]?.attention == .needsYou)
+        #expect(byID["t2"] == nil)
+        #expect(byID["t3"] != nil)
+    }
+
     /// The one-time repair for mailboxes synced under the old "every unread
     /// message is Needs You" rule: bulk mail still carrying that untouched
     /// default moves out, personal mail stays, and anything the person or

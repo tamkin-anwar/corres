@@ -403,6 +403,27 @@ public struct BriefSnapshot: Equatable, Sendable {
     }
 }
 
+/// A change made to an already-synced message somewhere else — read in
+/// Gmail's own app, archived on the web, deleted from Apple Mail — as
+/// reported by Gmail's history API. Provider-neutral so the repository can
+/// apply it without knowing Gmail's wire format (ADR 002).
+public struct RemoteMessageChange: Sendable, Equatable {
+    public let threadID: ThreadID
+    public let messageID: String
+    /// The message's full current label set after the change, when known.
+    public let currentLabelIds: [String]?
+    /// Archived, trashed, marked spam, or deleted elsewhere: the thread
+    /// leaves Corres exactly as it would after archiving it here.
+    public let removed: Bool
+
+    public init(threadID: ThreadID, messageID: String, currentLabelIds: [String]?, removed: Bool) {
+        self.threadID = threadID
+        self.messageID = messageID
+        self.currentLabelIds = currentLabelIds
+        self.removed = removed
+    }
+}
+
 /// Decides where a freshly-synced message starts, before any on-device AI
 /// looks at it. Needs You is opt-in, not the default: every reference
 /// client that does this well (Gmail's Primary tab, Apple Mail's Primary
@@ -442,7 +463,28 @@ public enum InboxClassifier {
     /// threads whose attention came from that old default and nothing else.
     public static let legacyUnreadReason = "Unread in Gmail."
     public static let personalUnreadReason = "Unread, from a person."
+    public static let correspondentReason = "Unread, from someone you've written to."
     public static let readReason = "Already read in Gmail."
+
+    /// Every reason these rules can produce for unread mail: a thread
+    /// carrying one of these (and never triaged) still reflects a pure rule
+    /// decision nobody has overridden, so re-running the rules is safe.
+    public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason,
+                                                  BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,
+                                                  BulkKind.updates.reason, BulkKind.automated.reason]
+
+    /// Gmail Priority Inbox's own strongest signal is who you email, and
+    /// Apple Mail's Primary favors your contacts; this is the local
+    /// equivalent. An unread message from an address this account has
+    /// itself written to is correspondence even when Gmail filed it under
+    /// Updates, as it sometimes does with person-to-person mail. A
+    /// `List-Unsubscribe` header still wins: replying once to a company's
+    /// support address shouldn't let its newsletters through.
+    public static func correspondentOverride(isUnread: Bool, hasListUnsubscribe: Bool,
+                                             isCorrespondent: Bool) -> (attention: Attention, reason: String)? {
+        guard isUnread, isCorrespondent, !hasListUnsubscribe else { return nil }
+        return (.needsYou, correspondentReason)
+    }
 
     /// Gmail's own category labels come first because Gmail's classifier
     /// has seen the whole message and the sender's history, far more than

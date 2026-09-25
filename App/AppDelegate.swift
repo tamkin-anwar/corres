@@ -179,19 +179,24 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         let previousUnread = Dictionary(uniqueKeysWithValues: store.threads.map { ($0.id, $0.isUnread) })
         guard await sync.syncAll(accounts: auth.accounts.map(\.email)) else { return .noData }
         await store.load()
-        // Before filtering for notification purposes, not after: this is
-        // exactly what lets "Only notify for what needs me" (below) act on
-        // a real, refined judgment rather than just Gmail's raw unread
-        // state — a newsletter triage has already downgraded to `.quiet`
-        // correctly gets excluded, not just anything still unread.
-        await semanticTriageService.triageIfNeeded(store: store)
-        let newlyUnread = store.threads.filter { thread in
-            thread.isUnread && previousUnread[thread.id] != true
-                // Matches the Screener's own rule for ordinary browsing: a
-                // pending/blocked sender's first message doesn't belong in
-                // a notification either.
-                && thread.senderDecision == .approved
+        func newlyUnreadThreads() -> [Correspondence] {
+            store.threads.filter { thread in
+                thread.isUnread && previousUnread[thread.id] != true
+                    // Matches the Screener's own rule for ordinary browsing:
+                    // a pending/blocked sender's first message doesn't
+                    // belong in a notification either.
+                    && thread.senderDecision == .approved
+            }
         }
+        // Triage only what just arrived, before deciding what to notify
+        // about, so "Only notify for what needs me" acts on a refined
+        // judgment. Scoped deliberately: iOS allows roughly 30 seconds of
+        // background execution per push, and assessing the whole untriaged
+        // backlog first could delay this notification past that window, or
+        // get the app killed before it's posted at all. The backlog is
+        // picked up by the next foreground sync instead.
+        await semanticTriageService.triageIfNeeded(store: store, only: Set(newlyUnreadThreads().map(\.id)))
+        let newlyUnread = newlyUnreadThreads()
         // Preferences → "Only notify for what needs me": a direct extension
         // of Corres's own stated thesis ("less noise, more perspective"),
         // not a bolted-on setting. Read straight from UserDefaults, not

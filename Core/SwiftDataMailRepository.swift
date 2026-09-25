@@ -62,29 +62,64 @@ public actor SwiftDataMailRepository: MailRepository {
         }
     }
 
-    /// Only touches threads whose attention came from the old sync default
-    /// and nothing else: still `.needsYou`, still carrying that exact
-    /// reason, never triaged. A thread the person moved themselves, or that
-    /// the AI already refined, has a different attention or reason and is
-    /// left alone. Every stored preview is decoded regardless, since all of
-    /// them came from Gmail's HTML-escaped `snippet`; the caller runs this
-    /// exactly once, so a preview is never decoded twice.
+    /// Reading a message elsewhere updates `isUnread` but not attention,
+    /// the same as opening it in Corres does: read isn't the same as
+    /// handled, and Needs You only empties when the person acts.
+    @discardableResult
+    public func applyRemoteChanges(_ changes: [RemoteMessageChange]) throws -> Int {
+        guard !changes.isEmpty else { return 0 }
+        var changed = 0
+        for change in changes {
+            let compositeID = PersistedCorrespondence.compositeID(account: change.threadID.account,
+                                                                 providerID: change.threadID.providerID)
+            var descriptor = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.compositeID == compositeID })
+            descriptor.fetchLimit = 1
+            guard let model = try modelContext.fetch(descriptor).first,
+                  model.latestMessageID == change.messageID else { continue }
+            if change.removed {
+                modelContext.delete(model)
+                changed += 1
+            } else if let labels = change.currentLabelIds, labels != model.labelIds {
+                model.labelIds = labels
+                model.isUnread = labels.contains("UNREAD")
+                changed += 1
+            }
+        }
+        if changed > 0 { try modelContext.save() }
+        return changed
+    }
+
+    /// Only touches threads whose attention is still a pure rule decision:
+    /// `.needsYou`/`.quiet` with one of `InboxClassifier.ruleReasons`
+    /// (including the old "every unread message" default), never triaged.
+    /// A thread the person moved themselves, or that the AI already
+    /// refined, has a different attention or reason and is left alone, so
+    /// this is safe to re-run whenever the rules improve. Stored previews
+    /// are decoded too, since they came from Gmail's HTML-escaped `snippet`.
     @discardableResult
     public func reclassifyLegacySyncDefaults() throws -> Int {
         let models = try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>())
+        let correspondents = Self.correspondents(in: models, plus: [])
         var changed = 0
         for model in models {
             let decoded = model.excerpt.decodingHTMLEntities
             if decoded != model.excerpt { model.excerpt = decoded }
-            guard model.attentionRaw == Attention.needsYou.rawValue,
-                  model.reason == InboxClassifier.legacyUnreadReason,
+            guard model.attentionRaw == Attention.needsYou.rawValue || model.attentionRaw == Attention.quiet.rawValue,
+                  InboxClassifier.ruleReasons.contains(model.reason),
                   model.triagedMessageID == nil else { continue }
             let automated = Correspondence.isAutomated(listUnsubscribeMailto: model.listUnsubscribeMailto,
                                                        listUnsubscribeURL: model.listUnsubscribeURL,
                                                        senderEmail: model.senderEmail)
-            let (attention, reason) = InboxClassifier.initialAttention(isUnread: model.isUnread,
+            var (attention, reason) = InboxClassifier.initialAttention(isUnread: model.isUnread,
                                                                       labelIds: model.labelIds,
                                                                       looksAutomated: automated)
+            if let senderEmail = model.senderEmail?.lowercased(), senderEmail != model.account.lowercased(),
+               let override = InboxClassifier.correspondentOverride(
+                   isUnread: model.isUnread,
+                   hasListUnsubscribe: model.listUnsubscribeMailto != nil || model.listUnsubscribeURL != nil,
+                   isCorrespondent: correspondents.contains(Self.senderKey(account: model.account, senderEmail: senderEmail))) {
+                (attention, reason) = override
+            }
             if attention.rawValue != model.attentionRaw { changed += 1 }
             model.attentionRaw = attention.rawValue
             model.reason = reason
@@ -154,9 +189,18 @@ public actor SwiftDataMailRepository: MailRepository {
         var knownSenderDecisions = Self.senderDecisions(in: existingModels)
         let knownImageTrust = Self.imageTrust(in: existingModels)
         let knownUnsubscribed = Self.unsubscribed(in: existingModels)
+        let correspondents = Self.correspondents(in: existingModels, plus: incoming)
         var inserted = 0
         var changed = false
         for var item in incoming {
+            if let senderEmail = item.senderEmail?.lowercased(), senderEmail != item.id.account.lowercased(),
+               let override = InboxClassifier.correspondentOverride(
+                   isUnread: item.isUnread,
+                   hasListUnsubscribe: item.listUnsubscribeMailto != nil || item.listUnsubscribeURL != nil,
+                   isCorrespondent: correspondents.contains(Self.senderKey(account: item.id.account, senderEmail: senderEmail))) {
+                item.attention = override.attention
+                item.reason = override.reason
+            }
             let compositeID = PersistedCorrespondence.compositeID(account: item.id.account, providerID: item.id.providerID)
             if let existing = existingByCompositeID[compositeID] {
                 // Same thread already known. Only a genuinely new message
@@ -307,6 +351,29 @@ public actor SwiftDataMailRepository: MailRepository {
             map[senderKey(account: model.account, senderEmail: senderEmail)] = true
         }
         return map
+    }
+
+    /// Everyone this account has written to, keyed like `senderKey` (with
+    /// the address lowercased), from threads whose latest message is the
+    /// account owner's own, plus any of the owner's messages in the batch
+    /// being synced. Only a thread's latest message is stored, so a
+    /// conversation where the other person replied last no longer
+    /// contributes on its own — but it's computed *before* that reply is
+    /// applied, which is exactly the moment it matters. A known limitation,
+    /// not a full correspondent history.
+    private static func correspondents(in models: [PersistedCorrespondence], plus incoming: [Correspondence]) -> Set<String> {
+        var keys = Set<String>()
+        for model in models where model.senderEmail?.lowercased() == model.account.lowercased() {
+            for recipient in model.toRecipients + model.ccRecipients {
+                keys.insert(senderKey(account: model.account, senderEmail: recipient.lowercased()))
+            }
+        }
+        for item in incoming where item.senderEmail?.lowercased() == item.id.account.lowercased() {
+            for recipient in item.toRecipients + item.ccRecipients {
+                keys.insert(senderKey(account: item.id.account, senderEmail: recipient.lowercased()))
+            }
+        }
+        return keys
     }
 
     private static func unsubscribed(in models: [PersistedCorrespondence]) -> [String: Bool] {
