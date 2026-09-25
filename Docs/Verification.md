@@ -2,6 +2,15 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Needs You rebuilt as opt-in (September 25, 2026)
+
+Reported from a real device: Needs You held 110 mostly-promotional conversations. Every unread message used to start there. Now `InboxClassifier` keeps Gmail's Promotions/Social/Forums/Updates and any mailing-list/no-reply mail out by rule, and on-device triage refines both ways (drop personal mail that needs nothing; pull in an update carrying a real obligation, high confidence only).
+
+- One-time migration re-sorts threads still carrying the old default, leaving anything already decided alone; decodes stored `&#39;`-style previews.
+- Brief's Needs You count now matches the list it opens (both exclude Screener-held senders).
+- Verified with `swift test` (52/52, 6 new) and `xcodebuild` (`BUILD SUCCEEDED`).
+- **Needs on-device confirmation**: relaunch and check Needs You now shows only real correspondence, and that nothing personal went missing into Mail. Gmail occasionally files person-to-person mail under Updates; if that happens, it'll show in Mail, and the AI can only pull it back if it reads as needing action.
+
 ## Hotfix: OAuth refresh percent-encoding (September 24, 2026)
 
 Reported directly against a real device: "Could not mark this conversation as read" recurring consistently. Root cause traced to `GoogleTokenProvider.refreshAccessToken` using the wrong character set (`.urlQueryAllowed`, meant for URL query strings, not form bodies) when building its `application/x-www-form-urlencoded` POST body — a refresh token containing `+`, `&`, or `=` would get silently corrupted, breaking every subsequent Gmail call for that account, not just the one that happened to surface the alert first.

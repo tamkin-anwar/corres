@@ -373,10 +373,12 @@ struct SwiftDataMailRepositoryTests {
         // The (now-stale) triage result arrives and says it didn't need a
         // reply, which would normally downgrade a `.needsYou` thread to
         // `.quiet`.
-        try await repository.applySemanticTriage(id, needsReply: false, reason: "Marketing newsletter, no action needed.", messageID: "msg-1")
+        try await repository.applySemanticTriage(id, from: .needsYou, to: .quiet,
+                                                 reason: "Marketing newsletter, no action needed.", messageID: "msg-1")
 
         let updated = try await repository.threads().first { $0.id == id }
         #expect(updated?.attention == .handled)
+        #expect(updated?.reason == "Unread in Gmail.")
         // The bookkeeping still applies regardless, so this exact message
         // isn't re-triaged forever just because its result arrived too late.
         #expect(updated?.triagedMessageID == "msg-1")
@@ -391,10 +393,70 @@ struct SwiftDataMailRepositoryTests {
             reason: "Unread in Gmail.", attention: .needsYou)
         try await repository.upsert([message], isInitialSync: true)
 
-        try await repository.applySemanticTriage(id, needsReply: false, reason: "Marketing newsletter, no action needed.", messageID: "msg-1")
+        try await repository.applySemanticTriage(id, from: .needsYou, to: .quiet,
+                                                 reason: "Marketing newsletter, no action needed.", messageID: "msg-1")
 
         let updated = try await repository.threads().first { $0.id == id }
         #expect(updated?.attention == .quiet)
         #expect(updated?.reason == "Marketing newsletter, no action needed.")
+    }
+
+    @Test func semanticTriageCanPromoteAnUntouchedUpdateButNotOneThePersonHandled() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let billID = ThreadID(account: "gmail:me@example.com", providerID: "9")
+        let alertID = ThreadID(account: "gmail:me@example.com", providerID: "10")
+        let bill = Correspondence(
+            id: billID, sender: "Utility", organization: "Example", subject: "Payment due Friday",
+            excerpt: "hi", body: "hi", latestMessageID: "msg-9", receivedAt: now, dueAt: nil,
+            reason: InboxClassifier.BulkKind.updates.reason, attention: .quiet, isUnread: true)
+        let alert = Correspondence(
+            id: alertID, sender: "Bank", organization: "Example", subject: "New sign-in",
+            excerpt: "hi", body: "hi", latestMessageID: "msg-10", receivedAt: now, dueAt: nil,
+            reason: InboxClassifier.BulkKind.updates.reason, attention: .quiet, isUnread: true)
+        try await repository.upsert([bill, alert], isInitialSync: true)
+        try await repository.setAttention(.handled, for: alertID)
+
+        try await repository.applySemanticTriage(billID, from: .quiet, to: .needsYou, reason: "Payment due Friday.", messageID: "msg-9")
+        try await repository.applySemanticTriage(alertID, from: .quiet, to: .needsYou, reason: "Unrecognized sign-in.", messageID: "msg-10")
+
+        let threads = try await repository.threads()
+        #expect(threads.first { $0.id == billID }?.attention == .needsYou)
+        #expect(threads.first { $0.id == alertID }?.attention == .handled)
+    }
+
+    /// The one-time repair for mailboxes synced under the old "every unread
+    /// message is Needs You" rule: bulk mail still carrying that untouched
+    /// default moves out, personal mail stays, and anything the person or
+    /// the AI already decided on is left exactly as it is.
+    @Test func reclassifyingLegacyDefaultsSortsOnlyUntouchedThreads() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        func thread(_ n: Int, labels: [String] = [], unsubscribe: String? = nil, reason: String = InboxClassifier.legacyUnreadReason,
+                    attention: Attention = .needsYou, excerpt: String = "hi") -> Correspondence {
+            Correspondence(id: ThreadID(account: "gmail:me@example.com", providerID: "\(n)"), sender: "S\(n)",
+                           senderEmail: "s\(n)@example.com", organization: "Example", subject: "Subject \(n)",
+                           excerpt: excerpt, body: "hi", latestMessageID: "m\(n)", receivedAt: now, dueAt: nil,
+                           reason: reason, attention: attention, isUnread: true, labelIds: labels,
+                           listUnsubscribeURL: unsubscribe)
+        }
+        try await repository.upsert([
+            thread(1, labels: ["INBOX", "UNREAD", "CATEGORY_PROMOTIONS"], excerpt: "Don&#39;t miss it &amp; more"),
+            thread(2, unsubscribe: "https://example.com/unsub"),
+            thread(3, labels: ["INBOX", "UNREAD", "CATEGORY_PERSONAL"]),
+            thread(4, labels: ["CATEGORY_PROMOTIONS"], reason: "Asks you to confirm a date."),
+            thread(5, labels: ["CATEGORY_PROMOTIONS"], attention: .handled),
+        ], isInitialSync: true)
+
+        let changed = try await repository.reclassifyLegacySyncDefaults()
+        let byID = Dictionary(uniqueKeysWithValues: try await repository.threads().map { ($0.id.providerID, $0) })
+
+        #expect(changed == 2)
+        #expect(byID["1"]?.attention == .quiet)
+        #expect(byID["1"]?.reason == InboxClassifier.BulkKind.promotions.reason)
+        #expect(byID["1"]?.excerpt == "Don't miss it & more")
+        #expect(byID["2"]?.attention == .quiet)
+        #expect(byID["3"]?.attention == .needsYou)
+        #expect(byID["3"]?.reason == InboxClassifier.personalUnreadReason)
+        #expect(byID["4"]?.attention == .needsYou)
+        #expect(byID["5"]?.attention == .handled)
     }
 }

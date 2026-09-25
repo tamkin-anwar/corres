@@ -87,11 +87,27 @@ final class MailStore {
     /// keeps whatever Gmail-unread-state-derived reason it already had,
     /// correct even if not yet refined, and gets naturally retried the next
     /// time `SemanticTriageService` finds it still untriaged.
-    func applySemanticTriage(_ id: ThreadID, needsReply: Bool, reason: String, messageID: String) async {
-        guard let updated = try? await repository.applySemanticTriage(id, needsReply: needsReply, reason: reason, messageID: messageID) else { return }
+    func applySemanticTriage(_ id: ThreadID, from expected: Attention, to result: Attention,
+                             reason: String?, messageID: String) async {
+        guard let updated = try? await repository.applySemanticTriage(id, from: expected, to: result,
+                                                                      reason: reason, messageID: messageID) else { return }
         if let index = threads.firstIndex(where: { $0.id == updated.id }) {
             threads[index] = updated
         }
+    }
+
+    private static let attentionRulesMigrationKey = "corres.migration.inboxClassifier.v1"
+
+    /// Runs `MailRepository.reclassifyLegacySyncDefaults` once per install,
+    /// the first launch after Needs You stopped meaning "every unread
+    /// message." Only marks itself done on success, so a failed attempt
+    /// simply runs again next launch.
+    func migrateAttentionRulesIfNeeded() async {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: Self.attentionRulesMigrationKey) else { return }
+        guard (try? await repository.reclassifyLegacySyncDefaults()) != nil else { return }
+        defaults.set(true, forKey: Self.attentionRulesMigrationKey)
+        await refresh()
     }
 
     /// Every thread currently held by the Screener, awaiting a one-time

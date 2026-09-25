@@ -365,4 +365,53 @@ struct CorresCoreTests {
         let afterSecondIssue = try await repository.threads()
         #expect(afterSecondIssue.first { $0.id == secondMessage.id }?.imagesTrusted == true)
     }
+
+    /// Needs You is opt-in: only unread mail Gmail didn't file as bulk, and
+    /// that doesn't carry a mailing-list or no-reply signal, starts there.
+    @Test func inboxClassifierKeepsBulkMailOutOfNeedsYou() {
+        func attention(_ labels: [String], unread: Bool = true, automated: Bool = false) -> Attention {
+            InboxClassifier.initialAttention(isUnread: unread, labelIds: labels, looksAutomated: automated).attention
+        }
+        #expect(attention(["INBOX", "UNREAD", "CATEGORY_PERSONAL"]) == .needsYou)
+        #expect(attention(["INBOX", "UNREAD"]) == .needsYou)
+        #expect(attention(["INBOX", "UNREAD", "CATEGORY_PROMOTIONS"]) == .quiet)
+        #expect(attention(["INBOX", "UNREAD", "CATEGORY_SOCIAL"]) == .quiet)
+        #expect(attention(["INBOX", "UNREAD", "CATEGORY_FORUMS"]) == .quiet)
+        #expect(attention(["INBOX", "UNREAD", "CATEGORY_UPDATES"]) == .quiet)
+        #expect(attention(["INBOX", "UNREAD", "CATEGORY_PERSONAL"], automated: true) == .quiet)
+        #expect(attention(["INBOX", "CATEGORY_PERSONAL"], unread: false) == .quiet)
+
+        #expect(InboxClassifier.bulkKind(labelIds: ["CATEGORY_UPDATES"], looksAutomated: true)?.isPromotable == true)
+        #expect(InboxClassifier.bulkKind(labelIds: [], looksAutomated: true)?.isPromotable == true)
+        #expect(InboxClassifier.bulkKind(labelIds: ["CATEGORY_PROMOTIONS"], looksAutomated: true)?.isPromotable == false)
+        #expect(InboxClassifier.bulkKind(labelIds: ["CATEGORY_SOCIAL"], looksAutomated: false)?.isPromotable == false)
+    }
+
+    @Test func automatedSignalsComeFromRealHeaders() {
+        #expect(Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: "https://x.test/u", senderEmail: "a@x.test"))
+        #expect(Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: "no-reply@x.test"))
+        #expect(Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: "noreply@x.test"))
+        #expect(!Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: "jane@x.test"))
+    }
+
+    @Test func gmailSnippetEntitiesAreDecoded() {
+        #expect("Don&#39;t Fear The End".decodingHTMLEntities == "Don't Fear The End")
+        #expect("Tom &amp; Jerry &lt;3 &quot;hi&quot;".decodingHTMLEntities == "Tom & Jerry <3 \"hi\"")
+        #expect("caf&#xE9;".decodingHTMLEntities == "café")
+        #expect("AT&T and a stray & sign".decodingHTMLEntities == "AT&T and a stray & sign")
+        #expect("&bogus; stays".decodingHTMLEntities == "&bogus; stays")
+    }
+
+    /// Brief's count and the list it opens must agree: Screener-held
+    /// senders are excluded from both, not just the list.
+    @Test func briefCountsExcludeScreenerHeldSenders() {
+        let approved = Correspondence(id: ThreadID(account: "gmail:me@x.test", providerID: "1"), sender: "A", organization: "",
+                                      subject: "s", excerpt: "", body: "", receivedAt: now, dueAt: nil,
+                                      reason: "r", attention: .needsYou)
+        let held = Correspondence(id: ThreadID(account: "gmail:me@x.test", providerID: "2"), sender: "B", organization: "",
+                                  subject: "s", excerpt: "", body: "", receivedAt: now, dueAt: nil,
+                                  reason: "r", attention: .needsYou, senderDecision: .pending)
+        #expect(BriefSnapshot(threads: [approved, held], now: now).needsYou == 1)
+        #expect(MailQuery.filter([approved, held], attention: .needsYou, now: now).count == 1)
+    }
 }

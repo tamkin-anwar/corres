@@ -70,7 +70,7 @@ struct PreferencesView: View {
                         }
                     }
                     .disabled(auth.isSigningIn || sync.isSyncing)
-                    Text("Every connected account syncs into Mail at once. Switch between a single merged inbox and one account at a time from the toolbar. Sender, subject, and content are real, but Needs You/Waiting are only based on Gmail's own read/unread state at first, not real judgment. Replying, replying all, forwarding, starting a new message, archiving, moving to Trash, marking read/unread, and applying your own Gmail labels all act for real.")
+                    Text("Every connected account syncs into Mail at once. Switch between a single merged inbox and one account at a time from the toolbar. Needs You holds unread mail from people; promotions, social updates, newsletters, and automated notifications stay in Mail, sorted using Gmail's own categories. Everything is always in Mail. Replying, replying all, forwarding, starting a new message, archiving, moving to Trash, marking read/unread, and applying your own Gmail labels all act for real.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
                     if !auth.accounts.isEmpty {
                         Toggle("Notify me about new mail", isOn: Binding(

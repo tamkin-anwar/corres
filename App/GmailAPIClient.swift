@@ -453,13 +453,16 @@ struct GmailAPIClient {
         // right.
         let listUnsubscribeOneClick = listUnsubscribeURL != nil
             && (headers["list-unsubscribe-post"]?.lowercased().contains("one-click") ?? false)
+        let automated = Correspondence.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto,
+                                                   listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail)
+        let (attention, reason) = InboxClassifier.initialAttention(isUnread: isUnread, labelIds: message.labelIds ?? [],
+                                                                  looksAutomated: automated)
         return Correspondence(
             id: ThreadID(account: account, providerID: message.threadId ?? message.id),
             sender: sender, senderEmail: senderEmail, organization: organization, subject: subject,
-            excerpt: message.snippet ?? "", body: body, htmlBody: htmlBody, messageIdHeader: messageIdHeader,
+            excerpt: (message.snippet ?? "").decodingHTMLEntities, body: body, htmlBody: htmlBody, messageIdHeader: messageIdHeader,
             latestMessageID: message.id, receivedAt: receivedAt, dueAt: nil,
-            reason: isUnread ? "Unread in Gmail." : "Already read in Gmail.",
-            attention: isUnread ? .needsYou : .quiet, attachments: attachments, isUnread: isUnread,
+            reason: reason, attention: attention, attachments: attachments, isUnread: isUnread,
             labelIds: message.labelIds ?? [],
             toRecipients: toRecipients, ccRecipients: ccRecipients,
             listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,

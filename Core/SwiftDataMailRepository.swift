@@ -45,21 +45,52 @@ public actor SwiftDataMailRepository: MailRepository {
     /// Waiting, snooze it). `mutate` re-fetches the model fresh from
     /// SwiftData right here, inside this actor's own serialized access, so
     /// `model.attentionRaw` at this point is the true current state, not
-    /// the stale snapshot the model was given; the downgrade to `.quiet`
-    /// only applies if the thread is *still* sitting exactly where triage
-    /// found it (`.needsYou`), never overwriting whatever the person
-    /// decided in the meantime. `reason`/`triagedMessageID` still update
-    /// unconditionally either way, so this message isn't re-triaged
-    /// forever just because its result arrived too late to apply.
+    /// the stale snapshot the model was given; the move only applies if the
+    /// thread is *still* sitting exactly where triage found it (`expected`),
+    /// never overwriting whatever the person decided in the meantime.
+    /// `triagedMessageID` still updates unconditionally, so this message
+    /// isn't re-triaged forever just because its result arrived too late.
     @discardableResult
-    public func applySemanticTriage(_ id: ThreadID, needsReply: Bool, reason: String, messageID: String) throws -> Correspondence {
+    public func applySemanticTriage(_ id: ThreadID, from expected: Attention, to result: Attention,
+                                    reason: String?, messageID: String) throws -> Correspondence {
         try mutate(id) { model in
-            if !needsReply && model.attentionRaw == Attention.needsYou.rawValue {
-                model.attentionRaw = Attention.quiet.rawValue
+            if model.attentionRaw == expected.rawValue {
+                model.attentionRaw = result.rawValue
+                if let reason { model.reason = reason }
             }
-            model.reason = reason
             model.triagedMessageID = messageID
         }
+    }
+
+    /// Only touches threads whose attention came from the old sync default
+    /// and nothing else: still `.needsYou`, still carrying that exact
+    /// reason, never triaged. A thread the person moved themselves, or that
+    /// the AI already refined, has a different attention or reason and is
+    /// left alone. Every stored preview is decoded regardless, since all of
+    /// them came from Gmail's HTML-escaped `snippet`; the caller runs this
+    /// exactly once, so a preview is never decoded twice.
+    @discardableResult
+    public func reclassifyLegacySyncDefaults() throws -> Int {
+        let models = try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>())
+        var changed = 0
+        for model in models {
+            let decoded = model.excerpt.decodingHTMLEntities
+            if decoded != model.excerpt { model.excerpt = decoded }
+            guard model.attentionRaw == Attention.needsYou.rawValue,
+                  model.reason == InboxClassifier.legacyUnreadReason,
+                  model.triagedMessageID == nil else { continue }
+            let automated = Correspondence.isAutomated(listUnsubscribeMailto: model.listUnsubscribeMailto,
+                                                       listUnsubscribeURL: model.listUnsubscribeURL,
+                                                       senderEmail: model.senderEmail)
+            let (attention, reason) = InboxClassifier.initialAttention(isUnread: model.isUnread,
+                                                                      labelIds: model.labelIds,
+                                                                      looksAutomated: automated)
+            if attention.rawValue != model.attentionRaw { changed += 1 }
+            model.attentionRaw = attention.rawValue
+            model.reason = reason
+        }
+        try modelContext.save()
+        return changed
     }
 
     public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {

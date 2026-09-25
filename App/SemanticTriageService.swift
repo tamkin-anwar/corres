@@ -2,26 +2,22 @@ import FoundationModels
 import Observation
 
 /// Refines "Needs You" with a real, on-device understanding of whether a
-/// message actually expects a personal reply, decision, or action — not
-/// just "Gmail says this is unread" (the only signal `Attention` had until
-/// this). Built on Apple's Foundation Models framework: the same ~3B
-/// parameter model powering Apple Intelligence, running entirely on-device.
-/// No API key, no network request, no ongoing cost, and nothing about a
-/// message ever leaves the device or reaches a server Corres runs — chosen
-/// deliberately over a cloud model for exactly that reason, requested
-/// directly ("I love this idea of using Apple Intelligence").
+/// message actually expects a personal reply, decision, or action. Built on
+/// Apple's Foundation Models framework: the same ~3B parameter model
+/// powering Apple Intelligence, running entirely on-device. No API key, no
+/// network request, no ongoing cost, and nothing about a message ever
+/// leaves the device or reaches a server Corres runs.
 ///
-/// Strictly a *refinement*, never an invention: this only ever runs against
-/// a thread Gmail's own unread state already put in `.needsYou`, and can
-/// only downgrade it to `.quiet` when the model reports it's confident it
-/// doesn't need a reply (a newsletter, a receipt, an automated
-/// notification) — `TriageAssessment.confidence`, a real field the model
-/// fills in, not just a doc comment's claim about behavior the type
-/// couldn't actually express (found and fixed in a review sweep: the
-/// confidence language existed here before the field backing it did). It
-/// never promotes an already-read thread into `.needsYou` — that's a
-/// meaningfully bigger claim (finding something the person forgot to reply
-/// to) deliberately left for a later, separate feature.
+/// A *refinement* of `InboxClassifier`'s rule-based sort, never the
+/// foundation of it: Needs You has to work on a device without Apple
+/// Intelligence too, so the rules decide first and this only adjusts the
+/// edges (see `triageIfNeeded`). Every move is gated on
+/// `TriageAssessment.confidence` — medium to drop personal mail out, high
+/// to pull an automated update in, since wrongly hiding a real message and
+/// wrongly surfacing a promotion are both worse than leaving the rules'
+/// answer alone. Only unread mail is ever assessed; finding an old,
+/// already-read thread the person forgot to answer is a bigger claim,
+/// deliberately left for a separate feature.
 ///
 /// Worth being honest about what "confident" means here: this is the
 /// on-device model's own self-reported assessment, constrained to three
@@ -63,18 +59,25 @@ final class SemanticTriageService {
         }
     }
 
-    /// Finds every real, currently-`.needsYou` thread this hasn't already
-    /// assessed the latest message of, and refines each one. Called after a
-    /// sync brings in new mail (launch, a push-triggered background sync);
-    /// safe to call as often as that, since anything already triaged is
-    /// skipped immediately rather than re-assessed.
+    /// Two pools, assessed in both directions. `InboxClassifier` already
+    /// sorted every message by rule at sync time; this only refines the
+    /// edges it can't see from labels and headers alone:
+    /// - personal unread mail (`.needsYou`) that turns out not to need
+    ///   anything (an FYI, a thank-you) may drop out, at medium confidence;
+    /// - unread automated updates (`.quiet`, `BulkKind.isPromotable`) that
+    ///   genuinely demand action (a bill due, a flight change, a security
+    ///   alert) may come back in, at high confidence only — the same thing
+    ///   Apple Mail does when time-sensitive mail surfaces in Primary.
+    /// Promotions, social, and mailing-list mail are never candidates.
+    /// Screener-held senders aren't either: they're not shown anywhere yet.
     func triageIfNeeded(store: MailStore) async {
         guard isAvailable else { return }
         let candidates = store.threads.filter { thread in
-            thread.id.account != Self.sampleAccount &&
-            thread.attention == .needsYou &&
-            thread.latestMessageID != nil &&
-            thread.triagedMessageID != thread.latestMessageID
+            guard thread.id.account != Self.sampleAccount,
+                  thread.senderDecision == .approved,
+                  thread.latestMessageID != nil,
+                  thread.triagedMessageID != thread.latestMessageID else { return false }
+            return thread.attention == .needsYou || Self.isPromotionCandidate(thread)
         }
         guard !candidates.isEmpty else { return }
         await withTaskGroup(of: Void.self) { group in
@@ -88,33 +91,43 @@ final class SemanticTriageService {
         }
     }
 
+    private static func isPromotionCandidate(_ thread: Correspondence) -> Bool {
+        guard thread.attention == .quiet, thread.isUnread,
+              let kind = InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) else { return false }
+        return kind.isPromotable
+    }
+
     private func triage(_ thread: Correspondence, store: MailStore) async {
         guard let messageID = thread.latestMessageID,
               let assessment = await assess(thread) else { return }
-        // A downgrade only ever applies once the model both says it
-        // doesn't need a reply AND reports being confident about it;
-        // `needsReply == false` at low confidence leaves the thread
-        // exactly where it was (still `.needsYou`) rather than acting on a
-        // guess. `applySemanticTriage` itself still records the reason and
-        // `triagedMessageID` either way, so this message isn't re-assessed
-        // every single time just because confidence was too low to act on.
-        await store.applySemanticTriage(thread.id, needsReply: assessment.needsReply || !assessment.confidentEnough,
-                                        reason: assessment.reason, messageID: messageID)
+        let from = thread.attention
+        let to: Attention
+        if from == .needsYou {
+            to = (!assessment.needsReply && assessment.confidence >= 1) ? .quiet : .needsYou
+        } else {
+            to = (assessment.needsReply && assessment.confidence >= 2) ? .needsYou : .quiet
+        }
+        // Only show the model's own reason when the outcome agrees with
+        // it; a low-confidence "no action needed" on a thread that stays in
+        // Needs You would otherwise contradict where the thread sits.
+        let agrees = (to == .needsYou) == assessment.needsReply
+        await store.applySemanticTriage(thread.id, from: from, to: to,
+                                        reason: agrees ? assessment.reason : nil, messageID: messageID)
     }
 
     /// A plain, non-`@available` tuple, deliberately: `TriageAssessment`
     /// (and its `Confidence` enum) is `@available(iOS 26.0, *)`, and
     /// putting that type directly in this method's own signature would
     /// force the whole method to carry that availability annotation too,
-    /// leaking the same requirement out to `triage(_:store:)`'s call site
-    /// for no reason — the `#available` check right below already confines
-    /// where that actually matters to this one method's body.
-    private func assess(_ thread: Correspondence) async -> (needsReply: Bool, reason: String, confidentEnough: Bool)? {
+    /// leaking the same requirement out to `triage(_:store:)`'s call site.
+    /// `confidence` is 0 (low), 1 (medium), or 2 (high) for the same reason.
+    private func assess(_ thread: Correspondence) async -> (needsReply: Bool, reason: String, confidence: Int)? {
         guard #available(iOS 26.0, *) else { return nil }
         do {
             let session = LanguageModelSession(instructions: Self.instructions)
             let response = try await session.respond(to: Self.prompt(for: thread), generating: TriageAssessment.self)
-            return (response.content.needsReply, response.content.reason, response.content.confidence != .low)
+            let confidence: Int = switch response.content.confidence { case .low: 0; case .medium: 1; case .high: 2 }
+            return (response.content.needsReply, response.content.reason, confidence)
         } catch {
             // Fails closed: `triagedMessageID` is only ever set by
             // `applySemanticTriage`, which this simply never calls on
@@ -136,6 +149,14 @@ final class SemanticTriageService {
     Keep the reason short, specific, and in plain language, as if explaining \
     the decision to the recipient in one breath.
 
+    An automated message does need action when it carries a real obligation \
+    or deadline for this person specifically: a bill or payment due, a \
+    failed payment, a security alert or sign-in they didn't make, an \
+    appointment or travel change, a document to sign, a verification only \
+    they can complete. Marketing urgency never counts: sales, limited-time \
+    offers, "last chance," price drops, recommendations, and job or property \
+    alerts are not actions, however urgent the wording.
+
     Also rate your own confidence honestly. Only report "high" or "medium" \
     confidence when the message's purpose is genuinely clear from the sender, \
     subject, and preview alone. Report "low" confidence whenever the preview \
@@ -153,6 +174,7 @@ final class SemanticTriageService {
         Message preview: \(thread.excerpt)
         The recipient was \(thread.isDirectRecipient ? "addressed directly (To)" : "only copied (Cc)") on this message.
         \(thread.looksAutomated ? "This message shows signs of being automated or bulk mail (it includes an unsubscribe link, or comes from a no-reply address)." : "")
+        \(thread.labelIds.contains("CATEGORY_UPDATES") ? "Gmail filed this under Updates (automated notifications, receipts, account alerts)." : "")
 
         Does this message genuinely need a personal reply, decision, or action from the recipient? How confident are you?
         """

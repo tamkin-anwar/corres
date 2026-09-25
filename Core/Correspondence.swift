@@ -229,6 +229,10 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// context alongside the message itself, not used to decide anything on
     /// its own.
     public var looksAutomated: Bool {
+        Self.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail)
+    }
+
+    public static func isAutomated(listUnsubscribeMailto: String?, listUnsubscribeURL: String?, senderEmail: String?) -> Bool {
         if listUnsubscribeMailto != nil || listUnsubscribeURL != nil { return true }
         guard let senderEmail else { return false }
         return senderEmail.lowercased().range(of: #"^no.?reply@"#, options: .regularExpression) != nil
@@ -386,13 +390,113 @@ public struct BriefSnapshot: Equatable, Sendable {
     public let upcoming: Int
 
     public init(threads: [Correspondence], now: Date, horizon: TimeInterval = 86_400) {
-        let active = threads.filter { !$0.isSnoozed(at: now) }
+        // Same exclusions `MailQuery.filter` applies to the lists these
+        // counts link to; without the Screener check, Brief said 149 while
+        // the Needs You list it opens showed 110.
+        let active = threads.filter { !$0.isSnoozed(at: now) && $0.senderDecision == .approved }
         needsYou = active.filter { $0.attention == .needsYou }.count
         waiting = active.filter { $0.attention == .waiting }.count
         upcoming = active.filter {
             guard $0.attention == .needsYou, let due = $0.dueAt else { return false }
             return due >= now && due <= now.addingTimeInterval(horizon)
         }.count
+    }
+}
+
+/// Decides where a freshly-synced message starts, before any on-device AI
+/// looks at it. Needs You is opt-in, not the default: every reference
+/// client that does this well (Gmail's Primary tab, Apple Mail's Primary
+/// category, Superhuman's Important split, Spark's People) starts from
+/// "not important" and admits only person-to-person mail, sending
+/// marketing, social, and automated updates elsewhere. Corres used to do
+/// the opposite — every unread message was Needs You — which buried the
+/// handful of real ones under store promotions and newsletters.
+///
+/// Rules first, AI second: this works identically on every device,
+/// whether or not Apple Intelligence is available, so Needs You is never
+/// only as good as whether the model happens to be ready.
+public enum InboxClassifier {
+    /// Where a message was sorted out of Needs You, and why. `updates` and
+    /// `automated` are the only kinds `SemanticTriageService` may promote
+    /// back in (a bill due, a flight change, a verification request);
+    /// promotions, social, and mailing-list mail never are, since marketing
+    /// copy routinely dresses itself up as urgent ("sale ends tonight").
+    public enum BulkKind: Sendable {
+        case promotions, social, forums, updates, automated
+
+        public var reason: String {
+            switch self {
+            case .promotions: "Promotion. Kept out of Needs You."
+            case .social: "Social notification. Kept out of Needs You."
+            case .forums: "Mailing list. Kept out of Needs You."
+            case .updates: "Automated update. Kept out of Needs You."
+            case .automated: "Bulk mail. Kept out of Needs You."
+            }
+        }
+
+        public var isPromotable: Bool { self == .updates || self == .automated }
+    }
+
+    /// The reason every unread message used to get, whatever it was.
+    /// Kept only so `MailRepository.reclassifyLegacySyncDefaults` can find
+    /// threads whose attention came from that old default and nothing else.
+    public static let legacyUnreadReason = "Unread in Gmail."
+    public static let personalUnreadReason = "Unread, from a person."
+    public static let readReason = "Already read in Gmail."
+
+    /// Gmail's own category labels come first because Gmail's classifier
+    /// has seen the whole message and the sender's history, far more than
+    /// anything available here. The unsubscribe/no-reply check catches
+    /// bulk mail Gmail left uncategorized (or an account with categories
+    /// turned off).
+    public static func bulkKind(labelIds: [String], looksAutomated: Bool) -> BulkKind? {
+        let labels = Set(labelIds)
+        if labels.contains("CATEGORY_PROMOTIONS") { return .promotions }
+        if labels.contains("CATEGORY_SOCIAL") { return .social }
+        if labels.contains("CATEGORY_FORUMS") { return .forums }
+        if labels.contains("CATEGORY_UPDATES") { return .updates }
+        if looksAutomated { return .automated }
+        return nil
+    }
+
+    public static func initialAttention(isUnread: Bool, labelIds: [String], looksAutomated: Bool) -> (attention: Attention, reason: String) {
+        guard isUnread else { return (.quiet, readReason) }
+        if let kind = bulkKind(labelIds: labelIds, looksAutomated: looksAutomated) {
+            return (.quiet, kind.reason)
+        }
+        return (.needsYou, personalUnreadReason)
+    }
+}
+
+public extension String {
+    /// Gmail's `snippet` field is HTML-escaped (`Don&#39;t`, `&amp;`), and
+    /// was being shown verbatim in every row preview and notification.
+    var decodingHTMLEntities: String {
+        guard contains("&") else { return self }
+        let named: [String: String] = ["amp": "&", "lt": "<", "gt": ">", "quot": "\"", "apos": "'", "nbsp": " "]
+        var result = ""
+        var index = startIndex
+        while index < endIndex {
+            if self[index] == "&", let semicolon = self[index...].prefix(10).firstIndex(of: ";") {
+                let entity = self[self.index(after: index)..<semicolon]
+                var decoded: String?
+                if entity.hasPrefix("#x") || entity.hasPrefix("#X") {
+                    decoded = UInt32(entity.dropFirst(2), radix: 16).flatMap(Unicode.Scalar.init).map { String(Character($0)) }
+                } else if entity.hasPrefix("#") {
+                    decoded = UInt32(entity.dropFirst()).flatMap(Unicode.Scalar.init).map { String(Character($0)) }
+                } else {
+                    decoded = named[String(entity)]
+                }
+                if let decoded {
+                    result += decoded
+                    index = self.index(after: semicolon)
+                    continue
+                }
+            }
+            result.append(self[index])
+            index = self.index(after: index)
+        }
+        return result
     }
 }
 

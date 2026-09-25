@@ -97,6 +97,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         async let storeLoaded: Void = store.load()
         await auth.restoreConnectedAccounts()
         await storeLoaded
+        await store.migrateAttentionRulesIfNeeded()
         let accountEmails = auth.accounts.map(\.email)
 
         async let didSync = sync.syncAll(accounts: accountEmails)
