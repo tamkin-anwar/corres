@@ -29,7 +29,8 @@ struct ConversationView: View {
     /// has fully closed, so the pop and the sheet dismissal never race.
     @State private var leaveAfterSnooze = false
     @State private var draftingIntent: String?
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss) private var systemDismiss
+    @Environment(\.conversationSelection) private var splitSelection
     @Environment(MailIntelligence.self) private var intelligence
     @Environment(\.displayScale) private var displayScale
     @AppStorage(GoogleAuthService.givenNameKey) private var givenName = ""
@@ -217,6 +218,12 @@ struct ConversationView: View {
     /// Everything in the conversation before the message shown in full.
     private func earlierMessages(in thread: Correspondence) -> [Correspondence]? {
         threadActions.messages(in: thread)?.filter { $0.latestMessageID != thread.latestMessageID }
+    }
+
+    /// Leaves the conversation: pops it on iPhone, clears the detail
+    /// column in the split layout.
+    private func dismiss() {
+        if let splitSelection { splitSelection.wrappedValue = nil } else { systemDismiss() }
     }
 
     private var threadExists: Bool { store.threads.contains { $0.id == currentID } }

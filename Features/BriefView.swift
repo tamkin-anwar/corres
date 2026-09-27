@@ -13,6 +13,7 @@ struct BriefView: View {
     /// a specific email scopes the whole Brief to just that one.
     var accountFilter: String?
     @AppStorage(GoogleAuthService.givenNameKey) private var givenName = ""
+    @Environment(\.conversationSelection) private var splitSelection
 
     private var scopedThreads: [Correspondence] {
         guard let accountFilter else { return store.threads }
@@ -161,10 +162,19 @@ struct BriefView: View {
                 let shown = Array(priorities.prefix(3))
                 let orderedIDs = shown.map(\.id)
                 ForEach(Array(shown.enumerated()), id: \.element.id) { index, thread in
-                    NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
-                        CorrespondenceRow(thread: thread, showsReason: true)
+                    let route = ConversationRoute(id: thread.id, orderedIDs: orderedIDs)
+                    if let splitSelection {
+                        Button { splitSelection.wrappedValue = route } label: {
+                            CorrespondenceRow(thread: thread, showsReason: true)
+                                .background(splitSelection.wrappedValue == route ? CorresPalette.accent.opacity(0.12) : .clear)
+                        }
+                        .buttonStyle(CorresRowButtonStyle())
+                    } else {
+                        NavigationLink(value: route) {
+                            CorrespondenceRow(thread: thread, showsReason: true)
+                        }
+                        .buttonStyle(CorresRowButtonStyle())
                     }
-                    .buttonStyle(CorresRowButtonStyle())
                     if index < shown.count - 1 { Hairline(leading: 77) }
                 }
             }

@@ -2,6 +2,13 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 1: iPad and wide-window layout (September 27, 2026)
+
+- Regular width now uses a three-column `NavigationSplitView`, the Apple Mail layout: a sidebar (Brief, Needs You, Waiting, Mail, with counts, plus accounts when there is more than one), the list, and the conversation beside it. Compact width keeps the tab layout unchanged.
+- Selection flows through an environment binding (`conversationSelection`). Lists use `List(selection:)` only in the split layout, the Brief's rows select instead of push, the selected row is tinted, and a conversation closes by clearing the detail column (archive, trash and snooze included). Changing sidebar destination clears the detail. ⌘N composes.
+- `CorresShell`'s modifier chain was split into helpers; the added layout pushed it past the type checker's limit.
+- Verified: `xcodebuild` BUILD SUCCEEDED, `swift test` 66/66. On the iPhone simulator, list to conversation still pushes. The iPad simulator opened Corres in a narrow iPadOS 26 window, which correctly used the tab layout; its window controls didn't respond to automated taps, so **the three-column layout needs checking on an iPad or a full-width window.**
+
 ## Premium parity sweep (September 27, 2026)
 
 Compared against what Superhuman, Spark, Apple Mail and Gmail treat as standard. Built:

@@ -133,6 +133,7 @@ struct CorrespondenceList: View {
     @State private var search = ""
     @State private var mailFilter = MailFilter.everything
     @State private var snoozeTarget: Correspondence?
+    @Environment(\.conversationSelection) private var splitSelection
     /// Same four `UserDefaults` keys `PreferencesView`'s own pickers
     /// read/write; `@AppStorage` keeps both in sync automatically, the same
     /// pattern `corres.appearance` already uses across multiple independent
@@ -193,7 +194,7 @@ struct CorrespondenceList: View {
 
     var body: some View {
         if scrolls {
-            List {
+            listContainer {
                 Section {
                     header
                     if results.isEmpty {
@@ -254,6 +255,17 @@ struct CorrespondenceList: View {
             }
         } else {
             ScrollView { staticContent }
+        }
+    }
+
+    /// On iPhone a plain List, so rows push; in the split layout a List
+    /// bound to the detail column's selection, so rows select into it.
+    @ViewBuilder
+    private func listContainer<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        if let splitSelection {
+            List(selection: splitSelection) { content() }
+        } else {
+            List { content() }
         }
     }
 
@@ -433,6 +445,7 @@ struct CorrespondenceList: View {
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.visible)
             .listRowSeparatorTint(CorresPalette.line)
+            .listRowBackground(splitSelection?.wrappedValue?.id == thread.id ? CorresPalette.accent.opacity(0.12) : Color.clear)
             .alignmentGuide(.listRowSeparatorLeading) { _ in 77 }
             .onAppear {
                 if pagesOlderMail, thread.id == results.last?.id { loadOlderMail() }

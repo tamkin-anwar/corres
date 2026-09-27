@@ -25,29 +25,25 @@ struct CorresShell: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
 
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// The conversation open in the split layout's detail column.
+    @State private var splitRoute: ConversationRoute?
+
     var body: some View {
-        TabView(selection: $selection) {
-            ForEach(Destination.allCases) { destination in
-                NavigationStack {
-                    destinationContent(for: destination)
-                        .background(CorresPalette.canvas)
-                        .navigationTitle(title(for: destination))
-                        // Brief sets its own greeting as the headline; the
-                        // lists use the system large title, set in New York
-                        // (see CorresApp.init), which collapses on scroll.
-                        .navigationBarTitleDisplayMode(destination == .brief ? .inline : .large)
-                        .toolbarTitleMenu { if auth.accounts.count > 1 { accountMenu } }
-                        .toolbar { toolbarContent }
-                        .navigationDestination(for: ConversationRoute.self) { route in
-                            ConversationView(store: store, outbox: outbox, threadActions: threadActions,
-                                            labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
-                                            route: route)
-                        }
-                }
-                .tabItem { Label(destination.rawValue, systemImage: destination.systemImage) }
-                .tag(destination)
-            }
+        withAlerts(withSheets(withFeedback(layout)))
+    }
+
+    @ViewBuilder
+    private var layout: some View {
+        if sizeClass == .regular {
+            splitLayout
+        } else {
+            tabLayout
         }
+    }
+
+    private func withFeedback(_ content: some View) -> some View {
+        content
         .foregroundStyle(CorresPalette.ink)
         .overlay(alignment: .bottom) { outboxBanner }
         // Reduce Motion, respected: the banner still needs to appear and
@@ -67,6 +63,10 @@ struct CorresShell: View {
             if !hasExplored { showingWelcome = true }
             if store.state == .idle { await store.load() }
         }
+    }
+
+    private func withSheets(_ content: some View) -> some View {
+        content
         // A filtered-to-one-account view whose account was just disconnected
         // would otherwise keep silently showing nothing, with no visible
         // explanation; falling back to "All Inboxes" is the same recovery
@@ -85,6 +85,10 @@ struct CorresShell: View {
                 showingWelcome = false
             }
         }
+    }
+
+    private func withAlerts(_ content: some View) -> some View {
+        content
         .alert("Could not save", isPresented: Binding(
             get: { store.errorMessage != nil },
             set: { if !$0 { store.errorMessage = nil } }
@@ -208,6 +212,115 @@ struct CorresShell: View {
             if let accountFilter { accountFilter.components(separatedBy: "@").first ?? accountFilter }
             else { auth.accounts.count > 1 ? "All Inboxes" : "Mail" }
         default: destination.rawValue
+        }
+    }
+
+    /// iPhone: one tab per destination, conversations pushed on top.
+    private var tabLayout: some View {
+        TabView(selection: $selection) {
+            ForEach(Destination.allCases) { destination in
+                NavigationStack {
+                    destinationContent(for: destination)
+                        .background(CorresPalette.canvas)
+                        .navigationTitle(title(for: destination))
+                        // Brief sets its own greeting as the headline; the
+                        // lists use the system large title, set in New York
+                        // (see CorresApp.init), which collapses on scroll.
+                        .navigationBarTitleDisplayMode(destination == .brief ? .inline : .large)
+                        .toolbarTitleMenu { if auth.accounts.count > 1 { accountMenu } }
+                        .toolbar { toolbarContent }
+                        .navigationDestination(for: ConversationRoute.self) { route in
+                            ConversationView(store: store, outbox: outbox, threadActions: threadActions,
+                                            labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
+                                            route: route)
+                        }
+                }
+                .tabItem { Label(destination.rawValue, systemImage: destination.systemImage) }
+                .tag(destination)
+            }
+        }
+    }
+
+    /// iPad and wide windows: Apple Mail's three columns. Sidebar picks the
+    /// destination, the middle column lists it, the conversation stays open
+    /// beside the list instead of covering it.
+    private var splitLayout: some View {
+        NavigationSplitView {
+            List(selection: Binding(get: { Optional(selection) }, set: { if let new = $0 { selection = new } })) {
+                Section {
+                    ForEach(Destination.allCases) { destination in
+                        NavigationLink(value: destination) {
+                            LabeledContent {
+                                if let count = sidebarCount(for: destination), count > 0 {
+                                    Text(count, format: .number).monospacedDigit()
+                                }
+                            } label: {
+                                Label(destination.rawValue, systemImage: destination.systemImage)
+                            }
+                        }
+                    }
+                } header: {
+                    HStack(spacing: 8) {
+                        CorrespondenceMark().frame(width: 22, height: 22)
+                        Text("corres").font(.system(.title3, design: .serif)).foregroundStyle(CorresPalette.ink)
+                    }
+                    .textCase(nil)
+                    .padding(.bottom, 6)
+                }
+                if auth.accounts.count > 1 {
+                    Section("Accounts") { accountMenu }
+                }
+            }
+            .navigationSplitViewColumnWidth(min: 200, ideal: 240)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) { accountButton }
+            }
+        } content: {
+            NavigationStack {
+                destinationContent(for: selection)
+                    .background(CorresPalette.canvas)
+                    .navigationTitle(title(for: selection))
+                    .navigationBarTitleDisplayMode(selection == .brief ? .inline : .large)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button { composeDraft = Draft(kind: .new, to: "", subject: "") } label: {
+                                Image(systemName: "square.and.pencil")
+                            }
+                            .keyboardShortcut("n", modifiers: .command)
+                            .accessibilityLabel("New message")
+                        }
+                    }
+            }
+            .navigationSplitViewColumnWidth(min: 320, ideal: 380, max: 460)
+        } detail: {
+            NavigationStack {
+                if let splitRoute {
+                    ConversationView(store: store, outbox: outbox, threadActions: threadActions,
+                                    labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
+                                    route: splitRoute)
+                        .id(splitRoute)
+                } else {
+                    ContentUnavailableView {
+                        Label("No conversation selected", systemImage: "envelope.open")
+                    } description: {
+                        Text("Choose one from the list.")
+                    }
+                    .background(CorresPalette.canvas)
+                }
+            }
+        }
+        .environment(\.conversationSelection, $splitRoute)
+        .onChange(of: selection) { splitRoute = nil }
+        .tint(CorresPalette.accent)
+    }
+
+    private func sidebarCount(for destination: Destination) -> Int? {
+        let scoped = accountFilter.map { filter in store.threads.filter { $0.id.account == filter } } ?? store.threads
+        switch destination {
+        case .needsYou: return MailQuery.filter(scoped, attention: .needsYou).count
+        case .waiting: return MailQuery.filter(scoped, attention: .waiting).count
+        case .mail: return MailQuery.filter(scoped).filter(\.isUnread).count
+        case .brief: return nil
         }
     }
 

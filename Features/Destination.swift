@@ -17,3 +17,17 @@ enum Destination: String, CaseIterable, Identifiable {
         switch self { case .needsYou: .needsYou; case .waiting: .waiting; default: nil }
     }
 }
+
+/// Set only in the iPad/wide layout: which conversation the detail column
+/// shows. Lists and the Brief select into it instead of pushing, and a
+/// conversation closes by clearing it instead of popping.
+private struct ConversationSelectionKey: EnvironmentKey {
+    static let defaultValue: Binding<ConversationRoute?>? = nil
+}
+
+extension EnvironmentValues {
+    var conversationSelection: Binding<ConversationRoute?>? {
+        get { self[ConversationSelectionKey.self] }
+        set { self[ConversationSelectionKey.self] = newValue }
+    }
+}
