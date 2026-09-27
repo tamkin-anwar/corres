@@ -28,6 +28,41 @@ struct CorresShell: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     /// The conversation open in the split layout's detail column.
     @State private var splitRoute: ConversationRoute?
+    @State private var paths: [Destination: NavigationPath] = [:]
+    @Environment(AppRouter.self) private var router
+
+    private func path(for destination: Destination) -> Binding<NavigationPath> {
+        Binding(get: { paths[destination] ?? NavigationPath() }, set: { paths[destination] = $0 })
+    }
+
+    /// Acts on a widget tap, Siri/Shortcuts action or `corres://` link.
+    private func handle(_ target: AppRouter.Target?) {
+        guard let target else { return }
+        router.pending = nil
+        switch target {
+        case .destination(let destination):
+            selection = destination
+            paths[destination] = NavigationPath()
+        case .compose:
+            composeDraft = Draft(kind: .new, to: "", subject: "")
+        case .thread(let id):
+            guard store.threads.contains(where: { $0.id == id }) else {
+                selection = .needsYou
+                return
+            }
+            let thread = store.threads.first { $0.id == id }
+            let destination: Destination = thread?.attention == .waiting ? .waiting : (thread?.attention == .needsYou ? .needsYou : .mail)
+            selection = destination
+            let route = ConversationRoute(id: id, orderedIDs: [id])
+            if sizeClass == .regular {
+                splitRoute = route
+            } else {
+                var fresh = NavigationPath()
+                fresh.append(route)
+                paths[destination] = fresh
+            }
+        }
+    }
 
     var body: some View {
         withAlerts(withSheets(withFeedback(layout)))
@@ -59,9 +94,11 @@ struct CorresShell: View {
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { Task { await threadActions.commitPendingRemoval() } }
         }
+        .onChange(of: router.pending) { _, target in handle(target) }
         .task {
             if !hasExplored { showingWelcome = true }
             if store.state == .idle { await store.load() }
+            handle(router.pending)
         }
     }
 
@@ -219,7 +256,7 @@ struct CorresShell: View {
     private var tabLayout: some View {
         TabView(selection: $selection) {
             ForEach(Destination.allCases) { destination in
-                NavigationStack {
+                NavigationStack(path: path(for: destination)) {
                     destinationContent(for: destination)
                         .background(CorresPalette.canvas)
                         .navigationTitle(title(for: destination))

@@ -59,7 +59,47 @@
 		66B455C3F7FE4E5A80CB7790 /* Features/EarlierMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */; };
 		0DC12458B7C243E3A408FD10 /* App/SnippetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 865AF253964B45F6A4D8875F /* App/SnippetStore.swift */; };
 		D5195C9FE186477BA44C6D4C /* App/DictationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F0F29A3B9945FDB1D3A7CC /* App/DictationService.swift */; };
+		9B3A020AEDAA4F449B17B527 /* Shared/WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */; };
+		B38567BB8F8242BAAFBFF5E0 /* App/WidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C33E49C348642688FD36A86 /* App/WidgetBridge.swift */; };
+		22827E0A314346DBB52A00F2 /* Widgets/CorresWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44A006B97B0A489DAF0F9B18 /* Widgets/CorresWidgets.swift */; };
+		9EB4BC82CCA048A18F899919 /* Shared/WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */; };
+		38185E83F6BF4FCDBF51442D /* DesignSystem/CorrespondenceMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */; };
+		61562B7EFBCA437FA5E0DBEA /* CorresWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3113854F872440AD82EDE4FD /* App/AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */; };
+		C5FD4D482EA945EA9AE3AE5E /* App/CorresIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E327868891D340BF93EFB082 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				61562B7EFBCA437FA5E0DBEA /* CorresWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		747FA3D082A74C558FAC6065 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 244210E48437B6556980A702 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C69DF3B7A0A94507982CAA18;
+			remoteInfo = CorresWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		3FD96208F882409B8ABF585F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C69DF3B7A0A94507982CAA18 /* CorresWidgets */;
+			targetProxy = 747FA3D082A74C558FAC6065 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
 		0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PersistedOutboxEntry.swift; sourceTree = SOURCE_ROOT; };
@@ -113,6 +153,14 @@
 		179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/EarlierMessages.swift; sourceTree = SOURCE_ROOT; };
 		865AF253964B45F6A4D8875F /* App/SnippetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SnippetStore.swift; sourceTree = SOURCE_ROOT; };
 		26F0F29A3B9945FDB1D3A7CC /* App/DictationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/DictationService.swift; sourceTree = SOURCE_ROOT; };
+		1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/WidgetSnapshot.swift; sourceTree = SOURCE_ROOT; };
+		9C33E49C348642688FD36A86 /* App/WidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/WidgetBridge.swift; sourceTree = SOURCE_ROOT; };
+		44A006B97B0A489DAF0F9B18 /* Widgets/CorresWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Widgets/CorresWidgets.swift; sourceTree = SOURCE_ROOT; };
+		78B06183ECCF424E8A22B6B4 /* Widgets/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Widgets/Info.plist; sourceTree = SOURCE_ROOT; };
+		FEB5C4BF79C6432CA56B4E65 /* Widgets/CorresWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Widgets/CorresWidgets.entitlements; sourceTree = SOURCE_ROOT; };
+		D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CorresWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppRouter.swift; sourceTree = SOURCE_ROOT; };
+		AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CorresIntents.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +173,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		19699E6363444FB4A2F2B8B9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -132,6 +187,7 @@
 			isa = PBXGroup;
 			children = (
 				A8792157CB4F27FB949C035F /* Corres.app */,
+				D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -139,6 +195,7 @@
 		0D6E4079E36703EBD37C0072 = {
 			isa = PBXGroup;
 			children = (
+				D0528F5DA84E44AFB36E205D /* Widgets */,
 				C03285F34837864AED181DA0 /* App/CorresApp.swift */,
 				682EC77E42F944FED8F83C02 /* App/GmailAPIClient.swift */,
 				44B8B11C43712F4DF6C6A4B0 /* App/GmailMessageComposer.swift */,
@@ -163,6 +220,10 @@
 				D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */,
 				0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */,
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
+				AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */,
+				3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */,
+				9C33E49C348642688FD36A86 /* App/WidgetBridge.swift */,
+				1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */,
 				26F0F29A3B9945FDB1D3A7CC /* App/DictationService.swift */,
 				865AF253964B45F6A4D8875F /* App/SnippetStore.swift */,
 				179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */,
@@ -193,6 +254,16 @@
 			);
 			sourceTree = "<group>";
 		};
+		D0528F5DA84E44AFB36E205D /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				44A006B97B0A489DAF0F9B18 /* Widgets/CorresWidgets.swift */,
+				78B06183ECCF424E8A22B6B4 /* Widgets/Info.plist */,
+				FEB5C4BF79C6432CA56B4E65 /* Widgets/CorresWidgets.entitlements */,
+			);
+			name = Widgets;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -203,10 +274,12 @@
 				878A52FC5FF6A57D50B7B870 /* Sources */,
 				E2AA269EB967A8853A258BFA /* Frameworks */,
 				41D311A605520FC7B8B9A980 /* Resources */,
+				E327868891D340BF93EFB082 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				3FD96208F882409B8ABF585F /* PBXTargetDependency */,
 			);
 			name = Corres;
 			packageProductDependencies = (
@@ -216,6 +289,23 @@
 			productName = Corres;
 			productReference = A8792157CB4F27FB949C035F /* Corres.app */;
 			productType = "com.apple.product-type.application";
+		};
+		C69DF3B7A0A94507982CAA18 /* CorresWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C73674CFBDEE467B9FBBC9ED /* Build configuration list for PBXNativeTarget "CorresWidgets" */;
+			buildPhases = (
+				F2D39D8A400547B392271E91 /* Sources */,
+				19699E6363444FB4A2F2B8B9 /* Frameworks */,
+				C4D10C052DA14BFAA8201BD7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CorresWidgets;
+			productName = CorresWidgets;
+			productReference = D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -242,6 +332,7 @@
 			projectRoot = "";
 			targets = (
 				34A04005BCAF206EEC990BD9 /* Corres */,
+				C69DF3B7A0A94507982CAA18 /* CorresWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -253,6 +344,13 @@
 			files = (
 				D3C2358BFDB254816ED9D71E /* App/PrivacyInfo.xcprivacy in Resources */,
 				B9A73E7D7AC845889F7D3870 /* App/Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C4D10C052DA14BFAA8201BD7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -287,6 +385,10 @@
 				84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */,
 				BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */,
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
+				C5FD4D482EA945EA9AE3AE5E /* App/CorresIntents.swift in Sources */,
+				3113854F872440AD82EDE4FD /* App/AppRouter.swift in Sources */,
+				B38567BB8F8242BAAFBFF5E0 /* App/WidgetBridge.swift in Sources */,
+				9B3A020AEDAA4F449B17B527 /* Shared/WidgetSnapshot.swift in Sources */,
 				D5195C9FE186477BA44C6D4C /* App/DictationService.swift in Sources */,
 				0DC12458B7C243E3A408FD10 /* App/SnippetStore.swift in Sources */,
 				66B455C3F7FE4E5A80CB7790 /* Features/EarlierMessages.swift in Sources */,
@@ -311,6 +413,16 @@
 				3A16A2272C5E0513B52F8189 /* Features/ScreenerView.swift in Sources */,
 				DA1D1527A8E832C86F278428 /* Features/WKWebViewPool.swift in Sources */,
 				B66A15A79057947ECBB08EFC /* Features/WelcomeView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2D39D8A400547B392271E91 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22827E0A314346DBB52A00F2 /* Widgets/CorresWidgets.swift in Sources */,
+				9EB4BC82CCA048A18F899919 /* Shared/WidgetSnapshot.swift in Sources */,
+				38185E83F6BF4FCDBF51442D /* DesignSystem/CorrespondenceMark.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -392,6 +504,53 @@
 			};
 			name = Release;
 		};
+		3C69DF78F592460EA9B0A3BA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Widgets/CorresWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.widgets;
+				PRODUCT_NAME = CorresWidgets;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		6B0FE7EFD9AA469794EDC920 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Widgets/CorresWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.widgets;
+				PRODUCT_NAME = CorresWidgets;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -409,6 +568,15 @@
 			buildConfigurations = (
 				73EBF6644258C120893E685D /* Debug */,
 				0B0C687DF8B6B8DC790B519C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C73674CFBDEE467B9FBBC9ED /* Build configuration list for PBXNativeTarget "CorresWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3C69DF78F592460EA9B0A3BA /* Debug */,
+				6B0FE7EFD9AA469794EDC920 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

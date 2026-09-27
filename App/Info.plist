@@ -30,6 +30,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>com.googleusercontent.apps.211980968673-k961lt0jtath3ojt4r7ukb3j3jbn8ecl</string>
+				<string>corres</string>
 			</array>
 		</dict>
 	</array>

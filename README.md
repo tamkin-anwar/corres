@@ -24,6 +24,7 @@ Built by Anwar Creative Studio.
 - Apple Mail's keyboard shortcuts on iPad and hardware keyboards (⌘R, ⌘⇧R, ⌘⇧F, ⌃⌘A, ⌘⌫, ⌘⇧L, ⌘⇧U, ⌃⌘S, ⌃⌘↑/↓), plus haptics that confirm sends, removals, snoozes and flags.
 - Archive, trash, mark read or unread, flag (Gmail star) and labels, all applied in Gmail. Changes made in Gmail or iOS Mail flow back.
 - Fast metadata-first sync in batches, push notifications through a content-free relay (`Server/push-relay`), and Gmail search beyond what's synced.
+- Needs You and Waiting widgets for the Home Screen and Lock Screen, opening straight into a conversation; Siri, Shortcuts and Spotlight actions ("What needs me in Corres", open a list, new message).
 - Saved snippets with `{first name}`, and dictation in Compose, transcribed on the iPhone.
 - Snooze by typing a time ("in 3 days at 9am", "next friday") or picking a preset; custom short and long swipes.
 
@@ -56,7 +57,7 @@ Open `Corres.xcodeproj` in Xcode, select the **Corres** scheme and a simulator o
 xcodebuild -scheme Corres -destination 'generic/platform=iOS Simulator' build
 ```
 
-If you add source files, regenerate the checked-in project with `python3 Scripts/generate_project.py` (it picks up every `.swift` file under `App`, `Core`, `DesignSystem` and `Features`). The app icon and launch mark are rendered from the vector mark by `Scripts/RenderIcon.swift`.
+The checked-in `Corres.xcodeproj` is the source of truth (it carries entitlements, the widget extension and embed phases that `Scripts/generate_project.py` predates, so don't regenerate from that script). Add new files through Xcode. The app icon and launch mark are rendered from the vector mark by `Scripts/RenderIcon.swift`.
 
 ## Running tests
 ```bash

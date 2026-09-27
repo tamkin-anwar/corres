@@ -2,6 +2,20 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 3: widgets, Siri and Shortcuts (September 27, 2026)
+
+- **Widget extension `CorresWidgets`** (`studio.anwarcreative.corres.widgets`), embedded in the app, sharing the App Group `group.studio.anwarcreative.corres` (added to both entitlements).
+  - Needs You widget: small, medium and large, plus Lock Screen circular, rectangular and inline.
+  - Waiting widget: small, medium, circular and rectangular.
+  - Obsidian and Ivory colors, serif counts, and a SAMPLE tag before Gmail is connected.
+  - Rows link straight to their conversation; the widget background opens the list.
+- **Data:** `WidgetBridge` writes a small `WidgetSnapshot` (counts, plus sender, subject, reason and due for up to six conversations per list) to the App Group whenever `store.threads` changes, and after a push sync. It reloads timelines only when the content changed, which saves iOS's reload budget. No credentials or message bodies cross into the widget.
+- **Deep links** (`corres://thread?account=&id=`, `needs-you`, `waiting`, `mail`, `compose`) go through `AppRouter`. On iPhone the tabs now have navigation paths, so a link pushes the conversation; on iPad it selects into the detail column.
+- **App Intents:** "What needs me" answers in a sentence without opening the app, from the snapshot; Open List (Brief, Needs You, Waiting, Mail); New Message. Siri phrases through `AppShortcutsProvider`, which also puts them in Spotlight, Shortcuts and on the Action button.
+- **Widget actions deliberately left out.** Archive and Mark Read in a widget would mean giving the widget process your Gmail credentials, or queueing actions that don't reach Gmail until Corres next runs. Tapping a row opens the conversation instead.
+- **The project generator is stale**, so the README now says not to regenerate from it.
+- Verified: `xcodebuild` BUILD SUCCEEDED with `CorresWidgets.appex` embedded; `swift test` 66/66. In the simulator, the app writes the snapshot to the App Group container (read back as JSON), and `corres://thread?...` opens that conversation. **On device:** add the widgets to the Home Screen and Lock Screen, and try "What needs me in Corres" with Siri. The first device build may ask Xcode to register the App Group.
+
 ## Batch 2: snippets, on-device dictation, iPad enabled (September 27, 2026)
 
 - **iPad was never enabled.** The target was `TARGETED_DEVICE_FAMILY = 1` (iPhone only), so on iPad Corres ran as a scaled iPhone app and the Batch 1 split layout could never appear. It's now `1,2` (in the project and in `Scripts/generate_project.py`) with all four iPad orientations. It is confirmed to install and run as a native iPad app. The simulator's window manager ignores injected resize gestures, so **the three-column layout still needs a full-width iPad window to check.**

@@ -24,6 +24,7 @@ struct CorresApp: App {
                        unsubscribeService: appDelegate.unsubscribeService)
                 .environment(appDelegate.mailIntelligence)
                 .environment(appDelegate.snippetStore)
+                .environment(appDelegate.router)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
                 .task {
@@ -57,7 +58,14 @@ struct CorresApp: App {
                 .onChange(of: appDelegate.sync.syncProgress) {
                     Task { await appDelegate.store.refresh() }
                 }
-                .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
+                .onOpenURL { url in
+                    if !appDelegate.router.open(url) { GIDSignIn.sharedInstance.handle(url) }
+                }
+                // Widgets show what's on the phone; refresh their snapshot
+                // whenever the mail it summarizes changes.
+                .onChange(of: appDelegate.store.threads) { _, threads in
+                    WidgetBridge.update(from: threads)
+                }
         }
     }
 }

@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     let semanticTriageService: SemanticTriageService
     let mailIntelligence: MailIntelligence
     let snippetStore: SnippetStore
+    let router: AppRouter
 
     /// Must match the identifier declared in `Info.plist`'s
     /// `BGTaskSchedulerPermittedIdentifiers`; iOS silently refuses to run
@@ -57,6 +58,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         semanticTriageService = SemanticTriageService()
         mailIntelligence = MailIntelligence()
         snippetStore = SnippetStore()
+        router = AppRouter.shared
         super.init()
     }
 
@@ -212,6 +214,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         let notifyOnlyNeedsYou = UserDefaults.standard.bool(forKey: "corres.notifyOnlyNeedsYou")
         let toNotify = notifyOnlyNeedsYou ? newlyUnread.filter { $0.attention == .needsYou } : newlyUnread
         pushService.notifyAboutNewMail(toNotify)
+        WidgetBridge.update(from: store.threads)
         return .newData
     }
 
