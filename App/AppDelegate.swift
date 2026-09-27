@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     let unsubscribeService: UnsubscribeService
     let semanticTriageService: SemanticTriageService
     let mailIntelligence: MailIntelligence
+    let snippetStore: SnippetStore
 
     /// Must match the identifier declared in `Info.plist`'s
     /// `BGTaskSchedulerPermittedIdentifiers`; iOS silently refuses to run
@@ -55,6 +56,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         unsubscribeService = UnsubscribeService()
         semanticTriageService = SemanticTriageService()
         mailIntelligence = MailIntelligence()
+        snippetStore = SnippetStore()
         super.init()
     }
 

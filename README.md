@@ -24,6 +24,7 @@ Built by Anwar Creative Studio.
 - Apple Mail's keyboard shortcuts on iPad and hardware keyboards (⌘R, ⌘⇧R, ⌘⇧F, ⌃⌘A, ⌘⌫, ⌘⇧L, ⌘⇧U, ⌃⌘S, ⌃⌘↑/↓), plus haptics that confirm sends, removals, snoozes and flags.
 - Archive, trash, mark read or unread, flag (Gmail star) and labels, all applied in Gmail. Changes made in Gmail or iOS Mail flow back.
 - Fast metadata-first sync in batches, push notifications through a content-free relay (`Server/push-relay`), and Gmail search beyond what's synced.
+- Saved snippets with `{first name}`, and dictation in Compose, transcribed on the iPhone.
 - Snooze by typing a time ("in 3 days at 9am", "next friday") or picking a preset; custom short and long swipes.
 
 **Intelligence, on this iPhone only**

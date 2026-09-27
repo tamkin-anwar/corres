@@ -30,6 +30,11 @@ struct PreferencesView: View {
                         settingLabel("Swipes", "hand.draw")
                     }
                     NavigationLink {
+                        SnippetSettingsView()
+                    } label: {
+                        settingLabel("Snippets", "text.badge.plus")
+                    }
+                    NavigationLink {
                         NotificationSettingsView(auth: auth, pushService: pushService)
                     } label: {
                         LabeledContent {
@@ -325,6 +330,79 @@ private struct SwipeSettingsView: View {
         .background(CorresPalette.canvas)
         .navigationTitle("Swipes")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Snippets
+
+private struct SnippetSettingsView: View {
+    @Environment(SnippetStore.self) private var store
+    @State private var editing: SnippetStore.Snippet?
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach(store.snippets) { snippet in
+                    Button { editing = snippet } label: {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(snippet.title).foregroundStyle(CorresPalette.ink)
+                            Text(snippet.body).font(.footnote).foregroundStyle(CorresPalette.secondary).lineLimit(2)
+                        }
+                    }
+                }
+                .onDelete { store.delete(at: $0) }
+                .onMove { store.move(from: $0, to: $1) }
+                Button {
+                    editing = SnippetStore.Snippet(title: "", body: "")
+                } label: {
+                    Label("New snippet", systemImage: "plus")
+                }
+            } footer: {
+                Text("Insert a snippet from the bar above the keyboard in any message. Write \(SnippetStore.firstNameToken) and Corres fills in the recipient's first name. Snippets stay on this iPhone.")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(CorresPalette.canvas)
+        .navigationTitle("Snippets")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { EditButton() }
+        .sheet(item: $editing) { snippet in
+            SnippetEditor(snippet: snippet) { store.save($0) }
+        }
+    }
+}
+
+private struct SnippetEditor: View {
+    @State var snippet: SnippetStore.Snippet
+    let onSave: (SnippetStore.Snippet) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField("Title", text: $snippet.title)
+                Section {
+                    TextEditor(text: $snippet.body).frame(minHeight: 160)
+                } footer: {
+                    Button("Insert \(SnippetStore.firstNameToken)") { snippet.body += SnippetStore.firstNameToken }
+                        .font(.footnote.weight(.semibold))
+                }
+            }
+            .navigationTitle(snippet.title.isEmpty ? "New Snippet" : "Edit Snippet")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave(snippet)
+                        dismiss()
+                    }
+                    .disabled(snippet.title.trimmingCharacters(in: .whitespaces).isEmpty
+                              || snippet.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 

@@ -23,6 +23,7 @@ struct CorresApp: App {
                        labelDirectory: appDelegate.labelDirectory, pushService: appDelegate.pushService,
                        unsubscribeService: appDelegate.unsubscribeService)
                 .environment(appDelegate.mailIntelligence)
+                .environment(appDelegate.snippetStore)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
                 .task {

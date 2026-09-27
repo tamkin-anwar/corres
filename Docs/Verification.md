@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 2: snippets, on-device dictation, iPad enabled (September 27, 2026)
+
+- **iPad was never enabled.** The target was `TARGETED_DEVICE_FAMILY = 1` (iPhone only), so on iPad Corres ran as a scaled iPhone app and the Batch 1 split layout could never appear. It's now `1,2` (in the project and in `Scripts/generate_project.py`) with all four iPad orientations. It is confirmed to install and run as a native iPad app. The simulator's window manager ignores injected resize gestures, so **the three-column layout still needs a full-width iPad window to check.**
+- **Snippets (`SnippetStore`):** saved text on this iPhone, with a `{first name}` token that fills the recipient's first name, or drops cleanly ("Thanks, {first name}." becomes "Thanks.") when none is known. Inserted from the Compose bar above the keyboard, into your own text above any quote. Managed in Settings → Snippets (add, edit, delete, reorder). Two starter snippets.
+- **Dictation (`DictationService`):** a mic in the Compose bar using `SFSpeechRecognizer` with `requiresOnDeviceRecognition`, so audio never leaves the phone. It shows a live transcript and inserts it on Done. The mic is hidden where on-device recognition isn't supported. Microphone and speech usage strings were added.
+- The Compose bar is now mic · Snippets · tone rewrites, always present (the keystroke-safety rule from the post-redesign sweep).
+- Verified: `xcodebuild` BUILD SUCCEEDED, `swift test` 66/66. On the iPhone simulator, the bar renders and inserting a snippet works. **On device:** dictation (the first use asks for permission) and the iPad layout.
+
 ## Batch 1: iPad and wide-window layout (September 27, 2026)
 
 - Regular width now uses a three-column `NavigationSplitView`, the Apple Mail layout: a sidebar (Brief, Needs You, Waiting, Mail, with counts, plus accounts when there is more than one), the list, and the conversation beside it. Compact width keeps the tab layout unchanged.

@@ -26,6 +26,8 @@ struct ComposeView: View {
     @State private var rewriting: MailIntelligence.Tone?
     @State private var beforeRewrite: String?
     @Environment(MailIntelligence.self) private var intelligence
+    @Environment(SnippetStore.self) private var snippets
+    @State private var dictation = DictationService()
 
     private enum Field { case to, cc, subject, body }
 
@@ -174,9 +176,44 @@ struct ComposeView: View {
         // changing the bottom inset while the editor has focus disturbs
         // UITextView and drops keystrokes.
         let hasText = ownText.text.trimmingCharacters(in: .whitespacesAndNewlines).count >= 12
-        if intelligence.isAvailable {
+        VStack(spacing: 0) {
+            if dictation.isListening {
+                HStack(spacing: 10) {
+                    Image(systemName: "waveform").symbolEffect(.variableColor.iterative, isActive: true)
+                        .foregroundStyle(CorresPalette.accent)
+                    Text(dictation.transcript.isEmpty ? "Listening…" : dictation.transcript)
+                        .font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(2)
+                    Spacer(minLength: 8)
+                    Button("Done") { finishDictation() }.font(.subheadline.weight(.semibold))
+                }
+                .padding(.horizontal, CorresSpace.page).padding(.vertical, 10)
+            }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
+                    if dictation.isSupported {
+                        Button {
+                            if dictation.isListening { finishDictation() } else { Task { await dictation.start() } }
+                        } label: {
+                            Image(systemName: dictation.isListening ? "stop.fill" : "mic")
+                                .frame(width: 18)
+                        }
+                        .buttonStyle(CorresPillStyle())
+                        .accessibilityLabel(dictation.isListening ? "Stop dictating" : "Dictate")
+                    }
+                    Menu {
+                        ForEach(snippets.snippets) { snippet in
+                            Button(snippet.title) { insert(SnippetStore.expand(snippet.body, recipientName: recipientName)) }
+                        }
+                        if snippets.snippets.isEmpty { Text("Add snippets in Settings") }
+                    } label: {
+                        Label("Snippets", systemImage: "text.badge.plus").labelStyle(TightLabelStyle())
+                            .font(.subheadline.weight(.medium))
+                            .padding(.horizontal, 15).frame(minHeight: 36)
+                            .background(CorresPalette.surfaceRaised, in: Capsule())
+                            .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.5))
+                    }
+                    .foregroundStyle(CorresPalette.ink)
+                    if intelligence.isAvailable {
                     if let beforeRewrite {
                         Button {
                             draft.body = beforeRewrite + ownText.quote
@@ -199,11 +236,41 @@ struct ComposeView: View {
                         .disabled(rewriting != nil || !hasText)
                         .opacity(hasText ? 1 : 0.45)
                     }
+                    }
                 }
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 8)
             }
-            .background(.bar)
         }
+        .background(.bar)
+        .animation(.easeOut(duration: 0.2), value: dictation.isListening)
+        .onDisappear { dictation.stop() }
+        .alert("Dictation", isPresented: Binding(
+            get: { dictation.errorMessage != nil },
+            set: { if !$0 { dictation.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { dictation.errorMessage = nil }
+        } message: { Text(dictation.errorMessage ?? "") }
+    }
+
+    /// The recipient's display name, for `{first name}` in snippets.
+    private var recipientName: String? {
+        if let sourceThread, draft.kind != .forward { return sourceThread.sender }
+        return nil
+    }
+
+    /// Adds text at the end of the person's own words, above any quote.
+    private func insert(_ text: String) {
+        let (own, quote) = ownText
+        let trimmed = own.trimmingCharacters(in: .whitespacesAndNewlines)
+        let joined = trimmed.isEmpty ? text : trimmed + (trimmed.hasSuffix("\n") ? "" : " ") + text
+        draft.body = joined + quote
+        beforeRewrite = nil
+    }
+
+    private func finishDictation() {
+        dictation.stop()
+        let spoken = dictation.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !spoken.isEmpty { insert(spoken) }
     }
 
     private func rewrite(_ tone: MailIntelligence.Tone) {
