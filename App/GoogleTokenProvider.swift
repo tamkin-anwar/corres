@@ -100,6 +100,11 @@ actor GoogleTokenProvider {
         grantedScopes[email] = nil
     }
 
+    /// Forgets the cached access token so the next call mints a fresh one.
+    func invalidateAccessToken(for email: String) {
+        cache[email] = nil
+    }
+
     func removeRefreshToken(for email: String) {
         Keychain.delete(key: Self.keychainKey(for: email))
         cache[email] = nil

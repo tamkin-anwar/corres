@@ -13,7 +13,14 @@ struct GmailAPIClient {
     /// (429/5xx, worth retrying) apart from one Gmail has already fully
     /// processed and rejected (any other 4xx, retrying just repeats the
     /// same rejection).
-    enum ClientError: Error { case notSignedIn, badResponse(statusCode: Int), decodingFailed, historyExpired }
+    enum ClientError: Error {
+        case notSignedIn, badResponse(statusCode: Int), decodingFailed, historyExpired
+        /// Gmail refused a change and said why. `reason` is Gmail's own
+        /// machine-readable code ("insufficientPermissions",
+        /// "rateLimitExceeded", "failedPrecondition"...); `message` its
+        /// human text. Kept so a failure is never just "error 403".
+        case refused(statusCode: Int, reason: String?, message: String?)
+    }
 
     /// What a sync pass needs to fetch, newest first, without fetching it
     /// yet: `GmailSyncService` pulls these down in batches and saves each
@@ -57,12 +64,10 @@ struct GmailAPIClient {
     /// alongside INBOX, not instead of it.
     private static let syncedLabels = ["INBOX", "SENT"]
 
-    /// Google recommends no more than 50 calls per batch, and each
-    /// `messages.get` costs 5 of a user's 250 quota units per second, so a
-    /// full batch is a second's worth of quota: callers space batches by
-    /// `batchInterval` rather than firing them back to back into 429s.
+    /// Google recommends no more than 50 calls per batch. Pacing between
+    /// batches is `GmailQuotaGate`'s job, shared across every caller, so
+    /// several fetches running at once can't jointly exceed the quota.
     static let batchSize = 50
-    static let batchInterval: Duration = .seconds(1)
 
     /// A full listing of the inbox and sent mail, used the first time an
     /// account syncs, or whenever a stored history cursor has expired.
@@ -219,8 +224,7 @@ struct GmailAPIClient {
     func fetchMessages(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
         var items: [Correspondence] = []
         var failed: [String] = []
-        for (index, chunk) in ids.chunked(into: Self.batchSize).enumerated() {
-            if index > 0 { try? await Task.sleep(for: Self.batchInterval) }
+        for chunk in ids.chunked(into: Self.batchSize) {
             let result = try await fetchMetadata(ids: chunk, account: account)
             items += result.items
             failed += result.failedIDs
@@ -243,6 +247,7 @@ struct GmailAPIClient {
         var items: [Correspondence] = []
         for attempt in 1...Self.batchAttempts {
             guard !pending.isEmpty else { break }
+            await GmailQuotaGate.shared.reserve(pending.count * GmailQuotaGate.unitsPerMessageFetch, for: account)
             let boundary = "corres_batch_\(UUID().uuidString)"
             var request = URLRequest(url: URL(string: "https://gmail.googleapis.com/batch/gmail/v1")!)
             request.httpMethod = "POST"
@@ -428,31 +433,75 @@ struct GmailAPIClient {
     /// Marking read/unread is the same call with `UNREAD` instead. One
     /// shared entry point since both are the same Gmail endpoint.
     func modifyThread(threadId: String, addLabelIds: [String] = [], removeLabelIds: [String] = [], account: String) async throws {
-        let token = try await accessToken(for: account)
-        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/threads/\(threadId)/modify")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         var body: [String: [String]] = [:]
         if !addLabelIds.isEmpty { body["addLabelIds"] = addLabelIds }
         if !removeLabelIds.isEmpty { body["removeLabelIds"] = removeLabelIds }
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        let (_, response) = try await URLSession.shared.data(for: request)
-        try validate(response)
+        let payload = try JSONSerialization.data(withJSONObject: body)
+        try await performChange(path: "threads/\(threadId)/modify", body: payload, account: account)
     }
 
     /// Gmail's dedicated Trash endpoint, distinct from `modify`: it moves the
     /// whole thread to Trash (auto-deleted by Gmail after 30 days), rather
     /// than just changing which labels it carries.
     func trashThread(threadId: String, account: String) async throws {
-        let token = try await accessToken(for: account)
-        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/threads/\(threadId)/trash")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        let (_, response) = try await URLSession.shared.data(for: request)
-        try validate(response)
+        try await performChange(path: "threads/\(threadId)/trash", body: nil, account: account)
+    }
+
+    /// Every change Corres makes to a mailbox goes through here, so each
+    /// one recovers the same way from the two refusals that aren't really
+    /// the person's problem, instead of surfacing "Gmail error 403":
+    /// - a stale access token (minted before a permission was granted, or
+    ///   revoked and re-granted since): drop it and try once with a fresh one;
+    /// - Gmail's per-user rate limit, which it also reports as 403 (or 429):
+    ///   back off and try again, up to three times.
+    /// Anything else is thrown with Gmail's own reason and message.
+    private func performChange(path: String, body: Data?, account: String) async throws {
+        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/\(path)")!
+        var refreshedToken = false
+        var rateLimitRetries = 0
+        while true {
+            let token = try await accessToken(for: account)
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            if let body {
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = body
+            }
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            if 200..<300 ~= status { return }
+            let refusal = Self.refusal(from: data)
+            let reason = refusal.reason ?? ""
+            if Self.rateLimitReasons.contains(reason) || status == 429, rateLimitRetries < 3 {
+                rateLimitRetries += 1
+                try await Task.sleep(for: .milliseconds(600 * (1 << rateLimitRetries)))
+                continue
+            }
+            if (status == 401 || (status == 403 && Self.permissionReasons.contains(reason))) && !refreshedToken {
+                refreshedToken = true
+                await GoogleTokenProvider.shared.invalidateAccessToken(for: account)
+                continue
+            }
+            throw ClientError.refused(statusCode: status, reason: refusal.reason, message: refusal.message)
+        }
+    }
+
+    static let permissionReasons: Set<String> = ["insufficientPermissions", "ACCESS_TOKEN_SCOPE_INSUFFICIENT",
+                                                 "authError", "forbidden", "PERMISSION_DENIED"]
+    static let rateLimitReasons: Set<String> = ["rateLimitExceeded", "userRateLimitExceeded", "RATE_LIMIT_EXCEEDED"]
+
+    /// Gmail's error body: `{"error": {"code", "message", "status",
+    /// "errors": [{"reason", "message"}], "details": [{"reason"}]}}`.
+    private static func refusal(from data: Data) -> (reason: String?, message: String?) {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let error = json["error"] as? [String: Any] else { return (nil, nil) }
+        let errors = error["errors"] as? [[String: Any]]
+        let details = error["details"] as? [[String: Any]]
+        let reason = (errors?.first?["reason"] as? String)
+            ?? (details?.compactMap { $0["reason"] as? String }.first)
+            ?? (error["status"] as? String)
+        return (reason, error["message"] as? String)
     }
 
     /// Subscribes this account to real-time push: Gmail publishes a

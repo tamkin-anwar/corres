@@ -2,6 +2,16 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## "Could not mark as unread (Gmail error 403)" root cause (September 27, 2026)
+
+Reported on device with `gmail.modify` confirmed granted, so the earlier permission diagnosis didn't apply, and the alert offered no Reconnect.
+
+- **Likely cause: quota.** Each message fetch costs 5 of Gmail's 250 units per user per second. Sync, body backfill, older-mail paging and search each paced themselves to about 250 units a second independently, so together they could exceed the allowance. A change made in that second was then refused with 403 "user rate limit exceeded", which is why reading always worked while read, archive and flag changes failed right after opening mail.
+- **Fix: `GmailQuotaGate`.** One token bucket per account, shared by every background fetch, holds them to 200 units a second. The remaining 50 are always free for the person's own changes, which don't wait on it. The per-caller sleeps are removed.
+- **All changes (modify, trash) now go through `GmailAPIClient.performChange`.** It backs off and retries rate-limit refusals up to three times, and retries once with a fresh access token on 401 or a permission 403 (covering a token minted before a permission was granted).
+- **Refusals now carry Gmail's own reason and message (`ClientError.refused`).** The alert shows them, offers Reconnect on any 403 it can't explain, and asks to reconnect only when Gmail names a permission problem.
+- Verified: `xcodebuild` BUILD SUCCEEDED, `swift test` 65/65. **On device:** open unread mail right after launch, and mark unread or archive repeatedly. If anything still fails, the alert now quotes Gmail's reason.
+
 ## Settings rebuilt for real users (September 27, 2026)
 
 Researched how Apple Mail, Gmail, Superhuman and Spark structure settings: accounts first, then how the app behaves (appearance, swipes, notifications), then privacy, then a quiet version footer. None exposes demo or developer controls.

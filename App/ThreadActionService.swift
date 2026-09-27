@@ -196,6 +196,20 @@ final class ThreadActionService {
         switch error {
         case is MissingModifyPermission:
             askToReconnect(account)
+        case GmailAPIClient.ClientError.refused(let status, let reason, let message):
+            if let reason, GmailAPIClient.permissionReasons.contains(reason) {
+                askToReconnect(account)
+            } else if status == 403 && reason == nil && hasModify != true {
+                askToReconnect(account)
+            } else if let reason, GmailAPIClient.rateLimitReasons.contains(reason) {
+                errorMessage = "Gmail is limiting how fast changes can be made right now. Give it a moment and try again."
+            } else {
+                // Unexplained: show Gmail's own words, and offer Reconnect
+                // for any 403, the one thing within the person's reach.
+                if status == 403 { reconnectAccount = account }
+                let detail = [message, reason.map { "(\($0), \(status))" } ?? "(\(status))"].compactMap { $0 }.joined(separator: " ")
+                errorMessage = "\(failureMessage)\n\nGmail said: \(detail)"
+            }
         case GmailAPIClient.ClientError.badResponse(let status) where status == 403 && hasModify != true:
             askToReconnect(account)
         case GmailAPIClient.ClientError.notSignedIn:
