@@ -85,11 +85,22 @@ struct CorrespondenceMark: View {
 struct CorresIconArtwork: View {
     var body: some View {
         ZStack {
-            Color(markHex: 0x0A0A0C)
-            RadialGradient(colors: [Color(markHex: 0xBECDE6).opacity(0.16), .clear],
-                           center: UnitPoint(x: 0.5, y: -0.05), startRadius: 0, endRadius: 760)
-            CorrespondenceMark(glow: true).padding(150)
+            LinearGradient(colors: [Color(markHex: 0x1D2027), Color(markHex: 0x0C0D10), Color(markHex: 0x060607)],
+                           startPoint: .top, endPoint: .bottom)
+            // A cool light from above, and a faint sapphire bloom behind
+            // the mark, so the field has depth rather than flat black.
+            RadialGradient(colors: [Color(markHex: 0xC8D6EE).opacity(0.18), .clear],
+                           center: UnitPoint(x: 0.5, y: -0.1), startRadius: 0, endRadius: 820)
+            RadialGradient(colors: [Color(markHex: 0x5E86C4).opacity(0.22), .clear],
+                           center: .center, startRadius: 0, endRadius: 420)
+            // The mark fills about two thirds of the icon, like the other
+            // studio apps; nudged right because an open C reads left-heavy.
+            CorrespondenceMark(glow: true)
+                .frame(width: 1110, height: 1110)
+                .offset(x: 24)
         }
+        .frame(width: 1024, height: 1024)
+        .clipped()
     }
 }
 

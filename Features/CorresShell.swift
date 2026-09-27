@@ -211,8 +211,21 @@ struct CorresShell: View {
         }
     }
 
-    private var profileInitial: String {
-        (accountFilter ?? auth.primaryAccount?.email ?? auth.accounts.first?.email)?.first.map { String($0).uppercased() } ?? "C"
+    /// Whose face the account button shows: the account being viewed, or
+    /// the first connected one in the merged view.
+    private var displayedAccount: String? { accountFilter ?? auth.accounts.first?.email }
+
+    private var accountButton: some View {
+        Button { showingSettings = true } label: {
+            AccountAvatar(email: displayedAccount,
+                          name: displayedAccount.flatMap { auth.profile(for: $0)?.name },
+                          photoURL: displayedAccount.flatMap { auth.profile(for: $0)?.photoURL })
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Account and settings")
+        .accessibilityValue(displayedAccount ?? "Sample mail")
     }
 
     @ToolbarContentBuilder
@@ -236,13 +249,13 @@ struct CorresShell: View {
             }
             .accessibilityLabel("New message")
         }
-        ToolbarItem(placement: .topBarTrailing) {
-            Button { showingSettings = true } label: {
-                Text(profileInitial)
-                    .font(.subheadline.weight(.semibold))
-                    .frame(minWidth: 44, minHeight: 44)
-            }
-            .accessibilityLabel("Accounts and settings")
+        // Its own circle, outside the glass group the system gives other
+        // toolbar items on iOS 26, the way Apple's apps show an account.
+        if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .topBarTrailing) { accountButton }
+                .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .topBarTrailing) { accountButton }
         }
     }
 }

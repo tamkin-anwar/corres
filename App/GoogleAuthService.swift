@@ -42,6 +42,7 @@ final class GoogleAuthService {
 
     var primaryAccount: GmailAccount? { accounts.first }
     static let givenNameKey = "corres.givenName"
+    private static let profilesKey = "corres.accountProfiles"
 
     func isConnected(_ email: String) -> Bool { accounts.contains { $0.email == email } }
 
@@ -62,24 +63,54 @@ final class GoogleAuthService {
         }
         accounts = restored
         persistAccountList()
-        Task { await fillGivenNameIfMissing() }
+        Task { await fillProfilesIfMissing() }
     }
 
-    /// Accounts connected before the Brief greeted by name never stored
-    /// one; ask Google's own profile endpoint once (the sign-in already
-    /// granted the basic profile scope). Silent on any failure: the
-    /// greeting simply stays without a name.
-    private func fillGivenNameIfMissing() async {
-        guard defaults.string(forKey: Self.givenNameKey) == nil, let email = accounts.first?.email,
-              let token = try? await GoogleTokenProvider.shared.accessToken(for: email),
-              let url = URL(string: "https://openidconnect.googleapis.com/v1/userinfo") else { return }
-        var request = URLRequest(url: url)
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        guard let (data, response) = try? await URLSession.shared.data(for: request),
-              (response as? HTTPURLResponse)?.statusCode == 200,
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let given = json["given_name"] as? String, !given.isEmpty else { return }
-        defaults.set(given, forKey: Self.givenNameKey)
+    /// Each account's display name and Google profile photo, for the
+    /// account button and switcher. Kept in UserDefaults on this device only.
+    private(set) var profiles: [String: AccountProfile] = [:]
+
+    struct AccountProfile: Codable, Equatable {
+        var name: String?
+        var photoURL: URL?
+    }
+
+    func profile(for email: String) -> AccountProfile? { profiles[email] }
+
+    private func setProfile(for email: String, name: String?, photo: URL?) {
+        profiles[email] = AccountProfile(name: name, photoURL: photo)
+        if let data = try? JSONEncoder().encode(profiles) { defaults.set(data, forKey: Self.profilesKey) }
+    }
+
+    /// Accounts connected before Corres kept names and photos never stored
+    /// them; ask Google's own profile endpoint once per account (sign-in
+    /// already granted the basic profile scope). Silent on any failure:
+    /// the UI falls back to a monogram.
+    private func fillProfilesIfMissing() async {
+        if let data = defaults.data(forKey: Self.profilesKey),
+           let stored = try? JSONDecoder().decode([String: AccountProfile].self, from: data) {
+            profiles = stored
+        }
+        for account in accounts where profiles[account.email] == nil || defaults.string(forKey: Self.givenNameKey) == nil {
+            guard let token = try? await GoogleTokenProvider.shared.accessToken(for: account.email),
+                  let url = URL(string: "https://openidconnect.googleapis.com/v1/userinfo") else { continue }
+            var request = URLRequest(url: url)
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            guard let (data, response) = try? await URLSession.shared.data(for: request),
+                  (response as? HTTPURLResponse)?.statusCode == 200,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
+            if account.email == accounts.first?.email, defaults.string(forKey: Self.givenNameKey) == nil,
+               let given = json["given_name"] as? String, !given.isEmpty {
+                defaults.set(given, forKey: Self.givenNameKey)
+            }
+            // Google photo URLs carry their size as a suffix ("=s96-c");
+            // ask for 192px so the circle stays sharp at 3x.
+            let photo = (json["picture"] as? String).flatMap { raw -> URL? in
+                let base = raw.range(of: "=s", options: .backwards).map { String(raw[..<$0.lowerBound]) } ?? raw
+                return URL(string: base + "=s192-c")
+            }
+            setProfile(for: account.email, name: json["name"] as? String, photo: photo)
+        }
     }
 
     /// One-time upgrade path: reads whatever GoogleSignIn's own single-slot
@@ -130,6 +161,9 @@ final class GoogleAuthService {
                let given = result.user.profile?.givenName, !given.isEmpty {
                 defaults.set(given, forKey: Self.givenNameKey)
             }
+            if let profile = result.user.profile {
+                setProfile(for: email, name: profile.name, photo: profile.hasImage ? profile.imageURL(withDimension: 192) : nil)
+            }
             // Google's consent screen lets each permission be unchecked.
             // Without modify, reading works but read/unread, archive, trash,
             // flags, and labels all fail — say so now, not on the first tap.
@@ -156,6 +190,8 @@ final class GoogleAuthService {
     func signOut(_ email: String) async {
         accounts.removeAll { $0.email == email }
         persistAccountList()
+        profiles[email] = nil
+        if let data = try? JSONEncoder().encode(profiles) { defaults.set(data, forKey: Self.profilesKey) }
         await GoogleTokenProvider.shared.removeRefreshToken(for: email)
         // GoogleSignIn's own session only ever tracks one account; clearing
         // it is only meaningful when the disconnected account happens to be

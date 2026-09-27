@@ -152,7 +152,7 @@ struct BriefView: View {
                         .foregroundStyle(CorresPalette.accent)
                         .frame(minHeight: 44)
                 } else {
-                    Color.clear.frame(width: 1, height: 44)
+                    Color.clear.frame(width: 1, height: 30)
                 }
             }
             .padding(.horizontal, 4)

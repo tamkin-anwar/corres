@@ -43,8 +43,19 @@ struct PreferencesView: View {
                 }
                 Section("Accounts") {
                     ForEach(auth.accounts) { account in
-                        Label(account.email, systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(CorresPalette.accent)
+                        HStack(spacing: 12) {
+                            AccountAvatar(email: account.email, name: auth.profile(for: account.email)?.name,
+                                          photoURL: auth.profile(for: account.email)?.photoURL, size: 36)
+                            VStack(alignment: .leading, spacing: 1) {
+                                if let name = auth.profile(for: account.email)?.name {
+                                    Text(name).font(.body.weight(.medium))
+                                }
+                                Text(account.email)
+                                    .font(auth.profile(for: account.email)?.name == nil ? .body : .footnote)
+                                    .foregroundStyle(auth.profile(for: account.email)?.name == nil ? CorresPalette.ink : CorresPalette.secondary)
+                            }
+                        }
+                        .accessibilityElement(children: .combine)
                             .swipeActions(edge: .trailing) {
                                 Button("Disconnect", role: .destructive) { accountPendingDisconnect = account }
                             }

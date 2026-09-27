@@ -2,6 +2,12 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Account button and a fuller icon (September 27, 2026)
+
+- **Account button:** it was a bare letter ("T") sharing a glass capsule with Compose. It's now its own circle showing the account's Google profile photo, the convention in Gmail and in Apple's own apps (App Store, Music, Photos). The photo is fetched once (192px, sharp at 3x) and cached on the device. The fallback is a two-letter monogram on a sapphire circle, or a person symbol for sample mail. Photos and names come from sign-in, or once from Google's userinfo endpoint for accounts connected earlier. Settings lists each account with its photo and name.
+- **App icon:** the mark covered about 43% of the tile and looked empty next to the studio's other icons. It now fills about two-thirds, is optically centered (an open C reads left-heavy), and sits on a deeper obsidian field with a cool top light and a faint sapphire bloom. It's still rendered from the vector mark.
+- Verified in the simulator: the toolbar shows Compose and a separate avatar circle; the unread dot shows on a thread marked unread. `xcodebuild` BUILD SUCCEEDED.
+
 ## Post-redesign sweep (September 27, 2026)
 
 Every redesigned surface was exercised on the iPhone 18 Pro simulator (iOS 27, which has the on-device Apple Intelligence model), plus a code review of each changed path. Found and fixed:
