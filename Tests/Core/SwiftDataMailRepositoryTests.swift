@@ -226,6 +226,24 @@ struct SwiftDataMailRepositoryTests {
         #expect(afterward.count == 1)
     }
 
+    /// Removing an account from Corres takes its mail off the device and
+    /// leaves every other account's mail alone.
+    @Test func deleteAccountDataRemovesOnlyThatAccountsThreads() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        func thread(_ account: String, _ id: String) -> Correspondence {
+            Correspondence(id: ThreadID(account: account, providerID: id), sender: "S", senderEmail: "s@example.com",
+                           organization: "", subject: "s", excerpt: "", body: "", receivedAt: now, dueAt: nil,
+                           reason: "r", attention: .needsYou)
+        }
+        try await repository.upsert([thread("me@work.test", "1"), thread("me@work.test", "2"), thread("me@home.test", "3")],
+                                    isInitialSync: true)
+
+        try await repository.deleteAccountData("me@work.test")
+
+        let remaining = try await repository.threads()
+        #expect(remaining.map(\.id.account) == ["me@home.test"])
+    }
+
     @Test func upsertInsertsUnseenThreadsAndIgnoresARefetchOfTheSameMessage() async throws {
         let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
         try await repository.seedIfNeeded(now: now)

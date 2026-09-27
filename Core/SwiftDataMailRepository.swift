@@ -196,7 +196,10 @@ public actor SwiftDataMailRepository: MailRepository {
     }
 
     public func deleteSampleData() throws {
-        let account = Self.localAccount
+        try deleteAccountData(Self.localAccount)
+    }
+
+    public func deleteAccountData(_ account: String) throws {
         let descriptor = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.account == account })
         let matches = try modelContext.fetch(descriptor)
         guard !matches.isEmpty else { return }

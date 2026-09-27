@@ -95,6 +95,12 @@ public protocol MailRepository: Sendable {
     /// purpose before that and has no business still mixing into Brief/Needs
     /// You/Waiting counts and copy alongside a person's real mail.
     func deleteSampleData() async throws
+    /// Removes every thread belonging to `account` from this device, and
+    /// nothing else. Called when a person removes an account from Corres:
+    /// its mail, and every local decision about it (Screener, attention,
+    /// pins), must not stay on the phone once the account is gone. Never
+    /// touches the provider; the mail is still in Gmail.
+    func deleteAccountData(_ account: String) async throws
     /// Merges freshly-fetched provider data (e.g. a Gmail sync pass) into the
     /// store. A given *message* is immutable once received, so a re-fetch of
     /// one already known (same thread, same `latestMessageID`) never touches
@@ -272,6 +278,10 @@ public actor SampleMailRepository: MailRepository {
     }
 
     public func deleteSampleData() {
+        items.removeAll { $0.id.account == account }
+    }
+
+    public func deleteAccountData(_ account: String) {
         items.removeAll { $0.id.account == account }
     }
 

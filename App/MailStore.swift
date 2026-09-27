@@ -36,12 +36,19 @@ final class MailStore {
         threads = (try? await repository.threads()) ?? threads
     }
 
-    func resetSampleData() async {
+    /// Removes an account's mail from this iPhone after the account is
+    /// removed from Corres. If no mail is left at all, `load()` brings the
+    /// sample conversations back, the same state as a fresh install.
+    func removeAccountData(_ account: String) async {
         do {
-            try await repository.resetToSampleData(now: .now)
+            try await repository.deleteAccountData(account)
             threads = try await repository.threads()
+            if threads.isEmpty {
+                state = .idle
+                await load()
+            }
         } catch {
-            errorMessage = "Could not reset sample data. Please try again."
+            errorMessage = "Could not remove this account's mail from your iPhone. Please try again."
         }
     }
 

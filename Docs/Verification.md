@@ -2,6 +2,21 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Settings rebuilt for real users (September 27, 2026)
+
+Researched how Apple Mail, Gmail, Superhuman and Spark structure settings: accounts first, then how the app behaves (appearance, swipes, notifications), then privacy, then a quiet version footer. None exposes demo or developer controls.
+
+- **Removed "Reset Sample Data".** It was a developer control. With Gmail connected it deleted every synced thread, re-seeded the fictional sample mail alongside it, and re-downloaded the mail. Sample mail now exists only before the first account connects, and returns automatically if the last account is removed.
+- **Fixed a privacy bug:** disconnecting an account left all its mail on the device and visible in Mail. New `MailRepository.deleteAccountData(_:)` (both repositories, with a test) is called on removal, along with the push unsubscribe and the token and profile cleanup.
+- **New layout:**
+  - Account rows (photo, name, email) open an account page with Sync now (last synced time), Reconnect with Google (the fix for failing read, archive and flag changes), and Remove Account. Removing says plainly that nothing is deleted from Gmail.
+  - With no account, a "Connect your Gmail" card with the titanium button.
+  - Mail: Appearance, Swipes (its own page, grouped as swipe left and swipe right), Notifications (its own page; disabled until Gmail is connected).
+  - Intelligence: Apple Intelligence status, with guidance when it's unavailable.
+  - Private by design: its own page, a detail line per promise.
+  - Footer: the mark, the tagline, and the real version from the bundle ("Version 0.1.0 (1) · Anwar Creative Studio"), replacing the hard-coded "Foundation preview".
+- Verified: `swift test` 65/65; simulator screenshots of the sample-mode Settings and its footer. The account page needs a connected account, so check it on device.
+
 ## Account button and a fuller icon (September 27, 2026)
 
 - **Account button:** it was a bare letter ("T") sharing a glass capsule with Compose. It's now its own circle showing the account's Google profile photo, the convention in Gmail and in Apple's own apps (App Store, Music, Photos). The photo is fetched once (192px, sharp at 3x) and cached on the device. The fallback is a two-letter monogram on a sapphire circle, or a person symbol for sample mail. Photos and names come from sign-in, or once from Google's userinfo endpoint for accounts connected earlier. Settings lists each account with its photo and name.
