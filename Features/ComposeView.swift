@@ -112,7 +112,8 @@ struct ComposeView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Send") { sendAndDismiss() }
-                        .buttonStyle(CorresMetalCapsuleStyle(minHeight: 34))
+                        .fontWeight(.semibold)
+                        .prominentToolbarButton()
                         .disabled(!draft.isSendable)
                 }
             }
@@ -121,7 +122,10 @@ struct ComposeView: View {
                 Button("Keep Editing", role: .cancel) {}
             }
             .interactiveDismissDisabled(hasUnsavedChanges)
-            .onAppear { focusedField = draft.to.isEmpty ? .to : .body }
+            .onAppear {
+                focusedField = draft.to.isEmpty ? .to : .body
+                if draft.kind != .new { placeCursorAboveQuote() }
+            }
             .onChange(of: pickedPhoto) { _, newValue in
                 guard let newValue else { return }
                 Task { await addPhoto(newValue) }
@@ -142,6 +146,17 @@ struct ComposeView: View {
         .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
     }
 
+    /// A reply opens with the cursor above the quoted original, the way
+    /// Mail does; UIKit otherwise puts it at the end, below the quote.
+    /// Done once on the underlying text view: a SwiftUI selection binding
+    /// on the editor was tried first and dropped keystrokes while typing.
+    private func placeCursorAboveQuote() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+            (UIResponder.currentFirstResponder as? UITextView)?.selectedRange = NSRange(location: 0, length: 0)
+        }
+    }
+
     /// The person's own words, without the quoted original below them:
     /// only this part is ever rewritten.
     private var ownText: (text: String, quote: String) {
@@ -155,8 +170,11 @@ struct ComposeView: View {
     /// iPhone. One tap to undo, so trying a tone costs nothing.
     @ViewBuilder
     private var toneBar: some View {
-        let own = ownText.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if intelligence.isAvailable, own.count >= 12 {
+        // Always present when available, never inserted mid-typing:
+        // changing the bottom inset while the editor has focus disturbs
+        // UITextView and drops keystrokes.
+        let hasText = ownText.text.trimmingCharacters(in: .whitespacesAndNewlines).count >= 12
+        if intelligence.isAvailable {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     if let beforeRewrite {
@@ -178,7 +196,8 @@ struct ComposeView: View {
                             }
                         }
                         .buttonStyle(CorresPillStyle())
-                        .disabled(rewriting != nil)
+                        .disabled(rewriting != nil || !hasText)
+                        .opacity(hasText ? 1 : 0.45)
                     }
                 }
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 8)
@@ -421,4 +440,18 @@ extension Correspondence {
         }
         return result
     }
+}
+
+extension UIResponder {
+    private nonisolated(unsafe) static weak var found: UIResponder?
+
+    /// Whatever currently has keyboard focus, found by sending a nil-target
+    /// action (UIKit delivers it to the first responder).
+    @MainActor static var currentFirstResponder: UIResponder? {
+        found = nil
+        UIApplication.shared.sendAction(#selector(captureFirstResponder), to: nil, from: nil, for: nil)
+        return found
+    }
+
+    @objc private func captureFirstResponder() { UIResponder.found = self }
 }

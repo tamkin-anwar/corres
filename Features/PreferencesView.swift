@@ -18,30 +18,30 @@ struct PreferencesView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Make yourself comfortable") {
+                Section("Appearance") {
                     Picker("Appearance", selection: $appearance) {
                         ForEach(Appearance.allCases) { Text($0.title).tag($0.rawValue) }
                     }
                 }
                 Section {
-                    Picker("Short swipe right", selection: $trailingShortRaw) {
+                    Picker("Short swipe left", selection: $trailingShortRaw) {
                         ForEach(PrimarySwipeAction.allCases) { Text($0.title).tag($0.rawValue) }
                     }
-                    Picker("Long swipe right", selection: $trailingLongRaw) {
+                    Picker("Long swipe left", selection: $trailingLongRaw) {
                         ForEach(PrimarySwipeAction.allCases) { Text($0.title).tag($0.rawValue) }
                     }
-                    Picker("Short swipe left", selection: $leadingShortRaw) {
+                    Picker("Short swipe right", selection: $leadingShortRaw) {
                         ForEach(LeadingSwipeAction.allCases) { Text($0.settingsTitle).tag($0.rawValue) }
                     }
-                    Picker("Long swipe left", selection: $leadingLongRaw) {
+                    Picker("Long swipe right", selection: $leadingLongRaw) {
                         ForEach(LeadingSwipeAction.allCases) { Text($0.settingsTitle).tag($0.rawValue) }
                     }
                 } header: {
-                    Text("Swipe Actions")
+                    Text("Swipes")
                 } footer: {
-                    Text("A short swipe on a Mail row fires one action right away; swiping further fires a different one, Snooze and marking Needs You stay one tap away in a conversation's own toolbar.")
+                    Text("A short swipe fires one action right away; swiping further fires a second one. Snooze and Move to are always one tap away in a conversation, or by pressing and holding a row.")
                 }
-                Section("Your Gmail accounts") {
+                Section("Accounts") {
                     ForEach(auth.accounts) { account in
                         Label(account.email, systemImage: "checkmark.circle.fill")
                             .foregroundStyle(CorresPalette.accent)
@@ -70,7 +70,7 @@ struct PreferencesView: View {
                         }
                     }
                     .disabled(auth.isSigningIn || sync.isSyncing)
-                    Text("Every connected account syncs into Mail at once. Switch between a single merged inbox and one account at a time from the toolbar. Needs You holds unread mail from people; promotions, social updates, newsletters, and automated notifications stay in Mail, sorted using Gmail's own categories. Everything is always in Mail. Replying, replying all, forwarding, starting a new message, archiving, moving to Trash, marking read/unread, and applying your own Gmail labels all act for real.")
+                    Text("Every account syncs into one inbox, newest first; switch to a single account from the top of the screen. Needs You holds what asks something of you; promotions, newsletters and notifications stay in Mail, never hidden. Everything you do here, from replying to archiving and labels, happens in Gmail too.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
                     if !auth.accounts.isEmpty {
                         Toggle("Notify me about new mail", isOn: Binding(

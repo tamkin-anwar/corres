@@ -69,7 +69,7 @@ struct CorrespondenceRow: View {
         .padding(.leading, 8).padding(.trailing, 18).padding(.vertical, 12)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(thread.isUnread ? "Unread. " : "")
+        .accessibilityValue(thread.isUnread ? "Unread" : "")
     }
 
     /// Today shows the time, this week the weekday, older the date, the
@@ -132,6 +132,7 @@ struct CorrespondenceList: View {
     var accountFilter: String?
     @State private var search = ""
     @State private var mailFilter = MailFilter.everything
+    @State private var snoozeTarget: Correspondence?
     /// Same four `UserDefaults` keys `PreferencesView`'s own pickers
     /// read/write; `@AppStorage` keeps both in sync automatically, the same
     /// pattern `corres.appearance` already uses across multiple independent
@@ -229,6 +230,9 @@ struct CorrespondenceList: View {
                 } else {
                     scrollPosition = newValue.last?.id
                 }
+            }
+            .sheet(item: $snoozeTarget) { thread in
+                SnoozeSheet { date in Task { await store.snooze(thread.id, until: date) } }
             }
             .searchable(text: $search, prompt: "Search conversations")
             .refreshable {
@@ -464,6 +468,11 @@ struct CorrespondenceList: View {
                     Button(attention.title) { Task { await store.update(thread.id, to: attention) } }
                 }
             }
+        }
+        Button {
+            snoozeTarget = thread
+        } label: {
+            Label("Snooze…", systemImage: "clock")
         }
         Button {
             Task { await threadActions?.setFlagged(!thread.isFlagged, for: thread) }

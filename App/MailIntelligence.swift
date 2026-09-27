@@ -60,15 +60,21 @@ final class MailIntelligence {
     private static let maxBodyCharacters = 2_800
 
     func insight(for thread: Correspondence) -> Insight? {
-        thread.latestMessageID.flatMap { insights[$0] }
+        insights[Self.key(for: thread)]
+    }
+
+    /// The latest message's id when known, so a new reply gets a fresh
+    /// read; the thread id otherwise.
+    private static func key(for thread: Correspondence) -> String {
+        thread.latestMessageID ?? "thread:\(thread.id.account)|\(thread.id.providerID)"
     }
 
     /// Computes (once per message) a summary and reply directions. Safe to
     /// call repeatedly from `.task`; concurrent calls for the same message
     /// coalesce.
     func prepareInsight(for thread: Correspondence) async {
-        guard isAvailable, thread.id.account != "sample", thread.isBodyLoaded,
-              let messageID = thread.latestMessageID, insights[messageID] == nil,
+        let messageID = Self.key(for: thread)
+        guard isAvailable, thread.isBodyLoaded, insights[messageID] == nil,
               !inFlight.contains(messageID) else { return }
         inFlight.insert(messageID)
         defer { inFlight.remove(messageID) }
@@ -95,7 +101,8 @@ final class MailIntelligence {
         Subject: \(thread.subject)
         \(Self.trimmed(thread.body))
 
-        What the reply should say: \(intent)
+        I am the recipient, replying in first person. My answer, in short: \(intent)
+        Write my reply so it gives that answer directly. Do not ask the sender to decide something I was asked to decide.
         \(signOff.map { "Sign it: \($0)" } ?? "Do not add a signature.")
         """
         do {
@@ -155,9 +162,12 @@ final class MailIntelligence {
     under 35 words. Name people and dates exactly as written. Never invent \
     facts. If the message needs a personal reply, suggest up to three short, \
     distinct reply directions the reader might choose, each two to four \
-    words, written as the reader would say them (for example "Count me in", \
-    "Can't make it", "Ask for Tuesday"). Suggest no replies for newsletters, \
-    receipts, notifications, or anything that doesn't expect an answer.
+    words, written as the reader's own answer in first person (for example \
+    "Count me in", "Can't make it", "Go with option A", "Ask for Tuesday"). \
+    Never phrase them as advice to the reader, like "Share your thoughts" or \
+    "Reply soon". When the message offers a choice, suggest the choices \
+    themselves. Suggest no replies for newsletters, receipts, \
+    notifications, or anything that doesn't expect an answer.
     """
 
     @available(iOS 26.0, *)

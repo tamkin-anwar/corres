@@ -121,8 +121,14 @@ struct CorresShell: View {
     private var outboxBanner: some View {
         if let pending = outbox.pending {
             HStack(spacing: 12) {
-                Text("Sending \u{201C}\(pending.subjectPreview)\u{201D} in \(pending.secondsRemaining)\u{2026}")
+                // The subject truncates; the countdown never does.
+                Text("Sending \u{201C}\(pending.subjectPreview)\u{201D}")
                     .font(.subheadline).lineLimit(1)
+                Text("\(pending.secondsRemaining)s")
+                    .font(.subheadline).monospacedDigit()
+                    .foregroundStyle(CorresPalette.secondary)
+                    .fixedSize()
+                    .contentTransition(.numericText(countsDown: true))
                 Spacer(minLength: 8)
                 Button("Undo") { outbox.undo() }.font(.subheadline.weight(.semibold))
             }
@@ -211,6 +217,18 @@ struct CorresShell: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        // Tapping the title also switches (on the lists), but the Brief has
+        // no title, so a visible control is the one path that always works.
+        if auth.accounts.count > 1 {
+            ToolbarItem(placement: .topBarLeading) {
+                Menu { accountMenu } label: {
+                    Image(systemName: accountFilter == nil ? "tray.2" : "person.crop.circle")
+                        .frame(minWidth: 44, minHeight: 44)
+                }
+                .accessibilityLabel(accountFilter == nil ? "All Inboxes" : accountFilter ?? "")
+                .accessibilityHint("Switch between all inboxes and one account")
+            }
+        }
         ToolbarItem(placement: .topBarTrailing) {
             Button { composeDraft = Draft(kind: .new, to: "", subject: "") } label: {
                 Image(systemName: "square.and.pencil")

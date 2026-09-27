@@ -25,6 +25,9 @@ struct ConversationView: View {
     @State private var isUnsubscribing = false
     @State private var unsubscribeOpened = false
     @State private var showingSnooze = false
+    /// Set when a snooze was chosen; the view leaves only after the sheet
+    /// has fully closed, so the pop and the sheet dismissal never race.
+    @State private var leaveAfterSnooze = false
     @State private var draftingIntent: String?
     @Environment(\.dismiss) private var dismiss
     @Environment(MailIntelligence.self) private var intelligence
@@ -137,10 +140,12 @@ struct ConversationView: View {
                         }
                     }
                 }
-                .sheet(isPresented: $showingSnooze) {
+                .sheet(isPresented: $showingSnooze, onDismiss: {
+                    if leaveAfterSnooze { dismiss() }
+                }) {
                     SnoozeSheet { date in
+                        leaveAfterSnooze = true
                         Task { await store.snooze(thread.id, until: date) }
-                        dismiss()
                     }
                 }
                 .confirmationDialog("Unsubscribe from \(thread.sender)?", isPresented: $showingUnsubscribeConfirmation, titleVisibility: .visible) {

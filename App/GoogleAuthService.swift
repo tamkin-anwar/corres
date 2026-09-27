@@ -62,6 +62,24 @@ final class GoogleAuthService {
         }
         accounts = restored
         persistAccountList()
+        Task { await fillGivenNameIfMissing() }
+    }
+
+    /// Accounts connected before the Brief greeted by name never stored
+    /// one; ask Google's own profile endpoint once (the sign-in already
+    /// granted the basic profile scope). Silent on any failure: the
+    /// greeting simply stays without a name.
+    private func fillGivenNameIfMissing() async {
+        guard defaults.string(forKey: Self.givenNameKey) == nil, let email = accounts.first?.email,
+              let token = try? await GoogleTokenProvider.shared.accessToken(for: email),
+              let url = URL(string: "https://openidconnect.googleapis.com/v1/userinfo") else { return }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              (response as? HTTPURLResponse)?.statusCode == 200,
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let given = json["given_name"] as? String, !given.isEmpty else { return }
+        defaults.set(given, forKey: Self.givenNameKey)
     }
 
     /// One-time upgrade path: reads whatever GoogleSignIn's own single-slot
@@ -108,9 +126,9 @@ final class GoogleAuthService {
             }
             // Only the first account's name is kept, for the Brief's
             // greeting; it never leaves the device.
-            if UserDefaults.standard.string(forKey: Self.givenNameKey) == nil,
+            if defaults.string(forKey: Self.givenNameKey) == nil,
                let given = result.user.profile?.givenName, !given.isEmpty {
-                UserDefaults.standard.set(given, forKey: Self.givenNameKey)
+                defaults.set(given, forKey: Self.givenNameKey)
             }
             // Google's consent screen lets each permission be unchecked.
             // Without modify, reading works but read/unread, archive, trash,
@@ -146,6 +164,8 @@ final class GoogleAuthService {
         // legacy single slot (relevant right after the migration path above).
         if accounts.isEmpty {
             GIDSignIn.sharedInstance.signOut()
+            // The Brief's greeting name belongs to whoever is connected.
+            defaults.removeObject(forKey: Self.givenNameKey)
         }
     }
 

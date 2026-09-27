@@ -187,10 +187,10 @@ struct HTMLMessageBody: UIViewRepresentable {
         <style>
         :root { color-scheme: light dark; }
         html, body { overflow-x: hidden; }
-        body { font: -apple-system-body; font-size: 17px; line-height: 1.5; color: #1c1c1e !important;
+        body { font: -apple-system-body; font-size: 17px; line-height: 1.5; color: #141312 !important;
                margin: 0; padding: 0; word-wrap: break-word; -webkit-text-size-adjust: 100%;
                background: transparent; }
-        a { color: #0a5f8a; }
+        a { color: #2F5D9E; }
         /* The actual fix for wide marketing HTML, researched against what
            real mail clients do (Apple Mail included, both WebKit-based):
            force every table/image to reflow to the viewport natively,
@@ -234,8 +234,8 @@ struct HTMLMessageBody: UIViewRepresentable {
              setting it; `prefers-color-scheme` plus real color values is
              the standards-based mechanism actually documented to respect
              `overrideUserInterfaceStyle`. */
-          body { color: #f2f2f7 !important; }
-          a { color: #7fc2ef; }
+          body { color: #F2F3F5 !important; }
+          a { color: #8FB4E8; }
         }
         </style></head><body>\(html)</body></html>
         """

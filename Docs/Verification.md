@@ -2,6 +2,28 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Post-redesign sweep (September 27, 2026)
+
+Every redesigned surface was exercised on the iPhone 18 Pro simulator (iOS 27, which has the on-device Apple Intelligence model), plus a code review of each changed path. Found and fixed:
+
+- **Compose dropped keystrokes.** Typing stopped or garbled at 12 characters, when the tone bar appeared and changed the bottom inset under the focused editor. A SwiftUI selection binding, tried for cursor placement, dropped keystrokes too. Fixed: the tone bar is always present (disabled until there's text), and the cursor is placed once on the underlying text view. Confirmed that a 49-character sentence types in full.
+- **Replies started below the quote.** The cursor now opens above the quoted original, as in Mail.
+- **Send was clipped to "Se…"** by the iOS 26 toolbar. It now uses the system prominent style (glass on iOS 26).
+- **Swipe labels were reversed.** "Short swipe right" named the action you get by swiping left. The pickers now match iOS convention. The broken helper sentence was rewritten.
+- **The undo banner hid its countdown.** The subject truncates now; the seconds never do.
+- **Read rows had an empty VoiceOver label.** Unread is now an accessibility value, and the combined row label is kept.
+- **Snooze from a conversation** now leaves the view only after the sheet has closed (a dismiss race). Snooze is also in the press-and-hold menu, as the copy says.
+- **Multiple accounts:** a visible switcher in the toolbar. The Brief has no title to tap.
+- **Screener Allow/Block** now fill their width. The Brief's dividers are aligned, and "All N" shows only when the list is truncated.
+- **HTML mail** colors are aligned to the new palette.
+- **Greeting name:** filled once from Google's profile for accounts connected before this build; cleared when the last account disconnects.
+- **Suggested replies** read as your own answer ("Choose option 1"), not advice ("Share your thoughts"). Drafts answer the question instead of bouncing it back. Insights also work for sample mail (keyed by thread when there's no message id), so the features can be tried before connecting Gmail.
+- Confirmed working in the simulator:
+  - Welcome, Brief, Needs You (grouping, swipe to archive, press-and-hold menu), Mail, Conversation, Snooze sheet, and Settings.
+  - Reply → Warmer rewrite (on-device) with Undo → Send → undo banner.
+  - Suggested reply → drafted reply in compose.
+- `swift test` 64/64; `xcodebuild` BUILD SUCCEEDED.
+
 ## Obsidian redesign and on-device intelligence (September 27, 2026)
 
 The approved "Pro" direction, built in SwiftUI. Sync, triage, outbox, Screener, and every Gmail action are unchanged; this is design system, screens, and new on-device features.

@@ -146,10 +146,14 @@ struct BriefView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("Needs You").eyebrow()
                 Spacer(minLength: 8)
-                Button("All \(priorities.count)") { selection = .needsYou }
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(CorresPalette.accent)
-                    .frame(minHeight: 44)
+                if priorities.count > 3 {
+                    Button("All \(priorities.count)") { selection = .needsYou }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(CorresPalette.accent)
+                        .frame(minHeight: 44)
+                } else {
+                    Color.clear.frame(width: 1, height: 44)
+                }
             }
             .padding(.horizontal, 4)
             .padding(.bottom, -8)
@@ -161,7 +165,7 @@ struct BriefView: View {
                         CorrespondenceRow(thread: thread, showsReason: true)
                     }
                     .buttonStyle(CorresRowButtonStyle())
-                    if index < shown.count - 1 { Hairline(leading: 72) }
+                    if index < shown.count - 1 { Hairline(leading: 77) }
                 }
             }
             .padding(.vertical, 4)

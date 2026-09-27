@@ -106,3 +106,18 @@ struct DueChip: View {
         return date.formatted(.dateTime.month(.abbreviated).day())
     }
 }
+
+extension View {
+    /// The one emphasized action in a toolbar (Send). Toolbars size their
+    /// items themselves, so this uses the system's prominent style (glass
+    /// on iOS 26) tinted with the accent, rather than a custom capsule the
+    /// toolbar would clip.
+    @ViewBuilder
+    func prominentToolbarButton() -> some View {
+        if #available(iOS 26.0, *) {
+            self.buttonStyle(.glassProminent).tint(CorresPalette.accent)
+        } else {
+            self.buttonStyle(.borderedProminent).tint(CorresPalette.accent)
+        }
+    }
+}

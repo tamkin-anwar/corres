@@ -79,17 +79,19 @@ struct ScreenerView: View {
                                           : "\(group.messageCount) messages, including \u{201C}\(group.latestSubject)\u{201D}")
                 .font(.subheadline).foregroundStyle(CorresPalette.ink).lineLimit(2)
             HStack(spacing: 10) {
-                Button("Allow") {
+                Button {
                     Task { await store.approveSender(group.senderEmail, account: group.account) }
+                } label: {
+                    Text("Allow").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(CorresMetalCapsuleStyle(minHeight: 44))
-                .frame(maxWidth: .infinity)
                 .accessibilityLabel("Allow \(group.sender)")
-                Button("Block") {
+                Button {
                     Task { await store.blockSender(group.senderEmail, account: group.account) }
+                } label: {
+                    Text("Block").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(CorresPillStyle(minHeight: 44))
-                .frame(maxWidth: .infinity)
                 .accessibilityLabel("Block \(group.sender)")
             }
         }
