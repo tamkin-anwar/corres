@@ -6,12 +6,23 @@ struct CorresApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
 
+    init() {
+        // Large navigation titles in New York, the same serif as the rest
+        // of Corres's display type; inline titles stay SF for legibility.
+        let largeTitle = UIFont.preferredFont(forTextStyle: .largeTitle)
+        if let serif = largeTitle.fontDescriptor.withDesign(.serif) {
+            let font = UIFont(descriptor: serif, size: 0)
+            UINavigationBar.appearance().largeTitleTextAttributes = [.font: font]
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             CorresShell(store: appDelegate.store, auth: appDelegate.auth, sync: appDelegate.sync,
                        outbox: appDelegate.outbox, threadActions: appDelegate.threadActions,
                        labelDirectory: appDelegate.labelDirectory, pushService: appDelegate.pushService,
                        unsubscribeService: appDelegate.unsubscribeService)
+                .environment(appDelegate.mailIntelligence)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
                 .task {

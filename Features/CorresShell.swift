@@ -30,8 +30,12 @@ struct CorresShell: View {
                 NavigationStack {
                     destinationContent(for: destination)
                         .background(CorresPalette.canvas)
-                        .navigationTitle(destination.rawValue)
-                        .navigationBarTitleDisplayMode(.inline)
+                        .navigationTitle(title(for: destination))
+                        // Brief sets its own greeting as the headline; the
+                        // lists use the system large title, set in New York
+                        // (see CorresApp.init), which collapses on scroll.
+                        .navigationBarTitleDisplayMode(destination == .brief ? .inline : .large)
+                        .toolbarTitleMenu { if auth.accounts.count > 1 { accountMenu } }
                         .toolbar { toolbarContent }
                         .navigationDestination(for: ConversationRoute.self) { route in
                             ConversationView(store: store, outbox: outbox, threadActions: threadActions,
@@ -39,7 +43,7 @@ struct CorresShell: View {
                                             route: route)
                         }
                 }
-                .tabItem { Label { Text(destination.rawValue) } icon: { Image(uiImage: CorresIcon.tabImage(destination.glyph)) } }
+                .tabItem { Label(destination.rawValue, systemImage: destination.systemImage) }
                 .tag(destination)
             }
         }
@@ -122,8 +126,8 @@ struct CorresShell: View {
                 Spacer(minLength: 8)
                 Button("Undo") { outbox.undo() }.font(.subheadline.weight(.semibold))
             }
-            .padding(.horizontal, 18).padding(.vertical, 14)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+            .padding(.horizontal, 20).padding(.vertical, 14)
+            .corresGlass(in: Capsule())
             .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
             // Reduce Motion drops the slide specifically (large-scale
             // positional movement, what the setting actually targets), not
@@ -138,8 +142,8 @@ struct CorresShell: View {
                 Button("Discard") { outbox.discardFailed() }.font(.subheadline)
                 Button("Retry") { outbox.retryFailed() }.font(.subheadline.weight(.semibold))
             }
-            .padding(.horizontal, 18).padding(.vertical, 14)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+            .padding(.horizontal, 20).padding(.vertical, 14)
+            .corresGlass(in: Capsule())
             .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         }
@@ -170,66 +174,43 @@ struct CorresShell: View {
         }
     }
 
-    /// "All Inboxes" (Apple Mail/Spark's unified view, this app's default)
-    /// plus one row per connected account (Superhuman's per-account view).
-    /// Both are real modes over the same already-synced local threads; see
-    /// `accountFilter`'s doc comment.
-    private var accountSwitcher: some View {
-        Menu {
-            Button {
-                accountFilter = nil
-            } label: {
-                if accountFilter == nil { Label("All Inboxes", systemImage: "checkmark") }
-                else { Text("All Inboxes") }
-            }
-            Divider()
-            ForEach(auth.accounts) { account in
-                Button {
-                    accountFilter = account.email
-                } label: {
-                    if accountFilter == account.email { Label(account.email, systemImage: "checkmark") }
-                    else { Text(account.email) }
-                }
-            }
-        } label: {
-            Image(systemName: accountFilter == nil ? "tray.2" : "person.crop.circle")
-                .frame(minWidth: 44, minHeight: 44)
+    private func title(for destination: Destination) -> String {
+        switch destination {
+        case .brief: ""
+        case .mail:
+            if let accountFilter { accountFilter.components(separatedBy: "@").first ?? accountFilter }
+            else { auth.accounts.count > 1 ? "All Inboxes" : "Mail" }
+        default: destination.rawValue
         }
-        .accessibilityLabel(accountFilter == nil ? "All Inboxes" : accountFilter ?? "")
     }
 
-    private var brandLabel: some View {
-        HStack(spacing: 8) {
-            CorrespondenceMark().frame(width: 30, height: 30)
-            Text("corres")
-                .font(.system(.title2, design: .serif).weight(.medium))
-                .lineLimit(1)
-                .fixedSize()
+    /// "All Inboxes" (every connected account merged, newest first; the
+    /// default) plus one row per account. Reached by tapping the screen's
+    /// title, the system's own place for switching what a screen shows.
+    @ViewBuilder
+    private var accountMenu: some View {
+        Button {
+            accountFilter = nil
+        } label: {
+            if accountFilter == nil { Label("All Inboxes", systemImage: "checkmark") }
+            else { Label("All Inboxes", systemImage: "tray.2") }
         }
-        .fixedSize()
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Corres. Email, considered.")
+        ForEach(auth.accounts) { account in
+            Button {
+                accountFilter = account.email
+            } label: {
+                if accountFilter == account.email { Label(account.email, systemImage: "checkmark") }
+                else { Text(account.email) }
+            }
+        }
+    }
+
+    private var profileInitial: String {
+        (accountFilter ?? auth.primaryAccount?.email ?? auth.accounts.first?.email)?.first.map { String($0).uppercased() } ?? "C"
     }
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        // The system wraps custom toolbar content in an automatic glass
-        // capsule on iOS 26+, which breaks the icon+wordmark brand lockup
-        // apart into separate pills. Opt out where that API exists; on
-        // iOS 17-25 there is no such glass treatment to begin with.
-        if #available(iOS 26.0, *) {
-            ToolbarItem(placement: .topBarLeading) { brandLabel }
-                .sharedBackgroundVisibility(.hidden)
-        } else {
-            ToolbarItem(placement: .topBarLeading) { brandLabel }
-        }
-        // Only worth showing once there is an actual choice to make: one
-        // connected account (or none, sample mail) has nothing to switch
-        // between, matching Superhuman's own account switcher only mattering
-        // once a second account exists.
-        if auth.accounts.count > 1 {
-            ToolbarItem(placement: .topBarTrailing) { accountSwitcher }
-        }
         ToolbarItem(placement: .topBarTrailing) {
             Button { composeDraft = Draft(kind: .new, to: "", subject: "") } label: {
                 Image(systemName: "square.and.pencil")
@@ -239,10 +220,11 @@ struct CorresShell: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button { showingSettings = true } label: {
-                Image(systemName: "slider.horizontal.3")
+                Text(profileInitial)
+                    .font(.subheadline.weight(.semibold))
                     .frame(minWidth: 44, minHeight: 44)
             }
-            .accessibilityLabel("Preferences and privacy")
+            .accessibilityLabel("Accounts and settings")
         }
     }
 }

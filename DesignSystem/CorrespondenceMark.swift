@@ -1,99 +1,101 @@
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#endif
 
-/// Two open, opposing arcs: an exchange with space left for the other person.
-/// Native paths remain sharp at every display scale; no raster upscaling.
+/// The Corres monogram: a titanium outer C holding a sapphire inner C and a
+/// single point, an exchange with room left for the other person. Pure
+/// vector paths drawn at the display's native scale, so it is exactly as
+/// sharp on a 1024pt App Store render as in a 28pt toolbar.
+///
+/// Self-contained on purpose (no asset-catalog colors): the app icon is
+/// rendered from this same view by Scripts/RenderIcon.swift, outside the
+/// app bundle.
 struct CorrespondenceMark: View {
-    var sculpted = false
+    /// A faint sapphire halo behind the mark, for hero placements only.
+    var glow = false
 
-    var body: some View {
-        if sculpted {
-            CorrespondenceSculpture()
-        } else {
-            flatMark
-        }
-    }
+    private static let titaniumAxis = (UnitPoint(x: 0.24, y: 0.2), UnitPoint(x: 0.76, y: 0.8))
+    private static let sapphireAxis = (UnitPoint(x: 0.36, y: 0.36), UnitPoint(x: 0.62, y: 0.64))
 
-    private var flatMark: some View {
-        GeometryReader { geometry in
-            let side = min(geometry.size.width, geometry.size.height)
-            ZStack {
-                // The two-tone gold/silver pairing is what makes the sculpture
-                // read as a brand mark rather than a generic sync/refresh glyph;
-                // the flat version needs the same distinction at small sizes.
-                arc(side: side, rotation: -32, colors: [CorresPalette.champagne, Color(hex: 0xB08A54)])
-                arc(side: side * 0.61, rotation: 148, colors: [Color(hex: 0xE3ECF0), Color(hex: 0x8FA6B2)])
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
-        }
-        .accessibilityHidden(true)
-    }
-
-    private func arc(side: CGFloat, rotation: Double, colors: [Color]) -> some View {
-        Circle().trim(from: 0.12, to: 0.88)
-            .stroke(
-                LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing),
-                style: StrokeStyle(lineWidth: side * 0.105, lineCap: .round)
-            )
-            .frame(width: side * 0.76, height: side * 0.76)
-            .rotationEffect(.degrees(rotation))
-    }
-}
-
-enum CorresGlyph: String {
-    case brief, needsYou, waiting, mail
-}
-
-struct CorresIcon: View {
-    let glyph: CorresGlyph
     var body: some View {
         Canvas { context, size in
-            let scale = min(size.width, size.height) / 24
-            let path = Self.path(for: glyph)
-            context.scaleBy(x: scale, y: scale)
-            context.stroke(path, with: .foreground, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+            let side = min(size.width, size.height)
+            let unit = side / 240
+            let origin = CGPoint(x: (size.width - side) / 2, y: (size.height - side) / 2)
+            let center = CGPoint(x: origin.x + 120 * unit, y: origin.y + 120 * unit)
+            let rect = CGRect(origin: origin, size: CGSize(width: side, height: side))
+
+            if glow {
+                context.fill(Path(ellipseIn: CGRect(x: center.x - 80 * unit, y: center.y - 80 * unit,
+                                                    width: 160 * unit, height: 160 * unit)),
+                             with: .radialGradient(Gradient(colors: [.init(markHex: 0x9FBEE8).opacity(0.22), .clear]),
+                                                   center: center, startRadius: 0, endRadius: 80 * unit))
+            }
+
+            let outer = Self.arc(center: center, radius: 62 * unit, from: 40, to: 320)
+            let inner = Self.arc(center: center, radius: 34 * unit, from: 60, to: 300)
+            let outerStyle = StrokeStyle(lineWidth: 22 * unit, lineCap: .round)
+            let innerStyle = StrokeStyle(lineWidth: 11 * unit, lineCap: .round)
+
+            // Soft contact shadows give the metal depth without a bevel.
+            var shadowed = context
+            shadowed.addFilter(.blur(radius: 2.2 * unit))
+            shadowed.opacity = 0.5
+            shadowed.stroke(outer.offsetBy(dx: 0, dy: 3 * unit), with: .color(.black), style: outerStyle)
+            shadowed.stroke(inner.offsetBy(dx: 0, dy: 2 * unit), with: .color(.black), style: innerStyle)
+
+            context.stroke(outer, with: Self.shading(Self.titaniumStops, Self.titaniumAxis, rect), style: outerStyle)
+            // A fine specular line along the upper edge of the outer ring.
+            context.stroke(Self.arc(center: center, radius: 72 * unit, from: 150, to: 300),
+                           with: .color(.white.opacity(0.35)), style: StrokeStyle(lineWidth: 1.2 * unit, lineCap: .round))
+            context.stroke(inner, with: Self.shading(Self.sapphireStops, Self.sapphireAxis, rect), style: innerStyle)
+            context.fill(Path(ellipseIn: CGRect(x: center.x + 32 * unit - 5.5 * unit, y: center.y - 5.5 * unit,
+                                                width: 11 * unit, height: 11 * unit)),
+                         with: Self.shading(Self.titaniumStops, Self.titaniumAxis, rect))
         }
-        .frame(width: 24, height: 24)
+        .aspectRatio(1, contentMode: .fit)
         .accessibilityHidden(true)
     }
 
-    static func path(for glyph: CorresGlyph) -> Path {
+    /// Angles in degrees, measured clockwise from 3 o'clock in screen space;
+    /// sweeping 40→320 draws a C that opens to the right.
+    private static func arc(center: CGPoint, radius: CGFloat, from: Double, to: Double) -> Path {
         var path = Path()
-        switch glyph {
-        case .brief:
-            path.addRoundedRect(in: CGRect(x: 4, y: 3, width: 16, height: 18), cornerSize: CGSize(width: 3, height: 3))
-            for y in [8.0, 12.0, 16.0] {
-                path.move(to: CGPoint(x: 8, y: y)); path.addLine(to: CGPoint(x: y == 16 ? 13 : 16, y: y))
-            }
-        case .needsYou:
-            path.addEllipse(in: CGRect(x: 3, y: 3, width: 18, height: 18))
-            path.move(to: CGPoint(x: 12, y: 7)); path.addLine(to: CGPoint(x: 12, y: 13))
-            path.addEllipse(in: CGRect(x: 11.6, y: 16, width: 0.8, height: 0.8))
-        case .waiting:
-            path.addArc(center: CGPoint(x: 12, y: 12), radius: 9, startAngle: .degrees(-70), endAngle: .degrees(250), clockwise: false)
-            path.move(to: CGPoint(x: 12, y: 6)); path.addLine(to: CGPoint(x: 12, y: 12)); path.addLine(to: CGPoint(x: 16, y: 14))
-        case .mail:
-            path.addRoundedRect(in: CGRect(x: 3, y: 5, width: 18, height: 14), cornerSize: CGSize(width: 3, height: 3))
-            path.move(to: CGPoint(x: 4, y: 7)); path.addLine(to: CGPoint(x: 12, y: 13)); path.addLine(to: CGPoint(x: 20, y: 7))
-        }
+        path.addArc(center: center, radius: radius, startAngle: .degrees(from), endAngle: .degrees(to), clockwise: false)
         return path
     }
 
-    #if canImport(UIKit)
-    /// TabView requires an Image; a Canvas inside tabItem can be dropped by UIKit.
-    @MainActor static func tabImage(_ glyph: CorresGlyph) -> UIImage {
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 24, height: 24))
-        return renderer.image { context in
-            context.cgContext.addPath(path(for: glyph).cgPath)
-            context.cgContext.setStrokeColor(UIColor.black.cgColor)
-            context.cgContext.setLineWidth(1.5)
-            context.cgContext.setLineCap(.round)
-            context.cgContext.setLineJoin(.round)
-            context.cgContext.strokePath()
-        }.withRenderingMode(.alwaysTemplate)
+    private static func point(_ unit: UnitPoint, in rect: CGRect) -> CGPoint {
+        CGPoint(x: rect.minX + unit.x * rect.width, y: rect.minY + unit.y * rect.height)
     }
-    #endif
 
+    private static func shading(_ gradient: Gradient, _ axis: (UnitPoint, UnitPoint), _ rect: CGRect) -> GraphicsContext.Shading {
+        .linearGradient(gradient, startPoint: point(axis.0, in: rect), endPoint: point(axis.1, in: rect))
+    }
+    private static let titaniumStops = Gradient(stops: [
+        .init(color: .init(markHex: 0xFFFFFF), location: 0), .init(color: .init(markHex: 0xD5D9DF), location: 0.3),
+        .init(color: .init(markHex: 0x9197A0), location: 0.55), .init(color: .init(markHex: 0xE7EAEE), location: 0.78),
+        .init(color: .init(markHex: 0x848A93), location: 1)])
+    private static let sapphireStops = Gradient(stops: [
+        .init(color: .init(markHex: 0xE3EEFC), location: 0), .init(color: .init(markHex: 0x8FB4E8), location: 0.4),
+        .init(color: .init(markHex: 0x4A6C9C), location: 0.7), .init(color: .init(markHex: 0xB9D1F2), location: 1)])
+}
+
+/// The app icon's composition: the mark on an obsidian field with a faint
+/// cool light from above. Rendered to App/Assets.xcassets by
+/// Scripts/RenderIcon.swift.
+struct CorresIconArtwork: View {
+    var body: some View {
+        ZStack {
+            Color(markHex: 0x0A0A0C)
+            RadialGradient(colors: [Color(markHex: 0xBECDE6).opacity(0.16), .clear],
+                           center: UnitPoint(x: 0.5, y: -0.05), startRadius: 0, endRadius: 760)
+            CorrespondenceMark(glow: true).padding(150)
+        }
+    }
+}
+
+extension Color {
+    init(markHex hex: UInt32) {
+        self.init(.sRGB, red: Double((hex >> 16) & 255) / 255,
+                  green: Double((hex >> 8) & 255) / 255, blue: Double(hex & 255) / 255)
+    }
 }

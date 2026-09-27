@@ -7,9 +7,17 @@ struct WelcomeView: View {
 
     var body: some View {
         Group {
-            if scrolls { ScrollView { content } } else { content }
+            if scrolls { ScrollView { content }.scrollBounceBehavior(.basedOnSize) } else { content }
         }
-        .foregroundStyle(CorresPalette.ink).background(CorresPalette.canvas)
+        .foregroundStyle(CorresPalette.ink)
+        .background {
+            ZStack {
+                CorresPalette.canvas
+                RadialGradient(colors: [CorresPalette.accent.opacity(0.10), .clear],
+                               center: UnitPoint(x: 0.5, y: 0.18), startRadius: 0, endRadius: 420)
+            }
+            .ignoresSafeArea()
+        }
         // Self-contained, like PreferencesView and ComposeView: a distant
         // .preferredColorScheme does not reliably re-trait an already-
         // presented fullScreenCover if Appearance changes while it's open.
@@ -17,47 +25,54 @@ struct WelcomeView: View {
     }
 
     var content: some View {
-            VStack(spacing: 30) {
-                Text("ANWAR CREATIVE STUDIO")
-                    .font(CorresType.label).tracking(3).foregroundStyle(CorresPalette.secondary)
-                    .padding(.top, 28)
-                ZStack {
-                    InkMaterial(radius: 56)
-                        .shadow(color: CorresPalette.midnight.opacity(0.25), radius: 28, y: 20)
-                    CorrespondenceMark(sculpted: true).padding(34)
-                }
-                .frame(width: 214, height: 214).padding(.vertical, 20)
-                VStack(spacing: 12) {
-                    Text("corres")
-                        .font(.system(.largeTitle, design: .serif))
-                        // A hero wordmark still deserves to grow with Dynamic
-                        // Type, but capped short of the accessibility sizes
-                        // where 500pt-tall text would break this fixed layout.
-                        .dynamicTypeSize(...(.xxxLarge))
-                    Text("Email, considered.").font(CorresType.heading)
-                    Text("A quieter place for the decisions,\nrelationships, and promises in your inbox.")
-                        .font(.body).foregroundStyle(CorresPalette.secondary).multilineTextAlignment(.center)
-                }
-                VStack(alignment: .leading, spacing: 22) {
-                    welcomeRow(.brief, title: "Perspective, before the inbox", detail: "Brief brings the important conversations together.")
-                    welcomeRow(.needsYou, title: "Know what needs you", detail: "A clear place for decisions and replies.")
-                    welcomeRow(.waiting, title: "Give the rest some space", detail: "Keep track of what is moving with others.")
-                }
-                .padding(24).corresSurface()
-                Button("Explore Corres", action: onExplore).buttonStyle(CorresButtonStyle())
-                Text("Explore with fictional mail first, or connect your real Gmail account anytime from Preferences.")
-                    .font(.footnote).foregroundStyle(CorresPalette.secondary).multilineTextAlignment(.center)
+        VStack(spacing: 0) {
+            Spacer(minLength: 72)
+            CorrespondenceMark(glow: true)
+                .frame(width: 150, height: 150)
+            VStack(spacing: 10) {
+                Text("corres")
+                    .font(.system(size: 50, weight: .regular, design: .serif))
+                    .dynamicTypeSize(...(.xxxLarge))
+                Text("Email, considered.")
+                    .font(.system(.title3, design: .serif).italic())
+                    .foregroundStyle(CorresPalette.secondary)
             }
-            .padding(28).frame(maxWidth: 520).frame(maxWidth: .infinity)
+            .padding(.top, 20)
+            VStack(alignment: .leading, spacing: 18) {
+                point("exclamationmark.circle", "What needs you, first",
+                      "The few conversations that ask something of you, with the reason for each.")
+                point("tray", "Everything else, in one place",
+                      "Every account in one inbox, newest first. Nothing hidden, ever.")
+                point("lock", "Private by design",
+                      "Sorting, summaries and drafts run on this iPhone. Your mail is never read on a server.")
+            }
+            .padding(.top, 44)
+            Spacer(minLength: 40)
+            VStack(spacing: 14) {
+                Button("Explore Corres", action: onExplore).buttonStyle(CorresButtonStyle())
+                Text("Start with sample mail. Connect Gmail anytime from Settings.")
+                    .font(.footnote).foregroundStyle(CorresPalette.tertiary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.bottom, 24)
+        }
+        .padding(.horizontal, 28)
+        .frame(maxWidth: 480)
+        .frame(maxWidth: .infinity, minHeight: 700)
     }
 
-    private func welcomeRow(_ glyph: CorresGlyph, title: String, detail: String) -> some View {
-        HStack(alignment: .top, spacing: 16) {
-            SculptedBadge(glyph: glyph)
-            VStack(alignment: .leading, spacing: 5) {
-                Text(title).font(.subheadline.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
-                Text(detail).font(.footnote).foregroundStyle(CorresPalette.secondary).fixedSize(horizontal: false, vertical: true)
+    private func point(_ icon: String, _ title: String, _ detail: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: icon)
+                .font(.body.weight(.medium))
+                .foregroundStyle(CorresPalette.accent)
+                .frame(width: 26, height: 22)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.body.weight(.semibold))
+                Text(detail).font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .accessibilityElement(children: .combine)
     }
 }

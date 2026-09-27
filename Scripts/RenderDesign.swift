@@ -32,9 +32,9 @@ struct RenderDesign {
         try render(CorrespondenceList(scrolls: false, store: store, destination: .needsYou),
                    scheme: .light, width: 393, height: 1200,
                    to: output.appendingPathComponent("needs-you-light.png"))
-        try render(CorrespondenceSculpture(exportQuality: true).padding(180).background(InkMaterial(radius: 0)),
-                   scheme: .dark, width: 1280, height: 1280,
-                   to: output.appendingPathComponent("sculpture-4k.png"))
+        try render(CorresIconArtwork(),
+                   scheme: .dark, width: 1024, height: 1024,
+                   to: output.appendingPathComponent("icon.png"))
         try render(BriefView(scrolls: false, store: store, selection: .constant(.brief), showingScreener: .constant(false))
             .environment(\.dynamicTypeSize, .accessibility3), scheme: .light,
                    width: 320, height: 1900, to: output.appendingPathComponent("brief-large-text.png"))

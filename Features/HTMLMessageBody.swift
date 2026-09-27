@@ -86,6 +86,32 @@ struct HTMLMessageBody: UIViewRepresentable {
         return regex.numberOfMatches(in: html, range: NSRange(html.startIndex..., in: html))
     }
 
+    /// How many of those remote images are tracking pixels: an image
+    /// declared 0–2px in either dimension (the defining shape of an open
+    /// tracker), or served from a known email-analytics host. A lower bound,
+    /// not a guarantee; every remote image is blocked either way.
+    static func trackerCount(in html: String) -> Int {
+        guard let tagRegex = imgTagRegex else { return 0 }
+        let range = NSRange(html.startIndex..., in: html)
+        return tagRegex.matches(in: html, range: range).reduce(0) { count, match in
+            guard let tagRange = Range(match.range, in: html) else { return count }
+            let tag = html[tagRange].lowercased()
+            guard tag.contains("http") else { return count }
+            let tiny = tag.range(of: #"\b(width|height)\s*=\s*["']?[0-2](px)?["'\s>/]"#, options: .regularExpression) != nil
+                || tag.range(of: #"(width|height)\s*:\s*[0-2]px"#, options: .regularExpression) != nil
+                || tag.contains("display:none") || tag.contains("display: none")
+            let knownHost = trackerHosts.contains { tag.contains($0) }
+            return count + (tiny || knownHost ? 1 : 0)
+        }
+    }
+
+    private static let imgTagRegex = try? NSRegularExpression(pattern: #"<img\b[^>]*>"#, options: [.caseInsensitive])
+    /// Common open-tracking hosts used by marketing and sales email tools.
+    private static let trackerHosts = ["/open.", "/o.gif", "/track/open", "/wf/open", "pixel.", "/pixel",
+                                       "mailtrack", "list-manage.com/track", "sendgrid.net/wf", "mandrillapp.com/track",
+                                       "hubspotemail", "t.hubspot", "mixmax", "superhuman.com", "yesware", "bananatag",
+                                       "streak.com", "mailchimp.com/track", "ct.sendgrid", "track.customer.io"]
+
     /// Replaces every remote `<img>` source with an inline transparent pixel,
     /// so no network request is made at all until the user chooses to load
     /// images. Deliberately narrow in scope (only `<img src>`, not CSS

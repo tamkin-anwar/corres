@@ -1,79 +1,108 @@
 import SwiftUI
 
-/// Light is concentrated at the edge; text remains on a quiet, opaque surface.
-struct InkMaterial: View {
-    var radius: CGFloat = 30
+/// Floating chrome (action bars, reply chips): Apple's Liquid Glass where
+/// the system has it, a frosted material with a hairline edge before that.
+/// Content itself always sits on opaque surfaces; glass is only for
+/// controls that float above it, the way the system uses it.
+struct CorresGlass<S: Shape>: ViewModifier {
+    let shape: S
+    var interactive = false
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.displayScale) private var displayScale
 
-    var body: some View {
-        RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .fill(LinearGradient(colors: [Color(hex: 0x254A5C), Color(hex: 0x122C3C), Color(hex: 0x0C1E2B)],
-                                 startPoint: .topLeading, endPoint: .bottomTrailing))
-            .overlay {
-                if !reduceTransparency {
-                    RoundedRectangle(cornerRadius: radius, style: .continuous)
-                        .fill(RadialGradient(colors: [Color(hex: 0xA6C1CB).opacity(0.14), .clear],
-                                             center: .topTrailing, startRadius: 0, endRadius: 270))
-                }
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0.06), .white.opacity(0.2)],
-                                                 startPoint: .topLeading, endPoint: .bottomTrailing),
-                                  lineWidth: contrast == .increased ? 1.5 : 0.75)
-            }
-    }
-}
-
-struct SculptedBadge: View {
-    let glyph: CorresGlyph
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 15, style: .continuous)
-                .fill(LinearGradient(colors: [Color(hex: 0x496D7C), Color(hex: 0x183847)],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .shadow(.inner(color: .white.opacity(0.2), radius: 1, y: 1)))
-                .overlay(RoundedRectangle(cornerRadius: 15).strokeBorder(.white.opacity(0.24), lineWidth: 0.5))
-            CorresIcon(glyph: glyph)
-                .foregroundStyle(LinearGradient(colors: [.white, CorresPalette.champagne], startPoint: .top, endPoint: .bottom))
-                .shadow(color: .black.opacity(0.3), radius: 1, y: 2)
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *), !reduceTransparency {
+            content.glassEffect(interactive ? .regular.interactive() : .regular, in: shape)
+        } else {
+            content
+                .background(reduceTransparency ? AnyShapeStyle(CorresPalette.surfaceRaised) : AnyShapeStyle(.ultraThinMaterial), in: shape)
+                .overlay(shape.stroke(CorresPalette.line, lineWidth: 1 / displayScale))
+                .shadow(color: .black.opacity(0.18), radius: 16, y: 8)
         }
-        .frame(width: 46, height: 46)
-        .compositingGroup()
-        .shadow(color: CorresPalette.midnight.opacity(0.16), radius: 5, y: 4)
-        // Static, non-animated per Design.md; rasterize once instead of
-        // recomputing three layered shadows/gradients on every scroll frame.
-        .drawingGroup()
-        .accessibilityHidden(true)
     }
 }
 
+extension View {
+    func corresGlass<S: Shape>(in shape: S, interactive: Bool = false) -> some View {
+        modifier(CorresGlass(shape: shape, interactive: interactive))
+    }
+}
+
+/// A round monogram. Initials are set in SF at a fixed ratio of the circle
+/// so they stay optically centered at any size.
 struct CorrespondentAvatar: View {
     let initials: String
-    /// Drives the view's own internal frame and corner radius; a caller
-    /// wanting a smaller avatar must pass a smaller `size`, not wrap the
-    /// default-sized view in an external `.frame()`. SwiftUI's `.frame()`
-    /// only changes the layout box a view is given, it never rescales a
-    /// view's own already-fixed internal content to fit a smaller one, so
-    /// an external override on the default 44x48 size would just overflow
-    /// and clip against the smaller declared box instead of shrinking.
-    var size = CGSize(width: 44, height: 48)
+    /// Drives the view's own frame; pass a smaller size rather than
+    /// wrapping the default in an external `.frame()`, which never
+    /// rescales the fixed internal content.
+    var size = CGSize(width: 42, height: 42)
+    var highlighted = false
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
-        Text(initials)
-            .font(.system(.subheadline, design: .serif).weight(.medium))
-            .foregroundStyle(CorresPalette.accent)
-            .frame(width: size.width, height: size.height)
-            .background {
-                RoundedRectangle(cornerRadius: size.width * 0.36, style: .continuous)
-                    .fill(CorresPalette.surface.gradient
-                        .shadow(.inner(color: CorresPalette.accent.opacity(0.1), radius: 4, y: -3)))
-                    .overlay(RoundedRectangle(cornerRadius: size.width * 0.36).strokeBorder(CorresPalette.line, lineWidth: 0.75))
+        let side = min(size.width, size.height)
+        Text(initials.isEmpty ? "·" : initials)
+            .font(.system(size: side * 0.34, weight: .semibold))
+            .foregroundStyle(CorresPalette.ink)
+            .frame(width: side, height: side)
+            .background(CorresPalette.avatarFill, in: Circle())
+            .overlay(Circle().strokeBorder(CorresPalette.line, lineWidth: 1 / displayScale))
+            .overlay {
+                if highlighted {
+                    Circle().stroke(CorresPalette.accent, lineWidth: 1.5).padding(-3)
+                }
             }
-            // Rendered once per visible list row; rasterize the inner-shadow
-            // fill so scrolling doesn't recompute it per frame.
-            .drawingGroup()
             .accessibilityHidden(true)
+    }
+}
+
+/// The one-line "why this is here" evidence under a row or on a
+/// conversation. A sparkle marks a judgment Apple Intelligence made on this
+/// iPhone; an arrow marks a rule (a Gmail category, a person you write to).
+struct ReasonLine: View {
+    let text: String
+    let isIntelligence: Bool
+
+    var body: some View {
+        Label {
+            Text(text).lineLimit(1)
+        } icon: {
+            Image(systemName: isIntelligence ? "sparkle" : "arrow.turn.down.right")
+                .font(.caption2.weight(.semibold))
+        }
+        .labelStyle(TightLabelStyle())
+        .font(.footnote.weight(.medium))
+        .foregroundStyle(CorresPalette.accent)
+    }
+}
+
+struct TightLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 6) { configuration.icon; configuration.title }
+    }
+}
+
+/// A small outlined day marker ("Fri") for something due.
+struct DueChip: View {
+    let date: Date
+    @Environment(\.displayScale) private var displayScale
+
+    var body: some View {
+        Text(label)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(CorresPalette.accent)
+            .padding(.horizontal, 8).padding(.vertical, 2)
+            .overlay(Capsule().strokeBorder(CorresPalette.accent.opacity(0.5), lineWidth: 1))
+            .accessibilityLabel("Due \(date.formatted(.dateTime.weekday(.wide).month().day()))")
+    }
+
+    private var label: String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return "Today" }
+        if calendar.isDateInTomorrow(date) { return "Tomorrow" }
+        if let days = calendar.dateComponents([.day], from: .now, to: date).day, days < 6, days >= 0 {
+            return date.formatted(.dateTime.weekday(.abbreviated))
+        }
+        return date.formatted(.dateTime.month(.abbreviated).day())
     }
 }

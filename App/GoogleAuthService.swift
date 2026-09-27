@@ -41,6 +41,7 @@ final class GoogleAuthService {
     ]
 
     var primaryAccount: GmailAccount? { accounts.first }
+    static let givenNameKey = "corres.givenName"
 
     func isConnected(_ email: String) -> Bool { accounts.contains { $0.email == email } }
 
@@ -104,6 +105,12 @@ final class GoogleAuthService {
             guard let email = result.user.profile?.email, !email.isEmpty else {
                 errorMessage = "Could not connect Gmail. Please try again."
                 return
+            }
+            // Only the first account's name is kept, for the Brief's
+            // greeting; it never leaves the device.
+            if UserDefaults.standard.string(forKey: Self.givenNameKey) == nil,
+               let given = result.user.profile?.givenName, !given.isEmpty {
+                UserDefaults.standard.set(given, forKey: Self.givenNameKey)
             }
             // Google's consent screen lets each permission be unchecked.
             // Without modify, reading works but read/unread, archive, trash,

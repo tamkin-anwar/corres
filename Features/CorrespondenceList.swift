@@ -1,53 +1,116 @@
 import SwiftUI
 
-/// A flat, dense row (avatar, sender, date, subject, one-line preview),
-/// matching Mail and Spark's actual list anatomy rather than the card-heavy,
-/// four-line row this replaced: no per-row bordered/shadowed card, no
-/// trailing chevron (neither reference shows one in a plain list), and a
-/// date now shown on every row (previously missing entirely). The attention
-/// text pill is also gone; a destination-filtered list (Needs You, Waiting)
-/// already tells you the attention state by which screen you're on, and
-/// neither Mail nor Spark labels attention with per-row text, they use
-/// color, which corresSurface's list styling doesn't have a slot for yet.
+/// A flat, dense row in the Mail/Spark list anatomy: unread dot, a round
+/// monogram, sender and time, subject, a one-line preview, and, in the
+/// curated lists, the one-line reason it's there.
 struct CorrespondenceRow: View {
     let thread: Correspondence
+    /// The "why this is here" line; shown in Needs You, Waiting, and the Brief.
+    var showsReason = false
+    /// A short account marker, shown only in the merged view of several accounts.
+    var accountTag: String?
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            ZStack(alignment: .topTrailing) {
-                CorrespondentAvatar(initials: thread.initials)
-                if thread.isUnread {
-                    Circle().fill(CorresPalette.accent).frame(width: 9, height: 9)
-                        .accessibilityLabel("Unread")
-                }
-            }
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(thread.sender).font(.subheadline.weight(thread.isUnread ? .bold : .semibold)).lineLimit(1)
-                    if thread.isPinned {
-                        Image(systemName: "pin.fill").font(.caption2).foregroundStyle(CorresPalette.champagne)
-                            .accessibilityLabel("Pinned")
-                    }
+        HStack(alignment: .top, spacing: 10) {
+            Circle()
+                .fill(thread.isUnread ? CorresPalette.accent : .clear)
+                .frame(width: 7, height: 7)
+                .padding(.top, 17)
+                .accessibilityHidden(true)
+            CorrespondentAvatar(initials: thread.initials)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(thread.sender)
+                        .font(.body.weight(thread.isUnread ? .semibold : .medium))
+                        .foregroundStyle(thread.isUnread ? CorresPalette.ink : CorresPalette.secondary)
+                        .lineLimit(1)
                     if thread.isFlagged {
                         Image(systemName: "flag.fill").font(.caption2).foregroundStyle(CorresPalette.flag)
                             .accessibilityLabel("Flagged")
                     }
-                    Spacer(minLength: 8)
-                    if thread.dueAt != nil && thread.attention == .needsYou {
-                        Image(systemName: "clock").font(.caption2).foregroundStyle(CorresPalette.secondary)
-                            .accessibilityLabel("Due soon")
+                    if thread.isPinned {
+                        Image(systemName: "pin.fill").font(.caption2).foregroundStyle(CorresPalette.tertiary)
+                            .accessibilityLabel("Pinned")
                     }
-                    Text(thread.receivedAt, format: .dateTime.month(.abbreviated).day())
-                        .font(.caption).foregroundStyle(CorresPalette.secondary)
+                    if !thread.attachments.isEmpty {
+                        Image(systemName: "paperclip").font(.caption2).foregroundStyle(CorresPalette.tertiary)
+                            .accessibilityLabel("Has attachments")
+                    }
+                    Spacer(minLength: 6)
+                    if let accountTag {
+                        Text(accountTag)
+                            .font(.caption2.weight(.semibold)).tracking(0.4)
+                            .foregroundStyle(CorresPalette.tertiary)
+                            .padding(.horizontal, 5).padding(.vertical, 1)
+                            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(CorresPalette.line, lineWidth: 1))
+                    }
+                    Text(Self.timestamp(thread.receivedAt))
+                        .font(.footnote).monospacedDigit()
+                        .foregroundStyle(CorresPalette.tertiary)
                 }
-                Text(thread.subject).font(.subheadline.weight(.medium)).lineLimit(1)
-                Text(thread.excerpt).font(.footnote)
-                    .foregroundStyle(CorresPalette.secondary).lineLimit(1)
+                Text(thread.subject)
+                    .font(.subheadline.weight(thread.isUnread ? .medium : .regular))
+                    .foregroundStyle(thread.isUnread ? CorresPalette.ink : CorresPalette.secondary)
+                    .lineLimit(1)
+                Text(thread.excerpt)
+                    .font(.subheadline)
+                    .foregroundStyle(CorresPalette.secondary)
+                    .lineLimit(showsReason ? 1 : 2)
+                if showsReason, !thread.reason.isEmpty {
+                    HStack(spacing: 8) {
+                        ReasonLine(text: thread.reason, isIntelligence: thread.isIntelligenceReason)
+                        Spacer(minLength: 4)
+                        if let due = thread.dueAt, thread.attention == .needsYou { DueChip(date: due) }
+                    }
+                    .padding(.top, 4)
+                }
             }
         }
-        .padding(.horizontal, 20).padding(.vertical, 12)
+        .padding(.leading, 8).padding(.trailing, 18).padding(.vertical, 12)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(thread.isUnread ? "Unread. " : "")
+    }
+
+    /// Today shows the time, this week the weekday, older the date, the
+    /// same ladder Apple Mail uses.
+    static func timestamp(_ date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return date.formatted(date: .omitted, time: .shortened) }
+        if calendar.isDateInYesterday(date) { return "Yesterday" }
+        if let days = calendar.dateComponents([.day], from: date, to: .now).day, days < 7 {
+            return date.formatted(.dateTime.weekday(.wide))
+        }
+        if calendar.isDate(date, equalTo: .now, toGranularity: .year) {
+            return date.formatted(.dateTime.month(.abbreviated).day())
+        }
+        return date.formatted(.dateTime.month(.abbreviated).day().year(.twoDigits))
+    }
+}
+
+extension Correspondence {
+    /// Whether the reason shown was written by Apple Intelligence on this
+    /// iPhone (vs. a rule), so the row can mark it honestly.
+    var isIntelligenceReason: Bool {
+        triagedMessageID != nil && triagedMessageID == latestMessageID
+            && !InboxClassifier.ruleReasons.contains(reason)
+    }
+}
+
+/// The Mail tab's quick filters. Everything stays in one chronological
+/// list; these only narrow it, and never hide mail anywhere else.
+enum MailFilter: String, CaseIterable, Identifiable {
+    case everything = "Everything", unread = "Unread", people = "People", flagged = "Flagged", updates = "Updates"
+    var id: String { rawValue }
+
+    func includes(_ thread: Correspondence) -> Bool {
+        switch self {
+        case .everything: true
+        case .unread: thread.isUnread
+        case .flagged: thread.isFlagged
+        case .people: InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == nil
+        case .updates: InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) != nil
+        }
     }
 }
 
@@ -68,6 +131,7 @@ struct CorrespondenceList: View {
     /// switcher.
     var accountFilter: String?
     @State private var search = ""
+    @State private var mailFilter = MailFilter.everything
     /// Same four `UserDefaults` keys `PreferencesView`'s own pickers
     /// read/write; `@AppStorage` keeps both in sync automatically, the same
     /// pattern `corres.appearance` already uses across multiple independent
@@ -105,7 +169,25 @@ struct CorrespondenceList: View {
     }
 
     private var results: [Correspondence] {
-        MailQuery.filter(scopedThreads, attention: destination.attention, search: search)
+        let all = MailQuery.filter(scopedThreads, attention: destination.attention, search: search)
+        guard destination == .mail, mailFilter != .everything else { return all }
+        return all.filter(mailFilter.includes)
+    }
+
+    /// Needs You splits into what's due within three days and the rest,
+    /// keeping the chronological order inside each group.
+    private var dueSoonIDs: Set<ThreadID> {
+        guard destination == .needsYou else { return [] }
+        let horizon = Date.now.addingTimeInterval(3 * 86_400)
+        return Set(results.filter { ($0.dueAt ?? .distantFuture) <= horizon }.map(\.id))
+    }
+
+    private var showsAccountTags: Bool { accountFilter == nil && (auth?.accounts.count ?? 0) > 1 }
+
+    private func accountTag(for thread: Correspondence) -> String? {
+        guard showsAccountTags else { return nil }
+        let local = thread.id.account.components(separatedBy: "@").first ?? thread.id.account
+        return String(local.prefix(8)).uppercased()
     }
 
     var body: some View {
@@ -113,8 +195,18 @@ struct CorrespondenceList: View {
             List {
                 Section {
                     header
-                    if results.isEmpty { emptyState } else { conversationRows }
+                    if results.isEmpty {
+                        emptyState
+                    } else if !dueSoonIDs.isEmpty && dueSoonIDs.count < results.count {
+                        groupLabel("Due soon")
+                        conversationRows(results.filter { dueSoonIDs.contains($0.id) })
+                        groupLabel("When you can")
+                        conversationRows(results.filter { !dueSoonIDs.contains($0.id) })
+                    } else {
+                        conversationRows(results)
+                    }
                     olderMailFooter
+                    listFooter
                 }
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
@@ -162,31 +254,86 @@ struct CorrespondenceList: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SculptedBadge(glyph: destination.glyph).padding(.bottom, 8)
-            Text(destination.rawValue).font(CorresType.display)
-            Text(subtitle).foregroundStyle(CorresPalette.secondary)
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
-                Text("\(results.count) conversations" + ((auth?.accounts.isEmpty ?? true) ? " · Sample mail" : ""))
-                    .font(CorresType.label).foregroundStyle(CorresPalette.secondary)
+                Text(summaryLine).font(.subheadline).foregroundStyle(CorresPalette.secondary)
                 // Visible feedback that a search is genuinely reaching past
                 // what's already synced, not just quietly finding nothing:
                 // see GmailSyncService.search's doc comment.
                 if sync?.isSearchingRemote == true {
                     ProgressView().controlSize(.mini)
-                    Text("Searching Gmail…").font(CorresType.label).foregroundStyle(CorresPalette.secondary)
+                    Text("Searching Gmail…").font(.subheadline).foregroundStyle(CorresPalette.secondary)
                 }
             }
+            .padding(.horizontal, CorresSpace.page)
+            if destination == .mail { filterBar }
         }
-        .padding(.horizontal, CorresSpace.page).padding(.top, CorresSpace.page).padding(.bottom, CorresSpace.medium)
-        // Order matters: expand to fill the available width (left-aligned)
-        // FIRST, then cap that already-full-width box at 680pt. The reverse
-        // order (cap first, expand second) caps a box that's still only as
-        // wide as its own text content, then centers that narrow box in the
-        // remaining space by .frame(maxWidth: .infinity)'s own default
-        // alignment, exactly the "header floating in the middle of the
-        // screen while the list below is flush left" bug this was.
-        .frame(maxWidth: .infinity, alignment: .leading).frame(maxWidth: 680)
+        .padding(.bottom, 6)
+        .readableWidth()
+    }
+
+    private var summaryLine: String {
+        let count = results.count
+        let noun = count == 1 ? "conversation" : "conversations"
+        let sample = (auth?.accounts.isEmpty ?? true) ? " · Sample mail" : ""
+        switch destination {
+        case .needsYou:
+            let due = dueSoonIDs.count
+            return "\(count) \(noun)" + (due > 0 ? " · \(due) due soon" : "") + sample
+        case .waiting:
+            return (count == 1 ? "1 person owes you a reply" : "\(count) people owe you a reply") + sample
+        default:
+            let unread = results.filter(\.isUnread).count
+            return "Newest first" + (unread > 0 ? " · \(unread) unread" : "") + sample
+        }
+    }
+
+    /// Underlined text tabs, not chips: they read as views of one list,
+    /// which is what they are.
+    private var filterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 22) {
+                ForEach(MailFilter.allCases) { filter in
+                    Button {
+                        mailFilter = filter
+                    } label: {
+                        Text(filter.rawValue)
+                            .font(.subheadline.weight(mailFilter == filter ? .semibold : .medium))
+                            .foregroundStyle(mailFilter == filter ? CorresPalette.ink : CorresPalette.secondary)
+                            .padding(.vertical, 10)
+                            .overlay(alignment: .bottom) {
+                                if mailFilter == filter {
+                                    Capsule().fill(CorresPalette.accent).frame(height: 2)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(mailFilter == filter ? .isSelected : [])
+                }
+            }
+            .padding(.horizontal, CorresSpace.page)
+        }
+        .overlay(alignment: .bottom) { Hairline() }
+    }
+
+    private func groupLabel(_ title: String) -> some View {
+        Text(title).eyebrow()
+            .padding(.horizontal, CorresSpace.page).padding(.top, 14).padding(.bottom, 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    @ViewBuilder
+    private var listFooter: some View {
+        if destination == .needsYou && !results.isEmpty {
+            Text("Sorted on this iPhone. Wrong call? Press and hold a conversation to move it.")
+                .font(.footnote).foregroundStyle(CorresPalette.tertiary)
+                .padding(.horizontal, CorresSpace.page).padding(.vertical, 18)
+        } else if destination == .waiting && !results.isEmpty {
+            Text("Corres knows who owes you a reply from the conversation itself. No tracking pixels, no read receipts.")
+                .font(.footnote).foregroundStyle(CorresPalette.tertiary)
+                .padding(.horizontal, CorresSpace.page).padding(.vertical, 18)
+        }
     }
 
     private var emptyState: some View {
@@ -242,9 +389,9 @@ struct CorrespondenceList: View {
     /// design has. Both stay one tap away regardless, in the conversation's
     /// own Mark As/Snooze menus — a deliberate trade for matching the
     /// requested interaction model, not an oversight.
-    private var conversationRows: some View {
+    private func conversationRows(_ threads: [Correspondence]) -> some View {
         let orderedIDs = results.map(\.id)
-        return ForEach(results) { thread in
+        return ForEach(threads) { thread in
             PremiumSwipeRow(
                 leadingShort: leadingVisual(for: leadingShortAction, thread: thread),
                 leadingLong: leadingVisual(for: leadingLongAction, thread: thread),
@@ -256,13 +403,16 @@ struct CorrespondenceList: View {
                 onTrailingLong: { perform(trailingLongAction, on: thread) }
             ) {
                 NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
-                    CorrespondenceRow(thread: thread)
+                    CorrespondenceRow(thread: thread, showsReason: destination != .mail, accountTag: accountTag(for: thread))
                 }
+                .hidingDisclosureIndicator()
             }
+            .contextMenu { rowMenu(for: thread) }
             .disabled(store.pending.contains(thread.id))
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.visible)
             .listRowSeparatorTint(CorresPalette.line)
+            .alignmentGuide(.listRowSeparatorLeading) { _ in 77 }
             .onAppear {
                 if pagesOlderMail, thread.id == results.last?.id { loadOlderMail() }
             }
@@ -300,6 +450,35 @@ struct CorrespondenceList: View {
                 guard !store.pending.contains(thread.id) else { return }
                 perform(trailingLongAction, on: thread)
             }
+        }
+    }
+
+    /// "Wrong call?": the correction path for every sort Corres makes.
+    /// Moving a thread is the person's own decision and sticks; later
+    /// automatic passes never move it back (see ADR 002).
+    @ViewBuilder
+    private func rowMenu(for thread: Correspondence) -> some View {
+        Section("Move to") {
+            ForEach([Attention.needsYou, .waiting, .quiet, .handled], id: \.self) { attention in
+                if attention != thread.attention {
+                    Button(attention.title) { Task { await store.update(thread.id, to: attention) } }
+                }
+            }
+        }
+        Button {
+            Task { await threadActions?.setFlagged(!thread.isFlagged, for: thread) }
+        } label: {
+            Label(thread.isFlagged ? "Unflag" : "Flag", systemImage: thread.isFlagged ? "flag.slash" : "flag")
+        }
+        Button {
+            Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
+        } label: {
+            Label(thread.isUnread ? "Mark as Read" : "Mark as Unread", systemImage: thread.isUnread ? "envelope.open" : "envelope.badge")
+        }
+        Button {
+            Task { await threadActions?.archive(thread) }
+        } label: {
+            Label("Archive", systemImage: "archivebox")
         }
     }
 
@@ -344,9 +523,9 @@ struct CorrespondenceList: View {
                 VStack(spacing: 0) {
                     ForEach(Array(results.enumerated()), id: \.element.id) { index, thread in
                         NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
-                            CorrespondenceRow(thread: thread)
+                            CorrespondenceRow(thread: thread, showsReason: destination != .mail)
                         }
-                        if index < results.count - 1 { Divider().padding(.leading, 76) }
+                        if index < results.count - 1 { Hairline(leading: 76) }
                     }
                 }
                 .corresSurface()
@@ -355,12 +534,16 @@ struct CorrespondenceList: View {
             }
         }
     }
+}
 
-    private var subtitle: String {
-        switch destination {
-        case .needsYou: "Decisions, invitations, and promises to keep."
-        case .waiting: "The conversations you have moved forward."
-        default: "Every conversation, in its place."
+extension View {
+    /// No mail app shows a disclosure chevron on its rows.
+    @ViewBuilder
+    func hidingDisclosureIndicator() -> some View {
+        if #available(iOS 26.0, *) {
+            self.navigationLinkIndicatorVisibility(.hidden)
+        } else {
+            self
         }
     }
 }

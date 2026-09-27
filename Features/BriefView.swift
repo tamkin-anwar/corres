@@ -12,7 +12,7 @@ struct BriefView: View {
     /// See `CorresShell`'s doc comment: nil merges every connected account,
     /// a specific email scopes the whole Brief to just that one.
     var accountFilter: String?
-    @Environment(\.dynamicTypeSize) private var typeSize
+    @AppStorage(GoogleAuthService.givenNameKey) private var givenName = ""
 
     private var scopedThreads: [Correspondence] {
         guard let accountFilter else { return store.threads }
@@ -20,6 +20,7 @@ struct BriefView: View {
     }
     private var snapshot: BriefSnapshot { BriefSnapshot(threads: scopedThreads, now: .now) }
     private var priorities: [Correspondence] { MailQuery.filter(scopedThreads, attention: .needsYou) }
+    private var waiting: [Correspondence] { MailQuery.filter(scopedThreads, attention: .waiting) }
     private var pendingSenderCount: Int {
         let pending = accountFilter == nil ? store.pendingSenderThreads : store.pendingSenderThreads.filter { $0.id.account == accountFilter }
         return Set(pending.compactMap(\.senderEmail)).count
@@ -28,176 +29,227 @@ struct BriefView: View {
 
     var body: some View {
         if scrolls {
-            ScrollView { content }.refreshable {
-                _ = await sync?.syncAll(accounts: auth?.accounts.map(\.email) ?? [])
-                await store.load()
-            }
+            ScrollView { content }
+                .scrollIndicators(.hidden)
+                .refreshable {
+                    _ = await sync?.syncAll(accounts: auth?.accounts.map(\.email) ?? [])
+                    await store.load()
+                }
         } else {
             content
         }
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: 26) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text(Date.now, format: .dateTime.weekday(.wide).month(.abbreviated).day())
-                    Spacer(minLength: 8)
-                    if !isConnected {
-                        Text("SAMPLE").tracking(1.5)
-                            .padding(.horizontal, 8).padding(.vertical, 4)
-                            .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.75))
-                    }
-                }
-                .font(CorresType.label).foregroundStyle(CorresPalette.secondary)
-                Text("A little clarity.").font(CorresType.display)
-                Text("Your day, thoughtfully considered.")
-                    .foregroundStyle(CorresPalette.secondary)
-            }
-            if pendingSenderCount > 0 { newSendersCard }
+        VStack(alignment: .leading, spacing: 24) {
+            header
             briefCard
-            attentionCards
-            HStack(alignment: .firstTextBaseline) {
-                Text("Worth your attention").font(CorresType.heading)
-                Spacer(minLength: 8)
-                Button { selection = .needsYou } label: {
-                    Image(systemName: "arrow.up.right").font(.body.weight(.medium))
-                        .frame(width: 44, height: 44)
-                }.buttonStyle(.plain).accessibilityLabel("View all conversations that need you")
-            }.padding(.bottom, -14)
-            if priorities.isEmpty {
-                Label("Nothing needs you right now.", systemImage: "checkmark.circle")
-                    .padding(24).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
-            } else {
-                VStack(spacing: 0) {
-                    let shown = Array(priorities.prefix(3))
-                    let orderedIDs = shown.map(\.id)
-                    ForEach(Array(shown.enumerated()), id: \.element.id) { index, thread in
-                        NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
-                            CorrespondenceRow(thread: thread)
-                        }
-                        .buttonStyle(CorresRowButtonStyle())
-                        if index < shown.count - 1 { Divider().padding(.leading, 76) }
-                    }
-                }.corresSurface()
-            }
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "lock.shield").font(.title3).accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Private by intention.").font(.subheadline.weight(.medium))
-                    Text(isConnected ? "Your Gmail account, synced to this device only."
-                                     : "Fictional mail. No account connected.")
-                        .font(.footnote)
-                }
-            }
-            .foregroundStyle(CorresPalette.secondary).padding(.horizontal, 6)
-            Text("ANWAR CREATIVE STUDIO")
-                .font(CorresType.label).tracking(2.5).foregroundStyle(CorresPalette.secondary)
-                .frame(maxWidth: .infinity).padding(.vertical, 8)
+            if !priorities.isEmpty { needsYouSection }
+            followUpCard
+            privacyNote
         }
-        .padding(CorresSpace.page)
-        .frame(maxWidth: .infinity, alignment: .leading).frame(maxWidth: 680)
+        .padding(.horizontal, CorresSpace.page).padding(.top, 8).padding(.bottom, 32)
+        .readableWidth()
+        .frame(maxWidth: .infinity)
     }
 
-    private var newSendersCard: some View {
-        Button { showingScreener = true } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "shield").font(.title3).foregroundStyle(CorresPalette.accent)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(pendingSenderCount == 1 ? "1 new sender" : "\(pendingSenderCount) new senders")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Held out of Mail until you decide").font(.caption).foregroundStyle(CorresPalette.secondary)
+    // MARK: - Header
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text(Date.now, format: .dateTime.weekday(.wide).month(.wide).day()).eyebrow()
+                if !isConnected {
+                    Text("Sample").eyebrow(CorresPalette.accent)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .overlay(Capsule().strokeBorder(CorresPalette.accent.opacity(0.5), lineWidth: 1))
                 }
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.secondary)
             }
-            .padding(18).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
+            Text(greeting)
+                .font(CorresType.display)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
         }
-        .buttonStyle(CorresRowButtonStyle())
-        .accessibilityLabel("\(pendingSenderCount) new senders, held out of Mail until you decide")
+        .padding(.horizontal, 2)
     }
+
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: .now)
+        let part = hour < 5 ? "Good evening" : hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
+        return givenName.isEmpty ? "\(part)." : "\(part), \(givenName)."
+    }
+
+    // MARK: - Brief
 
     private var briefCard: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("CORRES BRIEF").font(CorresType.label).tracking(2.5)
-                Spacer()
-                Image(systemName: "sun.horizon").font(.body).accessibilityHidden(true)
-            }.foregroundStyle(CorresPalette.champagne)
-            HStack(alignment: .center, spacing: 0) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Less noise.\nMore perspective.")
-                        .font(.system(.title, design: .serif))
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("A moment to see\nwhat matters.")
-                        .font(.subheadline).foregroundStyle(Color(hex: 0xD3DFE4))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                if !typeSize.isAccessibilitySize {
-                    CorrespondenceSculpture().frame(width: 124, height: 155)
-                        .padding(.trailing, -12)
-                }
+                Label("Your brief", systemImage: "sparkle")
+                    .labelStyle(TightLabelStyle())
+                    .eyebrow(CorresPalette.accent)
+                Spacer(minLength: 8)
+                Text(isConnected ? "On this iPhone" : "Sample mail")
+                    .font(.caption).foregroundStyle(CorresPalette.tertiary)
             }
-            Rectangle().fill(.white.opacity(0.16)).frame(height: 0.5)
-            Text(snapshot.needsYou == 0
-                 ? "Nothing needs your attention. Take the space."
-                 : "\(snapshot.needsYou) conversations need your perspective.")
-                .font(.subheadline).foregroundStyle(Color(hex: 0xE3EAED))
+            Text(briefSentence)
+                .font(CorresType.brief)
+                .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
-            if snapshot.upcoming > 0 {
-                Label("\(snapshot.upcoming) due within the next 24 hours", systemImage: "clock")
-                    .font(.caption).foregroundStyle(CorresPalette.champagne)
-            }
-            Button { selection = .needsYou } label: {
-                HStack {
-                    Text("Open your priorities")
-                    Spacer(minLength: 8)
-                    Image(systemName: "arrow.right")
-                }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color(hex: 0x183344))
-                .padding(16).frame(minHeight: 52)
-                .background {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(LinearGradient(colors: [Color(hex: 0xF6EBD5), Color(hex: 0xD9C6A5)],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.6), lineWidth: 0.75))
-                        .shadow(color: .black.opacity(0.2), radius: 6, y: 4)
-                }
-            }.buttonStyle(CorresRowButtonStyle())
         }
-        .padding(24)
-        .foregroundStyle(Color(hex: 0xFAF7EF))
-        .background(InkMaterial())
-        .shadow(color: CorresPalette.midnight.opacity(0.16), radius: 18, x: 0, y: 12)
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .corresSurface()
     }
 
-    private var attentionCards: some View {
-        let layout = typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: 12)) : AnyLayout(HStackLayout(spacing: 12))
-        return layout {
-            attentionCard(.needsYou, count: snapshot.needsYou, caption: "Your next move", glyph: .needsYou)
-            attentionCard(.waiting, count: snapshot.waiting, caption: "In their hands", glyph: .waiting)
+    /// Built from the same counts and reasons the lists use, so the Brief
+    /// can never claim something the Needs You list doesn't show.
+    private var briefSentence: AttributedString {
+        var text = AttributedString()
+        func plain(_ string: String) { text += AttributedString(string) }
+        func strong(_ string: String) {
+            var part = AttributedString(string)
+            part.font = .system(.title3, design: .serif, weight: .semibold)
+            text += part
+        }
+        let count = snapshot.needsYou
+        if count == 0 {
+            plain("Nothing needs you right now.")
+        } else {
+            plain("\(Self.spelled(count).capitalized) \(count == 1 ? "conversation needs" : "conversations need") you")
+            plain(snapshot.upcoming > 0 ? ", \(Self.spelled(snapshot.upcoming)) due within a day. " : ". ")
+            let top = Array(priorities.prefix(2))
+            for (index, thread) in top.enumerated() {
+                if index == 1 { plain(" ") }
+                let name = Self.firstName(thread.sender)
+                let reason = thread.reason.trimmingCharacters(in: .whitespacesAndNewlines.union(.init(charactersIn: ".")))
+                // Reasons often already lead with the person ("Maya asked
+                // you…"); bold that name in place instead of repeating it.
+                if reason.lowercased().hasPrefix(name.lowercased() + " ") {
+                    strong(String(reason.prefix(name.count)))
+                    plain(String(reason.dropFirst(name.count)) + ".")
+                } else {
+                    strong(name)
+                    plain(": \(Self.sentenceCase(reason)).")
+                }
+            }
+        }
+        if !waiting.isEmpty {
+            plain(" You're waiting on \(Self.spelled(waiting.count)) \(waiting.count == 1 ? "reply" : "replies").")
+        }
+        return text
+    }
+
+    // MARK: - Needs You
+
+    private var needsYouSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Needs You").eyebrow()
+                Spacer(minLength: 8)
+                Button("All \(priorities.count)") { selection = .needsYou }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(CorresPalette.accent)
+                    .frame(minHeight: 44)
+            }
+            .padding(.horizontal, 4)
+            .padding(.bottom, -8)
+            VStack(spacing: 0) {
+                let shown = Array(priorities.prefix(3))
+                let orderedIDs = shown.map(\.id)
+                ForEach(Array(shown.enumerated()), id: \.element.id) { index, thread in
+                    NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
+                        CorrespondenceRow(thread: thread, showsReason: true)
+                    }
+                    .buttonStyle(CorresRowButtonStyle())
+                    if index < shown.count - 1 { Hairline(leading: 72) }
+                }
+            }
+            .padding(.vertical, 4)
+            .corresSurface()
         }
     }
 
-    private func attentionCard(_ destination: Destination, count: Int, caption: String, glyph: CorresGlyph) -> some View {
-        Button { selection = destination } label: {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    SculptedBadge(glyph: glyph)
-                    Spacer(minLength: 4)
-                    Text(count, format: .number).font(.system(.largeTitle, design: .serif)).monospacedDigit()
-                }
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(destination.rawValue).font(.subheadline.weight(.semibold))
-                    Text(caption).font(.caption).foregroundStyle(CorresPalette.secondary)
-                }
+    // MARK: - Follow-ups
+
+    private var followUpCard: some View {
+        VStack(spacing: 0) {
+            briefRow(icon: "clock",
+                     title: waiting.isEmpty ? "No one owes you a reply" : "Waiting on \(waiting.count) \(waiting.count == 1 ? "person" : "people")",
+                     detail: longestWait) { selection = .waiting }
+            if pendingSenderCount > 0 {
+                Hairline(leading: 52)
+                briefRow(icon: "checkmark.shield",
+                         title: pendingSenderCount == 1 ? "1 new sender to approve" : "\(pendingSenderCount) new senders to approve",
+                         detail: nil) { showingScreener = true }
             }
-            .padding(18).frame(maxWidth: .infinity, alignment: .leading).corresSurface()
+            Hairline(leading: 52)
+            briefRow(icon: "tray", title: "All mail", detail: unreadDetail) { selection = .mail }
+        }
+        .corresSurface()
+    }
+
+    private var longestWait: String? {
+        guard let oldest = waiting.map(\.receivedAt).min() else { return nil }
+        let days = Calendar.current.dateComponents([.day], from: oldest, to: .now).day ?? 0
+        return days < 1 ? "Since today" : "Longest \(days) \(days == 1 ? "day" : "days")"
+    }
+
+    private var unreadDetail: String? {
+        let unread = MailQuery.filter(scopedThreads).filter(\.isUnread).count
+        return unread == 0 ? nil : "\(unread) unread"
+    }
+
+    private func briefRow(icon: String, title: String, detail: String?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.body)
+                    .foregroundStyle(CorresPalette.secondary)
+                    .frame(width: 24)
+                Text(title).foregroundStyle(CorresPalette.ink)
+                Spacer(minLength: 8)
+                if let detail {
+                    Text(detail).font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                }
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(CorresPalette.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .frame(minHeight: 52)
+            .contentShape(Rectangle())
         }
         .buttonStyle(CorresRowButtonStyle())
-        .accessibilityLabel("\(destination.rawValue), \(count) conversations. \(caption)")
+    }
+
+    private var privacyNote: some View {
+        Label(isConnected ? "Sorted on this iPhone. Your mail is never sent to a server to be read."
+                          : "Fictional mail. Connect Gmail in Settings when you're ready.",
+              systemImage: "lock")
+            .labelStyle(TightLabelStyle())
+            .font(.footnote)
+            .foregroundStyle(CorresPalette.tertiary)
+            .padding(.horizontal, 4)
+    }
+
+    // MARK: - Language
+
+    private static func spelled(_ number: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .spellOut
+        return number <= 10 ? (formatter.string(from: NSNumber(value: number)) ?? "\(number)") : "\(number)"
+    }
+
+    private static func firstName(_ sender: String) -> String {
+        let name = sender.trimmingCharacters(in: .whitespaces)
+        // Organizations ("American Express") read better whole.
+        guard let first = name.split(separator: " ").first, name.split(separator: " ").count == 2 else { return name }
+        return String(first)
+    }
+
+    private static func sentenceCase(_ reason: String) -> String {
+        let trimmed = reason.trimmingCharacters(in: .whitespacesAndNewlines.union(.init(charactersIn: ".")))
+        guard let first = trimmed.first else { return trimmed }
+        return first.lowercased() + trimmed.dropFirst()
     }
 }

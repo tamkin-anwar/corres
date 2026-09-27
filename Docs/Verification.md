@@ -2,6 +2,22 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Obsidian redesign and on-device intelligence (September 27, 2026)
+
+The approved "Pro" direction, built in SwiftUI. Sync, triage, outbox, Screener, and every Gmail action are unchanged; this is design system, screens, and new on-device features.
+
+- Design system: Obsidian (dark) and Ivory (light) color sets following the iPhone's appearance, one sapphire accent, New York display type (including native large titles), SF for UI, single-pixel hairlines, titanium primary buttons, Liquid Glass for floating controls on iOS 26 with a material fallback. Everything is vector or SF Symbols; no raster UI. The sculpture, ink material and custom tab glyphs are gone.
+- New mark and app icon: titanium outer C, sapphire inner C, drawn as vector paths; the 1024px icon and launch marks are rendered from the same view by `Scripts/RenderIcon.swift`.
+- Brief: greeting, a one-sentence brief built from the same counts and reasons as the lists, top three Needs You rows, Waiting / new senders / All mail rows.
+- Lists: unread dot, round monograms, reason line (sparkle = Apple Intelligence, arrow = rule), due chips, Needs You grouped into Due soon / When you can, Mail filters (Everything, Unread, People, Flagged, Updates), account tags in the merged view, press-and-hold "Move to" to correct any sort. Disclosure chevrons hidden (iOS 26).
+- Conversation: serif subject, tracker count (tiny or known-tracker images) with Show images, "In short" summary and reason with Change, suggested reply directions that draft a full reply on-device into compose, glass action bar, titanium Reply (hold for Reply All / Forward), Snooze sheet.
+- Snooze: type a time ("in 3 days at 9am", "next friday", "tonight") via `TimePhrase` (Core), or four presets, or a date picker.
+- Compose: Shorter / Warmer / More formal / Proofread rewrites of your own text on-device, with Undo; the quoted original is never rewritten.
+- Screener cards (Allow / Block), Settings "Private by design" section. No plan row until the subscription exists.
+- Decided with the owner: appearance follows the iPhone; AI stays on-device only (no cloud fallback); Send later deferred (Gmail has no scheduled-send API); plan row hidden.
+- Verified: `swift test` 64/64 (5 new `TimePhraseTests`); `xcodebuild` BUILD SUCCEEDED; iPhone 18 Pro simulator (iOS 27) screenshots of Brief (dark and light), Needs You, Mail, Conversation, and the Snooze sheet.
+- **Needs on-device confirmation** (the simulator has no Apple Intelligence model): the "In short" summary and reply suggestions appearing on a long personal email; tapping a suggestion opening a drafted reply; Shorter/Warmer rewriting in compose.
+
 ## Mark-read still failing: permission diagnosis and Reconnect (September 25, 2026)
 
 Reported again on a real device after the OAuth-encoding hotfix: "Could not mark this conversation as read" on opening mail, while sync keeps working. That pattern (reading works, every change fails) points at a login without `gmail.modify`. Two ways that happens: Google's consent screen lets each permission be unchecked, and the pre-multi-account migration requested modify silently and skipped it entirely when no window was ready at launch. Not confirmed from the device; the code now makes it visible instead of guessing.

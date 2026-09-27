@@ -278,3 +278,12 @@ Approving or blocking is entirely local to Corres; neither writes anything back 
 SwiftUI features -> main-actor store -> repository -> protected local database.
 
 Gmail sync actor -> validated provider adapter -> database transaction -> observable snapshot. Outbox -> provider -> acknowledgment/reconciliation -> local state. Optional intelligence -> explicit processing policy -> source-linked suggestions. Views never call the network directly.
+
+## ADR 008: Obsidian design system and on-device writing help
+
+Accepted (2026-09-27): one restrained system in two themes (Obsidian dark, Ivory light) that follows the device appearance. Serif (New York) is for display only; everything actionable is SF. One accent (sapphire), hairlines at exactly one physical pixel, opaque surfaces for content and Liquid Glass only for floating controls, the way the system itself uses glass. Every visual is vector (paths, SF Symbols, asset-catalog colors), including the app icon, which is rendered from the same SwiftUI view the app draws.
+
+`MailIntelligence` adds summaries, reply directions, drafted replies and tone rewrites on Apple's on-device Foundation Model. There is deliberately no cloud fallback: devices without Apple Intelligence simply don't show these features, so "your mail is never read on a server" stays literally true. Output is advisory only: a draft opens in compose for the person to edit, and nothing sends, files or changes mail on its own. Insights are cached per message id in memory, so a new reply gets a fresh read and nothing generated is persisted.
+
+Snooze parsing (`TimePhrase`) lives in Core so it is unit-tested; relative phrases are parsed directly because `NSDataDetector` doesn't handle "in 3 days" or "this weekend", with `NSDataDetector` as the fallback for absolute dates.
+

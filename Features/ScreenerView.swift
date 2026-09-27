@@ -42,19 +42,21 @@ struct ScreenerView: View {
                         Text("Everyone who's reached you so far has already been reviewed.")
                     }
                 } else {
-                    List {
-                        Section {
-                            ForEach(groups) { group in row(for: group) }
-                        } footer: {
-                            Text("A new sender's mail stays out of Brief, Needs You, Waiting, and Mail until you decide. Approving lets everything from them through, now and later. Blocking hides them silently, no notification, ever again. Neither touches your real Gmail account.")
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Their mail reaches Corres only once you allow them. Blocking hides them quietly, for good. Neither changes your Gmail account.")
+                                .font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                                .padding(.horizontal, 4).padding(.bottom, 4)
+                            ForEach(groups) { group in card(for: group) }
                         }
+                        .padding(.horizontal, CorresSpace.page).padding(.vertical, 8)
+                        .readableWidth()
+                        .frame(maxWidth: .infinity)
                     }
-                    .listStyle(.insetGrouped)
-                    .scrollContentBackground(.hidden)
                 }
             }
             .background(CorresPalette.canvas)
-            .navigationTitle("New Senders")
+            .navigationTitle("New senders")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -64,35 +66,35 @@ struct ScreenerView: View {
         }
     }
 
-    private func row(for group: SenderGroup) -> some View {
-        HStack(spacing: 14) {
-            CorrespondentAvatar(initials: initials(for: group.sender))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(group.sender).font(.subheadline.weight(.semibold))
-                Text(group.organization).font(.caption).foregroundStyle(CorresPalette.secondary)
-                Text(group.messageCount == 1 ? group.latestSubject
-                                              : "\(group.messageCount) messages, including \u{201C}\(group.latestSubject)\u{201D}")
-                    .font(.footnote).foregroundStyle(CorresPalette.secondary).lineLimit(2)
+    private func card(for group: SenderGroup) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                CorrespondentAvatar(initials: initials(for: group.sender))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(group.sender).font(.body.weight(.semibold)).lineLimit(1)
+                    Text(group.senderEmail).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(1)
+                }
             }
-            Spacer(minLength: 8)
-            VStack(spacing: 8) {
-                Button {
+            Text(group.messageCount == 1 ? group.latestSubject
+                                          : "\(group.messageCount) messages, including \u{201C}\(group.latestSubject)\u{201D}")
+                .font(.subheadline).foregroundStyle(CorresPalette.ink).lineLimit(2)
+            HStack(spacing: 10) {
+                Button("Allow") {
                     Task { await store.approveSender(group.senderEmail, account: group.account) }
-                } label: {
-                    Image(systemName: "checkmark").frame(width: 44, height: 44)
                 }
-                .buttonStyle(.bordered).tint(CorresPalette.accent)
-                .accessibilityLabel("Approve \(group.sender)")
-                Button {
+                .buttonStyle(CorresMetalCapsuleStyle(minHeight: 44))
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("Allow \(group.sender)")
+                Button("Block") {
                     Task { await store.blockSender(group.senderEmail, account: group.account) }
-                } label: {
-                    Image(systemName: "xmark").frame(width: 44, height: 44)
                 }
-                .buttonStyle(.bordered).tint(.red)
+                .buttonStyle(CorresPillStyle(minHeight: 44))
+                .frame(maxWidth: .infinity)
                 .accessibilityLabel("Block \(group.sender)")
             }
         }
-        .padding(.vertical, 6)
+        .padding(16)
+        .corresSurface()
     }
 
     private func initials(for sender: String) -> String {

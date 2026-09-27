@@ -24,7 +24,12 @@ struct ConversationView: View {
     @State private var showingUnsubscribeConfirmation = false
     @State private var isUnsubscribing = false
     @State private var unsubscribeOpened = false
+    @State private var showingSnooze = false
+    @State private var draftingIntent: String?
     @Environment(\.dismiss) private var dismiss
+    @Environment(MailIntelligence.self) private var intelligence
+    @Environment(\.displayScale) private var displayScale
+    @AppStorage(GoogleAuthService.givenNameKey) private var givenName = ""
 
     init(store: MailStore, outbox: OutboxService, threadActions: ThreadActionService,
         labelDirectory: LabelDirectory, unsubscribeService: UnsubscribeService, route: ConversationRoute) {
@@ -40,13 +45,19 @@ struct ConversationView: View {
     var body: some View {
         Group {
             if let thread = store.threads.first(where: { $0.id == currentID }) {
-                let isSample = thread.id.account == "sample"
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        Text(thread.subject).font(.system(.title2, design: .serif).weight(.semibold))
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text(thread.subject)
+                            .font(CorresType.title)
                             .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                            .accessibilityAddTraits(.isHeader)
                             .padding(.horizontal, CorresSpace.page)
-                        messageHeader(for: thread, isSample: isSample)
+                        messageHeader(for: thread)
+                            .padding(.horizontal, CorresSpace.page)
+                        privacyLine(for: thread)
+                            .padding(.horizontal, CorresSpace.page)
+                        inShortCard(for: thread)
                             .padding(.horizontal, CorresSpace.page)
                         if unsubscribeService.canUnsubscribe(thread) && !thread.senderUnsubscribed {
                             VStack(alignment: .leading, spacing: 6) {
@@ -71,10 +82,6 @@ struct ConversationView: View {
                             labelChips(knownLabels).padding(.horizontal, CorresSpace.page)
                         }
                         if let html = thread.htmlBody {
-                            let blockedCount = HTMLMessageBody.remoteImageCount(in: html)
-                            if blockedCount > 0 && !showRemoteImages && !thread.imagesTrusted {
-                                remoteImagesBanner(count: blockedCount, thread: thread).padding(.horizontal, CorresSpace.page)
-                            }
                             // Full width, no card: real HTML mail is a
                             // fixed-width table (often 600pt), and wrapping
                             // it in padding narrow enough to clip that table
@@ -85,7 +92,9 @@ struct ConversationView: View {
                                             blockRemoteImages: !(showRemoteImages || thread.imagesTrusted))
                                 .frame(height: htmlHeight)
                         } else {
-                            Text(thread.body).font(.body).lineSpacing(8).textSelection(.enabled)
+                            Text(thread.body)
+                                .font(.body).lineSpacing(6)
+                                .textSelection(.enabled)
                                 .padding(.horizontal, CorresSpace.page)
                         }
                         if !thread.isBodyLoaded {
@@ -101,25 +110,16 @@ struct ConversationView: View {
                             attachmentsList(thread.attachments, messageID: messageID, account: thread.id.account)
                                 .padding(.horizontal, CorresSpace.page)
                         }
-                        Text(isSample ? "No AI processing. Replying, forwarding, and sending stay on this device until Gmail is connected."
-                                      : "Needs You may be refined by Apple Intelligence, entirely on your device. Nothing else here is processed by AI. Replying, replying all, and forwarding send for real through Gmail.")
-                            .font(.caption).foregroundStyle(CorresPalette.secondary)
-                            .padding(.horizontal, CorresSpace.page).padding(.top, 4)
                     }
-                    .padding(.vertical, CorresSpace.page)
-                    .frame(maxWidth: .infinity, alignment: .leading).frame(maxWidth: 680)
+                    .padding(.top, 4).padding(.bottom, 24)
+                    .readableWidth()
+                    .frame(maxWidth: .infinity)
                 }
-                .safeAreaInset(edge: .bottom) { actionBar(for: thread) }
-                // A reading view competing with the main tab bar for the
-                // same strip of screen (Brief/Needs You/Waiting/Mail
-                // sitting directly under this view's own action bar) was
-                // exactly the "feels like a wrapper around email, not a
-                // full-screen reading experience" gap flagged directly
-                // against a real screenshot, contrasted with Apple Mail's
-                // own message view, which is never double-chromed like
-                // this. The main tab bar has no reason to still be visible
-                // while reading one specific conversation; hiding it here
-                // gives the message the whole screen, the same as Mail.
+                .scrollIndicators(.hidden)
+                .safeAreaInset(edge: .bottom) { bottomChrome(for: thread) }
+                // The reading view owns the whole screen, like Apple Mail's:
+                // the main tab bar has no reason to compete with this
+                // view's own floating action bar.
                 .toolbar(.hidden, for: .tabBar)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -135,6 +135,12 @@ struct ConversationView: View {
                             .disabled(!hasNext)
                             .accessibilityLabel("Next conversation")
                         }
+                    }
+                }
+                .sheet(isPresented: $showingSnooze) {
+                    SnoozeSheet { date in
+                        Task { await store.snooze(thread.id, until: date) }
+                        dismiss()
                     }
                 }
                 .confirmationDialog("Unsubscribe from \(thread.sender)?", isPresented: $showingUnsubscribeConfirmation, titleVisibility: .visible) {
@@ -167,11 +173,12 @@ struct ConversationView: View {
             ComposeView(store: store, outbox: outbox, draft: draft,
                         sourceThread: store.threads.first(where: { $0.id == currentID }))
         }
-        .onChange(of: currentID) { htmlHeight = 200 }
+        .onChange(of: currentID) {
+            htmlHeight = 200
+            showRemoteImages = false
+        }
         // Opening a conversation is itself the signal that it's been seen,
-        // the same behavior every real mail client already has; without
-        // this, isUnread would only ever change via an explicit swipe/tap,
-        // which is not what "mark as read" means to anyone using a mail app.
+        // the same behavior every real mail client already has.
         .task(id: currentID) {
             guard let thread = store.threads.first(where: { $0.id == currentID }) else { return }
             // Loading the body and marking read are independent network
@@ -181,13 +188,14 @@ struct ConversationView: View {
                 await threadActions.setUnread(false, for: thread)
             }
             await loaded
+            if let current = store.threads.first(where: { $0.id == currentID }) {
+                await intelligence.prepareInsight(for: current)
+            }
         }
         .onChange(of: threadExists) { _, stillExists in
             // Archiving or trashing from inside the conversation itself
             // removes it from `store.threads` right under this view; pop
-            // back to the list rather than leaving "Conversation
-            // unavailable" as a dead end the person has to back out of
-            // manually.
+            // back to the list rather than leaving a dead end.
             if !stillExists { dismiss() }
         }
     }
@@ -200,42 +208,106 @@ struct ConversationView: View {
     private func goToPrevious() { if let i = currentIndex, i > 0 { currentID = orderedIDs[i - 1] } }
     private func goToNext() { if let i = currentIndex, i < orderedIDs.count - 1 { currentID = orderedIDs[i + 1] } }
 
-    /// A single compact row (avatar, sender, time) instead of the previous
-    /// stacked avatar/name/organization/date block, matching how Mail packs
-    /// this information into one line above the body.
-    private func messageHeader(for thread: Correspondence, isSample: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
-                CorrespondentAvatar(initials: thread.initials, size: CGSize(width: 34, height: 34))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(thread.sender).font(.subheadline.weight(.semibold))
-                    Text(thread.organization).font(.caption).foregroundStyle(CorresPalette.secondary)
-                }
-                Spacer(minLength: 8)
-                Text(thread.receivedAt, format: .dateTime.month().day().hour().minute())
-                    .font(.caption).foregroundStyle(CorresPalette.secondary)
+    private func messageHeader(for thread: Correspondence) -> some View {
+        HStack(spacing: 12) {
+            CorrespondentAvatar(initials: thread.initials, size: CGSize(width: 44, height: 44))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(thread.sender).font(.body.weight(.semibold))
+                Text(recipientLine(for: thread))
+                    .font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                    .lineLimit(1)
             }
-            Label(evidenceLine(for: thread), systemImage: "text.bubble")
-                .font(.caption).foregroundStyle(CorresPalette.secondary)
+            Spacer(minLength: 8)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func recipientLine(for thread: Correspondence) -> String {
+        let when = thread.receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
+        let to = (thread.toRecipients.isEmpty || thread.isDirectRecipient) ? "To you" : "Cc you"
+        return thread.senderEmail.map { "\($0) · \(when)" } ?? "\(to) · \(when)"
+    }
+
+    /// One quiet line that says what Corres did to protect this read:
+    /// remote images (and the tracking pixels among them) are off until
+    /// the person chooses otherwise.
+    @ViewBuilder
+    private func privacyLine(for thread: Correspondence) -> some View {
+        if let html = thread.htmlBody, !(showRemoteImages || thread.imagesTrusted) {
+            let blocked = HTMLMessageBody.remoteImageCount(in: html)
+            if blocked > 0 {
+                let trackers = HTMLMessageBody.trackerCount(in: html)
+                HStack(spacing: 7) {
+                    Image(systemName: "shield.lefthalf.filled").font(.caption)
+                    Text(trackers > 0
+                         ? "\(trackers) \(trackers == 1 ? "tracker" : "trackers") blocked · Remote images off"
+                         : "Remote images off · \(blocked) blocked")
+                    Spacer(minLength: 8)
+                    Button("Show images") {
+                        showRemoteImages = true
+                        if let senderEmail = thread.senderEmail {
+                            Task { await store.trustSenderImages(senderEmail, account: thread.id.account) }
+                        }
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(CorresPalette.accent)
+                }
+                .font(.footnote)
+                .foregroundStyle(CorresPalette.tertiary)
+            }
         }
     }
 
-    private func evidenceLine(for thread: Correspondence) -> String {
-        "\(thread.attention.title): \(thread.reason)"
+    /// The summary (on this iPhone, when Apple Intelligence is available)
+    /// plus the reason this conversation is where it is, with a direct way
+    /// to correct it.
+    private func inShortCard(for thread: Correspondence) -> some View {
+        let insight = intelligence.insight(for: thread)
+        return VStack(alignment: .leading, spacing: 10) {
+            if let summary = insight?.summary {
+                Label("In short", systemImage: "sparkle").labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
+                Text(summary)
+                    .font(.subheadline).lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+                Hairline().padding(.vertical, 2)
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text("\(thread.attention.title): \(thread.reason)")
+                    .font(.footnote)
+                    .foregroundStyle(CorresPalette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                Menu {
+                    ForEach([Attention.needsYou, .waiting, .quiet, .handled], id: \.self) { attention in
+                        Button {
+                            Task { await store.update(thread.id, to: attention) }
+                        } label: {
+                            if thread.attention == attention { Label(attention.title, systemImage: "checkmark") }
+                            else { Text(attention.title) }
+                        }
+                    }
+                } label: {
+                    Text("Change").font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                        .frame(minHeight: 32)
+                }
+                .accessibilityLabel("Change where this conversation is sorted")
+            }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .corresSurface(radius: 18)
+        .animation(.easeOut(duration: 0.25), value: insight)
     }
 
     private func labelChips(_ labels: [GmailUserLabel]) -> some View {
-        // A flowing wrap would be nicer for many labels, but a horizontal
-        // scroll matches what's already the established pattern elsewhere in
-        // this view (the action bar itself) and is simpler than SwiftUI's
-        // lack of a built-in flow layout pre-iOS 17's own primitives.
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
                 ForEach(labels) { label in
                     Text(label.name).font(.caption.weight(.medium))
                         .padding(.horizontal, 10).padding(.vertical, 4)
-                        .background(CorresPalette.surface, in: Capsule())
-                        .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.5))
+                        .background(CorresPalette.surfaceRaised, in: Capsule())
+                        .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 1 / displayScale))
                 }
             }
         }
@@ -249,104 +321,168 @@ struct ConversationView: View {
         }
     }
 
-    /// Shown whenever a message actually offers a real way to stop hearing
-    /// from its sender (`List-Unsubscribe`/`List-Unsubscribe-Post`, RFC
-    /// 2369/8058), same placement and visual weight as `remoteImagesBanner`
-    /// right below it: both are "here's a real, safe action available on
-    /// this specific message," not a persistent chrome element. Disappears
-    /// permanently for this sender's future mail the moment it's actually
-    /// acted on (`Correspondence.senderUnsubscribed`, stamped by
-    /// `UnsubscribeService` through `MailStore.markSenderUnsubscribed`),
-    /// the same one-decision-per-sender model `imagesTrusted` already uses.
+    /// Shown whenever a message offers a real way to stop hearing from its
+    /// sender (`List-Unsubscribe`/`List-Unsubscribe-Post`, RFC 2369/8058).
+    /// Disappears for this sender's future mail once acted on.
     private func unsubscribeBanner(for thread: Correspondence) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: "person.fill.badge.minus").accessibilityHidden(true)
-            Text("You get mail from \(thread.sender) often").font(.footnote).foregroundStyle(CorresPalette.secondary)
+            Image(systemName: "envelope.badge.shield.half.filled").foregroundStyle(CorresPalette.secondary)
+                .accessibilityHidden(true)
+            Text("Mailing list").font(.footnote).foregroundStyle(CorresPalette.secondary)
             Spacer()
             if isUnsubscribing {
                 ProgressView().controlSize(.small)
             } else {
                 Button("Unsubscribe") { showingUnsubscribeConfirmation = true }
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(CorresPalette.accent)
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 10)
-        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(CorresPalette.line, lineWidth: 0.5))
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .corresSurface(radius: 14)
     }
 
-    /// Showing images also remembers the sender (`MailStore.trustSenderImages`),
-    /// so a newsletter you've already decided to trust never needs a repeat
-    /// tap: the smaller, no-infrastructure alternative to Apple's own Mail
-    /// Privacy Protection relay (see Docs/Architecture.md). One tap, not a
-    /// separate "always" affordance, matching what was actually proposed and
-    /// agreed on rather than adding a second control nobody asked for.
-    private func remoteImagesBanner(count: Int, thread: Correspondence) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "photo").accessibilityHidden(true)
-            Text(count == 1 ? "1 image blocked" : "\(count) images blocked")
-                .font(.footnote).foregroundStyle(CorresPalette.secondary)
-            Spacer()
-            Button("Show Images") {
-                showRemoteImages = true
-                if let senderEmail = thread.senderEmail {
-                    Task { await store.trustSenderImages(senderEmail, account: thread.id.account) }
-                }
-            }
-            .font(.footnote.weight(.semibold))
-        }
-        .padding(.horizontal, 16).padding(.vertical, 10)
-        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(CorresPalette.line, lineWidth: 0.5))
-    }
-
-    /// Icon-only, matching Mail/Spark's compact bottom toolbar rather than a
-    /// full-width labeled button bar. Mark-as/pin/snooze (previously a large
-    /// standalone card in the scrolling body) move here as menus; they are
-    /// also always reachable via swipe actions on the Mail list, so nothing
-    /// here is the only way to reach them.
     /// A reply or forward quotes the original, so it needs the real body,
     /// not the snippet a metadata-first sync stored. Opening the thread
     /// already started loading it; this only waits in the rare case the
     /// person taps Reply before that finishes.
-    private func compose(_ kind: Draft.Kind, from thread: Correspondence) {
-        guard !thread.isBodyLoaded else {
-            composeDraft = thread.draft(kind: kind)
-            return
+    private func compose(_ kind: Draft.Kind, from thread: Correspondence, prefill: String? = nil) {
+        func open(_ source: Correspondence) {
+            var draft = source.draft(kind: kind)
+            if let prefill { draft.body = prefill + draft.body }
+            composeDraft = draft
         }
+        guard !thread.isBodyLoaded else { return open(thread) }
         Task {
             await threadActions.loadContent(for: thread)
-            composeDraft = (store.threads.first { $0.id == thread.id } ?? thread).draft(kind: kind)
+            open(store.threads.first { $0.id == thread.id } ?? thread)
         }
     }
 
+    /// Tapping a suggested direction drafts the full reply in the person's
+    /// voice on this iPhone, then opens it in compose to read and edit.
+    /// Nothing sends without them.
+    private func draftReply(_ intent: String, for thread: Correspondence) {
+        guard draftingIntent == nil else { return }
+        draftingIntent = intent
+        Task {
+            if !thread.isBodyLoaded { await threadActions.loadContent(for: thread) }
+            let source = store.threads.first { $0.id == thread.id } ?? thread
+            let drafted = await intelligence.draftReply(to: source, intent: intent,
+                                                        signOff: givenName.isEmpty ? nil : givenName)
+            draftingIntent = nil
+            compose(.reply, from: source, prefill: drafted ?? "")
+        }
+    }
+
+    private func bottomChrome(for thread: Correspondence) -> some View {
+        VStack(spacing: 10) {
+            if let intents = intelligence.insight(for: thread)?.replyIntents, !intents.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(intents, id: \.self) { intent in
+                            Button {
+                                draftReply(intent, for: thread)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    if draftingIntent == intent { ProgressView().controlSize(.mini) }
+                                    Text(intent)
+                                }
+                                .font(.subheadline.weight(.medium))
+                                .padding(.horizontal, 15).frame(minHeight: 38)
+                                .corresGlass(in: Capsule(), interactive: true)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(draftingIntent != nil)
+                            .accessibilityHint("Drafts this reply on your iPhone for you to review")
+                        }
+                    }
+                    .padding(.horizontal, CorresSpace.medium)
+                    .padding(.vertical, 4)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            actionBar(for: thread)
+        }
+        .padding(.bottom, 6)
+        .animation(.easeOut(duration: 0.25), value: intelligence.insight(for: thread)?.replyIntents)
+    }
+
     private func actionBar(for thread: Correspondence) -> some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 10) {
+            HStack(spacing: 0) {
+                barButton("archivebox", "Archive") {
+                    // Returns to the list instantly; the Gmail call happens
+                    // in the background, the same as a swipe.
+                    dismiss()
+                    Task { await threadActions.archive(thread) }
+                }
+                barButton("trash", "Move to Trash") {
+                    dismiss()
+                    Task { await threadActions.trash(thread) }
+                }
+                barButton(thread.isFlagged ? "flag.fill" : "flag", thread.isFlagged ? "Unflag" : "Flag",
+                          tint: thread.isFlagged ? CorresPalette.flag : nil) {
+                    Task { await threadActions.setFlagged(!thread.isFlagged, for: thread) }
+                }
+                barButton("clock", "Snooze") { showingSnooze = true }
+                moreMenu(for: thread)
+            }
+            .frame(height: 56)
+            .corresGlass(in: Capsule())
+            Menu {
+                Button { compose(.replyAll, from: thread) } label: { Label("Reply All", systemImage: "arrowshape.turn.up.left.2") }
+                Button { compose(.forward, from: thread) } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
+            } label: {
+                Image(systemName: "arrowshape.turn.up.left.fill")
+                    .font(.title3.weight(.semibold))
+                    .frame(width: 56, height: 56)
+            } primaryAction: {
+                compose(.reply, from: thread)
+            }
+            .foregroundStyle(CorresMetalBackground.ink(scheme))
+            .background(CorresMetalBackground(shape: AnyShape(Circle())))
+            .accessibilityLabel("Reply")
+            .accessibilityHint("Press and hold for Reply All and Forward")
+        }
+        .disabled(store.pending.contains(thread.id))
+        .padding(.horizontal, CorresSpace.medium)
+    }
+
+    @Environment(\.colorScheme) private var scheme
+
+    private func barButton(_ systemImage: String, _ label: String, tint: Color? = nil, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.medium))
+                .foregroundStyle(tint ?? CorresPalette.ink)
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(CorresRowButtonStyle())
+        .accessibilityLabel(label)
+    }
+
+    private func moreMenu(for thread: Correspondence) -> some View {
+        Menu {
+            Button { Task { await threadActions.setUnread(!thread.isUnread, for: thread) } } label: {
+                Label(thread.isUnread ? "Mark as Read" : "Mark as Unread",
+                      systemImage: thread.isUnread ? "envelope.open" : "envelope.badge")
+            }
+            // Pin is Corres-only "keep at top"; Flag syncs with iOS Mail and Gmail.
+            Button { Task { await store.setPinned(!thread.isPinned, for: thread.id) } } label: {
+                Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin")
+            }
             Menu {
                 ForEach(Attention.allCases, id: \.self) { attention in
                     Button {
                         Task { await store.update(thread.id, to: attention) }
                     } label: {
-                        if thread.attention == attention {
-                            Label(attention.title, systemImage: "checkmark")
-                        } else {
-                            Text(attention.title)
-                        }
+                        if thread.attention == attention { Label(attention.title, systemImage: "checkmark") }
+                        else { Text(attention.title) }
                     }
                 }
-                Divider()
-                // Pin lives here now that Flag took its bar slot: Flag syncs
-                // with iOS Mail and Gmail, Pin is Corres-only "keep at top".
-                Button {
-                    Task { await store.setPinned(!thread.isPinned, for: thread.id) }
-                } label: {
-                    Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin")
-                }
-            } label: {
-                Image(systemName: "tag").frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .accessibilityLabel("Mark as")
+            } label: { Label("Move to", systemImage: "arrow.up.and.down.text.horizontal") }
             let accountLabels = labelDirectory.labels(for: thread.id.account)
             if !accountLabels.isEmpty {
                 Menu {
@@ -355,92 +491,22 @@ struct ConversationView: View {
                         Button {
                             Task { await threadActions.toggleLabel(label.id, isOn: !isOn, for: thread) }
                         } label: {
-                            if isOn {
-                                Label(label.name, systemImage: "checkmark")
-                            } else {
-                                Text(label.name)
-                            }
+                            if isOn { Label(label.name, systemImage: "checkmark") } else { Text(label.name) }
                         }
                     }
-                } label: {
-                    Image(systemName: "bookmark").frame(maxWidth: .infinity, minHeight: 44)
-                }
-                .accessibilityLabel("Labels")
+                } label: { Label("Labels", systemImage: "tag") }
             }
-            Button {
-                Task { await threadActions.setFlagged(!thread.isFlagged, for: thread) }
-            } label: {
-                Image(systemName: thread.isFlagged ? "flag.fill" : "flag")
-                    .foregroundStyle(thread.isFlagged ? AnyShapeStyle(CorresPalette.flag) : AnyShapeStyle(.tint))
-                    .frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .accessibilityLabel(thread.isFlagged ? "Unflag" : "Flag")
-            Menu {
-                ForEach(SnoozeOption.allCases, id: \.self) { option in
-                    Button(option.title) { Task { await store.snooze(thread.id, until: option.date()) } }
-                }
-            } label: {
-                Image(systemName: "moon").frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .accessibilityLabel("Snooze")
-            Button { Task { await threadActions.setUnread(!thread.isUnread, for: thread) } } label: {
-                Image(systemName: thread.isUnread ? "envelope.open" : "envelope.badge")
-                    .frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .accessibilityLabel(thread.isUnread ? "Mark as Read" : "Mark as Unread")
-            Button {
-                // Returns to the list instantly, not after Gmail's round
-                // trip: waiting on the network before anything visible
-                // happens is exactly the "not instant, not smooth" gap
-                // reported directly. The real Gmail call and the local
-                // removal still both happen exactly as before, in the
-                // background; only *when the list pops back into view*
-                // changed, not whether the network is trusted before the
-                // row actually disappears from data.
-                dismiss()
-                Task { await threadActions.archive(thread) }
-            } label: {
-                Image(systemName: "archivebox").frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .accessibilityLabel("Archive")
-            Button(role: .destructive) {
-                dismiss()
-                Task { await threadActions.trash(thread) }
-            } label: {
-                Image(systemName: "trash").frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .accessibilityLabel("Move to Trash")
-            Divider().frame(height: 24)
-            Button { compose(.reply, from: thread) } label: {
-                Image(systemName: "arrowshape.turn.up.left").frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .accessibilityLabel("Reply")
-            Button { compose(.replyAll, from: thread) } label: {
-                Image(systemName: "arrowshape.turn.up.left.2").frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .accessibilityLabel("Reply All")
-            Button { compose(.forward, from: thread) } label: {
-                Image(systemName: "arrowshape.turn.up.right").frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .accessibilityLabel("Forward")
+            Divider()
+            Button { compose(.replyAll, from: thread) } label: { Label("Reply All", systemImage: "arrowshape.turn.up.left.2") }
+            Button { compose(.forward, from: thread) } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(CorresPalette.ink)
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .contentShape(Rectangle())
         }
-        .font(.body)
-        .disabled(store.pending.contains(thread.id))
-        .padding(.horizontal, CorresSpace.medium)
-        // A floating, inset capsule instead of a full-width, edge-to-edge
-        // opaque bar: matches Apple Mail's own bottom toolbar (a translucent
-        // pill sitting a short margin above the safe area, not a docked
-        // strip flush with the screen edges), part of the same "feels like
-        // a wrapper, not a full native reading surface" gap the tab-bar fix
-        // above addresses. `.ultraThinMaterial` for the frosted-glass
-        // translucency Apple's own floating bars use; a stroke outline
-        // since a translucent capsule floating directly over busy image
-        // content otherwise has no visible edge of its own.
-        .frame(height: 50)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.5))
-        .padding(.horizontal, CorresSpace.page)
-        .padding(.bottom, 8)
+        .accessibilityLabel("More actions")
     }
 }
 
@@ -528,26 +594,24 @@ private struct AttachmentRow: View {
 }
 
 enum SnoozeOption: CaseIterable {
-    case laterToday, tomorrow, nextWeek
+    case laterToday, tomorrow, thisWeekend, nextWeek
 
     var title: String {
         switch self {
         case .laterToday: "Later today"
-        case .tomorrow: "Tomorrow morning"
+        case .tomorrow: "Tomorrow"
+        case .thisWeekend: "This weekend"
         case .nextWeek: "Next week"
         }
     }
 
     func date(from now: Date = .now) -> Date {
-        let calendar = Calendar.current
-        switch self {
-        case .laterToday:
-            return calendar.date(byAdding: .hour, value: 3, to: now) ?? now
-        case .tomorrow:
-            let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) ?? now
-            return calendar.date(bySettingHour: 8, minute: 0, second: 0, of: tomorrow) ?? tomorrow
-        case .nextWeek:
-            return calendar.date(byAdding: .day, value: 7, to: now) ?? now
+        let phrase = switch self {
+        case .laterToday: "later today"
+        case .tomorrow: "tomorrow"
+        case .thisWeekend: "this weekend"
+        case .nextWeek: "next week"
         }
+        return TimePhrase.parse(phrase, now: now) ?? now.addingTimeInterval(86_400)
     }
 }

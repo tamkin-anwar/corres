@@ -39,7 +39,7 @@ struct PreferencesView: View {
                 } header: {
                     Text("Swipe Actions")
                 } footer: {
-                    Text("A short swipe on a Mail row fires one action right away; swiping further fires a different one, matching Spark's own swipe model. Snooze and marking Needs You stay one tap away in a conversation's own toolbar.")
+                    Text("A short swipe on a Mail row fires one action right away; swiping further fires a different one, Snooze and marking Needs You stay one tap away in a conversation's own toolbar.")
                 }
                 Section("Your Gmail accounts") {
                     ForEach(auth.accounts) { account in
@@ -128,11 +128,16 @@ struct PreferencesView: View {
                 )) {
                     Button("OK", role: .cancel) { sync.errorMessage = nil }
                 } message: { Text(sync.errorMessage ?? "Please try again.") }
-                Section("Your privacy, clearly") {
-                    Label("No advertising or analytics SDKs", systemImage: "hand.raised")
-                    Label("AI runs entirely on your device", systemImage: "lock.shield")
-                    Text("Needs You is refined by Apple Intelligence, running on your device with Apple's on-device model. Nothing about your mail is ever sent to a server Corres runs, or to any AI provider, to make that judgment. Sample conversations are stored only on this device and never leave it. Attention, pins, and snoozes now persist between launches.")
-                        .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                Section {
+                    privacyRow("Corres never sees your Google password", "key")
+                    privacyRow("Sorting, summaries and drafts run on this iPhone", "iphone")
+                    privacyRow("Remote images and tracking pixels blocked", "shield.lefthalf.filled")
+                    privacyRow("No read receipts or tracking, ever", "eye.slash")
+                    privacyRow("No advertising or analytics SDKs", "hand.raised")
+                } header: {
+                    Text("Private by design")
+                } footer: {
+                    Text("Sign-in happens with Google directly; Corres only receives a revocable permission, kept in this iPhone's Keychain. Apple Intelligence runs on-device, so your mail is never sent to a server Corres runs, or to any AI provider.")
                 }
                 Section {
                     Button("Reset Sample Data", role: .destructive) { showingResetConfirmation = true }
@@ -158,20 +163,22 @@ struct PreferencesView: View {
                     }
                     Button("Cancel", role: .cancel) {}
                 }
-                Section("The next chapter") {
-                    Text("Future cloud intelligence will require a clear processing choice, always disclosed and reviewed by you before anything sends. Corres will never silently forward your correspondence to an AI service.")
-                }
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("corres").font(CorresType.heading)
-                        Text("Email, considered.")
+                        HStack(spacing: 10) {
+                            CorrespondenceMark().frame(width: 34, height: 34)
+                            Text("corres").font(CorresType.heading)
+                        }
+                        Text("Email, considered.").font(.system(.body, design: .serif).italic())
                         Text("A flagship by Anwar Creative Studio, alongside Artha.")
                             .font(.footnote).foregroundStyle(CorresPalette.secondary)
                         Text("Foundation preview · 0.1.0").font(.caption)
                     }.padding(.vertical, 8)
                 }
             }
-            .navigationTitle("Preferences")
+            .scrollContentBackground(.hidden)
+            .background(CorresPalette.canvas)
+            .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
         // .preferredColorScheme() set on a distant ancestor (here, the app's
@@ -181,5 +188,13 @@ struct PreferencesView: View {
         // Applying it directly on this sheet's own content, driven by the same
         // @AppStorage value it already reads, makes it self-sufficient.
         .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
+    }
+
+    private func privacyRow(_ title: String, _ icon: String) -> some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: icon).foregroundStyle(CorresPalette.accent)
+        }
     }
 }

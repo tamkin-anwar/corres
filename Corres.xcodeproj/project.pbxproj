@@ -29,7 +29,6 @@
 		8EFE7A4258A57167DB2D4714 /* Core/GmailAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68DA0977ACFA46A1C9952B4 /* Core/GmailAccount.swift */; };
 		915836714C5888A247DFC316 /* Features/CorrespondenceList.swift in Sources */ = {isa = PBXBuildFile; fileRef = A84A2742DF9E08880CF52E5D /* Features/CorrespondenceList.swift */; };
 		9D52FB6C7F9BA8A3A75AA58C /* Features/BriefView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F27FB96B40EED99BFE20A6 /* Features/BriefView.swift */; };
-		A99CD41F11A5A2AEBA88195E /* DesignSystem/CorrespondenceSculpture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA4C4D94F17EABA46312F3F /* DesignSystem/CorrespondenceSculpture.swift */; };
 		B3C4C37B4AD4DE2EECA87225 /* Features/HTMLMessageBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FCDDD1329818B12922D64E /* Features/HTMLMessageBody.swift */; };
 		B4CF17BA7EBADAFFFE4C32D9 /* DesignSystem/Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FDAA185499F66241648B25 /* DesignSystem/Tokens.swift */; };
 		B66A15A79057947ECBB08EFC /* Features/WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A197A2D27A63A32E9B83006 /* Features/WelcomeView.swift */; };
@@ -52,6 +51,9 @@
 		E79A8DBC3229495CA769B912 /* App/ThreadActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89705DCC26384892BF488BA2 /* App/ThreadActionService.swift */; };
 		E98FEC0BFF976467BBBDCC6E /* Features/Destination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E30C119A8AA5A9BF4A804F /* Features/Destination.swift */; };
 		EA144187FC763199BAADD12C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = C12665C738199993D8D54A23 /* GoogleSignInSwift */; };
+		3B47738C7F21473DB5948605 /* Core/TimePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */; };
+		1BA03B99003749AABDD410CB /* App/MailIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCE33A1D946429F9220EDC4 /* App/MailIntelligence.swift */; };
+		35EF1AE6ABD2488C953C0213 /* Features/SnoozeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D88F20EF7A545638AB0EE70 /* Features/SnoozeSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -98,7 +100,9 @@
 		F048BFA7B57836F484F1B9C1 /* App/PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = App/PrivacyInfo.xcprivacy; sourceTree = SOURCE_ROOT; };
 		F87B8DB17F1F3706C1461F47 /* App/GoogleAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GoogleAuthService.swift; sourceTree = SOURCE_ROOT; };
 		FA57480437BE46588460ED61 /* Features/PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PreferencesView.swift; sourceTree = SOURCE_ROOT; };
-		FBA4C4D94F17EABA46312F3F /* DesignSystem/CorrespondenceSculpture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/CorrespondenceSculpture.swift; sourceTree = SOURCE_ROOT; };
+		8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/TimePhrase.swift; sourceTree = SOURCE_ROOT; };
+		ACCE33A1D946429F9220EDC4 /* App/MailIntelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MailIntelligence.swift; sourceTree = SOURCE_ROOT; };
+		1D88F20EF7A545638AB0EE70 /* Features/SnoozeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SnoozeSheet.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -149,10 +153,12 @@
 				D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */,
 				0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */,
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
+				1D88F20EF7A545638AB0EE70 /* Features/SnoozeSheet.swift */,
+				ACCE33A1D946429F9220EDC4 /* App/MailIntelligence.swift */,
+				8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */,
 				6AF963A48F35EECBABCEAC67 /* Core/SampleCorrespondence.swift */,
 				97F9C55B0E3533C78CF4C4F6 /* Core/SwiftDataMailRepository.swift */,
 				3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */,
-				FBA4C4D94F17EABA46312F3F /* DesignSystem/CorrespondenceSculpture.swift */,
 				37AEABBF5B1C933392981114 /* DesignSystem/Materials.swift */,
 				16FDAA185499F66241648B25 /* DesignSystem/Tokens.swift */,
 				D6F27FB96B40EED99BFE20A6 /* Features/BriefView.swift */,
@@ -266,10 +272,12 @@
 				84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */,
 				BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */,
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
+				35EF1AE6ABD2488C953C0213 /* Features/SnoozeSheet.swift in Sources */,
+				1BA03B99003749AABDD410CB /* App/MailIntelligence.swift in Sources */,
+				3B47738C7F21473DB5948605 /* Core/TimePhrase.swift in Sources */,
 				6B9841FB4C0E4DED3FD28A36 /* Core/SampleCorrespondence.swift in Sources */,
 				5663E23856EA9C3DB7EC73D8 /* Core/SwiftDataMailRepository.swift in Sources */,
 				896ABC29D193F2031450A89B /* DesignSystem/CorrespondenceMark.swift in Sources */,
-				A99CD41F11A5A2AEBA88195E /* DesignSystem/CorrespondenceSculpture.swift in Sources */,
 				198AA1E8786592DABC5E015E /* DesignSystem/Materials.swift in Sources */,
 				B4CF17BA7EBADAFFFE4C32D9 /* DesignSystem/Tokens.swift in Sources */,
 				9D52FB6C7F9BA8A3A75AA58C /* Features/BriefView.swift in Sources */,

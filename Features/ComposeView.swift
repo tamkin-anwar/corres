@@ -23,6 +23,9 @@ struct ComposeView: View {
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showingFileImporter = false
     @State private var attachmentError: String?
+    @State private var rewriting: MailIntelligence.Tone?
+    @State private var beforeRewrite: String?
+    @Environment(MailIntelligence.self) private var intelligence
 
     private enum Field { case to, cc, subject, body }
 
@@ -87,6 +90,7 @@ struct ComposeView: View {
                 .padding(.vertical, 12)
             }
             .background(CorresPalette.canvas)
+            .safeAreaInset(edge: .bottom) { toneBar }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -108,8 +112,8 @@ struct ComposeView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Send") { sendAndDismiss() }
+                        .buttonStyle(CorresMetalCapsuleStyle(minHeight: 34))
                         .disabled(!draft.isSendable)
-                        .fontWeight(.semibold)
                 }
             }
             .confirmationDialog("Delete this draft?", isPresented: $showingDiscardConfirmation, titleVisibility: .visible) {
@@ -136,6 +140,63 @@ struct ComposeView: View {
         // does not reliably re-trait an already-presented sheet if Appearance
         // changes while it's open (e.g. via system auto dark mode).
         .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
+    }
+
+    /// The person's own words, without the quoted original below them:
+    /// only this part is ever rewritten.
+    private var ownText: (text: String, quote: String) {
+        guard let marker = draft.body.range(of: "\n\n\(sourceThread?.sender ?? "\u{0}") wrote:\n") else {
+            return (draft.body, "")
+        }
+        return (String(draft.body[..<marker.lowerBound]), String(draft.body[marker.lowerBound...]))
+    }
+
+    /// Shorter / Warmer / More formal / Proofread, rewritten on this
+    /// iPhone. One tap to undo, so trying a tone costs nothing.
+    @ViewBuilder
+    private var toneBar: some View {
+        let own = ownText.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if intelligence.isAvailable, own.count >= 12 {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    if let beforeRewrite {
+                        Button {
+                            draft.body = beforeRewrite + ownText.quote
+                            self.beforeRewrite = nil
+                        } label: {
+                            Label("Undo", systemImage: "arrow.uturn.backward").labelStyle(TightLabelStyle())
+                        }
+                        .buttonStyle(CorresPillStyle())
+                    }
+                    ForEach(MailIntelligence.Tone.allCases) { tone in
+                        Button {
+                            rewrite(tone)
+                        } label: {
+                            HStack(spacing: 6) {
+                                if rewriting == tone { ProgressView().controlSize(.mini) }
+                                Text(tone.rawValue)
+                            }
+                        }
+                        .buttonStyle(CorresPillStyle())
+                        .disabled(rewriting != nil)
+                    }
+                }
+                .padding(.horizontal, CorresSpace.page).padding(.vertical, 8)
+            }
+            .background(.bar)
+        }
+    }
+
+    private func rewrite(_ tone: MailIntelligence.Tone) {
+        let (text, quote) = ownText
+        rewriting = tone
+        Task {
+            let result = await intelligence.rewrite(text, tone: tone)
+            rewriting = nil
+            guard let result else { return }
+            beforeRewrite = text
+            draft.body = result + quote
+        }
     }
 
     private var title: String {
