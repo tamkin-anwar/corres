@@ -40,7 +40,7 @@ Built by Anwar Creative Studio.
 
 ## Scopes
 
-`gmail.readonly`, `gmail.send`, `gmail.modify`: all three are Google "sensitive" scopes, not "restricted" ones. See ADR 005 in [Docs/Architecture.md](Docs/Architecture.md).
+`gmail.readonly`, `gmail.send`, `gmail.modify`. `gmail.send` is a Google "sensitive" scope; `gmail.readonly` and `gmail.modify` are "restricted", so a public release needs Google's OAuth verification plus an annual CASA security assessment. See ADR 005 in [Docs/Architecture.md](Docs/Architecture.md).
 
 ## Tech stack
 - SwiftUI, iOS 17 minimum (Liquid Glass and Foundation Models features on iOS 26), Swift 6 strict concurrency.
