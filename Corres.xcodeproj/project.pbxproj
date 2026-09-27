@@ -56,6 +56,7 @@
 		35EF1AE6ABD2488C953C0213 /* Features/SnoozeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D88F20EF7A545638AB0EE70 /* Features/SnoozeSheet.swift */; };
 		537C62D39E8646D090F06DA5 /* Features/AccountAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A1BCC0306E4172BBFF5CBF /* Features/AccountAvatar.swift */; };
 		77485366CDAE444C800848E3 /* App/GmailQuotaGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */; };
+		66B455C3F7FE4E5A80CB7790 /* Features/EarlierMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -107,6 +108,7 @@
 		1D88F20EF7A545638AB0EE70 /* Features/SnoozeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SnoozeSheet.swift; sourceTree = SOURCE_ROOT; };
 		B8A1BCC0306E4172BBFF5CBF /* Features/AccountAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AccountAvatar.swift; sourceTree = SOURCE_ROOT; };
 		FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GmailQuotaGate.swift; sourceTree = SOURCE_ROOT; };
+		179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/EarlierMessages.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,6 +159,7 @@
 				D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */,
 				0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */,
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
+				179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */,
 				FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */,
 				B8A1BCC0306E4172BBFF5CBF /* Features/AccountAvatar.swift */,
 				1D88F20EF7A545638AB0EE70 /* Features/SnoozeSheet.swift */,
@@ -278,6 +281,7 @@
 				84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */,
 				BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */,
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
+				66B455C3F7FE4E5A80CB7790 /* Features/EarlierMessages.swift in Sources */,
 				77485366CDAE444C800848E3 /* App/GmailQuotaGate.swift in Sources */,
 				537C62D39E8646D090F06DA5 /* Features/AccountAvatar.swift in Sources */,
 				35EF1AE6ABD2488C953C0213 /* Features/SnoozeSheet.swift in Sources */,

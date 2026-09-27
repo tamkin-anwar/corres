@@ -318,6 +318,7 @@ struct CorrespondenceList: View {
             .padding(.horizontal, CorresSpace.page)
         }
         .overlay(alignment: .bottom) { Hairline() }
+        .sensoryFeedback(.selection, trigger: mailFilter)
     }
 
     private func groupLabel(_ title: String) -> some View {

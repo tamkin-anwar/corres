@@ -152,6 +152,22 @@ final class PushNotificationService {
     /// (Gmail's own short snippet, already computed at sync time, not the
     /// full message body) is exactly the right length for this, the same
     /// value `CorrespondenceRow`'s list preview already uses.
+    static let messageCategory = "corres.message"
+    static let archiveAction = "corres.archive"
+    static let markReadAction = "corres.markRead"
+
+    /// Registered every launch; iOS shows these under a long-press on any
+    /// single-conversation notification, without opening Corres.
+    static func registerNotificationActions() {
+        let archive = UNNotificationAction(identifier: archiveAction, title: "Archive",
+                                           options: [], icon: UNNotificationActionIcon(systemImageName: "archivebox"))
+        let markRead = UNNotificationAction(identifier: markReadAction, title: "Mark as Read",
+                                            options: [], icon: UNNotificationActionIcon(systemImageName: "envelope.open"))
+        let category = UNNotificationCategory(identifier: messageCategory, actions: [archive, markRead],
+                                              intentIdentifiers: [], options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([category])
+    }
+
     func notifyAboutNewMail(_ threads: [Correspondence]) {
         guard !threads.isEmpty else { return }
         let content = UNMutableNotificationContent()
@@ -165,6 +181,13 @@ final class PushNotificationService {
             content.body = threads.count > 3 ? "\(senders), and more" : senders
         }
         content.sound = .default
+        if threads.count == 1, let thread = threads.first {
+            // One conversation: Archive and Mark as Read right on the
+            // notification, and grouped with that conversation's others.
+            content.categoryIdentifier = Self.messageCategory
+            content.threadIdentifier = "\(thread.id.account)|\(thread.id.providerID)"
+            content.userInfo = ["account": thread.id.account, "thread": thread.id.providerID]
+        }
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
     }

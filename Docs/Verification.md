@@ -2,6 +2,18 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Premium parity sweep (September 27, 2026)
+
+Compared against what Superhuman, Spark, Apple Mail and Gmail treat as standard. Built:
+
+- **Whole conversations.** Opening a thread fetches `threads.get?format=full` once (10 quota units, through `GmailQuotaGate`), cached in memory per latest message. `EarlierMessages` shows the earlier messages oldest-first as compact rows (avatar, "You" for your own, time, first line) that open to their text with quoted history stripped. Conversations over four messages fold behind "N more messages". Drafts are excluded.
+- **Undo for Archive and Trash.** The thread hides at once (`MailStore.hide`; `threads` is now computed over `allThreads`, minus hidden). A glass "Archived · subject · Undo" banner runs for 5 seconds, then Gmail is told. A second removal, or leaving the foreground, sends the pending one immediately; a Gmail refusal brings the thread back.
+- **Notification actions.** Archive and Mark as Read on single-conversation notifications (category `corres.message`), grouped by thread. They are handled in `AppDelegate` as a `UNUserNotificationCenterDelegate` and awaited to completion.
+- **Keyboard shortcuts** (Apple Mail's, so they show in the ⌘ overlay) in the conversation view.
+- **Haptics:** success on send and snooze, impact on archive/trash, selection on flag and on Mail filter changes.
+- **iOS 26 Home Screen icons:** dark (transparent, the mark only) and tinted (grayscale) variants, rendered from the vector mark.
+- Verified: `swift test` 66/66, `xcodebuild` BUILD SUCCEEDED. In the simulator, a swipe to archive shows the Undo banner, which stays for 5 seconds and then commits (confirmed through logs). **On device:** a long real thread (earlier messages, folding), notification actions from the lock screen, and a hardware keyboard.
+
 ## Review follow-ups: summaries, wording, waiting age, docs (September 27, 2026)
 
 From an outside review of the redesign; each point was checked against the code first.

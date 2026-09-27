@@ -91,6 +91,7 @@ struct SnoozeSheet: View {
 
     private func finish(_ date: Date) {
         onSnooze(date)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
         dismiss()
     }
 

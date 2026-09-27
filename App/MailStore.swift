@@ -4,7 +4,18 @@ import Observation
 @MainActor @Observable
 final class MailStore {
     enum LoadState: Equatable { case idle, loading, loaded, failed }
-    private(set) var threads: [Correspondence] = []
+    /// Everything in the store, including threads hidden while an Archive
+    /// or Trash is waiting out its Undo window.
+    private var allThreads: [Correspondence] = []
+    /// Removed from view the instant Archive/Trash is tapped, before Gmail
+    /// is told, so Undo can bring them straight back.
+    private(set) var hiddenIDs: Set<ThreadID> = []
+    var threads: [Correspondence] {
+        hiddenIDs.isEmpty ? allThreads : allThreads.filter { !hiddenIDs.contains($0.id) }
+    }
+
+    func hide(_ id: ThreadID) { hiddenIDs.insert(id) }
+    func unhide(_ id: ThreadID) { hiddenIDs.remove(id) }
     private(set) var state = LoadState.idle
     private(set) var pending: Set<ThreadID> = []
     private(set) var sending: Set<UUID> = []
@@ -18,7 +29,7 @@ final class MailStore {
         state = .loading
         do {
             try await repository.seedIfNeeded(now: .now)
-            threads = try await repository.threads()
+            allThreads = try await repository.threads()
             state = .loaded
         } catch is CancellationError {
             state = .idle
@@ -33,7 +44,7 @@ final class MailStore {
     /// load. `load()`'s `state = .loading` transition would otherwise flash
     /// the whole list away to a spinner on every debounced search tick.
     func refresh() async {
-        threads = (try? await repository.threads()) ?? threads
+        allThreads = (try? await repository.threads()) ?? allThreads
     }
 
     /// Removes an account's mail from this iPhone after the account is
@@ -42,8 +53,8 @@ final class MailStore {
     func removeAccountData(_ account: String) async {
         do {
             try await repository.deleteAccountData(account)
-            threads = try await repository.threads()
-            if threads.isEmpty {
+            allThreads = try await repository.threads()
+            if allThreads.isEmpty {
                 state = .idle
                 await load()
             }
@@ -58,10 +69,10 @@ final class MailStore {
     /// give a pre-connection preview. Safe to call unconditionally; a no-op
     /// once no sample threads remain.
     func deleteSampleDataIfPresent() async {
-        guard threads.contains(where: { $0.id.account == "sample" }) else { return }
+        guard allThreads.contains(where: { $0.id.account == "sample" }) else { return }
         do {
             try await repository.deleteSampleData()
-            threads = try await repository.threads()
+            allThreads = try await repository.threads()
         } catch {
             errorMessage = "Could not remove sample data. Please try again."
         }
@@ -98,8 +109,8 @@ final class MailStore {
                              reason: String?, messageID: String) async {
         guard let updated = try? await repository.applySemanticTriage(id, from: expected, to: result,
                                                                       reason: reason, messageID: messageID) else { return }
-        if let index = threads.firstIndex(where: { $0.id == updated.id }) {
-            threads[index] = updated
+        if let index = allThreads.firstIndex(where: { $0.id == updated.id }) {
+            allThreads[index] = updated
         }
     }
 
@@ -143,7 +154,7 @@ final class MailStore {
     private func setSenderDecision(_ decision: SenderDecision, senderEmail: String, account: String) async {
         do {
             try await repository.setSenderDecision(decision, forSenderEmail: senderEmail, account: account)
-            threads = try await repository.threads()
+            allThreads = try await repository.threads()
         } catch {
             errorMessage = "Could not update this sender. Please try again."
         }
@@ -159,7 +170,7 @@ final class MailStore {
     func trustSenderImages(_ senderEmail: String, account: String) async {
         do {
             try await repository.trustSenderImages(forSenderEmail: senderEmail, account: account)
-            threads = try await repository.threads()
+            allThreads = try await repository.threads()
         } catch {
             errorMessage = "Could not remember this sender. Please try again."
         }
@@ -173,7 +184,7 @@ final class MailStore {
     func markSenderUnsubscribed(_ senderEmail: String, account: String) async {
         do {
             try await repository.markSenderUnsubscribed(forSenderEmail: senderEmail, account: account)
-            threads = try await repository.threads()
+            allThreads = try await repository.threads()
         } catch {
             errorMessage = "Could not remember this unsubscribe. Please try again."
         }
@@ -189,10 +200,10 @@ final class MailStore {
         defer { sending.remove(draft.id) }
         do {
             let updated = try await repository.send(draft, sentAt: .now, realThreadID: realThreadID)
-            if let index = threads.firstIndex(where: { $0.id == updated.id }) {
-                threads[index] = updated
+            if let index = allThreads.firstIndex(where: { $0.id == updated.id }) {
+                allThreads[index] = updated
             } else {
-                threads.insert(updated, at: 0)
+                allThreads.insert(updated, at: 0)
             }
             return true
         } catch {
@@ -218,7 +229,7 @@ final class MailStore {
     func remove(_ id: ThreadID) async {
         do {
             try await repository.remove(id)
-            threads.removeAll { $0.id == id }
+            allThreads.removeAll { $0.id == id }
         } catch {
             errorMessage = "Could not update this conversation. Please try again."
         }
@@ -256,8 +267,8 @@ final class MailStore {
         defer { pending.remove(id) }
         do {
             let updated = try await operation()
-            if let index = threads.firstIndex(where: { $0.id == updated.id }) {
-                threads[index] = updated
+            if let index = allThreads.firstIndex(where: { $0.id == updated.id }) {
+                allThreads[index] = updated
             }
         } catch {
             errorMessage = "The change could not be saved. Your conversation is unchanged. Please try again."

@@ -17,7 +17,11 @@ Built by Anwar Creative Studio.
 
 **A full Gmail client**
 - Multiple Gmail accounts, merged or one at a time.
+- Whole conversations: earlier messages appear as compact rows above the latest one, open in place, and long threads fold in the middle.
 - Read, reply, reply all, forward and compose, with attachments and a short undo-send window.
+- Undo after Archive or Trash: the conversation leaves instantly, and Gmail is told only after the 5-second window.
+- Archive and Mark as Read right from a notification; notifications are grouped per conversation.
+- Apple Mail's keyboard shortcuts on iPad and hardware keyboards (⌘R, ⌘⇧R, ⌘⇧F, ⌃⌘A, ⌘⌫, ⌘⇧L, ⌘⇧U, ⌃⌘S, ⌃⌘↑/↓), plus haptics that confirm sends, removals, snoozes and flags.
 - Archive, trash, mark read or unread, flag (Gmail star) and labels, all applied in Gmail. Changes made in Gmail or iOS Mail flow back.
 - Fast metadata-first sync in batches, push notifications through a content-free relay (`Server/push-relay`), and Gmail search beyond what's synced.
 - Snooze by typing a time ("in 3 days at 9am", "next friday") or picking a preset; custom short and long swipes.

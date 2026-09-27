@@ -218,6 +218,24 @@ struct GmailAPIClient {
         try await batchFetch(ids: ids, query: "format=full", bodyLoaded: true, account: account)
     }
 
+    /// Every message in a conversation, oldest first, with full bodies:
+    /// what the conversation view shows above the latest message. Fetched
+    /// when a thread is opened, never during sync, so it costs nothing
+    /// until someone actually reads the conversation.
+    func fetchThreadMessages(threadId: String, account: String) async throws -> [Correspondence] {
+        let token = try await accessToken(for: account)
+        await GmailQuotaGate.shared.reserve(10, for: account)
+        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/threads/\(threadId)?format=full")!
+        let (data, response) = try await authorizedRequest(url: url, token: token)
+        try validate(response)
+        struct ThreadResponse: Decodable { let messages: [GmailMessage]? }
+        let decoded = try JSONDecoder().decode(ThreadResponse.self, from: data)
+        return (decoded.messages ?? [])
+            .filter { !($0.labelIds ?? []).contains("DRAFT") }
+            .map { map($0, account: account, bodyLoaded: true) }
+            .sorted { $0.receivedAt < $1.receivedAt }
+    }
+
     /// Re-attempts specific message ids directly, independent of the
     /// history cursor — the path `GmailSyncService` uses for ids a previous
     /// sync reported as failed. Paced across batches like any other fetch.

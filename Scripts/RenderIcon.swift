@@ -10,6 +10,15 @@ struct RenderIcon {
         let assets = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
         try write(CorresIconArtwork().frame(width: 1024, height: 1024), scale: 1, opaque: true,
                   to: assets.appendingPathComponent("AppIcon.appiconset/icon-1024.png"))
+        // Home Screen dark mode draws its own dark field behind a
+        // transparent icon; tinted mode tints a grayscale one.
+        try write(CorrespondenceMark(glow: false).frame(width: 1110, height: 1110).offset(x: 24)
+                    .frame(width: 1024, height: 1024).clipped(), scale: 1, opaque: false,
+                  to: assets.appendingPathComponent("AppIcon.appiconset/icon-1024-dark.png"))
+        try write(CorrespondenceMark(glow: false).frame(width: 1110, height: 1110).offset(x: 24)
+                    .frame(width: 1024, height: 1024).clipped().grayscale(1).brightness(0.15)
+                    .background(Color.black), scale: 1, opaque: true,
+                  to: assets.appendingPathComponent("AppIcon.appiconset/icon-1024-tinted.png"))
         for scale in 1...3 {
             let suffix = scale == 1 ? "@1x" : "@\(scale)x"
             try write(CorrespondenceMark().frame(width: 96, height: 96), scale: CGFloat(scale), opaque: false,

@@ -1,6 +1,7 @@
 import BackgroundTasks
 import SwiftData
 import UIKit
+import UserNotifications
 
 /// Owns every core service Corres needs, not `CorresApp`. This is a
 /// correction, not the original design: a SwiftUI `View`'s `.task`
@@ -70,6 +71,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             }
             self.handleBackgroundRefresh(refreshTask)
         }
+        UNUserNotificationCenter.current().delegate = self
+        PushNotificationService.registerNotificationActions()
         Task { await self.performLaunchWork() }
         return true
     }
@@ -235,6 +238,33 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                 fatalError("Could not create any Corres local store, including an in-memory fallback: \(error)")
             }
             return (fallback, true)
+        }
+    }
+}
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    /// Archive / Mark as Read from a notification. Runs in the background
+    /// window iOS grants the action, so an archive is sent right away
+    /// rather than waiting out the in-app Undo window nobody can see.
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                            didReceive response: UNNotificationResponse) async {
+        let info = response.notification.request.content.userInfo
+        guard let account = info["account"] as? String, let providerID = info["thread"] as? String else { return }
+        await handleNotificationAction(response.actionIdentifier, account: account, providerID: providerID)
+    }
+
+    /// Awaited to completion so iOS keeps the app alive until Gmail has it.
+    private func handleNotificationAction(_ action: String, account: String, providerID: String) async {
+        if store.state != .loaded { await store.load() }
+        guard let thread = store.threads.first(where: { $0.id == ThreadID(account: account, providerID: providerID) }) else { return }
+        switch action {
+        case PushNotificationService.archiveAction:
+            await threadActions.archive(thread)
+            await threadActions.commitPendingRemoval()
+        case PushNotificationService.markReadAction:
+            await threadActions.setUnread(false, for: thread)
+        default:
+            break
         }
     }
 }

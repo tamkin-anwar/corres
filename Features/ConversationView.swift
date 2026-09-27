@@ -56,11 +56,16 @@ struct ConversationView: View {
                             .textSelection(.enabled)
                             .accessibilityAddTraits(.isHeader)
                             .padding(.horizontal, CorresSpace.page)
+                        inShortCard(for: thread)
+                            .padding(.horizontal, CorresSpace.page)
+                        if let earlier = earlierMessages(in: thread), !earlier.isEmpty {
+                            EarlierMessages(messages: earlier, account: thread.id.account)
+                                .padding(.horizontal, CorresSpace.page)
+                                .transition(.opacity)
+                        }
                         messageHeader(for: thread)
                             .padding(.horizontal, CorresSpace.page)
                         privacyLine(for: thread)
-                            .padding(.horizontal, CorresSpace.page)
-                        inShortCard(for: thread)
                             .padding(.horizontal, CorresSpace.page)
                         if unsubscribeService.canUnsubscribe(thread) && !thread.senderUnsubscribed {
                             VStack(alignment: .leading, spacing: 6) {
@@ -120,6 +125,8 @@ struct ConversationView: View {
                 }
                 .scrollIndicators(.hidden)
                 .safeAreaInset(edge: .bottom) { bottomChrome(for: thread) }
+                .background { keyboardCommands(for: thread) }
+                .sensoryFeedback(.selection, trigger: thread.isFlagged)
                 // The reading view owns the whole screen, like Apple Mail's:
                 // the main tab bar has no reason to compete with this
                 // view's own floating action bar.
@@ -189,10 +196,12 @@ struct ConversationView: View {
             // Loading the body and marking read are independent network
             // calls; neither should wait on the other.
             async let loaded: Void = threadActions.loadContent(for: thread)
+            async let conversation: Void = threadActions.loadHistory(for: thread)
             if thread.isUnread {
                 await threadActions.setUnread(false, for: thread)
             }
             await loaded
+            await conversation
             if let current = store.threads.first(where: { $0.id == currentID }) {
                 await intelligence.prepareInsight(for: current)
             }
@@ -203,6 +212,11 @@ struct ConversationView: View {
             // back to the list rather than leaving a dead end.
             if !stillExists { dismiss() }
         }
+    }
+
+    /// Everything in the conversation before the message shown in full.
+    private func earlierMessages(in thread: Correspondence) -> [Correspondence]? {
+        threadActions.messages(in: thread)?.filter { $0.latestMessageID != thread.latestMessageID }
     }
 
     private var threadExists: Bool { store.threads.contains { $0.id == currentID } }
@@ -463,6 +477,36 @@ struct ConversationView: View {
     }
 
     @Environment(\.colorScheme) private var scheme
+
+    /// Apple Mail's own shortcuts, so they appear in iPadOS's ⌘ overlay and
+    /// work from any hardware keyboard: the hands never leave the keys.
+    private func keyboardCommands(for thread: Correspondence) -> some View {
+        Group {
+            Button("Reply") { compose(.reply, from: thread) }.keyboardShortcut("r", modifiers: .command)
+            Button("Reply All") { compose(.replyAll, from: thread) }.keyboardShortcut("r", modifiers: [.command, .shift])
+            Button("Forward") { compose(.forward, from: thread) }.keyboardShortcut("f", modifiers: [.command, .shift])
+            Button("Archive") {
+                dismiss()
+                Task { await threadActions.archive(thread) }
+            }.keyboardShortcut("a", modifiers: [.command, .control])
+            Button("Move to Trash") {
+                dismiss()
+                Task { await threadActions.trash(thread) }
+            }.keyboardShortcut(.delete, modifiers: .command)
+            Button(thread.isFlagged ? "Unflag" : "Flag") {
+                Task { await threadActions.setFlagged(!thread.isFlagged, for: thread) }
+            }.keyboardShortcut("l", modifiers: [.command, .shift])
+            Button(thread.isUnread ? "Mark as Read" : "Mark as Unread") {
+                Task { await threadActions.setUnread(!thread.isUnread, for: thread) }
+            }.keyboardShortcut("u", modifiers: [.command, .shift])
+            Button("Snooze") { showingSnooze = true }.keyboardShortcut("s", modifiers: [.command, .control])
+            Button("Previous Conversation") { goToPrevious() }.keyboardShortcut(.upArrow, modifiers: [.command, .control])
+            Button("Next Conversation") { goToNext() }.keyboardShortcut(.downArrow, modifiers: [.command, .control])
+        }
+        .frame(width: 0, height: 0)
+        .opacity(0)
+        .accessibilityHidden(true)
+    }
 
     private func barButton(_ systemImage: String, _ label: String, tint: Color? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {

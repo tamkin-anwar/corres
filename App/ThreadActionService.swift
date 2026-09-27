@@ -25,16 +25,73 @@ final class ThreadActionService {
         self.auth = auth
     }
 
-    func archive(_ thread: Correspondence) async {
-        await perform(thread, failureMessage: "Could not archive this conversation. Please try again.", gmailCall: {
-            try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: ["INBOX"], account: thread.id.account)
-        }, local: { await self.store.remove(thread.id) })
+    enum RemovalKind { case archive, trash }
+
+    /// An Archive or Trash waiting out its Undo window. The conversation is
+    /// already gone from view; Gmail hears about it only once the window
+    /// closes, so Undo is instant and never needs a second round trip.
+    struct PendingRemoval: Identifiable, Equatable {
+        let id = UUID()
+        let thread: Correspondence
+        let kind: RemovalKind
+        var secondsRemaining: Int
+        var title: String { kind == .archive ? "Archived" : "Moved to Trash" }
     }
 
-    func trash(_ thread: Correspondence) async {
-        await perform(thread, failureMessage: "Could not move this conversation to Trash. Please try again.", gmailCall: {
-            try await self.client.trashThread(threadId: thread.id.providerID, account: thread.id.account)
-        }, local: { await self.store.remove(thread.id) })
+    private(set) var pendingRemoval: PendingRemoval?
+    private var removalTask: Task<Void, Never>?
+    static let undoSeconds = 5
+
+    func archive(_ thread: Correspondence) async { await queueRemoval(thread, kind: .archive) }
+    func trash(_ thread: Correspondence) async { await queueRemoval(thread, kind: .trash) }
+
+    /// Undo puts the conversation back exactly where it was.
+    func undoRemoval() {
+        guard let pending = pendingRemoval else { return }
+        removalTask?.cancel()
+        pendingRemoval = nil
+        store.unhide(pending.thread.id)
+    }
+
+    /// Sends a waiting removal now: when the app leaves the foreground, or
+    /// another removal starts, rather than losing it.
+    func commitPendingRemoval() async {
+        guard let pending = pendingRemoval else { return }
+        removalTask?.cancel()
+        await commit(pending)
+    }
+
+    private func queueRemoval(_ thread: Correspondence, kind: RemovalKind) async {
+        await commitPendingRemoval()
+        store.hide(thread.id)
+        let pending = PendingRemoval(thread: thread, kind: kind, secondsRemaining: Self.undoSeconds)
+        pendingRemoval = pending
+        removalTask = Task { [weak self] in
+            for remaining in stride(from: Self.undoSeconds - 1, through: 0, by: -1) {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled, let self, self.pendingRemoval?.id == pending.id else { return }
+                self.pendingRemoval?.secondsRemaining = remaining
+            }
+            guard !Task.isCancelled, let self, self.pendingRemoval?.id == pending.id else { return }
+            await self.commit(pending)
+        }
+    }
+
+    private func commit(_ pending: PendingRemoval) async {
+        if pendingRemoval?.id == pending.id { pendingRemoval = nil }
+        let thread = pending.thread
+        switch pending.kind {
+        case .archive:
+            await perform(thread, failureMessage: "Could not archive this conversation. Please try again.", gmailCall: {
+                try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: ["INBOX"], account: thread.id.account)
+            }, local: { await self.store.remove(thread.id) })
+        case .trash:
+            await perform(thread, failureMessage: "Could not move this conversation to Trash. Please try again.", gmailCall: {
+                try await self.client.trashThread(threadId: thread.id.providerID, account: thread.id.account)
+            }, local: { await self.store.remove(thread.id) })
+        }
+        // Removed for good on success; back in view if Gmail refused.
+        store.unhide(thread.id)
     }
 
     /// Orthogonal to Archive/Trash: this never removes the thread, only
@@ -73,6 +130,23 @@ final class ThreadActionService {
               let messageID = thread.latestMessageID,
               let fetched = try? await client.fetchFull(ids: [messageID], account: thread.id.account) else { return }
         await store.applyLoadedContent(fetched.items)
+    }
+
+    /// Every message in a conversation, oldest first, keyed by thread and
+    /// refreshed whenever a new message lands in it. In memory only: the
+    /// conversation view needs it while open, and Gmail stays the record.
+    private(set) var history: [ThreadID: (latest: String?, messages: [Correspondence])] = [:]
+
+    func messages(in thread: Correspondence) -> [Correspondence]? {
+        guard let entry = history[thread.id], entry.latest == thread.latestMessageID else { return nil }
+        return entry.messages
+    }
+
+    func loadHistory(for thread: Correspondence) async {
+        guard thread.id.account != Self.sampleAccount, messages(in: thread) == nil,
+              let messages = try? await client.fetchThreadMessages(threadId: thread.id.providerID, account: thread.id.account)
+        else { return }
+        history[thread.id] = (thread.latestMessageID, messages)
     }
 
     /// Adds or removes a single real Gmail label (from `LabelDirectory`),

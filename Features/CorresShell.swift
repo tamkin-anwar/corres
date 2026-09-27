@@ -23,6 +23,7 @@ struct CorresShell: View {
     @State private var accountFilter: String?
     @AppStorage("corres.hasExplored") private var hasExplored = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TabView(selection: $selection) {
@@ -55,6 +56,13 @@ struct CorresShell: View {
         // iOS to minimize.
         .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.pending?.id)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.failed?.id)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: threadActions.pendingRemoval?.id)
+        // Premium apps confirm what just happened in the hand, not only on screen.
+        .sensoryFeedback(.success, trigger: outbox.pending?.id) { _, new in new != nil }
+        .sensoryFeedback(.impact(weight: .medium), trigger: threadActions.pendingRemoval?.id) { _, new in new != nil }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { Task { await threadActions.commitPendingRemoval() } }
+        }
         .task {
             if !hasExplored { showingWelcome = true }
             if store.state == .idle { await store.load() }
@@ -119,7 +127,20 @@ struct CorresShell: View {
 
     @ViewBuilder
     private var outboxBanner: some View {
-        if let pending = outbox.pending {
+        if outbox.pending == nil, outbox.failed == nil, let removal = threadActions.pendingRemoval {
+            HStack(spacing: 12) {
+                Image(systemName: removal.kind == .archive ? "archivebox" : "trash")
+                    .foregroundStyle(CorresPalette.secondary)
+                Text(removal.title).font(.subheadline.weight(.medium))
+                Text(removal.thread.subject).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(1)
+                Spacer(minLength: 8)
+                Button("Undo") { threadActions.undoRemoval() }.font(.subheadline.weight(.semibold))
+            }
+            .padding(.horizontal, 20).padding(.vertical, 14)
+            .corresGlass(in: Capsule())
+            .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+        } else if let pending = outbox.pending {
             HStack(spacing: 12) {
                 // The subject truncates; the countdown never does.
                 Text("Sending \u{201C}\(pending.subjectPreview)\u{201D}")
