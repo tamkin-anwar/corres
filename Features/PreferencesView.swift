@@ -50,7 +50,7 @@ struct PreferencesView: View {
                     Text("Intelligence")
                 } footer: {
                     Text(intelligence.isAvailable
-                         ? "Sorting, summaries, suggested replies and rewrites run on Apple's on-device model. Nothing is sent to a server to be read."
+                         ? "Sorting, summaries, suggested replies and rewrites run on Apple's on-device model, not on a server."
                          : "Turn on Apple Intelligence in the Settings app for summaries, suggested replies and rewrites. Needs You still sorts your mail without it.")
                 }
                 Section {
@@ -378,11 +378,11 @@ private struct PrivacyView: View {
                 row("Corres never sees your Google password", "key",
                     "You sign in with Google directly. Corres receives a permission you can revoke anytime, kept in this iPhone's Keychain.")
                 row("Your mail is read on this iPhone", "iphone",
-                    "Sorting, summaries, suggested replies and rewrites run on Apple's on-device model. Nothing goes to a server Corres runs, or to any AI company.")
+                    "Sorting, summaries, suggested replies and rewrites run on Apple's on-device model. Your mail isn't sent to a server Corres runs, or to any AI company, to do it.")
                 row("Trackers blocked", "shield.lefthalf.filled",
                     "Remote images, and the tracking pixels hidden in them, stay off until you choose to show them.")
                 row("No read receipts, ever", "eye.slash",
-                    "Corres never tells anyone you opened their email. Waiting works from the conversation itself.")
+                    "Corres never tells anyone you opened their email. Waiting is tracked from the conversation itself.")
                 row("No ads, no analytics", "hand.raised",
                     "No advertising or analytics code is built into Corres.")
             }

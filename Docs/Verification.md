@@ -2,6 +2,20 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Review follow-ups: summaries, wording, waiting age, docs (September 27, 2026)
+
+From an outside review of the redesign; each point was checked against the code first.
+
+- **Long-email summaries.** Before, only the first 2,800 characters were read. Now `MailIntelligence.prepared` keeps the opening and the last 900 characters with a marked gap, and the model is told never to guess the middle. `Insight.coversWholeMessage` drives an "Opening and ending only" note on the In short card.
+- **Wording that claimed more than Corres knows:**
+  - "No one owes you a reply" is now "Nothing in Waiting". "N people owe you a reply" is now "N conversations waiting on a reply", since they're conversations, not people.
+  - Empty states are per list.
+  - The Welcome screen's "Nothing hidden, ever" was false with the Screener; it's now "New senders wait for your OK first".
+  - "Never read on a server" is now scoped to what's true: Corres doesn't send mail to its own servers or to an AI service.
+- **Waiting age.** Replying never recorded when you replied, so "Longest N days" counted from their older message. New `waitingSince` (optional with a default, so lightweight migration): set when you reply, set to Gmail's timestamp when your sent copy syncs, set when you move a thread to Waiting, and cleared when they reply or it leaves Waiting. The Brief uses `waitingReference` (`waitingSince` or the latest message). One new test.
+- **Docs.** The README was rewritten (it still said `gmail.readonly` only and mentioned Reset Sample Data), `Docs/Design.md` was rewritten for Obsidian and Ivory, and the stale scope note in Product.md was corrected.
+- Verified: `swift test` 66/66; simulator build and a Brief screenshot showing the new wording.
+
 ## "Could not mark as unread (Gmail error 403)" root cause (September 27, 2026)
 
 Reported on device with `gmail.modify` confirmed granted, so the earlier permission diagnosis didn't apply, and the alert offered no Reconnect.

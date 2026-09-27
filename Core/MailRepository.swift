@@ -187,7 +187,11 @@ public actor SampleMailRepository: MailRepository {
 
     @discardableResult
     public func setAttention(_ attention: Attention, for id: ThreadID) throws -> Correspondence {
-        try mutate(id) { $0.attention = attention }
+        try mutate(id) { item in
+            if attention == .waiting, item.attention != .waiting { item.waitingSince = .now }
+            if attention != .waiting { item.waitingSince = nil }
+            item.attention = attention
+        }
     }
 
     @discardableResult
@@ -241,7 +245,7 @@ public actor SampleMailRepository: MailRepository {
                 sender: sender, organization: "", subject: subject,
                 excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
                 reason: "You started this conversation. Waiting for a response.",
-                attention: .waiting)
+                attention: .waiting, waitingSince: sentAt)
             items.insert(created, at: 0)
             return created
         }
@@ -249,6 +253,7 @@ public actor SampleMailRepository: MailRepository {
             throw RepositoryError.threadNotFound
         }
         items[index].attention = .waiting
+        items[index].waitingSince = sentAt
         items[index].snoozedUntil = nil
         let verb = draft.kind == .forward ? "forwarded this" : "replied"
         items[index].reason = "You \(verb) just now. Waiting for their response."

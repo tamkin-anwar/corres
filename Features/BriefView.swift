@@ -113,7 +113,7 @@ struct BriefView: View {
         }
         let count = snapshot.needsYou
         if count == 0 {
-            plain("Nothing needs you right now.")
+            plain("Nothing is in Needs You right now.")
         } else {
             plain("\(Self.spelled(count).capitalized) \(count == 1 ? "conversation needs" : "conversations need") you")
             plain(snapshot.upcoming > 0 ? ", \(Self.spelled(snapshot.upcoming)) due within a day. " : ". ")
@@ -178,7 +178,7 @@ struct BriefView: View {
     private var followUpCard: some View {
         VStack(spacing: 0) {
             briefRow(icon: "clock",
-                     title: waiting.isEmpty ? "No one owes you a reply" : "Waiting on \(waiting.count) \(waiting.count == 1 ? "person" : "people")",
+                     title: waiting.isEmpty ? "Nothing in Waiting" : "\(waiting.count) waiting on a reply",
                      detail: longestWait) { selection = .waiting }
             if pendingSenderCount > 0 {
                 Hairline(leading: 52)
@@ -193,7 +193,7 @@ struct BriefView: View {
     }
 
     private var longestWait: String? {
-        guard let oldest = waiting.map(\.receivedAt).min() else { return nil }
+        guard let oldest = waiting.map(\.waitingReference).min() else { return nil }
         let days = Calendar.current.dateComponents([.day], from: oldest, to: .now).day ?? 0
         return days < 1 ? "Since today" : "Longest \(days) \(days == 1 ? "day" : "days")"
     }
@@ -227,7 +227,7 @@ struct BriefView: View {
     }
 
     private var privacyNote: some View {
-        Label(isConnected ? "Sorted on this iPhone. Your mail is never sent to a server to be read."
+        Label(isConnected ? "Sorted on this iPhone. Corres doesn't send your mail to its own servers or to an AI service."
                           : "Fictional mail. Connect Gmail in Settings when you're ready.",
               systemImage: "lock")
             .labelStyle(TightLabelStyle())

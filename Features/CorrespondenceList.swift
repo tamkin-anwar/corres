@@ -285,7 +285,7 @@ struct CorrespondenceList: View {
             let due = dueSoonIDs.count
             return "\(count) \(noun)" + (due > 0 ? " · \(due) due soon" : "") + sample
         case .waiting:
-            return (count == 1 ? "1 person owes you a reply" : "\(count) people owe you a reply") + sample
+            return (count == 1 ? "1 conversation waiting on a reply" : "\(count) conversations waiting on a reply") + sample
         default:
             let unread = results.filter(\.isUnread).count
             return "Newest first" + (unread > 0 ? " · \(unread) unread" : "") + sample
@@ -334,17 +334,33 @@ struct CorrespondenceList: View {
                 .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 18)
         } else if destination == .waiting && !results.isEmpty {
-            Text("Corres knows who owes you a reply from the conversation itself. No tracking pixels, no read receipts.")
+            Text("Conversations you replied to, or moved here yourself. Corres tracks them from the conversation: no tracking pixels, no read receipts.")
                 .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 18)
         }
     }
 
+    private var emptyTitle: String {
+        switch destination {
+        case .needsYou: "Nothing in Needs You"
+        case .waiting: "Nothing in Waiting"
+        default: mailFilter == .everything ? "No mail here" : "Nothing in \(mailFilter.rawValue)"
+        }
+    }
+
+    private var emptyDetail: String {
+        switch destination {
+        case .needsYou: "Anything Corres files here asks something of you. Everything else is in Mail."
+        case .waiting: "When you reply to someone, or move a conversation here, it waits here until they answer."
+        default: "Pull down to check for new mail."
+        }
+    }
+
     private var emptyState: some View {
         ContentUnavailableView {
-            Label(search.isEmpty ? "Room to breathe" : "No conversations found", systemImage: search.isEmpty ? "checkmark.circle" : "magnifyingglass")
+            Label(search.isEmpty ? emptyTitle : "No conversations found", systemImage: search.isEmpty ? "checkmark.circle" : "magnifyingglass")
         } description: {
-            Text(search.isEmpty ? "There is nothing here that needs attention." : "Try a name, subject, or organization.")
+            Text(search.isEmpty ? emptyDetail : "Try a name, subject, or organization.")
         }
         .padding(.horizontal, CorresSpace.page)
     }

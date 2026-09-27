@@ -270,7 +270,15 @@ struct ConversationView: View {
         let insight = intelligence.insight(for: thread)
         return VStack(alignment: .leading, spacing: 10) {
             if let summary = insight?.summary {
-                Label("In short", systemImage: "sparkle").labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
+                HStack {
+                    Label("In short", systemImage: "sparkle").labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
+                    Spacer(minLength: 8)
+                    if insight?.coversWholeMessage == false {
+                        Text("Opening and ending only")
+                            .font(.caption).foregroundStyle(CorresPalette.tertiary)
+                            .accessibilityLabel("Long email. This summary covers its opening and ending only.")
+                    }
+                }
                 Text(summary)
                     .font(.subheadline).lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)

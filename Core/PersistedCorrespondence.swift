@@ -65,6 +65,7 @@ public final class PersistedCorrespondence {
     /// Defaults to `true`: every row that predates this column was synced
     /// with its full body already.
     public var isBodyLoaded: Bool = true
+    public var waitingSince: Date? = nil
 
     public init(from correspondence: Correspondence) {
         self.compositeID = Self.compositeID(account: correspondence.id.account, providerID: correspondence.id.providerID)
@@ -98,6 +99,7 @@ public final class PersistedCorrespondence {
         self.ccRecipients = correspondence.ccRecipients
         self.triagedMessageID = correspondence.triagedMessageID
         self.isBodyLoaded = correspondence.isBodyLoaded
+        self.waitingSince = correspondence.waitingSince
     }
 
     public var asCorrespondence: Correspondence {
@@ -113,7 +115,7 @@ public final class PersistedCorrespondence {
                        toRecipients: toRecipients, ccRecipients: ccRecipients, triagedMessageID: triagedMessageID,
                        listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
                        listUnsubscribeOneClick: listUnsubscribeOneClick, senderUnsubscribed: senderUnsubscribed,
-                       isBodyLoaded: isBodyLoaded)
+                       isBodyLoaded: isBodyLoaded, waitingSince: waitingSince)
     }
 
     public static func compositeID(account: String, providerID: String) -> String { "\(account)|\(providerID)" }

@@ -226,6 +226,25 @@ struct SwiftDataMailRepositoryTests {
         #expect(afterward.count == 1)
     }
 
+    /// "Waiting on Maya for 6 days" must count from when you replied, not
+    /// from her older message the reply answered.
+    @Test func waitingClockStartsWhenYouReplyAndStopsWhenMovedOut() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let received = now.addingTimeInterval(-6 * 86_400)
+        let thread = Correspondence(id: ThreadID(account: "me@x.test", providerID: "t1"), sender: "Maya",
+                                    senderEmail: "maya@x.test", organization: "", subject: "Plan", excerpt: "",
+                                    body: "", receivedAt: received, dueAt: nil, reason: "r", attention: .needsYou)
+        try await repository.upsert([thread], isInitialSync: true)
+        let draft = Draft(kind: .reply, threadID: thread.id, fromAccount: "me@x.test", to: "maya@x.test", subject: "Re: Plan")
+        let replied = try await repository.send(draft, sentAt: now, realThreadID: nil)
+        #expect(replied.attention == .waiting)
+        #expect(replied.waitingReference == now)
+
+        let moved = try await repository.setAttention(.handled, for: thread.id)
+        #expect(moved.waitingSince == nil)
+        #expect(moved.waitingReference == received)
+    }
+
     /// Removing an account from Corres takes its mail off the device and
     /// leaves every other account's mail alone.
     @Test func deleteAccountDataRemovesOnlyThatAccountsThreads() async throws {

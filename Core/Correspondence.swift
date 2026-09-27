@@ -177,6 +177,10 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// then `body` is the snippet. Opening an unloaded thread loads it
     /// immediately.
     public var isBodyLoaded: Bool
+    /// When this conversation started waiting on someone else: the moment
+    /// you replied, or moved it to Waiting yourself. Nil for anything not
+    /// waiting, and for threads that predate it (see `waitingReference`).
+    public var waitingSince: Date?
 
     /// Flagged in iOS Mail, starred in Gmail: the same thing underneath, a
     /// Gmail `STARRED` label, so it mirrors both ways through the labels
@@ -193,7 +197,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
                 triagedMessageID: String? = nil,
                 listUnsubscribeMailto: String? = nil, listUnsubscribeURL: String? = nil,
                 listUnsubscribeOneClick: Bool = false, senderUnsubscribed: Bool = false,
-                isBodyLoaded: Bool = true) {
+                isBodyLoaded: Bool = true, waitingSince: Date? = nil) {
         self.id = id
         self.sender = sender
         self.senderEmail = senderEmail
@@ -223,7 +227,13 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.listUnsubscribeOneClick = listUnsubscribeOneClick
         self.senderUnsubscribed = senderUnsubscribed
         self.isBodyLoaded = isBodyLoaded
+        self.waitingSince = waitingSince
     }
+
+    /// What "waiting for N days" counts from: when you replied or moved it,
+    /// falling back to the latest message for threads from before that was
+    /// recorded.
+    public var waitingReference: Date { waitingSince ?? receivedAt }
 
     public var initials: String {
         sender.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined()
@@ -294,7 +304,8 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
             // Per-sender, like imagesTrusted/senderDecision: once acted on,
             // stays acted on regardless of what a later message offers.
             senderUnsubscribed: senderUnsubscribed,
-            isBodyLoaded: incoming.isBodyLoaded)
+            isBodyLoaded: incoming.isBodyLoaded,
+            waitingSince: preserveAttention ? waitingSince : nil)
     }
 }
 

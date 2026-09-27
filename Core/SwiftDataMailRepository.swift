@@ -15,7 +15,13 @@ public actor SwiftDataMailRepository: MailRepository {
 
     @discardableResult
     public func setAttention(_ attention: Attention, for id: ThreadID) throws -> Correspondence {
-        try mutate(id) { $0.attentionRaw = attention.rawValue }
+        try mutate(id) { model in
+            // Moving something into Waiting starts its clock now; moving it
+            // anywhere else stops it.
+            if attention == .waiting, model.attentionRaw != Attention.waiting.rawValue { model.waitingSince = .now }
+            if attention != .waiting { model.waitingSince = nil }
+            model.attentionRaw = attention.rawValue
+        }
     }
 
     @discardableResult
@@ -163,13 +169,14 @@ public actor SwiftDataMailRepository: MailRepository {
                 sender: sender, organization: "", subject: subject,
                 excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
                 reason: "You started this conversation. Waiting for a response.",
-                attention: .waiting)
+                attention: .waiting, waitingSince: sentAt)
             modelContext.insert(PersistedCorrespondence(from: created))
             try modelContext.save()
             return created
         }
         let model = try fetchOne(threadID)
         model.attentionRaw = Attention.waiting.rawValue
+        model.waitingSince = sentAt
         model.snoozedUntil = nil
         let verb = draft.kind == .forward ? "forwarded this" : "replied"
         model.reason = "You \(verb) just now. Waiting for their response."
@@ -276,7 +283,13 @@ public actor SwiftDataMailRepository: MailRepository {
                 // attention/reason below): always take the freshest known
                 // value, regardless of which side sent the triggering message.
                 existing.labelIds = item.labelIds
+                if isFromAccountOwner && existing.attentionRaw == Attention.waiting.rawValue {
+                    // Gmail's own record of when you sent it is the truth.
+                    existing.waitingSince = item.receivedAt
+                }
                 if !isFromAccountOwner {
+                    // They replied: whatever you were waiting on has arrived.
+                    existing.waitingSince = nil
                     // A genuine inbound message: its own unread state should
                     // drive attention/reason/isUnread, same as any new
                     // thread. Our own sent copy showing back up must never

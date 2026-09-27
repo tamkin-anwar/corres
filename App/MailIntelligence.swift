@@ -23,6 +23,10 @@ final class MailIntelligence {
         /// Up to three short reply directions ("Count me in"), empty when
         /// the message doesn't call for a reply.
         let replyIntents: [String]
+        /// False when the email was too long for the on-device model to
+        /// read whole, so the summary covers its opening and closing only.
+        /// The conversation says so rather than implying it read it all.
+        var coversWholeMessage = true
     }
 
     enum Tone: String, CaseIterable, Identifiable {
@@ -55,9 +59,11 @@ final class MailIntelligence {
     /// Below this, the preview already is the summary.
     private static let summaryThreshold = 320
     /// The on-device model's context is small (about 4k tokens including
-    /// instructions and output), so long bodies are trimmed to their start,
-    /// which is where the ask almost always is.
+    /// instructions and output), so a long body keeps its opening and its
+    /// closing, where asks and deadlines almost always are, and drops the
+    /// middle with a marker the model is told about.
     private static let maxBodyCharacters = 2_800
+    private static let tailCharacters = 900
 
     func insight(for thread: Correspondence) -> Insight? {
         insights[Self.key(for: thread)]
@@ -86,7 +92,8 @@ final class MailIntelligence {
         }
         guard let result = await generateInsight(for: thread) else { return }
         insights[messageID] = Insight(summary: wantsSummary ? result.summary : nil,
-                                      replyIntents: wantsReplies ? Array(result.replies.prefix(3)) : [])
+                                      replyIntents: wantsReplies ? Array(result.replies.prefix(3)) : [],
+                                      coversWholeMessage: !Self.prepared(thread.body).wasShortened)
     }
 
     /// A complete reply body for `intent` ("Count me in"), in a plain,
@@ -157,7 +164,9 @@ final class MailIntelligence {
 
     @available(iOS 26.0, *)
     private static let readingInstructions = """
-    You help a busy person read email. Summarize what the message says and, \
+    You help a busy person read email. A very long email may arrive with \
+    its middle omitted and marked; summarize only what you can see and \
+    never guess at the missing part. Summarize what the message says and, \
     above all, what it asks of the reader, in one or two plain sentences, \
     under 35 words. Name people and dates exactly as written. Never invent \
     facts. If the message needs a personal reply, suggest up to three short, \
@@ -179,7 +188,11 @@ final class MailIntelligence {
     give. Output only the email text.
     """
 
-    private static func trimmed(_ body: String) -> String {
+    private static func trimmed(_ body: String) -> String { prepared(body).text }
+
+    /// The body as the model sees it: quoted history removed, then, if still
+    /// too long, the opening and the closing joined by a marker.
+    static func prepared(_ body: String) -> (text: String, wasShortened: Bool) {
         // Quoted history ("On … wrote:" and "> " lines) adds length, not meaning.
         let lines = body.split(separator: "\n", omittingEmptySubsequences: false)
         var kept: [Substring] = []
@@ -189,7 +202,10 @@ final class MailIntelligence {
             kept.append(line)
         }
         let text = kept.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
-        return text.count > maxBodyCharacters ? String(text.prefix(maxBodyCharacters)) + "…" : text
+        guard text.count > maxBodyCharacters else { return (text, false) }
+        let head = text.prefix(maxBodyCharacters - tailCharacters)
+        let tail = text.suffix(tailCharacters)
+        return (head + "\n\n[… middle of the email omitted …]\n\n" + tail, true)
     }
 
     private static func clean(_ output: String) -> String? {
