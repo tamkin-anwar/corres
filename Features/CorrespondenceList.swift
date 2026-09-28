@@ -246,6 +246,9 @@ struct CorrespondenceList: View {
     @State private var confirmingTrash: Correspondence?
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatarsInList = true
     @State private var isSelecting = false
+    @State private var rowFrames = RowFrames()
+    /// The two-finger drag's starting row and what was selected before it.
+    @State private var dragAnchor: (index: Int, before: Set<ThreadID>)?
     @State private var confirmingBulkTrash = false
     @State private var selected: Set<ThreadID> = []
 
@@ -323,6 +326,7 @@ struct CorrespondenceList: View {
                     Color.clear.frame(height: threadActions?.pendingRemoval == nil ? 0 : 56)
                 }
             }
+            .modifier(TwoFingerSelect(onChange: handleTwoFingerSelect))
             .toolbar(isSelecting ? .hidden : .automatic, for: .tabBar)
             .toolbar { selectionToolbar }
             .animation(.snappy(duration: 0.25), value: isSelecting)
@@ -370,6 +374,28 @@ struct CorrespondenceList: View {
 
     private func toggleSelection(_ id: ThreadID) {
         if selected.contains(id) { selected.remove(id) } else { selected.insert(id) }
+    }
+
+    /// Two fingers down a list: select everything from the row where they
+    /// started to the row under them now, as in Mail. Dragging back up
+    /// unselects the rows left behind; what was already selected stays.
+    private func handleTwoFingerSelect(_ state: UIGestureRecognizer.State, _ point: CGPoint) {
+        let order = results.map(\.id)
+        switch state {
+        case .began:
+            guard let id = rowFrames.id(at: point, in: order), let index = order.firstIndex(of: id) else { return }
+            if !isSelecting { isSelecting = true }
+            dragAnchor = (index, selected)
+            selected.insert(id)
+        case .changed:
+            guard let anchor = dragAnchor, let id = rowFrames.id(at: point, in: order),
+                  let index = order.firstIndex(of: id) else { return }
+            let run = order[min(anchor.index, index)...max(anchor.index, index)]
+            let next = anchor.before.union(run)
+            if next != selected { selected = next }
+        default:
+            dragAnchor = nil
+        }
     }
 
     private func endSelection() {
@@ -682,9 +708,11 @@ struct CorrespondenceList: View {
             .listRowBackground(splitSelection?.wrappedValue?.id == thread.id ? CorresPalette.accent.opacity(0.12) : Color.clear)
             .alignmentGuide(.listRowSeparatorLeading) { _ in showAvatarsInList ? 77 : 25 }
             .id(thread.id)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { rowFrames.frames[thread.id] = $0 }
             .onAppear {
                 if pagesOlderMail, thread.id == results.last?.id { loadOlderMail() }
             }
+            .onDisappear { rowFrames.frames[thread.id] = nil }
             // A hand-built drag gesture gets none of what Apple's own
             // `.swipeActions` gave VoiceOver for free: every button it
             // exposes is automatically reachable through the accessibility
@@ -827,6 +855,20 @@ extension View {
             self.navigationLinkIndicatorVisibility(.hidden)
         } else {
             self
+        }
+    }
+}
+
+
+/// The two-finger selection drag where it exists (iOS 18+).
+private struct TwoFingerSelect: ViewModifier {
+    let onChange: (UIGestureRecognizer.State, CGPoint) -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.gesture(TwoFingerSelectGesture(onChange: onChange))
+        } else {
+            content
         }
     }
 }
