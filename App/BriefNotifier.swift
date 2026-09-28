@@ -4,8 +4,8 @@ import UserNotifications
 /// The Brief, delivered: one quiet notification at the time you choose
 /// (Settings → Notifications → Morning Brief) with what needs you and who
 /// you're waiting on, the same sentence Siri gives for "What needs me".
-/// It's a single scheduled notification, rewritten whenever the mail
-/// changes, so it reads what Corres knew at the last sync.
+/// It's one daily notification, rewritten whenever the mail changes, so it
+/// reads what Corres knew at the last sync.
 @MainActor
 enum BriefNotifier {
     static let enabledKey = "corres.brief.enabled"
@@ -32,7 +32,9 @@ enum BriefNotifier {
             return
         }
         let body = WhatNeedsMeIntent.summary(of: snapshot)
-        let fire = nextFire()
+        // Every day at that time, even on days Corres isn't opened; each
+        // sync rewrites what it says.
+        let fire = DateComponents(hour: time.hour, minute: time.minute)
         if let lastScheduled, lastScheduled.body == body, lastScheduled.fire == fire { return }
         lastScheduled = (body, fire)
 
@@ -42,16 +44,7 @@ enum BriefNotifier {
         content.userInfo = ["destination": "brief"]
         content.interruptionLevel = .passive
         let request = UNNotificationRequest(identifier: identifier, content: content,
-                                            trigger: UNCalendarNotificationTrigger(dateMatching: fire, repeats: false))
+                                            trigger: UNCalendarNotificationTrigger(dateMatching: fire, repeats: true))
         center.add(request)
-    }
-
-    /// Today at the chosen time if it's still ahead, otherwise tomorrow.
-    private static func nextFire(now: Date = .now) -> DateComponents {
-        let calendar = Calendar.current
-        let (hour, minute) = time
-        var day = calendar.date(bySettingHour: hour, minute: minute, second: 0, of: now) ?? now
-        if day <= now { day = calendar.date(byAdding: .day, value: 1, to: day) ?? day }
-        return calendar.dateComponents([.year, .month, .day, .hour, .minute], from: day)
     }
 }

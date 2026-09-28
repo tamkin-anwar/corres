@@ -358,12 +358,7 @@ private struct AccountDetailView: View {
             }
             if pushService.isEnabled {
                 Section {
-                    Toggle(isOn: Binding(
-                        get: { CorresSettings.notifies(for: account.email) },
-                        set: { UserDefaults.standard.set($0, forKey: CorresSettings.accountNotificationsKey(for: account.email)) }
-                    )) {
-                        Label("Notifications", systemImage: "bell")
-                    }
+                    AccountNotificationToggle(email: account.email)
                 } footer: {
                     Text("Turn off to keep this account quiet while its mail still syncs and sorts.")
                 }
@@ -469,6 +464,19 @@ private struct SignatureEditor: View {
             .onChange(of: text) { _, value in
                 UserDefaults.standard.set(value, forKey: CorresSettings.signatureKey(for: account))
             }
+    }
+}
+
+/// Observed through @AppStorage, so the switch redraws when flipped.
+private struct AccountNotificationToggle: View {
+    @AppStorage private var isOn: Bool
+
+    init(email: String) {
+        _isOn = AppStorage(wrappedValue: true, CorresSettings.accountNotificationsKey(for: email))
+    }
+
+    var body: some View {
+        Toggle(isOn: $isOn) { Label("Notifications", systemImage: "bell") }
     }
 }
 
