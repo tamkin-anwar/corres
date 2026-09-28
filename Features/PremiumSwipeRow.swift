@@ -1,55 +1,39 @@
 import SwiftUI
+import UIKit
 
 /// Icon/label/tint for whichever action is armed at a given point in the
-/// gesture — pure display data, independent of which underlying action type
-/// (`PrimarySwipeAction`/`LeadingSwipeAction`, each with their own
-/// state-dependent variants like Pin/Unpin) it came from.
+/// gesture. `removesRow` (Archive, Trash) makes the row slide fully off
+/// screen on commit instead of springing back, the way Mail does.
 struct SwipeVisual {
     let title: String
     let systemImage: String
     let tint: Color
+    var removesRow = false
 }
 
-/// Swift doesn't allow stored `static` properties on a generic type
-/// (`PremiumSwipeRow<Content>` below), so these live in a plain, non-generic
-/// namespace instead. Tuned by feel against Spark's own described
-/// short/long distinction, not measured against the real app (no access to
-/// it here): short is reachable with a casual swipe, long needs a
-/// deliberate, further drag past it. `maxDrag` caps how far the row can
-/// visually slide so a determined drag doesn't send it flying off
-/// unbounded.
-private enum SwipeMetrics {
-    static let shortThreshold: CGFloat = 76
-    static let longThreshold: CGFloat = 156
-    static let maxDrag: CGFloat = 172
-}
-
-/// Corres's own hand-built replacement for Apple's `.swipeActions` on a
-/// Mail row, built specifically to match Spark's own swipe model,
-/// researched directly rather than guessed at: Spark assigns an
-/// independent action to *four* slots — Left Short, Left Long, Right
-/// Short, Right Long — where a short swipe fires one action directly on
-/// release and a longer swipe fires a different one, no intermediate
-/// "reveal a row of buttons and tap one" step at all. Apple's own
-/// `.swipeActions` API has no equivalent of this: it only offers reveal-
-/// then-tap plus a single auto-fire-on-full-swipe action, which is exactly
-/// why this exists as a real custom gesture instead of another
-/// `.swipeActions` configuration, the way the rest of this session's swipe
-/// customization was.
+/// A Mail row with four independent swipe slots: a short and a long swipe
+/// in each direction (Spark's model), where releasing fires the action
+/// directly with no reveal-then-tap step.
 ///
-/// Genuinely higher-risk than most of this app's other UI, and known to be
-/// so before it ships: a hand-rolled horizontal drag gesture living inside
-/// a vertically-scrolling `List` is exactly the class of thing that can
-/// look correct in code and still misbehave on a real device (competing
-/// with the List's own scroll recognizer, or with `NavigationLink`'s own
-/// tap) in ways a build can't catch — the same lesson the `.swipeActions`/
-/// `ForEach` bug just taught, applied here proactively rather than found
-/// the same way again. `.simultaneousGesture` (not `.gesture`) is used
-/// specifically so this never claims exclusive priority over the List's
-/// own vertical pan recognizer; a `minimumDistance` on the `DragGesture`
-/// plus checking which axis actually dominates on the very first reported
-/// translation is what lets an ordinary vertical scroll pass through
-/// untouched instead of being hijacked by a horizontal-swipe row.
+/// Why this is built on a UIKit pan recognizer (iOS 18+) and not SwiftUI's
+/// `DragGesture`: inside a scrolling `List`, a `DragGesture` competes with
+/// the list's own pan for the same touches, which is what made the old
+/// version stutter, hitch scrolling and misfire on diagonal drags. A
+/// `UIPanGestureRecognizer` whose delegate only lets it begin when the
+/// finger is clearly moving sideways hands every vertical movement to the
+/// scroll view untouched, the same arbitration Mail's rows get from UIKit.
+///
+/// Feel, matched to Mail and Spark:
+/// - distances scale with the row's width (short at about a fifth, long
+///   past half), not fixed points;
+/// - a quick flick counts, judged from the finger's speed, not only its
+///   distance;
+/// - the action colour fills from the edge, its icon grows as it arms,
+///   and a haptic tick marks each threshold, in both directions;
+/// - past the long threshold the row stretches with resistance instead of
+///   stopping dead;
+/// - Archive and Trash carry the row off screen before it's removed;
+///   everything else springs back into place.
 struct PremiumSwipeRow<Content: View>: View {
     let leadingShort: SwipeVisual?
     let leadingLong: SwipeVisual?
@@ -63,158 +47,268 @@ struct PremiumSwipeRow<Content: View>: View {
 
     private enum Zone: Int { case none = 0, short = 1, long = 2 }
 
-    // A custom gesture doesn't automatically respect `.disabled()` the way
-    // a real `Button` does; read it explicitly so callers can still disable
-    // a row mid-action (`store.pending`, preventing a double-fire) exactly
-    // like before.
+    // A custom gesture doesn't automatically respect `.disabled()` the way a
+    // real Button does; read it so a row mid-action can't fire twice.
     @Environment(\.isEnabled) private var isEnabled
-    // Matches `CorresShell`'s own outbox banner and `DesignSystem/Tokens.swift`'s
-    // row-press animation, the established convention throughout this app:
-    // Reduce Motion drops the animated spring specifically (the large,
-    // springy positional movement Reduce Motion's own guidance targets),
-    // never the state change itself — the row still snaps back to flat
-    // instantly, just without the bounce.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var offset: CGFloat = 0
-    /// nil until the first meaningful movement of a given gesture, then
-    /// fixed for its duration: whether *this* gesture turned out to be
-    /// predominantly horizontal (a swipe this view should handle) or
-    /// vertical (an ordinary scroll this view must get out of the way of).
-    @State private var isHorizontalDrag: Bool?
+    @State private var rowWidth: CGFloat = 390
     @State private var zone: Zone = .none
+    @State private var isCommitting = false
+
+    private var shortThreshold: CGFloat { max(64, rowWidth * 0.2) }
+    private var longThreshold: CGFloat { max(shortThreshold + 60, rowWidth * 0.55) }
+    private var allowsPositive: Bool { leadingShort != nil || leadingLong != nil }
+    private var allowsNegative: Bool { trailingShort != nil || trailingLong != nil }
 
     var body: some View {
         ZStack {
-            // Purely decorative: the real actions it previews are exposed
-            // to VoiceOver as proper named accessibility actions (see
-            // `CorrespondenceList`'s use of this view), not by making
-            // VoiceOver stumble onto this icon as its own, separate,
-            // context-free element while navigating the row.
+            // Decorative: the same actions are exposed to VoiceOver as named
+            // accessibility actions by the list.
             background.accessibilityHidden(true)
             content
                 .offset(x: offset)
         }
-        .simultaneousGesture(dragGesture)
-        // One haptic tick exactly when `zone` changes value, in either
-        // direction (crossing a threshold forward while dragging further,
-        // or crossing back while easing off) — SwiftUI fires this
-        // automatically on any change to the trigger value, so the zone
-        // state machine above is the only place that needs to get this
-        // right.
-        .sensoryFeedback(.impact(weight: .light), trigger: zone)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { rowWidth = max($0, 1) }
+        .modifier(SwipeGesture(isEnabled: isEnabled && !isCommitting,
+                               allowsPositive: allowsPositive, allowsNegative: allowsNegative,
+                               changed: dragChanged, ended: dragEnded))
+        .sensoryFeedback(trigger: zone) { old, new in
+            new.rawValue > old.rawValue ? .impact(weight: new == .long ? .medium : .light, intensity: 0.9)
+                                        : .impact(weight: .light, intensity: 0.5)
+        }
     }
 
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 16)
-            .onChanged { value in
-                guard isEnabled else { return }
-                if isHorizontalDrag == nil {
-                    isHorizontalDrag = abs(value.translation.width) > abs(value.translation.height)
-                }
-                guard isHorizontalDrag == true else { return }
-                // Only drag toward a side that actually has something
-                // configured; dragging toward an empty side (e.g. no
-                // leading actions at all) simply does nothing rather than
-                // revealing a blank background.
-                let allowsPositive = leadingShort != nil || leadingLong != nil
-                let allowsNegative = trailingShort != nil || trailingLong != nil
-                var next = value.translation.width
-                if next > 0 && !allowsPositive { next = 0 }
-                if next < 0 && !allowsNegative { next = 0 }
-                offset = Self.resistedOffset(for: next)
-                zone = Self.zone(for: offset)
-            }
-            .onEnded { _ in
-                defer {
-                    isHorizontalDrag = nil
-                    zone = .none
-                }
-                // `onChanged` already bails out on `isEnabled` while
-                // dragging, but a real `Button` also refuses to fire if it
-                // goes disabled between being pressed and being released —
-                // rechecked here so a row that's disabled mid-gesture (e.g.
-                // another swipe on it just started committing) can't still
-                // commit a second action through the gesture that was
-                // already in progress when that happened.
-                guard isEnabled, isHorizontalDrag == true else { return }
-                commit(offset)
-                withAnimation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.82)) {
-                    offset = 0
-                }
-            }
+    // MARK: - Gesture handling
+
+    private func dragChanged(_ translation: CGFloat) {
+        var next = translation
+        if next > 0 && !allowsPositive { next = 0 }
+        if next < 0 && !allowsNegative { next = 0 }
+        offset = resisted(next)
+        let newZone = zone(for: offset)
+        if newZone != zone {
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.18)) { zone = newZone }
+        }
     }
 
-    /// Below `longThreshold`, the row tracks the finger exactly 1:1, same
-    /// as before. Past it, movement is damped to a quarter rate instead of
-    /// being hard-clamped at `maxDrag`: a real finger dragging further than
-    /// the long action still needs somewhere to go, and UIKit's own
-    /// `.swipeActions` gives it that same elastic "still moving, just
-    /// working against you" give rather than a wall that feels like the
-    /// gesture stopped responding. Still hard-capped at `maxDrag` so a
-    /// determined drag can't send the row flying arbitrarily far.
-    private static func resistedOffset(for translation: CGFloat) -> CGFloat {
+    private func dragEnded(_ translation: CGFloat, _ velocity: CGFloat) {
+        var committed = zone(for: offset)
+        // A decisive flick arms the short action even before its distance.
+        let flicked = abs(velocity) > 700 && abs(offset) > 24 && (velocity > 0) == (offset > 0)
+        if committed == .none && flicked { committed = .short }
+        guard isEnabled, committed != .none, let visual = visual(for: committed, positive: offset > 0) else {
+            settle()
+            return
+        }
+        let positive = offset > 0
+        let action = self.action(for: committed, positive: positive)
+        if visual.removesRow {
+            isCommitting = true
+            withAnimation(reduceMotion ? nil : .easeIn(duration: 0.2)) {
+                offset = (positive ? 1 : -1) * (rowWidth + 40)
+            }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(reduceMotion ? 0 : 190))
+                action()
+                // If the row stays (Undo, or Gmail refused), bring it back.
+                try? await Task.sleep(for: .milliseconds(600))
+                isCommitting = false
+                settle()
+            }
+        } else {
+            action()
+            settle()
+        }
+    }
+
+    private func settle() {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.36, dampingFraction: 0.78)) {
+            offset = 0
+            zone = .none
+        }
+    }
+
+    /// 1:1 with the finger up to the long threshold, then progressively
+    /// harder to pull, capped short of the row's own width.
+    private func resisted(_ translation: CGFloat) -> CGFloat {
         let magnitude = abs(translation)
-        guard magnitude > SwipeMetrics.longThreshold else { return translation }
-        let extra = magnitude - SwipeMetrics.longThreshold
-        let damped = min(SwipeMetrics.longThreshold + extra * 0.25, SwipeMetrics.maxDrag)
+        guard magnitude > longThreshold else { return translation }
+        let extra = magnitude - longThreshold
+        let limit = rowWidth * 0.85 - longThreshold
+        let damped = longThreshold + limit * (1 - exp(-extra / max(limit, 1)))
         return translation < 0 ? -damped : damped
     }
 
-    private static func zone(for offset: CGFloat) -> Zone {
+    private func zone(for offset: CGFloat) -> Zone {
         let magnitude = abs(offset)
-        if magnitude >= SwipeMetrics.longThreshold { return .long }
-        if magnitude >= SwipeMetrics.shortThreshold { return .short }
+        if magnitude >= longThreshold, visual(for: .long, positive: offset > 0) != nil { return .long }
+        if magnitude >= shortThreshold { return .short }
         return .none
     }
 
-    private func commit(_ offset: CGFloat) {
-        switch Self.zone(for: offset) {
-        case .none:
-            return
-        case .short:
-            if offset > 0 { onLeadingShort() } else { onTrailingShort() }
-        case .long:
-            if offset > 0 { onLeadingLong() } else { onTrailingLong() }
+    private func visual(for zone: Zone, positive: Bool) -> SwipeVisual? {
+        switch (zone, positive) {
+        case (.long, true): leadingLong ?? leadingShort
+        case (.long, false): trailingLong ?? trailingShort
+        case (.short, true): leadingShort ?? leadingLong
+        case (.short, false): trailingShort ?? trailingLong
+        case (.none, _): nil
         }
     }
 
-    /// The colored panel revealed behind the row as it slides, showing
-    /// whichever action is currently armed (switching from the short
-    /// action's icon/tint to the long action's the moment the drag passes
-    /// `longThreshold`, so the visible icon always matches what will
-    /// actually fire if released right now).
-    private var background: some View {
-        HStack(spacing: 0) {
-            if offset > 0 {
-                armedVisual(short: leadingShort, long: leadingLong)
-                    .frame(width: min(offset, SwipeMetrics.maxDrag), alignment: .leading)
-                Spacer(minLength: 0)
-            } else if offset < 0 {
-                Spacer(minLength: 0)
-                armedVisual(short: trailingShort, long: trailingLong)
-                    .frame(width: min(-offset, SwipeMetrics.maxDrag), alignment: .trailing)
-            }
+    private func action(for zone: Zone, positive: Bool) -> () -> Void {
+        switch (zone, positive) {
+        case (.long, true): leadingLong != nil ? onLeadingLong : onLeadingShort
+        case (.long, false): trailingLong != nil ? onTrailingLong : onTrailingShort
+        case (_, true): leadingShort != nil ? onLeadingShort : onLeadingLong
+        case (_, false): trailingShort != nil ? onTrailingShort : onTrailingLong
         }
     }
+
+    // MARK: - Background
 
     @ViewBuilder
-    private func armedVisual(short: SwipeVisual?, long: SwipeVisual?) -> some View {
-        let visual = zone == .long ? (long ?? short) : (short ?? long)
-        if let visual {
-            ZStack(alignment: offset > 0 ? .leading : .trailing) {
-                Rectangle().fill(visual.tint)
-                Label(visual.title, systemImage: visual.systemImage)
-                    .labelStyle(.iconOnly)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
-                    // Only worth showing once there's enough room for it to
-                    // read as an icon rather than a sliver; fades and grows
-                    // in with the drag instead of popping in abruptly at
-                    // the threshold.
-                    .opacity(min(1, Double(abs(offset)) / Double(SwipeMetrics.shortThreshold)))
-                    .padding(.horizontal, 22)
+    private var background: some View {
+        if offset != 0 {
+            let positive = offset > 0
+            let shown = visual(for: zone == .none ? .short : zone, positive: positive)
+            let revealed = min(abs(offset), rowWidth)
+            let progress = min(1, abs(offset) / shortThreshold)
+            ZStack(alignment: positive ? .leading : .trailing) {
+                Rectangle()
+                    .fill((shown?.tint ?? .gray).opacity(zone == .none ? 0.55 + 0.45 * progress : 1))
+                if let shown {
+                    Image(systemName: shown.systemImage)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .scaleEffect(zone == .none ? 0.7 + 0.3 * progress : (zone == .long ? 1.15 : 1))
+                        .opacity(progress)
+                        // Pinned to the edge while arming, then carried
+                        // along with the row once it's committed to long,
+                        // the way Mail signals "let go now".
+                        .padding(positive ? .leading : .trailing, zone == .long ? max(22, revealed - 56) : 22)
+                        .accessibilityLabel(shown.title)
+                }
             }
+            .frame(width: revealed)
+            .frame(maxWidth: .infinity, alignment: positive ? .leading : .trailing)
         }
+    }
+}
+
+// MARK: - Gesture plumbing
+
+/// Picks the UIKit recognizer on iOS 18+, a tuned `DragGesture` before that.
+private struct SwipeGesture: ViewModifier {
+    let isEnabled: Bool
+    let allowsPositive: Bool
+    let allowsNegative: Bool
+    let changed: (CGFloat) -> Void
+    let ended: (CGFloat, CGFloat) -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.gesture(HorizontalPanGesture(isEnabled: isEnabled, allowsPositive: allowsPositive,
+                                                 allowsNegative: allowsNegative, changed: changed, ended: ended))
+        } else {
+            content.simultaneousGesture(LegacyDrag(isEnabled: isEnabled, changed: changed, ended: ended).gesture)
+        }
+    }
+}
+
+@available(iOS 18.0, *)
+private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
+    let isEnabled: Bool
+    let allowsPositive: Bool
+    let allowsNegative: Bool
+    let changed: (CGFloat) -> Void
+    let ended: (CGFloat, CGFloat) -> Void
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator(allowsPositive: allowsPositive, allowsNegative: allowsNegative) }
+
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let recognizer = UIPanGestureRecognizer()
+        recognizer.delegate = context.coordinator
+        recognizer.maximumNumberOfTouches = 1
+        return recognizer
+    }
+
+    func updateUIGestureRecognizer(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        recognizer.isEnabled = isEnabled
+        context.coordinator.allowsPositive = allowsPositive
+        context.coordinator.allowsNegative = allowsNegative
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        // Measured from where the finger first touched down, not from where
+        // UIKit finished recognizing the pan: recognition lands a beat after
+        // the finger starts moving, and `translation(in:)` would discard
+        // that first stretch, so fast swipes lost most of their distance.
+        let current = recognizer.location(in: recognizer.view).x
+        let translation = current - (context.coordinator.touchDownX ?? current)
+        switch recognizer.state {
+        case .began, .changed:
+            changed(translation)
+        case .ended:
+            ended(translation, recognizer.velocity(in: recognizer.view).x)
+        case .cancelled, .failed:
+            ended(0, 0)
+        default:
+            break
+        }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        var allowsPositive: Bool
+        var allowsNegative: Bool
+        var touchDownX: CGFloat?
+
+        init(allowsPositive: Bool, allowsNegative: Bool) {
+            self.allowsPositive = allowsPositive
+            self.allowsNegative = allowsNegative
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            touchDownX = touch.location(in: gestureRecognizer.view).x
+            return true
+        }
+
+        /// Only a clearly sideways start becomes a swipe; anything else is
+        /// left entirely to the scroll view.
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return false }
+            let velocity = pan.velocity(in: pan.view)
+            guard abs(velocity.x) > abs(velocity.y) * 1.2 else { return false }
+            return velocity.x > 0 ? allowsPositive : allowsNegative
+        }
+
+        /// Never alongside the list's scrolling: once a swipe owns the
+        /// touch, the list holds still, and vice versa.
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            false
+        }
+    }
+}
+
+/// iOS 17: SwiftUI's drag, locked to whichever axis dominates first.
+private struct LegacyDrag {
+    let isEnabled: Bool
+    let changed: (CGFloat) -> Void
+    let ended: (CGFloat, CGFloat) -> Void
+
+    var gesture: some Gesture {
+        DragGesture(minimumDistance: 14)
+            .onChanged { value in
+                guard isEnabled, abs(value.translation.width) > abs(value.translation.height) * 1.2 else { return }
+                changed(value.translation.width)
+            }
+            .onEnded { value in
+                let horizontal = abs(value.translation.width) > abs(value.translation.height) * 1.2
+                let velocity = (value.predictedEndTranslation.width - value.translation.width) * 4
+                ended(horizontal ? value.translation.width : 0, horizontal ? velocity : 0)
+            }
     }
 }

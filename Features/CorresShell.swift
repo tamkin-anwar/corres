@@ -264,7 +264,7 @@ struct CorresShell: View {
                         // lists use the system large title, set in New York
                         // (see CorresApp.init), which collapses on scroll.
                         .navigationBarTitleDisplayMode(destination == .brief ? .inline : .large)
-                        .toolbarTitleMenu { if auth.accounts.count > 1 { accountMenu } }
+                        .modifier(AccountTitleMenu(isEnabled: auth.accounts.count > 1) { accountMenu })
                         .toolbar { toolbarContent }
                         .navigationDestination(for: ConversationRoute.self) { route in
                             ConversationView(store: store, outbox: outbox, threadActions: threadActions,
@@ -427,6 +427,21 @@ struct CorresShell: View {
                 .sharedBackgroundVisibility(.hidden)
         } else {
             ToolbarItem(placement: .topBarTrailing) { accountButton }
+        }
+    }
+}
+
+/// The title-tap account switcher, attached only when there's a choice to
+/// make: an empty title menu still draws a disclosure arrow.
+private struct AccountTitleMenu<Menu: View>: ViewModifier {
+    let isEnabled: Bool
+    @ViewBuilder let menu: () -> Menu
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.toolbarTitleMenu { menu() }
+        } else {
+            content
         }
     }
 }

@@ -22,6 +22,15 @@ enum PrimarySwipeAction: String, CaseIterable, Identifiable {
         case .handled: "checkmark.circle.fill"
         }
     }
+    /// Whether committing it takes the row out of the list it's in, so the
+    /// row should leave the screen rather than spring back.
+    func removesRow(in destination: Destination) -> Bool {
+        switch self {
+        case .archive, .trash: true
+        case .handled: destination != .mail
+        }
+    }
+
     var tint: Color {
         switch self {
         case .archive: CorresPalette.swipeArchive

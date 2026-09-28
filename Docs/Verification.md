@@ -2,6 +2,21 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Swipe rebuild (September 27, 2026)
+
+Reported: left and right swipes, short and long, weren't smooth. Cause: a SwiftUI `DragGesture` inside a scrolling `List` competes with the list's own pan for the same touches, so rows stuttered, scrolling hitched, and diagonal drags misfired.
+
+- `PremiumSwipeRow` now uses a `UIPanGestureRecognizer` through `UIGestureRecognizerRepresentable` (iOS 18+). It begins only when the finger moves clearly sideways (horizontal speed above 1.2× vertical, in a direction that has actions), and never runs at the same time as scrolling. iOS 17 keeps an axis-locked `DragGesture`.
+- **Found while testing:** UIKit only recognizes a pan a beat after the finger starts moving, and `translation(in:)` counts from that moment, so a fast swipe lost most of its distance. A 240pt flick registered 0 and never fired. The distance is now measured from the touch-down point.
+- **Feel:**
+  - Thresholds scale with row width (short at 20%, at least 64pt; long at 55%).
+  - A flick over 700pt/s arms the short action.
+  - The action color fills in and its icon grows as it arms. A haptic marks each threshold, in both directions.
+  - Past the long threshold the row stretches with exponential resistance.
+  - Archive and Trash (and Handled outside Mail) carry the row off screen, then the Undo banner appears. Other actions spring back.
+- Also: the title-tap account menu drew a "Mail ⌄" arrow with a single account; it's now attached only when there are several.
+- Verified in the simulator (logs and screenshots): a long left swipe moves to Trash with Undo, a short right swipe pins, a partial swipe tracks the finger 1:1 and springs back, and a vertical drag scrolls without moving rows. `xcodebuild` BUILD SUCCEEDED, `swift test` 66/66. **On device:** the haptics and the feel at real finger speeds.
+
 ## Batch 3: widgets, Siri and Shortcuts (September 27, 2026)
 
 - **Widget extension `CorresWidgets`** (`studio.anwarcreative.corres.widgets`), embedded in the app, sharing the App Group `group.studio.anwarcreative.corres` (added to both entitlements).

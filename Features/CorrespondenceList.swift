@@ -428,8 +428,10 @@ struct CorrespondenceList: View {
             PremiumSwipeRow(
                 leadingShort: leadingVisual(for: leadingShortAction, thread: thread),
                 leadingLong: leadingVisual(for: leadingLongAction, thread: thread),
-                trailingShort: SwipeVisual(title: trailingShortAction.title, systemImage: trailingShortAction.systemImage, tint: trailingShortAction.tint),
-                trailingLong: SwipeVisual(title: trailingLongAction.title, systemImage: trailingLongAction.systemImage, tint: trailingLongAction.tint),
+                trailingShort: SwipeVisual(title: trailingShortAction.title, systemImage: trailingShortAction.systemImage,
+                                           tint: trailingShortAction.tint, removesRow: trailingShortAction.removesRow(in: destination)),
+                trailingLong: SwipeVisual(title: trailingLongAction.title, systemImage: trailingLongAction.systemImage,
+                                          tint: trailingLongAction.tint, removesRow: trailingLongAction.removesRow(in: destination)),
                 onLeadingShort: { perform(leadingShortAction, on: thread) },
                 onLeadingLong: { perform(leadingLongAction, on: thread) },
                 onTrailingShort: { perform(trailingShortAction, on: thread) },
