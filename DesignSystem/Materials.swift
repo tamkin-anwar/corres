@@ -121,3 +121,18 @@ extension View {
         }
     }
 }
+
+
+extension View {
+    /// Fades the trailing edge of a horizontal scroller, so a row that
+    /// runs past the screen reads as "more this way" rather than cut off.
+    func trailingFade(_ width: CGFloat = CorresSpace.page) -> some View {
+        mask {
+            HStack(spacing: 0) {
+                Color.black
+                LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: width)
+            }
+        }
+    }
+}

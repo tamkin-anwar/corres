@@ -331,13 +331,7 @@ struct CorrespondenceList: View {
         }
         // At larger text sizes the tabs scroll; a soft edge says so instead
         // of cutting the last one off mid-word.
-        .mask {
-            HStack(spacing: 0) {
-                Color.black
-                LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
-                    .frame(width: CorresSpace.page)
-            }
-        }
+        .trailingFade()
         .overlay(alignment: .bottom) { Hairline() }
         .sensoryFeedback(.selection, trigger: mailFilter)
     }

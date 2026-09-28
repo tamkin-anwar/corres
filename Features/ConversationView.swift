@@ -435,6 +435,7 @@ struct ConversationView: View {
                     .padding(.horizontal, CorresSpace.medium)
                     .padding(.vertical, 4)
                 }
+                .trailingFade(CorresSpace.medium)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             actionBar(for: thread)
