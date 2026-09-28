@@ -45,7 +45,6 @@ struct ConversationView: View {
         self.unsubscribeService = unsubscribeService
         self.orderedIDs = route.orderedIDs
         self._currentID = State(initialValue: route.id)
-        self.openedID = route.id
     }
 
     var body: some View {
@@ -196,13 +195,16 @@ struct ConversationView: View {
                             isPresented: Binding(get: { confirmingTrash != nil }, set: { if !$0 { confirmingTrash = nil } }),
                             titleVisibility: .visible) {
             Button("Move to Trash", role: .destructive) {
-                if let thread = confirmingTrash { Task { await threadActions.trash(thread) } }
+                if let thread = confirmingTrash { Task { await threadActions.trash(thread, animated: false) } }
                 confirmingTrash = nil
             }
         }
         .onChange(of: currentID) {
             htmlHeight = 200
             showRemoteImages = false
+            // Keep the list underneath scrolled to the conversation you're
+            // on while it's hidden, so going back shows it already in place.
+            router.returnAnchor = currentID
         }
         // Opening a conversation is itself the signal that it's been seen,
         // the same behavior every real mail client already has.
@@ -221,15 +223,6 @@ struct ConversationView: View {
             if proUnlocked, let current = store.threads.first(where: { $0.id == currentID }) {
                 await intelligence.prepareInsight(for: current)
             }
-        }
-        // Leaving normally: the list comes back to whatever you were
-        // last reading (next/previous may have moved on from the row you
-        // tapped). An archive-driven exit has already set its neighbour.
-        .onDisappear {
-            // Only when you moved on to another email with ⌃/⌄: the row you
-            // opened is still where you left it, and re-centring it would
-            // move the list under your finger.
-            if threadExists, currentID != openedID { router.returnAnchor = currentID }
         }
         .onChange(of: threadExists) { _, stillExists in
             // Archiving or trashing from inside the conversation itself
@@ -272,10 +265,9 @@ struct ConversationView: View {
 
     /// Settings → Reading → Ask before moving to Trash.
     private func requestTrash(_ thread: Correspondence) {
-        if confirmTrash { confirmingTrash = thread } else { Task { await threadActions.trash(thread) } }
+        if confirmTrash { confirmingTrash = thread } else { Task { await threadActions.trash(thread, animated: false) } }
     }
     @Environment(AppRouter.self) private var router
-    private let openedID: ThreadID
 
     private var currentIndex: Int? { orderedIDs.firstIndex(of: currentID) }
     private var hasPrevious: Bool { (currentIndex ?? 0) > 0 }
@@ -541,7 +533,7 @@ struct ConversationView: View {
                 // threadExists observer); the Gmail call happens in the
                 // background, the same as a swipe.
                 barButton("archivebox", "Archive") {
-                    Task { await threadActions.archive(thread) }
+                    Task { await threadActions.archive(thread, animated: false) }
                 }
                 barButton("trash", "Move to Trash") {
                     requestTrash(thread)
@@ -591,7 +583,7 @@ struct ConversationView: View {
             Button("Reply All") { compose(.replyAll, from: thread) }.keyboardShortcut("r", modifiers: [.command, .shift])
             Button("Forward") { compose(.forward, from: thread) }.keyboardShortcut("f", modifiers: [.command, .shift])
             Button("Archive") {
-                Task { await threadActions.archive(thread) }
+                Task { await threadActions.archive(thread, animated: false) }
             }.keyboardShortcut("a", modifiers: [.command, .control])
             Button("Move to Trash") {
                 requestTrash(thread)

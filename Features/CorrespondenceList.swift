@@ -270,11 +270,11 @@ struct CorrespondenceList: View {
     private func restorePosition(_ proxy: ScrollViewProxy) {
         guard let anchor = router.returnAnchor, results.contains(where: { $0.id == anchor }) else { return }
         router.returnAnchor = nil
-        Task { @MainActor in
-            // After the pop animation has laid the list out again.
-            try? await Task.sleep(for: .milliseconds(60))
-            proxy.scrollTo(anchor, anchor: .center)
-        }
+        // Instantly, with no animation: this runs while the list is still
+        // under the conversation, so there's nothing to watch move.
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { proxy.scrollTo(anchor, anchor: .center) }
     }
 
     @ViewBuilder

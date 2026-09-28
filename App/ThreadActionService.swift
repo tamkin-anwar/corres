@@ -48,8 +48,11 @@ final class ThreadActionService {
     private var removalTask: Task<Void, Never>?
     static let undoSeconds = 5
 
-    func archive(_ thread: Correspondence) async { await queueRemoval([thread], kind: .archive) }
-    func trash(_ thread: Correspondence) async { await queueRemoval([thread], kind: .trash) }
+    /// `animated: false` from inside a conversation: the list underneath
+    /// isn't on screen, so it should already be settled when you go back,
+    /// rather than animating the row away as it comes into view.
+    func archive(_ thread: Correspondence, animated: Bool = true) async { await queueRemoval([thread], kind: .archive, animated: animated) }
+    func trash(_ thread: Correspondence, animated: Bool = true) async { await queueRemoval([thread], kind: .trash, animated: animated) }
     func archive(_ threads: [Correspondence]) async { await queueRemoval(threads, kind: .archive) }
     func trash(_ threads: [Correspondence]) async { await queueRemoval(threads, kind: .trash) }
 
@@ -69,10 +72,16 @@ final class ThreadActionService {
         await commit(pending)
     }
 
-    private func queueRemoval(_ threads: [Correspondence], kind: RemovalKind) async {
+    private func queueRemoval(_ threads: [Correspondence], kind: RemovalKind, animated: Bool = true) async {
         guard !threads.isEmpty else { return }
         await commitPendingRemoval()
-        withAnimation(.snappy(duration: 0.3)) { for thread in threads { store.hide(thread.id) } }
+        if animated {
+            withAnimation(.snappy(duration: 0.3)) { for thread in threads { store.hide(thread.id) } }
+        } else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { for thread in threads { store.hide(thread.id) } }
+        }
         let pending = PendingRemoval(threads: threads, kind: kind, secondsRemaining: Self.undoSeconds)
         pendingRemoval = pending
         removalTask = Task { [weak self] in
