@@ -71,6 +71,10 @@ struct ConversationView: View {
                         }
                         messageHeader(for: thread)
                             .padding(.horizontal, CorresSpace.page)
+                        if let calendarEvent, !thread.isFromAccountOwner {
+                            CalendarSuggestionCard(event: calendarEvent)
+                                .padding(.horizontal, CorresSpace.page)
+                        }
                         privacyLine(for: thread)
                             .padding(.horizontal, CorresSpace.page)
                         if unsubscribeService.canUnsubscribe(thread) && !thread.senderUnsubscribed {
@@ -202,6 +206,7 @@ struct ConversationView: View {
         .onChange(of: currentID) {
             htmlHeight = 200
             showRemoteImages = false
+            calendarEvent = nil
             // Keep the list underneath scrolled to the conversation you're
             // on while it's hidden, so going back shows it already in place.
             router.returnAnchor = currentID
@@ -220,6 +225,10 @@ struct ConversationView: View {
             }
             await loaded
             await conversation
+            // The event this email is about, once its full text is here.
+            if let current = store.threads.first(where: { $0.id == currentID }) {
+                calendarEvent = MailSignals.event(in: current.body, subject: current.subject)
+            }
             if proUnlocked, let current = store.threads.first(where: { $0.id == currentID }) {
                 await intelligence.prepareInsight(for: current)
             }
@@ -261,6 +270,7 @@ struct ConversationView: View {
     @AppStorage(CorresSettings.markReadOnOpenKey) private var markReadOnOpen = true
     @AppStorage(CorresSettings.confirmTrashKey) private var confirmTrash = false
     @State private var confirmingTrash: Correspondence?
+    @State private var calendarEvent: EventSuggestion?
     private var loadsImages: Bool { remoteImages == CorresSettings.RemoteImages.always.rawValue }
 
     /// Settings → Reading → Ask before moving to Trash.

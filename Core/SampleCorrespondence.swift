@@ -10,11 +10,19 @@ public enum SampleCorrespondence {
             ("Emma Park", "Form & Function", "The material samples", "Our workshop is preparing the samples you requested.", "You asked Emma for samples. She is arranging delivery.", .waiting, 5_820, nil),
             ("The Editorial", "Collected", "A little perspective", "This week's reading, collected in one place.", "A reading digest with no request addressed to you.", .quiet, 360, nil)
         ]
+        // Sofia's meeting has a real time and place, so sample mail shows
+        // the calendar suggestion.
+        let thursday = Calendar.current.nextDate(after: now, matching: DateComponents(hour: 15, minute: 0, weekday: 5),
+                                                 matchingPolicy: .nextTime) ?? now.addingTimeInterval(3 * 86_400)
+        let meeting = thursday.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) + " at 3:00 PM"
         return records.enumerated().map { index, row in
-            Correspondence(
+            let details = row.0 == "Sofia Laurent"
+                ? "\n\nThe meeting is \(meeting), at Maison Studio, 120 Grand Street, New York, NY 10013."
+                : ""
+            return Correspondence(
                 id: ThreadID(account: "sample", providerID: "sample-\(index)"),
                 sender: row.0, organization: row.1, subject: row.2, excerpt: row.3,
-                body: "Hello,\n\n\(row.3)\n\nWe have taken time to consider the details and would appreciate your perspective. Everything you need for this conversation is here.\n\nWarmly,\n\(row.0)",
+                body: "Hello,\n\n\(row.3)\(details)\n\nWe have taken time to consider the details and would appreciate your perspective. Everything you need for this conversation is here.\n\nWarmly,\n\(row.0)",
                 receivedAt: now.addingTimeInterval(Double(-row.6 * 60)),
                 dueAt: row.7.map { now.addingTimeInterval(Double($0 * 3600)) },
                 reason: row.4, attention: row.5

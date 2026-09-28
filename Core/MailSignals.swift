@@ -99,3 +99,63 @@ public enum MailSignals {
         }
     }
 }
+
+/// Something the reader could put on their calendar: an appointment, a
+/// reservation, a meeting, a flight, an interview. Found with Apple's own
+/// date and address detectors, the same way Mail offers "Add to Calendar".
+public struct EventSuggestion: Equatable, Sendable {
+    public let title: String
+    public let start: Date
+    public let location: String?
+
+    public init(title: String, start: Date, location: String?) {
+        self.title = title
+        self.start = start
+        self.location = location
+    }
+}
+
+public extension MailSignals {
+    private static let eventWords = #"appointment|reservation|booking|meeting|interview|flight|check-in|event|dinner|lunch|call|webinar|session|visit|consultation|class|concert|show"#
+
+    /// The event an email is about, when it names one with a time: the
+    /// earliest upcoming date that has a clock time, within the next three
+    /// months. Title is the name before the event word ("Labcorp
+    /// Appointment"), else the subject.
+    static func event(in text: String, subject: String, now: Date = .now) -> EventSuggestion? {
+        let own = String(ownText(text).prefix(6_000))
+        let all = subject + "\n" + own
+        guard all.range(of: "(?i)\\b(" + eventWords + ")\\b", options: .regularExpression) != nil,
+              let dates = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else { return nil }
+        let ns = own as NSString
+        let timed = dates.matches(in: own, range: NSRange(location: 0, length: ns.length)).compactMap { match -> Date? in
+            guard let date = match.date, date > now, date < now.addingTimeInterval(92 * 86_400) else { return nil }
+            // Only dates that name a time ("2:45 PM", "at 3"), not a bare day.
+            let phrase = ns.substring(with: match.range).lowercased()
+            return phrase.range(of: #"\d:\d\d|\d\s?(am|pm)\b|noon"#, options: .regularExpression) != nil ? date : nil
+        }
+        guard let start = timed.min() else { return nil }
+
+        var location: String?
+        if let addresses = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.address.rawValue),
+           let match = addresses.firstMatch(in: own, range: NSRange(location: 0, length: ns.length)) {
+            location = ns.substring(with: match.range)
+                .replacingOccurrences(of: #"\s*\n\s*"#, with: ", ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        var title = subject.trimmingCharacters(in: .whitespacesAndNewlines)
+        // A capitalised name right before the event word ("Labcorp
+        // appointment", "Delta flight"); the event word in any case.
+        let named = try? NSRegularExpression(pattern: "\\b([A-Z][\\w&'.-]*)\\s+(?i:(" + eventWords + "))\\b")
+        let skip: Set<String> = ["your", "the", "our", "this", "an", "a", "upcoming", "next", "for", "of", "my", "new"]
+        for match in named?.matches(in: all, range: NSRange(location: 0, length: (all as NSString).length)) ?? [] {
+            let name = (all as NSString).substring(with: match.range(at: 1))
+            guard !skip.contains(name.lowercased()) else { continue }
+            let kind = (all as NSString).substring(with: match.range(at: 2))
+            title = name + " " + kind.prefix(1).uppercased() + kind.dropFirst().lowercased()
+            break
+        }
+        return EventSuggestion(title: title, start: start, location: location)
+    }
+}

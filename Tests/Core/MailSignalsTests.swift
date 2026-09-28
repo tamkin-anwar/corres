@@ -207,4 +207,23 @@ struct MailSignalsTests {
         #expect(MailSignals.isObligation("Your Labcorp appointment is tomorrow at 9:00 AM."))
         #expect(MailSignals.isObligation("Signature requested: please sign the lease by Friday."))
     }
+
+    @Test func appointmentEmailsBecomeCalendarEvents() {
+        let calendar = Calendar.current
+        let now = Date()
+        let day = calendar.date(byAdding: .day, value: 1, to: now)!
+        let parts = calendar.dateComponents([.year, .month, .day], from: day)
+        let text = """
+        We look forward to seeing you at your Labcorp appointment tomorrow.
+        Date and time: \(parts.month!)/\(parts.day!)/\(parts.year!) 2:45 PM
+        Location: 100 W Ontario Ave, Corona, CA 92882
+        """
+        let event = MailSignals.event(in: text, subject: "Your Labcorp appointment is tomorrow", now: now)
+        #expect(event?.title == "Labcorp Appointment")
+        #expect(event.map { calendar.component(.hour, from: $0.start) } == 14)
+        #expect(event?.location?.contains("Corona") == true)
+        // A date with no time, or no event at all, isn't offered.
+        #expect(MailSignals.event(in: "Your order shipped \(parts.month!)/\(parts.day!)/\(parts.year!).", subject: "Shipped", now: now) == nil)
+        #expect(MailSignals.event(in: "Your appointment is on \(parts.month!)/\(parts.day!)/\(parts.year!).", subject: "Reminder", now: now) == nil)
+    }
 }

@@ -45,7 +45,12 @@ struct HTMLMessageBody: UIViewRepresentable {
         // instances (WKWebViewPool) make this worse, not better: a reused
         // webview can carry a stale style into a differently-styled
         // conversation, so this can't just be set once at creation.
-        webView.overrideUserInterfaceStyle = colorScheme == .dark ? .dark : .light
+        // A designed email (its own backgrounds and colours) is shown as its
+        // sender made it, on its own white card, the way Mail does: forcing
+        // light text onto it in Dark mode put white text on its white
+        // tables. Only plain mail from people is adapted to Dark mode.
+        let designed = Self.isDesigned(html)
+        webView.overrideUserInterfaceStyle = designed ? .light : (colorScheme == .dark ? .dark : .light)
         // Checked against the raw inputs, not the processed/wrapped output:
         // SwiftUI re-invokes updateUIView on any state change anywhere this
         // view observes (e.g. an unrelated background sync mutating
@@ -73,7 +78,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         // resolved (nothing is loaded from it; the page content comes
         // entirely from loadHTMLString), it exists only to give the page
         // a real https origin.
-        webView.loadHTMLString(Self.wrap(processed), baseURL: Self.placeholderBaseURL)
+        webView.loadHTMLString(Self.wrap(processed, adaptsToDark: !designed), baseURL: Self.placeholderBaseURL)
     }
 
     private static let placeholderBaseURL = URL(string: "https://mail.corres.app/")
@@ -181,7 +186,26 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// there's real overflow to correct; the earlier bug was that
     /// forcing `width=1024` manufactured false overflow for content that
     /// never had any, not a flaw in that check itself.
-    private static func wrap(_ html: String) -> String {
+    /// Mail that sets its own look: background colours, colour on its
+    /// text, or a style sheet (marketing, receipts, notifications, and
+    /// mail from Outlook). Plain mail from Gmail or Mail has none of these.
+    static func isDesigned(_ html: String) -> Bool {
+        let lower = html.lowercased()
+        return lower.range(of: #"bgcolor\s*=|background(-color)?\s*:\s*(#|rgb|white)|<style[\s>]"#,
+                           options: .regularExpression) != nil
+    }
+
+    private static func wrap(_ html: String, adaptsToDark: Bool = true) -> String {
+        guard !adaptsToDark else { return wrapAdaptive(html) }
+        // As the sender designed it: light only, on white, their colours.
+        return wrapAdaptive(html)
+            .replacingOccurrences(of: ":root { color-scheme: light dark; }",
+                                  with: ":root { color-scheme: light only; } html, body { background: #FFFFFF !important; }")
+            .replacingOccurrences(of: #"@media \(prefers-color-scheme: dark\) \{[\s\S]*?\n        \}\n"#,
+                                  with: "", options: .regularExpression)
+    }
+
+    private static func wrapAdaptive(_ html: String) -> String {
         """
         <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
