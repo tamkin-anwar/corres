@@ -58,6 +58,10 @@ struct ConversationView: View {
                             .textSelection(.enabled)
                             .accessibilityAddTraits(.isHeader)
                             .padding(.horizontal, CorresSpace.page)
+                        if thread.senderDecision == .pending, let email = thread.senderEmail {
+                            newSenderCard(thread: thread, email: email)
+                                .padding(.horizontal, CorresSpace.page)
+                        }
                         inShortCard(for: thread)
                             .padding(.horizontal, CorresSpace.page)
                         if let earlier = earlierMessages(in: thread), !earlier.isEmpty {
@@ -462,6 +466,41 @@ struct ConversationView: View {
         }
         .padding(.bottom, 6)
         .animation(.easeOut(duration: 0.25), value: intelligence.insight(for: thread)?.replyIntents)
+    }
+
+    /// Opened from a "New sender" notification: decide right here instead
+    /// of hunting for them in New senders.
+    private func newSenderCard(thread: Correspondence, email: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label {
+                Text("First email from \(email). Allow them to see their mail in Corres from now on.")
+                    .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "checkmark.shield").foregroundStyle(CorresPalette.accent)
+            }
+            .font(.subheadline)
+            // Same pair, same order and styles as the New senders screen.
+            HStack(spacing: 10) {
+                Button {
+                    Task { await store.approveSender(email, account: thread.id.account) }
+                } label: {
+                    Text("Allow").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(CorresMetalCapsuleStyle(minHeight: 44))
+                Button {
+                    Task {
+                        await store.blockSender(email, account: thread.id.account)
+                        dismiss()
+                    }
+                } label: {
+                    Text("Block").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(CorresPillStyle(minHeight: 44))
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .corresSurface()
     }
 
     private func actionBar(for thread: Correspondence) -> some View {

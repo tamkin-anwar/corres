@@ -195,12 +195,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         await store.load()
         func newlyUnreadThreads() -> [Correspondence] {
             store.threads.filter { thread in
-                thread.isUnread && previousUnread[thread.id] != true
-                    // Matches the Screener's own rule for ordinary browsing:
-                    // a pending/blocked sender's first message doesn't
-                    // belong in a notification either.
-                    && thread.senderDecision == .approved
+                thread.isUnread && previousUnread[thread.id] != true && thread.senderDecision == .approved
             }
+        }
+        // First emails from senders still in New senders, filtered by
+        // Settings → Notifications → New senders.
+        let newSenders = store.threads.filter { thread in
+            thread.isUnread && previousUnread[thread.id] != true
+                && PushNotificationService.NewSenderAlerts.includes(thread)
         }
         // Triage only what just arrived, before deciding what to notify
         // about, so "Only notify for what needs me" acts on a refined
@@ -212,7 +214,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         await semanticTriageService.triageIfNeeded(store: store, only: Set(newlyUnreadThreads().map(\.id)))
         let newlyUnread = newlyUnreadThreads()
         // Settings → Notifications (see PushNotificationService.Level).
-        let toNotify = newlyUnread.filter(PushNotificationService.Level.current.includes)
+        let toNotify = newlyUnread.filter(PushNotificationService.Level.current.includes) + newSenders
         pushService.notifyAboutNewMail(toNotify)
         WidgetBridge.update(from: store.threads)
         return .newData

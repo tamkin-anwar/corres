@@ -196,6 +196,31 @@ final class PushNotificationService {
         }
     }
 
+    /// First emails from someone not yet allowed wait in New senders.
+    /// Which of them still notify, modelled on iOS 26 Messages' "Screen
+    /// Unknown Senders" (Allow Notifications: Time Sensitive, Personal,
+    /// Transactions, Promotions). Apple turns on only Time Sensitive;
+    /// Corres also turns on people, so a first email from a landlord or
+    /// recruiter isn't missed. Blocked senders never notify.
+    enum NewSenderAlerts {
+        static let timeSensitiveKey = "corres.newSenders.timeSensitive"
+        static let peopleKey = "corres.newSenders.people"
+        static let otherKey = "corres.newSenders.other"
+
+        static func includes(_ thread: Correspondence) -> Bool {
+            guard thread.senderDecision == .pending else { return false }
+            let defaults = UserDefaults.standard
+            func on(_ key: String, _ fallback: Bool) -> Bool { defaults.object(forKey: key) as? Bool ?? fallback }
+            let timeSensitive = thread.dueAt != nil
+                || [InboxClassifier.obligationReason, InboxClassifier.deadlineReason].contains(thread.reason)
+            if timeSensitive { return on(timeSensitiveKey, true) }
+            if InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == nil {
+                return on(peopleKey, true)
+            }
+            return on(otherKey, false)
+        }
+    }
+
     static let messageCategory = "corres.message"
     static let archiveAction = "corres.archive"
     static let markReadAction = "corres.markRead"
@@ -217,7 +242,7 @@ final class PushNotificationService {
         let content = UNMutableNotificationContent()
         if threads.count == 1, let thread = threads.first {
             content.title = thread.sender
-            content.subtitle = thread.subject
+            content.subtitle = thread.senderDecision == .pending ? "New sender · \(thread.subject)" : thread.subject
             content.body = thread.excerpt
         } else {
             content.title = "\(threads.count) new messages"

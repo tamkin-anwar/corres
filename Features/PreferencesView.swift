@@ -491,6 +491,9 @@ private struct NotificationSettingsView: View {
     var auth: GoogleAuthService
     @Bindable var pushService: PushNotificationService
     @AppStorage(PushNotificationService.Level.key) private var level = PushNotificationService.Level.current.rawValue
+    @AppStorage(PushNotificationService.NewSenderAlerts.timeSensitiveKey) private var newTimeSensitive = true
+    @AppStorage(PushNotificationService.NewSenderAlerts.peopleKey) private var newPeople = true
+    @AppStorage(PushNotificationService.NewSenderAlerts.otherKey) private var newOther = false
 
     var body: some View {
         Form {
@@ -521,6 +524,15 @@ private struct NotificationSettingsView: View {
                 } footer: {
                     Text((PushNotificationService.Level(rawValue: level) ?? .people).detail
                          + " Everything is always in Corres when you open it.")
+                }
+                Section {
+                    Toggle("Time-sensitive", isOn: $newTimeSensitive)
+                    Toggle("From a person", isOn: $newPeople)
+                    Toggle("Everything else", isOn: $newOther)
+                } header: {
+                    Text("New senders")
+                } footer: {
+                    Text("Someone's first email waits in New senders until you allow them. These still notify, marked \u{201C}New sender\u{201D}, and you can allow or block them right from the email. Blocked senders never notify.")
                 }
             }
         }
