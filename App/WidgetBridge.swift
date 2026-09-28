@@ -12,8 +12,8 @@ enum WidgetBridge {
 
     static func update(from threads: [Correspondence]) {
         let now = Date.now
-        let needs = MailQuery.filter(threads, attention: .needsYou, now: now)
-        let waiting = MailQuery.filter(threads, attention: .waiting, now: now)
+        let needs = MailQuery.prioritized(threads, attention: .needsYou, now: now)
+        let waiting = MailQuery.prioritized(threads, attention: .waiting, now: now)
         let unread = MailQuery.filter(threads, now: now).filter(\.isUnread).count
         func item(_ thread: Correspondence) -> WidgetSnapshot.Item {
             WidgetSnapshot.Item(account: thread.id.account, threadID: thread.id.providerID, sender: thread.sender,

@@ -631,18 +631,32 @@ struct GmailAPIClient {
             && (headers["list-unsubscribe-post"]?.lowercased().contains("one-click") ?? false)
         let automated = Correspondence.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto,
                                                    listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail)
-        let (attention, reason) = InboxClassifier.initialAttention(isUnread: isUnread, labelIds: message.labelIds ?? [],
-                                                                  looksAutomated: automated, receivedAt: receivedAt)
+        // What the message itself says: the subject plus the full text
+        // when it's here, or Gmail's snippet (the opening) until it is.
+        let text = subject + "\n" + body
+        let asks = MailSignals.asksSomething(text)
+        let fromYou = senderEmail.lowercased() == account.lowercased()
+        let deadline = fromYou ? nil : MailSignals.deadline(in: text)
+        var (attention, reason) = InboxClassifier.initialAttention(
+            isUnread: isUnread, labelIds: message.labelIds ?? [], looksAutomated: automated, receivedAt: receivedAt,
+            isCopiedOnly: Correspondence.isCopiedOnly(account: account, to: toRecipients, cc: ccRecipients),
+            asksSomething: asks, deadline: deadline, text: text)
+        if fromYou {
+            (attention, reason) = InboxClassifier.afterYouWrote(
+                asksSomething: asks, toPeople: MailSignals.hasPersonRecipient(toRecipients + ccRecipients, account: account),
+                sentAt: receivedAt)
+        }
         return Correspondence(
             id: ThreadID(account: account, providerID: message.threadId ?? message.id),
             sender: sender, senderEmail: senderEmail, organization: organization, subject: subject,
             excerpt: (message.snippet ?? "").decodingHTMLEntities, body: body, htmlBody: htmlBody, messageIdHeader: messageIdHeader,
-            latestMessageID: message.id, receivedAt: receivedAt, dueAt: nil,
+            latestMessageID: message.id, receivedAt: receivedAt, dueAt: attention == .needsYou ? deadline : nil,
             reason: reason, attention: attention, attachments: attachments, isUnread: isUnread,
             labelIds: message.labelIds ?? [],
             toRecipients: toRecipients, ccRecipients: ccRecipients,
             listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
-            listUnsubscribeOneClick: listUnsubscribeOneClick, isBodyLoaded: bodyLoaded)
+            listUnsubscribeOneClick: listUnsubscribeOneClick, isBodyLoaded: bodyLoaded,
+            waitingSince: attention == .waiting ? receivedAt : nil)
     }
 
     /// A real attachment (something to download) versus an inline image

@@ -98,6 +98,7 @@ public actor SwiftDataMailRepository: MailRepository {
     @discardableResult
     public func applyLoadedContent(_ items: [Correspondence]) throws -> Int {
         guard !items.isEmpty else { return 0 }
+        let correspondents = Self.correspondents(in: try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>()), plus: [])
         var filled = 0
         for item in items {
             let compositeID = PersistedCorrespondence.compositeID(account: item.id.account, providerID: item.id.providerID)
@@ -109,6 +110,9 @@ public actor SwiftDataMailRepository: MailRepository {
             model.htmlBody = item.htmlBody
             model.attachmentsData = (try? JSONEncoder().encode(item.attachments)) ?? Data()
             model.isBodyLoaded = true
+            // The snippet was only the opening; the whole message can hold
+            // the question or the deadline.
+            Self.applyRules(to: model, correspondents: correspondents, now: .now)
             filled += 1
         }
         if filled > 0 { try modelContext.save() }
@@ -130,30 +134,70 @@ public actor SwiftDataMailRepository: MailRepository {
         for model in models {
             let decoded = model.excerpt.decodingHTMLEntities
             if decoded != model.excerpt { model.excerpt = decoded }
-            guard model.attentionRaw == Attention.needsYou.rawValue || model.attentionRaw == Attention.quiet.rawValue,
-                  InboxClassifier.ruleReasons.contains(model.reason),
-                  model.triagedMessageID == nil else { continue }
-            let automated = Correspondence.isAutomated(listUnsubscribeMailto: model.listUnsubscribeMailto,
-                                                       listUnsubscribeURL: model.listUnsubscribeURL,
-                                                       senderEmail: model.senderEmail)
-            var (attention, reason) = InboxClassifier.initialAttention(isUnread: model.isUnread,
-                                                                      labelIds: model.labelIds,
-                                                                      looksAutomated: automated,
-                                                                      receivedAt: model.receivedAt)
-            if let senderEmail = model.senderEmail?.lowercased(), senderEmail != model.account.lowercased(),
-               let override = InboxClassifier.correspondentOverride(
-                   isUnread: model.isUnread,
-                   hasListUnsubscribe: model.listUnsubscribeMailto != nil || model.listUnsubscribeURL != nil,
-                   isCorrespondent: correspondents.contains(Self.senderKey(account: model.account, senderEmail: senderEmail)),
-                   isStale: InboxClassifier.isStale(receivedAt: model.receivedAt, now: .now)) {
-                (attention, reason) = override
-            }
-            if attention.rawValue != model.attentionRaw { changed += 1 }
-            model.attentionRaw = attention.rawValue
-            model.reason = reason
+            if Self.applyRules(to: model, correspondents: correspondents, now: .now) { changed += 1 }
         }
         try modelContext.save()
         return changed
+    }
+
+    /// Re-runs `InboxClassifier` on a thread whose place is still purely a
+    /// rule decision (a rule reason, never triaged, never moved by the
+    /// person), using everything now known about it. Returns whether its
+    /// attention changed. Safe to call whenever the rules improve or a
+    /// message's full text arrives.
+    @discardableResult
+    static func applyRules(to model: PersistedCorrespondence, correspondents: Set<String>, now: Date) -> Bool {
+        let movable: Set<String> = [Attention.needsYou.rawValue, Attention.quiet.rawValue, Attention.waiting.rawValue]
+        guard movable.contains(model.attentionRaw),
+              InboxClassifier.ruleReasons.contains(model.reason),
+              model.triagedMessageID == nil,
+              model.account != "sample" else { return false }
+        // Waiting that the person chose themselves carries no rule reason;
+        // only a rule-made Waiting may be re-decided.
+        if model.attentionRaw == Attention.waiting.rawValue, model.reason != InboxClassifier.askedReason { return false }
+        let text = model.subject + "\n" + (model.body.isEmpty ? model.excerpt : model.body)
+        let asks = MailSignals.asksSomething(text)
+        let before = model.attentionRaw
+        let fromYou = model.senderEmail?.lowercased() == model.account.lowercased()
+        var attention: Attention
+        var reason: String
+        var due: Date?
+        if fromYou {
+            (attention, reason) = InboxClassifier.afterYouWrote(
+                asksSomething: asks,
+                toPeople: MailSignals.hasPersonRecipient(model.toRecipients + model.ccRecipients, account: model.account),
+                sentAt: model.receivedAt, now: now)
+        } else {
+            // Relative dates ("by Friday") only mean something for recent mail.
+            let recent = now.timeIntervalSince(model.receivedAt) < InboxClassifier.waitingWindow
+            due = recent ? MailSignals.deadline(in: text, now: now) : nil
+            let automated = Correspondence.isAutomated(listUnsubscribeMailto: model.listUnsubscribeMailto,
+                                                       listUnsubscribeURL: model.listUnsubscribeURL,
+                                                       senderEmail: model.senderEmail)
+            let copied = Correspondence.isCopiedOnly(account: model.account, to: model.toRecipients, cc: model.ccRecipients)
+            (attention, reason) = InboxClassifier.initialAttention(
+                isUnread: model.isUnread, labelIds: model.labelIds, looksAutomated: automated,
+                receivedAt: model.receivedAt, now: now, isCopiedOnly: copied, asksSomething: asks,
+                deadline: due, text: text)
+            if let senderEmail = model.senderEmail?.lowercased(),
+               let override = InboxClassifier.correspondentOverride(
+                   isUnread: model.isUnread,
+                   hasListUnsubscribe: model.listUnsubscribeMailto != nil || model.listUnsubscribeURL != nil,
+                   isCorrespondent: correspondents.contains(senderKey(account: model.account, senderEmail: senderEmail)),
+                   isStale: InboxClassifier.isStale(receivedAt: model.receivedAt, now: now),
+                   isCopiedOnly: copied, currentReason: reason) {
+                (attention, reason) = override
+            }
+        }
+        model.attentionRaw = attention.rawValue
+        model.reason = reason
+        model.dueAt = attention == .needsYou ? due : nil
+        if attention == .waiting {
+            if model.waitingSince == nil { model.waitingSince = model.receivedAt }
+        } else {
+            model.waitingSince = nil
+        }
+        return before != model.attentionRaw
     }
 
     public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {
@@ -164,24 +208,37 @@ public actor SwiftDataMailRepository: MailRepository {
             // OutboxService already sent this via Gmail; falling back to the
             // local "sample" account only when it stayed local-only (no
             // account connected).
+            let (attention, reason) = Self.afterSending(draft, sentAt: sentAt)
             let created = Correspondence(
                 id: realThreadID ?? ThreadID(account: Self.localAccount, providerID: UUID().uuidString),
                 sender: sender, organization: "", subject: subject,
                 excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
-                reason: "You started this conversation. Waiting for a response.",
-                attention: .waiting, waitingSince: sentAt)
+                reason: reason, attention: attention, waitingSince: attention == .waiting ? sentAt : nil)
             modelContext.insert(PersistedCorrespondence(from: created))
             try modelContext.save()
             return created
         }
         let model = try fetchOne(threadID)
-        model.attentionRaw = Attention.waiting.rawValue
-        model.waitingSince = sentAt
+        let (attention, reason) = Self.afterSending(draft, sentAt: sentAt)
+        model.attentionRaw = attention.rawValue
+        model.reason = reason
+        model.waitingSince = attention == .waiting ? sentAt : nil
+        model.dueAt = nil
         model.snoozedUntil = nil
-        let verb = draft.kind == .forward ? "forwarded this" : "replied"
-        model.reason = "You \(verb) just now. Waiting for their response."
         try modelContext.save()
         return model.asCorrespondence
+    }
+
+    /// Waiting only if what you sent asks a person for something; a
+    /// "Thanks!" or an FYI is simply done.
+    private static func afterSending(_ draft: Draft, sentAt: Date) -> (attention: Attention, reason: String) {
+        let recipients = (draft.to + "," + (draft.cc ?? "")).split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        // Sample and bare-name recipients have no address to check; treat
+        // them as people.
+        let toPeople = recipients.isEmpty || MailSignals.hasPersonRecipient(recipients, account: draft.fromAccount ?? "")
+        return InboxClassifier.afterYouWrote(asksSomething: MailSignals.asksSomething(draft.subject + "\n" + draft.body),
+                                             toPeople: toPeople, sentAt: sentAt, now: sentAt)
     }
 
     public func remove(_ id: ThreadID) throws {
@@ -230,7 +287,8 @@ public actor SwiftDataMailRepository: MailRepository {
                    isUnread: item.isUnread,
                    hasListUnsubscribe: item.listUnsubscribeMailto != nil || item.listUnsubscribeURL != nil,
                    isCorrespondent: correspondents.contains(Self.senderKey(account: item.id.account, senderEmail: senderEmail)),
-                   isStale: InboxClassifier.isStale(receivedAt: item.receivedAt, now: .now)) {
+                   isStale: InboxClassifier.isStale(receivedAt: item.receivedAt, now: .now),
+                   isCopiedOnly: item.isCopiedOnly, currentReason: item.reason) {
                 item.attention = override.attention
                 item.reason = override.reason
             }
@@ -248,7 +306,7 @@ public actor SwiftDataMailRepository: MailRepository {
                 // regardless of fetch order.
                 guard let incomingMessageID = item.latestMessageID, incomingMessageID != existing.latestMessageID,
                       item.receivedAt >= existing.receivedAt else { continue }
-                let isFromAccountOwner = item.senderEmail != nil && item.senderEmail == item.id.account
+                let isFromAccountOwner = item.isFromAccountOwner
                 existing.sender = item.sender
                 existing.senderEmail = item.senderEmail
                 existing.organization = item.organization
@@ -286,6 +344,15 @@ public actor SwiftDataMailRepository: MailRepository {
                 if isFromAccountOwner && existing.attentionRaw == Attention.waiting.rawValue {
                     // Gmail's own record of when you sent it is the truth.
                     existing.waitingSince = item.receivedAt
+                } else if isFromAccountOwner {
+                    // You wrote in this thread, from Corres or any other app
+                    // (Gmail on the web, Apple Mail): your part is done. It
+                    // waits on them if you asked something, otherwise it
+                    // leaves Needs You.
+                    existing.attentionRaw = item.attention.rawValue
+                    existing.reason = item.reason
+                    existing.dueAt = nil
+                    existing.waitingSince = item.attention == .waiting ? item.receivedAt : nil
                 }
                 if !isFromAccountOwner {
                     // They replied: whatever you were waiting on has arrived.
@@ -298,6 +365,7 @@ public actor SwiftDataMailRepository: MailRepository {
                     existing.reason = item.reason
                     existing.attentionRaw = item.attention.rawValue
                     existing.isUnread = item.isUnread
+                    existing.dueAt = item.dueAt
                 }
                 changed = true
                 continue

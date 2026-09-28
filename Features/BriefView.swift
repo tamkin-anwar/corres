@@ -20,8 +20,8 @@ struct BriefView: View {
         return store.threads.filter { $0.id.account == accountFilter }
     }
     private var snapshot: BriefSnapshot { BriefSnapshot(threads: scopedThreads, now: .now) }
-    private var priorities: [Correspondence] { MailQuery.filter(scopedThreads, attention: .needsYou) }
-    private var waiting: [Correspondence] { MailQuery.filter(scopedThreads, attention: .waiting) }
+    private var priorities: [Correspondence] { MailQuery.prioritized(scopedThreads, attention: .needsYou) }
+    private var waiting: [Correspondence] { MailQuery.prioritized(scopedThreads, attention: .waiting) }
     private var pendingSenderCount: Int {
         let pending = accountFilter == nil ? store.pendingSenderThreads : store.pendingSenderThreads.filter { $0.id.account == accountFilter }
         return Set(pending.compactMap(\.senderEmail)).count
@@ -135,7 +135,17 @@ struct BriefView: View {
             }
         }
         if !waiting.isEmpty {
-            plain(" You're waiting on \(Self.spelled(waiting.count)) \(waiting.count == 1 ? "reply" : "replies").")
+            plain(" You're waiting on \(Self.spelled(waiting.count)) \(waiting.count == 1 ? "reply" : "replies")")
+            // Name whoever has gone quiet longest, once it's worth a nudge.
+            if let overdue = waiting.min(by: { $0.waitingReference < $1.waitingReference }),
+               let days = Calendar.current.dateComponents([.day], from: overdue.waitingReference, to: .now).day,
+               days >= WaitChip.followUpAfterDays {
+                plain("; ")
+                strong(Self.firstName(overdue.sender))
+                plain(" hasn't replied in \(Self.spelled(days)) days.")
+            } else {
+                plain(".")
+            }
         }
         return text
     }

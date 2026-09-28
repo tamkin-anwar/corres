@@ -7,7 +7,7 @@ public enum SampleCorrespondence {
             ("Oliver Grant", "Fieldwork", "A moment before we move forward", "Two options for the launch. One decision to make.", "Oliver is waiting for your choice between the two launch approaches.", .needsYou, 38, nil),
             ("Sofia Laurent", "Maison Studio", "A place at the table", "Could you confirm Thursday's conversation?", "Sofia requested a meeting confirmation within the next day.", .needsYou, 64, 8),
             ("James Okafor", "Common Ground", "Partnership proposal", "I will send the revised scope once our team has reviewed it.", "James committed to sending a revised scope. Your last reply needs no action.", .waiting, 140, nil),
-            ("Emma Park", "Form & Function", "The material samples", "Our workshop is preparing the samples you requested.", "You asked Emma for samples. She is arranging delivery.", .waiting, 240, nil),
+            ("Emma Park", "Form & Function", "The material samples", "Our workshop is preparing the samples you requested.", "You asked Emma for samples. She is arranging delivery.", .waiting, 5_820, nil),
             ("The Editorial", "Collected", "A little perspective", "This week's reading, collected in one place.", "A reading digest with no request addressed to you.", .quiet, 360, nil)
         ]
         return records.enumerated().map { index, row in

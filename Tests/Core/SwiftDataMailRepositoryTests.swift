@@ -42,17 +42,31 @@ struct SwiftDataMailRepositoryTests {
         let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
         try await repository.seedIfNeeded(now: now)
         let original = try #require(await repository.threads().first { $0.attention == .needsYou })
-        let draft = Draft(kind: .reply, threadID: original.id, to: original.sender, subject: "Re: \(original.subject)", body: "On it.")
+        let draft = Draft(kind: .reply, threadID: original.id, to: original.sender, subject: "Re: \(original.subject)",
+                          body: "Looks good. Can you send the final files?")
         let updated = try await repository.send(draft, sentAt: now, realThreadID: nil)
         #expect(updated.attention == .waiting)
-        #expect(updated.reason.contains("replied"))
+        #expect(updated.reason == InboxClassifier.askedReason)
+    }
+
+    /// A reply that asks nothing ("On it.", "Thanks!") finishes your part:
+    /// it leaves Needs You without pretending you're waiting on anyone.
+    @Test func replyingWithoutAskingAnythingIsSimplyDone() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        try await repository.seedIfNeeded(now: now)
+        let original = try #require(await repository.threads().first { $0.attention == .needsYou })
+        let draft = Draft(kind: .reply, threadID: original.id, to: original.sender, subject: "Re: \(original.subject)", body: "On it.")
+        let updated = try await repository.send(draft, sentAt: now, realThreadID: nil)
+        #expect(updated.attention == .quiet)
+        #expect(updated.reason == InboxClassifier.repliedReason)
+        #expect(updated.waitingSince == nil)
     }
 
     @Test func newDraftCreatesATrimmedWaitingConversation() async throws {
         let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
         try await repository.seedIfNeeded(now: now)
         let before = try await repository.threads().count
-        let draft = Draft(kind: .new, to: "  Nadia Osei  ", subject: "  Introduction  ", body: "Hello.")
+        let draft = Draft(kind: .new, to: "  Nadia Osei  ", subject: "  Introduction  ", body: "Hello. Are you free Thursday?")
         let created = try await repository.send(draft, sentAt: now, realThreadID: nil)
         #expect(created.sender == "Nadia Osei")
         #expect(created.subject == "Introduction")
@@ -235,7 +249,8 @@ struct SwiftDataMailRepositoryTests {
                                     senderEmail: "maya@x.test", organization: "", subject: "Plan", excerpt: "",
                                     body: "", receivedAt: received, dueAt: nil, reason: "r", attention: .needsYou)
         try await repository.upsert([thread], isInitialSync: true)
-        let draft = Draft(kind: .reply, threadID: thread.id, fromAccount: "me@x.test", to: "maya@x.test", subject: "Re: Plan")
+        let draft = Draft(kind: .reply, threadID: thread.id, fromAccount: "me@x.test", to: "maya@x.test", subject: "Re: Plan",
+                          body: "Let me know what you decide.")
         let replied = try await repository.send(draft, sentAt: now, realThreadID: nil)
         #expect(replied.attention == .waiting)
         #expect(replied.waitingReference == now)

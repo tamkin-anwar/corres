@@ -212,6 +212,7 @@ final class SemanticTriageService {
         The recipient was \(thread.isDirectRecipient ? "addressed directly (To)" : "only copied (Cc)") on this message.
         \(thread.looksAutomated ? "This message shows signs of being automated or bulk mail (it includes an unsubscribe link, or comes from a no-reply address)." : "")
         \(thread.labelIds.contains("CATEGORY_UPDATES") ? "Gmail filed this under Updates (automated notifications, receipts, account alerts)." : "")
+        \(thread.dueAt.map { "It names a deadline: \($0.formatted(date: .complete, time: .omitted))." } ?? "")
 
         Does this message genuinely need a personal reply, decision, or action from the recipient? How confident are you?
         """

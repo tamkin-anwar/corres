@@ -269,6 +269,23 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         toRecipients.contains(id.account.lowercased())
     }
 
+    /// Named in Cc but not in To. Only this exact case counts: mail that
+    /// reached you through an alias or a group names neither, and isn't
+    /// "copied".
+    public var isCopiedOnly: Bool {
+        Self.isCopiedOnly(account: id.account, to: toRecipients, cc: ccRecipients)
+    }
+
+    public static func isCopiedOnly(account: String, to: [String], cc: [String]) -> Bool {
+        let me = account.lowercased()
+        return cc.contains(me) && !to.contains(me)
+    }
+
+    /// Whether the latest message in this thread is your own.
+    public var isFromAccountOwner: Bool {
+        senderEmail?.lowercased() == id.account.lowercased()
+    }
+
     /// A genuinely new message landed in this same thread (a real reply, or
     /// the first real sync of a message this thread's local placeholder was
     /// only guessing at), used by `upsert` once it has already confirmed
@@ -492,13 +509,27 @@ public enum InboxClassifier {
     public static let correspondentReason = "Unread, from someone you've written to."
     public static let staleReason = "Unread for over a month. Kept out of Needs You."
     public static let readReason = "Already read in Gmail."
+    public static let questionReason = "Asks you something."
+    public static let deadlineReason = "Mentions a deadline."
+    public static let obligationReason = "Has a deadline for you."
+    public static let copiedReason = "You're copied, not asked. Kept out of Needs You."
+    /// Where a thread goes after you write in it, from any app: Waiting if
+    /// you asked something of a person, otherwise done for now.
+    public static let askedReason = "You asked. No reply yet."
+    public static let repliedReason = "You replied. Nothing pending."
 
     /// Every reason these rules can produce for unread mail: a thread
     /// carrying one of these (and never triaged) still reflects a pure rule
     /// decision nobody has overridden, so re-running the rules is safe.
     public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason, staleReason,
+                                                  readReason, questionReason, deadlineReason, obligationReason, copiedReason,
+                                                  askedReason, repliedReason,
                                                   BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,
                                                   BulkKind.updates.reason, BulkKind.automated.reason]
+
+    /// How long after you write something it still counts as waiting on a
+    /// reply when first seen; older than this, the moment has passed.
+    public static let waitingWindow: TimeInterval = 14 * 86_400
 
     /// Sync now reaches hundreds of messages back; an unread personal email
     /// from months ago is history, not a decision waiting on you, and would
@@ -518,9 +549,27 @@ public enum InboxClassifier {
     /// `List-Unsubscribe` header still wins: replying once to a company's
     /// support address shouldn't let its newsletters through.
     public static func correspondentOverride(isUnread: Bool, hasListUnsubscribe: Bool, isCorrespondent: Bool,
-                                             isStale: Bool = false) -> (attention: Attention, reason: String)? {
-        guard isUnread, isCorrespondent, !hasListUnsubscribe, !isStale else { return nil }
+                                             isStale: Bool = false, isCopiedOnly: Bool = false,
+                                             currentReason: String? = nil) -> (attention: Attention, reason: String)? {
+        guard isUnread, isCorrespondent, !hasListUnsubscribe, !isStale, !isCopiedOnly else { return nil }
+        // A more specific reason the rules already found says more than
+        // "someone you've written to".
+        if let currentReason, [questionReason, deadlineReason].contains(currentReason) {
+            return (.needsYou, currentReason)
+        }
         return (.needsYou, correspondentReason)
+    }
+
+    /// The thread's latest message is yours, sent from Corres or any other
+    /// app. Superhuman's "if no reply" reminders and Gmail's follow-up
+    /// nudges both key off the same thing: did your message ask a person
+    /// for something.
+    public static func afterYouWrote(asksSomething: Bool, toPeople: Bool, sentAt: Date,
+                                     now: Date = .now) -> (attention: Attention, reason: String) {
+        if asksSomething, toPeople, now.timeIntervalSince(sentAt) < waitingWindow {
+            return (.waiting, askedReason)
+        }
+        return (.quiet, repliedReason)
     }
 
     /// Gmail's own category labels come first because Gmail's classifier
@@ -538,15 +587,28 @@ public enum InboxClassifier {
         return nil
     }
 
+    /// `text` is the subject and whatever of the message is known yet;
+    /// `deadline` comes from `MailSignals.deadline(in:)` over the same.
     public static func initialAttention(isUnread: Bool, labelIds: [String], looksAutomated: Bool,
-                                        receivedAt: Date? = nil, now: Date = .now) -> (attention: Attention, reason: String) {
+                                        receivedAt: Date? = nil, now: Date = .now,
+                                        isCopiedOnly: Bool = false, asksSomething: Bool = false,
+                                        deadline: Date? = nil, text: String = "") -> (attention: Attention, reason: String) {
         guard isUnread else { return (.quiet, readReason) }
+        let stale = receivedAt.map { isStale(receivedAt: $0, now: now) } ?? false
         if let kind = bulkKind(labelIds: labelIds, looksAutomated: looksAutomated) {
+            // A bill due Thursday is an update that needs you; a sale ending
+            // Thursday never is (promotions aren't promotable).
+            if kind.isPromotable, !stale, deadline != nil, MailSignals.isObligation(text) {
+                return (.needsYou, obligationReason)
+            }
             return (.quiet, kind.reason)
         }
-        if let receivedAt, isStale(receivedAt: receivedAt, now: now) {
-            return (.quiet, staleReason)
-        }
+        if stale { return (.quiet, staleReason) }
+        // Copied on a thread addressed to someone else: Gmail's Priority
+        // Inbox weighs To above Cc for the same reason.
+        if isCopiedOnly { return (.quiet, copiedReason) }
+        if deadline != nil { return (.needsYou, deadlineReason) }
+        if asksSomething { return (.needsYou, questionReason) }
         return (.needsYou, personalUnreadReason)
     }
 }
@@ -584,6 +646,37 @@ public extension String {
 }
 
 public enum MailQuery {
+    /// The curated lists in the order that matters: Needs You with the
+    /// nearest deadline first, then newest; Waiting with whoever has gone
+    /// quiet longest first, since that's the one to nudge. Pinned always
+    /// leads. Mail stays chronological.
+    public static func prioritized(_ threads: [Correspondence], attention: Attention,
+                                   now: Date = .now, dueHorizon: TimeInterval = 3 * 86_400) -> [Correspondence] {
+        let base = filter(threads, attention: attention, now: now)
+        switch attention {
+        case .needsYou:
+            let horizon = now.addingTimeInterval(dueHorizon)
+            return base.sorted {
+                if $0.isPinned != $1.isPinned { return $0.isPinned }
+                let a = $0.dueAt.flatMap { $0 <= horizon ? $0 : nil }
+                let b = $1.dueAt.flatMap { $0 <= horizon ? $0 : nil }
+                switch (a, b) {
+                case let (a?, b?) where a != b: return a < b
+                case (.some, nil): return true
+                case (nil, .some): return false
+                default: return $0.receivedAt > $1.receivedAt
+                }
+            }
+        case .waiting:
+            return base.sorted {
+                if $0.isPinned != $1.isPinned { return $0.isPinned }
+                return $0.waitingReference < $1.waitingReference
+            }
+        default:
+            return base
+        }
+    }
+
     public static func filter(_ threads: [Correspondence], attention: Attention? = nil,
                               search: String = "", now: Date = .now) -> [Correspondence] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)

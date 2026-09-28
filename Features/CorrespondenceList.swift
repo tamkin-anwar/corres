@@ -60,7 +60,11 @@ struct CorrespondenceRow: View {
                     HStack(spacing: 8) {
                         ReasonLine(text: thread.reason, isIntelligence: thread.isIntelligenceReason)
                         Spacer(minLength: 4)
-                        if let due = thread.dueAt, thread.attention == .needsYou { DueChip(date: due) }
+                        if let due = thread.dueAt, thread.attention == .needsYou {
+                            DueChip(date: due)
+                        } else if thread.attention == .waiting {
+                            WaitChip(since: thread.waitingReference)
+                        }
                     }
                     .padding(.top, 4)
                 }
@@ -171,7 +175,12 @@ struct CorrespondenceList: View {
     }
 
     private var results: [Correspondence] {
-        let all = MailQuery.filter(scopedThreads, attention: destination.attention, search: search)
+        let all: [Correspondence]
+        if let attention = destination.attention, search.trimmingCharacters(in: .whitespaces).isEmpty {
+            all = MailQuery.prioritized(scopedThreads, attention: attention)
+        } else {
+            all = MailQuery.filter(scopedThreads, attention: destination.attention, search: search)
+        }
         guard destination == .mail, mailFilter != .everything else { return all }
         return all.filter(mailFilter.includes)
     }
@@ -350,7 +359,7 @@ struct CorrespondenceList: View {
                 .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 18)
         } else if destination == .waiting && !results.isEmpty {
-            Text("Conversations you replied to, or moved here yourself. Corres tracks them from the conversation: no tracking pixels, no read receipts.")
+            Text("Where you asked someone something, from Corres or any other app, or moved it here yourself. Longest wait first; after three days it's time to follow up. No tracking pixels, no read receipts.")
                 .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 18)
         }

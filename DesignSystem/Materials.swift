@@ -98,12 +98,33 @@ struct DueChip: View {
 
     private var label: String {
         let calendar = Calendar.current
+        if date < calendar.startOfDay(for: .now) { return "Overdue" }
         if calendar.isDateInToday(date) { return "Today" }
         if calendar.isDateInTomorrow(date) { return "Tomorrow" }
         if let days = calendar.dateComponents([.day], from: .now, to: date).day, days < 6, days >= 0 {
             return date.formatted(.dateTime.weekday(.abbreviated))
         }
         return date.formatted(.dateTime.month(.abbreviated).day())
+    }
+}
+
+/// How long a Waiting conversation has gone without a reply. After three
+/// days it turns into a nudge, the way Gmail's "Sent 3 days ago. Follow
+/// up?" and Superhuman's "if no reply" reminders resurface a thread.
+struct WaitChip: View {
+    let since: Date
+    static let followUpAfterDays = 3
+
+    private var days: Int { max(0, Calendar.current.dateComponents([.day], from: since, to: .now).day ?? 0) }
+    private var isNudge: Bool { days >= Self.followUpAfterDays }
+
+    var body: some View {
+        Text(isNudge ? "Follow up" : days == 0 ? "Today" : "\(days)d")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(isNudge ? CorresPalette.accent : CorresPalette.tertiary)
+            .padding(.horizontal, 8).padding(.vertical, 2)
+            .overlay(Capsule().strokeBorder(isNudge ? CorresPalette.accent.opacity(0.5) : CorresPalette.line, lineWidth: 1))
+            .accessibilityLabel(days == 0 ? "Sent today" : "No reply in \(days) \(days == 1 ? "day" : "days")")
     }
 }
 
