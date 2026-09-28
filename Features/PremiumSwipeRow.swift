@@ -57,8 +57,11 @@ struct PremiumSwipeRow<Content: View>: View {
     @State private var zone: Zone = .none
     @State private var isCommitting = false
 
-    private var shortThreshold: CGFloat { max(64, rowWidth * 0.2) }
-    private var longThreshold: CGFloat { max(shortThreshold + 60, rowWidth * 0.55) }
+    /// Quarter swipes: the short action arms at about 15% of the row (a
+    /// quick thumb movement), the long one at about 42%, far enough apart
+    /// that one never slips into the other.
+    private var shortThreshold: CGFloat { max(52, rowWidth * 0.15) }
+    private var longThreshold: CGFloat { max(shortThreshold + 72, rowWidth * 0.42) }
     private var allowsPositive: Bool { leadingShort != nil || leadingLong != nil }
     private var allowsNegative: Bool { trailingShort != nil || trailingLong != nil }
 
@@ -96,7 +99,7 @@ struct PremiumSwipeRow<Content: View>: View {
     private func dragEnded(_ translation: CGFloat, _ velocity: CGFloat) {
         var committed = zone(for: offset)
         // A decisive flick arms the short action even before its distance.
-        let flicked = abs(velocity) > 700 && abs(offset) > 24 && (velocity > 0) == (offset > 0)
+        let flicked = abs(velocity) > 450 && abs(offset) > 16 && (velocity > 0) == (offset > 0)
         if committed == .none && flicked { committed = .short }
         guard isEnabled, committed != .none, let visual = visual(for: committed, positive: offset > 0) else {
             settle()
