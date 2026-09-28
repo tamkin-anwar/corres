@@ -11,6 +11,9 @@ import SwiftUI
 struct CorrespondenceMark: View {
     /// A faint sapphire halo behind the mark, for hero placements only.
     var glow = false
+    /// Drawn for a light field (the Light Home Screen icon): deeper
+    /// graphite titanium and sapphire, softer shadows.
+    var onLight = false
 
     private static let titaniumAxis = (UnitPoint(x: 0.24, y: 0.2), UnitPoint(x: 0.76, y: 0.8))
     private static let sapphireAxis = (UnitPoint(x: 0.36, y: 0.36), UnitPoint(x: 0.62, y: 0.64))
@@ -38,18 +41,20 @@ struct CorrespondenceMark: View {
             // Soft contact shadows give the metal depth without a bevel.
             var shadowed = context
             shadowed.addFilter(.blur(radius: 2.2 * unit))
-            shadowed.opacity = 0.5
+            shadowed.opacity = onLight ? 0.22 : 0.5
             shadowed.stroke(outer.offsetBy(dx: 0, dy: 3 * unit), with: .color(.black), style: outerStyle)
             shadowed.stroke(inner.offsetBy(dx: 0, dy: 2 * unit), with: .color(.black), style: innerStyle)
 
-            context.stroke(outer, with: Self.shading(Self.titaniumStops, Self.titaniumAxis, rect), style: outerStyle)
+            let titanium = onLight ? Self.graphiteStops : Self.titaniumStops
+            let sapphire = onLight ? Self.deepSapphireStops : Self.sapphireStops
+            context.stroke(outer, with: Self.shading(titanium, Self.titaniumAxis, rect), style: outerStyle)
             // A fine specular line along the upper edge of the outer ring.
             context.stroke(Self.arc(center: center, radius: 72 * unit, from: 150, to: 300),
-                           with: .color(.white.opacity(0.35)), style: StrokeStyle(lineWidth: 1.2 * unit, lineCap: .round))
-            context.stroke(inner, with: Self.shading(Self.sapphireStops, Self.sapphireAxis, rect), style: innerStyle)
+                           with: .color(.white.opacity(onLight ? 0.55 : 0.35)), style: StrokeStyle(lineWidth: 1.2 * unit, lineCap: .round))
+            context.stroke(inner, with: Self.shading(sapphire, Self.sapphireAxis, rect), style: innerStyle)
             context.fill(Path(ellipseIn: CGRect(x: center.x + 32 * unit - 5.5 * unit, y: center.y - 5.5 * unit,
                                                 width: 11 * unit, height: 11 * unit)),
-                         with: Self.shading(Self.titaniumStops, Self.titaniumAxis, rect))
+                         with: Self.shading(titanium, Self.titaniumAxis, rect))
         }
         .aspectRatio(1, contentMode: .fit)
         .accessibilityHidden(true)
@@ -74,6 +79,14 @@ struct CorrespondenceMark: View {
         .init(color: .init(markHex: 0xFFFFFF), location: 0), .init(color: .init(markHex: 0xD5D9DF), location: 0.3),
         .init(color: .init(markHex: 0x9197A0), location: 0.55), .init(color: .init(markHex: 0xE7EAEE), location: 0.78),
         .init(color: .init(markHex: 0x848A93), location: 1)])
+    /// Titanium in shadow: the same metal, read against ivory.
+    private static let graphiteStops = Gradient(stops: [
+        .init(color: .init(markHex: 0x8C929B), location: 0), .init(color: .init(markHex: 0x5B616B), location: 0.3),
+        .init(color: .init(markHex: 0x2E3239), location: 0.55), .init(color: .init(markHex: 0x6E747D), location: 0.78),
+        .init(color: .init(markHex: 0x25282E), location: 1)])
+    private static let deepSapphireStops = Gradient(stops: [
+        .init(color: .init(markHex: 0x7FA3D8), location: 0), .init(color: .init(markHex: 0x3A68AC), location: 0.4),
+        .init(color: .init(markHex: 0x1E3F72), location: 0.7), .init(color: .init(markHex: 0x5C86C4), location: 1)])
     private static let sapphireStops = Gradient(stops: [
         .init(color: .init(markHex: 0xE3EEFC), location: 0), .init(color: .init(markHex: 0x8FB4E8), location: 0.4),
         .init(color: .init(markHex: 0x4A6C9C), location: 0.7), .init(color: .init(markHex: 0xB9D1F2), location: 1)])
@@ -96,6 +109,27 @@ struct CorresIconArtwork: View {
             // The mark fills about two thirds of the icon, like the other
             // studio apps; nudged right because an open C reads left-heavy.
             CorrespondenceMark(glow: true)
+                .frame(width: 1110, height: 1110)
+                .offset(x: 24)
+        }
+        .frame(width: 1024, height: 1024)
+        .clipped()
+    }
+}
+
+/// The Light Home Screen icon: the same mark on Corres's ivory, with the
+/// same cool light from above, so the icon matches its neighbours in
+/// Light mode instead of sitting there as a black tile.
+struct CorresLightIconArtwork: View {
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [Color(markHex: 0xFFFEFB), Color(markHex: 0xF6F3EC), Color(markHex: 0xE9E4DA)],
+                           startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [Color.white.opacity(0.9), .clear],
+                           center: UnitPoint(x: 0.5, y: -0.1), startRadius: 0, endRadius: 760)
+            RadialGradient(colors: [Color(markHex: 0x8FB4E8).opacity(0.16), .clear],
+                           center: .center, startRadius: 0, endRadius: 440)
+            CorrespondenceMark(onLight: true)
                 .frame(width: 1110, height: 1110)
                 .offset(x: 24)
         }

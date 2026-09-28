@@ -8,12 +8,11 @@ import SwiftUI
 struct RenderIcon {
     @MainActor static func main() throws {
         let assets = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
-        try write(CorresIconArtwork().frame(width: 1024, height: 1024), scale: 1, opaque: true,
+        // Light (the default): ivory. Dark: the obsidian field. Tinted:
+        // iOS tints a grayscale mark.
+        try write(CorresLightIconArtwork().frame(width: 1024, height: 1024), scale: 1, opaque: true,
                   to: assets.appendingPathComponent("AppIcon.appiconset/icon-1024.png"))
-        // Home Screen dark mode draws its own dark field behind a
-        // transparent icon; tinted mode tints a grayscale one.
-        try write(CorrespondenceMark(glow: false).frame(width: 1110, height: 1110).offset(x: 24)
-                    .frame(width: 1024, height: 1024).clipped(), scale: 1, opaque: false,
+        try write(CorresIconArtwork().frame(width: 1024, height: 1024), scale: 1, opaque: true,
                   to: assets.appendingPathComponent("AppIcon.appiconset/icon-1024-dark.png"))
         try write(CorrespondenceMark(glow: false).frame(width: 1110, height: 1110).offset(x: 24)
                     .frame(width: 1024, height: 1024).clipped().grayscale(1).brightness(0.15)
@@ -25,6 +24,10 @@ struct RenderIcon {
                     .clipShape(RoundedRectangle(cornerRadius: 230, style: .continuous))
                     .padding(8), scale: 1, opaque: false,
                   to: brand.appendingPathComponent("corres-icon.png"))
+        try write(CorresLightIconArtwork().frame(width: 1024, height: 1024)
+                    .clipShape(RoundedRectangle(cornerRadius: 230, style: .continuous))
+                    .padding(8), scale: 1, opaque: false,
+                  to: brand.appendingPathComponent("corres-icon-light.png"))
         try write(CorresHeroArtwork().frame(width: 1200, height: 1200), scale: 2, opaque: true,
                   to: brand.appendingPathComponent("corres-hero.png"))
         for scale in 1...3 {
