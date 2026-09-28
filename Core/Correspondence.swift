@@ -395,9 +395,20 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
         self.attachments = attachments
     }
 
+    /// A recipient is enough; a missing subject is asked about, not
+    /// blocked, the way Mail and Gmail both handle it.
     public var isSendable: Bool {
-        !to.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !subject.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !to.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    public var hasSubject: Bool { !subject.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    /// Every address in To and Cc is shaped like one ("maya@x.com" or
+    /// "Maya <maya@x.com>"), so a typo is caught before the undo window,
+    /// not reported as a failed send after it.
+    public var recipientsLookValid: Bool {
+        let all = (to + "," + (cc ?? "")).split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return !all.isEmpty && all.allSatisfy { $0.range(of: #"[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+"#, options: .regularExpression) != nil }
     }
 
     public var attachmentsSizeBytes: Int { attachments.reduce(0) { $0 + $1.data.count } }

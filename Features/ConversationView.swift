@@ -212,7 +212,17 @@ struct ConversationView: View {
             // Archiving or trashing from inside the conversation itself
             // removes it from `store.threads` right under this view; pop
             // back to the list rather than leaving a dead end.
-            if !stillExists { dismiss() }
+            // Like Mail and Superhuman, the next conversation takes its
+            // place, so triage flows one message to the next.
+            guard !stillExists else { return }
+            let live = Set(store.threads.map(\.id))
+            let index = orderedIDs.firstIndex(of: currentID) ?? 0
+            if let next = orderedIDs[min(index + 1, orderedIDs.count)...].first(where: live.contains)
+                ?? orderedIDs[..<index].last(where: live.contains) {
+                currentID = next
+            } else {
+                dismiss()
+            }
         }
     }
 
@@ -447,14 +457,13 @@ struct ConversationView: View {
     private func actionBar(for thread: Correspondence) -> some View {
         HStack(spacing: 10) {
             HStack(spacing: 0) {
+                // The next conversation opens in its place (see the
+                // threadExists observer); the Gmail call happens in the
+                // background, the same as a swipe.
                 barButton("archivebox", "Archive") {
-                    // Returns to the list instantly; the Gmail call happens
-                    // in the background, the same as a swipe.
-                    dismiss()
                     Task { await threadActions.archive(thread) }
                 }
                 barButton("trash", "Move to Trash") {
-                    dismiss()
                     Task { await threadActions.trash(thread) }
                 }
                 barButton(thread.isFlagged ? "flag.fill" : "flag", thread.isFlagged ? "Unflag" : "Flag",
@@ -495,11 +504,9 @@ struct ConversationView: View {
             Button("Reply All") { compose(.replyAll, from: thread) }.keyboardShortcut("r", modifiers: [.command, .shift])
             Button("Forward") { compose(.forward, from: thread) }.keyboardShortcut("f", modifiers: [.command, .shift])
             Button("Archive") {
-                dismiss()
                 Task { await threadActions.archive(thread) }
             }.keyboardShortcut("a", modifiers: [.command, .control])
             Button("Move to Trash") {
-                dismiss()
                 Task { await threadActions.trash(thread) }
             }.keyboardShortcut(.delete, modifiers: .command)
             Button(thread.isFlagged ? "Unflag" : "Flag") {

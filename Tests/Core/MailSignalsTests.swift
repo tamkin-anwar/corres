@@ -136,4 +136,12 @@ struct MailSignalsTests {
         #expect(MailSignals.timeSensitiveDate(in: "Your order shipped on \(spelled(tomorrow)).", now: now) == nil)
         #expect(MailSignals.timeSensitiveDate(in: "Appointment on \(spelled(now.addingTimeInterval(10 * 86_400))).", now: now) == nil)
     }
+
+    @Test func draftsNeedARecipientAndRealAddresses() {
+        #expect(Draft(kind: .new, to: "maya@studio.test", subject: "").isSendable)
+        #expect(!Draft(kind: .new, to: "  ", subject: "Hi").isSendable)
+        #expect(Draft(kind: .new, to: "Maya <maya@studio.test>, j@x.io", subject: "").recipientsLookValid)
+        #expect(!Draft(kind: .new, to: "maya@studio", subject: "").recipientsLookValid)
+        #expect(!Draft(kind: .new, to: "maya@studio.test", cc: "oops", subject: "").recipientsLookValid)
+    }
 }

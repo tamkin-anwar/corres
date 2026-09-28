@@ -18,6 +18,7 @@ struct ComposeView: View {
     private let initialDraft: Draft
     @Environment(\.dismiss) private var dismiss
     @State private var showingDiscardConfirmation = false
+    @State private var confirmingNoSubject = false
     @FocusState private var focusedField: Field?
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
     @State private var pickedPhoto: PhotosPickerItem?
@@ -66,7 +67,7 @@ struct ComposeView: View {
                         fromPicker(accounts)
                         Divider().padding(.leading, CorresSpace.page)
                     }
-                    field(title: "To", text: $draft.to, isEditable: draft.kind == .new || draft.kind == .forward)
+                    field(title: "To", text: $draft.to, isEditable: true)
                         .focused($focusedField, equals: .to)
                     if !toSuggestions.isEmpty {
                         recipientSuggestionsList
@@ -114,11 +115,17 @@ struct ComposeView: View {
                     .accessibilityLabel("Add Attachment")
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Send") { sendAndDismiss() }
+                    Button("Send") {
+                        if draft.hasSubject { sendAndDismiss() } else { confirmingNoSubject = true }
+                    }
                         .fontWeight(.semibold)
                         .prominentToolbarButton()
-                        .disabled(!draft.isSendable)
+                        .disabled(!canSend)
                 }
+            }
+            .confirmationDialog("Send without a subject?", isPresented: $confirmingNoSubject, titleVisibility: .visible) {
+                Button("Send") { sendAndDismiss() }
+                Button("Add a Subject", role: .cancel) { focusedField = .subject }
             }
             .confirmationDialog("Delete this draft?", isPresented: $showingDiscardConfirmation, titleVisibility: .visible) {
                 Button("Delete Draft", role: .destructive) { dismiss() }
@@ -313,6 +320,13 @@ struct ComposeView: View {
     /// (a real Gmail delivery when replying/forwarding a connected thread,
     /// plus local bookkeeping) happens in OutboxService after a short undo
     /// window; see its doc comment and ADR 005.
+    /// Real mail needs real addresses; sample mail can go to a name.
+    private var canSend: Bool {
+        guard draft.isSendable else { return false }
+        let isReal = !(auth?.accounts.isEmpty ?? true) && sourceThread?.id.account != "sample"
+        return !isReal || draft.recipientsLookValid
+    }
+
     private func sendAndDismiss() {
         outbox.queueSend(draft, replyingTo: sourceThread)
         dismiss()
