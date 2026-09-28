@@ -13,6 +13,7 @@ struct BriefView: View {
     /// a specific email scopes the whole Brief to just that one.
     var accountFilter: String?
     @AppStorage(GoogleAuthService.givenNameKey) private var givenName = ""
+    @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
     @Environment(\.conversationSelection) private var splitSelection
 
     private var scopedThreads: [Correspondence] {
@@ -185,7 +186,7 @@ struct BriefView: View {
                         }
                         .buttonStyle(CorresRowButtonStyle())
                     }
-                    if index < shown.count - 1 { Hairline(leading: 77) }
+                    if index < shown.count - 1 { Hairline(leading: showAvatars ? 77 : 25) }
                 }
             }
             .padding(.vertical, 4)

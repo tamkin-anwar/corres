@@ -1,4 +1,5 @@
 import Foundation
+import UserNotifications
 import WidgetKit
 
 /// Keeps the widgets current: rebuilds the shared snapshot from the same
@@ -12,6 +13,7 @@ enum WidgetBridge {
 
     static func update(from threads: [Correspondence]) {
         let now = Date.now
+        updateBadge(from: threads, now: now)
         let needs = MailQuery.prioritized(threads, attention: .needsYou, now: now)
         let waiting = MailQuery.prioritized(threads, attention: .waiting, now: now)
         let unread = MailQuery.filter(threads, now: now).filter(\.isUnread).count
@@ -33,6 +35,25 @@ enum WidgetBridge {
         snapshot.save()
         last = snapshot
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private static var lastBadge: Int?
+
+    /// Settings → Lists → App icon badge: what needs you (default, in
+    /// keeping with Corres), everything unread, or nothing. Shows only once
+    /// notifications are allowed, since iOS ties badges to that permission.
+    private static func updateBadge(from threads: [Correspondence], now: Date) {
+        let count: Int
+        switch CorresSettings.badge {
+        case .needsYou: count = MailQuery.filter(threads, attention: .needsYou, now: now).count
+        case .unread: count = MailQuery.filter(threads, now: now).filter(\.isUnread).count
+        case .off: count = 0
+        }
+        // Sample mail never badges the real app icon.
+        let shown = threads.allSatisfy { $0.id.account == "sample" } ? 0 : count
+        guard shown != lastBadge else { return }
+        lastBadge = shown
+        UNUserNotificationCenter.current().setBadgeCount(shown)
     }
 
     private static func dueLabel(_ date: Date) -> String {

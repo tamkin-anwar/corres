@@ -10,6 +10,8 @@ struct CorrespondenceRow: View {
     /// A short account marker, shown only in the merged view of several accounts.
     var accountTag: String?
     @Environment(\.dynamicTypeSize) private var typeSize
+    @AppStorage(CorresSettings.previewLinesKey) private var previewLines = 2
+    @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -18,7 +20,7 @@ struct CorrespondenceRow: View {
                 .frame(width: 7, height: 7)
                 .padding(.top, 17)
                 .accessibilityHidden(true)
-            CorrespondentAvatar(initials: thread.initials)
+            if showAvatars { CorrespondentAvatar(initials: thread.initials) }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(thread.sender)
@@ -62,10 +64,14 @@ struct CorrespondenceRow: View {
                     .font(.subheadline.weight(thread.isUnread ? .medium : .regular))
                     .foregroundStyle(thread.isUnread ? CorresPalette.ink : CorresPalette.secondary)
                     .lineLimit(1)
-                Text(thread.excerpt)
-                    .font(.subheadline)
-                    .foregroundStyle(CorresPalette.secondary)
-                    .lineLimit(showsReason ? 1 : 2)
+                // Settings → Lists → Preview; the curated lists keep it to a
+                // line so the reason has room.
+                if previewLines > 0 {
+                    Text(thread.excerpt)
+                        .font(.subheadline)
+                        .foregroundStyle(CorresPalette.secondary)
+                        .lineLimit(showsReason ? 1 : previewLines)
+                }
                 if showsReason, !thread.reason.isEmpty {
                     // Side by side normally; stacked at the largest text
                     // sizes, where both would otherwise squeeze to a word.
@@ -219,6 +225,7 @@ struct CorrespondenceList: View {
     @Environment(AppRouter.self) private var router
     @AppStorage(CorresSettings.confirmTrashKey) private var confirmTrash = false
     @State private var confirmingTrash: Correspondence?
+    @AppStorage(CorresSettings.showAvatarsKey) private var showAvatarsInList = true
 
     var body: some View {
         if scrolls {
@@ -517,7 +524,7 @@ struct CorrespondenceList: View {
             .listRowSeparator(.visible)
             .listRowSeparatorTint(CorresPalette.line)
             .listRowBackground(splitSelection?.wrappedValue?.id == thread.id ? CorresPalette.accent.opacity(0.12) : Color.clear)
-            .alignmentGuide(.listRowSeparatorLeading) { _ in 77 }
+            .alignmentGuide(.listRowSeparatorLeading) { _ in showAvatarsInList ? 77 : 25 }
             .id(thread.id)
             .onAppear {
                 if pagesOlderMail, thread.id == results.last?.id { loadOlderMail() }

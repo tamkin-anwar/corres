@@ -34,6 +34,11 @@ struct PreferencesView: View {
                         settingLabel("Composing", "square.and.pencil")
                     }
                     NavigationLink {
+                        ListSettingsView(store: store)
+                    } label: {
+                        settingLabel("Lists", "list.bullet")
+                    }
+                    NavigationLink {
                         SwipeSettingsView()
                     } label: {
                         settingLabel("Swipes", "hand.draw")
@@ -488,6 +493,43 @@ private struct ReadingSettingsView: View {
         .background(CorresPalette.canvas)
         .navigationTitle("Reading")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Lists
+
+private struct ListSettingsView: View {
+    let store: MailStore
+    @AppStorage(CorresSettings.previewLinesKey) private var previewLines = 2
+    @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
+    @AppStorage(CorresSettings.badgeKey) private var badge = CorresSettings.Badge.needsYou.rawValue
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("Preview", selection: $previewLines) {
+                    Text("None").tag(0)
+                    Text("1 line").tag(1)
+                    Text("2 lines").tag(2)
+                    Text("3 lines").tag(3)
+                }
+                Toggle("Show pictures", isOn: $showAvatars)
+            } footer: {
+                Text("How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits.")
+            }
+            Section {
+                Picker("App icon badge", selection: $badge) {
+                    ForEach(CorresSettings.Badge.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+            } footer: {
+                Text("Needs You counts only what asks something of you, so the number means something. Badges need notifications to be allowed for Corres.")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(CorresPalette.canvas)
+        .navigationTitle("Lists")
+        .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: badge) { WidgetBridge.update(from: store.threads) }
     }
 }
 
