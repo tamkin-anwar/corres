@@ -25,7 +25,7 @@ Both themes follow the iPhone's appearance by default; Settings can pin one.
 | `accentInk` (on accent) | #FFFFFF | #0E1116 |
 | `avatarFill` | #EDE9E1 | #1E1F23 |
 
-Flag is #C2410C in both themes (5.18:1 on white). Swipe tints are fixed darks at 4.5:1 or better against their white icons.
+Flag is #C2410C in both themes (5.18:1 on white). Swipe tints follow iOS Mail's meanings (Archive #8B45C8 purple, Trash #D2342A red, Flag #C2410C orange, Read/Unread #0B68D9 blue), plus Handled #1F8045 green and Pin #0E7C86 teal, each deepened to 4.9:1 or better against its white icon and label.
 
 ## Type
 

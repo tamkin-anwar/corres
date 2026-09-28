@@ -213,6 +213,14 @@ struct HTMLMessageBody: UIViewRepresentable {
            for instance), but should rarely need to actually shrink
            anything now that width overflow is handled at the CSS layer
            instead. */
+        /* Measured, not viewport-sized: emails that make their wrapper
+           "full screen" (height: 100%, min-height: 100vh) grew every time
+           the view grew to fit them, leaving an endless blank tail below
+           the message. Their height comes from their content instead. */
+        html, body { height: auto !important; min-height: 0 !important; }
+        #corres-root { display: flow-root; }
+        [height="100%"], [style*="height:100%"], [style*="height: 100%"], [style*="vh"] {
+          height: auto !important; min-height: 0 !important; }
         table { max-width: 100% !important; }
         td, th { max-width: 100% !important; }
         img { max-width: 100% !important; height: auto !important; }
@@ -237,7 +245,7 @@ struct HTMLMessageBody: UIViewRepresentable {
           body { color: #F2F3F5 !important; }
           a { color: #8FB4E8; }
         }
-        </style></head><body>\(html)</body></html>
+        </style></head><body><div id="corres-root">\(html)</div></body></html>
         """
     }
 
@@ -315,7 +323,14 @@ struct HTMLMessageBody: UIViewRepresentable {
             // allowsContentJavaScript = false only restricts content-embedded
             // <script> execution; this host-triggered evaluateJavaScript call
             // is unaffected (confirmed on-device: it reliably returns a value).
-            let result = try? await webView.evaluateJavaScript("[document.body.scrollWidth, document.body.scrollHeight]")
+            // The content's own height, from a wrapper around it, rather
+            // than the body's scrollHeight, which is never less than the
+            // view itself and so could only ever grow.
+            let result = try? await webView.evaluateJavaScript("""
+                (() => { const root = document.getElementById('corres-root');
+                  return [document.body.scrollWidth,
+                          root ? Math.ceil(root.getBoundingClientRect().height) : document.body.scrollHeight]; })()
+                """)
             // Reveal unconditionally on the first pass, even if measurement
             // below fails: updateUIView hid this webview (alpha 0) to avoid
             // flashing a pooled instance's stale previous content, and it

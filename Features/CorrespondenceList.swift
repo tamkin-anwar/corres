@@ -402,7 +402,7 @@ struct CorrespondenceList: View {
         case .unread:
             SwipeVisual(title: thread.isUnread ? "Read" : "Unread",
                        systemImage: thread.isUnread ? "envelope.open.fill" : "envelope.badge.fill",
-                       tint: CorresPalette.swipeSnooze)
+                       tint: CorresPalette.swipeUnread)
         case .flag:
             SwipeVisual(title: thread.isFlagged ? "Unflag" : "Flag",
                        systemImage: thread.isFlagged ? "flag.slash.fill" : "flag.fill",

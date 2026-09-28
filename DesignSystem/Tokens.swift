@@ -35,11 +35,19 @@ enum CorresPalette {
     // above (accent/secondary flip to light tones in dark mode and would put
     // white-on-white). Each is >=4.5:1 against white; see the WCAG audit in
     // Docs/Verification.md.
-    static let swipeHandled = Color(hex: 0x2F5D9E) // sapphire, 6.4:1
+    //
+    // The meanings follow iOS Mail, so a swipe reads the same as it does
+    // everywhere else on iPhone: purple Archive, red Trash, orange Flag,
+    // blue Read/Unread. Handled is the green "done" of Gmail and Inbox;
+    // Pin is teal so it never reads as Flag. Each is deepened from Apple's
+    // system color just enough for a white label (Apple's own red, purple
+    // and blue are 3.5 to 4.2:1).
+    static let swipeHandled = Color(hex: 0x1F8045) // green, 4.96:1
+    static let swipeArchive = Color(hex: 0x8B45C8) // purple, 5.55:1
+    static let swipeTrash = Color(hex: 0xD2342A) // red, 4.92:1
+    static let swipeUnread = Color(hex: 0x0B68D9) // blue, 5.25:1
+    static let swipePin = Color(hex: 0x0E7C86) // teal, 4.95:1
     static let swipeSnooze = Color(hex: 0x4A5560)
-    static let swipePin = Color(hex: 0x5B4B8A)
-    static let swipeArchive = Color(hex: 0x3D5A4C)
-    static let swipeTrash = Color(hex: 0xA33B2E) // 6.51:1
     /// iOS Mail's own flag orange (#FF9500) is only 2.2:1 against white, too
     /// faint for a white swipe icon or a row indicator on the light canvas.
     /// 5.18:1 against white, 3.76:1 against the dark canvas (icons need 3:1).
