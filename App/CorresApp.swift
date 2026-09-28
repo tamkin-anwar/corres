@@ -25,6 +25,7 @@ struct CorresApp: App {
                 .environment(appDelegate.mailIntelligence)
                 .environment(appDelegate.snippetStore)
                 .environment(appDelegate.router)
+                .environment(appDelegate.askService)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
                 .task {

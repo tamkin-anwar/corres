@@ -33,6 +33,7 @@ Built by Anwar Creative Studio.
 - A short summary of long emails. For very long ones it covers the opening and ending, and says so.
 - Suggested reply directions that draft a full reply in your voice, for you to edit and send.
 - Shorter / Warmer / More formal / Proofread rewrites of your own writing, with Undo.
+- **Ask your mail:** a question in plain language ("When is my next flight?") answered from your own email by the on-device model, which searches your mail (including Gmail's search for older messages) and cites the emails it used. Without Apple Intelligence, Ask still finds the right emails.
 - There's no cloud fallback. On iPhones without Apple Intelligence these features don't appear.
 
 **Private by design**

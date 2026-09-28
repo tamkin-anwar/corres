@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     let mailIntelligence: MailIntelligence
     let snippetStore: SnippetStore
     let router: AppRouter
+    let askService: AskService
 
     /// Must match the identifier declared in `Info.plist`'s
     /// `BGTaskSchedulerPermittedIdentifiers`; iOS silently refuses to run
@@ -59,6 +60,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         mailIntelligence = MailIntelligence()
         snippetStore = SnippetStore()
         router = AppRouter.shared
+        askService = AskService(store: mailStore, sync: sync, auth: authService)
         super.init()
     }
 

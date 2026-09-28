@@ -67,6 +67,8 @@
 		61562B7EFBCA437FA5E0DBEA /* CorresWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3113854F872440AD82EDE4FD /* App/AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */; };
 		C5FD4D482EA945EA9AE3AE5E /* App/CorresIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */; };
+		B67D56F88C9340B68A93BFF6 /* App/AskService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A52B6D67E5444081ECC866 /* App/AskService.swift */; };
+		9ADBDB8EA7A9457EBAB271E4 /* Features/AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -161,6 +163,8 @@
 		D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CorresWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppRouter.swift; sourceTree = SOURCE_ROOT; };
 		AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CorresIntents.swift; sourceTree = SOURCE_ROOT; };
+		A5A52B6D67E5444081ECC866 /* App/AskService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AskService.swift; sourceTree = SOURCE_ROOT; };
+		6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AskView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -220,6 +224,8 @@
 				D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */,
 				0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */,
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
+				6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */,
+				A5A52B6D67E5444081ECC866 /* App/AskService.swift */,
 				AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */,
 				3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */,
 				9C33E49C348642688FD36A86 /* App/WidgetBridge.swift */,
@@ -385,6 +391,8 @@
 				84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */,
 				BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */,
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
+				9ADBDB8EA7A9457EBAB271E4 /* Features/AskView.swift in Sources */,
+				B67D56F88C9340B68A93BFF6 /* App/AskService.swift in Sources */,
 				C5FD4D482EA945EA9AE3AE5E /* App/CorresIntents.swift in Sources */,
 				3113854F872440AD82EDE4FD /* App/AppRouter.swift in Sources */,
 				B38567BB8F8242BAAFBFF5E0 /* App/WidgetBridge.swift in Sources */,

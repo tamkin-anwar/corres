@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Batch 4: Ask your mail (September 27, 2026)
+
+- **New Ask tab** (a fifth tab on iPhone, a sidebar item on iPad), reachable at `corres://ask`: a question field, suggestions, an answer card, and a list of source conversations that open in place.
+- **`AskService`** gives Apple's on-device model one tool, `searchMail`. The model calls it with keywords, and it can search again with different ones. The tool runs Gmail's own search across connected accounts first, so older, never-synced mail is reachable, then ranks local mail: every keyword must appear, sender and subject matches weigh 3× body matches, newest first. The top five, with trimmed bodies, go back to the model. The model is told to answer only from those emails, quote facts exactly, and say when it can't find the answer. The emails the tool returned become the answer's sources.
+- **Without Apple Intelligence** (or if the model declines), Ask runs the same ranked search on the question's keywords, with filler and question words dropped, and shows the best matches.
+- `MailIntelligence.prepared` is now `nonisolated` so the tool can trim bodies off the main actor.
+- Verified in the simulator (which has the on-device model): "What did Maya ask me?" answered "Maya asked for your approval on the final direction." with Maya's email as its source. `xcodebuild` BUILD SUCCEEDED, `swift test` 66/66. **On device:** questions over real Gmail, including mail older than what has synced.
+
 ## Swipe rebuild (September 27, 2026)
 
 Reported: left and right swipes, short and long, weren't smooth. Cause: a SwiftUI `DragGesture` inside a scrolling `List` competes with the list's own pan for the same touches, so rows stuttered, scrolling hitched, and diagonal drags misfired.

@@ -30,6 +30,7 @@ struct CorresShell: View {
     @State private var splitRoute: ConversationRoute?
     @State private var paths: [Destination: NavigationPath] = [:]
     @Environment(AppRouter.self) private var router
+    @Environment(AskService.self) private var ask
 
     private func path(for destination: Destination) -> Binding<NavigationPath> {
         Binding(get: { paths[destination] ?? NavigationPath() }, set: { paths[destination] = $0 })
@@ -232,7 +233,9 @@ struct CorresShell: View {
                 Button("Try again") { Task { await store.load() } }
             }
         case .loaded:
-            if destination == .brief {
+            if destination == .ask {
+                AskView(ask: ask)
+            } else if destination == .brief {
                 BriefView(store: store, sync: sync, auth: auth, selection: $selection, showingScreener: $showingScreener,
                           accountFilter: accountFilter)
             } else {
@@ -357,7 +360,7 @@ struct CorresShell: View {
         case .needsYou: return MailQuery.filter(scoped, attention: .needsYou).count
         case .waiting: return MailQuery.filter(scoped, attention: .waiting).count
         case .mail: return MailQuery.filter(scoped).filter(\.isUnread).count
-        case .brief: return nil
+        case .brief, .ask: return nil
         }
     }
 

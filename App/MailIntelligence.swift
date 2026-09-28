@@ -62,8 +62,8 @@ final class MailIntelligence {
     /// instructions and output), so a long body keeps its opening and its
     /// closing, where asks and deadlines almost always are, and drops the
     /// middle with a marker the model is told about.
-    private static let maxBodyCharacters = 2_800
-    private static let tailCharacters = 900
+    nonisolated private static let maxBodyCharacters = 2_800
+    nonisolated private static let tailCharacters = 900
 
     func insight(for thread: Correspondence) -> Insight? {
         insights[Self.key(for: thread)]
@@ -192,7 +192,7 @@ final class MailIntelligence {
 
     /// The body as the model sees it: quoted history removed, then, if still
     /// too long, the opening and the closing joined by a marker.
-    static func prepared(_ body: String) -> (text: String, wasShortened: Bool) {
+    nonisolated static func prepared(_ body: String) -> (text: String, wasShortened: Bool) {
         // Quoted history ("On … wrote:" and "> " lines) adds length, not meaning.
         let lines = body.split(separator: "\n", omittingEmptySubsequences: false)
         var kept: [Substring] = []
