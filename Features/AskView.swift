@@ -26,12 +26,33 @@ struct AskView: View {
             .readableWidth()
             .frame(maxWidth: .infinity)
         }
-        .scrollDismissesKeyboard(.interactively)
-        .background(CorresPalette.canvas)
+        // The keyboard covers the tab bar, so every way out of it matters:
+        // scrolling, tapping anywhere outside the field, Cancel, or Search.
+        .scrollDismissesKeyboard(.immediately)
+        .background(CorresPalette.canvas.onTapGesture { focused = false })
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button { focused = false } label: { Image(systemName: "keyboard.chevron.compact.down") }
+                    .accessibilityLabel("Hide keyboard")
+            }
+        }
         .animation(.easeOut(duration: 0.2), value: ask.phase)
     }
 
     private var field: some View {
+        HStack(spacing: 12) {
+            fieldCapsule
+            if focused {
+                Button("Cancel") { focused = false }
+                    .font(.body)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: focused)
+    }
+
+    private var fieldCapsule: some View {
         HStack(spacing: 10) {
             Image(systemName: "sparkle.magnifyingglass").foregroundStyle(CorresPalette.accent)
             TextField("Ask about your mail", text: $text)
@@ -87,7 +108,8 @@ struct AskView: View {
     private var result: some View {
         if let answer = ask.answer {
             VStack(alignment: .leading, spacing: 10) {
-                Label("Answer · from \(ask.sources.count) \(ask.sources.count == 1 ? "email" : "emails")", systemImage: "sparkle")
+                Label(ask.answerFound ? "Answer · from \(ask.sources.count) \(ask.sources.count == 1 ? "email" : "emails")" : "Not found",
+                      systemImage: ask.answerFound ? "sparkle" : "magnifyingglass")
                     .labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
                 Text(answer)
                     .font(CorresType.brief).lineSpacing(3)
@@ -105,7 +127,7 @@ struct AskView: View {
             }
         } else {
             VStack(alignment: .leading, spacing: 8) {
-                Text(ask.answer == nil ? "Best matches" : "Sources").eyebrow().padding(.horizontal, 4)
+                Text(ask.answer != nil && ask.answerFound ? "Sources" : "Closest matches").eyebrow().padding(.horizontal, 4)
                 VStack(spacing: 0) {
                     let ids = ask.sources.map(\.id)
                     ForEach(Array(ask.sources.enumerated()), id: \.element.id) { index, source in
