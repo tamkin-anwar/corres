@@ -104,14 +104,15 @@ struct CorresShell: View {
     private func withFeedback(_ content: some View) -> some View {
         content
         .foregroundStyle(CorresPalette.ink)
-        .overlay(alignment: .bottom) { outboxBanner }
-        // Reduce Motion, respected: the banner still needs to appear and
-        // disappear (it carries a real, actionable state change: Undo,
-        // Retry, Discard), just without the animated slide a person asked
-        // iOS to minimize.
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.pending?.id)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.failed?.id)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: threadActions.pendingRemoval?.id)
+        // The banner animates on its own; attached to the whole app, these
+        // used to animate every list underneath each time it came and went.
+        // Reduce Motion keeps the fade and drops the slide.
+        .overlay(alignment: .bottom) {
+            ZStack { outboxBanner }
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.pending?.id)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.failed?.id)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: threadActions.pendingRemoval?.id)
+        }
         // Premium apps confirm what just happened in the hand, not only on screen.
         .sensoryFeedback(.success, trigger: outbox.pending?.id) { _, new in new != nil }
         .sensoryFeedback(.impact(weight: .medium), trigger: threadActions.pendingRemoval?.id) { _, new in new != nil }

@@ -28,7 +28,16 @@ final class MailStore {
 
     init(repository: any MailRepository) { self.repository = repository }
 
+    /// The first load shows the launch mark; every later one (after a
+    /// sync, a push, pull to refresh) updates the lists in place. Flipping
+    /// back to `.loading` swapped every list out for a moment, which threw
+    /// away its scroll position and dropped you back at the top mid-task.
     func load() async {
+        if state == .loaded {
+            if seedsSampleMail() { try? await repository.seedIfNeeded(now: .now) }
+            await refresh()
+            return
+        }
         guard state != .loading else { return }
         state = .loading
         do {

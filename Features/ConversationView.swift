@@ -45,6 +45,7 @@ struct ConversationView: View {
         self.unsubscribeService = unsubscribeService
         self.orderedIDs = route.orderedIDs
         self._currentID = State(initialValue: route.id)
+        self.openedID = route.id
     }
 
     var body: some View {
@@ -225,7 +226,10 @@ struct ConversationView: View {
         // last reading (next/previous may have moved on from the row you
         // tapped). An archive-driven exit has already set its neighbour.
         .onDisappear {
-            if threadExists { router.returnAnchor = currentID }
+            // Only when you moved on to another email with ⌃/⌄: the row you
+            // opened is still where you left it, and re-centring it would
+            // move the list under your finger.
+            if threadExists, currentID != openedID { router.returnAnchor = currentID }
         }
         .onChange(of: threadExists) { _, stillExists in
             // Archiving or trashing from inside the conversation itself
@@ -271,6 +275,7 @@ struct ConversationView: View {
         if confirmTrash { confirmingTrash = thread } else { Task { await threadActions.trash(thread) } }
     }
     @Environment(AppRouter.self) private var router
+    private let openedID: ThreadID
 
     private var currentIndex: Int? { orderedIDs.firstIndex(of: currentID) }
     private var hasPrevious: Bool { (currentIndex ?? 0) > 0 }

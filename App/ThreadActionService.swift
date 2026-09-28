@@ -1,3 +1,4 @@
+import SwiftUI
 import Foundation
 import Observation
 
@@ -50,7 +51,7 @@ final class ThreadActionService {
         guard let pending = pendingRemoval else { return }
         removalTask?.cancel()
         pendingRemoval = nil
-        store.unhide(pending.thread.id)
+        withAnimation(.snappy(duration: 0.3)) { store.unhide(pending.thread.id) }
     }
 
     /// Sends a waiting removal now: when the app leaves the foreground, or
@@ -63,7 +64,7 @@ final class ThreadActionService {
 
     private func queueRemoval(_ thread: Correspondence, kind: RemovalKind) async {
         await commitPendingRemoval()
-        store.hide(thread.id)
+        withAnimation(.snappy(duration: 0.3)) { store.hide(thread.id) }
         let pending = PendingRemoval(thread: thread, kind: kind, secondsRemaining: Self.undoSeconds)
         pendingRemoval = pending
         removalTask = Task { [weak self] in
