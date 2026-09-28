@@ -190,4 +190,21 @@ struct MailSignalsTests {
         #expect(vip.attention == .needsYou)
         #expect(vip.reason == InboxClassifier.vipReason)
     }
+
+    @Test func systemSendersAreAutomatedWhateverTheirSuffix() {
+        for address in ["noreply-purchases@youtube.com", "no_reply.alerts@bank.test", "donotreply@x.test",
+                        "notifications@github.com", "noreply@x.test"] {
+            #expect(Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: address))
+        }
+        #expect(!Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: "nora@studio.test"))
+    }
+
+    @Test func noticesAreNotObligations() {
+        // The YouTube welcome: a date and "payment", but nothing to do.
+        #expect(!MailSignals.isObligation("Welcome to your YouTube Premium student membership! Your payment method will be charged monthly starting on Oct 28, 2026."))
+        #expect(!MailSignals.isObligation("Thanks for your payment of $42. Receipt attached."))
+        #expect(MailSignals.isObligation("Your payment is due Oct 3. Pay now to avoid a late fee."))
+        #expect(MailSignals.isObligation("Your Labcorp appointment is tomorrow at 9:00 AM."))
+        #expect(MailSignals.isObligation("Signature requested: please sign the lease by Friday."))
+    }
 }

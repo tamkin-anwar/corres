@@ -74,9 +74,19 @@ public enum MailSignals {
     /// Automated mail that carries a real obligation for this person: a
     /// bill, a signature, a renewal, an appointment. Only ever combined
     /// with a detected deadline, and never applied to promotions.
+    /// Something the reader has to do, not just something that will
+    /// happen: "payment due", "sign by", "your appointment", "verify".
+    /// A welcome, receipt or autopay notice ("will be charged
+    /// automatically", "thanks for your payment") is information, never an
+    /// obligation, however many dates it names.
     public static func isObligation(_ text: String) -> Bool {
-        text.range(of: #"(?i)\b(payment|pay|bill|invoice|balance|renew(al)?|expir\w*|sign(ature)?|verify|appointment|check-in|reservation|rsvp|deadline|due)\b"#,
-                   options: .regularExpression) != nil
+        let lower = text.lowercased()
+        let action = #"\b(payment (is )?(due|failed|declined|overdue)|past due|amount due|due (date|on|by)|pay (by|now|your)|bill (is )?(due|ready)|balance (is )?due|invoice (is )?due|sign (by|the|your|here)|signature (requested|required|needed)|please sign|verify (your|by)|action (is )?required|expires? (on|in|soon|today|tomorrow)|expiring|renew (by|before|now)|appointment|check-in|reservation|rsvp|deadline)\b"#
+        let notice = #"\b(will be (charged|billed|renewed) (automatically|monthly|annually)|(automatically|auto-?) ?(charged|billed|renews?)|thank(s| you) for (your )?(payment|order|purchase)|payment (received|confirmed|successful)|receipt|welcome to)\b"#
+        guard lower.range(of: action, options: .regularExpression) != nil else { return false }
+        // An appointment or reservation reminder stays even if it thanks you.
+        let reminder = lower.range(of: #"\b(appointment|reservation|check-in|rsvp)\b"#, options: .regularExpression) != nil
+        return reminder || lower.range(of: notice, options: .regularExpression) == nil
     }
 
     /// Whether anyone you wrote to is a person rather than a no-reply
@@ -85,7 +95,7 @@ public enum MailSignals {
         recipients.contains { address in
             let lower = address.lowercased()
             return lower != account.lowercased()
-                && lower.range(of: #"^(no.?reply|do.?not.?reply|notifications?|mailer-daemon)@"#, options: .regularExpression) == nil
+                && lower.range(of: Correspondence.automatedLocalPart, options: .regularExpression) == nil
         }
     }
 }

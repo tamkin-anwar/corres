@@ -86,7 +86,10 @@ final class MailIntelligence {
         defer { inFlight.remove(messageID) }
         let wantsSummary = thread.body.count >= Self.summaryThreshold
         // Nothing to answer when the last word is yours.
-        let wantsReplies = !thread.looksAutomated && thread.attention != .waiting && !thread.isFromAccountOwner
+        // Only a person writing to you gets reply suggestions: never
+        // automated or Gmail-categorized mail.
+        let wantsReplies = InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == nil
+            && thread.attention != .waiting && !thread.isFromAccountOwner
         guard wantsSummary || wantsReplies else {
             insights[messageID] = Insight(summary: nil, replyIntents: [])
             return
@@ -147,40 +150,63 @@ final class MailIntelligence {
     private func generateInsight(for thread: Correspondence) async -> (summary: String, replies: [String])? {
         guard #available(iOS 26.0, *) else { return nil }
         let prompt = """
-        From: \(thread.sender)
+        From: \(thread.sender)\(thread.senderEmail.map { " <\($0)>" } ?? "")
         Subject: \(thread.subject)
         \(Self.trimmed(thread.body))
         """
         do {
             let session = LanguageModelSession(instructions: Self.readingInstructions)
             let response = try await session.respond(to: prompt, generating: ThreadInsight.self)
-            let replies = response.content.replyIntents
+            let content = response.content
+            // The model decides whether a reply is expected before it
+            // suggests any; stock answers that aren't about this email
+            // are dropped.
+            let replies = (content.expectsReply ? content.replyIntents : [])
+                .filter { !Self.isGenericReply($0) }
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(.init(charactersIn: "\".")))}
                 .filter { !$0.isEmpty && $0.count <= 32 }
             // The model occasionally repeats itself; one chip per idea.
             var seen = Set<String>()
             let distinct = replies.filter { seen.insert($0.lowercased()).inserted }
-            return (response.content.summary.trimmingCharacters(in: .whitespacesAndNewlines), distinct)
+            return (content.summary.trimmingCharacters(in: .whitespacesAndNewlines), distinct)
         } catch {
             return nil
         }
     }
 
+    /// Replies that could answer any email say nothing about this one.
+    private static func isGenericReply(_ text: String) -> Bool {
+        let lower = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+        let stock: Set<String> = ["count me in", "can't make it", "cant make it", "go with option a", "go with option b",
+                                  "ask for tuesday", "sounds good", "thanks", "thank you", "got it", "ok", "okay",
+                                  "will do", "noted", "reply later", "share your thoughts", "reply soon", "let me check"]
+        return stock.contains(lower)
+    }
+
     @available(iOS 26.0, *)
     private static let readingInstructions = """
-    You help a busy person read email. A very long email may arrive with \
-    its middle omitted and marked; summarize only what you can see and \
-    never guess at the missing part. Summarize what the message says and, \
-    above all, what it asks of the reader, in one or two plain sentences, \
-    under 35 words. Name people and dates exactly as written. Never invent \
-    facts. If the message needs a personal reply, suggest up to three short, \
-    distinct reply directions the reader might choose, each two to four \
-    words, written as the reader's own answer in first person (for example \
-    "Count me in", "Can't make it", "Go with option A", "Ask for Tuesday"). \
-    Never phrase them as advice to the reader, like "Share your thoughts" or \
-    "Reply soon". When the message offers a choice, suggest the choices \
-    themselves. Suggest no replies for newsletters, receipts, \
-    notifications, or anything that doesn't expect an answer.
+    You help a busy person read their email. Write to them as "you", never \
+    by their name or in the third person. A very long email may arrive with \
+    its middle omitted and marked; use only what you can see and never \
+    guess at the missing part. Never invent facts.
+
+    Summary: one or two plain sentences, under 35 words. Lead with what \
+    matters to the reader: what they need to do and by when, or, if \
+    nothing, what happened (a charge, a delivery, a change). Keep names, \
+    amounts and dates exactly as written. Say plainly when nothing is \
+    needed, for example "Nothing to do; it renews automatically on Oct 28."
+
+    Replies: first decide whether a real person is waiting for this reader \
+    to answer. Automated mail, receipts, welcomes, notifications, \
+    newsletters, marketing and anything from a no-reply address never \
+    expect a reply: set expectsReply to false and give no replies. When a \
+    reply is expected, give up to three short answers, two to five words, \
+    each written as the reader's own first-person reply to the specific \
+    question or request in this email, using its own names, dates, times \
+    and options (for example, for "Can you do Thursday at 3?": "Thursday \
+    at 3 works", "Could we do Friday?"). Each must be a different answer. \
+    Never write generic replies that would fit any email, and never advice \
+    to the reader.
     """
 
     @available(iOS 26.0, *)
@@ -224,8 +250,10 @@ final class MailIntelligence {
 @available(iOS 26.0, *)
 @Generable
 struct ThreadInsight {
-    @Guide(description: "One or two plain sentences, under 35 words, saying what the message is about and what, if anything, it asks of the reader.")
+    @Guide(description: "One or two plain sentences to the reader as \"you\", under 35 words: what they need to do and by when, or what happened if nothing is needed.")
     let summary: String
-    @Guide(description: "Zero to three short reply directions, two to four words each, phrased as the reader would say them. Empty if no reply is expected.")
+    @Guide(description: "True only if a real person wrote this and is waiting for the reader's answer. False for automated mail, receipts, welcomes, notifications, newsletters and no-reply senders.")
+    let expectsReply: Bool
+    @Guide(description: "If expectsReply, up to three different first-person answers, two to five words, to this email's specific question, using its own names, dates and options. Otherwise empty.")
     let replyIntents: [String]
 }

@@ -256,10 +256,15 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         Self.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail)
     }
 
+    public static let automatedLocalPart =
+        #"^(no[-_.]?reply|do[-_.]?not[-_.]?reply|notifications?|alerts?|mailer-daemon|postmaster|bounces?)([-_.+][^@]*)?@"#
+
     public static func isAutomated(listUnsubscribeMailto: String?, listUnsubscribeURL: String?, senderEmail: String?) -> Bool {
         if listUnsubscribeMailto != nil || listUnsubscribeURL != nil { return true }
         guard let senderEmail else { return false }
-        return senderEmail.lowercased().range(of: #"^no.?reply@"#, options: .regularExpression) != nil
+        // "noreply@", but also "noreply-purchases@", "no_reply.alerts@",
+        // "donotreply@" and system senders like "notifications@".
+        return senderEmail.lowercased().range(of: automatedLocalPart, options: .regularExpression) != nil
     }
 
     /// Whether `account` was addressed directly (`To`) rather than only
