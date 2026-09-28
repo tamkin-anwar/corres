@@ -37,8 +37,12 @@ struct CorresApp: App {
                     // is genuinely foreground-only: pre-creating the pool of
                     // reusable WKWebView instances off the interaction path,
                     // instead of paying to create one on the first real tap
-                    // into a message (see WKWebViewPool).
-                    WKWebViewPool.shared.prewarm()
+                    // into a message (see WKWebViewPool). Deferred past
+                    // launch: creating a web view blocks the main thread,
+                    // and doing it as the first screen appeared swallowed
+                    // the first tap.
+                    try? await Task.sleep(for: .seconds(1.5))
+                    await WKWebViewPool.shared.prewarm()
                 }
                 // One place covers every foreground sync path (pull-to-refresh
                 // on Brief or a list, connecting an account in Preferences),

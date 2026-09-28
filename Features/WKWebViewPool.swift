@@ -19,16 +19,18 @@ final class WKWebViewPool {
 
     private init() {}
 
-    /// Called once from CorresApp's launch task, before any await, off the
-    /// interaction path entirely: pre-creates the pool itself (not one
-    /// separate throwaway instance) so the very first real conversation
-    /// also gets to borrow an already-warm webview.
-    func prewarm() {
+    /// Called once from CorresApp's launch task, a moment after the first
+    /// screen settles: pre-creates the pool itself (not one separate
+    /// throwaway instance) so the very first real conversation also gets
+    /// to borrow an already-warm webview.
+    func prewarm() async {
         guard available.isEmpty else { return }
         for _ in 0..<poolSize {
             let webView = makeWebView()
             webView.loadHTMLString("<html></html>", baseURL: nil)
             available.append(webView)
+            // One at a time, letting touches through in between.
+            await Task.yield()
         }
     }
 

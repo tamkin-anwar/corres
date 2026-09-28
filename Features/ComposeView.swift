@@ -163,7 +163,7 @@ struct ComposeView: View {
     /// The person's own words, without the quoted original below them:
     /// only this part is ever rewritten.
     private var ownText: (text: String, quote: String) {
-        guard let marker = draft.body.range(of: "\n\n\(sourceThread?.sender ?? "\u{0}") wrote:\n") else {
+        guard let marker = draft.body.range(of: #"\n\nOn .+ wrote:\n"#, options: .regularExpression) else {
             return (draft.body, "")
         }
         return (String(draft.body[..<marker.lowerBound]), String(draft.body[marker.lowerBound...]))
@@ -470,7 +470,15 @@ struct ComposeView: View {
 
 extension Correspondence {
     func draft(kind: Draft.Kind) -> Draft {
-        let quoted = "\n\n\(sender) wrote:\n\(body.split(separator: "\n").map { "> \($0)" }.joined(separator: "\n"))"
+        // Blank lines stay as ">" so the quoted email keeps its paragraphs.
+        let quotedLines = body.trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces).isEmpty ? ">" : "> \($0)" }
+        // The standard attribution Gmail and Mail write, which is also what
+        // Corres itself looks for when hiding quoted history in a thread.
+        let when = receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().year().hour().minute())
+        let who = senderEmail.map { "\(sender) <\($0)>" } ?? sender
+        let quoted = "\n\nOn \(when), \(who) wrote:\n\(quotedLines.joined(separator: "\n"))"
         switch kind {
         case .new:
             return Draft(kind: .new, to: "", subject: "")

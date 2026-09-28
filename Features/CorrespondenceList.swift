@@ -308,7 +308,7 @@ struct CorrespondenceList: View {
     /// which is what they are.
     private var filterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 22) {
+            HStack(spacing: 18) {
                 ForEach(MailFilter.allCases) { filter in
                     Button {
                         mailFilter = filter
@@ -328,6 +328,15 @@ struct CorrespondenceList: View {
                 }
             }
             .padding(.horizontal, CorresSpace.page)
+        }
+        // At larger text sizes the tabs scroll; a soft edge says so instead
+        // of cutting the last one off mid-word.
+        .mask {
+            HStack(spacing: 0) {
+                Color.black
+                LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: CorresSpace.page)
+            }
         }
         .overlay(alignment: .bottom) { Hairline() }
         .sensoryFeedback(.selection, trigger: mailFilter)
