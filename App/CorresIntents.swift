@@ -95,3 +95,46 @@ struct CorresShortcuts: AppShortcutsProvider {
         ], shortTitle: "New Message", systemImageName: "square.and.pencil")
     }
 }
+
+// MARK: - Focus filter
+
+/// A connected account, as offered in a Focus filter.
+struct MailAccountEntity: AppEntity {
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Account"
+    static let defaultQuery = MailAccountQuery()
+    let id: String
+    var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(id)") }
+}
+
+struct MailAccountQuery: EntityQuery {
+    private var connected: [String] { UserDefaults.standard.stringArray(forKey: "corres.connectedAccounts") ?? [] }
+    func entities(for identifiers: [String]) async throws -> [MailAccountEntity] {
+        identifiers.filter(connected.contains).map(MailAccountEntity.init)
+    }
+    func suggestedEntities() async throws -> [MailAccountEntity] { connected.map(MailAccountEntity.init) }
+}
+
+/// Settings → Focus → a Focus → Add Filter → Corres: during that Focus,
+/// Corres shows and notifies for one account only, the way Mail's own
+/// Focus filter does. When the Focus ends, everything comes back.
+struct CorresFocusFilter: SetFocusFilterIntent {
+    static let title: LocalizedStringResource = "Show One Account"
+    static let description = IntentDescription("During this Focus, Corres shows and notifies for this account only.")
+    static let activeAccountKey = "corres.focus.account"
+    static let didChange = Notification.Name("corres.focusFilterChanged")
+
+    @Parameter(title: "Account") var account: MailAccountEntity?
+
+    var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(title: account.map { "Only \($0.id)" } ?? "All accounts")
+    }
+
+    func perform() async throws -> some IntentResult {
+        UserDefaults.standard.set(account?.id, forKey: Self.activeAccountKey)
+        await MainActor.run { NotificationCenter.default.post(name: Self.didChange, object: nil) }
+        return .result()
+    }
+
+    /// The account the current Focus limits Corres to, if any.
+    static var activeAccount: String? { UserDefaults.standard.string(forKey: activeAccountKey) }
+}

@@ -218,6 +218,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // Settings → an account → Notifications can mute one account.
         let toNotify = (newlyUnread.filter(PushNotificationService.Level.current.includes) + newSenders)
             .filter { CorresSettings.notifies(for: $0.id.account) }
+            // During a Focus limited to one account, only that account notifies.
+            .filter { thread in CorresFocusFilter.activeAccount.map { $0 == thread.id.account } ?? true }
         pushService.notifyAboutNewMail(toNotify)
         WidgetBridge.update(from: store.threads)
         return .newData
@@ -259,7 +261,17 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
                                             didReceive response: UNNotificationResponse) async {
         let info = response.notification.request.content.userInfo
-        guard let account = info["account"] as? String, let providerID = info["thread"] as? String else { return }
+        if info["destination"] as? String == "brief" {
+            await MainActor.run { AppRouter.shared.pending = .destination(.brief) }
+            return
+        }
+        guard let account = info["account"] as? String, let providerID = info["thread"] as? String else {
+            // A summary of several emails opens Needs You.
+            if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
+                await MainActor.run { AppRouter.shared.pending = .destination(.needsYou) }
+            }
+            return
+        }
         await handleNotificationAction(response.actionIdentifier, account: account, providerID: providerID)
     }
 
@@ -273,6 +285,9 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             await threadActions.commitPendingRemoval()
         case PushNotificationService.markReadAction:
             await threadActions.setUnread(false, for: thread)
+        case UNNotificationDefaultActionIdentifier:
+            // Tapping the notification opens that conversation.
+            router.pending = .thread(thread.id)
         default:
             break
         }

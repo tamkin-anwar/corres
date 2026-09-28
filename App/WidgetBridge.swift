@@ -27,6 +27,7 @@ enum WidgetBridge {
                                       isSample: !threads.isEmpty && threads.allSatisfy { $0.id.account == "sample" },
                                       updatedAt: now)
         snapshot.isLocked = isLocked && !snapshot.isSample
+        BriefNotifier.reschedule(snapshot)
         // Compare without the timestamp, so a sync that changed nothing
         // doesn't spend the widget reload budget.
         var comparable = snapshot

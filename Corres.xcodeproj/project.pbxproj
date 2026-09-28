@@ -74,6 +74,7 @@
 		2EBED90023A34A2EAC3923C9 /* Core/MailSignals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */; };
 		C15747BA2BA949D890FAA45B /* App/CorresSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8BEA5EECE643858167C548 /* App/CorresSettings.swift */; };
 		192CE0320F4A4F5F8C7D4F2C /* App/LinkOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D370982C074FF8839A73E6 /* App/LinkOpener.swift */; };
+		DA2DA6E461714EA88E32A952 /* App/BriefNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F763700EF74BE78B3980EF /* App/BriefNotifier.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -175,6 +176,7 @@
 		3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/MailSignals.swift; sourceTree = SOURCE_ROOT; };
 		9E8BEA5EECE643858167C548 /* App/CorresSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CorresSettings.swift; sourceTree = SOURCE_ROOT; };
 		B2D370982C074FF8839A73E6 /* App/LinkOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/LinkOpener.swift; sourceTree = SOURCE_ROOT; };
+		54F763700EF74BE78B3980EF /* App/BriefNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/BriefNotifier.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -234,6 +236,7 @@
 				D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */,
 				0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */,
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
+				54F763700EF74BE78B3980EF /* App/BriefNotifier.swift */,
 				B2D370982C074FF8839A73E6 /* App/LinkOpener.swift */,
 				9E8BEA5EECE643858167C548 /* App/CorresSettings.swift */,
 				3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */,
@@ -406,6 +409,7 @@
 				84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */,
 				BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */,
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
+				DA2DA6E461714EA88E32A952 /* App/BriefNotifier.swift in Sources */,
 				192CE0320F4A4F5F8C7D4F2C /* App/LinkOpener.swift in Sources */,
 				C15747BA2BA949D890FAA45B /* App/CorresSettings.swift in Sources */,
 				2EBED90023A34A2EAC3923C9 /* Core/MailSignals.swift in Sources */,

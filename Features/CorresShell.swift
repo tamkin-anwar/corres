@@ -41,6 +41,18 @@ struct CorresShell: View {
         entitlements.hasLoaded && !entitlements.isPro && !auth.accounts.isEmpty
     }
 
+    @State private var focusSetFilter = false
+
+    private func applyFocusFilter() {
+        if let account = CorresFocusFilter.activeAccount, auth.accounts.contains(where: { $0.email == account }) {
+            accountFilter = account
+            focusSetFilter = true
+        } else if focusSetFilter {
+            accountFilter = nil
+            focusSetFilter = false
+        }
+    }
+
     private func path(for destination: Destination) -> Binding<NavigationPath> {
         Binding(get: { paths[destination] ?? NavigationPath() }, set: { paths[destination] = $0 })
     }
@@ -103,6 +115,10 @@ struct CorresShell: View {
         // Premium apps confirm what just happened in the hand, not only on screen.
         .sensoryFeedback(.success, trigger: outbox.pending?.id) { _, new in new != nil }
         .sensoryFeedback(.impact(weight: .medium), trigger: threadActions.pendingRemoval?.id) { _, new in new != nil }
+        // A Focus filter (Settings → Focus) limits Corres to one account
+        // while it's on; turning the Focus off brings every account back.
+        .onReceive(NotificationCenter.default.publisher(for: CorresFocusFilter.didChange)) { _ in applyFocusFilter() }
+        .onAppear { applyFocusFilter() }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { Task { await threadActions.commitPendingRemoval() } }
         }

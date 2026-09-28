@@ -29,11 +29,6 @@ struct PreferencesView: View {
                         settingLabel("Appearance", "circle.lefthalf.filled")
                     }
                     NavigationLink {
-                        ComposingSettingsView(auth: auth)
-                    } label: {
-                        settingLabel("Composing", "square.and.pencil")
-                    }
-                    NavigationLink {
                         SortingSettingsView(store: store)
                     } label: {
                         settingLabel("Sorting", "line.3.horizontal.decrease")
@@ -44,14 +39,19 @@ struct PreferencesView: View {
                         settingLabel("Lists", "list.bullet")
                     }
                     NavigationLink {
-                        SwipeSettingsView()
-                    } label: {
-                        settingLabel("Swipes", "hand.draw")
-                    }
-                    NavigationLink {
                         ReadingSettingsView()
                     } label: {
                         settingLabel("Reading", "text.book.closed")
+                    }
+                    NavigationLink {
+                        ComposingSettingsView(auth: auth)
+                    } label: {
+                        settingLabel("Composing", "square.and.pencil")
+                    }
+                    NavigationLink {
+                        SwipeSettingsView()
+                    } label: {
+                        settingLabel("Swipes", "hand.draw")
                     }
                     NavigationLink {
                         SnippetSettingsView()
@@ -759,6 +759,20 @@ private struct NotificationSettingsView: View {
     @AppStorage(PushNotificationService.NewSenderAlerts.timeSensitiveKey) private var newTimeSensitive = true
     @AppStorage(PushNotificationService.NewSenderAlerts.peopleKey) private var newPeople = true
     @AppStorage(PushNotificationService.NewSenderAlerts.otherKey) private var newOther = false
+    @AppStorage(BriefNotifier.enabledKey) private var briefEnabled = false
+    @AppStorage(BriefNotifier.hourKey) private var briefHour = 8
+    @AppStorage(BriefNotifier.minuteKey) private var briefMinute = 0
+
+    private var briefTime: Binding<Date> {
+        Binding(
+            get: { Calendar.current.date(bySettingHour: briefHour, minute: briefMinute, second: 0, of: .now) ?? .now },
+            set: { date in
+                let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+                briefHour = parts.hour ?? 8
+                briefMinute = parts.minute ?? 0
+            }
+        )
+    }
 
     var body: some View {
         Form {
@@ -791,6 +805,14 @@ private struct NotificationSettingsView: View {
                          + " Everything is always in Corres when you open it.")
                 }
                 Section {
+                    Toggle("Morning Brief", isOn: $briefEnabled)
+                    if briefEnabled {
+                        DatePicker("Time", selection: briefTime, displayedComponents: .hourAndMinute)
+                    }
+                } footer: {
+                    Text("One quiet notification a day with what needs you and who you're waiting on. Tap it to open Brief.")
+                }
+                Section {
                     Toggle("Time-sensitive", isOn: $newTimeSensitive)
                     Toggle("From a person", isOn: $newPeople)
                     Toggle("Everything else", isOn: $newOther)
@@ -804,6 +826,9 @@ private struct NotificationSettingsView: View {
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
         .navigationTitle("Notifications")
+        .onChange(of: briefEnabled) { BriefNotifier.reschedule() }
+        .onChange(of: briefHour) { BriefNotifier.reschedule() }
+        .onChange(of: briefMinute) { BriefNotifier.reschedule() }
         .navigationBarTitleDisplayMode(.inline)
         .alert("Could not turn on notifications", isPresented: Binding(
             get: { pushService.errorMessage != nil },
