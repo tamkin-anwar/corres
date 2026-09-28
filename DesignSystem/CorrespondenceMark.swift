@@ -133,27 +133,6 @@ struct CorresIconArtwork: View {
     }
 }
 
-/// The Light Home Screen icon: the same mark on Corres's ivory, with the
-/// same cool light from above, so the icon matches its neighbours in
-/// Light mode instead of sitting there as a black tile.
-struct CorresLightIconArtwork: View {
-    var body: some View {
-        ZStack {
-            LinearGradient(colors: [Color(markHex: 0xFFFEFB), Color(markHex: 0xF6F3EC), Color(markHex: 0xE9E4DA)],
-                           startPoint: .top, endPoint: .bottom)
-            RadialGradient(colors: [Color.white.opacity(0.9), .clear],
-                           center: UnitPoint(x: 0.5, y: -0.1), startRadius: 0, endRadius: 760)
-            RadialGradient(colors: [Color(markHex: 0x8FB4E8).opacity(0.16), .clear],
-                           center: .center, startRadius: 0, endRadius: 440)
-            CorrespondenceMark(field: .light)
-                .frame(width: 1110, height: 1110)
-                .offset(x: 24)
-        }
-        .frame(width: 1024, height: 1024)
-        .clipped()
-    }
-}
-
 /// A square showcase of the mark for the studio site: the icon's field
 /// with wider breathing room. The site sets the name and tagline itself.
 struct CorresHeroArtwork: View {
