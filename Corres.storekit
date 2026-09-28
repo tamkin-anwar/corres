@@ -33,7 +33,21 @@
       "subscriptions": [
         {
           "adHocOffers": [],
-          "codeOffers": [],
+          "codeOffers": [
+            {
+              "displayPrice": "0.0",
+              "eligibility": [
+                "expired",
+                "existing",
+                "new"
+              ],
+              "internalID": "4FD55D98-460C-456D-94FF-95FEFE1F8A11",
+              "isStackable": true,
+              "paymentMode": "free",
+              "referenceName": "Free 3 months (test)",
+              "subscriptionPeriod": "P3M"
+            }
+          ],
           "displayPrice": "200.0",
           "familyShareable": false,
           "groupNumber": 1,
@@ -59,7 +73,21 @@
         },
         {
           "adHocOffers": [],
-          "codeOffers": [],
+          "codeOffers": [
+            {
+              "displayPrice": "0.0",
+              "eligibility": [
+                "expired",
+                "existing",
+                "new"
+              ],
+              "internalID": "2EF29D27-CC6A-4EA2-9A22-FA7C2A2A58BB",
+              "isStackable": true,
+              "paymentMode": "free",
+              "referenceName": "Free 3 months (test)",
+              "subscriptionPeriod": "P3M"
+            }
+          ],
           "displayPrice": "20.0",
           "familyShareable": false,
           "groupNumber": 2,

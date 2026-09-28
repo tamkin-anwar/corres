@@ -16,7 +16,6 @@ struct PreferencesView: View {
     @Environment(EntitlementStore.self) private var entitlements
     @State private var showingPaywall = false
     @State private var managingSubscription = false
-    @State private var redeeming = false
 
     var body: some View {
         NavigationStack {
@@ -119,7 +118,14 @@ struct PreferencesView: View {
                 EmptyView()
             }
             Button("Restore purchases") { Task { await entitlements.restore() } }
-            Button("Redeem code") { redeeming = true }
+            Button("Redeem code") {
+                    // Close this sheet first so Apple's sheet isn't stacked on it.
+                    dismiss()
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(450))
+                        await entitlements.presentRedeemSheet()
+                    }
+                }
         } header: {
             Text("Plan")
         } footer: {
@@ -129,7 +135,6 @@ struct PreferencesView: View {
         }
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         .manageSubscriptionsSheet(isPresented: $managingSubscription)
-        .offerCodeRedemption(isPresented: $redeeming) { _ in Task { await entitlements.refresh() } }
         .alert("Corres Pro", isPresented: Binding(
             get: { entitlements.errorMessage != nil && !showingPaywall },
             set: { if !$0 { entitlements.errorMessage = nil } }

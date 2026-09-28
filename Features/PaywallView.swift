@@ -13,7 +13,6 @@ struct PaywallView: View {
     @Environment(EntitlementStore.self) private var entitlements
     @Environment(\.dismiss) private var dismiss
     @State private var selectedID = EntitlementStore.ProductID.annual
-    @State private var redeeming = false
 
     var body: some View {
         NavigationStack {
@@ -45,9 +44,6 @@ struct PaywallView: View {
             }
             .task { await entitlements.loadProducts() }
             .onChange(of: entitlements.isPro) { _, isPro in if isPro { dismiss() } }
-            .offerCodeRedemption(isPresented: $redeeming) { _ in
-                Task { await entitlements.refresh() }
-            }
             .alert("Corres Pro", isPresented: Binding(
                 get: { entitlements.errorMessage != nil },
                 set: { if !$0 { entitlements.errorMessage = nil } }
@@ -240,7 +236,14 @@ struct PaywallView: View {
         VStack(spacing: 14) {
             HStack(spacing: 22) {
                 Button("Restore") { Task { await entitlements.restore() } }
-                Button("Redeem code") { redeeming = true }
+                Button("Redeem code") {
+                    // Close this sheet first so Apple's sheet isn't stacked on it.
+                    dismiss()
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(450))
+                        await entitlements.presentRedeemSheet()
+                    }
+                }
             }
             .font(.subheadline.weight(.medium))
             HStack(spacing: 16) {

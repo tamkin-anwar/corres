@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import StoreKit
+import UIKit
 
 /// Corres Pro, through StoreKit 2 only: no server of ours decides who has
 /// Pro. Apple's signed transactions on the device are the record, so a
@@ -114,6 +115,22 @@ final class EntitlementStore {
             }
         } catch {
             errorMessage = "The purchase didn't go through. Please try again."
+        }
+    }
+
+    /// Apple's Redeem Code sheet, presented from the app's own window
+    /// rather than from inside another sheet: stacked on top of the
+    /// paywall or Settings, iOS laid it out with its close button over
+    /// the header.
+    func presentRedeemSheet() async {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }) else { return }
+        do {
+            try await AppStore.presentOfferCodeRedeemSheet(in: scene)
+            await refresh()
+        } catch {
+            errorMessage = "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account."
         }
     }
 
