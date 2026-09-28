@@ -292,6 +292,11 @@ struct CorrespondenceList: View {
                     scrollPosition = newValue.last?.id
                 }
             }
+            // Room below the last rows while the Undo pill shows, so any row
+            // can be scrolled clear of it.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear.frame(height: threadActions?.pendingRemoval == nil ? 0 : 56)
+            }
             .confirmationDialog("Move this conversation to Trash?",
                                 isPresented: Binding(get: { confirmingTrash != nil }, set: { if !$0 { confirmingTrash = nil } }),
                                 titleVisibility: .visible) {

@@ -207,20 +207,42 @@ struct CorresShell: View {
         } message: { Text(pushService.errorMessage ?? "Please try again.") }
     }
 
+    @State private var bannerDrag: CGFloat = 0
+
     @ViewBuilder
     private var outboxBanner: some View {
         if outbox.pending == nil, outbox.failed == nil, let removal = threadActions.pendingRemoval {
-            HStack(spacing: 12) {
+            // A small pill, not a full-width bar: working through a stack of
+            // email, the rows beside it stay swipeable, the list makes room
+            // below (see CorrespondenceList), and a flick down sends it now.
+            HStack(spacing: 10) {
                 Image(systemName: removal.kind == .archive ? "archivebox" : "trash")
                     .foregroundStyle(CorresPalette.secondary)
                 Text(removal.title).font(.subheadline.weight(.medium))
-                Text(removal.thread.subject).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(1)
-                Spacer(minLength: 8)
-                Button("Undo") { threadActions.undoRemoval() }.font(.subheadline.weight(.semibold))
+                Button("Undo") { threadActions.undoRemoval() }
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.leading, 4)
             }
-            .padding(.horizontal, 20).padding(.vertical, 14)
+            .padding(.horizontal, 18).frame(minHeight: 44)
             .corresGlass(in: Capsule())
-            .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
+            .fixedSize()
+            // Follows the finger vertically; a flick up or down puts it away
+            // (the archive or delete goes through, as if the time ran out).
+            .offset(y: bannerDrag)
+            .opacity(1 - min(abs(bannerDrag) / 120, 0.6))
+            .gesture(DragGesture(minimumDistance: 8)
+                .onChanged { bannerDrag = $0.translation.height }
+                .onEnded { value in
+                    let moved = value.translation.height
+                    let flung = value.predictedEndTranslation.height
+                    if abs(moved) > 24 || abs(flung) > 60 {
+                        Task { await threadActions.commitPendingRemoval() }
+                    }
+                    withAnimation(.spring(duration: 0.25)) { bannerDrag = 0 }
+                })
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("\(removal.title): \(removal.thread.subject)")
+            .padding(.bottom, 92)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         } else if let pending = outbox.pending {
             HStack(spacing: 12) {

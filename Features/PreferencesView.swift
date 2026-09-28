@@ -403,7 +403,7 @@ private struct AccountDetailView: View {
 /// comes from: the composing settings Mail, Gmail and Spark all offer.
 private struct ComposingSettingsView: View {
     var auth: GoogleAuthService
-    @AppStorage(CorresSettings.undoSendKey) private var undoSeconds = 10
+    @AppStorage(CorresSettings.undoSendKey) private var undoSeconds = 5
     @AppStorage(CorresSettings.defaultReplyKey) private var defaultReply = CorresSettings.DefaultReply.reply.rawValue
     @AppStorage(CorresSettings.defaultFromKey) private var defaultFrom = ""
 

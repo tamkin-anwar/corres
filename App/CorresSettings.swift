@@ -8,10 +8,11 @@ enum CorresSettings {
 
     // MARK: Composing
 
-    /// Apple Mail's own default is 10 seconds; Off sends at once.
+    /// 5 seconds by default: long enough to catch a mistake, short enough
+    /// not to wait on. Off sends at once.
     static let undoSendKey = "corres.undoSendSeconds"
     static let undoSendChoices = [0, 5, 10, 20, 30]
-    static var undoSendSeconds: Int { defaults.object(forKey: undoSendKey) as? Int ?? 10 }
+    static var undoSendSeconds: Int { defaults.object(forKey: undoSendKey) as? Int ?? 5 }
 
     static let defaultReplyKey = "corres.defaultReply"
     enum DefaultReply: String, CaseIterable, Identifiable {
