@@ -170,10 +170,14 @@ public actor SwiftDataMailRepository: MailRepository {
         } else {
             // Relative dates ("by Friday") only mean something for recent mail.
             let recent = now.timeIntervalSince(model.receivedAt) < InboxClassifier.waitingWindow
-            due = recent ? MailSignals.deadline(in: text, now: now) : nil
             let automated = Correspondence.isAutomated(listUnsubscribeMailto: model.listUnsubscribeMailto,
                                                        listUnsubscribeURL: model.listUnsubscribeURL,
                                                        senderEmail: model.senderEmail)
+            let bulk = InboxClassifier.bulkKind(labelIds: model.labelIds, looksAutomated: automated)
+            if recent {
+                due = bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text, now: now)
+                    : bulk == nil ? MailSignals.deadline(in: text, now: now) : nil
+            }
             let copied = Correspondence.isCopiedOnly(account: model.account, to: model.toRecipients, cc: model.ccRecipients)
             (attention, reason) = InboxClassifier.initialAttention(
                 isUnread: model.isUnread, labelIds: model.labelIds, looksAutomated: automated,

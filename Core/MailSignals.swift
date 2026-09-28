@@ -56,6 +56,21 @@ public enum MailSignals {
         return earliest
     }
 
+    /// For automated mail about an appointment, bill or signature, any date
+    /// in the next few days is the one that matters, however it's worded:
+    /// "Your appointment is tomorrow at 9:00 AM" has no "by" or "due" in
+    /// it. Promotions never get here (see `InboxClassifier`).
+    public static func timeSensitiveDate(in text: String, now: Date = .now, within: TimeInterval = 3 * 86_400) -> Date? {
+        if let due = deadline(in: text, now: now, horizon: within) { return due }
+        guard isObligation(text),
+              let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else { return nil }
+        let own = String(ownText(text).prefix(4_000))
+        return detector.matches(in: own, range: NSRange(location: 0, length: (own as NSString).length))
+            .compactMap(\.date)
+            .filter { $0 > now.addingTimeInterval(-3_600) && $0 < now.addingTimeInterval(within) }
+            .min()
+    }
+
     /// Automated mail that carries a real obligation for this person: a
     /// bill, a signature, a renewal, an appointment. Only ever combined
     /// with a detected deadline, and never applied to promotions.

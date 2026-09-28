@@ -636,7 +636,9 @@ struct GmailAPIClient {
         let text = subject + "\n" + body
         let asks = MailSignals.asksSomething(text)
         let fromYou = senderEmail.lowercased() == account.lowercased()
-        let deadline = fromYou ? nil : MailSignals.deadline(in: text)
+        let bulk = InboxClassifier.bulkKind(labelIds: message.labelIds ?? [], looksAutomated: automated)
+        let deadline = fromYou ? nil
+            : (bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text) : bulk == nil ? MailSignals.deadline(in: text) : nil)
         var (attention, reason) = InboxClassifier.initialAttention(
             isUnread: isUnread, labelIds: message.labelIds ?? [], looksAutomated: automated, receivedAt: receivedAt,
             isCopiedOnly: Correspondence.isCopiedOnly(account: account, to: toRecipients, cc: ccRecipients),

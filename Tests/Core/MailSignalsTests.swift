@@ -128,4 +128,12 @@ struct MailSignalsTests {
         ], attention: .waiting, now: now)
         #expect(waiting.first?.sender == "quietFiveDays")
     }
+
+    @Test func appointmentsTomorrowAreTimeSensitiveButPlainDatesAreNot() {
+        let now = Date()
+        let tomorrow = now.addingTimeInterval(86_400)
+        #expect(MailSignals.timeSensitiveDate(in: "Your Labcorp appointment is on \(spelled(tomorrow)).", now: now) != nil)
+        #expect(MailSignals.timeSensitiveDate(in: "Your order shipped on \(spelled(tomorrow)).", now: now) == nil)
+        #expect(MailSignals.timeSensitiveDate(in: "Appointment on \(spelled(now.addingTimeInterval(10 * 86_400))).", now: now) == nil)
+    }
 }

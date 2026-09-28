@@ -511,7 +511,7 @@ public enum InboxClassifier {
     public static let readReason = "Already read in Gmail."
     public static let questionReason = "Asks you something."
     public static let deadlineReason = "Mentions a deadline."
-    public static let obligationReason = "Has a deadline for you."
+    public static let obligationReason = "Time-sensitive."
     public static let copiedReason = "You're copied, not asked. Kept out of Needs You."
     /// Where a thread goes after you write in it, from any app: Waiting if
     /// you asked something of a person, otherwise done for now.
