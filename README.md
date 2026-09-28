@@ -24,8 +24,8 @@ Built by [Anwar Creative Studio](https://tamkin-anwar.github.io/anwar-creative-s
 - **Mail:** every account in one inbox, newest first, with Everything / Unread / People / Flagged / Updates views. Scrolling pages in older mail.
 - **Screener:** mail from a new sender waits for Allow or Block before it reaches the other lists.
 
-**A full Gmail client**
-- Multiple Gmail accounts, merged or one at a time. A three-column layout on iPad, keyboard shortcuts on any hardware keyboard.
+**A complete mail app**
+- Multiple accounts, merged or one at a time (Gmail today, with more providers to come). A three-column layout on iPad, keyboard shortcuts on any hardware keyboard.
 - Whole conversations: earlier messages appear as compact rows above the latest one, open in place, and long threads fold in the middle.
 - Read, reply, reply all, forward and compose, with attachments and a short undo-send window.
 - Undo after Archive or Trash: the conversation leaves instantly, and Gmail is told only after the 5-second window.
