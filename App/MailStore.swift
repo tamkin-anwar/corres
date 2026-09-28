@@ -138,7 +138,7 @@ final class MailStore {
     /// Bump the version whenever `InboxClassifier`'s rules change, so
     /// already-synced threads get re-sorted under the new rules too (v2
     /// added the "someone you've written to" signal, v3 the 30-day limit).
-    private static let attentionRulesMigrationKey = "corres.migration.inboxClassifier.v5"
+    private static let attentionRulesMigrationKey = "corres.migration.inboxClassifier.v6"
 
     /// Runs `MailRepository.reclassifyLegacySyncDefaults` once per rules
     /// version. Only marks itself done on success, so a failed attempt

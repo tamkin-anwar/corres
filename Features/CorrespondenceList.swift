@@ -9,6 +9,9 @@ struct CorrespondenceRow: View {
     var showsReason = false
     /// A short account marker, shown only in the merged view of several accounts.
     var accountTag: String?
+    /// In Sent: who you wrote to, shown in place of the sender, with the
+    /// time you sent it.
+    var sentTo: String?
     @Environment(\.dynamicTypeSize) private var typeSize
     @AppStorage(CorresSettings.previewLinesKey) private var previewLines = 2
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
@@ -23,7 +26,7 @@ struct CorrespondenceRow: View {
             if showAvatars { CorrespondentAvatar(initials: thread.initials) }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(thread.sender)
+                    Text(sentTo.map { "To: \($0)" } ?? thread.sender)
                         .font(.body.weight(thread.isUnread ? .semibold : .medium))
                         .foregroundStyle(thread.isUnread ? CorresPalette.ink : CorresPalette.secondary)
                         .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
@@ -48,7 +51,7 @@ struct CorrespondenceRow: View {
                             .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(CorresPalette.line, lineWidth: 1))
                     }
                     if !typeSize.isAccessibilitySize {
-                        Text(Self.timestamp(thread.receivedAt))
+                        Text(Self.timestamp(sentTo != nil ? (thread.lastSentAt ?? thread.receivedAt) : thread.receivedAt))
                             .font(.footnote).monospacedDigit()
                             .foregroundStyle(CorresPalette.tertiary)
                     }
@@ -125,7 +128,7 @@ extension Correspondence {
 /// The Mail tab's quick filters. Everything stays in one chronological
 /// list; these only narrow it, and never hide mail anywhere else.
 enum MailFilter: String, CaseIterable, Identifiable {
-    case everything = "Everything", unread = "Unread", people = "People", flagged = "Flagged", updates = "Updates"
+    case everything = "Everything", unread = "Unread", people = "People", flagged = "Flagged", sent = "Sent", updates = "Updates"
     var id: String { rawValue }
 
     func includes(_ thread: Correspondence) -> Bool {
@@ -133,6 +136,7 @@ enum MailFilter: String, CaseIterable, Identifiable {
         case .everything: true
         case .unread: thread.isUnread
         case .flagged: thread.isFlagged
+        case .sent: thread.lastSentAt != nil
         case .people: InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == nil
         case .updates: InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) != nil
         }
@@ -203,7 +207,10 @@ struct CorrespondenceList: View {
             all = MailQuery.filter(scopedThreads, attention: destination.attention, search: search)
         }
         guard destination == .mail, mailFilter != .everything else { return all }
-        return all.filter(mailFilter.includes)
+        let filtered = all.filter(mailFilter.includes)
+        // Sent reads like a Sent mailbox: by when you sent, newest first.
+        guard mailFilter == .sent else { return filtered }
+        return filtered.sorted { ($0.lastSentAt ?? .distantPast) > ($1.lastSentAt ?? .distantPast) }
     }
 
     /// Needs You splits into what's due within three days and the rest,
@@ -212,6 +219,18 @@ struct CorrespondenceList: View {
         guard destination == .needsYou else { return [] }
         let horizon = Date.now.addingTimeInterval(3 * 86_400)
         return Set(results.filter { ($0.dueAt ?? .distantFuture) <= horizon }.map(\.id))
+    }
+
+    private var showingSent: Bool { destination == .mail && mailFilter == .sent }
+
+    /// Who you wrote to: the person who answered, or the first person you
+    /// sent it to, by name when Corres has seen them write.
+    private func recipientName(for thread: Correspondence) -> String {
+        if !thread.isFromAccountOwner { return thread.sender }
+        guard let address = thread.toRecipients.first ?? thread.ccRecipients.first else { return thread.sender }
+        let name = store.threads.first { $0.senderEmail?.lowercased() == address }?.sender
+        let others = thread.toRecipients.count + thread.ccRecipients.count - 1
+        return (name ?? address) + (others > 0 ? " +\(others)" : "")
     }
 
     private var showsAccountTags: Bool { accountFilter == nil && (auth?.accounts.count ?? 0) > 1 }
@@ -226,6 +245,9 @@ struct CorrespondenceList: View {
     @AppStorage(CorresSettings.confirmTrashKey) private var confirmTrash = false
     @State private var confirmingTrash: Correspondence?
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatarsInList = true
+    @State private var isSelecting = false
+    @State private var confirmingBulkTrash = false
+    @State private var selected: Set<ThreadID> = []
 
     var body: some View {
         if scrolls {
@@ -293,10 +315,22 @@ struct CorrespondenceList: View {
                 }
             }
             // Room below the last rows while the Undo pill shows, so any row
-            // can be scrolled clear of it.
+            // can be scrolled clear of it; while selecting, the action bar.
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                Color.clear.frame(height: threadActions?.pendingRemoval == nil ? 0 : 56)
+                if isSelecting {
+                    selectionBar
+                } else {
+                    Color.clear.frame(height: threadActions?.pendingRemoval == nil ? 0 : 56)
+                }
             }
+            .toolbar(isSelecting ? .hidden : .automatic, for: .tabBar)
+            .toolbar { selectionToolbar }
+            .animation(.snappy(duration: 0.25), value: isSelecting)
+            .onChange(of: results.map(\.id)) { _, ids in selected.formIntersection(ids) }
+            .onChange(of: isSelecting) { _, value in router.isSelecting = value }
+            .onDisappear { if isSelecting { endSelection() }; router.isSelecting = false }
+            .onChange(of: destination) { endSelection() }
+            .onChange(of: mailFilter) { endSelection() }
             .confirmationDialog("Move this conversation to Trash?",
                                 isPresented: Binding(get: { confirmingTrash != nil }, set: { if !$0 { confirmingTrash = nil } }),
                                 titleVisibility: .visible) {
@@ -330,6 +364,105 @@ struct CorrespondenceList: View {
 
     private var nonScrollingBody: some View {
         ScrollView { staticContent }
+    }
+
+    // MARK: - Select
+
+    private func toggleSelection(_ id: ThreadID) {
+        if selected.contains(id) { selected.remove(id) } else { selected.insert(id) }
+    }
+
+    private func endSelection() {
+        isSelecting = false
+        selected = []
+    }
+
+    private var selectedThreads: [Correspondence] { results.filter { selected.contains($0.id) } }
+
+    @ToolbarContentBuilder
+    private var selectionToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            if isSelecting {
+                Button(selected.count == results.count && !results.isEmpty ? "Deselect All" : "Select All") {
+                    selected = selected.count == results.count ? [] : Set(results.map(\.id))
+                }
+            } else if !results.isEmpty {
+                Button("Select") { isSelecting = true }
+            }
+        }
+        if isSelecting {
+            ToolbarItem(placement: .principal) {
+                Text(selected.isEmpty ? "Select Conversations" : "\(selected.count) Selected")
+                    .font(.headline).monospacedDigit()
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Done") { endSelection() }.fontWeight(.semibold)
+            }
+        }
+    }
+
+    /// Mail's selection actions: Mark, Move, Archive, Trash, for every
+    /// selected conversation at once, with one Undo.
+    private var selectionBar: some View {
+        let chosen = selectedThreads
+        let anyUnread = chosen.contains(where: \.isUnread)
+        let anyUnflagged = chosen.contains { !$0.isFlagged }
+        return HStack(spacing: 0) {
+            bulkButton(anyUnread ? "envelope.open" : "envelope.badge", anyUnread ? "Mark as Read" : "Mark as Unread") {
+                for thread in chosen { await threadActions?.setUnread(!anyUnread, for: thread) }
+            }
+            bulkButton(anyUnflagged ? "flag" : "flag.slash", anyUnflagged ? "Flag" : "Unflag") {
+                for thread in chosen { await threadActions?.setFlagged(anyUnflagged, for: thread) }
+            }
+            Menu {
+                ForEach([Attention.needsYou, .waiting, .quiet, .handled], id: \.self) { attention in
+                    Button(attention.title) {
+                        Task {
+                            for thread in chosen { await store.update(thread.id, to: attention) }
+                            endSelection()
+                        }
+                    }
+                }
+            } label: {
+                bulkLabel("arrow.up.and.down.text.horizontal", "Move to")
+            }
+            .disabled(chosen.isEmpty)
+            bulkButton("archivebox", "Archive") { await threadActions?.archive(chosen) }
+            bulkButton("trash", "Move to Trash") {
+                if confirmTrash { confirmingBulkTrash = true } else { await threadActions?.trash(chosen) }
+            }
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 56)
+        .corresGlass(in: Capsule())
+        .padding(.horizontal, CorresSpace.page).padding(.bottom, 8)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .confirmationDialog(chosen.count == 1 ? "Move this conversation to Trash?" : "Move \(chosen.count) conversations to Trash?",
+                            isPresented: $confirmingBulkTrash, titleVisibility: .visible) {
+            Button("Move to Trash", role: .destructive) {
+                Task { await threadActions?.trash(chosen); endSelection() }
+            }
+        }
+    }
+
+    private func bulkButton(_ icon: String, _ label: String, action: @escaping () async -> Void) -> some View {
+        Button {
+            Task {
+                await action()
+                if !confirmingBulkTrash { endSelection() }
+            }
+        } label: {
+            bulkLabel(icon, label)
+        }
+        .disabled(selected.isEmpty)
+    }
+
+    private func bulkLabel(_ icon: String, _ label: String) -> some View {
+        Image(systemName: icon)
+            .font(.body.weight(.medium))
+            .frame(maxWidth: .infinity, minHeight: 50)
+            .contentShape(Rectangle())
+            .accessibilityLabel(label)
     }
 
     /// On iPhone a plain List, so rows push; in the split layout a List
@@ -442,7 +575,8 @@ struct CorrespondenceList: View {
         switch destination {
         case .needsYou: "Anything Corres files here asks something of you. Everything else is in Mail."
         case .waiting: "When you reply to someone, or move a conversation here, it waits here until they answer."
-        default: "Pull down to check for new mail."
+        default: mailFilter == .sent ? "Conversations you've written in, from Corres or any other app, show here."
+                                     : "Pull down to check for new mail."
         }
     }
 
@@ -505,12 +639,12 @@ struct CorrespondenceList: View {
         let orderedIDs = results.map(\.id)
         return ForEach(threads) { thread in
             PremiumSwipeRow(
-                leadingShort: leadingVisual(for: leadingShortAction, thread: thread),
-                leadingLong: leadingVisual(for: leadingLongAction, thread: thread),
-                trailingShort: SwipeVisual(title: trailingShortAction.title, systemImage: trailingShortAction.systemImage,
+                leadingShort: isSelecting ? nil : leadingVisual(for: leadingShortAction, thread: thread),
+                leadingLong: isSelecting ? nil : leadingVisual(for: leadingLongAction, thread: thread),
+                trailingShort: isSelecting ? nil : SwipeVisual(title: trailingShortAction.title, systemImage: trailingShortAction.systemImage,
                                            tint: trailingShortAction.tint, removesRow: trailingShortAction.removesRow(in: destination)
                                                 && !(trailingShortAction == .trash && confirmTrash)),
-                trailingLong: SwipeVisual(title: trailingLongAction.title, systemImage: trailingLongAction.systemImage,
+                trailingLong: isSelecting ? nil : SwipeVisual(title: trailingLongAction.title, systemImage: trailingLongAction.systemImage,
                                           tint: trailingLongAction.tint, removesRow: trailingLongAction.removesRow(in: destination)
                                                && !(trailingLongAction == .trash && confirmTrash)),
                 onLeadingShort: { perform(leadingShortAction, on: thread) },
@@ -518,12 +652,29 @@ struct CorrespondenceList: View {
                 onTrailingShort: { perform(trailingShortAction, on: thread) },
                 onTrailingLong: { perform(trailingLongAction, on: thread) }
             ) {
-                NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
-                    CorrespondenceRow(thread: thread, showsReason: destination != .mail, accountTag: accountTag(for: thread))
+                let row = CorrespondenceRow(thread: thread, showsReason: destination != .mail, accountTag: accountTag(for: thread),
+                                            sentTo: showingSent ? recipientName(for: thread) : nil)
+                if isSelecting {
+                    // Tapping selects, the way Mail's Select works.
+                    Button { toggleSelection(thread.id) } label: {
+                        HStack(spacing: 0) {
+                            Image(systemName: selected.contains(thread.id) ? "checkmark.circle.fill" : "circle")
+                                .font(.title3)
+                                .foregroundStyle(selected.contains(thread.id) ? CorresPalette.accent : CorresPalette.tertiary)
+                                .padding(.leading, 14)
+                                .transition(.move(edge: .leading).combined(with: .opacity))
+                            row
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selected.contains(thread.id) ? .isSelected : [])
+                } else {
+                    NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) { row }
+                        .hidingDisclosureIndicator()
                 }
-                .hidingDisclosureIndicator()
             }
-            .contextMenu { rowMenu(for: thread) }
+            .contextMenu { if !isSelecting { rowMenu(for: thread) } }
             .disabled(store.pending.contains(thread.id))
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.visible)

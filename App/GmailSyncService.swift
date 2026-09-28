@@ -274,7 +274,20 @@ final class GmailSyncService {
     /// stored cursor expired and forced a resync, both the Screener's
     /// baseline case: every sender already in the inbox is established
     /// relationship, not a new arrival to be screened.
+    /// One full listing per account after Sent arrived, so conversations
+    /// you wrote in before they replied show up there too. Re-listing is
+    /// metadata only, and re-fetches of mail already stored are no-ops.
+    private static func sentBackfillKey(for account: String) -> String { "corres.gmail.sentBackfill.\(account)" }
+
     private func planSync(account: String) async throws -> (plan: GmailAPIClient.SyncPlan, isFullListing: Bool) {
+        if !defaults.bool(forKey: Self.sentBackfillKey(for: account)) {
+            defaults.set(true, forKey: Self.sentBackfillKey(for: account))
+            if historyCursor(for: account) != nil {
+                // Not a first sync: known senders stay known, so nothing
+                // lands in the Screener because of this.
+                return (try await client.planFullListing(account: account), false)
+            }
+        }
         guard let cursor = historyCursor(for: account) else {
             return (try await client.planFullListing(account: account), true)
         }

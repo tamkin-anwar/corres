@@ -66,6 +66,9 @@ public final class PersistedCorrespondence {
     /// with its full body already.
     public var isBodyLoaded: Bool = true
     public var waitingSince: Date? = nil
+    /// When you last wrote in this conversation, kept after they reply, so
+    /// Sent can list it.
+    public var lastSentAt: Date? = nil
 
     public init(from correspondence: Correspondence) {
         self.compositeID = Self.compositeID(account: correspondence.id.account, providerID: correspondence.id.providerID)
@@ -100,6 +103,7 @@ public final class PersistedCorrespondence {
         self.triagedMessageID = correspondence.triagedMessageID
         self.isBodyLoaded = correspondence.isBodyLoaded
         self.waitingSince = correspondence.waitingSince
+        self.lastSentAt = correspondence.lastSentAt
     }
 
     public var asCorrespondence: Correspondence {
@@ -115,7 +119,7 @@ public final class PersistedCorrespondence {
                        toRecipients: toRecipients, ccRecipients: ccRecipients, triagedMessageID: triagedMessageID,
                        listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
                        listUnsubscribeOneClick: listUnsubscribeOneClick, senderUnsubscribed: senderUnsubscribed,
-                       isBodyLoaded: isBodyLoaded, waitingSince: waitingSince)
+                       isBodyLoaded: isBodyLoaded, waitingSince: waitingSince, lastSentAt: lastSentAt)
     }
 
     public static func compositeID(account: String, providerID: String) -> String { "\(account)|\(providerID)" }

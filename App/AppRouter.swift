@@ -21,6 +21,8 @@ final class AppRouter {
     /// archived, its neighbour, so you land where you left off instead of
     /// at the top.
     var returnAnchor: ThreadID?
+    /// A list is in Select mode: the shell clears its toolbar for it.
+    var isSelecting = false
 
     /// Returns false for URLs that aren't Corres's (Google sign-in callbacks).
     func open(_ url: URL) -> Bool {

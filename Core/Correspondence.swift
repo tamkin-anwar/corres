@@ -181,6 +181,9 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// you replied, or moved it to Waiting yourself. Nil for anything not
     /// waiting, and for threads that predate it (see `waitingReference`).
     public var waitingSince: Date?
+    /// When you last wrote in this conversation, from any app; nil if you
+    /// never have. Sent lists these, newest first.
+    public var lastSentAt: Date?
 
     /// Flagged in iOS Mail, starred in Gmail: the same thing underneath, a
     /// Gmail `STARRED` label, so it mirrors both ways through the labels
@@ -197,7 +200,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
                 triagedMessageID: String? = nil,
                 listUnsubscribeMailto: String? = nil, listUnsubscribeURL: String? = nil,
                 listUnsubscribeOneClick: Bool = false, senderUnsubscribed: Bool = false,
-                isBodyLoaded: Bool = true, waitingSince: Date? = nil) {
+                isBodyLoaded: Bool = true, waitingSince: Date? = nil, lastSentAt: Date? = nil) {
         self.id = id
         self.sender = sender
         self.senderEmail = senderEmail
@@ -228,6 +231,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.senderUnsubscribed = senderUnsubscribed
         self.isBodyLoaded = isBodyLoaded
         self.waitingSince = waitingSince
+        self.lastSentAt = lastSentAt ?? (senderEmail?.lowercased() == id.account.lowercased() ? receivedAt : nil)
     }
 
     /// What "waiting for N days" counts from: when you replied or moved it,
@@ -327,7 +331,8 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
             // stays acted on regardless of what a later message offers.
             senderUnsubscribed: senderUnsubscribed,
             isBodyLoaded: incoming.isBodyLoaded,
-            waitingSince: preserveAttention ? waitingSince : nil)
+            waitingSince: preserveAttention ? waitingSince : nil,
+            lastSentAt: [lastSentAt, incoming.lastSentAt].compactMap { $0 }.max())
     }
 }
 

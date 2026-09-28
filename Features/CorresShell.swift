@@ -242,7 +242,7 @@ struct CorresShell: View {
                     withAnimation(.spring(duration: 0.25)) { bannerDrag = 0 }
                 })
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("\(removal.title): \(removal.thread.subject)")
+            .accessibilityLabel(removal.threads.count == 1 ? "\(removal.title): \(removal.thread.subject)" : removal.title)
             .padding(.bottom, 92)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         } else if let pending = outbox.pending {
@@ -480,6 +480,9 @@ struct CorresShell: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+      // While selecting, the list's own Select All / count / Done take the
+      // bar, as in Mail.
+      if !router.isSelecting {
         // Tapping the title also switches (on the lists), but the Brief has
         // no title, so a visible control is the one path that always works.
         if auth.accounts.count > 1 {
@@ -507,6 +510,7 @@ struct CorresShell: View {
         } else {
             ToolbarItem(placement: .topBarTrailing) { accountButton }
         }
+      }
     }
 }
 

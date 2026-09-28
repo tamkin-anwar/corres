@@ -33,25 +33,32 @@ final class ThreadActionService {
     /// closes, so Undo is instant and never needs a second round trip.
     struct PendingRemoval: Identifiable, Equatable {
         let id = UUID()
-        let thread: Correspondence
+        /// One conversation from a swipe; several from Select.
+        let threads: [Correspondence]
         let kind: RemovalKind
         var secondsRemaining: Int
-        var title: String { kind == .archive ? "Archived" : "Moved to Trash" }
+        var thread: Correspondence { threads[0] }
+        var title: String {
+            let verb = kind == .archive ? "Archived" : "Deleted"
+            return threads.count == 1 ? (kind == .archive ? "Archived" : "Moved to Trash") : "\(verb) \(threads.count)"
+        }
     }
 
     private(set) var pendingRemoval: PendingRemoval?
     private var removalTask: Task<Void, Never>?
     static let undoSeconds = 5
 
-    func archive(_ thread: Correspondence) async { await queueRemoval(thread, kind: .archive) }
-    func trash(_ thread: Correspondence) async { await queueRemoval(thread, kind: .trash) }
+    func archive(_ thread: Correspondence) async { await queueRemoval([thread], kind: .archive) }
+    func trash(_ thread: Correspondence) async { await queueRemoval([thread], kind: .trash) }
+    func archive(_ threads: [Correspondence]) async { await queueRemoval(threads, kind: .archive) }
+    func trash(_ threads: [Correspondence]) async { await queueRemoval(threads, kind: .trash) }
 
     /// Undo puts the conversation back exactly where it was.
     func undoRemoval() {
         guard let pending = pendingRemoval else { return }
         removalTask?.cancel()
         pendingRemoval = nil
-        withAnimation(.snappy(duration: 0.3)) { store.unhide(pending.thread.id) }
+        withAnimation(.snappy(duration: 0.3)) { for thread in pending.threads { store.unhide(thread.id) } }
     }
 
     /// Sends a waiting removal now: when the app leaves the foreground, or
@@ -62,10 +69,11 @@ final class ThreadActionService {
         await commit(pending)
     }
 
-    private func queueRemoval(_ thread: Correspondence, kind: RemovalKind) async {
+    private func queueRemoval(_ threads: [Correspondence], kind: RemovalKind) async {
+        guard !threads.isEmpty else { return }
         await commitPendingRemoval()
-        withAnimation(.snappy(duration: 0.3)) { store.hide(thread.id) }
-        let pending = PendingRemoval(thread: thread, kind: kind, secondsRemaining: Self.undoSeconds)
+        withAnimation(.snappy(duration: 0.3)) { for thread in threads { store.hide(thread.id) } }
+        let pending = PendingRemoval(threads: threads, kind: kind, secondsRemaining: Self.undoSeconds)
         pendingRemoval = pending
         removalTask = Task { [weak self] in
             for remaining in stride(from: Self.undoSeconds - 1, through: 0, by: -1) {
@@ -80,8 +88,16 @@ final class ThreadActionService {
 
     private func commit(_ pending: PendingRemoval) async {
         if pendingRemoval?.id == pending.id { pendingRemoval = nil }
-        let thread = pending.thread
-        switch pending.kind {
+        // Several at once run side by side; GmailQuotaGate paces them.
+        await withTaskGroup(of: Void.self) { group in
+            for thread in pending.threads {
+                group.addTask { await self.commitOne(thread, kind: pending.kind) }
+            }
+        }
+    }
+
+    private func commitOne(_ thread: Correspondence, kind: RemovalKind) async {
+        switch kind {
         case .archive:
             await perform(thread, failureMessage: "Could not archive this conversation. Please try again.", gmailCall: {
                 try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: ["INBOX"], account: thread.id.account)

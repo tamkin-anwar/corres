@@ -245,7 +245,7 @@ public actor SampleMailRepository: MailRepository {
                 sender: sender, organization: "", subject: subject,
                 excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
                 reason: "You started this conversation. Waiting for a response.",
-                attention: .waiting, waitingSince: sentAt)
+                attention: .waiting, waitingSince: sentAt, lastSentAt: sentAt)
             items.insert(created, at: 0)
             return created
         }

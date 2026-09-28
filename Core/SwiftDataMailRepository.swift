@@ -134,6 +134,9 @@ public actor SwiftDataMailRepository: MailRepository {
         for model in models {
             let decoded = model.excerpt.decodingHTMLEntities
             if decoded != model.excerpt { model.excerpt = decoded }
+            if model.lastSentAt == nil, model.senderEmail?.lowercased() == model.account.lowercased() {
+                model.lastSentAt = model.receivedAt
+            }
             if Self.applyRules(to: model, correspondents: correspondents, now: .now) { changed += 1 }
         }
         try modelContext.save()
@@ -217,7 +220,8 @@ public actor SwiftDataMailRepository: MailRepository {
                 id: realThreadID ?? ThreadID(account: Self.localAccount, providerID: UUID().uuidString),
                 sender: sender, organization: "", subject: subject,
                 excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
-                reason: reason, attention: attention, waitingSince: attention == .waiting ? sentAt : nil)
+                reason: reason, attention: attention, waitingSince: attention == .waiting ? sentAt : nil,
+                lastSentAt: sentAt)
             modelContext.insert(PersistedCorrespondence(from: created))
             try modelContext.save()
             return created
@@ -227,6 +231,7 @@ public actor SwiftDataMailRepository: MailRepository {
         model.attentionRaw = attention.rawValue
         model.reason = reason
         model.waitingSince = attention == .waiting ? sentAt : nil
+        model.lastSentAt = sentAt
         model.dueAt = nil
         model.snoozedUntil = nil
         try modelContext.save()
@@ -308,6 +313,12 @@ public actor SwiftDataMailRepository: MailRepository {
                 // showed up since the last sync), so the thread always ends
                 // up reflecting whichever message is actually newest
                 // regardless of fetch order.
+                // Your own message counts for Sent even when it's older than
+                // the reply already shown.
+                if let sent = item.lastSentAt, existing.lastSentAt.map({ sent > $0 }) ?? true {
+                    existing.lastSentAt = sent
+                    changed = true
+                }
                 guard let incomingMessageID = item.latestMessageID, incomingMessageID != existing.latestMessageID,
                       item.receivedAt >= existing.receivedAt else { continue }
                 let isFromAccountOwner = item.isFromAccountOwner
