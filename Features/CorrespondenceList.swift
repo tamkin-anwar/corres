@@ -755,6 +755,13 @@ struct CorrespondenceList: View {
     /// automatic passes never move it back (see ADR 002).
     @ViewBuilder
     private func rowMenu(for thread: Correspondence) -> some View {
+        // Mail's "Select": starts Select with this conversation checked.
+        Button {
+            isSelecting = true
+            selected = [thread.id]
+        } label: {
+            Label("Select", systemImage: "checkmark.circle")
+        }
         Section("Move to") {
             ForEach([Attention.needsYou, .waiting, .quiet, .handled], id: \.self) { attention in
                 if attention != thread.attention {
