@@ -30,6 +30,11 @@ struct PreferencesView: View {
                         settingLabel("Appearance", "circle.lefthalf.filled")
                     }
                     NavigationLink {
+                        ComposingSettingsView(auth: auth)
+                    } label: {
+                        settingLabel("Composing", "square.and.pencil")
+                    }
+                    NavigationLink {
                         SwipeSettingsView()
                     } label: {
                         settingLabel("Swipes", "hand.draw")
@@ -369,6 +374,81 @@ private struct AccountDetailView: View {
         } message: {
             Text("Its mail is removed from this iPhone. It stays in Gmail.")
         }
+    }
+}
+
+// MARK: - Composing
+
+/// Signatures, Undo Send, the default reply and which account new mail
+/// comes from: the composing settings Mail, Gmail and Spark all offer.
+private struct ComposingSettingsView: View {
+    var auth: GoogleAuthService
+    @AppStorage(CorresSettings.undoSendKey) private var undoSeconds = 10
+    @AppStorage(CorresSettings.defaultReplyKey) private var defaultReply = CorresSettings.DefaultReply.reply.rawValue
+    @AppStorage(CorresSettings.defaultFromKey) private var defaultFrom = ""
+
+    var body: some View {
+        Form {
+            if auth.accounts.isEmpty {
+                Section {
+                    SignatureEditor(account: "sample")
+                } header: {
+                    Text("Signature")
+                } footer: {
+                    Text("Added below what you write, above the email you're replying to.")
+                }
+            } else {
+                ForEach(auth.accounts) { account in
+                    Section {
+                        SignatureEditor(account: account.email)
+                    } header: {
+                        Text(auth.accounts.count > 1 ? "Signature · \(account.email)" : "Signature")
+                    } footer: {
+                        if account.email == auth.accounts.last?.email {
+                            Text("Added below what you write, above the email you're replying to. Each account keeps its own.")
+                        }
+                    }
+                }
+            }
+            Section {
+                Picker("Undo Send", selection: $undoSeconds) {
+                    ForEach(CorresSettings.undoSendChoices, id: \.self) { seconds in
+                        Text(seconds == 0 ? "Off" : "\(seconds) seconds").tag(seconds)
+                    }
+                }
+                Picker("Default reply", selection: $defaultReply) {
+                    ForEach(CorresSettings.DefaultReply.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+                if auth.accounts.count > 1 {
+                    Picker("Send new mail from", selection: $defaultFrom) {
+                        ForEach(auth.accounts) { Text($0.email).tag($0.email) }
+                    }
+                }
+            } footer: {
+                Text("Undo Send holds a message for a moment so you can take it back. Reply All is used only when others were on the email; press and hold Reply for the other choice.")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(CorresPalette.canvas)
+        .navigationTitle("Composing")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if defaultFrom.isEmpty, let first = auth.accounts.first { defaultFrom = first.email }
+        }
+    }
+}
+
+private struct SignatureEditor: View {
+    let account: String
+    @State private var text = ""
+
+    var body: some View {
+        TextField("None", text: $text, axis: .vertical)
+            .lineLimit(2...8)
+            .onAppear { text = UserDefaults.standard.string(forKey: CorresSettings.signatureKey(for: account)) ?? "" }
+            .onChange(of: text) { _, value in
+                UserDefaults.standard.set(value, forKey: CorresSettings.signatureKey(for: account))
+            }
     }
 }
 

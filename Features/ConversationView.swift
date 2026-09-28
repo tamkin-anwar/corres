@@ -428,7 +428,7 @@ struct ConversationView: View {
             if !thread.isBodyLoaded { await threadActions.loadContent(for: thread) }
             let source = store.threads.first { $0.id == thread.id } ?? thread
             let drafted = await intelligence.draftReply(to: source, intent: intent,
-                                                        signOff: givenName.isEmpty ? nil : givenName)
+                                                        signOff: givenName.isEmpty || !CorresSettings.signature(for: source.id.account).isEmpty ? nil : givenName)
             draftingIntent = nil
             compose(.reply, from: source, prefill: drafted ?? "")
         }
@@ -524,15 +524,22 @@ struct ConversationView: View {
             }
             .frame(height: 56)
             .corresGlass(in: Capsule())
+            // Settings → Composing → Default reply, when there's anyone
+            // besides the sender to reply to.
+            let replyAllFirst = CorresSettings.defaultReply == .replyAll && !thread.replyAllCc.isEmpty
             Menu {
-                Button { compose(.replyAll, from: thread) } label: { Label("Reply All", systemImage: "arrowshape.turn.up.left.2") }
+                if replyAllFirst {
+                    Button { compose(.reply, from: thread) } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
+                } else {
+                    Button { compose(.replyAll, from: thread) } label: { Label("Reply All", systemImage: "arrowshape.turn.up.left.2") }
+                }
                 Button { compose(.forward, from: thread) } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
             } label: {
-                Image(systemName: "arrowshape.turn.up.left.fill")
+                Image(systemName: replyAllFirst ? "arrowshape.turn.up.left.2.fill" : "arrowshape.turn.up.left.fill")
                     .font(.title3.weight(.semibold))
                     .frame(width: 56, height: 56)
             } primaryAction: {
-                compose(.reply, from: thread)
+                compose(replyAllFirst ? .replyAll : .reply, from: thread)
             }
             .foregroundStyle(CorresMetalBackground.ink(scheme))
             .background(CorresMetalBackground(shape: AnyShape(Circle())))

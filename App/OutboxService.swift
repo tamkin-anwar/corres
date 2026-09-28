@@ -57,7 +57,8 @@ final class OutboxService {
     private var queuedDraft: Draft?
     private var queuedThread: Correspondence?
 
-    private static let undoWindowSeconds = 6
+    /// Settings → Composing → Undo Send.
+    private static var undoWindowSeconds: Int { CorresSettings.undoSendSeconds }
     private static let sampleAccount = "sample"
     /// Bounded, not unlimited: a flaky connection gets three real chances
     /// before the person sees a failure, not an endless silent retry loop.
@@ -113,6 +114,14 @@ final class OutboxService {
             Task { await self.commit(previousDraft, thread: previousThread, id: previousID) }
         }
         let id = UUID()
+        // Undo Send off: straight out, still through the durable outbox.
+        guard Self.undoWindowSeconds > 0 else {
+            Task {
+                try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .pending))
+                await self.commit(draft, thread: thread, id: id)
+            }
+            return
+        }
         queuedDraft = draft
         queuedThread = thread
         pending = Pending(id: id, subjectPreview: draft.subject, secondsRemaining: Self.undoWindowSeconds)

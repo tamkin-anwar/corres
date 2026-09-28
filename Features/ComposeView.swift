@@ -53,8 +53,12 @@ struct ComposeView: View {
         self.sourceThread = sourceThread
         var initial = draft
         if initial.kind == .new, initial.fromAccount == nil {
-            initial.fromAccount = auth?.primaryAccount?.email
+            // Settings → Composing → Send new mail from, when it's still connected.
+            let connected = auth?.accounts.map(\.email) ?? []
+            initial.fromAccount = CorresSettings.defaultFromAccount.flatMap { connected.contains($0) ? $0 : nil }
+                ?? auth?.primaryAccount?.email
         }
+        initial.body = Self.addingSignature(to: initial.body, account: initial.fromAccount ?? initial.threadID?.account ?? "sample")
         self._draft = State(initialValue: initial)
         self.initialDraft = initial
     }
@@ -320,6 +324,30 @@ struct ComposeView: View {
     /// (a real Gmail delivery when replying/forwarding a connected thread,
     /// plus local bookkeeping) happens in OutboxService after a short undo
     /// window; see its doc comment and ADR 005.
+    /// The account's signature, between where you type and the quoted
+    /// email, the way Mail places it.
+    static func addingSignature(to body: String, account: String?) -> String {
+        let signature = CorresSettings.signature(for: account)
+        guard !signature.isEmpty, !body.contains(signature) else { return body }
+        if let quote = body.range(of: #"\n\nOn .+ wrote:\n"#, options: .regularExpression) {
+            var result = body
+            result.insert(contentsOf: "\n\n" + signature, at: quote.lowerBound)
+            return result
+        }
+        return body + "\n\n" + signature
+    }
+
+    /// Switching From swaps in that account's signature.
+    private func swapSignature(from old: String?, to new: String?) {
+        let oldSignature = CorresSettings.signature(for: old)
+        let newSignature = CorresSettings.signature(for: new)
+        if !oldSignature.isEmpty, let range = draft.body.range(of: oldSignature) {
+            draft.body.replaceSubrange(range, with: newSignature)
+        } else if !newSignature.isEmpty {
+            draft.body = Self.addingSignature(to: draft.body, account: new)
+        }
+    }
+
     /// Real mail needs real addresses; sample mail can go to a name.
     private var canSend: Bool {
         guard draft.isSendable else { return false }
@@ -454,7 +482,11 @@ struct ComposeView: View {
             Text("From").font(.subheadline).foregroundStyle(CorresPalette.secondary).frame(width: 64, alignment: .leading)
             Picker("From", selection: Binding(
                 get: { draft.fromAccount ?? accounts.first?.email ?? "" },
-                set: { draft.fromAccount = $0 }
+                set: { newValue in
+                    let previous = draft.fromAccount
+                    draft.fromAccount = newValue
+                    swapSignature(from: previous, to: newValue)
+                }
             )) {
                 ForEach(accounts) { account in Text(account.email).tag(account.email) }
             }
@@ -517,7 +549,7 @@ extension Correspondence {
     /// real fix, not a new feature. `toRecipients`/`ccRecipients` weren't
     /// captured at all before this, which meant "Reply All" silently
     /// behaved exactly like "Reply" — reported and root-caused directly.
-    private var replyAllCc: [String] {
+    var replyAllCc: [String] {
         let me = id.account.lowercased()
         let originalSender = (senderEmail ?? "").lowercased()
         var seen = Set([me, originalSender])

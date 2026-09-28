@@ -72,6 +72,7 @@
 		0815B5A5F1484E9BA0484CE3 /* App/EntitlementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */; };
 		AC57B9FF8D85450BAEC4B66A /* Features/PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */; };
 		2EBED90023A34A2EAC3923C9 /* Core/MailSignals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */; };
+		C15747BA2BA949D890FAA45B /* App/CorresSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8BEA5EECE643858167C548 /* App/CorresSettings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -171,6 +172,7 @@
 		270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/EntitlementStore.swift; sourceTree = SOURCE_ROOT; };
 		DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PaywallView.swift; sourceTree = SOURCE_ROOT; };
 		3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/MailSignals.swift; sourceTree = SOURCE_ROOT; };
+		9E8BEA5EECE643858167C548 /* App/CorresSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CorresSettings.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -230,6 +232,7 @@
 				D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */,
 				0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */,
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
+				9E8BEA5EECE643858167C548 /* App/CorresSettings.swift */,
 				3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */,
 				DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */,
 				270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */,
@@ -400,6 +403,7 @@
 				84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */,
 				BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */,
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
+				C15747BA2BA949D890FAA45B /* App/CorresSettings.swift in Sources */,
 				2EBED90023A34A2EAC3923C9 /* Core/MailSignals.swift in Sources */,
 				AC57B9FF8D85450BAEC4B66A /* Features/PaywallView.swift in Sources */,
 				0815B5A5F1484E9BA0484CE3 /* App/EntitlementStore.swift in Sources */,
