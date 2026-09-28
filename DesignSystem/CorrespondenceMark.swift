@@ -104,6 +104,22 @@ struct CorresIconArtwork: View {
     }
 }
 
+/// A square showcase of the mark for the studio site: the icon's field
+/// with wider breathing room. The site sets the name and tagline itself.
+struct CorresHeroArtwork: View {
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [Color(markHex: 0x1A1D24), Color(markHex: 0x0B0C0F), Color(markHex: 0x060607)],
+                           startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [Color(markHex: 0xC8D6EE).opacity(0.14), .clear],
+                           center: UnitPoint(x: 0.5, y: -0.1), startRadius: 0, endRadius: 900)
+            RadialGradient(colors: [Color(markHex: 0x5E86C4).opacity(0.20), .clear],
+                           center: .center, startRadius: 0, endRadius: 520)
+            CorrespondenceMark(glow: true).frame(width: 780, height: 780).offset(x: 18)
+        }
+    }
+}
+
 extension Color {
     init(markHex hex: UInt32) {
         self.init(.sRGB, red: Double((hex >> 16) & 255) / 255,

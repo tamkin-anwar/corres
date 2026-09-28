@@ -19,6 +19,14 @@ struct RenderIcon {
                     .frame(width: 1024, height: 1024).clipped().grayscale(1).brightness(0.15)
                     .background(Color.black), scale: 1, opaque: true,
                   to: assets.appendingPathComponent("AppIcon.appiconset/icon-1024-tinted.png"))
+        // Brand exports for the README and the studio site.
+        let brand = assets.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Docs/Brand")
+        try write(CorresIconArtwork().frame(width: 1024, height: 1024)
+                    .clipShape(RoundedRectangle(cornerRadius: 230, style: .continuous))
+                    .padding(8), scale: 1, opaque: false,
+                  to: brand.appendingPathComponent("corres-icon.png"))
+        try write(CorresHeroArtwork().frame(width: 1200, height: 1200), scale: 2, opaque: true,
+                  to: brand.appendingPathComponent("corres-hero.png"))
         for scale in 1...3 {
             let suffix = scale == 1 ? "@1x" : "@\(scale)x"
             try write(CorrespondenceMark().frame(width: 96, height: 96), scale: CGFloat(scale), opaque: false,

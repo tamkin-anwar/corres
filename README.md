@@ -1,10 +1,19 @@
-# Corres
+<p align="center">
+  <img src="Docs/Brand/corres-icon.png" width="128" height="128" alt="The Corres app icon: a titanium C holding a sapphire C and a single point.">
+</p>
 
-A premium, Apple-first email client for iPhone, built in SwiftUI. **Email, considered.**
+<h1 align="center">Corres</h1>
+
+<p align="center"><em>Email, considered.</em></p>
+
+<p align="center">A premium, Apple-first email app for iPhone and iPad, built in SwiftUI.<br>
+Private by design: sorting, summaries, drafts and answers run on your device with Apple Intelligence.</p>
+
+---
 
 Most mail apps answer "what did I receive?" Corres answers "what needs me?" Brief, Needs You and Waiting come first; every message is still in one chronological Mail list, and nothing is sorted out of reach.
 
-Built by Anwar Creative Studio.
+Built by [Anwar Creative Studio](https://tamkin-anwar.github.io/anwar-creative-studio-portfolio/), alongside Artha. Status: in development, tested daily on a real iPhone.
 
 ## What it does
 
@@ -16,7 +25,7 @@ Built by Anwar Creative Studio.
 - **Screener:** mail from a new sender waits for Allow or Block before it reaches the other lists.
 
 **A full Gmail client**
-- Multiple Gmail accounts, merged or one at a time.
+- Multiple Gmail accounts, merged or one at a time. A three-column layout on iPad, keyboard shortcuts on any hardware keyboard.
 - Whole conversations: earlier messages appear as compact rows above the latest one, open in place, and long threads fold in the middle.
 - Read, reply, reply all, forward and compose, with attachments and a short undo-send window.
 - Undo after Archive or Trash: the conversation leaves instantly, and Gmail is told only after the 5-second window.
@@ -26,7 +35,7 @@ Built by Anwar Creative Studio.
 - Fast metadata-first sync in batches, push notifications through a content-free relay (`Server/push-relay`), and Gmail search beyond what's synced.
 - Needs You and Waiting widgets for the Home Screen and Lock Screen, opening straight into a conversation; Siri, Shortcuts and Spotlight actions ("What needs me in Corres", open a list, new message).
 - Saved snippets with `{first name}`, and dictation in Compose, transcribed on the iPhone.
-- Snooze by typing a time ("in 3 days at 9am", "next friday") or picking a preset; custom short and long swipes.
+- Snooze by typing a time ("in 3 days at 9am", "next friday") or picking a preset; custom short and long swipes in both directions, velocity-aware, with haptics.
 
 **Intelligence, on this iPhone only**
 - Rules sort first; Apple Intelligence (Foundation Models) refines Needs You on-device.
