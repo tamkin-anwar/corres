@@ -229,12 +229,15 @@ struct PreferencesView: View {
             await auth.signIn()
             // Only the newly added account needs a fresh sync; the others,
             // if any, are already current.
-            if auth.accounts.count > previousCount, let newAccount = auth.accounts.last {
-                if await sync.syncIfConnected(account: newAccount.email) {
-                    await store.load()
-                }
-            }
+            // Cancelled sign-in: keep the sample mail, there's nothing to
+            // replace it with.
+            guard auth.accounts.count > previousCount, let newAccount = auth.accounts.last else { return }
+            // Sample mail goes before real mail arrives, so the two are
+            // never shown together, not even for a moment.
             await store.deleteSampleDataIfPresent()
+            if await sync.syncIfConnected(account: newAccount.email) {
+                await store.load()
+            }
         }
     }
 

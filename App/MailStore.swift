@@ -22,13 +22,17 @@ final class MailStore {
     var errorMessage: String?
     private let repository: any MailRepository
 
+    /// Sample mail is only for trying Corres before Gmail is connected; an
+    /// empty store with an account connected stays empty.
+    var seedsSampleMail: () -> Bool = { true }
+
     init(repository: any MailRepository) { self.repository = repository }
 
     func load() async {
         guard state != .loading else { return }
         state = .loading
         do {
-            try await repository.seedIfNeeded(now: .now)
+            if seedsSampleMail() { try await repository.seedIfNeeded(now: .now) }
             allThreads = try await repository.threads()
             state = .loaded
         } catch is CancellationError {

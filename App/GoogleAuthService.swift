@@ -23,7 +23,14 @@ final class GoogleAuthService {
     var errorMessage: String?
 
     private let defaults = UserDefaults.standard
-    private static let connectedAccountsKey = "corres.connectedAccounts"
+    nonisolated private static let connectedAccountsKey = "corres.connectedAccounts"
+
+    /// Whether any Gmail account was connected on this iPhone, readable
+    /// before `restoreConnectedAccounts()` finishes: sample mail must never
+    /// be put back for someone who has real mail.
+    nonisolated static var hasSavedAccounts: Bool {
+        !(UserDefaults.standard.stringArray(forKey: connectedAccountsKey) ?? []).isEmpty
+    }
 
     /// `gmail.readonly`, `gmail.send`, and now `gmail.modify` (Archive/Trash/
     /// read state) all requested upfront at connect time, one consent

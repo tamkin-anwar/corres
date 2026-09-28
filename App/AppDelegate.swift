@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         let (container, usedInMemoryFallback) = Self.makeModelContainer()
         let repository = SwiftDataMailRepository(modelContainer: container)
         let mailStore = MailStore(repository: repository)
+        mailStore.seedsSampleMail = { !GoogleAuthService.hasSavedAccounts }
         let authService = GoogleAuthService()
         store = mailStore
         // A real, silent-until-now failure mode, found in a review sweep:

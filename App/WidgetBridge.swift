@@ -22,7 +22,8 @@ enum WidgetBridge {
         }
         var snapshot = WidgetSnapshot(needsYouCount: needs.count, waitingCount: waiting.count, unreadCount: unread,
                                       needsYou: needs.prefix(6).map(item), waiting: waiting.prefix(6).map(item),
-                                      isSample: threads.allSatisfy { $0.id.account == "sample" }, updatedAt: now)
+                                      isSample: !threads.isEmpty && threads.allSatisfy { $0.id.account == "sample" },
+                                      updatedAt: now)
         snapshot.isLocked = isLocked && !snapshot.isSample
         // Compare without the timestamp, so a sync that changed nothing
         // doesn't spend the widget reload budget.
