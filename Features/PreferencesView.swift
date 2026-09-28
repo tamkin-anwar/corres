@@ -483,7 +483,7 @@ private struct SnippetEditor: View {
 private struct NotificationSettingsView: View {
     var auth: GoogleAuthService
     @Bindable var pushService: PushNotificationService
-    @AppStorage("corres.notifyOnlyNeedsYou") private var notifyOnlyNeedsYou = false
+    @AppStorage("corres.notifyOnlyNeedsYou") private var notifyOnlyNeedsYou = true
 
     var body: some View {
         Form {

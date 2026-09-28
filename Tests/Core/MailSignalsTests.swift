@@ -144,4 +144,28 @@ struct MailSignalsTests {
         #expect(!Draft(kind: .new, to: "maya@studio", subject: "").recipientsLookValid)
         #expect(!Draft(kind: .new, to: "maya@studio.test", cc: "oops", subject: "").recipientsLookValid)
     }
+
+    /// You emailed someone new; their reply is not a stranger to screen.
+    @Test func aReplyFromSomeoneYouWroteToSkipsTheScreener() async throws {
+        let schema = Schema(CorresSchemaV1.models)
+        let container = try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self,
+                                           configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)])
+        let repository = SwiftDataMailRepository(modelContainer: container)
+        let now = Date()
+        let yours = Correspondence(id: ThreadID(account: "me@x.test", providerID: "t1"), sender: "Me", senderEmail: "me@x.test",
+                                   organization: "", subject: "Intro", excerpt: "", body: "", latestMessageID: "m1",
+                                   receivedAt: now.addingTimeInterval(-86_400), dueAt: nil, reason: "", attention: .quiet,
+                                   toRecipients: ["nadia@new.test"])
+        try await repository.upsert([yours], isInitialSync: true)
+        let theirs = Correspondence(id: ThreadID(account: "me@x.test", providerID: "t2"), sender: "Nadia", senderEmail: "nadia@new.test",
+                                    organization: "", subject: "Hello", excerpt: "", body: "", latestMessageID: "m2",
+                                    receivedAt: now, dueAt: nil, reason: "", attention: .needsYou, isUnread: true)
+        let stranger = Correspondence(id: ThreadID(account: "me@x.test", providerID: "t3"), sender: "Spam", senderEmail: "who@else.test",
+                                      organization: "", subject: "Hi", excerpt: "", body: "", latestMessageID: "m3",
+                                      receivedAt: now, dueAt: nil, reason: "", attention: .needsYou, isUnread: true)
+        try await repository.upsert([theirs, stranger], isInitialSync: false)
+        let threads = try await repository.threads()
+        #expect(threads.first { $0.id.providerID == "t2" }?.senderDecision == .approved)
+        #expect(threads.first { $0.id.providerID == "t3" }?.senderDecision == .pending)
+    }
 }

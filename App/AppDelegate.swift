@@ -216,7 +216,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // not a bolted-on setting. Read straight from UserDefaults, not
         // @AppStorage: AppDelegate is not a View, and the key is the same
         // one PreferencesView's own @AppStorage toggle writes to.
-        let notifyOnlyNeedsYou = UserDefaults.standard.bool(forKey: "corres.notifyOnlyNeedsYou")
+        // On unless turned off: like Superhuman's Important-only default, a
+        // promotion never buzzes the phone; people and anything
+        // time-sensitive still do.
+        let notifyOnlyNeedsYou = UserDefaults.standard.object(forKey: "corres.notifyOnlyNeedsYou") as? Bool ?? true
         let toNotify = notifyOnlyNeedsYou ? newlyUnread.filter { $0.attention == .needsYou } : newlyUnread
         pushService.notifyAboutNewMail(toNotify)
         WidgetBridge.update(from: store.threads)

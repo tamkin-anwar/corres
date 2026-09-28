@@ -379,7 +379,10 @@ public actor SwiftDataMailRepository: MailRepository {
                 if let known = knownSenderDecisions[key] {
                     item.senderDecision = known
                 } else {
-                    item.senderDecision = isInitialSync ? .approved : .pending
+                    // Someone you've written to already has your answer:
+                    // you reached out first, so there's nothing to screen.
+                    let youWroteFirst = correspondents.contains(key) || item.isFromAccountOwner
+                    item.senderDecision = isInitialSync || youWroteFirst ? .approved : .pending
                     knownSenderDecisions[key] = item.senderDecision
                 }
                 if knownImageTrust[key] == true { item.imagesTrusted = true }

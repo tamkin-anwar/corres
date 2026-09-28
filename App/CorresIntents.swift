@@ -39,7 +39,10 @@ struct WhatNeedsMeIntent: AppIntent {
         case 1: parts.append("One conversation needs you.")
         default: parts.append("\(snapshot.needsYouCount) conversations need you.")
         }
-        let top = snapshot.needsYou.prefix(2).map { "\($0.sender): \($0.reason.trimmingCharacters(in: .punctuationCharacters))." }
+        let top = snapshot.needsYou.prefix(2).map { item in
+            let due = item.dueLabel.map { " Due \($0.lowercased())." } ?? ""
+            return "\(item.sender): \(item.reason.trimmingCharacters(in: .punctuationCharacters)).\(due)"
+        }
         parts.append(contentsOf: top)
         if snapshot.waitingCount > 0 {
             parts.append(snapshot.waitingCount == 1 ? "You're waiting on one reply." : "You're waiting on \(snapshot.waitingCount) replies.")
