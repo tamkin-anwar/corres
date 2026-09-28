@@ -161,8 +161,9 @@ final class MailIntelligence {
             // The model decides whether a reply is expected before it
             // suggests any; stock answers that aren't about this email
             // are dropped.
+            let source = (thread.subject + " " + thread.body).lowercased()
             let replies = (content.expectsReply ? content.replyIntents : [])
-                .filter { !Self.isGenericReply($0) }
+                .filter { !Self.isGenericReply($0) && Self.isGrounded($0, in: source) }
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(.init(charactersIn: "\".")))}
                 .filter { !$0.isEmpty && $0.count <= 32 }
             // The model occasionally repeats itself; one chip per idea.
@@ -181,6 +182,28 @@ final class MailIntelligence {
                                   "ask for tuesday", "sounds good", "thanks", "thank you", "got it", "ok", "okay",
                                   "will do", "noted", "reply later", "share your thoughts", "reply soon", "let me check"]
         return stock.contains(lower)
+    }
+
+    /// A suggested reply may only mention dates, times, numbers and months
+    /// the email itself contains; the model sometimes invents them
+    /// ("Clarify by Oct 10?" for an email with no date).
+    static func isGrounded(_ reply: String, in source: String) -> Bool {
+        let lower = reply.lowercased()
+        let numbers = lower.matches(of: /\d+/).map { String($0.output) }
+        guard numbers.allSatisfy(source.contains) else { return false }
+        // Whole words only, so "mark" or "may I" never count as months.
+        let calendarWords: [String: String] = [
+            "jan": "jan", "january": "jan", "feb": "feb", "february": "feb", "march": "mar",
+            "apr": "apr", "april": "apr", "june": "jun", "july": "jul", "aug": "aug", "august": "aug",
+            "sep": "sep", "sept": "sep", "september": "sep", "oct": "oct", "october": "oct",
+            "nov": "nov", "november": "nov", "dec": "dec", "december": "dec",
+            "monday": "mon", "tuesday": "tue", "wednesday": "wed", "thursday": "thu",
+            "friday": "fri", "saturday": "sat", "sunday": "sun",
+        ]
+        for word in lower.split(whereSeparator: { !$0.isLetter }) {
+            if let stem = calendarWords[String(word)], !source.contains(stem) { return false }
+        }
+        return true
     }
 
     @available(iOS 26.0, *)
@@ -204,9 +227,12 @@ final class MailIntelligence {
     each written as the reader's own first-person reply to the specific \
     question or request in this email, using its own names, dates, times \
     and options (for example, for "Can you do Thursday at 3?": "Thursday \
-    at 3 works", "Could we do Friday?"). Each must be a different answer. \
-    Never write generic replies that would fit any email, and never advice \
-    to the reader.
+    at 3 works", "Could we do Friday?"). Make them real, different \
+    answers: one that agrees or says yes, one that declines or proposes an \
+    alternative, and, only if something is unclear, one next step. Never \
+    ask the sender to confirm what they just said. Never mention a date, \
+    time, number or name that isn't in the email. Never write generic \
+    replies that would fit any email, and never advice to the reader.
     """
 
     @available(iOS 26.0, *)

@@ -351,7 +351,9 @@ struct ComposeView: View {
     /// Real mail needs real addresses; sample mail can go to a name.
     private var canSend: Bool {
         guard draft.isSendable else { return false }
-        let isReal = !(auth?.accounts.isEmpty ?? true) && sourceThread?.id.account != "sample"
+        // A reply is real exactly when its conversation is; a new message
+        // when an account is connected.
+        let isReal = sourceThread.map { $0.id.account != "sample" } ?? !(auth?.accounts.isEmpty ?? true)
         return !isReal || draft.recipientsLookValid
     }
 

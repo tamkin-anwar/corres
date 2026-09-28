@@ -108,6 +108,12 @@ struct GmailAPIClient {
                         historyId: historyId ?? cursor, remoteChanges: changes.changes)
     }
 
+    /// Your recent sent messages, for filling in Sent once.
+    func listRecentSent(account: String) async throws -> [String] {
+        let token = try await accessToken(for: account)
+        return try await listMessageIDs(token: token, label: "SENT", limit: Self.initialSentLimit).ids.map(\.id)
+    }
+
     /// The next page of older Inbox mail, for the Mail tab's scroll-to-load.
     /// Returns message and thread ids so the caller can skip threads it
     /// already has before spending quota fetching them.

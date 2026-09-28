@@ -458,9 +458,16 @@ struct ConversationView: View {
         }
     }
 
+    private func hasAnswered(_ thread: Correspondence) -> Bool {
+        thread.attention == .waiting || thread.isFromAccountOwner
+            || (thread.lastSentAt.map { $0 >= thread.receivedAt } ?? false)
+    }
+
     private func bottomChrome(for thread: Correspondence) -> some View {
         VStack(spacing: 10) {
-            if proUnlocked, let intents = intelligence.insight(for: thread)?.replyIntents, !intents.isEmpty {
+            // Gone once you've answered: the last word is yours, or it's
+            // waiting on them.
+            if proUnlocked, !hasAnswered(thread), let intents = intelligence.insight(for: thread)?.replyIntents, !intents.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(intents, id: \.self) { intent in

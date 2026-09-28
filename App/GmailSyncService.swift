@@ -181,6 +181,8 @@ final class GmailSyncService {
                 setOlderInboxPageToken(plan.olderInboxPageToken, for: account)
             }
             setMissedMessageIDs(stillMissing, for: account)
+            if !isFullListing { await backfillSentIfNeeded(account: account) }
+            else { defaults.set(true, forKey: Self.sentBackfillKey(for: account)) }
             return true
         } catch {
             errorMessage = "Could not sync Gmail. Please check your connection and try again."
@@ -279,15 +281,22 @@ final class GmailSyncService {
     /// metadata only, and re-fetches of mail already stored are no-ops.
     private static func sentBackfillKey(for account: String) -> String { "corres.gmail.sentBackfill.\(account)" }
 
-    private func planSync(account: String) async throws -> (plan: GmailAPIClient.SyncPlan, isFullListing: Bool) {
-        if !defaults.bool(forKey: Self.sentBackfillKey(for: account)) {
-            defaults.set(true, forKey: Self.sentBackfillKey(for: account))
-            if historyCursor(for: account) != nil {
-                // Not a first sync: known senders stay known, so nothing
-                // lands in the Screener because of this.
-                return (try await client.planFullListing(account: account), false)
-            }
+    /// Reads your recent sent messages once, so a conversation you wrote in
+    /// before they replied (Gmail keeps only their reply as the latest)
+    /// still shows in Sent. Sent messages are from you, so this can never
+    /// put anyone in the Screener; marked done only once it succeeds.
+    private func backfillSentIfNeeded(account: String) async {
+        guard !defaults.bool(forKey: Self.sentBackfillKey(for: account)),
+              let ids = try? await client.listRecentSent(account: account) else { return }
+        for chunk in ids.chunked(into: GmailAPIClient.batchSize) {
+            guard let fetched = try? await client.fetchMetadata(ids: chunk, account: account),
+                  (try? await repository.upsert(fetched.items, isInitialSync: true)) != nil else { return }
         }
+        defaults.set(true, forKey: Self.sentBackfillKey(for: account))
+        syncProgress += 1
+    }
+
+    private func planSync(account: String) async throws -> (plan: GmailAPIClient.SyncPlan, isFullListing: Bool) {
         guard let cursor = historyCursor(for: account) else {
             return (try await client.planFullListing(account: account), true)
         }
