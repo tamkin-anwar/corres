@@ -2,6 +2,14 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Mac notification icon blank (September 27, 2026)
+
+Reported: forwarded Corres notifications on the Mac (iPhone Mirroring and notifications) showed a blank square, while Spark and Gmail had their icons.
+
+- **Cause, confirmed on the Mac:** macOS keeps a placeholder copy of each iPhone app under `~/Library/Daemon Containers/<id>/Data/Library/Caches/Placeholders-v6.noindex/<bundle id>-<version>/`, and uses its icon for forwarded notifications. The Corres placeholder, created September 20 for version 0.1.0, has no `CFBundleIcons` and no `Assets.car`; Gmail's has both. Placeholders are keyed by version, and Corres had shipped every build as 0.1.0 (1), so the Mac never rebuilt it. The Mac's widget icon cache (chronod) already holds the new Corres icon, and current builds carry `CFBundleIcons` → `AppIcon` plus the compiled icon, so the icon itself is fine.
+- **Fix:** version 0.2.0, build 2 (app and widget extension, and the project generator). Future builds meant for the phone should bump the build number too.
+- **On device:** install the new build. The next forwarded notification should show the icon. If macOS keeps the old placeholder, toggling iPhone Mirroring or notifications for Corres (Mac Settings → Notifications → iPhone) refreshes it.
+
 ## Batch 4: Ask your mail (September 27, 2026)
 
 - **New Ask tab** (a fifth tab on iPhone, a sidebar item on iPad), reachable at `corres://ask`: a question field, suggestions, an answer card, and a list of source conversations that open in place.
