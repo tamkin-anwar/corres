@@ -31,6 +31,15 @@ struct CorresShell: View {
     @State private var paths: [Destination: NavigationPath] = [:]
     @Environment(AppRouter.self) private var router
     @Environment(AskService.self) private var ask
+    @Environment(EntitlementStore.self) private var entitlements
+    @State private var showingPaywall = false
+    @AppStorage("corres.paywallOffered") private var paywallOffered = false
+
+    /// Pro screens lock only for real accounts once StoreKit has answered;
+    /// sample mail stays fully open so people can try everything first.
+    private var requiresPro: Bool {
+        entitlements.hasLoaded && !entitlements.isPro && !auth.accounts.isEmpty
+    }
 
     private func path(for destination: Destination) -> Binding<NavigationPath> {
         Binding(get: { paths[destination] ?? NavigationPath() }, set: { paths[destination] = $0 })
@@ -96,6 +105,17 @@ struct CorresShell: View {
             if phase != .active { Task { await threadActions.commitPendingRemoval() } }
         }
         .onChange(of: router.pending) { _, target in handle(target) }
+        .environment(\.proUnlocked, !requiresPro)
+        // Right after someone connects their first Gmail account, offer the
+        // trial once; after that it's only ever one tap away.
+        .onChange(of: requiresPro) { _, locked in
+            guard locked else { return }
+            if selection != .mail { selection = .mail }
+            if !paywallOffered {
+                paywallOffered = true
+                showingPaywall = true
+            }
+        }
         .task {
             if !hasExplored { showingWelcome = true }
             if store.state == .idle { await store.load() }
@@ -116,7 +136,9 @@ struct CorresShell: View {
         }
         .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService) }
         .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
-        .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, auth: auth, draft: draft, sourceThread: nil) }
+        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, auth: auth, draft: draft, sourceThread: nil)
+            .environment(\.proUnlocked, !requiresPro) }
         .fullScreenCover(isPresented: $showingWelcome) {
             WelcomeView {
                 hasExplored = true
@@ -233,7 +255,11 @@ struct CorresShell: View {
                 Button("Try again") { Task { await store.load() } }
             }
         case .loaded:
-            if destination == .ask {
+            if requiresPro && destination != .mail {
+                ProLockView(destination: destination,
+                            onUnlock: { showingPaywall = true },
+                            onOpenMail: { selection = .mail })
+            } else if destination == .ask {
                 AskView(ask: ask)
             } else if destination == .brief {
                 BriefView(store: store, sync: sync, auth: auth, selection: $selection, showingScreener: $showingScreener,

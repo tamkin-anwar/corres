@@ -13,11 +13,16 @@ struct PreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(MailIntelligence.self) private var intelligence
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
+    @Environment(EntitlementStore.self) private var entitlements
+    @State private var showingPaywall = false
+    @State private var managingSubscription = false
+    @State private var redeeming = false
 
     var body: some View {
         NavigationStack {
             Form {
                 accountsSection
+                planSection
                 Section("Mail") {
                     Picker(selection: $appearance) {
                         ForEach(Appearance.allCases) { Text($0.title).tag($0.rawValue) }
@@ -91,6 +96,62 @@ struct PreferencesView: View {
         // Self-sufficient: a distant .preferredColorScheme does not reliably
         // re-trait an already-presented sheet when the value changes.
         .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
+    }
+
+    // MARK: - Plan
+
+    private var planSection: some View {
+        Section {
+            HStack(spacing: 12) {
+                CorrespondenceMark().frame(width: 34, height: 34)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(entitlements.isPro ? entitlements.plan.title : "Corres Pro").font(.body.weight(.semibold))
+                    Text(planStatus).font(.footnote).foregroundStyle(CorresPalette.secondary)
+                }
+            }
+            .padding(.vertical, 2)
+            switch entitlements.plan {
+            case .none:
+                Button("Try Corres Pro free") { showingPaywall = true }
+            case .monthly, .annual:
+                Button("Manage subscription") { managingSubscription = true }
+            case .lifetime:
+                EmptyView()
+            }
+            Button("Restore purchases") { Task { await entitlements.restore() } }
+            Button("Redeem code") { redeeming = true }
+        } header: {
+            Text("Plan")
+        } footer: {
+            if !entitlements.isPro {
+                Text("Without Pro, Mail keeps working: read, reply, archive and search. Brief, Needs You, Waiting, Ask and the on-device intelligence need Pro.")
+            }
+        }
+        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .manageSubscriptionsSheet(isPresented: $managingSubscription)
+        .offerCodeRedemption(isPresented: $redeeming) { _ in Task { await entitlements.refresh() } }
+        .alert("Corres Pro", isPresented: Binding(
+            get: { entitlements.errorMessage != nil && !showingPaywall },
+            set: { if !$0 { entitlements.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { entitlements.errorMessage = nil }
+        } message: { Text(entitlements.errorMessage ?? "") }
+    }
+
+    private var planStatus: String {
+        switch entitlements.plan {
+        case .none:
+            if let monthly = entitlements.product(EntitlementStore.ProductID.monthly),
+               let annual = entitlements.product(EntitlementStore.ProductID.annual) {
+                return "Try it free, then \(monthly.displayPrice) a month or \(annual.displayPrice) a year."
+            }
+            return "Try it free for 14 days."
+        case .monthly(let renews, let inTrial), .annual(let renews, let inTrial):
+            let date = renews.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "soon"
+            return inTrial ? "Free trial · first charge \(date)" : "Renews \(date)"
+        case .lifetime(let familyShared):
+            return familyShared ? "Lifetime · shared by your family" : "Lifetime · yours for good"
+        }
     }
 
     // MARK: - Accounts

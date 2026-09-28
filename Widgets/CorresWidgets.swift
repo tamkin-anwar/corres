@@ -63,7 +63,7 @@ struct NeedsYouWidget: Widget {
         StaticConfiguration(kind: "corres.needsYou", provider: SnapshotProvider()) { entry in
             ListWidgetView(title: "Needs You", count: entry.snapshot.needsYouCount, items: entry.snapshot.needsYou,
                            emptyText: "Nothing in Needs You", showsReason: true, destination: "needs-you",
-                           isSample: entry.snapshot.isSample)
+                           isSample: entry.snapshot.isSample, isLocked: entry.snapshot.isLocked == true)
         }
         .configurationDisplayName("Needs You")
         .description("The conversations that ask something of you, with the reason for each.")
@@ -76,7 +76,7 @@ struct WaitingWidget: Widget {
         StaticConfiguration(kind: "corres.waiting", provider: SnapshotProvider()) { entry in
             ListWidgetView(title: "Waiting", count: entry.snapshot.waitingCount, items: entry.snapshot.waiting,
                            emptyText: "Nothing in Waiting", showsReason: false, destination: "waiting",
-                           isSample: entry.snapshot.isSample)
+                           isSample: entry.snapshot.isSample, isLocked: entry.snapshot.isLocked == true)
         }
         .configurationDisplayName("Waiting")
         .description("Conversations waiting on someone else's reply.")
@@ -94,8 +94,12 @@ struct ListWidgetView: View {
     let isSample: Bool
     @Environment(\.widgetFamily) private var family
 
+    var isLocked = false
+
     var body: some View {
-        content
+        Group {
+            if isLocked { locked } else { content }
+        }
             .widgetURL(WidgetSnapshot.url(for: destination))
             .containerBackground(for: .widget) { WidgetPalette.background }
     }
@@ -129,6 +133,17 @@ struct ListWidgetView: View {
         default:
             list(limit: family == .systemLarge ? 6 : 3)
         }
+    }
+
+    /// Pro has lapsed: no mail shown, one clear way back.
+    private var locked: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title.uppercased()).font(.caption2.weight(.semibold)).tracking(1.2).foregroundStyle(WidgetPalette.accent)
+            Spacer(minLength: 0)
+            Text("Corres Pro").font(.system(.headline, design: .serif)).foregroundStyle(WidgetPalette.ink)
+            Text("Open Corres to continue.").font(.caption).foregroundStyle(WidgetPalette.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var header: some View {

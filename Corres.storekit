@@ -1,0 +1,93 @@
+{
+  "identifier": "69298E45-42F8-46F1-95A4-AE276B8A7E03",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "1000.0",
+      "familyShareable": true,
+      "internalID": "8739803F-F628-40D7-A046-C5412956C5B9",
+      "localizations": [
+        {
+          "description": "Corres Pro for good, shared with your family.",
+          "displayName": "Corres Pro Lifetime",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "studio.anwarcreative.corres.pro.lifetime",
+      "referenceName": "Corres Pro Lifetime",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_developerTeamID": "7GGTC43CG8",
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [
+    {
+      "id": "A3AAA37B-B113-48F5-BA3E-DF482AF0F608",
+      "localizations": [],
+      "name": "Corres Pro",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "200.0",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "E5BCD6BF-4CD1-4FBE-AA85-B13CCE3E9C9A",
+          "introductoryOffer": {
+            "internalID": "8A5E8879-BA10-4C0F-B6CE-AB59D3D6BF36",
+            "paymentMode": "free",
+            "subscriptionPeriod": "P2W"
+          },
+          "localizations": [
+            {
+              "description": "Everything in Corres, billed yearly.",
+              "displayName": "Corres Pro Annual",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "studio.anwarcreative.corres.pro.annual",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Corres Pro Annual",
+          "subscriptionGroupID": "A3AAA37B-B113-48F5-BA3E-DF482AF0F608",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "20.0",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "BAF5B1FC-2B46-402D-AF59-0F1EF51BE66A",
+          "introductoryOffer": {
+            "internalID": "3B957A09-0D50-460D-9D11-2CEB0142BB96",
+            "paymentMode": "free",
+            "subscriptionPeriod": "P2W"
+          },
+          "localizations": [
+            {
+              "description": "Everything in Corres, billed monthly.",
+              "displayName": "Corres Pro Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "studio.anwarcreative.corres.pro.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Corres Pro Monthly",
+          "subscriptionGroupID": "A3AAA37B-B113-48F5-BA3E-DF482AF0F608",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

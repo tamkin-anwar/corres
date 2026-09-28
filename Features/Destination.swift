@@ -26,7 +26,18 @@ private struct ConversationSelectionKey: EnvironmentKey {
     static let defaultValue: Binding<ConversationRoute?>? = nil
 }
 
+/// Whether Corres Pro features (AI reading and writing help) are available
+/// here: with Pro, or on sample mail before any account is connected.
+private struct ProUnlockedKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
 extension EnvironmentValues {
+    var proUnlocked: Bool {
+        get { self[ProUnlockedKey.self] }
+        set { self[ProUnlockedKey.self] = newValue }
+    }
+
     var conversationSelection: Binding<ConversationRoute?>? {
         get { self[ConversationSelectionKey.self] }
         set { self[ConversationSelectionKey.self] = newValue }

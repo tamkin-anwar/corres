@@ -26,6 +26,7 @@ struct CorresApp: App {
                 .environment(appDelegate.snippetStore)
                 .environment(appDelegate.router)
                 .environment(appDelegate.askService)
+                .environment(appDelegate.entitlements)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 .tint(CorresPalette.accent)
                 .task {
@@ -66,6 +67,10 @@ struct CorresApp: App {
                 // whenever the mail it summarizes changes.
                 .onChange(of: appDelegate.store.threads) { _, threads in
                     WidgetBridge.update(from: threads)
+                }
+                .onChange(of: appDelegate.entitlements.isPro) { _, isPro in
+                    WidgetBridge.isLocked = !isPro
+                    WidgetBridge.update(from: appDelegate.store.threads)
                 }
         }
     }

@@ -31,6 +31,7 @@ struct ConversationView: View {
     @State private var draftingIntent: String?
     @Environment(\.dismiss) private var systemDismiss
     @Environment(\.conversationSelection) private var splitSelection
+    @Environment(\.proUnlocked) private var proUnlocked
     @Environment(MailIntelligence.self) private var intelligence
     @Environment(\.displayScale) private var displayScale
     @AppStorage(GoogleAuthService.givenNameKey) private var givenName = ""
@@ -203,7 +204,7 @@ struct ConversationView: View {
             }
             await loaded
             await conversation
-            if let current = store.threads.first(where: { $0.id == currentID }) {
+            if proUnlocked, let current = store.threads.first(where: { $0.id == currentID }) {
                 await intelligence.prepareInsight(for: current)
             }
         }
@@ -288,7 +289,7 @@ struct ConversationView: View {
     /// plus the reason this conversation is where it is, with a direct way
     /// to correct it.
     private func inShortCard(for thread: Correspondence) -> some View {
-        let insight = intelligence.insight(for: thread)
+        let insight = proUnlocked ? intelligence.insight(for: thread) : nil
         return VStack(alignment: .leading, spacing: 10) {
             if let summary = insight?.summary {
                 HStack {
@@ -411,7 +412,7 @@ struct ConversationView: View {
 
     private func bottomChrome(for thread: Correspondence) -> some View {
         VStack(spacing: 10) {
-            if let intents = intelligence.insight(for: thread)?.replyIntents, !intents.isEmpty {
+            if proUnlocked, let intents = intelligence.insight(for: thread)?.replyIntents, !intents.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(intents, id: \.self) { intent in

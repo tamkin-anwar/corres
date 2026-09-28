@@ -7,6 +7,8 @@ import WidgetKit
 @MainActor
 enum WidgetBridge {
     private static var last: WidgetSnapshot?
+    /// Widgets are part of Corres Pro once a real account is connected.
+    static var isLocked = false
 
     static func update(from threads: [Correspondence]) {
         let now = Date.now
@@ -21,6 +23,7 @@ enum WidgetBridge {
         var snapshot = WidgetSnapshot(needsYouCount: needs.count, waitingCount: waiting.count, unreadCount: unread,
                                       needsYou: needs.prefix(6).map(item), waiting: waiting.prefix(6).map(item),
                                       isSample: threads.allSatisfy { $0.id.account == "sample" }, updatedAt: now)
+        snapshot.isLocked = isLocked && !snapshot.isSample
         // Compare without the timestamp, so a sync that changed nothing
         // doesn't spend the widget reload budget.
         var comparable = snapshot

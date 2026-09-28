@@ -69,6 +69,8 @@
 		C5FD4D482EA945EA9AE3AE5E /* App/CorresIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */; };
 		B67D56F88C9340B68A93BFF6 /* App/AskService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A52B6D67E5444081ECC866 /* App/AskService.swift */; };
 		9ADBDB8EA7A9457EBAB271E4 /* Features/AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */; };
+		0815B5A5F1484E9BA0484CE3 /* App/EntitlementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */; };
+		AC57B9FF8D85450BAEC4B66A /* Features/PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -165,6 +167,8 @@
 		AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CorresIntents.swift; sourceTree = SOURCE_ROOT; };
 		A5A52B6D67E5444081ECC866 /* App/AskService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AskService.swift; sourceTree = SOURCE_ROOT; };
 		6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AskView.swift; sourceTree = SOURCE_ROOT; };
+		270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/EntitlementStore.swift; sourceTree = SOURCE_ROOT; };
+		DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PaywallView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -224,6 +228,8 @@
 				D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */,
 				0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */,
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
+				DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */,
+				270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */,
 				6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */,
 				A5A52B6D67E5444081ECC866 /* App/AskService.swift */,
 				AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */,
@@ -391,6 +397,8 @@
 				84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */,
 				BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */,
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
+				AC57B9FF8D85450BAEC4B66A /* Features/PaywallView.swift in Sources */,
+				0815B5A5F1484E9BA0484CE3 /* App/EntitlementStore.swift in Sources */,
 				9ADBDB8EA7A9457EBAB271E4 /* Features/AskView.swift in Sources */,
 				B67D56F88C9340B68A93BFF6 /* App/AskService.swift in Sources */,
 				C5FD4D482EA945EA9AE3AE5E /* App/CorresIntents.swift in Sources */,

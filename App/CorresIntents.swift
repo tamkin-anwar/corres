@@ -26,6 +26,9 @@ struct WhatNeedsMeIntent: AppIntent {
         guard let snapshot = WidgetSnapshot.load() else {
             return .result(dialog: "Open Corres once so it can sort your mail.")
         }
+        if snapshot.isLocked == true {
+            return .result(dialog: "Needs You is part of Corres Pro. Open Corres to start your free trial.")
+        }
         return .result(dialog: IntentDialog(stringLiteral: Self.summary(of: snapshot)))
     }
 

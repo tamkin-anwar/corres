@@ -27,6 +27,7 @@ struct ComposeView: View {
     @State private var beforeRewrite: String?
     @Environment(MailIntelligence.self) private var intelligence
     @Environment(SnippetStore.self) private var snippets
+    @Environment(\.proUnlocked) private var proUnlocked
     @State private var dictation = DictationService()
 
     private enum Field { case to, cc, subject, body }
@@ -213,7 +214,7 @@ struct ComposeView: View {
                             .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.5))
                     }
                     .foregroundStyle(CorresPalette.ink)
-                    if intelligence.isAvailable {
+                    if intelligence.isAvailable && proUnlocked {
                     if let beforeRewrite {
                         Button {
                             draft.body = beforeRewrite + ownText.quote

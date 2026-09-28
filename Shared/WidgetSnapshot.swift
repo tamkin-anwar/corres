@@ -33,6 +33,8 @@ struct WidgetSnapshot: Codable, Equatable {
     var needsYou: [Item]
     var waiting: [Item]
     var isSample: Bool
+    /// Pro has lapsed: the widget invites opening Corres instead of showing mail.
+    var isLocked: Bool? = nil
     var updatedAt: Date
 
     static let appGroup = "group.studio.anwarcreative.corres"
