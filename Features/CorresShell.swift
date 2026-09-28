@@ -244,8 +244,17 @@ struct CorresShell: View {
     private func destinationContent(for destination: Destination) -> some View {
         switch store.state {
         case .idle, .loading:
-            ProgressView("Preparing your space")
+            // The launch screen's own mark, at the same size and centered
+            // on the whole screen, so launch hands off without the mark
+            // fading under a spinner.
+            Image("LaunchMark")
+                .overlay(alignment: .bottom) {
+                    ProgressView().controlSize(.small).offset(y: 44)
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea()
+                .accessibilityElement()
+                .accessibilityLabel("Preparing your space")
         case .failed:
             ContentUnavailableView {
                 Label("A moment, please", systemImage: "arrow.clockwise")

@@ -79,6 +79,17 @@ struct PreferencesView: View {
             .background(CorresPalette.canvas)
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            // Presented from the whole screen, never from inside a Section:
+            // modifiers on a Section apply to every row in it, and five
+            // copies of one sheet cancelled each other, closing Settings.
+            .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .manageSubscriptionsSheet(isPresented: $managingSubscription)
+            .alert("Corres Pro", isPresented: Binding(
+                get: { entitlements.errorMessage != nil && !showingPaywall },
+                set: { if !$0 { entitlements.errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) { entitlements.errorMessage = nil }
+            } message: { Text(entitlements.errorMessage ?? "") }
             .alert("Could not connect", isPresented: Binding(
                 get: { auth.errorMessage != nil },
                 set: { if !$0 { auth.errorMessage = nil } }
@@ -133,14 +144,6 @@ struct PreferencesView: View {
                 Text("Without Pro, Mail keeps working: read, reply, archive and search. Brief, Needs You, Waiting, Ask and the on-device intelligence need Pro.")
             }
         }
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
-        .manageSubscriptionsSheet(isPresented: $managingSubscription)
-        .alert("Corres Pro", isPresented: Binding(
-            get: { entitlements.errorMessage != nil && !showingPaywall },
-            set: { if !$0 { entitlements.errorMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) { entitlements.errorMessage = nil }
-        } message: { Text(entitlements.errorMessage ?? "") }
     }
 
     private var planStatus: String {
