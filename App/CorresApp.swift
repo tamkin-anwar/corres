@@ -1,5 +1,6 @@
 import GoogleSignIn
 import SwiftUI
+import UIKit
 
 @main
 struct CorresApp: App {
@@ -28,6 +29,11 @@ struct CorresApp: App {
                 .environment(appDelegate.askService)
                 .environment(appDelegate.entitlements)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
+                // Set on the window itself, so everything already open (the
+                // Settings sheet you're changing it from, Compose, Welcome)
+                // switches in the same instant instead of after it closes.
+                .onAppear { Appearance.apply(appearance) }
+                .onChange(of: appearance) { _, value in Appearance.apply(value) }
                 .tint(CorresPalette.accent)
                 .task {
                     // Everything account/data-dependent already happened in
@@ -82,6 +88,17 @@ struct CorresApp: App {
 
 enum Appearance: String, CaseIterable, Identifiable {
     case system, light, dark
+
+    @MainActor static func apply(_ raw: String) {
+        let style: UIUserInterfaceStyle = switch Appearance(rawValue: raw) ?? .system {
+        case .system: .unspecified
+        case .light: .light
+        case .dark: .dark
+        }
+        for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+            for window in scene.windows { window.overrideUserInterfaceStyle = style }
+        }
+    }
     var id: String { rawValue }
     var title: String { rawValue.capitalized }
     var colorScheme: ColorScheme? {

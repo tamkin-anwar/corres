@@ -14,7 +14,7 @@ struct RenderIcon {
                   to: assets.appendingPathComponent("AppIcon.appiconset/icon-1024.png"))
         try write(CorresIconArtwork().frame(width: 1024, height: 1024), scale: 1, opaque: true,
                   to: assets.appendingPathComponent("AppIcon.appiconset/icon-1024-dark.png"))
-        try write(CorrespondenceMark(glow: false).frame(width: 1110, height: 1110).offset(x: 24)
+        try write(CorrespondenceMark(glow: false, field: .dark).frame(width: 1110, height: 1110).offset(x: 24)
                     .frame(width: 1024, height: 1024).clipped().grayscale(1).brightness(0.15)
                     .background(Color.black), scale: 1, opaque: true,
                   to: assets.appendingPathComponent("AppIcon.appiconset/icon-1024-tinted.png"))
@@ -30,10 +30,14 @@ struct RenderIcon {
                   to: brand.appendingPathComponent("corres-icon-light.png"))
         try write(CorresHeroArtwork().frame(width: 1200, height: 1200), scale: 2, opaque: true,
                   to: brand.appendingPathComponent("corres-hero.png"))
+        // The launch screen is ivory in Light and obsidian in Dark; each
+        // gets the mark drawn for its field.
         for scale in 1...3 {
             let suffix = scale == 1 ? "@1x" : "@\(scale)x"
-            try write(CorrespondenceMark().frame(width: 96, height: 96), scale: CGFloat(scale), opaque: false,
+            try write(CorrespondenceMark(field: .light).frame(width: 96, height: 96), scale: CGFloat(scale), opaque: false,
                       to: assets.appendingPathComponent("LaunchMark.imageset/launch-mark\(suffix).png"))
+            try write(CorrespondenceMark(field: .dark).frame(width: 96, height: 96), scale: CGFloat(scale), opaque: false,
+                      to: assets.appendingPathComponent("LaunchMark.imageset/launch-mark-dark\(suffix).png"))
         }
     }
 

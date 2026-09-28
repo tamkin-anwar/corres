@@ -11,9 +11,25 @@ import SwiftUI
 struct CorrespondenceMark: View {
     /// A faint sapphire halo behind the mark, for hero placements only.
     var glow = false
-    /// Drawn for a light field (the Light Home Screen icon): deeper
-    /// graphite titanium and sapphire, softer shadows.
-    var onLight = false
+    /// Which field the mark sits on. `.automatic` follows the app's
+    /// appearance, so the silver mark never fades into an ivory card; the
+    /// icon renderer names its field outright.
+    enum Field { case automatic, light, dark }
+    var field: Field = .automatic
+    @Environment(\.colorScheme) private var colorScheme
+
+    init(glow: Bool = false, field: Field = .automatic) {
+        self.glow = glow
+        self.field = field
+    }
+
+    private var onLight: Bool {
+        switch field {
+        case .automatic: colorScheme == .light
+        case .light: true
+        case .dark: false
+        }
+    }
 
     private static let titaniumAxis = (UnitPoint(x: 0.24, y: 0.2), UnitPoint(x: 0.76, y: 0.8))
     private static let sapphireAxis = (UnitPoint(x: 0.36, y: 0.36), UnitPoint(x: 0.62, y: 0.64))
@@ -108,7 +124,7 @@ struct CorresIconArtwork: View {
                            center: .center, startRadius: 0, endRadius: 420)
             // The mark fills about two thirds of the icon, like the other
             // studio apps; nudged right because an open C reads left-heavy.
-            CorrespondenceMark(glow: true)
+            CorrespondenceMark(glow: true, field: .dark)
                 .frame(width: 1110, height: 1110)
                 .offset(x: 24)
         }
@@ -129,7 +145,7 @@ struct CorresLightIconArtwork: View {
                            center: UnitPoint(x: 0.5, y: -0.1), startRadius: 0, endRadius: 760)
             RadialGradient(colors: [Color(markHex: 0x8FB4E8).opacity(0.16), .clear],
                            center: .center, startRadius: 0, endRadius: 440)
-            CorrespondenceMark(onLight: true)
+            CorrespondenceMark(field: .light)
                 .frame(width: 1110, height: 1110)
                 .offset(x: 24)
         }
@@ -149,7 +165,7 @@ struct CorresHeroArtwork: View {
                            center: UnitPoint(x: 0.5, y: -0.1), startRadius: 0, endRadius: 900)
             RadialGradient(colors: [Color(markHex: 0x5E86C4).opacity(0.20), .clear],
                            center: .center, startRadius: 0, endRadius: 520)
-            CorrespondenceMark(glow: true).frame(width: 780, height: 780).offset(x: 18)
+            CorrespondenceMark(glow: true, field: .dark).frame(width: 780, height: 780).offset(x: 18)
         }
     }
 }
