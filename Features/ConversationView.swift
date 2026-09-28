@@ -208,6 +208,12 @@ struct ConversationView: View {
                 await intelligence.prepareInsight(for: current)
             }
         }
+        // Leaving normally: the list comes back to whatever you were
+        // last reading (next/previous may have moved on from the row you
+        // tapped). An archive-driven exit has already set its neighbour.
+        .onDisappear {
+            if threadExists { router.returnAnchor = currentID }
+        }
         .onChange(of: threadExists) { _, stillExists in
             // Archiving or trashing from inside the conversation itself
             // removes it from `store.threads` right under this view; pop
@@ -217,10 +223,12 @@ struct ConversationView: View {
             guard !stillExists else { return }
             let live = Set(store.threads.map(\.id))
             let index = orderedIDs.firstIndex(of: currentID) ?? 0
-            if let next = orderedIDs[min(index + 1, orderedIDs.count)...].first(where: live.contains)
-                ?? orderedIDs[..<index].last(where: live.contains) {
-                currentID = next
+            let neighbour = orderedIDs[min(index + 1, orderedIDs.count)...].first(where: live.contains)
+                ?? orderedIDs[..<index].last(where: live.contains)
+            if afterRemoval == AfterRemoval.nextConversation.rawValue, let neighbour {
+                currentID = neighbour
             } else {
+                router.returnAnchor = neighbour
                 dismiss()
             }
         }
@@ -238,6 +246,8 @@ struct ConversationView: View {
     }
 
     private var threadExists: Bool { store.threads.contains { $0.id == currentID } }
+    @AppStorage(AfterRemoval.key) private var afterRemoval = AfterRemoval.nextConversation.rawValue
+    @Environment(AppRouter.self) private var router
 
     private var currentIndex: Int? { orderedIDs.firstIndex(of: currentID) }
     private var hasPrevious: Bool { (currentIndex ?? 0) > 0 }

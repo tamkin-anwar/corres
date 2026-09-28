@@ -14,6 +14,11 @@ final class AppRouter {
 
     static let shared = AppRouter()
     var pending: Target?
+    /// The row a list should bring back into view when you return to it
+    /// from a conversation: the one you were reading, or, if it was just
+    /// archived, its neighbour, so you land where you left off instead of
+    /// at the top.
+    var returnAnchor: ThreadID?
 
     /// Returns false for URLs that aren't Corres's (Google sign-in callbacks).
     func open(_ url: URL) -> Bool {

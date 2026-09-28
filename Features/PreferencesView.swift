@@ -14,6 +14,7 @@ struct PreferencesView: View {
     @Environment(MailIntelligence.self) private var intelligence
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
     @Environment(EntitlementStore.self) private var entitlements
+    @AppStorage(AfterRemoval.key) private var afterRemoval = AfterRemoval.nextConversation.rawValue
     @State private var showingPaywall = false
     @State private var managingSubscription = false
 
@@ -32,6 +33,12 @@ struct PreferencesView: View {
                         SwipeSettingsView()
                     } label: {
                         settingLabel("Swipes", "hand.draw")
+                    }
+                    Picker(selection: $afterRemoval) {
+                        Text("Next conversation").tag(AfterRemoval.nextConversation.rawValue)
+                        Text("Back to list").tag(AfterRemoval.list.rawValue)
+                    } label: {
+                        settingLabel("After archiving", "arrow.turn.down.right")
                     }
                     NavigationLink {
                         SnippetSettingsView()
@@ -483,7 +490,7 @@ private struct SnippetEditor: View {
 private struct NotificationSettingsView: View {
     var auth: GoogleAuthService
     @Bindable var pushService: PushNotificationService
-    @AppStorage("corres.notifyOnlyNeedsYou") private var notifyOnlyNeedsYou = true
+    @AppStorage(PushNotificationService.Level.key) private var level = PushNotificationService.Level.current.rawValue
 
     var body: some View {
         Form {
@@ -497,13 +504,24 @@ private struct NotificationSettingsView: View {
                         }
                     }
                 ))
-                if pushService.isEnabled {
-                    Toggle("Only what needs me", isOn: $notifyOnlyNeedsYou)
-                }
             } footer: {
-                Text(pushService.isEnabled
-                     ? "With \u{201C}Only what needs me\u{201D} on, mail Corres files under Waiting or quiet reading arrives silently. You'll still see everything when you open Corres."
-                     : "A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message.")
+                Text("A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message.")
+            }
+            if pushService.isEnabled {
+                Section {
+                    Picker("Notify me about", selection: $level) {
+                        ForEach(PushNotificationService.Level.allCases) { option in
+                            Text(option.title).tag(option.rawValue)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                } header: {
+                    Text("Notify me about")
+                } footer: {
+                    Text((PushNotificationService.Level(rawValue: level) ?? .people).detail
+                         + " Everything is always in Corres when you open it.")
+                }
             }
         }
         .scrollContentBackground(.hidden)

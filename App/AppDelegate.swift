@@ -211,16 +211,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // picked up by the next foreground sync instead.
         await semanticTriageService.triageIfNeeded(store: store, only: Set(newlyUnreadThreads().map(\.id)))
         let newlyUnread = newlyUnreadThreads()
-        // Preferences → "Only notify for what needs me": a direct extension
-        // of Corres's own stated thesis ("less noise, more perspective"),
-        // not a bolted-on setting. Read straight from UserDefaults, not
-        // @AppStorage: AppDelegate is not a View, and the key is the same
-        // one PreferencesView's own @AppStorage toggle writes to.
-        // On unless turned off: like Superhuman's Important-only default, a
-        // promotion never buzzes the phone; people and anything
-        // time-sensitive still do.
-        let notifyOnlyNeedsYou = UserDefaults.standard.object(forKey: "corres.notifyOnlyNeedsYou") as? Bool ?? true
-        let toNotify = notifyOnlyNeedsYou ? newlyUnread.filter { $0.attention == .needsYou } : newlyUnread
+        // Settings → Notifications (see PushNotificationService.Level).
+        let toNotify = newlyUnread.filter(PushNotificationService.Level.current.includes)
         pushService.notifyAboutNewMail(toNotify)
         WidgetBridge.update(from: store.threads)
         return .newData

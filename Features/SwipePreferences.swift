@@ -58,3 +58,19 @@ enum LeadingSwipeAction: String, CaseIterable, Identifiable {
         }
     }
 }
+
+
+/// What happens after you archive or delete from inside a conversation.
+/// Gmail calls this Auto-advance and Mac Mail offers the same choice.
+enum AfterRemoval: String, CaseIterable, Identifiable {
+    case nextConversation, list
+    var id: String { rawValue }
+    static let key = "corres.afterRemoval"
+
+    var title: String {
+        switch self {
+        case .nextConversation: "Open next conversation"
+        case .list: "Return to the list"
+        }
+    }
+}

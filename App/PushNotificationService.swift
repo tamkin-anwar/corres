@@ -152,6 +152,50 @@ final class PushNotificationService {
     /// (Gmail's own short snippet, already computed at sync time, not the
     /// full message body) is exactly the right length for this, the same
     /// value `CorrespondenceRow`'s list preview already uses.
+    /// Which new mail buzzes the phone. The default follows Spark's Smart
+    /// notifications and Superhuman's Important split: anything from a real
+    /// person, plus automated mail that's time-sensitive for you. It keys
+    /// off who sent it, which rules decide reliably, rather than whether
+    /// it "needs a reply", which is a judgment that can be wrong, so an FYI
+    /// from a colleague still arrives.
+    enum Level: String, CaseIterable, Identifiable {
+        case everything, people, needsYou
+        var id: String { rawValue }
+        static let key = "corres.notifyLevel"
+
+        var title: String {
+            switch self {
+            case .everything: "All new mail"
+            case .people: "People and time-sensitive"
+            case .needsYou: "Only what needs me"
+            }
+        }
+
+        var detail: String {
+            switch self {
+            case .everything: "Every new email in your inbox, newsletters and promotions included."
+            case .people: "Anything from a real person, plus bills, appointments and other mail with a date that matters. Newsletters, promotions and social updates arrive silently."
+            case .needsYou: "Only what Corres files in Needs You. The quietest option; an FYI from a person arrives silently."
+            }
+        }
+
+        /// The saved choice; the older on/off switch carries over.
+        static var current: Level {
+            let defaults = UserDefaults.standard
+            if let raw = defaults.string(forKey: key), let level = Level(rawValue: raw) { return level }
+            return defaults.bool(forKey: "corres.notifyOnlyNeedsYou") ? .needsYou : .people
+        }
+
+        func includes(_ thread: Correspondence) -> Bool {
+            switch self {
+            case .everything: true
+            case .people: thread.attention == .needsYou
+                || InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == nil
+            case .needsYou: thread.attention == .needsYou
+            }
+        }
+    }
+
     static let messageCategory = "corres.message"
     static let archiveAction = "corres.archive"
     static let markReadAction = "corres.markRead"

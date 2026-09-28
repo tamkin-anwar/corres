@@ -216,8 +216,35 @@ struct CorrespondenceList: View {
         return String(local.prefix(8)).uppercased()
     }
 
+    @Environment(AppRouter.self) private var router
+
     var body: some View {
         if scrolls {
+            ScrollViewReader { proxy in
+                scrollingList
+                    // Back from a conversation: bring the row you were on
+                    // (or, after an archive, its neighbour) into view, so
+                    // the list picks up where you left off, not at the top.
+                    .onAppear { restorePosition(proxy) }
+                    .onChange(of: router.returnAnchor) { restorePosition(proxy) }
+            }
+        } else {
+            nonScrollingBody
+        }
+    }
+
+    private func restorePosition(_ proxy: ScrollViewProxy) {
+        guard let anchor = router.returnAnchor, results.contains(where: { $0.id == anchor }) else { return }
+        router.returnAnchor = nil
+        Task { @MainActor in
+            // After the pop animation has laid the list out again.
+            try? await Task.sleep(for: .milliseconds(60))
+            proxy.scrollTo(anchor, anchor: .center)
+        }
+    }
+
+    @ViewBuilder
+    private var scrollingList: some View {
             listContainer {
                 Section {
                     header
@@ -277,9 +304,10 @@ struct CorrespondenceList: View {
                     await store.refresh()
                 }
             }
-        } else {
-            ScrollView { staticContent }
-        }
+    }
+
+    private var nonScrollingBody: some View {
+        ScrollView { staticContent }
     }
 
     /// On iPhone a plain List, so rows push; in the split layout a List
@@ -476,6 +504,7 @@ struct CorrespondenceList: View {
             .listRowSeparatorTint(CorresPalette.line)
             .listRowBackground(splitSelection?.wrappedValue?.id == thread.id ? CorresPalette.accent.opacity(0.12) : Color.clear)
             .alignmentGuide(.listRowSeparatorLeading) { _ in 77 }
+            .id(thread.id)
             .onAppear {
                 if pagesOlderMail, thread.id == results.last?.id { loadOlderMail() }
             }
