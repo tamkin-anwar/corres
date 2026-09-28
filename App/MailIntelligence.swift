@@ -85,7 +85,8 @@ final class MailIntelligence {
         inFlight.insert(messageID)
         defer { inFlight.remove(messageID) }
         let wantsSummary = thread.body.count >= Self.summaryThreshold
-        let wantsReplies = !thread.looksAutomated && thread.attention != .waiting
+        // Nothing to answer when the last word is yours.
+        let wantsReplies = !thread.looksAutomated && thread.attention != .waiting && !thread.isFromAccountOwner
         guard wantsSummary || wantsReplies else {
             insights[messageID] = Insight(summary: nil, replyIntents: [])
             return
@@ -156,7 +157,10 @@ final class MailIntelligence {
             let replies = response.content.replyIntents
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(.init(charactersIn: "\".")))}
                 .filter { !$0.isEmpty && $0.count <= 32 }
-            return (response.content.summary.trimmingCharacters(in: .whitespacesAndNewlines), replies)
+            // The model occasionally repeats itself; one chip per idea.
+            var seen = Set<String>()
+            let distinct = replies.filter { seen.insert($0.lowercased()).inserted }
+            return (response.content.summary.trimmingCharacters(in: .whitespacesAndNewlines), distinct)
         } catch {
             return nil
         }
