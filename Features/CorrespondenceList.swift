@@ -9,6 +9,7 @@ struct CorrespondenceRow: View {
     var showsReason = false
     /// A short account marker, shown only in the merged view of several accounts.
     var accountTag: String?
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -23,7 +24,7 @@ struct CorrespondenceRow: View {
                     Text(thread.sender)
                         .font(.body.weight(thread.isUnread ? .semibold : .medium))
                         .foregroundStyle(thread.isUnread ? CorresPalette.ink : CorresPalette.secondary)
-                        .lineLimit(1)
+                        .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                     if thread.isFlagged {
                         Image(systemName: "flag.fill").font(.caption2).foregroundStyle(CorresPalette.flag)
                             .accessibilityLabel("Flagged")
@@ -44,6 +45,15 @@ struct CorrespondenceRow: View {
                             .padding(.horizontal, 5).padding(.vertical, 1)
                             .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(CorresPalette.line, lineWidth: 1))
                     }
+                    if !typeSize.isAccessibilitySize {
+                        Text(Self.timestamp(thread.receivedAt))
+                            .font(.footnote).monospacedDigit()
+                            .foregroundStyle(CorresPalette.tertiary)
+                    }
+                }
+                // At the largest text sizes the time gets its own line, as
+                // in Mail, so the name isn't cut to a few letters.
+                if typeSize.isAccessibilitySize {
                     Text(Self.timestamp(thread.receivedAt))
                         .font(.footnote).monospacedDigit()
                         .foregroundStyle(CorresPalette.tertiary)
@@ -57,9 +67,14 @@ struct CorrespondenceRow: View {
                     .foregroundStyle(CorresPalette.secondary)
                     .lineLimit(showsReason ? 1 : 2)
                 if showsReason, !thread.reason.isEmpty {
-                    HStack(spacing: 8) {
+                    // Side by side normally; stacked at the largest text
+                    // sizes, where both would otherwise squeeze to a word.
+                    let layout = typeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+                        : AnyLayout(HStackLayout(spacing: 8))
+                    layout {
                         ReasonLine(text: thread.reason, isIntelligence: thread.isIntelligenceReason)
-                        Spacer(minLength: 4)
+                        if !typeSize.isAccessibilitySize { Spacer(minLength: 4) }
                         if let due = thread.dueAt, thread.attention == .needsYou {
                             DueChip(date: due)
                         } else if thread.attention == .waiting {

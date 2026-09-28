@@ -60,12 +60,13 @@ struct CorrespondentAvatar: View {
 /// conversation. A sparkle marks a judgment Apple Intelligence made on this
 /// iPhone; an arrow marks a rule (a Gmail category, a person you write to).
 struct ReasonLine: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let text: String
     let isIntelligence: Bool
 
     var body: some View {
         Label {
-            Text(text).lineLimit(1)
+            Text(text).lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
         } icon: {
             Image(systemName: isIntelligence ? "sparkle" : "arrow.turn.down.right")
                 .font(.caption2.weight(.semibold))
