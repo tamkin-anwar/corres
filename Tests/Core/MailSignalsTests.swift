@@ -168,4 +168,26 @@ struct MailSignalsTests {
         #expect(threads.first { $0.id.providerID == "t2" }?.senderDecision == .approved)
         #expect(threads.first { $0.id.providerID == "t3" }?.senderDecision == .pending)
     }
+
+    @Test func vipsAndSensitivityDecideWhatReachesNeedsYou() {
+        let plain = { (sensitivity: InboxClassifier.Sensitivity) in
+            InboxClassifier.initialAttention(isUnread: true, labelIds: [], looksAutomated: false, sensitivity: sensitivity)
+        }
+        #expect(plain(.focused).attention == .quiet)
+        #expect(plain(.balanced).attention == .needsYou)
+        #expect(plain(.inclusive).attention == .needsYou)
+
+        let copied = { (sensitivity: InboxClassifier.Sensitivity) in
+            InboxClassifier.initialAttention(isUnread: true, labelIds: [], looksAutomated: false, isCopiedOnly: true,
+                                             sensitivity: sensitivity)
+        }
+        #expect(copied(.balanced).attention == .quiet)
+        #expect(copied(.inclusive).attention == .needsYou)
+
+        // A VIP wins even when copied, focused, or filed under Updates.
+        let vip = InboxClassifier.initialAttention(isUnread: true, labelIds: ["CATEGORY_UPDATES"], looksAutomated: true,
+                                                   isCopiedOnly: true, isVIP: true, sensitivity: .focused)
+        #expect(vip.attention == .needsYou)
+        #expect(vip.reason == InboxClassifier.vipReason)
+    }
 }

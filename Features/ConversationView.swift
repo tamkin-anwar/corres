@@ -621,6 +621,14 @@ struct ConversationView: View {
             Button { Task { await store.setPinned(!thread.isPinned, for: thread.id) } } label: {
                 Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin")
             }
+            if let email = thread.senderEmail, !thread.isFromAccountOwner {
+                let isVIP = InboxClassifier.isVIP(email)
+                Button {
+                    Task { await store.setVIP(email, account: thread.id.account, isVIP: !isVIP) }
+                } label: {
+                    Label(isVIP ? "Remove from VIPs" : "Add \(thread.sender) to VIPs", systemImage: isVIP ? "star.slash" : "star")
+                }
+            }
             Menu {
                 ForEach(Attention.allCases, id: \.self) { attention in
                     Button {

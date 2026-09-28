@@ -583,6 +583,15 @@ struct CorrespondenceList: View {
         } label: {
             Label("Snooze…", systemImage: "clock")
         }
+        if let email = thread.senderEmail, !thread.isFromAccountOwner {
+                let isVIP = InboxClassifier.isVIP(email)
+                Button {
+                    Task { await store.setVIP(email, account: thread.id.account, isVIP: !isVIP) }
+                } label: {
+                    Label(isVIP ? "Remove from VIPs" : "Add \(thread.sender) to VIPs", systemImage: isVIP ? "star.slash" : "star")
+                }
+            }
+
         Button {
             Task { await threadActions?.setFlagged(!thread.isFlagged, for: thread) }
         } label: {

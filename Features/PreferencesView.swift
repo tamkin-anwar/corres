@@ -34,6 +34,11 @@ struct PreferencesView: View {
                         settingLabel("Composing", "square.and.pencil")
                     }
                     NavigationLink {
+                        SortingSettingsView(store: store)
+                    } label: {
+                        settingLabel("Sorting", "line.3.horizontal.decrease")
+                    }
+                    NavigationLink {
                         ListSettingsView(store: store)
                     } label: {
                         settingLabel("Lists", "list.bullet")
@@ -351,6 +356,18 @@ private struct AccountDetailView: View {
             } footer: {
                 Text("If marking as read, archiving or flagging stops working, reconnect and keep every permission checked.")
             }
+            if pushService.isEnabled {
+                Section {
+                    Toggle(isOn: Binding(
+                        get: { CorresSettings.notifies(for: account.email) },
+                        set: { UserDefaults.standard.set($0, forKey: CorresSettings.accountNotificationsKey(for: account.email)) }
+                    )) {
+                        Label("Notifications", systemImage: "bell")
+                    }
+                } footer: {
+                    Text("Turn off to keep this account quiet while its mail still syncs and sorts.")
+                }
+            }
             Section {
                 Button("Remove Account", role: .destructive) { confirmingRemoval = true }
             } footer: {
@@ -493,6 +510,93 @@ private struct ReadingSettingsView: View {
         .background(CorresPalette.canvas)
         .navigationTitle("Reading")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Sorting
+
+private struct SortingSettingsView: View {
+    let store: MailStore
+    @State private var vipsStorage: [String] = CorresSettings.vips.sorted()
+    @AppStorage(CorresSettings.sensitivityKey) private var sensitivity = InboxClassifier.Sensitivity.balanced.rawValue
+    @AppStorage(CorresSettings.followUpDaysKey) private var followUpDays = 3
+    @AppStorage(CorresSettings.morningHourKey) private var morningHour = 8
+    @AppStorage(CorresSettings.laterTodayEveningKey) private var laterTodayEvening = false
+
+    var body: some View {
+        Form {
+            Section {
+                if vipsStorage.isEmpty {
+                    Text("No VIPs yet").foregroundStyle(CorresPalette.secondary)
+                } else {
+                    ForEach(vipsStorage, id: \.self) { email in
+                        Label(name(for: email), systemImage: "star.fill")
+                    }
+                    .onDelete { offsets in
+                        let removed = offsets.map { vipsStorage[$0] }
+                        vipsStorage.remove(atOffsets: offsets)
+                        Task {
+                            for email in removed {
+                                let account = store.threads.first { $0.senderEmail?.lowercased() == email }?.id.account ?? ""
+                                await store.setVIP(email, account: account, isVIP: false)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("VIPs")
+            } footer: {
+                Text("A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove.")
+            }
+            Section {
+                Picker("Needs You", selection: $sensitivity) {
+                    Text("Focused").tag(InboxClassifier.Sensitivity.focused.rawValue)
+                    Text("Balanced").tag(InboxClassifier.Sensitivity.balanced.rawValue)
+                    Text("Everything from people").tag(InboxClassifier.Sensitivity.inclusive.rawValue)
+                }
+                Picker("Follow up after", selection: $followUpDays) {
+                    ForEach(CorresSettings.followUpChoices, id: \.self) { Text($0 == 1 ? "1 day" : "\($0) days").tag($0) }
+                }
+            } footer: {
+                Text(sensitivityDetail + " Waiting turns into Follow up once someone hasn't replied in that long.")
+            }
+            Section {
+                Picker("Start of day", selection: $morningHour) {
+                    ForEach(6...10, id: \.self) { hour in
+                        Text(Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: .now)!
+                                .formatted(date: .omitted, time: .shortened)).tag(hour)
+                    }
+                }
+                Picker("Later today", selection: $laterTodayEvening) {
+                    Text("In 3 hours").tag(false)
+                    Text("This evening, 6 PM").tag(true)
+                }
+            } header: {
+                Text("Snooze")
+            } footer: {
+                Text("Tomorrow and Next week come back at the start of your day; This weekend an hour later, on Saturday.")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(CorresPalette.canvas)
+        .navigationTitle("Sorting")
+        .onAppear { vipsStorage = CorresSettings.vips.sorted() }
+        .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: sensitivity) { CorresSettings.applyToCore(); Task { await store.reapplyRules() } }
+        .onChange(of: morningHour) { CorresSettings.applyToCore() }
+        .onChange(of: laterTodayEvening) { CorresSettings.applyToCore() }
+    }
+
+    private var sensitivityDetail: String {
+        switch InboxClassifier.Sensitivity(rawValue: sensitivity) ?? .balanced {
+        case .focused: "Focused: only email that asks something of you, has a deadline, or is from a VIP or someone you write to."
+        case .balanced: "Balanced: email written to you by a person; mail you're only copied on stays in Mail."
+        case .inclusive: "Everything from people: every email from a person, including ones you're copied on."
+        }
+    }
+
+    private func name(for email: String) -> String {
+        store.threads.first { $0.senderEmail?.lowercased() == email }.map { "\($0.sender) · \(email)" } ?? email
     }
 }
 

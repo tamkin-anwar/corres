@@ -182,7 +182,7 @@ public actor SwiftDataMailRepository: MailRepository {
             (attention, reason) = InboxClassifier.initialAttention(
                 isUnread: model.isUnread, labelIds: model.labelIds, looksAutomated: automated,
                 receivedAt: model.receivedAt, now: now, isCopiedOnly: copied, asksSomething: asks,
-                deadline: due, text: text)
+                deadline: due, text: text, isVIP: InboxClassifier.isVIP(model.senderEmail))
             if let senderEmail = model.senderEmail?.lowercased(),
                let override = InboxClassifier.correspondentOverride(
                    isUnread: model.isUnread,
@@ -382,6 +382,7 @@ public actor SwiftDataMailRepository: MailRepository {
                     // Someone you've written to already has your answer:
                     // you reached out first, so there's nothing to screen.
                     let youWroteFirst = correspondents.contains(key) || item.isFromAccountOwner
+                        || InboxClassifier.isVIP(item.senderEmail)
                     item.senderDecision = isInitialSync || youWroteFirst ? .approved : .pending
                     knownSenderDecisions[key] = item.senderDecision
                 }

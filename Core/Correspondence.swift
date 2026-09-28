@@ -526,6 +526,8 @@ public enum InboxClassifier {
     public static let copiedReason = "You're copied, not asked. Kept out of Needs You."
     /// Where a thread goes after you write in it, from any app: Waiting if
     /// you asked something of a person, otherwise done for now.
+    public static let vipReason = "From a VIP."
+    public static let fyiReason = "From a person, nothing asked. Kept out of Needs You."
     public static let askedReason = "You asked. No reply yet."
     public static let repliedReason = "You replied. Nothing pending."
 
@@ -534,9 +536,30 @@ public enum InboxClassifier {
     /// decision nobody has overridden, so re-running the rules is safe.
     public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason, staleReason,
                                                   readReason, questionReason, deadlineReason, obligationReason, copiedReason,
-                                                  askedReason, repliedReason,
+                                                  askedReason, repliedReason, vipReason, fyiReason,
                                                   BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,
                                                   BulkKind.updates.reason, BulkKind.automated.reason]
+
+    /// People whose mail always lands in Needs You (lowercased addresses),
+    /// set from Settings → Sorting.
+    public nonisolated(unsafe) static var vipAddresses: Set<String> = []
+
+    /// How much of person-to-person mail reaches Needs You.
+    public enum Sensitivity: String, CaseIterable, Sendable {
+        /// Only mail that asks something, has a deadline, or is from a VIP
+        /// or someone you write to.
+        case focused
+        /// Everything written to you by a person, not mail you're copied on.
+        case balanced
+        /// Everything from a person, including mail you're copied on; the
+        /// on-device model never moves it out.
+        case inclusive
+    }
+    public nonisolated(unsafe) static var sensitivity: Sensitivity = .balanced
+
+    public static func isVIP(_ senderEmail: String?) -> Bool {
+        senderEmail.map { vipAddresses.contains($0.lowercased()) } ?? false
+    }
 
     /// How long after you write something it still counts as waiting on a
     /// reply when first seen; older than this, the moment has passed.
@@ -562,10 +585,11 @@ public enum InboxClassifier {
     public static func correspondentOverride(isUnread: Bool, hasListUnsubscribe: Bool, isCorrespondent: Bool,
                                              isStale: Bool = false, isCopiedOnly: Bool = false,
                                              currentReason: String? = nil) -> (attention: Attention, reason: String)? {
-        guard isUnread, isCorrespondent, !hasListUnsubscribe, !isStale, !isCopiedOnly else { return nil }
+        guard isUnread, isCorrespondent, !hasListUnsubscribe, !isStale,
+              !isCopiedOnly || sensitivity == .inclusive else { return nil }
         // A more specific reason the rules already found says more than
         // "someone you've written to".
-        if let currentReason, [questionReason, deadlineReason].contains(currentReason) {
+        if let currentReason, [questionReason, deadlineReason, vipReason].contains(currentReason) {
             return (.needsYou, currentReason)
         }
         return (.needsYou, correspondentReason)
@@ -603,9 +627,12 @@ public enum InboxClassifier {
     public static func initialAttention(isUnread: Bool, labelIds: [String], looksAutomated: Bool,
                                         receivedAt: Date? = nil, now: Date = .now,
                                         isCopiedOnly: Bool = false, asksSomething: Bool = false,
-                                        deadline: Date? = nil, text: String = "") -> (attention: Attention, reason: String) {
+                                        deadline: Date? = nil, text: String = "",
+                                        isVIP: Bool = false,
+                                        sensitivity: Sensitivity = InboxClassifier.sensitivity) -> (attention: Attention, reason: String) {
         guard isUnread else { return (.quiet, readReason) }
         let stale = receivedAt.map { isStale(receivedAt: $0, now: now) } ?? false
+        if isVIP, !stale { return (.needsYou, vipReason) }
         if let kind = bulkKind(labelIds: labelIds, looksAutomated: looksAutomated) {
             // A bill due Thursday is an update that needs you; a sale ending
             // Thursday never is (promotions aren't promotable).
@@ -617,9 +644,10 @@ public enum InboxClassifier {
         if stale { return (.quiet, staleReason) }
         // Copied on a thread addressed to someone else: Gmail's Priority
         // Inbox weighs To above Cc for the same reason.
-        if isCopiedOnly { return (.quiet, copiedReason) }
+        if isCopiedOnly, sensitivity != .inclusive { return (.quiet, copiedReason) }
         if deadline != nil { return (.needsYou, deadlineReason) }
         if asksSomething { return (.needsYou, questionReason) }
+        if sensitivity == .focused { return (.quiet, fyiReason) }
         return (.needsYou, personalUnreadReason)
     }
 }

@@ -138,6 +138,13 @@ final class SemanticTriageService {
         guard let messageID = thread.latestMessageID,
               let assessment = await assess(thread) else { return }
         let from = thread.attention
+        // A VIP always stays; with sorting set to Everything from people,
+        // the model never takes a person's mail out.
+        if from == .needsYou,
+           InboxClassifier.isVIP(thread.senderEmail) || InboxClassifier.sensitivity == .inclusive {
+            await store.applySemanticTriage(thread.id, from: from, to: from, reason: nil, messageID: messageID)
+            return
+        }
         let to: Attention
         if from == .needsYou {
             to = (!assessment.needsReply && assessment.confidence >= 1) ? .quiet : .needsYou

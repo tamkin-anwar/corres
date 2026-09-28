@@ -9,7 +9,9 @@ import Foundation
 public enum TimePhrase {
     /// Default hour when a day is named without a time: early enough to be
     /// the first thing seen, the same default Gmail and Apple Mail use.
-    public static let morningHour = 8
+    public nonisolated(unsafe) static var morningHour = 8
+    /// "Later today": three hours from now, or this evening at six.
+    public nonisolated(unsafe) static var laterTodayIsEvening = false
 
     public static func parse(_ input: String, now: Date = .now, calendar: Calendar = .current) -> Date? {
         let text = input.lowercased()
@@ -70,11 +72,14 @@ public enum TimePhrase {
         case "tonight":
             return at(time ?? (20, 0), on: today, calendar: calendar)
         case "later", "later today":
+            if laterTodayIsEvening, let evening = at((18, 0), on: today, calendar: calendar), evening > now.addingTimeInterval(1_800) {
+                return evening
+            }
             return calendar.date(byAdding: .hour, value: 3, to: now)
         case "tomorrow", "tmrw", "tmr":
             return at(time ?? (morningHour, 0), on: calendar.date(byAdding: .day, value: 1, to: today)!, calendar: calendar)
         case "this weekend", "weekend", "the weekend":
-            return at(time ?? (9, 0), on: next(weekday: 7, after: today, calendar: calendar, allowToday: true), calendar: calendar)
+            return at(time ?? (morningHour + 1, 0), on: next(weekday: 7, after: today, calendar: calendar, allowToday: true), calendar: calendar)
         case "next week":
             // On a Sunday the coming Monday is tomorrow, which "Tomorrow"
             // already covers; next week then means the Monday after.

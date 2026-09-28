@@ -134,6 +134,31 @@ final class MailStore {
     /// Runs `MailRepository.reclassifyLegacySyncDefaults` once per rules
     /// version. Only marks itself done on success, so a failed attempt
     /// simply runs again next launch.
+    /// Re-sorts every thread whose place is still a rule decision, after a
+    /// VIP or sorting setting changes. Nothing the person moved, and nothing
+    /// Apple Intelligence already refined, is touched.
+    /// Adding a VIP lets them past the Screener and brings their unread
+    /// mail into Needs You now, not just from the next email on.
+    func setVIP(_ senderEmail: String, account: String, isVIP: Bool) async {
+        CorresSettings.setVIP(senderEmail, isVIP)
+        CorresSettings.applyToCore()
+        if isVIP {
+            if threads.contains(where: { $0.senderEmail?.lowercased() == senderEmail.lowercased() && $0.senderDecision == .pending }) {
+                await approveSender(senderEmail, account: account)
+            }
+            for thread in threads where thread.senderEmail?.lowercased() == senderEmail.lowercased()
+                && thread.isUnread && thread.attention == .quiet {
+                await update(thread.id, to: .needsYou)
+            }
+        }
+        await reapplyRules()
+    }
+
+    func reapplyRules() async {
+        _ = try? await repository.reclassifyLegacySyncDefaults()
+        await refresh()
+    }
+
     func migrateAttentionRulesIfNeeded() async {
         let defaults = UserDefaults.standard
         guard !defaults.bool(forKey: Self.attentionRulesMigrationKey) else { return }

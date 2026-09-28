@@ -642,7 +642,7 @@ struct GmailAPIClient {
         var (attention, reason) = InboxClassifier.initialAttention(
             isUnread: isUnread, labelIds: message.labelIds ?? [], looksAutomated: automated, receivedAt: receivedAt,
             isCopiedOnly: Correspondence.isCopiedOnly(account: account, to: toRecipients, cc: ccRecipients),
-            asksSomething: asks, deadline: deadline, text: text)
+            asksSomething: asks, deadline: deadline, text: text, isVIP: InboxClassifier.isVIP(senderEmail))
         if fromYou {
             (attention, reason) = InboxClassifier.afterYouWrote(
                 asksSomething: asks, toPeople: MailSignals.hasPersonRecipient(toRecipients + ccRecipients, account: account),

@@ -94,6 +94,23 @@ enum CorresSettings {
         defaults.set(all.sorted(), forKey: vipsKey)
     }
 
+    static let sensitivityKey = "corres.sensitivity"
+    static var sensitivity: InboxClassifier.Sensitivity {
+        defaults.string(forKey: sensitivityKey).flatMap(InboxClassifier.Sensitivity.init) ?? .balanced
+    }
+
+    static let morningHourKey = "corres.snooze.morningHour"
+    static let laterTodayEveningKey = "corres.snooze.laterTodayEvening"
+
+    /// Hands the sorting and snooze choices to Core, which has no access
+    /// to Settings itself. Called at launch and whenever one changes.
+    @MainActor static func applyToCore() {
+        InboxClassifier.vipAddresses = vips
+        InboxClassifier.sensitivity = sensitivity
+        TimePhrase.morningHour = defaults.object(forKey: morningHourKey) as? Int ?? 8
+        TimePhrase.laterTodayIsEvening = defaults.bool(forKey: laterTodayEveningKey)
+    }
+
     static let followUpDaysKey = "corres.followUpDays"
     static let followUpChoices = [1, 2, 3, 5, 7]
     static var followUpDays: Int { defaults.object(forKey: followUpDaysKey) as? Int ?? 3 }

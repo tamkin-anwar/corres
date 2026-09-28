@@ -114,7 +114,8 @@ struct DueChip: View {
 /// up?" and Superhuman's "if no reply" reminders resurface a thread.
 struct WaitChip: View {
     let since: Date
-    static let followUpAfterDays = 3
+    /// Settings → Sorting → Follow up after.
+    static var followUpAfterDays: Int { CorresSettings.followUpDays }
 
     private var days: Int { max(0, Calendar.current.dateComponents([.day], from: since, to: .now).day ?? 0) }
     private var isNudge: Bool { days >= Self.followUpAfterDays }

@@ -38,6 +38,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     override init() {
         let (container, usedInMemoryFallback) = Self.makeModelContainer()
         let repository = SwiftDataMailRepository(modelContainer: container)
+        CorresSettings.applyToCore()
         let mailStore = MailStore(repository: repository)
         mailStore.seedsSampleMail = { !GoogleAuthService.hasSavedAccounts }
         let authService = GoogleAuthService()
@@ -214,7 +215,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         await semanticTriageService.triageIfNeeded(store: store, only: Set(newlyUnreadThreads().map(\.id)))
         let newlyUnread = newlyUnreadThreads()
         // Settings → Notifications (see PushNotificationService.Level).
-        let toNotify = newlyUnread.filter(PushNotificationService.Level.current.includes) + newSenders
+        // Settings → an account → Notifications can mute one account.
+        let toNotify = (newlyUnread.filter(PushNotificationService.Level.current.includes) + newSenders)
+            .filter { CorresSettings.notifies(for: $0.id.account) }
         pushService.notifyAboutNewMail(toNotify)
         WidgetBridge.update(from: store.threads)
         return .newData
