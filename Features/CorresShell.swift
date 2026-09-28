@@ -55,6 +55,8 @@ struct CorresShell: View {
             paths[destination] = NavigationPath()
         case .compose:
             composeDraft = Draft(kind: .new, to: "", subject: "")
+        case .composeTo(let to, let subject, let body):
+            composeDraft = Draft(kind: .new, to: to, subject: subject, body: body)
         case .thread(let id):
             guard store.threads.contains(where: { $0.id == id }) else {
                 selection = .needsYou

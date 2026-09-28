@@ -217,6 +217,8 @@ struct CorrespondenceList: View {
     }
 
     @Environment(AppRouter.self) private var router
+    @AppStorage(CorresSettings.confirmTrashKey) private var confirmTrash = false
+    @State private var confirmingTrash: Correspondence?
 
     var body: some View {
         if scrolls {
@@ -281,6 +283,14 @@ struct CorrespondenceList: View {
                     scrollPosition = newValue[oldIndex].id
                 } else {
                     scrollPosition = newValue.last?.id
+                }
+            }
+            .confirmationDialog("Move this conversation to Trash?",
+                                isPresented: Binding(get: { confirmingTrash != nil }, set: { if !$0 { confirmingTrash = nil } }),
+                                titleVisibility: .visible) {
+                Button("Move to Trash", role: .destructive) {
+                    if let thread = confirmingTrash { Task { await threadActions?.trash(thread) } }
+                    confirmingTrash = nil
                 }
             }
             .sheet(item: $snoozeTarget) { thread in
@@ -456,7 +466,9 @@ struct CorrespondenceList: View {
     private func perform(_ action: PrimarySwipeAction, on thread: Correspondence) {
         switch action {
         case .archive: Task { await threadActions?.archive(thread) }
-        case .trash: Task { await threadActions?.trash(thread) }
+        case .trash:
+            // Settings → Reading → Ask before moving to Trash.
+            if confirmTrash { confirmingTrash = thread } else { Task { await threadActions?.trash(thread) } }
         case .handled: Task { await store.update(thread.id, to: .handled) }
         }
     }
@@ -484,9 +496,11 @@ struct CorrespondenceList: View {
                 leadingShort: leadingVisual(for: leadingShortAction, thread: thread),
                 leadingLong: leadingVisual(for: leadingLongAction, thread: thread),
                 trailingShort: SwipeVisual(title: trailingShortAction.title, systemImage: trailingShortAction.systemImage,
-                                           tint: trailingShortAction.tint, removesRow: trailingShortAction.removesRow(in: destination)),
+                                           tint: trailingShortAction.tint, removesRow: trailingShortAction.removesRow(in: destination)
+                                                && !(trailingShortAction == .trash && confirmTrash)),
                 trailingLong: SwipeVisual(title: trailingLongAction.title, systemImage: trailingLongAction.systemImage,
-                                          tint: trailingLongAction.tint, removesRow: trailingLongAction.removesRow(in: destination)),
+                                          tint: trailingLongAction.tint, removesRow: trailingLongAction.removesRow(in: destination)
+                                               && !(trailingLongAction == .trash && confirmTrash)),
                 onLeadingShort: { perform(leadingShortAction, on: thread) },
                 onLeadingLong: { perform(leadingLongAction, on: thread) },
                 onTrailingShort: { perform(trailingShortAction, on: thread) },

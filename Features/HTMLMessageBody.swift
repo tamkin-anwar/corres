@@ -370,9 +370,7 @@ struct HTMLMessageBody: UIViewRepresentable {
                 decisionHandler(.allow)
                 return
             }
-            if let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" {
-                UIApplication.shared.open(url)
-            }
+            LinkOpener.open(url)
             decisionHandler(.cancel)
         }
     }

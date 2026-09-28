@@ -10,6 +10,8 @@ final class AppRouter {
         case destination(Destination)
         case thread(ThreadID)
         case compose
+        /// A `mailto:` link tapped inside an email.
+        case composeTo(to: String, subject: String, body: String)
     }
 
     static let shared = AppRouter()

@@ -14,7 +14,6 @@ struct PreferencesView: View {
     @Environment(MailIntelligence.self) private var intelligence
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
     @Environment(EntitlementStore.self) private var entitlements
-    @AppStorage(AfterRemoval.key) private var afterRemoval = AfterRemoval.nextConversation.rawValue
     @State private var showingPaywall = false
     @State private var managingSubscription = false
 
@@ -39,11 +38,10 @@ struct PreferencesView: View {
                     } label: {
                         settingLabel("Swipes", "hand.draw")
                     }
-                    Picker(selection: $afterRemoval) {
-                        Text("Next conversation").tag(AfterRemoval.nextConversation.rawValue)
-                        Text("Back to list").tag(AfterRemoval.list.rawValue)
+                    NavigationLink {
+                        ReadingSettingsView()
                     } label: {
-                        settingLabel("After archiving", "arrow.turn.down.right")
+                        settingLabel("Reading", "text.book.closed")
                     }
                     NavigationLink {
                         SnippetSettingsView()
@@ -449,6 +447,47 @@ private struct SignatureEditor: View {
             .onChange(of: text) { _, value in
                 UserDefaults.standard.set(value, forKey: CorresSettings.signatureKey(for: account))
             }
+    }
+}
+
+// MARK: - Reading
+
+private struct ReadingSettingsView: View {
+    @AppStorage(CorresSettings.remoteImagesKey) private var remoteImages = CorresSettings.RemoteImages.ask.rawValue
+    @AppStorage(CorresSettings.markReadOnOpenKey) private var markReadOnOpen = true
+    @AppStorage(CorresSettings.confirmTrashKey) private var confirmTrash = false
+    @AppStorage(CorresSettings.openLinksKey) private var openLinks = CorresSettings.OpenLinks.inCorres.rawValue
+    @AppStorage(AfterRemoval.key) private var afterRemoval = AfterRemoval.nextConversation.rawValue
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("Remote images", selection: $remoteImages) {
+                    ForEach(CorresSettings.RemoteImages.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+            } footer: {
+                Text(remoteImages == CorresSettings.RemoteImages.ask.rawValue
+                     ? "Images from the web stay off until you tap Show Images, so senders can't tell when you opened their email. Trusting a sender loads theirs from then on."
+                     : "Images load as soon as you open an email. Senders using tracking images can see when you opened it.")
+            }
+            Section {
+                Toggle("Mark as read when opened", isOn: $markReadOnOpen)
+                Toggle("Ask before moving to Trash", isOn: $confirmTrash)
+                Picker("After archiving", selection: $afterRemoval) {
+                    Text("Next conversation").tag(AfterRemoval.nextConversation.rawValue)
+                    Text("Back to list").tag(AfterRemoval.list.rawValue)
+                }
+                Picker("Open links", selection: $openLinks) {
+                    ForEach(CorresSettings.OpenLinks.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+            } footer: {
+                Text("With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser.")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(CorresPalette.canvas)
+        .navigationTitle("Reading")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

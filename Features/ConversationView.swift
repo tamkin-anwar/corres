@@ -103,7 +103,7 @@ struct ConversationView: View {
                             // (see Docs/Verification.md). Mail and Spark both
                             // render the body edge to edge for this reason.
                             HTMLMessageBody(html: html, height: $htmlHeight,
-                                            blockRemoteImages: !(showRemoteImages || thread.imagesTrusted))
+                                            blockRemoteImages: !(showRemoteImages || thread.imagesTrusted || loadsImages))
                                 .frame(height: htmlHeight)
                         } else {
                             Text(thread.body)
@@ -191,6 +191,14 @@ struct ConversationView: View {
             ComposeView(store: store, outbox: outbox, draft: draft,
                         sourceThread: store.threads.first(where: { $0.id == currentID }))
         }
+        .confirmationDialog("Move this conversation to Trash?",
+                            isPresented: Binding(get: { confirmingTrash != nil }, set: { if !$0 { confirmingTrash = nil } }),
+                            titleVisibility: .visible) {
+            Button("Move to Trash", role: .destructive) {
+                if let thread = confirmingTrash { Task { await threadActions.trash(thread) } }
+                confirmingTrash = nil
+            }
+        }
         .onChange(of: currentID) {
             htmlHeight = 200
             showRemoteImages = false
@@ -203,7 +211,8 @@ struct ConversationView: View {
             // calls; neither should wait on the other.
             async let loaded: Void = threadActions.loadContent(for: thread)
             async let conversation: Void = threadActions.loadHistory(for: thread)
-            if thread.isUnread {
+            // Settings → Reading → Mark as read when opened.
+            if thread.isUnread && markReadOnOpen {
                 await threadActions.setUnread(false, for: thread)
             }
             await loaded
@@ -251,6 +260,16 @@ struct ConversationView: View {
 
     private var threadExists: Bool { store.threads.contains { $0.id == currentID } }
     @AppStorage(AfterRemoval.key) private var afterRemoval = AfterRemoval.nextConversation.rawValue
+    @AppStorage(CorresSettings.remoteImagesKey) private var remoteImages = CorresSettings.RemoteImages.ask.rawValue
+    @AppStorage(CorresSettings.markReadOnOpenKey) private var markReadOnOpen = true
+    @AppStorage(CorresSettings.confirmTrashKey) private var confirmTrash = false
+    @State private var confirmingTrash: Correspondence?
+    private var loadsImages: Bool { remoteImages == CorresSettings.RemoteImages.always.rawValue }
+
+    /// Settings → Reading → Ask before moving to Trash.
+    private func requestTrash(_ thread: Correspondence) {
+        if confirmTrash { confirmingTrash = thread } else { Task { await threadActions.trash(thread) } }
+    }
     @Environment(AppRouter.self) private var router
 
     private var currentIndex: Int? { orderedIDs.firstIndex(of: currentID) }
@@ -284,7 +303,7 @@ struct ConversationView: View {
     /// the person chooses otherwise.
     @ViewBuilder
     private func privacyLine(for thread: Correspondence) -> some View {
-        if let html = thread.htmlBody, !(showRemoteImages || thread.imagesTrusted) {
+        if let html = thread.htmlBody, !(showRemoteImages || thread.imagesTrusted || loadsImages) {
             let blocked = HTMLMessageBody.remoteImageCount(in: html)
             if blocked > 0 {
                 let trackers = HTMLMessageBody.trackerCount(in: html)
@@ -513,7 +532,7 @@ struct ConversationView: View {
                     Task { await threadActions.archive(thread) }
                 }
                 barButton("trash", "Move to Trash") {
-                    Task { await threadActions.trash(thread) }
+                    requestTrash(thread)
                 }
                 barButton(thread.isFlagged ? "flag.fill" : "flag", thread.isFlagged ? "Unflag" : "Flag",
                           tint: thread.isFlagged ? CorresPalette.flag : nil) {
@@ -563,7 +582,7 @@ struct ConversationView: View {
                 Task { await threadActions.archive(thread) }
             }.keyboardShortcut("a", modifiers: [.command, .control])
             Button("Move to Trash") {
-                Task { await threadActions.trash(thread) }
+                requestTrash(thread)
             }.keyboardShortcut(.delete, modifiers: .command)
             Button(thread.isFlagged ? "Unflag" : "Flag") {
                 Task { await threadActions.setFlagged(!thread.isFlagged, for: thread) }
