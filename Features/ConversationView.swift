@@ -213,7 +213,9 @@ struct ConversationView: View {
         }
         // Opening a conversation is itself the signal that it's been seen,
         // the same behavior every real mail client already has.
-        .task(id: currentID) {
+        // Keyed on the latest message too, so a reply landing while the
+        // conversation is open loads, is marked read and is summarized.
+        .task(id: "\(currentID.account)|\(currentID.providerID)|\(currentThread?.latestMessageID ?? "")") {
             guard let thread = store.threads.first(where: { $0.id == currentID }) else { return }
             // Loading the body and marking read are independent network
             // calls; neither should wait on the other.
@@ -229,8 +231,9 @@ struct ConversationView: View {
             if let current = store.threads.first(where: { $0.id == currentID }) {
                 calendarEvent = await Self.findEvent(in: current)
             }
+            // Covers the whole conversation once its history is here.
             if proUnlocked, let current = store.threads.first(where: { $0.id == currentID }) {
-                await intelligence.prepareInsight(for: current)
+                await intelligence.prepareInsight(for: current, conversation: threadActions.messages(in: current))
             }
         }
         .onChange(of: threadExists) { _, stillExists in
@@ -265,6 +268,9 @@ struct ConversationView: View {
     }
 
     private var threadExists: Bool { store.threads.contains { $0.id == currentID } }
+    private var currentThread: Correspondence? { store.threads.first { $0.id == currentID } }
+    @AppStorage(CorresSettings.summariesKey) private var summariesOn = true
+    @AppStorage(CorresSettings.summaryCollapsedKey) private var summaryCollapsed = false
     @AppStorage(AfterRemoval.key) private var afterRemoval = AfterRemoval.nextConversation.rawValue
     @AppStorage(CorresSettings.remoteImagesKey) private var remoteImages = CorresSettings.RemoteImages.ask.rawValue
     @AppStorage(CorresSettings.markReadOnOpenKey) private var markReadOnOpen = true
@@ -335,26 +341,78 @@ struct ConversationView: View {
         }
     }
 
+    /// The summary itself: a heading that folds it away (remembered, like
+    /// Gmail's), what it covers, the summary, and any key points it left out.
+    private func summaryBlock(_ insight: MailIntelligence.Insight, summary: String) -> some View {
+        let isConversation = insight.messageCount > 1
+        let title = insight.isExtractive ? "From the email" : (isConversation ? "The conversation so far" : "In short")
+        let coverage: String? = isConversation && insight.coversWholeMessage ? "\(insight.messageCount) messages" : nil
+        return VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) { summaryCollapsed.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Label(title, systemImage: insight.isExtractive ? "text.quote" : "sparkle")
+                        .labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
+                    Spacer(minLength: 8)
+                    if let coverage {
+                        Text(coverage).font(.caption).foregroundStyle(CorresPalette.tertiary)
+                    }
+                    Image(systemName: summaryCollapsed ? "chevron.down" : "chevron.up")
+                        .font(.caption2.weight(.semibold)).foregroundStyle(CorresPalette.tertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(summaryCollapsed ? "\(title), collapsed" : title)
+            .accessibilityHint(summaryCollapsed ? "Shows the summary" : "Hides the summary")
+            if !summaryCollapsed {
+                Text(summary)
+                    .font(.subheadline).lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel(insight.isExtractive ? "From the email: \(summary)" : summary)
+                if !insight.details.isEmpty {
+                    VStack(alignment: .leading, spacing: 5) {
+                        ForEach(insight.details, id: \.self) { point in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Circle().fill(CorresPalette.tertiary).frame(width: 4, height: 4)
+                                    .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 4 }
+                                Text(point)
+                                    .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+                if !insight.coversWholeMessage {
+                    Text(isConversation ? "A long conversation: this covers its first and most recent messages."
+                                        : "A long email: this covers its key sections and its ending.")
+                        .font(.caption).foregroundStyle(CorresPalette.tertiary)
+                }
+            }
+        }
+    }
+
     /// The summary (on this iPhone, when Apple Intelligence is available)
     /// plus the reason this conversation is where it is, with a direct way
     /// to correct it.
     private func inShortCard(for thread: Correspondence) -> some View {
-        let insight = proUnlocked ? intelligence.insight(for: thread) : nil
+        let showsSummaries = proUnlocked && summariesOn
+        let insight = showsSummaries ? intelligence.insight(for: thread) : nil
+        let isPreparing = showsSummaries && insight?.summary == nil && intelligence.isPreparing(thread)
         return VStack(alignment: .leading, spacing: 10) {
-            if let summary = insight?.summary {
-                HStack {
+            if let insight, let summary = insight.summary {
+                summaryBlock(insight, summary: summary)
+                Hairline().padding(.vertical, 2)
+            } else if isPreparing {
+                HStack(spacing: 8) {
                     Label("In short", systemImage: "sparkle").labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
                     Spacer(minLength: 8)
-                    if insight?.coversWholeMessage == false {
-                        Text("Opening and ending only")
-                            .font(.caption).foregroundStyle(CorresPalette.tertiary)
-                            .accessibilityLabel("Long email. This summary covers its opening and ending only.")
-                    }
+                    ProgressView().controlSize(.mini)
                 }
-                Text(summary)
-                    .font(.subheadline).lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Summarizing")
                 Hairline().padding(.vertical, 2)
             }
             HStack(alignment: .firstTextBaseline, spacing: 10) {

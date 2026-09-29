@@ -306,6 +306,7 @@ struct PreferencesView: View {
 /// person might need to do to it. Removing it takes its mail off this
 /// iPhone; nothing is deleted from Gmail.
 private struct AccountDetailView: View {
+    @Environment(MailIntelligence.self) private var intelligence
     let account: GmailAccount
     let store: MailStore
     var auth: GoogleAuthService
@@ -383,6 +384,7 @@ private struct AccountDetailView: View {
                     await pushService.disable(account: email)
                     await auth.signOut(email)
                     await store.removeAccountData(email)
+                    intelligence.forget(account: email)
                 }
                 dismiss()
             }
@@ -488,9 +490,20 @@ private struct ReadingSettingsView: View {
     @AppStorage(CorresSettings.confirmTrashKey) private var confirmTrash = false
     @AppStorage(CorresSettings.openLinksKey) private var openLinks = CorresSettings.OpenLinks.inCorres.rawValue
     @AppStorage(AfterRemoval.key) private var afterRemoval = AfterRemoval.nextConversation.rawValue
+    @AppStorage(CorresSettings.summariesKey) private var summaries = true
+    @Environment(MailIntelligence.self) private var intelligence
 
     var body: some View {
         Form {
+            Section {
+                Toggle("Summarize emails", isOn: $summaries)
+            } header: {
+                Text("Summaries")
+            } footer: {
+                Text(intelligence.isAvailable
+                     ? "A short summary at the top of each email and conversation, written on this iPhone and checked against the email: every name, number and date in it has to be in the email. Part of Corres Pro."
+                     : "Without Apple Intelligence, summaries are the email's own key sentence, taken word for word. Part of Corres Pro.")
+            }
             Section {
                 Picker("Remote images", selection: $remoteImages) {
                     ForEach(CorresSettings.RemoteImages.allCases) { Text($0.title).tag($0.rawValue) }
@@ -614,6 +627,7 @@ private struct ListSettingsView: View {
     let store: MailStore
     @AppStorage(CorresSettings.previewLinesKey) private var previewLines = 2
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
+    @AppStorage(CorresSettings.summaryInListKey) private var summaryInList = false
     @AppStorage(CorresSettings.badgeKey) private var badge = CorresSettings.Badge.needsYou.rawValue
 
     var body: some View {
@@ -626,8 +640,9 @@ private struct ListSettingsView: View {
                     Text("3 lines").tag(3)
                 }
                 Toggle("Show pictures", isOn: $showAvatars)
+                Toggle("Summaries as preview", isOn: $summaryInList)
             } footer: {
-                Text("How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits.")
+                Text("How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits. With summaries as preview, an email Corres has summarized shows its summary instead of its opening words. Part of Corres Pro.")
             }
             Section {
                 Picker("App icon badge", selection: $badge) {

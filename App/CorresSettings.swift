@@ -61,10 +61,24 @@ enum CorresSettings {
         defaults.string(forKey: openLinksKey).flatMap(OpenLinks.init) ?? .inCorres
     }
 
+    // MARK: Summaries
+
+    /// Settings → Reading → Summarize emails.
+    static let summariesKey = "corres.summaries"
+    static var summaries: Bool { defaults.object(forKey: summariesKey) as? Bool ?? true }
+    /// Whether the summary card is folded down to its heading; remembered,
+    /// the way Gmail remembers a collapsed summary.
+    static let summaryCollapsedKey = "corres.summaryCollapsed"
+
     // MARK: Lists
 
     static let previewLinesKey = "corres.previewLines"
     static var previewLines: Int { defaults.object(forKey: previewLinesKey) as? Int ?? 2 }
+
+    /// Settings → Lists → Summaries as preview: a row shows its email's
+    /// summary, once there is one, in place of its opening words.
+    static let summaryInListKey = "corres.summaryInList"
+    static var summaryInList: Bool { defaults.object(forKey: summaryInListKey) as? Bool ?? false }
 
     static let showAvatarsKey = "corres.showAvatars"
     static var showAvatars: Bool { defaults.object(forKey: showAvatarsKey) as? Bool ?? true }

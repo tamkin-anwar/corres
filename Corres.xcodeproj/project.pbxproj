@@ -77,6 +77,7 @@
 		DA2DA6E461714EA88E32A952 /* App/BriefNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F763700EF74BE78B3980EF /* App/BriefNotifier.swift */; };
 		1B3766733C22497596301550 /* Features/MultiSelectGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC8AB17E1D7432A8CFCE409 /* Features/MultiSelectGesture.swift */; };
 		9712EB6B6C414E27B62D1265 /* Features/AddToCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9007760E7EAB4EBEB34224FD /* Features/AddToCalendar.swift */; };
+		105E14E4D7714D74A177FC8D /* Core/MailDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -181,6 +182,7 @@
 		54F763700EF74BE78B3980EF /* App/BriefNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/BriefNotifier.swift; sourceTree = SOURCE_ROOT; };
 		FCC8AB17E1D7432A8CFCE409 /* Features/MultiSelectGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/MultiSelectGesture.swift; sourceTree = SOURCE_ROOT; };
 		9007760E7EAB4EBEB34224FD /* Features/AddToCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AddToCalendar.swift; sourceTree = SOURCE_ROOT; };
+		5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/MailDigest.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -240,6 +242,7 @@
 				D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */,
 				0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */,
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
+				5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */,
 				9007760E7EAB4EBEB34224FD /* Features/AddToCalendar.swift */,
 				FCC8AB17E1D7432A8CFCE409 /* Features/MultiSelectGesture.swift */,
 				54F763700EF74BE78B3980EF /* App/BriefNotifier.swift */,
@@ -415,6 +418,7 @@
 				84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */,
 				BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */,
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
+				105E14E4D7714D74A177FC8D /* Core/MailDigest.swift in Sources */,
 				9712EB6B6C414E27B62D1265 /* Features/AddToCalendar.swift in Sources */,
 				1B3766733C22497596301550 /* Features/MultiSelectGesture.swift in Sources */,
 				DA2DA6E461714EA88E32A952 /* App/BriefNotifier.swift in Sources */,

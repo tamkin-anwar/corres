@@ -62,7 +62,16 @@ struct CorresApp: App {
                     }
                     // Network-bound, independent of the on-device model, so
                     // it runs alongside triage rather than after it.
-                    Task { await appDelegate.sync.backfillContent() }
+                    // Then ready summaries for what's likely to be opened
+                    // next, once their bodies are here (Corres Pro).
+                    Task {
+                        await appDelegate.sync.backfillContent()
+                        await appDelegate.store.refresh()
+                        if appDelegate.entitlements.isPro && CorresSettings.summaries {
+                            await appDelegate.mailIntelligence.prewarm(appDelegate.store.threads,
+                                                                       includeRead: CorresSettings.summaryInList)
+                        }
+                    }
                 }
                 // Each batch of 50 a sync saves shows up as it lands, so the
                 // first screenful appears within a round trip, not after the

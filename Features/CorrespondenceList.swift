@@ -15,6 +15,17 @@ struct CorrespondenceRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @AppStorage(CorresSettings.previewLinesKey) private var previewLines = 2
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
+    @AppStorage(CorresSettings.summaryInListKey) private var summaryInList = false
+    @AppStorage(CorresSettings.summariesKey) private var summariesOn = true
+    @Environment(\.proUnlocked) private var proUnlocked
+    @Environment(MailIntelligence.self) private var intelligence: MailIntelligence?
+
+    /// Settings → Lists → Summaries as preview: the summary once there is
+    /// one, the email's opening words until then.
+    private var summaryPreview: String? {
+        guard summaryInList, summariesOn, proUnlocked else { return nil }
+        return intelligence?.insight(for: thread)?.summary
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -70,10 +81,19 @@ struct CorrespondenceRow: View {
                 // Settings → Lists → Preview; the curated lists keep it to a
                 // line so the reason has room.
                 if previewLines > 0 {
-                    Text(thread.excerpt)
-                        .font(.subheadline)
-                        .foregroundStyle(CorresPalette.secondary)
-                        .lineLimit(showsReason ? 1 : previewLines)
+                    if let summaryPreview {
+                        (Text(Image(systemName: "sparkle")).font(.caption2).foregroundStyle(CorresPalette.accent)
+                            + Text(" ") + Text(summaryPreview))
+                            .font(.subheadline)
+                            .foregroundStyle(CorresPalette.secondary)
+                            .lineLimit(showsReason ? 1 : previewLines)
+                            .accessibilityLabel("Summary: \(summaryPreview)")
+                    } else {
+                        Text(thread.excerpt)
+                            .font(.subheadline)
+                            .foregroundStyle(CorresPalette.secondary)
+                            .lineLimit(showsReason ? 1 : previewLines)
+                    }
                 }
                 if showsReason, !thread.reason.isEmpty {
                     // Side by side normally; stacked at the largest text
