@@ -3,12 +3,26 @@ import SwiftData
 
 /// Local-first persisted storage. Survives relaunch; holds both the fictional
 /// sample data and, once connected, real synced Gmail messages side by side
-/// (see PersistedCorrespondence). @ModelActor gives this its own
-/// actor-isolated ModelContext, the documented safe pattern for using
-/// SwiftData under Swift 6 strict concurrency: the container is Sendable and
-/// crosses actor boundaries, but the context never does.
-@ModelActor
+/// (see PersistedCorrespondence). An actor with its own ModelContext, the
+/// safe pattern for SwiftData under Swift 6 strict concurrency: the
+/// container is Sendable and crosses actor boundaries, but the context
+/// never does.
+///
+/// Runs on its own serial queue rather than `@ModelActor`'s default
+/// executor, which ran each call on the calling thread: every read and
+/// write the main-actor store asked for (a pin, a sync's saves, reloading
+/// the whole mailbox after each batch) ran on the main thread, measured
+/// at 50–150ms a call on a 2,000-conversation inbox, right in the middle
+/// of swipes and scrolling.
 public actor SwiftDataMailRepository: MailRepository {
+    private let modelContext: ModelContext
+    private let queue = DispatchSerialQueue(label: "studio.anwarcreative.corres.mailstore", qos: .userInitiated)
+    public nonisolated var unownedExecutor: UnownedSerialExecutor { queue.asUnownedSerialExecutor() }
+
+    public init(modelContainer: ModelContainer) {
+        modelContext = ModelContext(modelContainer)
+    }
+
     public func threads() throws -> [Correspondence] {
         try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>()).map(\.asCorrespondence)
     }

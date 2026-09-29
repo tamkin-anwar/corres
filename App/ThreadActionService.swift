@@ -36,7 +36,6 @@ final class ThreadActionService {
         /// One conversation from a swipe; several from Select.
         let threads: [Correspondence]
         let kind: RemovalKind
-        var secondsRemaining: Int
         var thread: Correspondence { threads[0] }
         var title: String {
             let verb = kind == .archive ? "Archived" : "Deleted"
@@ -92,14 +91,13 @@ final class ThreadActionService {
             transaction.disablesAnimations = true
             withTransaction(transaction) { for thread in threads { store.hide(thread.id) } }
         }
-        let pending = PendingRemoval(threads: threads, kind: kind, secondsRemaining: Self.undoSeconds)
+        let pending = PendingRemoval(threads: threads, kind: kind)
         pendingRemoval = pending
+        // One sleep, not a per-second countdown: the pill shows no timer,
+        // and ticking `pendingRemoval` every second redrew the list and the
+        // whole shell every second while you were triaging.
         removalTask = Task { [weak self] in
-            for remaining in stride(from: Self.undoSeconds - 1, through: 0, by: -1) {
-                try? await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled, let self, self.pendingRemoval?.id == pending.id else { return }
-                self.pendingRemoval?.secondsRemaining = remaining
-            }
+            try? await Task.sleep(for: .seconds(Self.undoSeconds))
             guard !Task.isCancelled, let self, self.pendingRemoval?.id == pending.id else { return }
             self.pendingRemoval = nil
             self.enqueue(pending)

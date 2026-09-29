@@ -317,9 +317,10 @@ struct ConversationView: View {
     @ViewBuilder
     private func privacyLine(for thread: Correspondence) -> some View {
         if let html = thread.htmlBody, !(showRemoteImages || thread.imagesTrusted || loadsImages) {
-            let blocked = HTMLMessageBody.remoteImageCount(in: html)
+            let analysis = HTMLMessageBody.analysis(of: html)
+            let blocked = analysis.remoteImages
             if blocked > 0 {
-                let trackers = HTMLMessageBody.trackerCount(in: html)
+                let trackers = analysis.trackers
                 HStack(spacing: 7) {
                     Image(systemName: "shield.lefthalf.filled").font(.caption)
                     Text(trackers > 0
@@ -520,7 +521,9 @@ struct ConversationView: View {
 
     /// Booking data first, then an attached invite (.ics), then the
     /// wording; see EventFinder.
-    private static func findEvent(in thread: Correspondence) async -> EventSuggestion? {
+    /// Off the main thread: parsing the HTML and running the date detector
+    /// over a long email took long enough to catch the opening animation.
+    nonisolated private static func findEvent(in thread: Correspondence) async -> EventSuggestion? {
         if let html = thread.htmlBody, let structured = EventFinder.fromStructuredData(html) { return structured }
         if let invite = thread.attachments.first(where: {
                $0.mimeType.lowercased().hasPrefix("text/calendar") || $0.filename.lowercased().hasSuffix(".ics") }),

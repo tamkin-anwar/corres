@@ -313,10 +313,11 @@ struct CorresShell: View {
                 AskView(ask: ask)
             } else if destination == .brief {
                 BriefView(store: store, sync: sync, auth: auth, selection: $selection, showingScreener: $showingScreener,
-                          accountFilter: accountFilter)
+                          accountFilter: accountFilter, isActive: selection == destination)
             } else {
                 CorrespondenceList(store: store, sync: sync, auth: auth, threadActions: threadActions,
-                                   destination: destination, accountFilter: accountFilter)
+                                   destination: destination, accountFilter: accountFilter,
+                                   isActive: selection == destination)
             }
         }
     }

@@ -49,7 +49,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         // sender made it, on its own white card, the way Mail does: forcing
         // light text onto it in Dark mode put white text on its white
         // tables. Only plain mail from people is adapted to Dark mode.
-        let designed = Self.isDesigned(html)
+        let designed = Self.analysis(of: html).isDesigned
         webView.overrideUserInterfaceStyle = designed ? .light : (colorScheme == .dark ? .dark : .light)
         // Checked against the raw inputs, not the processed/wrapped output:
         // SwiftUI re-invokes updateUIView on any state change anywhere this
@@ -86,6 +86,38 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// How many `<img>` tags in `html` point at a remote http(s) URL, so a
     /// caller can show a "N images blocked" banner without needing its own
     /// WKWebView instance to find out.
+    /// What the reading view needs to know about a message's HTML, worked
+    /// out once per message: each of these scans the whole body, and the
+    /// view asks on every redraw (the web view reporting its height, a
+    /// summary arriving, a sync landing), which is what made opening a
+    /// long designed email stutter.
+    struct Analysis {
+        let isDesigned: Bool
+        let remoteImages: Int
+        let trackers: Int
+    }
+
+    private final class AnalysisBox {
+        let value: Analysis
+        init(_ value: Analysis) { self.value = value }
+    }
+
+    nonisolated(unsafe) private static let analysisCache: NSCache<NSString, AnalysisBox> = {
+        let cache = NSCache<NSString, AnalysisBox>()
+        cache.countLimit = 64
+        return cache
+    }()
+
+    static func analysis(of html: String) -> Analysis {
+        let key = html as NSString
+        if let cached = analysisCache.object(forKey: key) { return cached.value }
+        let remote = remoteImageCount(in: html)
+        let value = Analysis(isDesigned: isDesigned(html), remoteImages: remote,
+                             trackers: remote > 0 ? trackerCount(in: html) : 0)
+        analysisCache.setObject(AnalysisBox(value), forKey: key)
+        return value
+    }
+
     static func remoteImageCount(in html: String) -> Int {
         guard let regex = remoteImgSrcRegex else { return 0 }
         return regex.numberOfMatches(in: html, range: NSRange(html.startIndex..., in: html))
@@ -190,9 +222,8 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// text, or a style sheet (marketing, receipts, notifications, and
     /// mail from Outlook). Plain mail from Gmail or Mail has none of these.
     static func isDesigned(_ html: String) -> Bool {
-        let lower = html.lowercased()
-        return lower.range(of: #"bgcolor\s*=|background(-color)?\s*:\s*(#|rgb|white)|<style[\s>]"#,
-                           options: .regularExpression) != nil
+        html.range(of: #"bgcolor\s*=|background(-color)?\s*:\s*(#|rgb|white)|<style[\s>]"#,
+                   options: [.regularExpression, .caseInsensitive]) != nil
     }
 
     private static func wrap(_ html: String, adaptsToDark: Bool = true) -> String {

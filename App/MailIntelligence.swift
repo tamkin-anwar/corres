@@ -120,13 +120,7 @@ final class MailIntelligence {
         inFlight.insert(key)
         defer { inFlight.remove(key) }
 
-        let reader = thread.id.account.lowercased()
-        let readable = messages.map { message in
-            MailDigest.Message(sender: message.sender,
-                               isFromReader: message.senderEmail?.lowercased() == reader,
-                               date: message.receivedAt,
-                               text: MailDigest.clean(MailDigest.readableText(body: message.body, html: message.htmlBody)))
-        }.filter { !$0.text.isEmpty }
+        let readable = await Self.readableMessages(messages, reader: thread.id.account.lowercased())
         guard let latest = readable.last else {
             store(Insight(summary: nil, replyIntents: []), for: key)
             return
@@ -161,6 +155,19 @@ final class MailIntelligence {
                       coversWholeMessage: result.covered,
                       isExtractive: wantsSummary && result.summary == nil,
                       messageCount: messages.count), for: key)
+    }
+
+    /// Each message as plain, cleaned text. Off the main thread: turning a
+    /// long designed email's HTML into text is the heaviest step before the
+    /// model runs, and on the main thread it hitched scrolling whenever
+    /// background summaries ran after a sync, and the opening of an email.
+    nonisolated private static func readableMessages(_ messages: [Correspondence], reader: String) async -> [MailDigest.Message] {
+        messages.map { message in
+            MailDigest.Message(sender: message.sender,
+                               isFromReader: message.senderEmail?.lowercased() == reader,
+                               date: message.receivedAt,
+                               text: MailDigest.clean(MailDigest.readableText(body: message.body, html: message.htmlBody)))
+        }.filter { !$0.text.isEmpty }
     }
 
     /// Readies summaries for the mail most likely to be opened next (new,

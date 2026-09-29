@@ -2,6 +2,33 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Mail tab speed sweep (September 29, 2026)
+
+Reported: swiping, pinning, opening mail and scrolling in Mail felt laggy at times, not native.
+
+- **Measured, not guessed.** A debug-only `-stressThreads 2000` launch argument pads sample mail with 2,000 saved copies. A background thread pinged the main thread every 10ms to measure how long it was blocked, run on the old and new builds with identical steps, and Time Profiler was used to find the work behind each freeze.
+- **Causes found and fixed:**
+  - The mail database ran on the main thread. `@ModelActor`'s default executor ran each call on the calling thread, so every pin, archive, sync save and whole-mailbox reload ran on the main thread (50–150ms each at this size). `SwiftDataMailRepository` now has its own serial queue as its executor and is created off the main thread.
+  - The Mail list filtered and sorted the whole mailbox about a dozen times per redraw, plus once per row scrolling into view. It now builds its rows once per change to the mail (`MailStore.revision`), per filter or search, and per minute.
+  - The Brief did the same about fifteen times per redraw. It also kept rebuilding while hidden behind Mail, as did the other lists. It is cached the same way, and tabs that aren't showing no longer rebuild until you switch to them.
+  - The app's root rebuilt the widget snapshot (four full sorts, a file write and a widget reload) on the main thread in every swipe. It now waits for a pause and sorts in the background.
+  - The Undo pill's countdown, which is never shown, redrew the list and the whole shell every second while you triaged. It is now a single timer.
+  - The shared sort moved whole threads around. It now sorts positions, and skips sorting when the list is already in order.
+  - Opening an email re-scanned its HTML (for trackers, images and whether it's designed) on every redraw. That is now done once per message. The calendar-event scan and the summary's HTML-to-text step now run off the main thread.
+  - Rows no longer carry an explicit `.id`, which is known to slow `List`.
+- **Result, main thread blocked per action with 2,000 conversations (simulator, optimized build):**
+
+| Action | Before | After |
+|---|---|---|
+| Full swipe (2nd, 3rd) | 2.0s, 1.8s | 0.12s, 0.07s |
+| Pin | 2.0s | 0.03s |
+| Open Mail tab | 1.8s | 0.8s |
+| Open an email | 1.4s | 0.5–0.9s |
+
+  Scrolling showed no stalls. The first swipe after launch still paid a one-time cost of 0.2–1s that varied run to run, and the CPU profile showed no app work behind it.
+- `xcodebuild` BUILD SUCCEEDED, `swift test` 107/107. In the simulator: archive, Undo, pin, and the Brief catching up after an archive in Mail.
+- **On device:** the feel on a real inbox, especially the first swipe after launch and opening long designed emails.
+
 ## Mac notification icon blank (September 27, 2026)
 
 Reported: forwarded Corres notifications on the Mac (iPhone Mirroring and notifications) showed a blank square, while Spark and Gmail had their icons.

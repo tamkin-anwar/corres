@@ -84,8 +84,11 @@ struct CorresApp: App {
                 }
                 // Widgets show what's on the phone; refresh their snapshot
                 // whenever the mail it summarizes changes.
-                .onChange(of: appDelegate.store.threads) { _, threads in
-                    WidgetBridge.update(from: threads)
+                // Keyed on the store's revision, not its threads: comparing
+                // the whole mailbox on every redraw of the root was itself
+                // work on each swipe.
+                .onChange(of: appDelegate.store.revision) {
+                    WidgetBridge.scheduleUpdate(from: appDelegate.store.threads)
                 }
                 .onChange(of: appDelegate.entitlements.isPro) { _, isPro in
                     WidgetBridge.isLocked = !isPro

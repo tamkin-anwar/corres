@@ -179,6 +179,10 @@ struct CorrespondenceList: View {
     /// matching Superhuman's per-account view. See `CorresShell`'s account
     /// switcher.
     var accountFilter: String?
+    /// False while another tab is showing: the list keeps its rows as they
+    /// were instead of rebuilding behind the tab you're using (the tabs
+    /// all stay alive), and catches up the moment it's shown again.
+    var isActive = true
     @State private var search = ""
     @State private var mailFilter = MailFilter.everything
     @State private var snoozeTarget: Correspondence?
@@ -219,7 +223,56 @@ struct CorrespondenceList: View {
         return store.threads.filter { $0.id.account == accountFilter }
     }
 
-    private var results: [Correspondence] {
+    /// The rows as last built, and what they were built from. A plain
+    /// class, not observed: reading it never redraws anything.
+    private final class RowsCache {
+        struct Key: Equatable {
+            let revision: Int
+            /// The minute, so snoozes waking and "due soon" still move on
+            /// their own on the next redraw, as they did before caching.
+            let minute: Int
+            let account: String?
+            let destination: Destination
+            let search: String
+            let filter: MailFilter
+        }
+        var key: Key?
+        var rows: [Correspondence] = []
+        var ids: [ThreadID] = []
+        var dueSoon: Set<ThreadID> = []
+        var unread = 0
+    }
+    @State private var rowsCache = RowsCache()
+
+    /// Filtered and sorted once per change to the mail or the view, not on
+    /// every read: `results` is read a dozen times per redraw and once per
+    /// row scrolling into view, and each fresh build filtered and sorted
+    /// the whole mailbox, which is what made scrolling and every swipe
+    /// hitch on a real inbox.
+    private var rows: RowsCache {
+        let cache = rowsCache
+        if !isActive, cache.key != nil { return cache }
+        let key = RowsCache.Key(revision: store.revision, minute: Int(Date.now.timeIntervalSince1970 / 60),
+                                account: accountFilter, destination: destination,
+                                search: search, filter: mailFilter)
+        guard cache.key != key else { return cache }
+        let built = buildResults()
+        cache.key = key
+        cache.rows = built
+        cache.ids = built.map(\.id)
+        if destination == .needsYou {
+            let horizon = Date.now.addingTimeInterval(3 * 86_400)
+            cache.dueSoon = Set(built.lazy.filter { ($0.dueAt ?? .distantFuture) <= horizon }.map(\.id))
+        } else {
+            cache.dueSoon = []
+        }
+        cache.unread = built.reduce(0) { $0 + ($1.isUnread ? 1 : 0) }
+        return cache
+    }
+
+    private var results: [Correspondence] { rows.rows }
+
+    private func buildResults() -> [Correspondence] {
         let all: [Correspondence]
         if let attention = destination.attention, search.trimmingCharacters(in: .whitespaces).isEmpty {
             all = MailQuery.prioritized(scopedThreads, attention: attention)
@@ -235,11 +288,7 @@ struct CorrespondenceList: View {
 
     /// Needs You splits into what's due within three days and the rest,
     /// keeping the chronological order inside each group.
-    private var dueSoonIDs: Set<ThreadID> {
-        guard destination == .needsYou else { return [] }
-        let horizon = Date.now.addingTimeInterval(3 * 86_400)
-        return Set(results.filter { ($0.dueAt ?? .distantFuture) <= horizon }.map(\.id))
-    }
+    private var dueSoonIDs: Set<ThreadID> { rows.dueSoon }
 
     private var showingSent: Bool { destination == .mail && mailFilter == .sent }
 
@@ -323,18 +372,19 @@ struct CorrespondenceList: View {
             .scrollContentBackground(.hidden)
             .background(CorresPalette.canvas)
             .scrollPosition(id: $scrollPosition)
-            .onChange(of: results) { oldValue, newValue in
-                guard let anchor = scrollPosition, !newValue.contains(where: { $0.id == anchor }),
-                      let oldIndex = oldValue.firstIndex(where: { $0.id == anchor }) else { return }
+            .onChange(of: rows.ids) { oldValue, newValue in
+                selected.formIntersection(newValue)
+                guard let anchor = scrollPosition, !newValue.contains(anchor),
+                      let oldIndex = oldValue.firstIndex(of: anchor) else { return }
                 // Whatever the disappeared thread's own former neighbor is
                 // now sits at (or near) the same index; re-anchor to it so
                 // the list holds its position instead of resetting, the
                 // same "next email is right where I left it" continuity a
                 // premium mail client is expected to have.
                 if newValue.indices.contains(oldIndex) {
-                    scrollPosition = newValue[oldIndex].id
+                    scrollPosition = newValue[oldIndex]
                 } else {
-                    scrollPosition = newValue.last?.id
+                    scrollPosition = newValue.last
                 }
             }
             // Room below the last rows while the Undo pill shows, so any row
@@ -350,7 +400,6 @@ struct CorrespondenceList: View {
             .toolbar(isSelecting ? .hidden : .automatic, for: .tabBar)
             .toolbar { selectionToolbar }
             .animation(.snappy(duration: 0.25), value: isSelecting)
-            .onChange(of: results.map(\.id)) { _, ids in selected.formIntersection(ids) }
             .onChange(of: isSelecting) { _, value in router.isSelecting = value }
             .onDisappear { if isSelecting { endSelection() }; router.isSelecting = false }
             .onChange(of: destination) { endSelection() }
@@ -400,7 +449,7 @@ struct CorrespondenceList: View {
     /// started to the row under them now, as in Mail. Dragging back up
     /// unselects the rows left behind; what was already selected stays.
     private func handleTwoFingerSelect(_ state: UIGestureRecognizer.State, _ point: CGPoint) {
-        let order = results.map(\.id)
+        let order = rows.ids
         switch state {
         case .began:
             guard let id = rowFrames.id(at: point, in: order), let index = order.firstIndex(of: id) else { return }
@@ -552,7 +601,7 @@ struct CorrespondenceList: View {
         case .waiting:
             return (count == 1 ? "1 conversation waiting on a reply" : "\(count) conversations waiting on a reply") + sample
         default:
-            let unread = results.filter(\.isUnread).count
+            let unread = rows.unread
             return "Newest first" + (unread > 0 ? " · \(unread) unread" : "") + sample
         }
     }
@@ -690,7 +739,7 @@ struct CorrespondenceList: View {
     /// own Mark As/Snooze menus — a deliberate trade for matching the
     /// requested interaction model, not an oversight.
     private func conversationRows(_ threads: [Correspondence]) -> some View {
-        let orderedIDs = results.map(\.id)
+        let orderedIDs = rows.ids
         return ForEach(threads) { thread in
             PremiumSwipeRow(
                 leadingShort: isSelecting ? nil : leadingVisual(for: leadingShortAction, thread: thread),
@@ -735,7 +784,6 @@ struct CorrespondenceList: View {
             .listRowSeparatorTint(CorresPalette.line)
             .listRowBackground(splitSelection?.wrappedValue?.id == thread.id ? CorresPalette.accent.opacity(0.12) : Color.clear)
             .alignmentGuide(.listRowSeparatorLeading) { _ in showAvatarsInList ? 77 : 25 }
-            .id(thread.id)
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { rowFrames.frames[thread.id] = $0 }
             .onAppear {
                 if pagesOlderMail, thread.id == results.last?.id { loadOlderMail() }

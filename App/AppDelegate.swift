@@ -35,9 +35,27 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     /// (or even accept registration for) an identifier missing from there.
     private static let backgroundRefreshIdentifier = "studio.anwarcreative.corres.renewWatch"
 
+    /// Made on a background thread, not here on the main thread: SwiftData
+    /// sets up a context created on the main thread as a main-queue
+    /// context, and the repository's whole point is keeping its work off
+    /// the main thread (see SwiftDataMailRepository). `async` plus a wait,
+    /// because `sync` onto a global queue runs the block right here on the
+    /// calling thread.
+    private static func makeRepository(_ container: ModelContainer) -> SwiftDataMailRepository {
+        final class Box: @unchecked Sendable { var repository: SwiftDataMailRepository? }
+        let box = Box()
+        let made = DispatchSemaphore(value: 0)
+        DispatchQueue.global(qos: .userInitiated).async {
+            box.repository = SwiftDataMailRepository(modelContainer: container)
+            made.signal()
+        }
+        made.wait()
+        return box.repository!
+    }
+
     override init() {
         let (container, usedInMemoryFallback) = Self.makeModelContainer()
-        let repository = SwiftDataMailRepository(modelContainer: container)
+        let repository = Self.makeRepository(container)
         CorresSettings.applyToCore()
         let mailStore = MailStore(repository: repository)
         mailStore.seedsSampleMail = { !GoogleAuthService.hasSavedAccounts }

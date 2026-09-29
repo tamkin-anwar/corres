@@ -6,10 +6,14 @@ final class MailStore {
     enum LoadState: Equatable { case idle, loading, loaded, failed }
     /// Everything in the store, including threads hidden while an Archive
     /// or Trash is waiting out its Undo window.
-    private var allThreads: [Correspondence] = []
+    private var allThreads: [Correspondence] = [] { didSet { revision &+= 1 } }
     /// Removed from view the instant Archive/Trash is tapped, before Gmail
     /// is told, so Undo can bring them straight back.
-    private(set) var hiddenIDs: Set<ThreadID> = []
+    private(set) var hiddenIDs: Set<ThreadID> = [] { didSet { revision &+= 1 } }
+    /// Bumped whenever `threads` could read differently, so a list can keep
+    /// its filtered, sorted rows until something actually changed instead
+    /// of rebuilding them on every redraw (see `CorrespondenceList`).
+    private(set) var revision = 0
     var threads: [Correspondence] {
         hiddenIDs.isEmpty ? allThreads : allThreads.filter { !hiddenIDs.contains($0.id) }
     }
@@ -43,6 +47,9 @@ final class MailStore {
         do {
             if seedsSampleMail() { try await repository.seedIfNeeded(now: .now) }
             allThreads = try await repository.threads()
+            #if DEBUG
+            await padForStressTest()
+            #endif
             state = .loaded
         } catch is CancellationError {
             state = .idle
@@ -50,6 +57,41 @@ final class MailStore {
             state = .failed
         }
     }
+
+    #if DEBUG
+    /// Launch with `-stressThreads 2000` to pad sample mail with copies of
+    /// what loaded (each an hour older than the last), saved like real
+    /// mail so every action works on them, for measuring scrolling and
+    /// swiping on an inbox the size of a real one. Removed with the rest
+    /// of the sample mail.
+    private func padForStressTest() async {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let flag = arguments.firstIndex(of: "-stressThreads"), flag + 1 < arguments.count,
+              let count = Int(arguments[flag + 1]), count > 0,
+              !allThreads.isEmpty, !allThreads.contains(where: { $0.id.providerID.contains("-stress") }) else { return }
+        let base = allThreads
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        var copies: [Correspondence] = []
+        copies.reserveCapacity(count)
+        for index in 0..<count {
+            let source = base[index % base.count]
+            guard let data = try? encoder.encode(source),
+                  var object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  var id = object["id"] as? [String: Any],
+                  let providerID = id["providerID"] as? String,
+                  let received = object["receivedAt"] as? Double else { continue }
+            id["providerID"] = "\(providerID)-stress\(index)"
+            object["id"] = id
+            object["receivedAt"] = received - Double(index + 1) * 3_600
+            guard let copyData = try? JSONSerialization.data(withJSONObject: object),
+                  let copy = try? decoder.decode(Correspondence.self, from: copyData) else { continue }
+            copies.append(copy)
+        }
+        _ = try? await repository.upsert(copies, isInitialSync: false)
+        allThreads = (try? await repository.threads()) ?? allThreads
+    }
+    #endif
 
     /// Re-fetches `threads` without touching `state`: unlike `load()`, this
     /// is for refreshing an already-loaded list after something changed

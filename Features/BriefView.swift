@@ -12,17 +12,46 @@ struct BriefView: View {
     /// See `CorresShell`'s doc comment: nil merges every connected account,
     /// a specific email scopes the whole Brief to just that one.
     var accountFilter: String?
+    /// False while another tab is showing: the Brief keeps what it last
+    /// showed instead of rebuilding behind the tab you're using, and
+    /// catches up the moment it's shown again.
+    var isActive = true
     @AppStorage(GoogleAuthService.givenNameKey) private var givenName = ""
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
     @Environment(\.conversationSelection) private var splitSelection
 
-    private var scopedThreads: [Correspondence] {
-        guard let accountFilter else { return store.threads }
-        return store.threads.filter { $0.id.account == accountFilter }
+    /// What the Brief shows, built once per change to the mail. The Brief
+    /// stays alive behind the other tabs, and it read these about fifteen
+    /// times per redraw, each a filter and sort of the whole mailbox, so
+    /// every archive or pin in Mail paid for it too.
+    private final class Digest {
+        /// The minute too, so due times and snoozes still move on their own.
+        var key: (revision: Int, minute: Int, account: String?)?
+        var snapshot = BriefSnapshot(threads: [], now: .now)
+        var priorities: [Correspondence] = []
+        var waiting: [Correspondence] = []
+        var unread = 0
     }
-    private var snapshot: BriefSnapshot { BriefSnapshot(threads: scopedThreads, now: .now) }
-    private var priorities: [Correspondence] { MailQuery.prioritized(scopedThreads, attention: .needsYou) }
-    private var waiting: [Correspondence] { MailQuery.prioritized(scopedThreads, attention: .waiting) }
+    @State private var digestCache = Digest()
+
+    private var digest: Digest {
+        let cache = digestCache
+        if !isActive, cache.key != nil { return cache }
+        let minute = Int(Date.now.timeIntervalSince1970 / 60)
+        if let key = cache.key, key.revision == store.revision, key.minute == minute, key.account == accountFilter {
+            return cache
+        }
+        let scoped = accountFilter.map { account in store.threads.filter { $0.id.account == account } } ?? store.threads
+        cache.key = (store.revision, minute, accountFilter)
+        cache.snapshot = BriefSnapshot(threads: scoped, now: .now)
+        cache.priorities = MailQuery.prioritized(scoped, attention: .needsYou)
+        cache.waiting = MailQuery.prioritized(scoped, attention: .waiting)
+        cache.unread = MailQuery.filter(scoped).reduce(0) { $0 + ($1.isUnread ? 1 : 0) }
+        return cache
+    }
+    private var snapshot: BriefSnapshot { digest.snapshot }
+    private var priorities: [Correspondence] { digest.priorities }
+    private var waiting: [Correspondence] { digest.waiting }
     private var pendingSenderCount: Int {
         let pending = accountFilter == nil ? store.pendingSenderThreads : store.pendingSenderThreads.filter { $0.id.account == accountFilter }
         return Set(pending.compactMap(\.senderEmail)).count
@@ -220,7 +249,7 @@ struct BriefView: View {
     }
 
     private var unreadDetail: String? {
-        let unread = MailQuery.filter(scopedThreads).filter(\.isUnread).count
+        let unread = digest.unread
         return unread == 0 ? nil : "\(unread) unread"
     }
 

@@ -738,16 +738,29 @@ public enum MailQuery {
         // findable if the person explicitly searches for it, never truly
         // hidden or deleted.
         let hideUnscreened = query.isEmpty
-        return threads.filter { item in
+        let kept = threads.filter { item in
             (!hideSnoozed || !item.isSnoozed(at: now)) &&
             (!hideUnscreened || item.senderDecision == .approved) &&
             (attention == nil || item.attention == attention) &&
             (query.isEmpty || [item.sender, item.organization, item.subject, item.excerpt]
                 .contains { $0.localizedStandardContains(query) })
-        }.sorted {
-            if $0.isPinned != $1.isPinned { return $0.isPinned }
-            if $0.receivedAt == $1.receivedAt { return $0.id.providerID < $1.id.providerID }
-            return $0.receivedAt > $1.receivedAt
         }
+        return sortedNewestFirst(kept)
+    }
+
+    /// Pinned first, then newest. Sorts positions and small keys rather
+    /// than the threads themselves: a thread is a large value, and moving
+    /// thousands of them around was most of the cost of a sort.
+    static func sortedNewestFirst(_ threads: [Correspondence]) -> [Correspondence] {
+        let keys = threads.map { (pinned: $0.isPinned, date: $0.receivedAt) }
+        func before(_ a: Int, _ b: Int) -> Bool {
+            if keys[a].pinned != keys[b].pinned { return keys[a].pinned }
+            if keys[a].date == keys[b].date { return threads[a].id.providerID < threads[b].id.providerID }
+            return keys[a].date > keys[b].date
+        }
+        // Often already in order (the store keeps it close to this), in
+        // which case there's nothing to move at all.
+        if threads.indices.dropFirst().allSatisfy({ !before($0, $0 - 1) }) { return threads }
+        return threads.indices.sorted(by: before).map { threads[$0] }
     }
 }
