@@ -218,12 +218,47 @@ struct MailSignalsTests {
         Date and time: \(parts.month!)/\(parts.day!)/\(parts.year!) 2:45 PM
         Location: 100 W Ontario Ave, Corona, CA 92882
         """
-        let event = MailSignals.event(in: text, subject: "Your Labcorp appointment is tomorrow", now: now)
+        let event = EventFinder.event(text: text, html: nil, subject: "Your Labcorp appointment is tomorrow", receivedAt: now, now: now)
         #expect(event?.title == "Labcorp Appointment")
         #expect(event.map { calendar.component(.hour, from: $0.start) } == 14)
         #expect(event?.location?.contains("Corona") == true)
         // A date with no time, or no event at all, isn't offered.
-        #expect(MailSignals.event(in: "Your order shipped \(parts.month!)/\(parts.day!)/\(parts.year!).", subject: "Shipped", now: now) == nil)
-        #expect(MailSignals.event(in: "Your appointment is on \(parts.month!)/\(parts.day!)/\(parts.year!).", subject: "Reminder", now: now) == nil)
+        let day2 = "\(parts.month!)/\(parts.day!)/\(parts.year!)"
+        #expect(EventFinder.event(text: "Your order shipped \(day2).", html: nil, subject: "Shipped", receivedAt: now, now: now) == nil)
+        #expect(EventFinder.event(text: "Your appointment is on \(day2).", html: nil, subject: "Reminder", receivedAt: now, now: now) == nil)
+    }
+
+    /// "Tomorrow" in yesterday's email isn't tomorrow now.
+    @Test func relativeDatesOnlyCountInMailFromToday() {
+        let now = Date()
+        let text = "Your dentist appointment is tomorrow at 3:00 PM."
+        #expect(EventFinder.event(text: text, html: nil, subject: "Reminder", receivedAt: now, now: now) != nil)
+        #expect(EventFinder.event(text: text, html: nil, subject: "Reminder",
+                                  receivedAt: now.addingTimeInterval(-2 * 86_400), now: now) == nil)
+    }
+
+    @Test func bookingDataAndInvitesAreReadExactly() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let html = """
+        <html><head><script type="application/ld+json">
+        {"@context":"http://schema.org","@type":"FlightReservation","reservationNumber":"RXJ34P",
+         "reservationFor":{"@type":"Flight","flightNumber":"110","airline":{"@type":"Airline","name":"United","iataCode":"UA"},
+         "departureAirport":{"@type":"Airport","name":"San Francisco Airport","iataCode":"SFO"},
+         "departureTime":"2027-03-04T20:15:00-08:00",
+         "arrivalAirport":{"@type":"Airport","name":"John F. Kennedy International Airport","iataCode":"JFK"},
+         "arrivalTime":"2027-03-05T06:30:00-05:00"}}
+        </script></head><body>Your trip</body></html>
+        """
+        let flight = EventFinder.fromStructuredData(html, now: now)
+        #expect(flight?.title == "Flight United 110 SFO → JFK")
+        #expect(flight?.confirmation == "RXJ34P")
+        #expect(flight?.end != nil)
+        #expect(flight?.location == "San Francisco Airport")
+
+        let ics = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nDTSTART:20270310T170000Z\r\nDTEND:20270310T173000Z\r\nSUMMARY:Design review\r\nLOCATION:Studio\\, 2nd floor\r\nEND:VEVENT\r\nEND:VCALENDAR"
+        let invite = EventFinder.fromInvite(ics, now: now)
+        #expect(invite?.title == "Design review")
+        #expect(invite?.location == "Studio, 2nd floor")
+        #expect(invite.flatMap { $0.end?.timeIntervalSince($0.start) } == 1_800)
     }
 }

@@ -72,7 +72,7 @@ struct ConversationView: View {
                         messageHeader(for: thread)
                             .padding(.horizontal, CorresSpace.page)
                         if let calendarEvent, !thread.isFromAccountOwner {
-                            CalendarSuggestionCard(event: calendarEvent)
+                            CalendarSuggestionCard(event: calendarEvent, sender: thread.sender, threadKey: thread.id.providerID)
                                 .padding(.horizontal, CorresSpace.page)
                         }
                         privacyLine(for: thread)
@@ -227,7 +227,7 @@ struct ConversationView: View {
             await conversation
             // The event this email is about, once its full text is here.
             if let current = store.threads.first(where: { $0.id == currentID }) {
-                calendarEvent = MailSignals.event(in: current.body, subject: current.subject)
+                calendarEvent = await Self.findEvent(in: current)
             }
             if proUnlocked, let current = store.threads.first(where: { $0.id == currentID }) {
                 await intelligence.prepareInsight(for: current)
@@ -458,6 +458,21 @@ struct ConversationView: View {
             draftingIntent = nil
             compose(.reply, from: source, prefill: drafted ?? "")
         }
+    }
+
+    /// Booking data first, then an attached invite (.ics), then the
+    /// wording; see EventFinder.
+    private static func findEvent(in thread: Correspondence) async -> EventSuggestion? {
+        if let html = thread.htmlBody, let structured = EventFinder.fromStructuredData(html) { return structured }
+        if let invite = thread.attachments.first(where: {
+               $0.mimeType.lowercased().hasPrefix("text/calendar") || $0.filename.lowercased().hasSuffix(".ics") }),
+           let messageID = thread.latestMessageID, thread.id.account != "sample",
+           let data = try? await GmailAPIClient().fetchAttachmentData(messageId: messageID, attachmentId: invite.id,
+                                                                       account: thread.id.account),
+           let text = String(data: data, encoding: .utf8), let event = EventFinder.fromInvite(text) {
+            return event
+        }
+        return EventFinder.fromWording(thread.body, subject: thread.subject, receivedAt: thread.receivedAt)
     }
 
     private func hasAnswered(_ thread: Correspondence) -> Bool {
