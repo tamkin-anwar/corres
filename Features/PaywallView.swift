@@ -3,7 +3,7 @@ import SwiftUI
 
 enum CorresLinks {
     static let terms = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
-    static let privacy = URL(string: "https://tamkin-anwar.github.io/anwar-creative-studio-portfolio/corres/privacy/")!
+    static let privacy = URL(string: "https://anwarcreativestudio.com/corres/privacy/")!
 }
 
 /// Corres Pro: annual (with the free trial) chosen by default, monthly,

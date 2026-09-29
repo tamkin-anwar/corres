@@ -13,7 +13,7 @@ Private by design: sorting, summaries, drafts and answers run on your device wit
 
 Most mail apps answer "what did I receive?" Corres answers "what needs me?" Brief, Needs You and Waiting come first; every message is still in one chronological Mail list, and nothing is sorted out of reach.
 
-Built by [Anwar Creative Studio](https://tamkin-anwar.github.io/anwar-creative-studio-portfolio/), alongside Artha. Status: in development, tested daily on a real iPhone.
+Built by [Anwar Creative Studio](https://anwarcreativestudio.com), alongside Artha. Status: in development, tested daily on a real iPhone.
 
 ## What it does
 
