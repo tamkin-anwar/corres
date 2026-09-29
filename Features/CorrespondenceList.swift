@@ -661,7 +661,15 @@ struct CorrespondenceList: View {
         case .trash:
             // Settings → Reading → Ask before moving to Trash.
             if confirmTrash { confirmingTrash = thread } else { Task { await threadActions?.trash(thread) } }
-        case .handled: Task { await store.update(thread.id, to: .handled) }
+        case .handled:
+            // Out of view the moment the swipe lands, not once the write
+            // finishes, so the row collapses right after it slides off.
+            let leaves = destination != .mail
+            if leaves { withAnimation(.snappy(duration: 0.3)) { store.hide(thread.id) } }
+            Task {
+                await store.update(thread.id, to: .handled)
+                if leaves { store.unhide(thread.id) }
+            }
         }
     }
 

@@ -109,16 +109,27 @@ struct PremiumSwipeRow<Content: View>: View {
         let action = self.action(for: committed, positive: positive)
         if visual.removesRow {
             isCommitting = true
-            withAnimation(reduceMotion ? nil : .easeIn(duration: 0.2)) {
-                offset = (positive ? 1 : -1) * (rowWidth + 40)
-            }
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(reduceMotion ? 0 : 190))
+            let target = (positive ? 1 : -1) * (rowWidth + 40)
+            // Leaves at the finger's own speed (never slower than a brisk
+            // throw) and eases out, so the row keeps moving the instant it's
+            // let go; an ease-in started it from rest, which read as a hitch.
+            let remaining = abs(target - offset)
+            let speed = max(abs(velocity), 1600)
+            let duration = min(0.22, max(0.1, Double(remaining / speed)))
+            let finish = {
                 action()
                 // If the row stays (Undo, or Gmail refused), bring it back.
-                try? await Task.sleep(for: .milliseconds(600))
-                isCommitting = false
-                settle()
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(600))
+                    isCommitting = false
+                    settle()
+                }
+            }
+            if reduceMotion {
+                offset = target
+                finish()
+            } else {
+                withAnimation(.easeOut(duration: duration)) { offset = target } completion: { finish() }
             }
         } else {
             action()

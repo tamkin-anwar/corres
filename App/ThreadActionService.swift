@@ -74,7 +74,13 @@ final class ThreadActionService {
 
     private func queueRemoval(_ threads: [Correspondence], kind: RemovalKind, animated: Bool = true) async {
         guard !threads.isEmpty else { return }
-        await commitPendingRemoval()
+        // The previous removal goes to Gmail in the background rather than
+        // being awaited: waiting on its round trip is what left a second
+        // swiped row stuck off screen for a beat before it collapsed.
+        if let previous = pendingRemoval {
+            removalTask?.cancel()
+            Task { await commit(previous) }
+        }
         if animated {
             withAnimation(.snappy(duration: 0.3)) { for thread in threads { store.hide(thread.id) } }
         } else {
