@@ -67,9 +67,12 @@ final class ThreadActionService {
     /// Sends a waiting removal now: when the app leaves the foreground, or
     /// another removal starts, rather than losing it.
     func commitPendingRemoval() async {
-        guard let pending = pendingRemoval else { return }
-        removalTask?.cancel()
-        await commit(pending)
+        if let pending = pendingRemoval {
+            removalTask?.cancel()
+            pendingRemoval = nil
+            enqueue(pending)
+        }
+        await commitQueue?.value
     }
 
     private func queueRemoval(_ threads: [Correspondence], kind: RemovalKind, animated: Bool = true) async {
@@ -79,7 +82,8 @@ final class ThreadActionService {
         // swiped row stuck off screen for a beat before it collapsed.
         if let previous = pendingRemoval {
             removalTask?.cancel()
-            Task { await commit(previous) }
+            pendingRemoval = nil
+            enqueue(previous)
         }
         if animated {
             withAnimation(.snappy(duration: 0.3)) { for thread in threads { store.hide(thread.id) } }
@@ -97,17 +101,32 @@ final class ThreadActionService {
                 self.pendingRemoval?.secondsRemaining = remaining
             }
             guard !Task.isCancelled, let self, self.pendingRemoval?.id == pending.id else { return }
-            await self.commit(pending)
+            self.pendingRemoval = nil
+            self.enqueue(pending)
+        }
+    }
+
+    /// The tail of the removals already on their way to Gmail.
+    private var commitQueue: Task<Void, Never>?
+
+    /// Queues a removal behind any already going to Gmail, without anyone
+    /// waiting on it: the list moves on at once, and Gmail gets the
+    /// changes one at a time rather than as a burst, which is what tripped
+    /// its per-user rate limit when several rows were swiped in a row.
+    private func enqueue(_ pending: PendingRemoval) {
+        let previous = commitQueue
+        commitQueue = Task { [weak self] in
+            await previous?.value
+            await self?.commit(pending)
         }
     }
 
     private func commit(_ pending: PendingRemoval) async {
         if pendingRemoval?.id == pending.id { pendingRemoval = nil }
-        // Several at once run side by side; GmailQuotaGate paces them.
-        await withTaskGroup(of: Void.self) { group in
-            for thread in pending.threads {
-                group.addTask { await self.commitOne(thread, kind: pending.kind) }
-            }
+        // One at a time, even from Select: a burst of changes is what Gmail
+        // rate-limits, and nobody is waiting on these.
+        for thread in pending.threads {
+            await commitOne(thread, kind: pending.kind)
         }
     }
 

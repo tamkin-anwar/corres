@@ -477,7 +477,7 @@ struct GmailAPIClient {
     /// - a stale access token (minted before a permission was granted, or
     ///   revoked and re-granted since): drop it and try once with a fresh one;
     /// - Gmail's per-user rate limit, which it also reports as 403 (or 429):
-    ///   back off and try again, up to three times.
+    ///   wait as long as Gmail asks and try again, for up to about 90 seconds.
     /// Anything else is thrown with Gmail's own reason and message.
     private func performChange(path: String, body: Data?, account: String) async throws {
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/\(path)")!
@@ -497,9 +497,16 @@ struct GmailAPIClient {
             if 200..<300 ~= status { return }
             let refusal = Self.refusal(from: data)
             let reason = refusal.reason ?? ""
-            if Self.rateLimitReasons.contains(reason) || status == 429, rateLimitRetries < 3 {
+            if Self.rateLimitReasons.contains(reason) || status == 429, rateLimitRetries < Self.changeRetryDelays.count {
+                // Wait as long as Gmail asks (never less than the backoff
+                // step), and hold background fetching for that long too, so
+                // the change isn't competing with sync for the same quota.
+                let backoff = Self.changeRetryDelays[rateLimitRetries]
+                let asked = Self.retryAfter(response: response, message: refusal.message) ?? 0
+                let wait = min(max(backoff, asked), 60)
                 rateLimitRetries += 1
-                try await Task.sleep(for: .milliseconds(600 * (1 << rateLimitRetries)))
+                await GmailQuotaGate.shared.pause(account, for: wait)
+                try await Task.sleep(for: .milliseconds(Int(wait * 1000)))
                 continue
             }
             if (status == 401 || (status == 403 && Self.permissionReasons.contains(reason))) && !refreshedToken {
@@ -514,6 +521,26 @@ struct GmailAPIClient {
     static let permissionReasons: Set<String> = ["insufficientPermissions", "ACCESS_TOKEN_SCOPE_INSUFFICIENT",
                                                  "authError", "forbidden", "PERMISSION_DENIED"]
     static let rateLimitReasons: Set<String> = ["rateLimitExceeded", "userRateLimitExceeded", "RATE_LIMIT_EXCEEDED"]
+
+    /// Seconds between attempts at a change Gmail refused for rate: about
+    /// a minute and a half in all, enough to outlast the usual per-minute
+    /// window, where three quick tries (8 seconds) often weren't.
+    static let changeRetryDelays: [Double] = [1, 2, 4, 8, 15, 30, 30]
+
+    /// How long Gmail asked to wait: the `Retry-After` header (seconds), or
+    /// the "Retry after 2026-09-29T22:10:31.123Z" its 429 message carries.
+    static func retryAfter(response: URLResponse?, message: String?, now: Date = .now) -> Double? {
+        if let header = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After"),
+           let seconds = Double(header.trimmingCharacters(in: .whitespaces)) {
+            return max(0, seconds)
+        }
+        guard let message, let range = message.range(of: #"Retry after (\S+)"#, options: .regularExpression) else { return nil }
+        let stamp = message[range].dropFirst("Retry after ".count).trimmingCharacters(in: CharacterSet(charactersIn: ". "))
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = formatter.date(from: stamp) ?? ISO8601DateFormatter().date(from: stamp) else { return nil }
+        return max(0, date.timeIntervalSince(now))
+    }
 
     /// Gmail's error body: `{"error": {"code", "message", "status",
     /// "errors": [{"reason", "message"}], "details": [{"reason"}]}}`.

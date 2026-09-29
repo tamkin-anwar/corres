@@ -18,12 +18,25 @@ actor GmailQuotaGate {
     private static let refillPerSecond = 200.0
 
     private var buckets: [String: (units: Double, updated: ContinuousClock.Instant)] = [:]
+    private var pausedUntil: [String: ContinuousClock.Instant] = [:]
     private let clock = ContinuousClock()
+
+    /// Holds background fetching for `account` while Gmail is refusing
+    /// changes for rate, so what the person did gets the quota first.
+    func pause(_ account: String, for seconds: Double) {
+        let until = clock.now + .milliseconds(Int(seconds * 1000))
+        if let current = pausedUntil[account], current >= until { return }
+        pausedUntil[account] = until
+    }
 
     /// Waits until `units` can be spent for `account` in the background budget.
     func reserve(_ units: Int, for account: String) async {
         let cost = min(Double(units), Self.capacity)
         while true {
+            if let until = pausedUntil[account], until > clock.now {
+                try? await Task.sleep(until: until, clock: clock)
+                continue
+            }
             let now = clock.now
             var bucket = buckets[account] ?? (Self.capacity, now)
             let elapsed = bucket.updated.duration(to: now)
