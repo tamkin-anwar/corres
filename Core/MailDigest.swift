@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 
 /// Everything Corres does to an email before and after its summarizer sees
 /// it, kept here as plain text work so every rule is tested:
@@ -240,9 +241,103 @@ public enum MailDigest {
             let email = summary[match].lowercased()
             if !lowerSource.contains(email) { unsupported.append(email) }
         }
+        // Whole statements the email never makes ("Address change
+        // approved" for an email of photos and captions).
+        unsupported += ungroundedClaims(in: summary, source: source)
         var seen = Set<String>()
         return unsupported.filter { seen.insert($0.lowercased()).inserted }
     }
+
+    /// Claims (sentences or clauses) whose meaningful words mostly don't
+    /// appear in the email, in any form. The checks above catch a wrong
+    /// number, date or name; this catches a statement made up whole. Word
+    /// overlap is a weak judge of subtle edits inside a long summary, so it
+    /// is applied claim by claim, matching word roots ("approval" is
+    /// supported by "approve"), and leaves room for the words a summary
+    /// adds to describe an email ("asks", "reminds", "wants").
+    public static func ungroundedClaims(in summary: String, source: String) -> [String] {
+        let sourceRoots = roots(in: source)
+        return claims(in: summary).filter { claim in
+            let words = contentWords(in: claim)
+            guard words.count >= minimumClaimWords else { return false }
+            let supported = words.filter { word in word.keys.contains(where: sourceRoots.contains) }.count
+            return Double(supported) / Double(words.count) < minimumClaimSupport
+        }
+    }
+
+    /// Below this share of supported words a claim counts as made up.
+    /// Calibrated on faithful paraphrases and fabrications (see
+    /// MailDigestTests): faithful summaries of real mail score 0.6 and up.
+    static let minimumClaimSupport = 0.5
+    /// One- and two-word claims ("Thanks, Maya.") are too short to judge.
+    static let minimumClaimWords = 2
+
+    private static func claims(in text: String) -> [String] {
+        text.components(separatedBy: CharacterSet(charactersIn: ".!?;\n•"))
+            .flatMap { $0.components(separatedBy: " — ") }
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// A word as the ways it can match: its lemma, its lowercase form, and
+    /// a six-letter root for longer words, so "approval" meets "approve"
+    /// and "confirmation" meets "confirm".
+    private struct ContentWord { let keys: [String] }
+
+    private static func keys(for word: String, lemma: String?) -> [String] {
+        var keys = [word]
+        if let lemma, lemma != word { keys.append(lemma) }
+        for form in keys where form.count >= 7 { keys.append(String(form.prefix(6))) }
+        return keys
+    }
+
+    private static func roots(in text: String) -> Set<String> {
+        var roots = Set<String>()
+        tagWords(in: text) { word, lemma, _ in roots.formUnion(keys(for: word, lemma: lemma)) }
+        return roots
+    }
+
+    private static func contentWords(in claim: String) -> [ContentWord] {
+        var words: [ContentWord] = []
+        tagWords(in: claim) { word, lemma, tag in
+            guard [.noun, .verb, .adjective].contains(tag), word.count >= 3,
+                  !word.contains(where: \.isNumber),
+                  !describingWords.contains(word), !describingWords.contains(lemma ?? word),
+                  // Days and dates have their own check above.
+                  !relativeDays.contains(word), calendarStems[word] == nil else { return }
+            words.append(ContentWord(keys: keys(for: word, lemma: lemma)))
+        }
+        return words
+    }
+
+    private static func tagWords(in text: String, _ body: (String, String?, NLTag?) -> Void) {
+        let tagger = NLTagger(tagSchemes: [.lexicalClass, .lemma])
+        tagger.string = text
+        let options: NLTagger.Options = [.omitPunctuation, .omitWhitespace, .omitOther]
+        tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .lexicalClass, options: options) { tag, range in
+            let word = text[range].lowercased().replacingOccurrences(of: "’", with: "'")
+            let lemma = tagger.tag(at: range.lowerBound, unit: .word, scheme: .lemma).0?.rawValue.lowercased()
+            body(word, lemma, tag)
+            return true
+        }
+    }
+
+    /// What a summary says about an email rather than from it: the act of
+    /// writing ("asks", "reminds"), the reader, and the email itself.
+    private static let describingWords: Set<String> = [
+        "ask", "asks", "asked", "request", "requests", "requested", "want", "wants", "wanted", "need", "needs",
+        "needed", "remind", "reminds", "reminder", "say", "says", "said", "tell", "tells", "told", "mention",
+        "mentions", "note", "notes", "share", "shares", "shared", "send", "sends", "sent", "let", "lets", "know",
+        "inform", "informs", "notify", "notifies", "invite", "invites", "invited", "offer", "offers", "suggest",
+        "suggests", "propose", "proposes", "include", "includes", "expect", "expects", "follow", "follows",
+        "reply", "replies", "respond", "responds", "response", "get", "gets", "make", "makes", "have", "has",
+        "had", "is", "are", "was", "were", "be", "been", "being", "do", "does", "did", "will", "would", "can",
+        "could", "should", "may", "might", "must", "email", "emails", "message", "messages", "note", "update",
+        "updates", "thread", "conversation", "sender", "you", "your", "reader", "recipient", "details", "info",
+        "information", "regarding", "about", "explain", "explains", "describe", "describes", "announce",
+        "announces", "confirm's", "check", "checks", "see", "look", "looks", "plan", "plans", "hope", "hopes",
+        "thank", "thanks", "thanked", "nothing", "anything", "something", "everything", "thing", "things",
+    ]
 
     /// Drops a relative day the email never used ("…across prototypes
     /// today."), the one slip worth repairing rather than discarding the

@@ -61,9 +61,8 @@ final class WKWebViewPool {
         webView.stopLoading()
         webView.loadHTMLString("", baseURL: nil)
         webView.scrollView.setContentOffset(.zero, animated: false)
-        webView.scrollView.minimumZoomScale = 1
-        webView.scrollView.maximumZoomScale = 1
-        webView.scrollView.zoomScale = 1
+        webView.scrollView.setZoomScale(1, animated: false)
+        webView.scrollView.isScrollEnabled = false
         webView.alpha = 1
         // Extras beyond poolSize are simply let go rather than grown into
         // an unbounded pool: per the research above, each live instance is
@@ -80,6 +79,10 @@ final class WKWebViewPool {
         let configuration = WKWebViewConfiguration()
         configuration.processPool = processPool
         configuration.defaultWebpagePreferences.allowsContentJavaScript = false
+        // Addresses, phone numbers, dates, flights, tracking numbers and
+        // bare web addresses in the text become tappable, found on this
+        // iPhone the way Mail finds them.
+        configuration.dataDetectorTypes = [.address, .phoneNumber, .calendarEvent, .link, .flightNumber, .trackingNumber]
         // Off: on, nothing painted until every image had loaded, so an
         // image-heavy email sat blank for seconds. A reused webview's old
         // content is still never shown (HTMLMessageBody keeps it hidden
@@ -89,6 +92,10 @@ final class WKWebViewPool {
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
         webView.scrollView.isScrollEnabled = false
+        // Zoomed in, the email pans sideways inside itself; up and down
+        // always scrolls the conversation (see HTMLMessageBody.Coordinator).
+        webView.scrollView.alwaysBounceVertical = false
+        webView.scrollView.isDirectionalLockEnabled = true
         install(on: webView)
         return webView
     }

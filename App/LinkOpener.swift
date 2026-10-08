@@ -10,6 +10,11 @@ enum LinkOpener {
     static func open(_ url: URL) {
         switch url.scheme?.lowercased() {
         case "http", "https":
+            // Maps links open the Maps app, never a web page.
+            if url.host?.lowercased() == "maps.apple.com" {
+                UIApplication.shared.open(url)
+                return
+            }
             if CorresSettings.openLinks == .inCorres, let presenter = topViewController() {
                 let safari = SFSafariViewController(url: url)
                 safari.dismissButtonStyle = .close
@@ -23,7 +28,7 @@ enum LinkOpener {
                                    uniquingKeysWith: { first, _ in first })
             AppRouter.shared.pending = .composeTo(to: components?.path ?? "", subject: query["subject"] ?? "",
                                                   body: query["body"] ?? "")
-        case "tel", "sms", "facetime", "facetime-audio", "maps":
+        case "tel", "sms", "facetime", "facetime-audio", "maps", "calshow":
             UIApplication.shared.open(url)
         default:
             break

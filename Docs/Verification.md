@@ -2,6 +2,16 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Email reading: links, addresses, pinch to zoom, summary accuracy (October 8, 2026)
+
+Reported: tapping a link in an email (a newsletter photo) did nothing; addresses should open Maps. Requested: pinch to zoom, and a fix for a summary that invented "Address change approved".
+
+- **Links never worked.** The link handler only "nearly matched" the SDK's `decidePolicyFor` signature (the build warned), so iOS never called it. It's now the async form. With no `uiDelegate`, links opening a new window (`target="_blank"`, nearly every newsletter) were dropped; `createWebViewWith` now opens them. Only the email itself loads in the reading view; everything else, including long-press Open Link, opens outside it.
+- **Addresses, phone numbers, dates.** Data detectors are on (address, phone, date, link, flight, tracking). WebKit marks them but doesn't act on a tap here, so Corres reads the tapped item's type and text: an address opens Maps (`maps.apple.com`, which iOS routes to Maps), a phone number calls, a date opens Calendar on that day.
+- **Pinch to zoom** (and double-tap): WebKit zooms natively. When it settles, the view becomes the fitted height × zoom, and WebKit's vertical anchor moves to the conversation's scroll view, so the zoomed spot stays put. Zoomed in, the email pans sideways inside itself while up and down scrolls the conversation. A scaled email's page is pinned to its shown height so zooming never reveals blank space. Each email opens at normal size.
+- **Made-up claims in summaries.** `MailDigest.ungroundedClaims` checks each sentence and clause. Its meaningful words (nouns, verbs, adjectives, lemmatized with NaturalLanguage, six-letter roots for longer words) must be at least half found in the email. Words that describe an email ("asks", "reminds") and those owned by the date and name checks are excluded. Research found word overlap weak at catching subtle edits, but it reliably catches whole invented statements, which is this failure. It's calibrated on a labeled set (`ClaimGroundingTests`): 8 faithful paraphrases pass and 6 fabrications are caught, including the live one. The prompt also says never to state an action, request, approval or change the email doesn't describe.
+- Verified in the simulator: the photo link opens the page, the address opens Maps, the phone number and plain web address are linked, pinch in and out works, and panning and scrolling while zoomed both work. `swift test` 109/109. **On device:** the feel of pinch at real finger speeds, and Phone and Calendar from taps.
+
 ## Email reading: fit and cut-off (October 8, 2026)
 
 Reported: email content was cut off vertically, and wide emails didn't fit the screen horizontally.

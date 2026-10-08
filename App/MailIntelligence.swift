@@ -274,7 +274,7 @@ final class MailIntelligence {
                 // One stricter try, told exactly what it got wrong.
                 var problems: [String] = []
                 if !unsupported.isEmpty {
-                    problems.append("These are not in the email: \(unsupported.joined(separator: ", ")). Use only names, numbers and dates that appear above.")
+                    problems.append("These are not in the email: \(unsupported.joined(separator: ", ")). Use only names, numbers and dates that appear above, and say only what the email itself says.")
                 }
                 if wrongVoice {
                     problems.append("It spoke as the sender (\"I\", \"we\"). Describe what the sender says, to the reader as \"you\".")
@@ -453,8 +453,10 @@ final class MailIntelligence {
     person, even where the email uses their name. Use only what the email says: never guess, never add a date, \
     time, amount, name, code or place it doesn't contain, and copy numbers, \
     amounts, codes and dates exactly as written. Say "today" or "tomorrow" \
-    only if the email does. Some text may be marked as omitted; never guess \
-    at it.
+    only if the email does. Never state an action, request, approval or \
+    change the email doesn't describe; when an email says little (mostly \
+    images, captions or a template), say only what is literally there. \
+    Some text may be marked as omitted; never guess at it.
     """
 
     @available(iOS 26.0, *)

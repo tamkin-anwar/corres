@@ -20,7 +20,9 @@ struct HTMLMessageBody: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebViewPool.shared.dequeue()
+        context.coordinator.watchZoom(of: webView)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         return webView
     }
 
@@ -66,6 +68,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         // Coordinator.loadGeneration.
         context.coordinator.loadGeneration = Coordinator.nextLoad()
         context.coordinator.hasSize = false
+        context.coordinator.resetZoom(webView)
         WKWebViewPool.shared.sizeRouter(for: webView).target = context.coordinator
         var processed = blockRemoteImages ? Self.blockingRemoteImages(in: html) : html
         processed = Self.strippingEmbeddedViewportMeta(processed)
@@ -84,7 +87,7 @@ struct HTMLMessageBody: UIViewRepresentable {
                                baseURL: Self.placeholderBaseURL)
     }
 
-    private static let placeholderBaseURL = URL(string: "https://mail.corres.app/")
+    static let placeholderBaseURL = URL(string: "https://mail.corres.app/")
 
     /// Corres's own script, in its own content world: it runs even though
     /// the email's scripts never do (`allowsContentJavaScript` is off, and
@@ -124,6 +127,12 @@ struct HTMLMessageBody: UIViewRepresentable {
           root.style.transform = 'scale(' + scale + ')';
         }
         const height = Math.ceil(Math.max(root.getBoundingClientRect().height, root.scrollHeight * scale));
+        // A scaled email's layout is taller than what shows; pin the page
+        // to the shown height so zooming in never reveals blank space.
+        for (const element of [document.documentElement, document.body]) {
+          if (scale < 1) element.style.setProperty('height', height + 'px', 'important');
+          else element.style.removeProperty('height');
+        }
         if (height !== lastHeight || scale !== lastScale) {
           lastHeight = height; lastScale = scale;
           window.webkit.messageHandlers.corresSize.postMessage({ load: load, height: height, scale: scale });
@@ -351,7 +360,7 @@ struct HTMLMessageBody: UIViewRepresentable {
     }
 
     @MainActor
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         var parent: HTMLMessageBody
         var lastHTML: String?
         var lastBlockRemoteImages: Bool?
@@ -377,6 +386,79 @@ struct HTMLMessageBody: UIViewRepresentable {
 
         /// Whether this load has reported its size yet.
         var hasSize = false
+        /// The email's fitted height at normal size; zoomed, the view is
+        /// this times the zoom.
+        private var baseHeight: CGFloat = 0
+        private var contentSizeObservation: NSKeyValueObservation?
+        private var settleZoom: Task<Void, Never>?
+
+        // MARK: Pinch to zoom
+        //
+        // WebKit zooms the email natively (pinch, or double-tap). While the
+        // fingers are down the view keeps its size and the email zooms
+        // inside it; once it settles, the view grows (or shrinks) to the
+        // zoomed height so the whole email still scrolls with the
+        // conversation, and the part that was under the fingers is kept in
+        // place by moving the conversation by the same amount. Zoomed in,
+        // the email pans sideways within itself; up and down always scrolls
+        // the conversation. Each email opens at normal size.
+
+        func watchZoom(of webView: WKWebView) {
+            contentSizeObservation = webView.scrollView.observe(\.contentSize, options: [.new]) { [weak self, weak webView] _, _ in
+                MainActor.assumeIsolated {
+                    guard let self, let webView else { return }
+                    self.zoomChanged(webView)
+                }
+            }
+        }
+
+        func resetZoom(_ webView: WKWebView) {
+            settleZoom?.cancel()
+            webView.scrollView.setZoomScale(1, animated: false)
+            webView.scrollView.isScrollEnabled = false
+            webView.scrollView.contentOffset = .zero
+        }
+
+        private func zoomChanged(_ webView: WKWebView) {
+            settleZoom?.cancel()
+            settleZoom = Task { @MainActor [weak self, weak webView] in
+                // After the pinch (and any bounce) has finished.
+                try? await Task.sleep(for: .milliseconds(120))
+                guard let self, let webView, !Task.isCancelled else { return }
+                let pinch = webView.scrollView.pinchGestureRecognizer?.state
+                guard pinch != .began && pinch != .changed else { return }
+                self.applyZoom(webView)
+            }
+        }
+
+        private func applyZoom(_ webView: WKWebView) {
+            let scrollView = webView.scrollView
+            let zoom = scrollView.zoomScale
+            guard baseHeight > 0 else { return }
+            let isZoomed = zoom > 1.01
+            scrollView.isScrollEnabled = isZoomed
+            let target = (baseHeight * zoom).rounded()
+            // The vertical part of WebKit's zoom anchor moves to the
+            // conversation, so what was under the fingers stays put.
+            let verticalOffset = scrollView.contentOffset.y
+            if abs(parent.height - target) >= 1 { parent.height = target }
+            if verticalOffset != 0 {
+                scrollView.contentOffset.y = 0
+                if let outer = Self.enclosingScrollView(of: webView) {
+                    outer.contentOffset.y = max(-outer.adjustedContentInset.top, outer.contentOffset.y + verticalOffset)
+                }
+            }
+            if !isZoomed { scrollView.contentOffset.x = 0 }
+        }
+
+        private static func enclosingScrollView(of view: UIView) -> UIScrollView? {
+            var current = view.superview
+            while let candidate = current {
+                if let scroll = candidate as? UIScrollView { return scroll }
+                current = candidate.superview
+            }
+            return nil
+        }
 
         /// The sizing script (`HTMLMessageBody.sizingScript`) reports the
         /// email's height whenever it changes: on layout, as each image
@@ -391,7 +473,9 @@ struct HTMLMessageBody: UIViewRepresentable {
                 hasSize = true
                 if let webView, webView.alpha < 1 { UIView.animate(withDuration: 0.12) { webView.alpha = 1 } }
             }
-            if abs(parent.height - height) >= 1 { parent.height = height }
+            baseHeight = height
+            let zoomed = height * (webView?.scrollView.zoomScale ?? 1)
+            if abs(parent.height - zoomed) >= 1 { parent.height = zoomed }
 
         }
 
@@ -420,14 +504,81 @@ struct HTMLMessageBody: UIViewRepresentable {
             webView.alpha = 1
         }
 
-        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
-                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-            guard navigationAction.navigationType == .linkActivated, let url = navigationAction.request.url else {
-                decisionHandler(.allow)
-                return
+        /// Only the email itself ever loads in the reading view. Every
+        /// other navigation, whatever started it (a tap, a long-press's
+        /// Open Link, a redirect), opens outside it: a website never
+        /// replaces the email.
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+            // Async, not the completion-handler form: that form's signature
+            // drifted from the SDK's, so it only "nearly matched" and iOS
+            // never called it. No link tap was ever handled.
+            guard let url = navigationAction.request.url else { return .cancel }
+            // The email being loaded (and a reused webview being cleared).
+            if navigationAction.navigationType == .other,
+               url.absoluteString == "about:blank" || url == HTMLMessageBody.placeholderBaseURL {
+                return .allow
             }
+            // An address, phone number or date iOS found in the text. WebKit
+            // marks them but doesn't act on a tap in a view like this, so
+            // Corres does, as Mail does: Maps, Phone, Calendar.
+            if url.scheme == "x-apple-data-detectors" {
+                await openDetected(url, in: webView)
+                return .cancel
+            }
+            // An embedded frame loading itself, or a jump within the email
+            // ("#top"): nothing to open.
+            let isSubframeLoad = navigationAction.targetFrame.map { !$0.isMainFrame } ?? false
+            let isInPageJump = url.host == HTMLMessageBody.placeholderBaseURL?.host && url.fragment != nil
+            if (isSubframeLoad && navigationAction.navigationType == .other) || isInPageJump { return .cancel }
             LinkOpener.open(url)
-            decisionHandler(.cancel)
+            return .cancel
+        }
+
+        private func openDetected(_ url: URL, in webView: WKWebView) async {
+            let script = """
+            (() => { const a = Array.from(document.querySelectorAll('a[x-apple-data-detectors]'))
+                .find(link => link.href === \(Self.jsString(url.absoluteString)));
+              return a ? [a.getAttribute('x-apple-data-detectors-type') || '', a.innerText] : null; })()
+            """
+            guard let found = try? await webView.evaluateJavaScript(script, in: nil, contentWorld: .defaultClient) as? [String],
+                  found.count == 2 else { return }
+            let text = found[1].trimmingCharacters(in: .whitespacesAndNewlines)
+            if let target = Self.destination(forDetected: found[0], text: text) { LinkOpener.open(target) }
+        }
+
+        /// Where a detected item goes: an address to Maps, a phone number
+        /// to a call, a date to that day in Calendar.
+        static func destination(forDetected type: String, text: String) -> URL? {
+            switch type {
+            case "address":
+                var components = URLComponents(string: "https://maps.apple.com/")
+                components?.queryItems = [URLQueryItem(name: "q", value: text)]
+                return components?.url
+            case "telephone":
+                let digits = text.filter { $0.isNumber || $0 == "+" }
+                return digits.isEmpty ? nil : URL(string: "tel:\(digits)")
+            case "calendar-event":
+                let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue)
+                guard let date = detector?.firstMatch(in: text, range: NSRange(text.startIndex..., in: text))?.date else { return nil }
+                return URL(string: "calshow:\(Int(date.timeIntervalSinceReferenceDate))")
+            default:
+                return nil
+            }
+        }
+
+        private static func jsString(_ value: String) -> String {
+            let data = try? JSONSerialization.data(withJSONObject: [value])
+            let array = data.flatMap { String(data: $0, encoding: .utf8) } ?? "[\"\"]"
+            return String(array.dropFirst().dropLast())
+        }
+
+        /// Links that ask for a new window (`target="_blank"`, used by
+        /// nearly every newsletter and receipt). Without this they did
+        /// nothing at all when tapped.
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+                     for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            if let url = navigationAction.request.url { LinkOpener.open(url) }
+            return nil
         }
     }
 }
