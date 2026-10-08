@@ -119,7 +119,14 @@ enum CorresSettings {
 
     /// Hands the sorting and snooze choices to Core, which has no access
     /// to Settings itself. Called at launch and whenever one changes.
+    /// Settings → Sorting → Screen new senders. Off by default: holding a
+    /// stranger's first email back made Corres feel like it was losing
+    /// mail (Spark's Gatekeeper is off by default for the same reason).
+    static let screenNewSendersKey = "corres.screenNewSenders"
+    static var screensNewSenders: Bool { defaults.bool(forKey: screenNewSendersKey) }
+
     @MainActor static func applyToCore() {
+        MailQuery.holdsNewSenders = screensNewSenders
         InboxClassifier.vipAddresses = vips
         InboxClassifier.sensitivity = sensitivity
         TimePhrase.morningHour = defaults.object(forKey: morningHourKey) as? Int ?? 8

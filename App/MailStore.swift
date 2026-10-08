@@ -19,6 +19,9 @@ final class MailStore {
     }
 
     func hide(_ id: ThreadID) { hiddenIDs.insert(id) }
+    /// For a setting that changes what the lists show without changing any
+    /// mail (Screen new senders): every list rebuilds on its next redraw.
+    func listsShouldRebuild() { revision &+= 1 }
     func unhide(_ id: ThreadID) { hiddenIDs.remove(id) }
     private(set) var state = LoadState.idle
     private(set) var pending: Set<ThreadID> = []

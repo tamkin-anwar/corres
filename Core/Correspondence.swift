@@ -457,7 +457,7 @@ public struct BriefSnapshot: Equatable, Sendable {
         // Same exclusions `MailQuery.filter` applies to the lists these
         // counts link to; without the Screener check, Brief said 149 while
         // the Needs You list it opens showed 110.
-        let active = threads.filter { !$0.isSnoozed(at: now) && $0.senderDecision == .approved }
+        let active = threads.filter { !$0.isSnoozed(at: now) && !$0.isScreenedOut }
         needsYou = active.filter { $0.attention == .needsYou }.count
         waiting = active.filter { $0.attention == .waiting }.count
         upcoming = active.filter {
@@ -695,6 +695,12 @@ public extension String {
 }
 
 public enum MailQuery {
+    /// Settings → Sorting → Screen new senders. Off (the default), a new
+    /// sender's mail shows everywhere like anyone else's, marked as new,
+    /// and can be allowed or blocked from the email; on, it waits in New
+    /// senders until allowed. Blocked senders stay hidden either way.
+    public nonisolated(unsafe) static var holdsNewSenders = false
+
     /// The curated lists in the order that matters: Needs You with the
     /// nearest deadline first, then newest; Waiting with whoever has gone
     /// quiet longest first, since that's the one to nudge. Pinned always
@@ -740,7 +746,7 @@ public enum MailQuery {
         let hideUnscreened = query.isEmpty
         let kept = threads.filter { item in
             (!hideSnoozed || !item.isSnoozed(at: now)) &&
-            (!hideUnscreened || item.senderDecision == .approved) &&
+            (!hideUnscreened || !item.isScreenedOut) &&
             (attention == nil || item.attention == attention) &&
             (query.isEmpty || [item.sender, item.organization, item.subject, item.excerpt]
                 .contains { $0.localizedStandardContains(query) })
@@ -762,5 +768,17 @@ public enum MailQuery {
         // which case there's nothing to move at all.
         if threads.indices.dropFirst().allSatisfy({ !before($0, $0 - 1) }) { return threads }
         return threads.indices.sorted(by: before).map { threads[$0] }
+    }
+}
+
+extension Correspondence {
+    /// Kept out of the lists: a blocked sender always, and a new sender
+    /// only while Screen new senders is on (`MailQuery.holdsNewSenders`).
+    public var isScreenedOut: Bool {
+        switch senderDecision {
+        case .approved: false
+        case .blocked: true
+        case .pending: MailQuery.holdsNewSenders
+        }
     }
 }

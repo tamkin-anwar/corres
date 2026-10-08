@@ -110,7 +110,7 @@ final class SemanticTriageService {
         let candidates = store.threads.filter { thread in
             guard ids?.contains(thread.id) ?? true,
                   thread.id.account != Self.sampleAccount,
-                  thread.senderDecision == .approved,
+                  !thread.isScreenedOut,
                   thread.latestMessageID != nil,
                   thread.triagedMessageID != thread.latestMessageID else { return false }
             if thread.attention == .needsYou { return true }

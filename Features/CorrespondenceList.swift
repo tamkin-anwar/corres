@@ -54,6 +54,16 @@ struct CorrespondenceRow: View {
                             .accessibilityLabel("Has attachments")
                     }
                     Spacer(minLength: 6)
+                    // A sender you haven't allowed or blocked yet, shown
+                    // in the lists while new senders aren't held back.
+                    if thread.senderDecision == .pending {
+                        Text("NEW")
+                            .font(.caption2.weight(.semibold)).tracking(0.4)
+                            .foregroundStyle(CorresPalette.accent)
+                            .padding(.horizontal, 5).padding(.vertical, 1)
+                            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(CorresPalette.accent.opacity(0.5), lineWidth: 1))
+                            .accessibilityLabel("New sender")
+                    }
                     if let accountTag {
                         Text(accountTag)
                             .font(.caption2.weight(.semibold)).tracking(0.4)

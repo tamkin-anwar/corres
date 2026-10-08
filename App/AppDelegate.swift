@@ -214,7 +214,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         await store.load()
         func newlyUnreadThreads() -> [Correspondence] {
             store.threads.filter { thread in
-                thread.isUnread && previousUnread[thread.id] != true && thread.senderDecision == .approved
+                thread.isUnread && previousUnread[thread.id] != true && !thread.isScreenedOut
             }
         }
         // First emails from senders still in New senders, filtered by

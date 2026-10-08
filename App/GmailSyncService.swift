@@ -60,7 +60,10 @@ final class GmailSyncService {
             for account in accounts {
                 group.addTask {
                     guard let matches = try? await self.client.searchMessages(query: trimmed, account: account), !matches.isEmpty else { return false }
-                    let inserted = (try? await self.repository.upsert(matches, isInitialSync: false)) ?? 0
+                    // Approved, not screened: these are older messages you
+                    // went looking for, not someone writing to you for the
+                    // first time.
+                    let inserted = (try? await self.repository.upsert(matches, isInitialSync: true)) ?? 0
                     return inserted > 0
                 }
             }

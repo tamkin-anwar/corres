@@ -543,9 +543,23 @@ private struct SortingSettingsView: View {
     @AppStorage(CorresSettings.followUpDaysKey) private var followUpDays = 3
     @AppStorage(CorresSettings.morningHourKey) private var morningHour = 8
     @AppStorage(CorresSettings.laterTodayEveningKey) private var laterTodayEvening = false
+    @AppStorage(CorresSettings.screenNewSendersKey) private var screenNewSenders = false
 
     var body: some View {
         Form {
+            Section {
+                Toggle("Screen new senders", isOn: $screenNewSenders)
+                    .onChange(of: screenNewSenders) {
+                        CorresSettings.applyToCore()
+                        store.listsShouldRebuild()
+                    }
+            } header: {
+                Text("New senders")
+            } footer: {
+                Text(screenNewSenders
+                     ? "Someone's first email waits in New senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden."
+                     : "Someone's first email shows like anyone else's, marked New, and you can allow or block them right from the email. Blocked senders stay hidden.")
+            }
             Section {
                 if vipsStorage.isEmpty {
                     Text("No VIPs yet").foregroundStyle(CorresPalette.secondary)
@@ -780,6 +794,9 @@ private struct NotificationSettingsView: View {
     @Bindable var pushService: PushNotificationService
     @AppStorage(PushNotificationService.Level.key) private var level = PushNotificationService.Level.current.rawValue
     @AppStorage(PushNotificationService.NewSenderAlerts.timeSensitiveKey) private var newTimeSensitive = true
+    /// The New senders alerts only apply while new senders are held back;
+    /// otherwise their mail notifies like anyone else's.
+    @AppStorage(CorresSettings.screenNewSendersKey) private var screenNewSenders = false
     @AppStorage(PushNotificationService.NewSenderAlerts.peopleKey) private var newPeople = true
     @AppStorage(PushNotificationService.NewSenderAlerts.otherKey) private var newOther = false
     @AppStorage(BriefNotifier.enabledKey) private var briefEnabled = false
@@ -835,6 +852,7 @@ private struct NotificationSettingsView: View {
                 } footer: {
                     Text("One quiet notification a day with what needs you and who you're waiting on. Tap it to open Brief.")
                 }
+                if screenNewSenders {
                 Section {
                     Toggle("Time-sensitive", isOn: $newTimeSensitive)
                     Toggle("From a person", isOn: $newPeople)
@@ -843,6 +861,7 @@ private struct NotificationSettingsView: View {
                     Text("New senders")
                 } footer: {
                     Text("Someone's first email waits in New senders until you allow them. These still notify, marked \u{201C}New sender\u{201D}, and you can allow or block them right from the email. Blocked senders never notify.")
+                }
                 }
             }
         }

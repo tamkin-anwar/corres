@@ -2,6 +2,9 @@ import Foundation
 import Testing
 @testable import CorresCore
 
+/// Serialized: two tests here switch the global Screen new senders setting
+/// (`MailQuery.holdsNewSenders`), which no other suite depends on.
+@Suite(.serialized)
 struct CorresCoreTests {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
@@ -311,6 +314,9 @@ struct CorresCoreTests {
         try await repository.upsert([fromUnknownSender], isInitialSync: false)
         let threads = try await repository.threads()
         #expect(threads.first?.senderDecision == .pending)
+        // With Screen new senders on (it's off by default).
+        MailQuery.holdsNewSenders = true
+        defer { MailQuery.holdsNewSenders = false }
         #expect(!MailQuery.filter(threads, now: now).contains { $0.id == fromUnknownSender.id })
         #expect(!MailQuery.filter(threads, attention: .needsYou, now: now).contains { $0.id == fromUnknownSender.id })
         // Held from ordinary browsing, same as HEY's Screener, but never
@@ -466,16 +472,25 @@ struct CorresCoreTests {
         #expect("&bogus; stays".decodingHTMLEntities == "&bogus; stays")
     }
 
-    /// Brief's count and the list it opens must agree: Screener-held
-    /// senders are excluded from both, not just the list.
-    @Test func briefCountsExcludeScreenerHeldSenders() {
-        let approved = Correspondence(id: ThreadID(account: "gmail:me@x.test", providerID: "1"), sender: "A", organization: "",
-                                      subject: "s", excerpt: "", body: "", receivedAt: now, dueAt: nil,
-                                      reason: "r", attention: .needsYou)
-        let held = Correspondence(id: ThreadID(account: "gmail:me@x.test", providerID: "2"), sender: "B", organization: "",
-                                  subject: "s", excerpt: "", body: "", receivedAt: now, dueAt: nil,
-                                  reason: "r", attention: .needsYou, senderDecision: .pending)
-        #expect(BriefSnapshot(threads: [approved, held], now: now).needsYou == 1)
-        #expect(MailQuery.filter([approved, held], attention: .needsYou, now: now).count == 1)
+    /// Brief's count and the list it opens must agree on who's held back.
+    /// New senders show unless Screen new senders is on; blocked senders
+    /// never show. (The only test that depends on the setting, so setting
+    /// it here can't disturb tests running alongside.)
+    @Test func newSendersShowUnlessScreeningIsOn() {
+        func thread(_ id: String, _ decision: SenderDecision) -> Correspondence {
+            Correspondence(id: ThreadID(account: "gmail:me@x.test", providerID: id), sender: id, organization: "",
+                           subject: "s", excerpt: "", body: "", receivedAt: now, dueAt: nil,
+                           reason: "r", attention: .needsYou, senderDecision: decision)
+        }
+        let threads = [thread("approved", .approved), thread("new", .pending), thread("blocked", .blocked)]
+        defer { MailQuery.holdsNewSenders = false }
+
+        MailQuery.holdsNewSenders = false
+        #expect(BriefSnapshot(threads: threads, now: now).needsYou == 2)
+        #expect(MailQuery.filter(threads, attention: .needsYou, now: now).map(\.sender).sorted() == ["approved", "new"])
+
+        MailQuery.holdsNewSenders = true
+        #expect(BriefSnapshot(threads: threads, now: now).needsYou == 1)
+        #expect(MailQuery.filter(threads, attention: .needsYou, now: now).map(\.sender) == ["approved"])
     }
 }

@@ -182,7 +182,7 @@ final class MailIntelligence {
         defer { isPrewarming = false }
         let recent = Date.now.addingTimeInterval(-3 * 86_400)
         let candidates = threads.filter { thread in
-            thread.isBodyLoaded && thread.id.account != Self.sampleAccount && thread.senderDecision == .approved
+            thread.isBodyLoaded && thread.id.account != Self.sampleAccount && !thread.isScreenedOut
                 && thread.receivedAt > recent && (includeRead || thread.isUnread || thread.attention == .needsYou)
                 && !thread.isSnoozed(at: .now) && insights[Self.key(for: thread)] == nil
         }.sorted { $0.receivedAt > $1.receivedAt }.prefix(includeRead ? 40 : 15)

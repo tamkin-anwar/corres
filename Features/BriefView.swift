@@ -233,7 +233,7 @@ struct BriefView: View {
             if pendingSenderCount > 0 {
                 Hairline(leading: 52)
                 briefRow(icon: "checkmark.shield",
-                         title: pendingSenderCount == 1 ? "1 new sender to approve" : "\(pendingSenderCount) new senders to approve",
+                         title: "\(pendingSenderCount == 1 ? "1 new sender" : "\(pendingSenderCount) new senders") \(MailQuery.holdsNewSenders ? "to approve" : "to review")",
                          detail: nil) { showingScreener = true }
             }
             Hairline(leading: 52)
