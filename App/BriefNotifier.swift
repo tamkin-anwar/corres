@@ -14,6 +14,9 @@ enum BriefNotifier {
     private static let identifier = "corres.brief"
     private static var lastSnapshot: WidgetSnapshot?
     private static var lastScheduled: (body: String, fire: DateComponents)?
+    /// Whether the pending Brief has already been removed, so a Brief that's
+    /// switched off isn't removed again on every change to the mail.
+    private static var isCleared = false
 
     static var isEnabled: Bool { UserDefaults.standard.bool(forKey: enabledKey) }
     static var time: (hour: Int, minute: Int) {
@@ -25,12 +28,20 @@ enum BriefNotifier {
     /// when the setting itself changes.
     static func reschedule(_ snapshot: WidgetSnapshot? = nil) {
         if let snapshot { lastSnapshot = snapshot }
-        let center = UNUserNotificationCenter.current()
+        let identifier = Self.identifier
         guard isEnabled, let snapshot = lastSnapshot, !snapshot.isSample, snapshot.isLocked != true else {
-            center.removePendingNotificationRequests(withIdentifiers: [identifier])
             lastScheduled = nil
+            guard !isCleared else { return }
+            isCleared = true
+            // Off the main thread: removing a pending notification waits on
+            // the system's notification service, and found live on a freshly
+            // started iPhone, that wait froze Corres right after launch.
+            Task.detached(priority: .utility) {
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+            }
             return
         }
+        isCleared = false
         let body = WhatNeedsMeIntent.summary(of: snapshot)
         // Every day at that time, even on days Corres isn't opened; each
         // sync rewrites what it says.
@@ -38,13 +49,15 @@ enum BriefNotifier {
         if let lastScheduled, lastScheduled.body == body, lastScheduled.fire == fire { return }
         lastScheduled = (body, fire)
 
-        let content = UNMutableNotificationContent()
-        content.title = "Your Brief"
-        content.body = body
-        content.userInfo = ["destination": "brief"]
-        content.interruptionLevel = .passive
-        let request = UNNotificationRequest(identifier: identifier, content: content,
-                                            trigger: UNCalendarNotificationTrigger(dateMatching: fire, repeats: true))
-        center.add(request)
+        Task.detached(priority: .utility) {
+            let content = UNMutableNotificationContent()
+            content.title = "Your Brief"
+            content.body = body
+            content.userInfo = ["destination": "brief"]
+            content.interruptionLevel = .passive
+            let request = UNNotificationRequest(identifier: identifier, content: content,
+                                                trigger: UNCalendarNotificationTrigger(dateMatching: fire, repeats: true))
+            try? await UNUserNotificationCenter.current().add(request)
+        }
     }
 }

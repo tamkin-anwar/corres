@@ -59,6 +59,8 @@ public enum MailDigest {
             #"(?s)<!--.*?-->"#,
             // Hidden preheaders repeat the opening or pad it with filler.
             #"(?is)<(span|div)\b[^>]*display\s*:\s*none[^>]*>.*?</\1>"#,
+            // …or hide it other ways: collapsed to nothing, or Outlook-only hiding.
+            #"(?is)<(span|div)\b[^>]*(max-height\s*:\s*0(px)?\s*[;"']|mso-hide\s*:\s*all|visibility\s*:\s*hidden)[^>]*>.*?</\1>"#,
         ]
         for pattern in removals { text = text.replacingOccurrences(of: pattern, with: " ", options: .regularExpression) }
         text = text.replacingOccurrences(of: #"(?i)<br\s*/?>"#, with: "\n", options: .regularExpression)

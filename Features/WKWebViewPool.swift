@@ -14,6 +14,9 @@ final class WKWebViewPool {
     static let shared = WKWebViewPool()
 
     private var available: [WKWebView] = []
+    /// Each webview's route for its email's size reports, retargeted to
+    /// whichever message borrows it (see `HTMLMessageBody.sizingScript`).
+    private var routers: [ObjectIdentifier: SizeMessageRouter] = [:]
     private let processPool = WKProcessPool()
     private let poolSize = 2
 
@@ -38,6 +41,12 @@ final class WKWebViewPool {
         available.popLast() ?? makeWebView()
     }
 
+    func sizeRouter(for webView: WKWebView) -> SizeMessageRouter {
+        if let router = routers[ObjectIdentifier(webView)] { return router }
+        // Not made by the pool (shouldn't happen); give it a route anyway.
+        return install(on: webView)
+    }
+
     /// Resets everything a borrower could have left behind: a stale
     /// delegate would otherwise keep firing callbacks at a coordinator that
     /// no longer owns this instance (delegates are `weak`, so this isn't a
@@ -48,6 +57,7 @@ final class WKWebViewPool {
     func enqueue(_ webView: WKWebView) {
         webView.navigationDelegate = nil
         webView.uiDelegate = nil
+        routers[ObjectIdentifier(webView)]?.target = nil
         webView.stopLoading()
         webView.loadHTMLString("", baseURL: nil)
         webView.scrollView.setContentOffset(.zero, animated: false)
@@ -58,7 +68,11 @@ final class WKWebViewPool {
         // Extras beyond poolSize are simply let go rather than grown into
         // an unbounded pool: per the research above, each live instance is
         // a real, non-trivial OS resource, not something to hoard freely.
-        guard available.count < poolSize else { return }
+        guard available.count < poolSize else {
+            routers[ObjectIdentifier(webView)] = nil
+            webView.configuration.userContentController.removeAllScriptMessageHandlers()
+            return
+        }
         available.append(webView)
     }
 
@@ -66,12 +80,43 @@ final class WKWebViewPool {
         let configuration = WKWebViewConfiguration()
         configuration.processPool = processPool
         configuration.defaultWebpagePreferences.allowsContentJavaScript = false
-        configuration.suppressesIncrementalRendering = true
+        // Off: on, nothing painted until every image had loaded, so an
+        // image-heavy email sat blank for seconds. A reused webview's old
+        // content is still never shown (HTMLMessageBody keeps it hidden
+        // until the new email's first size report).
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
         webView.scrollView.isScrollEnabled = false
+        install(on: webView)
         return webView
+    }
+
+    @discardableResult
+    private func install(on webView: WKWebView) -> SizeMessageRouter {
+        let router = SizeMessageRouter()
+        router.webView = webView
+        let controller = webView.configuration.userContentController
+        controller.addUserScript(WKUserScript(source: HTMLMessageBody.sizingScript, injectionTime: .atDocumentEnd,
+                                              forMainFrameOnly: true, in: .defaultClient))
+        controller.add(router, contentWorld: .defaultClient, name: "corresSize")
+        routers[ObjectIdentifier(webView)] = router
+        return router
+    }
+}
+
+/// Hands an email's size reports to the message currently showing in the
+/// webview. Weak both ways: the content controller holds this strongly.
+@MainActor
+final class SizeMessageRouter: NSObject, WKScriptMessageHandler {
+    weak var target: HTMLMessageBody.Coordinator?
+    weak var webView: WKWebView?
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard let body = message.body as? [String: Any],
+              let load = (body["load"] as? NSNumber)?.intValue,
+              let height = (body["height"] as? NSNumber)?.doubleValue else { return }
+        target?.receiveSize(load: load, height: CGFloat(height), webView: webView)
     }
 }

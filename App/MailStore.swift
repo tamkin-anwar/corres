@@ -52,6 +52,7 @@ final class MailStore {
             allThreads = try await repository.threads()
             #if DEBUG
             await padForStressTest()
+            await loadRenderTestEmails()
             #endif
             state = .loaded
         } catch is CancellationError {
@@ -67,6 +68,27 @@ final class MailStore {
     /// mail so every action works on them, for measuring scrolling and
     /// swiping on an inbox the size of a real one. Removed with the rest
     /// of the sample mail.
+    /// Launch with `-renderTestEmails <folder>` to add each .html file in
+    /// it as a sample email (images allowed), for checking how real email
+    /// HTML renders. Removed with the rest of the sample mail.
+    private func loadRenderTestEmails() async {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let flag = arguments.firstIndex(of: "-renderTestEmails"), flag + 1 < arguments.count else { return }
+        let folder = URL(fileURLWithPath: arguments[flag + 1])
+        guard let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil) else { return }
+        let emails = files.filter { $0.pathExtension == "html" }.sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .enumerated().compactMap { index, file -> Correspondence? in
+                guard let html = try? String(contentsOf: file, encoding: .utf8) else { return nil }
+                let name = file.deletingPathExtension().lastPathComponent
+                return Correspondence(id: ThreadID(account: "sample", providerID: "render-\(name)"), sender: "Render test",
+                                      organization: "Corres", subject: name, excerpt: "Rendering test: \(name)", body: name,
+                                      htmlBody: html, receivedAt: .now.addingTimeInterval(Double(-index) * 60), dueAt: nil,
+                                      reason: "", attention: .quiet, imagesTrusted: true)
+            }
+        _ = try? await repository.upsert(emails, isInitialSync: true)
+        allThreads = (try? await repository.threads()) ?? allThreads
+    }
+
     private func padForStressTest() async {
         let arguments = ProcessInfo.processInfo.arguments
         guard let flag = arguments.firstIndex(of: "-stressThreads"), flag + 1 < arguments.count,

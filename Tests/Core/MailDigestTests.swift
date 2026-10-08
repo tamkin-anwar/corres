@@ -257,4 +257,18 @@ struct MailDigestTests {
         #expect(sections.allSatisfy { $0.count <= 2_500 })
         #expect(sections.joined().filter { !$0.isWhitespace }.count == text.filter { !$0.isWhitespace }.count)
     }
+
+    /// Preheaders hidden by collapsing them (Cerberus, Litmus templates)
+    /// or Outlook-only hiding never reach a summary.
+    @Test func hiddenPreheadersOfEveryKindAreDropped() {
+        let html = """
+        <div style="max-height:0; overflow:hidden; mso-hide:all;" aria-hidden="true">Preview text only.</div>
+        <span style="mso-hide: all; font-size: 0">Filler</span>
+        <p>Your order has shipped.</p>
+        """
+        let text = MailDigest.text(fromHTML: html)
+        #expect(text.contains("Your order has shipped."))
+        #expect(!text.contains("Preview text only."))
+        #expect(!text.contains("Filler"))
+    }
 }

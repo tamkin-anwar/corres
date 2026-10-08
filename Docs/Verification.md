@@ -2,6 +2,22 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Email reading: fit and cut-off (October 8, 2026)
+
+Reported: email content was cut off vertically, and wide emails didn't fit the screen horizontally.
+
+- **Tested on real templates.** A debug-only `-renderTestEmails <folder>` launch argument loads .html files as emails. The set was Cerberus (fluid, hybrid, responsive), Lee Munroe's template and Mailchimp's basic template, plus worst cases: a fixed 700px table, a three-column grid, a 1200px image, a long unbroken link with a pasted table, a "full screen" 100%/100vh wrapper, and eight late-loading images. Each ends with an "END MARKER" line, so any cut-off is visible.
+- **Causes found and fixed:**
+  - **Designed mail lost its beginning.** The dark-mode rules were removed from designed mail with a pattern that assumed indentation the stylesheet didn't have. It ran on into the email and deleted everything up to the next match in the sender's own CSS, including the wrapper. Cerberus Hybrid rendered as a single broken image. Plain and designed pages are now built directly, with no editing of the finished page.
+  - **Height froze before late images loaded.** It was measured about ten times in the first ten seconds; since the email scrolls with the conversation, anything taller was clipped. A script in Corres's own content world (it runs even with the email's JavaScript off) now reports the size on every change: layout, each image's load or error, web fonts, and width changes.
+  - **Nothing painted until every image loaded** (`suppressesIncrementalRendering`), so image-heavy mail sat blank for seconds. That's now off; reused webviews still stay hidden until the new email's first size report.
+  - **Wide mail was forced narrow.** Tables and cells were capped at the screen's width and overflow was clipped, which broke fixed-width designs and hid their right edges. Emails now lay out at their own width and are scaled as a whole to fit, as Mail and Gmail show them. Narrower mail is never scaled up.
+  - **A reused webview could pass the previous email's late size report as the new one's.** Load numbers are now unique across all emails.
+  - **Mail from people ran to the screen edges.** It now has the page margin.
+  - **Summaries showed hidden preheaders** collapsed with `max-height: 0` or `mso-hide: all`. These are now dropped.
+- **Separate find:** after launch, the Morning Brief notification was removed and re-added on the main thread, which waits on the system's notification service. On a freshly booted simulator that froze Corres. Both now run in the background, and removal happens once rather than on every mail change.
+- Verified in the simulator: every test email fits the width, and the end marker is visible after scrolling. Late images grew the height from 268 to 3014. `swift test` 108/108. **On device:** real inbox mail, Show Images, and rotation on iPad.
+
 ## Mail tab speed sweep (September 29, 2026)
 
 Reported: swiping, pinning, opening mail and scrolling in Mail felt laggy at times, not native.

@@ -64,7 +64,9 @@ struct HTMLMessageBody: UIViewRepresentable {
         // Invalidates any re-measurement still scheduled from a previous
         // load on this same (possibly pooled/reused) webview instance; see
         // Coordinator.loadGeneration.
-        context.coordinator.loadGeneration += 1
+        context.coordinator.loadGeneration = Coordinator.nextLoad()
+        context.coordinator.hasSize = false
+        WKWebViewPool.shared.sizeRouter(for: webView).target = context.coordinator
         var processed = blockRemoteImages ? Self.blockingRemoteImages(in: html) : html
         processed = Self.strippingEmbeddedViewportMeta(processed)
         // Hidden until didFinish: a pooled instance still shows whatever it
@@ -78,10 +80,69 @@ struct HTMLMessageBody: UIViewRepresentable {
         // resolved (nothing is loaded from it; the page content comes
         // entirely from loadHTMLString), it exists only to give the page
         // a real https origin.
-        webView.loadHTMLString(Self.wrap(processed, adaptsToDark: !designed), baseURL: Self.placeholderBaseURL)
+        webView.loadHTMLString(Self.wrap(processed, adaptsToDark: !designed, load: context.coordinator.loadGeneration),
+                               baseURL: Self.placeholderBaseURL)
     }
 
     private static let placeholderBaseURL = URL(string: "https://mail.corres.app/")
+
+    /// Corres's own script, in its own content world: it runs even though
+    /// the email's scripts never do (`allowsContentJavaScript` is off, and
+    /// that only stops the page's own JavaScript). It never changes what
+    /// the email says or loads, only its scale, and reports the size.
+    ///
+    /// Fit: the email lays out at its own width. When that's wider than
+    /// the screen (a fixed 600–700px newsletter or receipt), the whole
+    /// email is scaled down to fit, keeping its design intact, as Mail and
+    /// Gmail do. Narrower mail is never scaled up.
+    ///
+    /// Size: re-measured on every change rather than a few times after
+    /// loading, so late images, web fonts and Show Images all fit.
+    static let sizingScript = """
+    (() => {
+      const root = document.getElementById('corres-root');
+      if (!root) return;
+      const meta = document.querySelector('meta[name="corres-load"]');
+      const load = meta ? Number(meta.content) : 0;
+      let lastHeight = -1, lastScale = -1, pending = false;
+      function measure() {
+        pending = false;
+        const viewport = document.documentElement.clientWidth || window.innerWidth;
+        root.style.transform = '';
+        root.style.width = '';
+        // Content wider than the screen: its full width, plus the right
+        // margin, which an overflowing box's scrollWidth leaves out.
+        const overflowing = root.scrollWidth > root.clientWidth + 1;
+        const natural = overflowing
+          ? root.scrollWidth + (parseFloat(getComputedStyle(root).paddingRight) || 0)
+          : root.offsetWidth;
+        let scale = 1;
+        if (viewport > 0 && natural > viewport + 1) {
+          scale = viewport / natural;
+          root.style.width = natural + 'px';
+          root.style.transformOrigin = '0 0';
+          root.style.transform = 'scale(' + scale + ')';
+        }
+        const height = Math.ceil(Math.max(root.getBoundingClientRect().height, root.scrollHeight * scale));
+        if (height !== lastHeight || scale !== lastScale) {
+          lastHeight = height; lastScale = scale;
+          window.webkit.messageHandlers.corresSize.postMessage({ load: load, height: height, scale: scale });
+        }
+      }
+      function schedule() {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(measure);
+      }
+      window.corresMeasure = measure;
+      new ResizeObserver(schedule).observe(root);
+      document.addEventListener('load', schedule, true);
+      document.addEventListener('error', schedule, true);
+      window.addEventListener('resize', schedule);
+      if (document.fonts) document.fonts.ready.then(schedule);
+      measure();
+    })();
+    """
 
     /// How many `<img>` tags in `html` point at a remote http(s) URL, so a
     /// caller can show a "N images blocked" banner without needing its own
@@ -177,8 +238,8 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// full document. WebKit's HTML parser still finds and honors a
     /// `<meta>` tag wherever it appears, so a sender's stray one can
     /// silently win over `wrap()`'s own tag (added second, after the
-    /// sender's content) and interfere with the zoom-scale Corres manages
-    /// itself (`measureAndScale`, below). Stripped unconditionally so
+    /// sender's content) and interfere with the fit Corres manages
+    /// itself (`sizingScript`). Stripped unconditionally so
     /// `wrap()`'s own tag is always the one that actually applies,
     /// regardless of what value the sender's own tag would have set.
     private static let embeddedViewportMetaRegex = try? NSRegularExpression(
@@ -203,7 +264,7 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// fills its *containing block*, regardless of how little text is
     /// actually inside it, so forcing `width=1024` made `scrollWidth`
     /// measure ~1024 even for two lines of "Hello", and the shrink-to-fit
-    /// math (`measureAndScale`, below) divided the whole page, text
+    /// math divided the whole page, text
     /// included, down to a small fraction of size for content that never
     /// needed to shrink at all.
     ///
@@ -213,11 +274,11 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// so, they overflow it outright, and `scrollWidth` reports that real
     /// overflow (the full extent including anything sticking out past the
     /// viewport, not just the viewport's own width) regardless of which
-    /// width the viewport meta requested. `measureAndScale`'s own
-    /// `contentWidth > viewportWidth` check already only shrinks when
+    /// width the viewport meta requested. `sizingScript` only shrinks when
     /// there's real overflow to correct; the earlier bug was that
     /// forcing `width=1024` manufactured false overflow for content that
     /// never had any, not a flaw in that check itself.
+    ///
     /// Mail that sets its own look: background colours, colour on its
     /// text, or a style sheet (marketing, receipts, notifications, and
     /// mail from Outlook). Plain mail from Gmail or Mail has none of these.
@@ -226,81 +287,66 @@ struct HTMLMessageBody: UIViewRepresentable {
                    options: [.regularExpression, .caseInsensitive]) != nil
     }
 
-    private static func wrap(_ html: String, adaptsToDark: Bool = true) -> String {
-        guard !adaptsToDark else { return wrapAdaptive(html) }
-        // As the sender designed it: light only, on white, their colours.
-        return wrapAdaptive(html)
-            .replacingOccurrences(of: ":root { color-scheme: light dark; }",
-                                  with: ":root { color-scheme: light only; } html, body { background: #FFFFFF !important; }")
-            .replacingOccurrences(of: #"@media \(prefers-color-scheme: dark\) \{[\s\S]*?\n        \}\n"#,
-                                  with: "", options: .regularExpression)
+    /// Built directly for each kind of mail, never by editing the finished
+    /// page: an earlier version removed the dark-mode rules from designed
+    /// mail with a pattern that, when it missed its own rules, ran on into
+    /// the email itself and deleted everything up to some later match,
+    /// taking the start of the email (and the wrapper the sizing script
+    /// needs) with it.
+    ///
+    /// Mail from people adapts to Dark mode. The dark rules use `!important`
+    /// deliberately: real mail HTML (Gmail's own quoted-reply markup
+    /// included) sets its own inline `color` on elements, and an
+    /// `!important` author rule is the one thing that outranks it. Literal
+    /// colours rather than `-apple-system-label`, which didn't reliably
+    /// follow `overrideUserInterfaceStyle` in a `loadHTMLString` page on a
+    /// real device. Designed mail is shown as its sender made it: light
+    /// only, on white, in their colours.
+    private static func wrap(_ html: String, adaptsToDark: Bool = true, load: Int = 0) -> String {
+        let scheme = adaptsToDark
+            ? ":root { color-scheme: light dark; }"
+            : ":root { color-scheme: light only; } html, body { background: #FFFFFF !important; }"
+        let darkRules = adaptsToDark
+            ? "@media (prefers-color-scheme: dark) { body { color: #F2F3F5 !important; } a { color: #8FB4E8; } }"
+            : ""
+        return wrapAdaptive(html, load: load, scheme: scheme, darkRules: darkRules,
+                            rootClass: adaptsToDark ? "plain" : "designed")
     }
 
-    private static func wrapAdaptive(_ html: String) -> String {
+    private static func wrapAdaptive(_ html: String, load: Int, scheme: String, darkRules: String, rootClass: String) -> String {
         """
         <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="corres-load" content="\(load)">
         <style>
-        :root { color-scheme: light dark; }
-        html, body { overflow-x: hidden; }
+        \(scheme)
         body { font: -apple-system-body; font-size: 17px; line-height: 1.5; color: #141312 !important;
-               margin: 0; padding: 0; word-wrap: break-word; -webkit-text-size-adjust: 100%;
+               margin: 0; padding: 0; -webkit-text-size-adjust: 100%;
                background: transparent; }
         a { color: #2F5D9E; }
-        /* The actual fix for wide marketing HTML, researched against what
-           real mail clients do (Apple Mail included, both WebKit-based):
-           force every table/image to reflow to the viewport natively,
-           rather than measuring the rendered width in JS after the fact and
-           visually shrinking the whole page with a view-level zoom
-           (`Coordinator.measureAndScale`, below). A multi-column product
-           grid built from fixed-pixel `<td width="...">` cells (routine in
-           real marketing templates, confirmed against a real UNIQLO email
-           reported directly) doesn't reliably get caught by that
-           measure-then-zoom approach once real images finish loading
-           asynchronously after the initial measurement, and can overflow
-           the right edge instead of reflowing, which is exactly the "breaks
-           up the email" bug reported against it, contrasted screenshot-by-
-           screenshot with Apple Mail's own clean, evenly-split rendering of
-           the identical email. `!important` throughout: a sender's own
-           inline `width` attribute (not just a CSS `width` property, which
-           `!important` alone doesn't override) otherwise wins over this.
-           `measureAndScale`'s JS-measured zoom stays as a backstop for
-           whatever this doesn't catch (unbreakable long text in a `<pre>`,
-           for instance), but should rarely need to actually shrink
-           anything now that width overflow is handled at the CSS layer
-           instead. */
+        /* The email lays out as its sender built it; nothing here narrows
+           its tables or cells. A design wider than the screen (most
+           marketing mail and receipts are fixed 600–700px tables) is
+           shrunk as a whole to fit by the sizing script (`sizingScript`),
+           the way Mail and Gmail show it. Forcing tables and cells to the
+           screen's width instead squeezed fixed-width columns into broken
+           layouts, and clipping overflow hid their right edges. */
+        /* Long unbroken text in mail from people (a pasted link, a code
+           snippet) wraps instead of widening the whole message. */
+        #corres-root { display: flow-root; overflow-wrap: break-word; box-sizing: border-box; }
+        /* Mail from people lines up with the rest of the conversation
+           (CorresSpace.page); designed mail keeps its own edges. */
+        #corres-root.plain { padding: 0 20px; }
+        pre { white-space: pre-wrap; }
+        img { max-width: 100%; height: auto; }
         /* Measured, not viewport-sized: emails that make their wrapper
            "full screen" (height: 100%, min-height: 100vh) grew every time
            the view grew to fit them, leaving an endless blank tail below
            the message. Their height comes from their content instead. */
         html, body { height: auto !important; min-height: 0 !important; }
-        #corres-root { display: flow-root; }
         [height="100%"], [style*="height:100%"], [style*="height: 100%"], [style*="vh"] {
           height: auto !important; min-height: 0 !important; }
-        table { max-width: 100% !important; }
-        td, th { max-width: 100% !important; }
-        img { max-width: 100% !important; height: auto !important; }
-        @media (prefers-color-scheme: dark) {
-          /* `!important`, deliberately: real mail HTML (Gmail's own quoted-
-             reply markup included) routinely sets its own inline `color`
-             on individual elements, which would otherwise win over a plain
-             `body` rule regardless of dark mode. An `!important` author
-             rule is the one thing that outranks a non-important inline
-             style in CSS's cascade, so this is what actually makes body
-             text legible instead of only working when nothing in the
-             sender's own HTML happens to set a color. Relying on the
-             literal hex pair here rather than the `-apple-system-label`
-             keyword this used before: that keyword's resolution inside an
-             offline `loadHTMLString` page (no real origin, no live
-             `prefers-color-scheme` media query support confirmed) turned
-             out not to reliably track `overrideUserInterfaceStyle` the way
-             assumed, confirmed unreadable on a real device even after
-             setting it; `prefers-color-scheme` plus real color values is
-             the standards-based mechanism actually documented to respect
-             `overrideUserInterfaceStyle`. */
-          body { color: #F2F3F5 !important; }
-          a { color: #8FB4E8; }
-        }
-        </style></head><body><div id="corres-root">\(html)</div></body></html>
+        \(darkRules)
+        </style></head><body><div id="corres-root" class="\(rootClass)">\(html)</div></body></html>
         """
     }
 
@@ -319,94 +365,49 @@ struct HTMLMessageBody: UIViewRepresentable {
         /// with a late measurement of the previous one's.
         var loadGeneration = 0
 
+        /// Load numbers unique across every message, not per view: a
+        /// reused webview can still deliver a late report from the previous
+        /// message's page, and a per-view count would let it pass as this
+        /// one's.
+        private static var lastLoad = 0
+        static func nextLoad() -> Int {
+            lastLoad += 1
+            return lastLoad
+        }
+
+        /// Whether this load has reported its size yet.
+        var hasSize = false
+
+        /// The sizing script (`HTMLMessageBody.sizingScript`) reports the
+        /// email's height whenever it changes: on layout, as each image
+        /// loads (however late), when web fonts arrive, and when the width
+        /// changes. Measuring a fixed number of times after the page
+        /// finished, as this used to, froze the height before slow images
+        /// arrived, and since the email doesn't scroll on its own (it
+        /// scrolls with the conversation), everything below was cut off.
+        func receiveSize(load: Int, height: CGFloat, webView: WKWebView?) {
+            guard load == loadGeneration, height > 0 else { return }
+            if !hasSize {
+                hasSize = true
+                if let webView, webView.alpha < 1 { UIView.animate(withDuration: 0.12) { webView.alpha = 1 } }
+            }
+            if abs(parent.height - height) >= 1 { parent.height = height }
+
+        }
+
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             let generation = loadGeneration
+            // A backstop in case the script's first report hasn't arrived:
+            // ask it to measure now, and never leave the email hidden.
             Task { @MainActor [weak self, weak webView] in
-                guard let self, let webView else { return }
-                await self.measureAndScale(webView, generation: generation, revealWhenDone: true)
-                await self.pollUntilStable(webView, generation: generation)
+                try? await Task.sleep(for: .milliseconds(300))
+                guard let self, let webView, generation == self.loadGeneration, !self.hasSize else { return }
+                _ = try? await webView.evaluateJavaScript("window.corresMeasure && window.corresMeasure()",
+                                                          in: nil, contentWorld: .defaultClient)
+                try? await Task.sleep(for: .milliseconds(300))
+                guard generation == self.loadGeneration else { return }
+                if webView.alpha < 1 { UIView.animate(withDuration: 0.12) { webView.alpha = 1 } }
             }
-        }
-
-        /// Real marketing HTML routinely finishes its main-frame navigation
-        /// before every image has actually finished loading (a slow remote
-        /// asset over a real, possibly slow connection, or a CSS
-        /// `background-image`, neither of which reliably gates the
-        /// navigation "finish" event the way a plain `<img src>` does).
-        /// Measuring only once at `didFinish` freezes the shrink-to-fit
-        /// scale and the WKWebView's own height against a page that then
-        /// grows taller a moment later once those finish — and because
-        /// `WKWebViewPool` deliberately disables the webview's own internal
-        /// scrolling (content is meant to scroll as one continuous page
-        /// with everything around it, not in a nested scroll view), any
-        /// growth past that locked-in height is silently, invisibly
-        /// clipped with no way to scroll and see the rest. Reported
-        /// directly against a real, image-heavy marketing email on a real
-        /// device: the content visibly stopped mid-image.
-        ///
-        /// A *fixed* number of re-measurements at fixed delays (this used
-        /// to do two, at 350ms/1000ms after `didFinish`) is still only a
-        /// guess at how long images take, and a dense email's images can
-        /// easily take longer than that on a slower connection. Polls
-        /// instead, at a steadily widening interval, until two consecutive
-        /// measurements agree within a point (nothing is still loading) or
-        /// a generous ~10-second cap is reached (a genuinely stuck remote
-        /// resource must not poll forever). A short, fast email with
-        /// nothing left to load stabilizes and stops after the very first
-        /// check; a slow one keeps checking, without wastefully polling at
-        /// a fixed high frequency the whole time.
-        private func pollUntilStable(_ webView: WKWebView, generation: Int) async {
-            var lastHeight: CGFloat?
-            for stepMs in Self.pollIntervalsMs {
-                try? await Task.sleep(for: .milliseconds(stepMs))
-                guard generation == loadGeneration else { return }
-                let measured = await measureAndScale(webView, generation: generation, revealWhenDone: false)
-                guard let measured else { continue }
-                if let lastHeight, abs(measured - lastHeight) < 1 { return }
-                lastHeight = measured
-            }
-        }
-
-        /// Widening on purpose: a page still actively loading images checks
-        /// again soon; one that's taking a while backs off instead of
-        /// polling needlessly often while it waits. Sums to just under 10
-        /// seconds of total worst-case polling.
-        private static let pollIntervalsMs = [150, 200, 300, 450, 650, 900, 1200, 1600, 2000, 2500]
-
-        @discardableResult
-        private func measureAndScale(_ webView: WKWebView, generation: Int, revealWhenDone: Bool) async -> CGFloat? {
-            // allowsContentJavaScript = false only restricts content-embedded
-            // <script> execution; this host-triggered evaluateJavaScript call
-            // is unaffected (confirmed on-device: it reliably returns a value).
-            // The content's own height, from a wrapper around it, rather
-            // than the body's scrollHeight, which is never less than the
-            // view itself and so could only ever grow.
-            let result = try? await webView.evaluateJavaScript("""
-                (() => { const root = document.getElementById('corres-root');
-                  return [document.body.scrollWidth,
-                          root ? Math.ceil(root.getBoundingClientRect().height) : document.body.scrollHeight]; })()
-                """)
-            // Reveal unconditionally on the first pass, even if measurement
-            // below fails: updateUIView hid this webview (alpha 0) to avoid
-            // flashing a pooled instance's stale previous content, and it
-            // must not stay invisible forever regardless of what sizing does.
-            if revealWhenDone { UIView.animate(withDuration: 0.12) { webView.alpha = 1 } }
-            guard generation == loadGeneration,
-                  let dimensions = result as? [Double], dimensions.count == 2,
-                  let contentWidth = dimensions.first, let contentHeight = dimensions.last,
-                  contentWidth > 0, contentHeight > 0 else { return nil }
-            let viewportWidth = webView.bounds.width
-            // Uniformly shrink the whole rendered page to fit, rather than
-            // per-element CSS clamping that broke proportions (see wrap()'s
-            // doc comment). Never scale a narrower-than-device email UP;
-            // only shrink an oversized one.
-            let scale = viewportWidth > 0 && contentWidth > viewportWidth ? viewportWidth / contentWidth : 1
-            webView.scrollView.minimumZoomScale = scale
-            webView.scrollView.maximumZoomScale = scale
-            webView.scrollView.zoomScale = scale
-            let scaledHeight = contentHeight * scale
-            parent.height = scaledHeight
-            return scaledHeight
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
