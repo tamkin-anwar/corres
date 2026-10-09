@@ -122,6 +122,9 @@ enum CorresSettings {
     /// Settings → Sorting → Screen new senders. Off by default: holding a
     /// stranger's first email back made Corres feel like it was losing
     /// mail (Spark's Gatekeeper is off by default for the same reason).
+    /// Mailboxes → Edit: the order of mailboxes and labels, and which are hidden.
+    static let mailboxOrderKey = "corres.mailboxes.order"
+    static let mailboxHiddenKey = "corres.mailboxes.hidden"
     static let screenNewSendersKey = "corres.screenNewSenders"
     static var screensNewSenders: Bool { defaults.bool(forKey: screenNewSendersKey) }
 

@@ -522,7 +522,9 @@ struct CorresShell: View {
             MailboxesView(store: store, threadActions: threadActions, labelDirectory: labelDirectory, outbox: outbox,
                           auth: auth, accounts: accountFilter.map { [$0] } ?? auth.accounts.map(\.email))
         } label: {
-            Image(systemName: "folder").frame(minWidth: 44, minHeight: 44)
+            // The menu mark Gmail and Spark use for "everything else": a
+            // folder read as "files", not mailboxes.
+            Image(systemName: "line.3.horizontal").frame(minWidth: 44, minHeight: 44)
         }
         .accessibilityLabel("Mailboxes")
         .accessibilityHint("Drafts, Sent, All Mail, Spam, Trash and labels")
@@ -549,6 +551,10 @@ struct CorresShell: View {
         // mailbox, one tap from Mail (see `MailboxesView`).
         if selection == .mail {
             ToolbarItem(placement: .topBarLeading) { mailboxesLink }
+            // Its own button, not merged into one capsule with Select.
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .topBarLeading)
+            }
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button { composeDraft = Draft(kind: .new, to: "", subject: "") } label: {

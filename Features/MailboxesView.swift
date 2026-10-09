@@ -82,46 +82,75 @@ struct MailboxesView: View {
     /// Which accounts' mailboxes: one, or every connected account.
     let accounts: [String]
 
+    /// Edit, as in Mail: tick what shows, drag to reorder. Stored as ids
+    /// (`Mailbox.id`), so a new label appears at the end of its list,
+    /// shown, until it's moved or hidden.
+    @AppStorage(CorresSettings.mailboxOrderKey) private var orderRaw = ""
+    @AppStorage(CorresSettings.mailboxHiddenKey) private var hiddenRaw = ""
+    @State private var isEditing = false
+
+    private var order: [String] { orderRaw.isEmpty ? [] : orderRaw.components(separatedBy: "\n") }
+    private var hidden: Set<String> { Set(hiddenRaw.isEmpty ? [] : hiddenRaw.components(separatedBy: "\n")) }
+
     private var snoozedCount: Int {
         let now = Date.now
         return store.threads.filter { accounts.contains($0.id.account) && $0.isSnoozed(at: now) }.count
     }
 
+    /// The built-in mailboxes there are to show: Gmail's only with Gmail.
+    private var builtIns: [Mailbox] {
+        accounts.isEmpty ? [.snoozed] : [.drafts, .snoozed, .flagged, .sent, .allMail, .spam, .trash]
+    }
+
+    private func labels(for account: String) -> [Mailbox] {
+        labelDirectory.labels(for: account)
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            .map { .label(id: $0.id, name: $0.name, account: account) }
+    }
+
+    /// In the saved order; anything not placed yet keeps its usual place
+    /// at the end.
+    private func arranged(_ mailboxes: [Mailbox]) -> [Mailbox] {
+        let position = Dictionary(order.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        return mailboxes.enumerated().sorted { lhs, rhs in
+            let a = position[lhs.element.id], b = position[rhs.element.id]
+            switch (a, b) {
+            case let (a?, b?): return a < b
+            case (.some, nil): return true
+            case (nil, .some): return false
+            default: return lhs.offset < rhs.offset
+            }
+        }.map(\.element)
+    }
+
     var body: some View {
         List {
-            Section {
-                if !accounts.isEmpty { row(.drafts) }
-                row(.snoozed, count: snoozedCount)
-                if !accounts.isEmpty {
-                    row(.flagged)
-                    row(.sent)
-                    row(.allMail)
-                    row(.spam)
-                    row(.trash)
-                }
-            } footer: {
-                if accounts.isEmpty {
+            section(arranged(builtIns), header: nil)
+            if accounts.isEmpty {
+                Section {} footer: {
                     Text("Connect Gmail to see Drafts, Sent, All Mail, Spam, Trash and your labels.")
                 }
             }
             ForEach(accounts, id: \.self) { account in
-                let labels = labelDirectory.labels(for: account)
-                    .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+                let labels = arranged(labels(for: account))
                 if !labels.isEmpty {
-                    Section(accounts.count > 1 ? account : "Labels") {
-                        ForEach(labels) { label in
-                            let depth = label.name.filter { $0 == "/" }.count
-                            row(.label(id: label.id, name: label.name, account: account))
-                                .padding(.leading, CGFloat(min(depth, 3)) * 18)
-                        }
-                    }
+                    section(labels, header: accounts.count > 1 ? account : "Labels")
                 }
             }
         }
+        .environment(\.editMode, .constant(isEditing ? .active : .inactive))
         .navigationTitle("Mailboxes")
         .navigationBarTitleDisplayMode(.large)
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(isEditing ? "Done" : "Edit") {
+                    withAnimation(.snappy(duration: 0.25)) { isEditing.toggle() }
+                }
+                .fontWeight(isEditing ? .semibold : .regular)
+            }
+        }
         .navigationDestination(for: Mailbox.self) { mailbox in
             if mailbox == .drafts {
                 DraftsView(store: store, outbox: outbox, auth: auth, accounts: accounts)
@@ -132,15 +161,71 @@ struct MailboxesView: View {
         .task { await labelDirectory.refreshIfConnected(accounts: accounts) }
     }
 
-    private func row(_ mailbox: Mailbox, count: Int? = nil) -> some View {
+    @ViewBuilder
+    private func section(_ mailboxes: [Mailbox], header: String?) -> some View {
+        // Editing shows everything, hidden ones unticked; otherwise only
+        // what's ticked.
+        let shown = isEditing ? mailboxes : mailboxes.filter { !hidden.contains($0.id) }
+        if !shown.isEmpty {
+            Section {
+                ForEach(shown) { mailbox in
+                    if isEditing { editRow(mailbox) } else { row(mailbox) }
+                }
+                .onMove { from, to in move(within: mailboxes, from: from, to: to) }
+            } header: {
+                if let header { Text(header) }
+            }
+        }
+    }
+
+    private func row(_ mailbox: Mailbox) -> some View {
         NavigationLink(value: mailbox) {
             LabeledContent {
-                if let count, count > 0 { Text(count, format: .number).monospacedDigit() }
+                if mailbox == .snoozed, snoozedCount > 0 { Text(snoozedCount, format: .number).monospacedDigit() }
             } label: {
                 Label(mailbox.title, systemImage: mailbox.systemImage)
             }
         }
+        .padding(.leading, indent(of: mailbox))
         .listRowBackground(CorresPalette.surface)
+    }
+
+    private func editRow(_ mailbox: Mailbox) -> some View {
+        let isShown = !hidden.contains(mailbox.id)
+        return Button {
+            var set = hidden
+            if isShown { set.insert(mailbox.id) } else { set.remove(mailbox.id) }
+            hiddenRaw = set.sorted().joined(separator: "\n")
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: isShown ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(isShown ? CorresPalette.accent : CorresPalette.tertiary)
+                Label(mailbox.title, systemImage: mailbox.systemImage)
+                    .foregroundStyle(isShown ? CorresPalette.ink : CorresPalette.secondary)
+                    .padding(.leading, indent(of: mailbox))
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(CorresPalette.surface)
+        .accessibilityValue(isShown ? "Shown" : "Hidden")
+        .accessibilityHint(isShown ? "Hides this mailbox" : "Shows this mailbox")
+    }
+
+    /// Labels inside labels ("Unroll.me/Unsubscribed") sit indented.
+    private func indent(of mailbox: Mailbox) -> CGFloat {
+        guard case let .label(_, name, _) = mailbox else { return 0 }
+        return CGFloat(min(name.filter { $0 == "/" }.count, 3)) * 18
+    }
+
+    /// Reorders one section and saves it, keeping every other section's
+    /// saved order as it was.
+    private func move(within mailboxes: [Mailbox], from: IndexSet, to: Int) {
+        var ids = mailboxes.map(\.id)
+        ids.move(fromOffsets: from, toOffset: to)
+        let others = order.filter { !ids.contains($0) }
+        orderRaw = (others + ids).joined(separator: "\n")
     }
 }
 
