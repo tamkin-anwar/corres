@@ -17,6 +17,8 @@ struct HTMLMessageBody: UIViewRepresentable {
     @Binding var height: CGFloat
     var blockRemoteImages = true
     @Environment(\.colorScheme) private var colorScheme
+    /// Read so a change of text size in Settings redraws the email.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebViewPool.shared.dequeue()
@@ -57,6 +59,9 @@ struct HTMLMessageBody: UIViewRepresentable {
         let analysis = Self.analysis(of: html)
         let designed = analysis.isDesigned
         let dark = colorScheme == .dark
+        // The person's text size (Settings → Display & Brightness → Text
+        // Size), which Mail follows too. 17pt is the default.
+        let textSize = UIFont.preferredFont(forTextStyle: .body, compatibleWith: webView.traitCollection).pointSize
         webView.overrideUserInterfaceStyle = designed && !analysis.hasOwnDarkMode ? .light : (dark ? .dark : .light)
         // Checked against the raw inputs, not the processed/wrapped output:
         // SwiftUI re-invokes updateUIView on any state change anywhere this
@@ -66,10 +71,11 @@ struct HTMLMessageBody: UIViewRepresentable {
         // blockingRemoteImages's regex work, means an unrelated re-render
         // costs nothing instead of re-running a full-body regex scan.
         guard context.coordinator.lastHTML != html || context.coordinator.lastBlockRemoteImages != blockRemoteImages
-              || context.coordinator.lastDark != dark else { return }
+              || context.coordinator.lastDark != dark || context.coordinator.lastTextSize != textSize else { return }
         context.coordinator.lastHTML = html
         context.coordinator.lastBlockRemoteImages = blockRemoteImages
         context.coordinator.lastDark = dark
+        context.coordinator.lastTextSize = textSize
         // Invalidates any re-measurement still scheduled from a previous
         // load on this same (possibly pooled/reused) webview instance; see
         // Coordinator.loadGeneration.
@@ -91,11 +97,27 @@ struct HTMLMessageBody: UIViewRepresentable {
         // entirely from loadHTMLString), it exists only to give the page
         // a real https origin.
         let kind: BodyKind = !designed ? .plain : analysis.hasOwnDarkMode ? .designedWithDarkMode : .designed
-        webView.loadHTMLString(Self.wrap(processed, kind: kind, dark: dark, load: context.coordinator.loadGeneration),
+        webView.loadHTMLString(Self.wrap(processed, kind: kind, dark: dark, textSize: textSize,
+                                         load: context.coordinator.loadGeneration),
                                baseURL: Self.placeholderBaseURL)
     }
 
     static let placeholderBaseURL = URL(string: "https://mail.corres.app/")
+
+    nonisolated(unsafe) private static let plainTextPages: NSCache<NSString, NSString> = {
+        let cache = NSCache<NSString, NSString>()
+        cache.countLimit = 32
+        return cache
+    }()
+
+    /// A plain-text email as a page (`PlainTextEmail`), worked out once
+    /// per message rather than on every redraw.
+    static func page(forPlainText text: String) -> String {
+        if let cached = plainTextPages.object(forKey: text as NSString) { return cached as String }
+        let page = PlainTextEmail.html(from: text)
+        plainTextPages.setObject(page as NSString, forKey: text as NSString)
+        return page
+    }
 
     /// Corres's own script, in its own content world: it runs even though
     /// the email's scripts never do (`allowsContentJavaScript` is off, and
@@ -215,9 +237,12 @@ struct HTMLMessageBody: UIViewRepresentable {
       }
       function darken() {
         const meta = document.querySelector('meta[name="corres-dark"]');
-        if (!meta || meta.content !== '1' || !root.classList.contains('designed') || root.classList.contains('own-dark')) return;
+        if (!meta || meta.content !== '1' || root.classList.contains('own-dark')) return;
+        // Mail from people is already dark; only colours its sender set
+        // (grey signatures, coloured quotes) need mapping, pictures or not.
+        const plain = root.classList.contains('plain');
         const elements = root.getElementsByTagName('*');
-        if (elements.length > 8000 || dependsOnPictures(elements)) return;
+        if (elements.length > 8000 || (!plain && dependsOnPictures(elements))) return;
         // Read everything first, then write, so the page is styled once.
         const changes = [];
         // An email's own <body> styles land on the real page (the parser
@@ -234,7 +259,8 @@ struct HTMLMessageBody: UIViewRepresentable {
         // between it and the page). `mapped`: on a background Corres darkened.
         (function visit(element, onPage, mapped) {
           const style = getComputedStyle(element);
-          if (style.display === 'none') return;
+          // Folded quotes are still coloured, for when they're opened.
+          if (style.display === 'none' && !element.classList.contains('corres-folded')) return;
           const background = parse(style.backgroundColor);
           if (background && background.a > 0.05) {
             const { s, l } = hsl(background);
@@ -295,6 +321,141 @@ struct HTMLMessageBody: UIViewRepresentable {
         }
         const padding = Math.max(0, Math.ceil(page - Math.max(0, inset)));
         if (padding > 0) root.style.padding = '0 ' + padding + 'px';
+        // The person's text size, for a design that reflows (one that's
+        // shrunk to fit keeps its own sizes, as Mail does). Mail set in
+        // desktop sizes (Outlook's 11pt Calibri is about 15px) is brought
+        // up to a size that reads on a phone, the way Mail and Gmail do.
+        const scaleMeta = document.querySelector('meta[name="corres-text-scale"]');
+        let textScale = scaleMeta ? Number(scaleMeta.content) || 1 : 1;
+        const body = typicalTextSize();
+        if (body > 0 && body < 15.5) textScale *= Math.min(17 / body, 1.3);
+        if (Math.abs(textScale - 1) > 0.01) {
+          root.style.setProperty('-webkit-text-size-adjust', Math.round(textScale * 100) + '%');
+        }
+      }
+
+      // The size most of the email's text is set in, by amount of text.
+      function typicalTextSize() {
+        const amounts = new Map();
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let count = 0, node; (node = walker.nextNode()) && count < 400;) {
+          const length = node.data.trim().length;
+          if (!length || !node.parentElement || !node.parentElement.offsetHeight) continue;
+          count++;
+          const size = parseFloat(getComputedStyle(node.parentElement).fontSize);
+          amounts.set(size, (amounts.get(size) || 0) + length);
+        }
+        let best = 0, most = 0;
+        amounts.forEach((amount, size) => { if (amount > most) { most = amount; best = size; } });
+        return best;
+      }
+
+      // MARK: Wide tables in mail from people
+      //
+      // A pasted spreadsheet or a wide signature table made the sizing
+      // script shrink the whole message, text and all. In mail from people
+      // the table scrolls sideways on its own instead.
+      function containWideTables() {
+        if (!root.classList.contains('plain')) return;
+        const limit = root.clientWidth - 40;
+        for (const table of Array.from(root.querySelectorAll('table'))) {
+          if (table.parentElement.closest('table') || table.offsetWidth <= limit + 1) continue;
+          const box = document.createElement('div');
+          box.className = 'corres-scroll';
+          table.parentNode.insertBefore(box, table);
+          box.appendChild(table);
+        }
+      }
+
+      // MARK: Quoted history
+      //
+      // Each reply carries the whole conversation below it, which Corres
+      // already shows above the message. Like Gmail and Mail, it's folded
+      // behind a ••• button. Only history at the end is folded: an
+      // interleaved reply (answers between quoted lines) and a forward
+      // (the point of the email) are left open, and so is a message that
+      // is nothing but a quote.
+      // Containers hold the whole quote; headers start it, and everything
+      // after them is the history (Outlook's "From: … Sent: …" block).
+      const quoteContainers = ['.gmail_quote', '.corres-quote', 'blockquote[type="cite"]', '.yahoo_quoted',
+        '.protonmail_quote', '#mail-editor-reference-message-container'];
+      const quoteHeaders = ['#divRplyFwdMsg', '#appendonsend', '.moz-cite-prefix', '#x_divRplyFwdMsg',
+        'div[style*="border-top:solid #E1E1E1"]', 'div[style*="border-top: solid #E1E1E1"]',
+        'div[style*="border-top:solid #B5C4DF"]', 'div[style*="border-top: solid #B5C4DF"]'];
+      function text(range) { return range.toString().replace(/\s+/g, ' ').trim(); }
+      function textBefore(node) {
+        const range = document.createRange();
+        range.setStart(root, 0); range.setEndBefore(node);
+        return text(range);
+      }
+      function textAfter(node) {
+        const range = document.createRange();
+        range.setStartAfter(node); range.setEnd(root, root.childNodes.length);
+        return text(range);
+      }
+      function isForward(node) {
+        const start = (node.innerText || node.textContent || '').slice(0, 600);
+        return /forwarded message|begin forwarded|weitergeleitete nachricht|message transféré|subject:\s*(fw|fwd)\b/i.test(start);
+      }
+      function findQuote() {
+        const header = root.querySelector(quoteHeaders.join(','));
+        const container = Array.from(root.querySelectorAll(quoteContainers.join(',')))
+          .find(node => !node.parentElement.closest(quoteContainers.join(',')) && !textAfter(node));
+        // Whichever comes first in the email.
+        let found = header;
+        if (container && (!header || (header.compareDocumentPosition(container) & Node.DOCUMENT_POSITION_PRECEDING))) found = container;
+        if (!found || isForward(found)) return null;
+        const before = textBefore(found);
+        if (before.length < 1 || /(forwarded message|begin forwarded)[^]{0,80}$/i.test(before)) return null;
+        return found;
+      }
+      function foldQuote() {
+        const start = findQuote();
+        if (!start) return;
+        // The quote and everything after it, at every level up to the email.
+        const hidden = [];
+        const previous = start.previousElementSibling;
+        if (previous && previous.tagName === 'HR') hidden.push(previous);
+        for (let node = start; node && node !== root; node = node.parentNode) {
+          for (let sibling = node === start ? node : node.nextSibling; sibling; sibling = sibling.nextSibling) {
+            if (sibling.nodeType === Node.TEXT_NODE) {
+              if (!sibling.data.trim()) continue;
+              const span = document.createElement('span');
+              sibling.parentNode.insertBefore(span, sibling);
+              span.appendChild(sibling);
+              sibling = span;
+            }
+            if (sibling.nodeType === Node.ELEMENT_NODE) hidden.push(sibling);
+          }
+        }
+        // Blank lines and empty paragraphs left just above the quote.
+        for (let node = hidden[0].previousSibling; node; node = node.previousSibling) {
+          if (node.nodeType === Node.TEXT_NODE && !node.data.trim()) continue;
+          if (node.nodeType === Node.ELEMENT_NODE && /^(BR|DIV|P)$/.test(node.tagName) && !node.textContent.trim()
+              && !node.querySelector('img')) { hidden.unshift(node); continue; }
+          break;
+        }
+        hidden.forEach(node => node.classList.add('corres-folded'));
+        const fold = document.createElement('div');
+        fold.className = 'corres-fold';
+        // A link, not a button: with the email's own scripts off, WebKit
+        // doesn't deliver taps to page elements, only link navigation,
+        // which Corres catches (`Coordinator.foldPath`) and answers by
+        // calling `corresToggleQuote`.
+        const button = document.createElement('a');
+        button.href = 'https://mail.corres.app/fold';
+        button.textContent = '•••';
+        button.setAttribute('role', 'button');
+        button.setAttribute('aria-label', 'Show quoted text');
+        button.setAttribute('aria-expanded', 'false');
+        window.corresToggleQuote = () => {
+          const open = button.getAttribute('aria-expanded') !== 'true';
+          hidden.forEach(node => node.classList.toggle('corres-folded', !open));
+          button.setAttribute('aria-expanded', String(open));
+          button.setAttribute('aria-label', open ? 'Hide quoted text' : 'Show quoted text');
+        };
+        fold.appendChild(button);
+        hidden[0].parentNode.insertBefore(fold, hidden[0]);
       }
 
       // Flight and tracking numbers iOS finds ("misc") do nothing when
@@ -310,6 +471,8 @@ struct HTMLMessageBody: UIViewRepresentable {
       function adoptAll() { root.querySelectorAll('a[x-apple-data-detectors-type="misc"]').forEach(adoptMisc); }
       new MutationObserver(adoptAll).observe(root, { childList: true, subtree: true });
       adoptAll();
+      foldQuote();
+      containWideTables();
       darken();
       fitMargins();
       window.corresMeasure = measure;
@@ -491,7 +654,7 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// follow `overrideUserInterfaceStyle` in a `loadHTMLString` page on a
     /// real device. Designed mail is shown as its sender made it: light
     /// only, on white, in their colours.
-    private static func wrap(_ html: String, kind: BodyKind, dark: Bool, load: Int = 0) -> String {
+    private static func wrap(_ html: String, kind: BodyKind, dark: Bool, textSize: CGFloat, load: Int = 0) -> String {
         let adaptiveRules = """
             :root { color-scheme: light dark; }
             @media (prefers-color-scheme: dark) { body { color: #F2F3F5 !important; } a { color: #8FB4E8; } }
@@ -509,17 +672,20 @@ struct HTMLMessageBody: UIViewRepresentable {
                   color: inherit !important; }
                 """
         }
-        return wrapAdaptive(html, load: load, dark: dark, styles: styles,
+        return wrapAdaptive(html, load: load, dark: dark, textSize: textSize, styles: styles,
                             rootClass: kind == .plain ? "plain" : kind == .designed ? "designed" : "designed own-dark")
     }
 
-    private static func wrapAdaptive(_ html: String, load: Int, dark: Bool, styles: String, rootClass: String) -> String {
-        """
+    private static func wrapAdaptive(_ html: String, load: Int, dark: Bool, textSize: CGFloat, styles: String,
+                                     rootClass: String) -> String {
+        let size = max(12, min(textSize, 40))
+        return """
         <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="corres-load" content="\(load)">
         <meta name="corres-dark" content="\(dark ? 1 : 0)">
+        <meta name="corres-text-scale" content="\(String(format: "%.3f", size / 17))">
         <style>
-        body { font: -apple-system-body; font-size: 17px; line-height: 1.5; color: #141312 !important;
+        body { font: -apple-system-body; font-size: \(String(format: "%.1f", size))px; line-height: 1.5; color: #141312 !important;
                margin: 0; padding: 0; -webkit-text-size-adjust: 100%;
                background: transparent; }
         a { color: #2F5D9E; }
@@ -537,6 +703,23 @@ struct HTMLMessageBody: UIViewRepresentable {
            (CorresSpace.page). Designed mail gets margins from the sizing
            script, measured against the email's own (`sizingScript`). */
         #corres-root.plain { padding: 0 20px; }
+        /* Designed mail keeps the line spacing it was designed with. */
+        #corres-root.designed { line-height: normal; }
+        /* Quoted mail in mail from people, as Mail draws it. */
+        #corres-root.plain .gmail_quote, #corres-root.plain .corres-quote { color: rgba(128, 128, 128, 1); }
+        #corres-root.plain blockquote[type="cite"] { margin: 8px 0; padding: 0 0 0 12px;
+          border-left: 2px solid rgba(128, 128, 128, 0.45); color: rgba(128, 128, 128, 1) !important; }
+        .corres-plain-text { font: inherit; }
+        /* A wide table in mail from people scrolls sideways on its own
+           rather than shrinking the whole message (`sizingScript`). */
+        .corres-scroll { overflow-x: auto; max-width: 100%; }
+        /* Quoted history, folded behind a button (`sizingScript`). */
+        .corres-folded { display: none !important; }
+        .corres-fold { margin: 14px 0 10px; line-height: 1; text-align: left; }
+        .corres-fold a { display: inline-block; border-radius: 11px; text-decoration: none !important;
+          padding: 2px 14px 9px; font: 600 20px/1 -apple-system; letter-spacing: 2px;
+          color: rgba(128, 128, 128, 1) !important; background: rgba(128, 128, 128, 0.16) !important; }
+        .corres-fold a[aria-expanded="true"] { background: rgba(128, 128, 128, 0.28) !important; }
         pre { white-space: pre-wrap; }
         img { max-width: 100%; height: auto; }
         /* Measured, not viewport-sized: emails that make their wrapper
@@ -557,6 +740,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         var lastHTML: String?
         var lastBlockRemoteImages: Bool?
         var lastDark: Bool?
+        var lastTextSize: CGFloat?
         init(_ parent: HTMLMessageBody) { self.parent = parent }
 
         /// A generation counter, bumped every time a fresh load starts
@@ -568,6 +752,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         var loadGeneration = 0
 
         static let detectedItemPath = "/detected"
+        static let foldPath = "/fold"
 
         /// Load numbers unique across every message, not per view: a
         /// reused webview can still deliver a late report from the previous
@@ -720,6 +905,12 @@ struct HTMLMessageBody: UIViewRepresentable {
                 await openDetected(url, in: webView)
                 return .cancel
             }
+            // The ••• that shows or hides quoted history (see `sizingScript`).
+            if url.host == HTMLMessageBody.placeholderBaseURL?.host, url.path == Self.foldPath {
+                _ = try? await webView.evaluateJavaScript("window.corresToggleQuote && window.corresToggleQuote()",
+                                                          in: nil, contentWorld: .defaultClient)
+                return .cancel
+            }
             // A flight or tracking number (see `sizingScript`).
             if url.host == HTMLMessageBody.placeholderBaseURL?.host, url.path == Self.detectedItemPath,
                let text = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "text" })?.value {
@@ -729,10 +920,31 @@ struct HTMLMessageBody: UIViewRepresentable {
             // An embedded frame loading itself, or a jump within the email
             // ("#top"): nothing to open.
             let isSubframeLoad = navigationAction.targetFrame.map { !$0.isMainFrame } ?? false
-            let isInPageJump = url.host == HTMLMessageBody.placeholderBaseURL?.host && url.fragment != nil
-            if (isSubframeLoad && navigationAction.navigationType == .other) || isInPageJump { return .cancel }
+            if isSubframeLoad && navigationAction.navigationType == .other { return .cancel }
+            // A jump within the email (a newsletter's contents, "Back to
+            // top"): the email doesn't scroll on its own, so the
+            // conversation scrolls to the spot.
+            if url.host == HTMLMessageBody.placeholderBaseURL?.host, let fragment = url.fragment {
+                await scroll(to: fragment, in: webView)
+                return .cancel
+            }
             LinkOpener.open(url)
             return .cancel
+        }
+
+        private func scroll(to fragment: String, in webView: WKWebView) async {
+            let script = """
+            (() => { const name = decodeURIComponent(\(Self.jsString(fragment)));
+              const target = name === 'top' ? document.body : (document.getElementById(name) || document.getElementsByName(name)[0]);
+              return target ? target.getBoundingClientRect().top + window.scrollY : null; })()
+            """
+            guard let top = try? await webView.evaluateJavaScript(script, in: nil, contentWorld: .defaultClient) as? Double,
+                  let outer = Self.enclosingScrollView(of: webView) else { return }
+            let point = webView.convert(CGPoint(x: 0, y: top * webView.scrollView.zoomScale), to: outer)
+            let inset = outer.adjustedContentInset
+            let highest = max(-inset.top, outer.contentSize.height - outer.bounds.height + inset.bottom)
+            let y = min(max(point.y - inset.top - 12, -inset.top), highest)
+            outer.setContentOffset(CGPoint(x: outer.contentOffset.x, y: y), animated: true)
         }
 
         private func openDetected(_ url: URL, in webView: WKWebView) async {

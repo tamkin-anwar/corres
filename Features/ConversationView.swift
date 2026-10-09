@@ -111,10 +111,12 @@ struct ConversationView: View {
                                             blockRemoteImages: !(showRemoteImages || thread.imagesTrusted || loadsImages))
                                 .frame(height: htmlHeight)
                         } else {
-                            Text(thread.body)
-                                .font(.body).lineSpacing(6)
-                                .textSelection(.enabled)
-                                .padding(.horizontal, CorresSpace.page)
+                            // Plain-text mail reads like the rest: tappable
+                            // links and addresses, Dark mode, zoom, and
+                            // its quoted history folded.
+                            HTMLMessageBody(html: HTMLMessageBody.page(forPlainText: thread.body), height: $htmlHeight,
+                                            blockRemoteImages: false)
+                                .frame(height: htmlHeight)
                         }
                         if !thread.isBodyLoaded {
                             // Synced metadata-first: the preview is showing

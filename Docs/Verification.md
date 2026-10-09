@@ -2,6 +2,22 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Email reading: full sweep (October 8, 2026)
+
+What every kind of email looked like before, and what changed:
+
+- **Quoted history** (every reply repeats the conversation below it, which Corres already shows above): folded behind a ••• button, like Gmail and Mail. Covers Gmail (`.gmail_quote`), Mail and iOS (`blockquote type=cite`), Outlook (`divRplyFwdMsg` and the "From: … Sent:" border block), Yahoo, Proton, Thunderbird and plain text. Not folded: inline replies (answers between quoted lines), forwards, and a message that is only a quote. The button is a link Corres catches (`/fold`): with the email's scripts off, WebKit doesn't deliver taps to page buttons. Checked by tapping in the Simulator.
+- **Plain-text email** was bare SwiftUI text: links, addresses and numbers did nothing, `>` quotes showed in full, and 72-column hard wraps read as ragged half-lines. It now goes through the same renderer (`PlainTextEmail`): escaped, quotes as nested `blockquote type=cite` with their "On … wrote:" line, hard-wrapped and format=flowed paragraphs joined (lists and short lines keep their breaks). 6 unit tests.
+- **Text size** follows Settings → Display & Brightness → Text Size, as Mail does, and the open email redraws when it changes. Designs that reflow scale too; designs shrunk to fit keep their own sizes.
+- **Small desktop text**: Outlook's 11pt Calibri (~15px) and similar is brought up to a readable size (up to 1.3×) in designs that reflow, measured from the size most of the text uses.
+- **Line spacing**: Corres's 1.5 now applies only to mail from people; designed mail keeps the spacing it was designed with.
+- **Wide tables in mail from people** (a pasted spreadsheet) scroll sideways on their own instead of shrinking the whole message.
+- **Dark mode in mail from people**: colours the sender set (grey signatures, navy Outlook signatures, dark quote text) are lightened; previously they stayed dark on dark.
+- **Jump links within an email** ("Back to top", a newsletter's contents) scroll the conversation to the spot; previously they did nothing.
+- **Earlier messages** in a conversation: web addresses and phone numbers are now tappable; the opened text sits outside the row's button so taps reach the links.
+
+Checked in the Simulator (dark, and light for plain text): Gmail reply (folded, opened by tap, quote in grey), Outlook reply (folded, signature lightened, text enlarged), forward (open), inline reply (open), wide table (scrolls, rest full size), plain text (paragraphs joined, link, quote folded), jump link (scrolled to section 3), plus the earlier Nomad, order, Lee Munroe and fixed-700 emails for regressions. 123 tests pass. Not yet seen with real mail on a device; the debug loader now takes `.txt` files as plain-text mail.
+
 ## Email reading: margins and Dark mode for designed mail (October 8, 2026)
 
 Problem: a simple brand email (a Nomad promotion) sat against the screen's edges on a white block in Dark mode, while iOS Mail showed it with margins and dark. Designed mail (anything with a style sheet or colours) had no margin and was always kept on white.

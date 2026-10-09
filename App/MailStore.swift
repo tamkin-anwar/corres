@@ -76,13 +76,16 @@ final class MailStore {
         guard let flag = arguments.firstIndex(of: "-renderTestEmails"), flag + 1 < arguments.count else { return }
         let folder = URL(fileURLWithPath: arguments[flag + 1])
         guard let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil) else { return }
-        let emails = files.filter { $0.pathExtension == "html" }.sorted { $0.lastPathComponent < $1.lastPathComponent }
+        // .html files are HTML mail; .txt files are plain-text mail.
+        let emails = files.filter { ["html", "txt"].contains($0.pathExtension) }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
             .enumerated().compactMap { index, file -> Correspondence? in
-                guard let html = try? String(contentsOf: file, encoding: .utf8) else { return nil }
+                guard let content = try? String(contentsOf: file, encoding: .utf8) else { return nil }
                 let name = file.deletingPathExtension().lastPathComponent
+                let isText = file.pathExtension == "txt"
                 return Correspondence(id: ThreadID(account: "sample", providerID: "render-\(name)"), sender: "Render test",
-                                      organization: "Corres", subject: name, excerpt: "Rendering test: \(name)", body: name,
-                                      htmlBody: html, receivedAt: .now.addingTimeInterval(Double(-index) * 60), dueAt: nil,
+                                      organization: "Corres", subject: name, excerpt: "Rendering test: \(name)",
+                                      body: isText ? content : name, htmlBody: isText ? nil : content, receivedAt: .now.addingTimeInterval(Double(-index) * 60), dueAt: nil,
                                       reason: "", attention: .quiet, imagesTrusted: true)
             }
         _ = try? await repository.upsert(emails, isInitialSync: true)
