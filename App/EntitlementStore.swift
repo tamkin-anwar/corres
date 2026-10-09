@@ -45,7 +45,53 @@ final class EntitlementStore {
     private(set) var isPurchasing = false
     var errorMessage: String?
 
-    var isPro: Bool { plan != .none }
+    var isPro: Bool { plan != .none || (hasBetaAccess && !previewAsFree) }
+
+    // MARK: Beta access
+    //
+    // Testers get Pro without buying it, so they test the mail, not a
+    // payment sheet (TestFlight purchases also lapse after a week of daily
+    // renewals). Two locks, both required, so App Store customers can never
+    // get Pro free:
+    // 1. Compiled in only by Scripts/testflight.sh (`-D CORRES_BETA`).
+    //    App Store submissions are built by Scripts/appstore.sh, without it,
+    //    and that script refuses to finish if the flag got in.
+    // 2. Even then, only when the app wasn't installed from the App Store
+    //    (`AppTransaction.environment` is sandbox or Xcode). So a beta
+    //    build released by mistake would still charge App Store customers.
+    // App Review also runs in the sandbox, which is why lock 1 exists: a
+    // reviewer handed free Pro never sees a working paywall (guideline 2.1).
+
+    #if CORRES_BETA
+    static let isBetaBuild = true
+    /// Checked in the built app by Scripts/testflight.sh and appstore.sh.
+    static let buildKind = "CORRES_BETA_BUILD"
+    #else
+    static let isBetaBuild = false
+    static let buildKind = "CORRES_APPSTORE_BUILD"
+    #endif
+
+    /// Beta build, installed from TestFlight or Xcode.
+    private(set) var hasBetaAccess = false
+
+    /// Settings → Beta → Preview as free user: the beta shows the locked
+    /// app and paywall, for testing them.
+    var previewAsFree = UserDefaults.standard.bool(forKey: EntitlementStore.previewAsFreeKey) {
+        didSet { UserDefaults.standard.set(previewAsFree, forKey: Self.previewAsFreeKey) }
+    }
+    static let previewAsFreeKey = "corres.beta.previewAsFree"
+
+    /// Fails closed: anything short of a definite non-App Store install
+    /// keeps the paywall.
+    private static func qualifiesForBetaAccess() async -> Bool {
+        guard isBetaBuild, let result = try? await AppTransaction.shared else { return false }
+        let transaction: AppTransaction
+        switch result {
+        case .verified(let verified): transaction = verified
+        case .unverified: return false
+        }
+        return transaction.environment == .sandbox || transaction.environment == .xcode
+    }
 
     private var updatesTask: Task<Void, Never>?
 
@@ -60,6 +106,7 @@ final class EntitlementStore {
     }
 
     func start() async {
+        hasBetaAccess = await Self.qualifiesForBetaAccess()
         await refresh()
         await loadProducts()
     }

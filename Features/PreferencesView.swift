@@ -145,7 +145,8 @@ struct PreferencesView: View {
             HStack(spacing: 12) {
                 CorrespondenceMark().frame(width: 34, height: 34)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entitlements.isPro ? entitlements.plan.title : "Corres Pro").font(.body.weight(.semibold))
+                    Text(entitlements.plan != .none ? entitlements.plan.title
+                         : entitlements.isPro ? "Corres Pro · Beta" : "Corres Pro").font(.body.weight(.semibold))
                     Text(planStatus).font(.footnote).foregroundStyle(CorresPalette.secondary)
                 }
             }
@@ -167,10 +168,15 @@ struct PreferencesView: View {
                         await entitlements.presentRedeemSheet()
                     }
                 }
+            if EntitlementStore.isBetaBuild && entitlements.hasBetaAccess {
+                Toggle("Preview as free user", isOn: Bindable(entitlements).previewAsFree)
+            }
         } header: {
-            Text("Plan")
+            Text("Plan").accessibilityIdentifier(EntitlementStore.buildKind)
         } footer: {
-            if !entitlements.isPro {
+            if entitlements.isPro && entitlements.plan == .none {
+                Text("Pro is included while you test the beta. Preview as free user shows the app as it is without Pro.")
+            } else if !entitlements.isPro {
                 Text("Without Pro, Mail keeps working: read, reply, archive and search. Brief, Needs You, Waiting, Ask and the on-device intelligence need Pro.")
             }
         }
@@ -178,6 +184,8 @@ struct PreferencesView: View {
 
     private var planStatus: String {
         switch entitlements.plan {
+        case .none where entitlements.isPro:
+            return "Included for beta testers"
         case .none:
             if let monthly = entitlements.product(EntitlementStore.ProductID.monthly),
                let annual = entitlements.product(EntitlementStore.ProductID.annual) {

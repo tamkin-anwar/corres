@@ -88,4 +88,9 @@ swift test --build-path /tmp/corres-swift-build
 The separate build path avoids a code-signing quirk when the repository lives in a synced folder.
 
 ## Docs
+## Releasing
+
+- **TestFlight beta:** `Scripts/testflight.sh`. Beta builds include Pro for testers (`-D CORRES_BETA`, and only when installed from TestFlight or Xcode, never from the App Store).
+- **App Store:** `Scripts/appstore.sh`, and submit *that* build number for review. Never submit a TestFlight beta build: App Review runs in the sandbox too, so the reviewer would get free Pro and the review would be rejected. The script refuses to upload if the beta flag got in.
+
 [Product specification](Docs/Product.md) · [Architecture decisions](Docs/Architecture.md) · [Design system](Docs/Design.md) · [Research](Docs/Research.md) · [Verification record](Docs/Verification.md)
