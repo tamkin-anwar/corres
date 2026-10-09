@@ -66,11 +66,22 @@ final class EntitlementStore {
 
     func product(_ id: String) -> Product? { products.first { $0.id == id } }
 
+    /// Whether the last attempt to load the plans came back empty or
+    /// failed, so the paywall can say so and offer to try again instead
+    /// of spinning forever (no network, or the App Store not yet serving
+    /// the products).
+    private(set) var productsUnavailable = false
+    private(set) var isLoadingProducts = false
+
     func loadProducts() async {
-        guard products.isEmpty else { return }
+        guard products.isEmpty, !isLoadingProducts else { return }
+        isLoadingProducts = true
+        defer { isLoadingProducts = false }
+        productsUnavailable = false
         if let loaded = try? await Product.products(for: ProductID.all) {
             products = ProductID.all.compactMap { id in loaded.first { $0.id == id } }
         }
+        productsUnavailable = products.isEmpty
         if let annual = product(ProductID.annual), let subscription = annual.subscription {
             isEligibleForTrial = await subscription.isEligibleForIntroOffer
         }

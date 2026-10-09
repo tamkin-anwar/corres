@@ -91,7 +91,20 @@ struct PaywallView: View {
 
     @ViewBuilder
     private var plans: some View {
-        if entitlements.products.isEmpty {
+        if entitlements.products.isEmpty && entitlements.productsUnavailable {
+            VStack(spacing: 10) {
+                Text("Plans couldn't load")
+                    .font(.headline).foregroundStyle(CorresPalette.ink)
+                Text("Check your connection and try again.")
+                    .font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                Button("Try Again") { Task { await entitlements.loadProducts() } }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(CorresPalette.accent)
+                    .padding(.top, 4)
+            }
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, minHeight: 180)
+        } else if entitlements.products.isEmpty {
             ProgressView().frame(height: 180)
         } else {
             VStack(spacing: 10) {
