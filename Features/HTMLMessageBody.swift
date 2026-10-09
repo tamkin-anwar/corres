@@ -51,8 +51,13 @@ struct HTMLMessageBody: UIViewRepresentable {
         // sender made it, on its own white card, the way Mail does: forcing
         // light text onto it in Dark mode put white text on its white
         // tables. Only plain mail from people is adapted to Dark mode.
-        let designed = Self.analysis(of: html).isDesigned
-        webView.overrideUserInterfaceStyle = designed ? .light : (colorScheme == .dark ? .dark : .light)
+        // Designed mail that ships its own dark styles gets them, as Mail
+        // does; other designed mail is darkened by Corres's script when it
+        // can be done safely (`sizingScript`), otherwise kept on white.
+        let analysis = Self.analysis(of: html)
+        let designed = analysis.isDesigned
+        let dark = colorScheme == .dark
+        webView.overrideUserInterfaceStyle = designed && !analysis.hasOwnDarkMode ? .light : (dark ? .dark : .light)
         // Checked against the raw inputs, not the processed/wrapped output:
         // SwiftUI re-invokes updateUIView on any state change anywhere this
         // view observes (e.g. an unrelated background sync mutating
@@ -60,9 +65,11 @@ struct HTMLMessageBody: UIViewRepresentable {
         // changed. Guarding here first, before ever touching
         // blockingRemoteImages's regex work, means an unrelated re-render
         // costs nothing instead of re-running a full-body regex scan.
-        guard context.coordinator.lastHTML != html || context.coordinator.lastBlockRemoteImages != blockRemoteImages else { return }
+        guard context.coordinator.lastHTML != html || context.coordinator.lastBlockRemoteImages != blockRemoteImages
+              || context.coordinator.lastDark != dark else { return }
         context.coordinator.lastHTML = html
         context.coordinator.lastBlockRemoteImages = blockRemoteImages
+        context.coordinator.lastDark = dark
         // Invalidates any re-measurement still scheduled from a previous
         // load on this same (possibly pooled/reused) webview instance; see
         // Coordinator.loadGeneration.
@@ -83,7 +90,8 @@ struct HTMLMessageBody: UIViewRepresentable {
         // resolved (nothing is loaded from it; the page content comes
         // entirely from loadHTMLString), it exists only to give the page
         // a real https origin.
-        webView.loadHTMLString(Self.wrap(processed, adaptsToDark: !designed, load: context.coordinator.loadGeneration),
+        let kind: BodyKind = !designed ? .plain : analysis.hasOwnDarkMode ? .designedWithDarkMode : .designed
+        webView.loadHTMLString(Self.wrap(processed, kind: kind, dark: dark, load: context.coordinator.loadGeneration),
                                baseURL: Self.placeholderBaseURL)
     }
 
@@ -101,7 +109,7 @@ struct HTMLMessageBody: UIViewRepresentable {
     ///
     /// Size: re-measured on every change rather than a few times after
     /// loading, so late images, web fonts and Show Images all fit.
-    static let sizingScript = """
+    static let sizingScript = #"""
     (() => {
       const root = document.getElementById('corres-root');
       if (!root) return;
@@ -143,6 +151,152 @@ struct HTMLMessageBody: UIViewRepresentable {
         pending = true;
         requestAnimationFrame(measure);
       }
+      // MARK: Dark mode for designed mail
+      //
+      // Mail that sets its own look (white tables, grey text, a footer
+      // box) was shown on a white card in Dark mode. Like Mail, its
+      // colours are mapped instead: light backgrounds go dark, keeping
+      // their hue (white, the page itself, goes to Corres's background),
+      // and dark text inside them goes light. Anything already dark or
+      // strongly coloured (a black button, a yellow banner) keeps its own
+      // colours, and so does the text on it. Mail whose look depends on
+      // pictures is left on white: a transparent logo drawn for a white
+      // page would disappear on a dark one, and there's no way to tell
+      // from here which pictures are transparent.
+      function parse(value) {
+        const match = /rgba?\(([^)]+)\)/.exec(value || '');
+        if (!match) return null;
+        const parts = match[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+        if (parts.length < 3 || parts.some(isNaN)) return null;
+        return { r: parts[0] / 255, g: parts[1] / 255, b: parts[2] / 255, a: parts.length > 3 ? parts[3] : 1 };
+      }
+      function hsl(c) {
+        const max = Math.max(c.r, c.g, c.b), min = Math.min(c.r, c.g, c.b), l = (max + min) / 2;
+        let h = 0, s = 0;
+        if (max !== min) {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          h = max === c.r ? (c.g - c.b) / d + (c.g < c.b ? 6 : 0) : max === c.g ? (c.b - c.r) / d + 2 : (c.r - c.g) / d + 4;
+          h *= 60;
+        }
+        return { h, s, l };
+      }
+      function css(h, s, l, a) {
+        return 'hsla(' + h.toFixed(1) + ', ' + (s * 100).toFixed(1) + '%, ' + (l * 100).toFixed(1) + '%, ' + a + ')';
+      }
+      // A light background, darkened: white → 12%, light grey → a little lighter.
+      function darkBackground(c) {
+        const { h, s, l } = hsl(c);
+        return css(h, s * 0.5, Math.min(0.42, 0.12 + (1 - l)), c.a);
+      }
+      // Dark text, lightened: black → 93%, mid grey → about 72%.
+      function lightText(c) {
+        const { h, s, l } = hsl(c);
+        return css(h, s, 0.93 - l * 0.5, c.a);
+      }
+      const blockedPixel = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP';
+      function dependsOnPictures(elements) {
+        for (const element of elements) {
+          const tag = element.tagName;
+          if (tag === 'svg' || tag === 'CANVAS' || tag === 'VIDEO') return true;
+          if (tag === 'IMG') {
+            const src = element.getAttribute('src') || '';
+            if (src.startsWith(blockedPixel)) continue;           // not shown
+            if (/\.jpe?g(\?|#|$)|^data:image\/jpe?g/i.test(src)) continue; // photos are never transparent
+            const width = element.naturalWidth || Number(element.getAttribute('width')) || element.offsetWidth;
+            const height = element.naturalHeight || Number(element.getAttribute('height')) || element.offsetHeight;
+            if ((width && width <= 3) || (height && height <= 3)) continue; // tracking pixels
+            return true;
+          }
+          const style = getComputedStyle(element);
+          if (style.backgroundImage && style.backgroundImage !== 'none') return true;
+        }
+        return false;
+      }
+      function darken() {
+        const meta = document.querySelector('meta[name="corres-dark"]');
+        if (!meta || meta.content !== '1' || !root.classList.contains('designed') || root.classList.contains('own-dark')) return;
+        const elements = root.getElementsByTagName('*');
+        if (elements.length > 8000 || dependsOnPictures(elements)) return;
+        // Read everything first, then write, so the page is styled once.
+        const changes = [];
+        // An email's own <body> styles land on the real page (the parser
+        // merges a second <body> into the first): a light page colour
+        // there is the page itself, and goes to Corres's background too.
+        for (const element of [document.documentElement, document.body]) {
+          const background = parse(getComputedStyle(element).backgroundColor);
+          if (background && background.a > 0.05 && hsl(background).l >= 0.7) {
+            changes.push([element, 'background-color', 'transparent']);
+          }
+        }
+        const sides = ['top', 'right', 'bottom', 'left'];
+        // `onPage`: drawn straight on the page (no background of its own
+        // between it and the page). `mapped`: on a background Corres darkened.
+        (function visit(element, onPage, mapped) {
+          const style = getComputedStyle(element);
+          if (style.display === 'none') return;
+          const background = parse(style.backgroundColor);
+          if (background && background.a > 0.05) {
+            const { s, l } = hsl(background);
+            if (l >= 0.7) {
+              const value = onPage && l >= 0.97 && s < 0.15 ? 'transparent' : darkBackground(background);
+              changes.push([element, 'background-color', value]);
+              mapped = true; onPage = onPage && value === 'transparent';
+            } else {
+              mapped = false; onPage = false;
+            }
+          }
+          if (mapped) {
+            const color = parse(style.color);
+            if (color && hsl(color).l < 0.6) changes.push([element, 'color', lightText(color)]);
+            for (const side of sides) {
+              if (parseFloat(style.getPropertyValue('border-' + side + '-width')) > 0) {
+                const border = parse(style.getPropertyValue('border-' + side + '-color'));
+                if (border && border.a > 0.05 && hsl(border).l >= 0.7) {
+                  changes.push([element, 'border-' + side + '-color', darkBackground(border)]);
+                }
+              }
+            }
+          }
+          for (const child of element.children) visit(child, onPage, mapped);
+        })(root, true, true);
+        for (const [element, property, value] of changes) element.style.setProperty(property, value, 'important');
+        document.documentElement.classList.add('corres-dark');
+      }
+
+      // MARK: Margins for designed mail
+      //
+      // Mail from people gets Corres's page margin. Designed mail brings
+      // its own, anywhere from none (text against the screen's edge) to
+      // plenty, so it's measured: its text is moved in until it sits at
+      // least the page margin from the edge, and never further. A design
+      // wider than the screen, about to be shrunk to fit, gets a small
+      // margin so it doesn't touch the edges.
+      function fitMargins() {
+        if (!root.classList.contains('designed')) return;
+        const page = 20;
+        if (root.scrollWidth > root.clientWidth + 1) {
+          root.style.padding = '0 8px';
+          return;
+        }
+        const width = root.clientWidth;
+        let inset = page;
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const range = document.createRange();
+        for (let count = 0, node; (node = walker.nextNode()) && count < 400;) {
+          if (!node.data.trim()) continue;
+          count++;
+          range.selectNodeContents(node);
+          for (const rect of range.getClientRects()) {
+            if (rect.width < 1 || rect.height < 1) continue;
+            inset = Math.min(inset, rect.left, width - rect.right);
+          }
+          if (inset <= 0) break;
+        }
+        const padding = Math.max(0, Math.ceil(page - Math.max(0, inset)));
+        if (padding > 0) root.style.padding = '0 ' + padding + 'px';
+      }
+
       // Flight and tracking numbers iOS finds ("misc") do nothing when
       // tapped in a view like this, unlike addresses and phone numbers.
       // Turned into ordinary links carrying their text, so a tap reaches
@@ -156,6 +310,8 @@ struct HTMLMessageBody: UIViewRepresentable {
       function adoptAll() { root.querySelectorAll('a[x-apple-data-detectors-type="misc"]').forEach(adoptMisc); }
       new MutationObserver(adoptAll).observe(root, { childList: true, subtree: true });
       adoptAll();
+      darken();
+      fitMargins();
       window.corresMeasure = measure;
       new ResizeObserver(schedule).observe(root);
       document.addEventListener('load', schedule, true);
@@ -164,7 +320,7 @@ struct HTMLMessageBody: UIViewRepresentable {
       if (document.fonts) document.fonts.ready.then(schedule);
       measure();
     })();
-    """
+    """#
 
     /// How many `<img>` tags in `html` point at a remote http(s) URL, so a
     /// caller can show a "N images blocked" banner without needing its own
@@ -176,6 +332,7 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// long designed email stutter.
     struct Analysis {
         let isDesigned: Bool
+        let hasOwnDarkMode: Bool
         let remoteImages: Int
         let trackers: Int
     }
@@ -195,7 +352,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         let key = html as NSString
         if let cached = analysisCache.object(forKey: key) { return cached.value }
         let remote = remoteImageCount(in: html)
-        let value = Analysis(isDesigned: isDesigned(html), remoteImages: remote,
+        let value = Analysis(isDesigned: isDesigned(html), hasOwnDarkMode: hasOwnDarkMode(html), remoteImages: remote,
                              trackers: remote > 0 ? trackerCount(in: html) : 0)
         analysisCache.setObject(AnalysisBox(value), forKey: key)
         return value
@@ -309,6 +466,16 @@ struct HTMLMessageBody: UIViewRepresentable {
                    options: [.regularExpression, .caseInsensitive]) != nil
     }
 
+    /// Designed mail with its own Dark mode styles: a
+    /// `prefers-color-scheme: dark` rule, or a `color-scheme` that
+    /// includes dark.
+    static func hasOwnDarkMode(_ html: String) -> Bool {
+        html.range(of: #"prefers-color-scheme\s*:\s*dark|color-schemes?["']?\s*(content\s*=\s*["']|:)[^"';>]*dark"#,
+                   options: [.regularExpression, .caseInsensitive]) != nil
+    }
+
+    enum BodyKind { case plain, designed, designedWithDarkMode }
+
     /// Built directly for each kind of mail, never by editing the finished
     /// page: an earlier version removed the dark-mode rules from designed
     /// mail with a pattern that, when it missed its own rules, ran on into
@@ -324,23 +491,34 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// follow `overrideUserInterfaceStyle` in a `loadHTMLString` page on a
     /// real device. Designed mail is shown as its sender made it: light
     /// only, on white, in their colours.
-    private static func wrap(_ html: String, adaptsToDark: Bool = true, load: Int = 0) -> String {
-        let scheme = adaptsToDark
-            ? ":root { color-scheme: light dark; }"
-            : ":root { color-scheme: light only; } html, body { background: #FFFFFF !important; }"
-        let darkRules = adaptsToDark
-            ? "@media (prefers-color-scheme: dark) { body { color: #F2F3F5 !important; } a { color: #8FB4E8; } }"
-            : ""
-        return wrapAdaptive(html, load: load, scheme: scheme, darkRules: darkRules,
-                            rootClass: adaptsToDark ? "plain" : "designed")
+    private static func wrap(_ html: String, kind: BodyKind, dark: Bool, load: Int = 0) -> String {
+        let adaptiveRules = """
+            :root { color-scheme: light dark; }
+            @media (prefers-color-scheme: dark) { body { color: #F2F3F5 !important; } a { color: #8FB4E8; } }
+            """
+        let styles: String
+        switch kind {
+        case .plain, .designedWithDarkMode:
+            styles = adaptiveRules
+        case .designed:
+            // White until the script darkens it (`corres-dark`).
+            styles = """
+                :root { color-scheme: light only; }
+                html:not(.corres-dark), html:not(.corres-dark) body { background: #FFFFFF !important; }
+                html.corres-dark a[x-apple-data-detectors], html.corres-dark a[href^="https://mail.corres.app/detected"] {
+                  color: inherit !important; }
+                """
+        }
+        return wrapAdaptive(html, load: load, dark: dark, styles: styles,
+                            rootClass: kind == .plain ? "plain" : kind == .designed ? "designed" : "designed own-dark")
     }
 
-    private static func wrapAdaptive(_ html: String, load: Int, scheme: String, darkRules: String, rootClass: String) -> String {
+    private static func wrapAdaptive(_ html: String, load: Int, dark: Bool, styles: String, rootClass: String) -> String {
         """
         <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="corres-load" content="\(load)">
+        <meta name="corres-dark" content="\(dark ? 1 : 0)">
         <style>
-        \(scheme)
         body { font: -apple-system-body; font-size: 17px; line-height: 1.5; color: #141312 !important;
                margin: 0; padding: 0; -webkit-text-size-adjust: 100%;
                background: transparent; }
@@ -356,7 +534,8 @@ struct HTMLMessageBody: UIViewRepresentable {
            snippet) wraps instead of widening the whole message. */
         #corres-root { display: flow-root; overflow-wrap: break-word; box-sizing: border-box; }
         /* Mail from people lines up with the rest of the conversation
-           (CorresSpace.page); designed mail keeps its own edges. */
+           (CorresSpace.page). Designed mail gets margins from the sizing
+           script, measured against the email's own (`sizingScript`). */
         #corres-root.plain { padding: 0 20px; }
         pre { white-space: pre-wrap; }
         img { max-width: 100%; height: auto; }
@@ -367,7 +546,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         html, body { height: auto !important; min-height: 0 !important; }
         [height="100%"], [style*="height:100%"], [style*="height: 100%"], [style*="vh"] {
           height: auto !important; min-height: 0 !important; }
-        \(darkRules)
+        \(styles)
         </style></head><body><div id="corres-root" class="\(rootClass)">\(html)</div></body></html>
         """
     }
@@ -377,6 +556,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         var parent: HTMLMessageBody
         var lastHTML: String?
         var lastBlockRemoteImages: Bool?
+        var lastDark: Bool?
         init(_ parent: HTMLMessageBody) { self.parent = parent }
 
         /// A generation counter, bumped every time a fresh load starts

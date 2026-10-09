@@ -2,6 +2,18 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Email reading: margins and Dark mode for designed mail (October 8, 2026)
+
+Problem: a simple brand email (a Nomad promotion) sat against the screen's edges on a white block in Dark mode, while iOS Mail showed it with margins and dark. Designed mail (anything with a style sheet or colours) had no margin and was always kept on white.
+
+- Margins are measured, not fixed. The sizing script finds how far the email's own text sits from the edges and adds only what's needed to reach the 20pt page margin, so the text lines up with the header. Designs wider than the screen get 8px before being shrunk to fit.
+- Dark mode is mapped, like Mail. Light backgrounds go dark, keeping their hue, and the page's white becomes Corres's background. Dark text on them goes light. Strong or dark colours (a yellow banner, a black button) keep their own colours, and so does their text. The email's own `<body>` colour is included, because WebKit merges it into the real page.
+- Emails with their own Dark mode (`prefers-color-scheme: dark` or a `color-scheme` with dark) get their own styles.
+- Emails that depend on pictures stay on white: any image that isn't a JPEG photo or a tracking pixel, inline SVG, or CSS background images. A transparent logo drawn for white would vanish on dark, and the page can't tell which images are transparent.
+- Switching the app between light and dark now reloads the open email.
+
+Checked in the Simulator in Dark mode: a Nomad-style email, an order email with a yellow banner and black button, Lee Munroe's template (grey page from `<body>`), own-dark-mode, a PNG logo (stays white), Mailchimp and Cerberus (images, stay white), and a fixed 700px table (shrunk with margin). Also checked in light mode. Not yet seen on a real device with real mail.
+
 ## Email reading: links, addresses, pinch to zoom, summary accuracy (October 8, 2026)
 
 Reported: tapping a link in an email (a newsletter photo) did nothing; addresses should open Maps. Requested: pinch to zoom, and a fix for a summary that invented "Address change approved".
