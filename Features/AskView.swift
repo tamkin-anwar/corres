@@ -8,9 +8,9 @@ struct AskView: View {
     @FocusState private var focused: Bool
     @Environment(\.conversationSelection) private var splitSelection
 
-    private let suggestions = [
-        "When is my next flight?", "What did Maya ask me?", "Receipts this month", "Attachments from Oliver",
-    ]
+    /// Built from this person's own mail each time Ask opens (see
+    /// `AskService.suggestions`), so every one finds something.
+    @State private var suggestions: [String] = []
 
     var body: some View {
         ScrollView {
@@ -38,6 +38,7 @@ struct AskView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: ask.phase)
+        .onAppear { suggestions = ask.suggestions() }
     }
 
     private var field: some View {
@@ -76,8 +77,29 @@ struct AskView: View {
 
     private var suggestionList: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if !ask.recent.isEmpty {
+                HStack {
+                    Text("Recent").eyebrow()
+                    Spacer()
+                    Button("Clear") { ask.clearRecent() }.font(.footnote)
+                }
+                ForEach(ask.recent, id: \.self) { question in
+                    Button {
+                        text = question
+                        submit(question)
+                    } label: {
+                        Label(question, systemImage: "clock.arrow.circlepath")
+                            .labelStyle(TightLabelStyle())
+                            .font(.subheadline).foregroundStyle(CorresPalette.ink)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.bottom, 2)
+            }
             Text("Try").eyebrow()
-            ForEach(suggestions, id: \.self) { suggestion in
+            ForEach(suggestions.filter { !ask.recent.contains($0) }, id: \.self) { suggestion in
                 Button {
                     text = suggestion
                     submit(suggestion)
@@ -86,6 +108,9 @@ struct AskView: View {
                 }
                 .buttonStyle(CorresPillStyle())
             }
+            Text("Ask about a person (“from Sam”), files (“attachments”), receipts or packages, and a time (“this month”, “last week”).")
+                .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                .padding(.top, 4)
             Label(ask.canAnswer ? "Answered on this iPhone from your own mail. Nothing is sent to a server."
                                 : "Turn on Apple Intelligence for written answers. Until then, Ask finds the right emails.",
                   systemImage: "lock")
@@ -106,6 +131,11 @@ struct AskView: View {
 
     @ViewBuilder
     private var result: some View {
+        if let listTitle = ask.listTitle {
+            Label(listTitle, systemImage: ask.query?.wantsAttachments == true ? "paperclip" : "line.3.horizontal.decrease")
+                .labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
+                .padding(.horizontal, 4)
+        }
         if let answer = ask.answer {
             VStack(alignment: .leading, spacing: 10) {
                 Label(ask.answerFound ? "Answer · from \(ask.sources.count) \(ask.sources.count == 1 ? "email" : "emails")" : "Not found",
@@ -122,21 +152,23 @@ struct AskView: View {
         }
         if ask.sources.isEmpty {
             if ask.answer == nil {
-                Text("Nothing in your mail matched \u{201C}\(ask.question)\u{201D}.")
+                Text("Nothing in your mail matched \u{201C}\(ask.question)\u{201D}. Try a name, a company, or fewer words.")
                     .font(.subheadline).foregroundStyle(CorresPalette.secondary)
             }
         } else {
             VStack(alignment: .leading, spacing: 8) {
-                Text(ask.answer != nil && ask.answerFound ? "Sources" : "Closest matches").eyebrow().padding(.horizontal, 4)
+                if ask.listTitle == nil {
+                    Text(ask.answer != nil && ask.answerFound ? "Sources" : "Closest matches").eyebrow().padding(.horizontal, 4)
+                }
                 VStack(spacing: 0) {
                     let ids = ask.sources.map(\.id)
                     ForEach(Array(ask.sources.enumerated()), id: \.element.id) { index, source in
                         let route = ConversationRoute(id: source.id, orderedIDs: ids)
                         Group {
                             if let splitSelection {
-                                Button { splitSelection.wrappedValue = route } label: { CorrespondenceRow(thread: source.thread) }
+                                Button { splitSelection.wrappedValue = route } label: { sourceRow(source.thread) }
                             } else {
-                                NavigationLink(value: route) { CorrespondenceRow(thread: source.thread) }
+                                NavigationLink(value: route) { sourceRow(source.thread) }
                             }
                         }
                         .buttonStyle(CorresRowButtonStyle())
@@ -145,6 +177,23 @@ struct AskView: View {
                 }
                 .padding(.vertical, 4)
                 .corresSurface()
+            }
+        }
+    }
+
+    /// A source, with its files named when the question was about files.
+    private func sourceRow(_ thread: Correspondence) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            CorrespondenceRow(thread: thread)
+            if ask.query?.wantsAttachments == true, !thread.attachments.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(thread.attachments) { file in
+                        Label(file.filename, systemImage: "doc")
+                            .labelStyle(TightLabelStyle())
+                            .font(.footnote).foregroundStyle(CorresPalette.secondary).lineLimit(1)
+                    }
+                }
+                .padding(.leading, 77).padding(.trailing, 18).padding(.bottom, 12).padding(.top, -4)
             }
         }
     }
