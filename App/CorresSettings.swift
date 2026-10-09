@@ -154,6 +154,44 @@ enum CorresSettings {
 
     static var tabs: [Destination] { tabs(from: defaults.string(forKey: tabsKey) ?? "") }
 
+    /// Settings → Email Toolbar: the actions on the bar under an email, in
+    /// order. The rest are in its ⋯ menu; Reply stays beside the bar.
+    enum ReadingAction: String, CaseIterable, Identifiable {
+        case archive = "Archive", trash = "Trash", flag = "Flag", snooze = "Snooze",
+             unread = "Mark Unread", pin = "Pin", replyAll = "Reply All", forward = "Forward"
+        var id: String { rawValue }
+        var systemImage: String {
+            switch self {
+            case .archive: "archivebox"
+            case .trash: "trash"
+            case .flag: "flag"
+            case .snooze: "clock"
+            case .unread: "envelope.badge"
+            case .pin: "pin"
+            case .replyAll: "arrowshape.turn.up.left.2"
+            case .forward: "arrowshape.turn.up.right"
+            }
+        }
+    }
+
+    static let readingBarKey = "corres.readingBar"
+    static let defaultReadingBar: [ReadingAction] = [.archive, .trash, .flag, .snooze]
+    /// More than this crowds the bar on the smallest iPhones.
+    static let readingBarLimit = 5
+
+    static func readingBar(from raw: String) -> [ReadingAction] {
+        guard !raw.isEmpty else { return defaultReadingBar }
+        if raw == "-" { return [] }
+        var seen = Set<ReadingAction>()
+        return Array(raw.split(separator: ",").compactMap { ReadingAction(rawValue: String($0)) }
+            .filter { seen.insert($0).inserted }.prefix(readingBarLimit))
+    }
+
+    /// "-" stands for an empty bar, so it isn't mistaken for the default.
+    static func raw(for actions: [ReadingAction]) -> String {
+        actions.isEmpty ? "-" : actions.map(\.rawValue).joined(separator: ",")
+    }
+
     static let followUpDaysKey = "corres.followUpDays"
     static let followUpChoices = [1, 2, 3, 5, 7]
     static var followUpDays: Int { defaults.object(forKey: followUpDaysKey) as? Int ?? 3 }

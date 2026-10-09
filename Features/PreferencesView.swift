@@ -59,6 +59,11 @@ struct PreferencesView: View {
                         settingLabel("Tab Bar", "dock.rectangle")
                     }
                     NavigationLink {
+                        ReadingBarSettingsView()
+                    } label: {
+                        settingLabel("Email Toolbar", "ellipsis.rectangle")
+                    }
+                    NavigationLink {
                         SnippetSettingsView()
                     } label: {
                         settingLabel("Snippets", "text.badge.plus")
@@ -757,6 +762,71 @@ private struct TabBarSettingsView: View {
         .navigationTitle("Tab Bar")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: tabsRaw)
+    }
+}
+
+/// Settings → Email Toolbar: which actions sit on the bar under an email,
+/// in order, like Tab Bar. Everything else is one tap away in its ⋯ menu.
+private struct ReadingBarSettingsView: View {
+    @AppStorage(CorresSettings.readingBarKey) private var raw = ""
+    private typealias Action = CorresSettings.ReadingAction
+    private var actions: [Action] { CorresSettings.readingBar(from: raw) }
+    private var others: [Action] { Action.allCases.filter { !actions.contains($0) } }
+    private var isFull: Bool { actions.count >= CorresSettings.readingBarLimit }
+
+    private func save(_ actions: [Action]) { raw = CorresSettings.raw(for: actions) }
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(actions) { action in
+                    Label(action.rawValue, systemImage: action.systemImage)
+                }
+                .onMove { from, to in
+                    var updated = actions
+                    updated.move(fromOffsets: from, toOffset: to)
+                    save(updated)
+                }
+                .onDelete { offsets in
+                    var updated = actions
+                    updated.remove(atOffsets: offsets)
+                    save(updated)
+                }
+            } header: {
+                Text("On the bar")
+            } footer: {
+                Text("Drag to reorder, up to \(CorresSettings.readingBarLimit). Reply always stays beside the bar.")
+            }
+            Section {
+                ForEach(others) { action in
+                    Button {
+                        save(actions + [action])
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "plus.circle.fill").foregroundStyle(isFull ? CorresPalette.tertiary : .green)
+                            Label(action.rawValue, systemImage: action.systemImage).foregroundStyle(CorresPalette.ink)
+                        }
+                    }
+                    .disabled(isFull)
+                    .accessibilityLabel("Add \(action.rawValue)")
+                }
+            } header: {
+                Text("In the ⋯ menu")
+            } footer: {
+                Text(isFull ? "The bar is full. Remove one to add another." : "Still a tap away under ⋯ on the bar.")
+            }
+            Section {
+                Button("Reset to Default") { raw = "" }
+                    .disabled(actions == CorresSettings.defaultReadingBar)
+            }
+        }
+        .environment(\.editMode, .constant(.active))
+        .id(raw)
+        .scrollContentBackground(.hidden)
+        .background(CorresPalette.canvas)
+        .navigationTitle("Email Toolbar")
+        .navigationBarTitleDisplayMode(.inline)
+        .sensoryFeedback(.selection, trigger: raw)
     }
 }
 

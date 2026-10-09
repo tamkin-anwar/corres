@@ -618,17 +618,8 @@ struct ConversationView: View {
                 // The next conversation opens in its place (see the
                 // threadExists observer); the Gmail call happens in the
                 // background, the same as a swipe.
-                barButton("archivebox", "Archive") {
-                    Task { await threadActions.archive(thread, animated: false) }
-                }
-                barButton("trash", "Move to Trash") {
-                    requestTrash(thread)
-                }
-                barButton(thread.isFlagged ? "flag.fill" : "flag", thread.isFlagged ? "Unflag" : "Flag",
-                          tint: thread.isFlagged ? CorresPalette.flag : nil) {
-                    Task { await threadActions.setFlagged(!thread.isFlagged, for: thread) }
-                }
-                barButton("clock", "Snooze") { showingSnooze = true }
+                // Settings → Email Toolbar.
+                ForEach(readingBar) { action in barButton(action, for: thread) }
                 moreMenu(for: thread)
             }
             .frame(height: 56)
@@ -689,6 +680,39 @@ struct ConversationView: View {
         .accessibilityHidden(true)
     }
 
+    @AppStorage(CorresSettings.readingBarKey) private var readingBarRaw = ""
+    private var readingBar: [CorresSettings.ReadingAction] { CorresSettings.readingBar(from: readingBarRaw) }
+
+    /// An action's icon and name as it stands for this conversation
+    /// ("Unflag" once flagged).
+    private func appearance(of action: CorresSettings.ReadingAction, for thread: Correspondence) -> (icon: String, title: String, tint: Color?) {
+        switch action {
+        case .flag: thread.isFlagged ? ("flag.fill", "Unflag", CorresPalette.flag) : ("flag", "Flag", nil)
+        case .unread: thread.isUnread ? ("envelope.open", "Mark as Read", nil) : ("envelope.badge", "Mark as Unread", nil)
+        case .pin: thread.isPinned ? ("pin.fill", "Unpin", nil) : ("pin", "Pin", nil)
+        case .trash: ("trash", "Move to Trash", nil)
+        default: (action.systemImage, action.rawValue, nil)
+        }
+    }
+
+    private func perform(_ action: CorresSettings.ReadingAction, on thread: Correspondence) {
+        switch action {
+        case .archive: Task { await threadActions.archive(thread, animated: false) }
+        case .trash: requestTrash(thread)
+        case .flag: Task { await threadActions.setFlagged(!thread.isFlagged, for: thread) }
+        case .snooze: showingSnooze = true
+        case .unread: Task { await threadActions.setUnread(!thread.isUnread, for: thread) }
+        case .pin: Task { await store.setPinned(!thread.isPinned, for: thread.id) }
+        case .replyAll: compose(.replyAll, from: thread)
+        case .forward: compose(.forward, from: thread)
+        }
+    }
+
+    private func barButton(_ action: CorresSettings.ReadingAction, for thread: Correspondence) -> some View {
+        let look = appearance(of: action, for: thread)
+        return barButton(look.icon, look.title, tint: look.tint) { perform(action, on: thread) }
+    }
+
     private func barButton(_ systemImage: String, _ label: String, tint: Color? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
@@ -703,14 +727,15 @@ struct ConversationView: View {
 
     private func moreMenu(for thread: Correspondence) -> some View {
         Menu {
-            Button { Task { await threadActions.setUnread(!thread.isUnread, for: thread) } } label: {
-                Label(thread.isUnread ? "Mark as Read" : "Mark as Unread",
-                      systemImage: thread.isUnread ? "envelope.open" : "envelope.badge")
+            // Whatever isn't on the bar (Settings → Email Toolbar). Pin is
+            // Corres-only "keep at top"; Flag syncs with iOS Mail and Gmail.
+            ForEach(CorresSettings.ReadingAction.allCases.filter { !readingBar.contains($0) }) { action in
+                let look = appearance(of: action, for: thread)
+                Button(role: action == .trash ? .destructive : nil) { perform(action, on: thread) } label: {
+                    Label(look.title, systemImage: look.icon)
+                }
             }
-            // Pin is Corres-only "keep at top"; Flag syncs with iOS Mail and Gmail.
-            Button { Task { await store.setPinned(!thread.isPinned, for: thread.id) } } label: {
-                Label(thread.isPinned ? "Unpin" : "Pin", systemImage: thread.isPinned ? "pin.slash" : "pin")
-            }
+            Divider()
             if let email = thread.senderEmail, !thread.isFromAccountOwner {
                 let isVIP = InboxClassifier.isVIP(email)
                 Button {
@@ -742,9 +767,6 @@ struct ConversationView: View {
                     }
                 } label: { Label("Labels", systemImage: "tag") }
             }
-            Divider()
-            Button { compose(.replyAll, from: thread) } label: { Label("Reply All", systemImage: "arrowshape.turn.up.left.2") }
-            Button { compose(.forward, from: thread) } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.body.weight(.semibold))
