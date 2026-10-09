@@ -773,6 +773,10 @@ private struct ReadingBarSettingsView: View {
     private var actions: [Action] { CorresSettings.readingBar(from: raw) }
     private var others: [Action] { Action.allCases.filter { !actions.contains($0) } }
     private var isFull: Bool { actions.count >= CorresSettings.readingBarLimit }
+    private var groups: [String] {
+        var seen = Set<String>()
+        return others.map(\.group).filter { seen.insert($0).inserted }
+    }
 
     private func save(_ actions: [Action]) { raw = CorresSettings.raw(for: actions) }
 
@@ -797,23 +801,27 @@ private struct ReadingBarSettingsView: View {
             } footer: {
                 Text("Drag to reorder, up to \(CorresSettings.readingBarLimit). Reply always stays beside the bar.")
             }
-            Section {
-                ForEach(others) { action in
-                    Button {
-                        save(actions + [action])
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "plus.circle.fill").foregroundStyle(isFull ? CorresPalette.tertiary : .green)
-                            Label(action.rawValue, systemImage: action.systemImage).foregroundStyle(CorresPalette.ink)
+            ForEach(groups, id: \.self) { group in
+                Section {
+                    ForEach(others.filter { $0.group == group }) { action in
+                        Button {
+                            save(actions + [action])
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "plus.circle.fill").foregroundStyle(isFull ? CorresPalette.tertiary : .green)
+                                Label(action.rawValue, systemImage: action.systemImage).foregroundStyle(CorresPalette.ink)
+                            }
                         }
+                        .disabled(isFull)
+                        .accessibilityLabel("Add \(action.rawValue)")
                     }
-                    .disabled(isFull)
-                    .accessibilityLabel("Add \(action.rawValue)")
+                } header: {
+                    Text(group == groups.first ? "In the ⋯ menu · \(group)" : group)
+                } footer: {
+                    if group == groups.last {
+                        Text(isFull ? "The bar is full. Remove one to add another." : "Still a tap away under ⋯ on the bar. An action that doesn't apply to an email (Unsubscribe without a list, Add to Calendar without an event) is dimmed on the bar.")
+                    }
                 }
-            } header: {
-                Text("In the ⋯ menu")
-            } footer: {
-                Text(isFull ? "The bar is full. Remove one to add another." : "Still a tap away under ⋯ on the bar.")
             }
             Section {
                 Button("Reset to Default") { raw = "" }

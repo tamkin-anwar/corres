@@ -69,7 +69,7 @@ struct CalendarSuggestionCard: View {
     }
 }
 
-private struct NewEventSheet: UIViewControllerRepresentable {
+struct NewEventSheet: UIViewControllerRepresentable {
     let event: EventSuggestion
     let sender: String
     let onFinish: (Bool) -> Void

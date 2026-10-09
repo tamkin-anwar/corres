@@ -26,7 +26,12 @@ final class ThreadActionService {
         self.auth = auth
     }
 
-    enum RemovalKind { case archive, trash }
+    enum RemovalKind {
+        case archive, trash, spam
+        var systemImage: String {
+            switch self { case .archive: "archivebox"; case .trash: "trash"; case .spam: "xmark.bin" }
+        }
+    }
 
     /// An Archive or Trash waiting out its Undo window. The conversation is
     /// already gone from view; Gmail hears about it only once the window
@@ -38,8 +43,11 @@ final class ThreadActionService {
         let kind: RemovalKind
         var thread: Correspondence { threads[0] }
         var title: String {
-            let verb = kind == .archive ? "Archived" : "Deleted"
-            return threads.count == 1 ? (kind == .archive ? "Archived" : "Moved to Trash") : "\(verb) \(threads.count)"
+            switch kind {
+            case .archive: return threads.count == 1 ? "Archived" : "Archived \(threads.count)"
+            case .trash: return threads.count == 1 ? "Moved to Trash" : "Deleted \(threads.count)"
+            case .spam: return threads.count == 1 ? "Reported as spam" : "Reported \(threads.count) as spam"
+            }
         }
     }
 
@@ -54,6 +62,9 @@ final class ThreadActionService {
     func trash(_ thread: Correspondence, animated: Bool = true) async { await queueRemoval([thread], kind: .trash, animated: animated) }
     func archive(_ threads: [Correspondence]) async { await queueRemoval(threads, kind: .archive) }
     func trash(_ threads: [Correspondence]) async { await queueRemoval(threads, kind: .trash) }
+    /// Out of the inbox and into Spam, which also teaches the provider's
+    /// filter. Undo works like Archive's.
+    func reportSpam(_ thread: Correspondence, animated: Bool = true) async { await queueRemoval([thread], kind: .spam, animated: animated) }
 
     /// Undo puts the conversation back exactly where it was.
     func undoRemoval() {
@@ -137,6 +148,11 @@ final class ThreadActionService {
         case .trash:
             await perform(thread, failureMessage: "Could not move this conversation to Trash. Please try again.", gmailCall: {
                 try await self.client.trashThread(threadId: thread.id.providerID, account: thread.id.account)
+            }, local: { await self.store.remove(thread.id) })
+        case .spam:
+            await perform(thread, failureMessage: "Could not report this conversation as spam. Please try again.", gmailCall: {
+                try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: ["SPAM"],
+                                                   removeLabelIds: ["INBOX"], account: thread.id.account)
             }, local: { await self.store.remove(thread.id) })
         }
         // Removed for good on success; back in view if Gmail refused.

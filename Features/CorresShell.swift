@@ -245,7 +245,7 @@ struct CorresShell: View {
             // email, the rows beside it stay swipeable, the list makes room
             // below (see CorrespondenceList), and a flick down sends it now.
             HStack(spacing: 10) {
-                Image(systemName: removal.kind == .archive ? "archivebox" : "trash")
+                Image(systemName: removal.kind.systemImage)
                     .foregroundStyle(CorresPalette.secondary)
                 Text(removal.title).font(.subheadline.weight(.medium))
                 Button("Undo") { threadActions.undoRemoval() }

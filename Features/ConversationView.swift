@@ -1,4 +1,5 @@
 import QuickLook
+import Translation
 import SwiftUI
 
 /// A conversation plus the ordered list of ids it was opened from (a Brief
@@ -165,6 +166,25 @@ struct ConversationView: View {
                         Task { await store.snooze(thread.id, until: date) }
                     }
                 }
+                .confirmationDialog("Block \(thread.sender)?",
+                                    isPresented: Binding(get: { confirmingBlock != nil }, set: { if !$0 { confirmingBlock = nil } }),
+                                    titleVisibility: .visible) {
+                    Button("Block", role: .destructive) {
+                        if let blocked = confirmingBlock, let email = blocked.senderEmail {
+                            Task { await store.blockSender(email, account: blocked.id.account) }
+                        }
+                        confirmingBlock = nil
+                    }
+                } message: {
+                    Text("Their mail is hidden in Corres from now on, with no notice to them. Your Gmail account isn't changed.")
+                }
+                .sheet(isPresented: $addingEvent) {
+                    if let calendarEvent {
+                        NewEventSheet(event: calendarEvent, sender: thread.sender) { _ in }
+                            .ignoresSafeArea()
+                    }
+                }
+                .modifier(TranslateSheet(isPresented: $showingTranslation, text: Self.plainText(of: thread)))
                 .confirmationDialog("Unsubscribe from \(thread.sender)?", isPresented: $showingUnsubscribeConfirmation, titleVisibility: .visible) {
                     Button("Unsubscribe", role: .destructive) {
                         Task {
@@ -691,7 +711,26 @@ struct ConversationView: View {
         case .unread: thread.isUnread ? ("envelope.open", "Mark as Read", nil) : ("envelope.badge", "Mark as Unread", nil)
         case .pin: thread.isPinned ? ("pin.fill", "Unpin", nil) : ("pin", "Pin", nil)
         case .trash: ("trash", "Move to Trash", nil)
+        case .vip:
+            thread.senderEmail.map(InboxClassifier.isVIP) == true
+                ? ("star.slash", "Remove from VIPs", nil) : ("star", "Add \(thread.sender) to VIPs", nil)
+        case .block: ("hand.raised", "Block \(thread.sender)", nil)
         default: (action.systemImage, action.rawValue, nil)
+        }
+    }
+
+    /// Whether an action applies to this email. On the bar an action that
+    /// doesn't is dimmed, so the bar keeps its shape; in ⋯ it's left out.
+    private func isAvailable(_ action: CorresSettings.ReadingAction, for thread: Correspondence) -> Bool {
+        let fromSomeoneElse = thread.senderEmail != nil && !thread.isFromAccountOwner
+        switch action {
+        case .labels: return !labelDirectory.labels(for: thread.id.account).isEmpty
+        case .vip, .block: return fromSomeoneElse
+        case .unsubscribe: return unsubscribeService.canUnsubscribe(thread) && !thread.senderUnsubscribed
+        case .calendar: return calendarEvent != nil && !thread.isFromAccountOwner
+        case .spam: return !thread.isFromAccountOwner
+        case .translate: if #available(iOS 17.4, *) { return true } else { return false }
+        default: return true
         }
     }
 
@@ -705,12 +744,102 @@ struct ConversationView: View {
         case .pin: Task { await store.setPinned(!thread.isPinned, for: thread.id) }
         case .replyAll: compose(.replyAll, from: thread)
         case .forward: compose(.forward, from: thread)
+        case .spam: Task { await threadActions.reportSpam(thread, animated: false) }
+        case .block: confirmingBlock = thread
+        case .unsubscribe: showingUnsubscribeConfirmation = true
+        case .vip:
+            if let email = thread.senderEmail {
+                Task { await store.setVIP(email, account: thread.id.account, isVIP: !InboxClassifier.isVIP(email)) }
+            }
+        case .calendar: addingEvent = calendarEvent != nil
+        case .share: Self.share(thread)
+        case .print: Self.print(thread)
+        case .translate: showingTranslation = true
+        case .moveTo, .labels: break // menus; see `menuContent`
         }
     }
 
+    /// Move to and Labels open a menu wherever they are.
+    @ViewBuilder
+    private func menuContent(_ action: CorresSettings.ReadingAction, for thread: Correspondence) -> some View {
+        if action == .moveTo {
+            ForEach(Attention.allCases, id: \.self) { attention in
+                Button {
+                    Task { await store.update(thread.id, to: attention) }
+                } label: {
+                    if thread.attention == attention { Label(attention.title, systemImage: "checkmark") }
+                    else { Text(attention.title) }
+                }
+            }
+        } else {
+            ForEach(labelDirectory.labels(for: thread.id.account)) { label in
+                let isOn = thread.labelIds.contains(label.id)
+                Button {
+                    Task { await threadActions.toggleLabel(label.id, isOn: !isOn, for: thread) }
+                } label: {
+                    if isOn { Label(label.name, systemImage: "checkmark") } else { Text(label.name) }
+                }
+            }
+        }
+    }
+
+    @State private var confirmingBlock: Correspondence?
+    @State private var addingEvent = false
+    @State private var showingTranslation = false
+
+    /// The email as plain text, for Share and Translate.
+    private static func plainText(of thread: Correspondence) -> String {
+        MailDigest.readableText(body: thread.body, html: thread.htmlBody)
+    }
+
+    private static func share(_ thread: Correspondence) {
+        let text = "\(thread.subject)\nFrom: \(thread.sender)\(thread.senderEmail.map { " <\($0)>" } ?? "")\n\n\(plainText(of: thread))"
+        let sheet = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+        topViewController()?.present(sheet, animated: true)
+    }
+
+    /// iOS's own print sheet (AirPrint, or Save to PDF from there).
+    private static func print(_ thread: Correspondence) {
+        let body = thread.htmlBody ?? "<pre style=\"white-space: pre-wrap; font: -apple-system-body\">"
+            + thread.body.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;") + "</pre>"
+        let header = "<h2 style=\"font-family: -apple-system\">\(thread.subject.replacingOccurrences(of: "<", with: "&lt;"))</h2>"
+        let controller = UIPrintInteractionController.shared
+        let info = UIPrintInfo.printInfo()
+        info.jobName = thread.subject
+        info.outputType = .general
+        controller.printInfo = info
+        controller.printFormatter = UIMarkupTextPrintFormatter(markupText: header + body)
+        controller.present(animated: true)
+    }
+
+    private static func topViewController() -> UIViewController? {
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+        var top = scene?.keyWindow?.rootViewController
+        while let presented = top?.presentedViewController { top = presented }
+        return top
+    }
+
+    @ViewBuilder
     private func barButton(_ action: CorresSettings.ReadingAction, for thread: Correspondence) -> some View {
         let look = appearance(of: action, for: thread)
-        return barButton(look.icon, look.title, tint: look.tint) { perform(action, on: thread) }
+        let available = isAvailable(action, for: thread)
+        if action == .moveTo || action == .labels {
+            Menu { menuContent(action, for: thread) } label: {
+                Image(systemName: look.icon)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(CorresPalette.ink)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .contentShape(Rectangle())
+            }
+            .disabled(!available)
+            .opacity(available ? 1 : 0.35)
+            .accessibilityLabel(look.title)
+        } else {
+            barButton(look.icon, look.title, tint: look.tint) { perform(action, on: thread) }
+                .disabled(!available)
+                .opacity(available ? 1 : 0.35)
+        }
     }
 
     private func barButton(_ systemImage: String, _ label: String, tint: Color? = nil, action: @escaping () -> Void) -> some View {
@@ -729,43 +858,15 @@ struct ConversationView: View {
         Menu {
             // Whatever isn't on the bar (Settings → Email Toolbar). Pin is
             // Corres-only "keep at top"; Flag syncs with iOS Mail and Gmail.
-            ForEach(CorresSettings.ReadingAction.allCases.filter { !readingBar.contains($0) }) { action in
+            ForEach(CorresSettings.ReadingAction.allCases.filter { !readingBar.contains($0) && isAvailable($0, for: thread) }) { action in
                 let look = appearance(of: action, for: thread)
-                Button(role: action == .trash ? .destructive : nil) { perform(action, on: thread) } label: {
-                    Label(look.title, systemImage: look.icon)
-                }
-            }
-            Divider()
-            if let email = thread.senderEmail, !thread.isFromAccountOwner {
-                let isVIP = InboxClassifier.isVIP(email)
-                Button {
-                    Task { await store.setVIP(email, account: thread.id.account, isVIP: !isVIP) }
-                } label: {
-                    Label(isVIP ? "Remove from VIPs" : "Add \(thread.sender) to VIPs", systemImage: isVIP ? "star.slash" : "star")
-                }
-            }
-            Menu {
-                ForEach(Attention.allCases, id: \.self) { attention in
-                    Button {
-                        Task { await store.update(thread.id, to: attention) }
-                    } label: {
-                        if thread.attention == attention { Label(attention.title, systemImage: "checkmark") }
-                        else { Text(attention.title) }
+                if action == .moveTo || action == .labels {
+                    Menu { menuContent(action, for: thread) } label: { Label(look.title, systemImage: look.icon) }
+                } else {
+                    Button(role: [.trash, .spam, .block].contains(action) ? .destructive : nil) { perform(action, on: thread) } label: {
+                        Label(look.title, systemImage: look.icon)
                     }
                 }
-            } label: { Label("Move to", systemImage: "arrow.up.and.down.text.horizontal") }
-            let accountLabels = labelDirectory.labels(for: thread.id.account)
-            if !accountLabels.isEmpty {
-                Menu {
-                    ForEach(accountLabels) { label in
-                        let isOn = thread.labelIds.contains(label.id)
-                        Button {
-                            Task { await threadActions.toggleLabel(label.id, isOn: !isOn, for: thread) }
-                        } label: {
-                            if isOn { Label(label.name, systemImage: "checkmark") } else { Text(label.name) }
-                        }
-                    }
-                } label: { Label("Labels", systemImage: "tag") }
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -881,5 +982,19 @@ enum SnoozeOption: CaseIterable {
         case .nextWeek: "next week"
         }
         return TimePhrase.parse(phrase, now: now) ?? now.addingTimeInterval(86_400)
+    }
+}
+
+/// Apple's on-device translation sheet (iOS 17.4 and later).
+private struct TranslateSheet: ViewModifier {
+    @Binding var isPresented: Bool
+    let text: String
+
+    func body(content: Content) -> some View {
+        if #available(iOS 17.4, *) {
+            content.translationPresentation(isPresented: $isPresented, text: text)
+        } else {
+            content
+        }
     }
 }

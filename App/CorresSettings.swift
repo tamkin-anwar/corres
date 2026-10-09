@@ -158,7 +158,10 @@ enum CorresSettings {
     /// order. The rest are in its ⋯ menu; Reply stays beside the bar.
     enum ReadingAction: String, CaseIterable, Identifiable {
         case archive = "Archive", trash = "Trash", flag = "Flag", snooze = "Snooze",
-             unread = "Mark Unread", pin = "Pin", replyAll = "Reply All", forward = "Forward"
+             unread = "Mark Unread", pin = "Pin", replyAll = "Reply All", forward = "Forward",
+             moveTo = "Move to", labels = "Labels", spam = "Report Spam", block = "Block Sender",
+             unsubscribe = "Unsubscribe", vip = "VIP", calendar = "Add to Calendar",
+             share = "Share", print = "Print", translate = "Translate"
         var id: String { rawValue }
         var systemImage: String {
             switch self {
@@ -170,6 +173,26 @@ enum CorresSettings {
             case .pin: "pin"
             case .replyAll: "arrowshape.turn.up.left.2"
             case .forward: "arrowshape.turn.up.right"
+            case .moveTo: "arrow.up.and.down.text.horizontal"
+            case .labels: "tag"
+            case .spam: "xmark.bin"
+            case .block: "hand.raised"
+            case .unsubscribe: "envelope.badge.shield.half.filled"
+            case .vip: "star"
+            case .calendar: "calendar.badge.plus"
+            case .share: "square.and.arrow.up"
+            case .print: "printer"
+            case .translate: "translate"
+            }
+        }
+
+        /// Grouped in Settings so the long list reads as kinds of action.
+        var group: String {
+            switch self {
+            case .archive, .trash, .flag, .snooze, .unread, .pin: "Everyday"
+            case .replyAll, .forward, .share, .print: "Send and share"
+            case .moveTo, .labels, .vip, .calendar, .translate: "Organize"
+            case .spam, .block, .unsubscribe: "Unwanted mail"
             }
         }
     }
