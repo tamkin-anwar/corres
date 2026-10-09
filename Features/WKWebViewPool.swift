@@ -2,9 +2,8 @@ import WebKit
 
 /// A small pool of reusable `WKWebView` instances, shared across every
 /// `HTMLMessageBody` on screen. Researched, not assumed: creating a fresh
-/// WKWebView is one of the heaviest actions an app can take on iOS, since
-/// each instance not sharing a `WKProcessPool` can spin up several of its
-/// own OS processes; reusing an existing instance (clearing and reloading
+/// WKWebView is one of the heaviest actions an app can take on iOS (its
+/// web content process and setup); reusing an existing instance (clearing and reloading
 /// content, not deleting and recreating) is the established fix. This is
 /// the cost that remains after `prewarm()` addresses the very first
 /// cold start: every conversation opened after that also borrows an
@@ -17,7 +16,6 @@ final class WKWebViewPool {
     /// Each webview's route for its email's size reports, retargeted to
     /// whichever message borrows it (see `HTMLMessageBody.sizingScript`).
     private var routers: [ObjectIdentifier: SizeMessageRouter] = [:]
-    private let processPool = WKProcessPool()
     private let poolSize = 2
 
     private init() {}
@@ -77,7 +75,6 @@ final class WKWebViewPool {
 
     private func makeWebView() -> WKWebView {
         let configuration = WKWebViewConfiguration()
-        configuration.processPool = processPool
         configuration.defaultWebpagePreferences.allowsContentJavaScript = false
         // Addresses, phone numbers, dates, flights, tracking numbers and
         // bare web addresses in the text become tappable, found on this

@@ -750,6 +750,8 @@ struct CorrespondenceList: View {
     /// requested interaction model, not an oversight.
     private func conversationRows(_ threads: [Correspondence]) -> some View {
         let orderedIDs = rows.ids
+        // Read here, on the main actor; the guide's closure isn't.
+        let separatorInset: CGFloat = showAvatarsInList ? 77 : 25
         return ForEach(threads) { thread in
             PremiumSwipeRow(
                 leadingShort: isSelecting ? nil : leadingVisual(for: leadingShortAction, thread: thread),
@@ -793,7 +795,7 @@ struct CorrespondenceList: View {
             .listRowSeparator(.visible)
             .listRowSeparatorTint(CorresPalette.line)
             .listRowBackground(splitSelection?.wrappedValue?.id == thread.id ? CorresPalette.accent.opacity(0.12) : Color.clear)
-            .alignmentGuide(.listRowSeparatorLeading) { _ in showAvatarsInList ? 77 : 25 }
+            .alignmentGuide(.listRowSeparatorLeading) { [separatorInset] _ in separatorInset }
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { rowFrames.frames[thread.id] = $0 }
             .onAppear {
                 if pagesOlderMail, thread.id == results.last?.id { loadOlderMail() }

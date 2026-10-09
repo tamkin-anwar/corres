@@ -308,6 +308,7 @@ private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
 }
 
 /// iOS 17: SwiftUI's drag, locked to whichever axis dominates first.
+@MainActor
 private struct LegacyDrag {
     let isEnabled: Bool
     let changed: (CGFloat) -> Void

@@ -132,7 +132,7 @@ final class GmailSyncService {
             let (plan, isFullListing) = try await planSync(account: account)
             var stillMissing = Set<String>()
 
-            for (index, chunk) in plan.messageIDs.chunked(into: GmailAPIClient.batchSize).enumerated() {
+            for chunk in plan.messageIDs.chunked(into: GmailAPIClient.batchSize) {
                 let fetched = try await client.fetchMetadata(ids: chunk, account: account)
                 stillMissing.formUnion(fetched.failedIDs)
                 try await repository.upsert(fetched.items, isInitialSync: isFullListing)
@@ -211,7 +211,7 @@ final class GmailSyncService {
             .prefix(Self.backfillLimit)
         for (account, accountThreads) in Dictionary(grouping: pending, by: \.id.account) {
             let ids = accountThreads.compactMap(\.latestMessageID)
-            for (index, chunk) in ids.chunked(into: GmailAPIClient.batchSize).enumerated() {
+            for chunk in ids.chunked(into: GmailAPIClient.batchSize) {
                 guard let fetched = try? await client.fetchFull(ids: chunk, account: account) else { break }
                 if (try? await repository.applyLoadedContent(fetched.items)) ?? 0 > 0 { syncProgress += 1 }
             }
@@ -243,7 +243,7 @@ final class GmailSyncService {
                     pageToken = page.nextPageToken
                     pagesScanned += 1
                 } while newIDs.isEmpty && pageToken != nil && pagesScanned < Self.maxOlderPagesScanned
-                for (index, chunk) in newIDs.chunked(into: GmailAPIClient.batchSize).enumerated() {
+                for chunk in newIDs.chunked(into: GmailAPIClient.batchSize) {
                     let fetched = try await client.fetchMetadata(ids: chunk, account: account)
                     // Older mail predates anything the Screener should hold.
                     try await repository.upsert(fetched.items, isInitialSync: true)
