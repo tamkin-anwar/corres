@@ -30,7 +30,10 @@ xcodebuild -project Corres.xcodeproj -scheme Corres -configuration Release \
   -allowProvisioningUpdates archive -quiet
 
 BIN="$ARCHIVE/Products/Applications/Corres.app/Corres"
-if strings "$BIN" | grep -q CORRES_BETA_BUILD || ! strings "$BIN" | grep -q CORRES_APPSTORE_BUILD; then
+# Read in full, not `grep -q`: with pipefail, -q stopping early reads as
+# "not found", which here would have let a beta build through.
+markers=$(strings "$BIN" | grep -o 'CORRES_[A-Z]*_BUILD' | sort -u | tr '\n' ' ')
+if [[ "$markers" == *CORRES_BETA_BUILD* || "$markers" != *CORRES_APPSTORE_BUILD* ]]; then
   echo "Stopped: this build isn't a clean App Store build (beta Pro would be included). Nothing was uploaded."
   sed -i '' "s/CURRENT_PROJECT_VERSION = $next;/CURRENT_PROJECT_VERSION = $current;/g" "$PBX"
   exit 1

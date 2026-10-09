@@ -30,7 +30,10 @@ xcodebuild -project Corres.xcodeproj -scheme Corres -configuration Release \
   OTHER_SWIFT_FLAGS='$(inherited) -D CORRES_BETA'
 
 BIN="$ARCHIVE/Products/Applications/Corres.app/Corres"
-if ! strings "$BIN" | grep -q CORRES_BETA_BUILD; then
+# Read in full, not `grep -q`: with pipefail, -q stopping early made the
+# pipeline report failure even when the marker was there.
+markers=$(strings "$BIN" | grep -o 'CORRES_[A-Z]*_BUILD' | sort -u | tr '\n' ' ')
+if [[ "$markers" != *CORRES_BETA_BUILD* ]]; then
   echo "Stopped: the beta flag isn't in this build, so testers would be locked out of Pro. Nothing was uploaded."
   exit 1
 fi
