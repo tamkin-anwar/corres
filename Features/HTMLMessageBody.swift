@@ -143,6 +143,19 @@ struct HTMLMessageBody: UIViewRepresentable {
         pending = true;
         requestAnimationFrame(measure);
       }
+      // Flight and tracking numbers iOS finds ("misc") do nothing when
+      // tapped in a view like this, unlike addresses and phone numbers.
+      // Turned into ordinary links carrying their text, so a tap reaches
+      // Corres (`Coordinator.detectedItemPath`).
+      function adoptMisc(link) {
+        if (link.getAttribute('x-apple-data-detectors-type') !== 'misc') return;
+        const text = link.innerText.trim();
+        link.removeAttribute('x-apple-data-detectors');
+        link.setAttribute('href', 'https://mail.corres.app/detected?text=' + encodeURIComponent(text));
+      }
+      function adoptAll() { root.querySelectorAll('a[x-apple-data-detectors-type="misc"]').forEach(adoptMisc); }
+      new MutationObserver(adoptAll).observe(root, { childList: true, subtree: true });
+      adoptAll();
       window.corresMeasure = measure;
       new ResizeObserver(schedule).observe(root);
       document.addEventListener('load', schedule, true);
@@ -374,6 +387,8 @@ struct HTMLMessageBody: UIViewRepresentable {
         /// with a late measurement of the previous one's.
         var loadGeneration = 0
 
+        static let detectedItemPath = "/detected"
+
         /// Load numbers unique across every message, not per view: a
         /// reused webview can still deliver a late report from the previous
         /// message's page, and a per-view count would let it pass as this
@@ -525,6 +540,12 @@ struct HTMLMessageBody: UIViewRepresentable {
                 await openDetected(url, in: webView)
                 return .cancel
             }
+            // A flight or tracking number (see `sizingScript`).
+            if url.host == HTMLMessageBody.placeholderBaseURL?.host, url.path == Self.detectedItemPath,
+               let text = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "text" })?.value {
+                if let target = DetectedItems.destination(forMisc: text) { LinkOpener.open(target) }
+                return .cancel
+            }
             // An embedded frame loading itself, or a jump within the email
             // ("#top"): nothing to open.
             let isSubframeLoad = navigationAction.targetFrame.map { !$0.isMainFrame } ?? false
@@ -547,7 +568,8 @@ struct HTMLMessageBody: UIViewRepresentable {
         }
 
         /// Where a detected item goes: an address to Maps, a phone number
-        /// to a call, a date to that day in Calendar.
+        /// to a call, a date to that day in Calendar, a flight to its
+        /// status, a parcel to its carrier's tracking page.
         static func destination(forDetected type: String, text: String) -> URL? {
             switch type {
             case "address":
@@ -561,6 +583,10 @@ struct HTMLMessageBody: UIViewRepresentable {
                 let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue)
                 guard let date = detector?.firstMatch(in: text, range: NSRange(text.startIndex..., in: text))?.date else { return nil }
                 return URL(string: "calshow:\(Int(date.timeIntervalSinceReferenceDate))")
+            // Flight and tracking numbers come through as "misc" (and as
+            // their own types on some versions of iOS).
+            case "misc", "flight-information", "flight-number", "tracking-number", "parcel-tracking":
+                return DetectedItems.destination(forMisc: text)
             default:
                 return nil
             }
