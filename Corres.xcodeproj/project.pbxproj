@@ -81,6 +81,7 @@
 		EA144187FC763199BAADD12C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = C12665C738199993D8D54A23 /* GoogleSignInSwift */; };
 		7C11B26349AC4D098ADB6CC6 /* Core/AskQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5657FD79441A48ACB789585C /* Core/AskQuery.swift */; };
 		F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
+		F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -181,6 +182,7 @@
 		FEB5C4BF79C6432CA56B4E65 /* Widgets/CorresWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Widgets/CorresWidgets.entitlements; sourceTree = SOURCE_ROOT; };
 		5657FD79441A48ACB789585C /* Core/AskQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/AskQuery.swift; sourceTree = SOURCE_ROOT; };
 		89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PlainTextEmail.swift; sourceTree = SOURCE_ROOT; };
+		B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/MailboxesView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -240,6 +242,7 @@
 				D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */,
 				0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */,
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
+				B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */,
 				89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */,
 				5657FD79441A48ACB789585C /* Core/AskQuery.swift */,
 				11F6E3D3ED4A43908B1C100E /* Core/DetectedItems.swift */,
@@ -419,6 +422,7 @@
 				84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */,
 				BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */,
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
+				F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */,
 				F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */,
 				7C11B26349AC4D098ADB6CC6 /* Core/AskQuery.swift in Sources */,
 				AFB2E1F7559842468CF8DF98 /* Core/DetectedItems.swift in Sources */,

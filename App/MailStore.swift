@@ -18,6 +18,42 @@ final class MailStore {
         hiddenIDs.isEmpty ? allThreads : allThreads.filter { !hiddenIDs.contains($0.id) }
     }
 
+    /// Mail opened from a mailbox (Trash, Spam, a label, All Mail) that
+    /// isn't in the Inbox: in memory only, so it can be read and acted on
+    /// without showing up in Mail, Needs You or the Brief.
+    private(set) var browsed: [ThreadID: Correspondence] = [:]
+
+    /// A conversation by id, wherever it came from: the Inbox, or a mailbox.
+    func thread(_ id: ThreadID) -> Correspondence? {
+        if let found = threads.first(where: { $0.id == id }) { return found }
+        return hiddenIDs.contains(id) ? nil : browsed[id]
+    }
+
+    /// Keeps a mailbox's rows openable. Mail already in the Inbox stays as
+    /// the Inbox has it.
+    func keepBrowsed(_ items: [Correspondence]) {
+        let synced = Set(allThreads.map(\.id))
+        for item in items where !synced.contains(item.id) {
+            // Content already loaded for it isn't thrown away by a refresh.
+            if let existing = browsed[item.id], existing.isBodyLoaded, !item.isBodyLoaded,
+               existing.latestMessageID == item.latestMessageID { continue }
+            browsed[item.id] = item
+        }
+    }
+
+    func forgetBrowsed(_ id: ThreadID) { browsed[id] = nil }
+
+    /// A mailbox's conversation, moved back to the Inbox: it joins the
+    /// lists now instead of waiting for the next sync to bring it.
+    func adoptIntoInbox(_ thread: Correspondence) async {
+        var item = browsed[thread.id] ?? thread
+        item.labelIds.removeAll { ["TRASH", "SPAM"].contains($0) }
+        if !item.labelIds.contains("INBOX") { item.labelIds.append("INBOX") }
+        browsed[thread.id] = nil
+        _ = try? await repository.upsert([item], isInitialSync: true)
+        await refresh()
+    }
+
     func hide(_ id: ThreadID) { hiddenIDs.insert(id) }
     /// For a setting that changes what the lists show without changing any
     /// mail (Screen new senders): every list rebuilds on its next redraw.
@@ -174,10 +210,12 @@ final class MailStore {
     }
 
     func setUnread(_ isUnread: Bool, for id: ThreadID) async {
+        if updateBrowsed(id, { $0.isUnread = isUnread }) { return }
         await mutate(id) { try await self.repository.setUnread(isUnread, for: id) }
     }
 
     func setLabelIds(_ labelIds: [String], for id: ThreadID) async {
+        if updateBrowsed(id, { $0.labelIds = labelIds }) { return }
         await mutate(id) { try await self.repository.setLabelIds(labelIds, for: id) }
     }
 
@@ -201,6 +239,14 @@ final class MailStore {
     /// `mutate`: nothing the person decided changed, so a failure has no
     /// business showing a save-error alert; the thread just stays unloaded.
     func applyLoadedContent(_ items: [Correspondence]) async {
+        // A mailbox's conversation, opened: its full message replaces the
+        // preview, keeping what's been changed on it here.
+        let browsedItems = items.filter { item in browsed[item.id] != nil && !allThreads.contains { $0.id == item.id } }
+        for item in browsedItems {
+            var loaded = item
+            if let existing = browsed[item.id] { loaded.isUnread = existing.isUnread; loaded.labelIds = existing.labelIds }
+            browsed[item.id] = loaded
+        }
         guard (try? await repository.applyLoadedContent(items)) ?? 0 > 0 else { return }
         await refresh()
     }
@@ -335,6 +381,11 @@ final class MailStore {
     /// row fully swipeable for the entire round trip, letting a second
     /// swipe fire a second, conflicting Gmail call on the same thread.
     func remove(_ id: ThreadID) async {
+        if browsed[id] != nil, !allThreads.contains(where: { $0.id == id }) {
+            browsed[id] = nil
+            return
+        }
+        browsed[id] = nil
         do {
             try await repository.remove(id)
             allThreads.removeAll { $0.id == id }
@@ -369,6 +420,15 @@ final class MailStore {
     /// in the app (every swipe action and every "Mark as" tap), and a full
     /// SwiftData re-fetch on each one was real, measured, avoidable work on
     /// the hot path (see Docs/Architecture.md's performance sweep entry).
+    /// Applies a change to a mailbox's conversation, when that's what it
+    /// is. Returns whether it was one.
+    private func updateBrowsed(_ id: ThreadID, _ change: (inout Correspondence) -> Void) -> Bool {
+        guard var item = browsed[id], !allThreads.contains(where: { $0.id == id }) else { return false }
+        change(&item)
+        browsed[id] = item
+        return true
+    }
+
     private func mutate(_ id: ThreadID, _ operation: @escaping () async throws -> Correspondence) async {
         guard !pending.contains(id) else { return }
         pending.insert(id)

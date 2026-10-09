@@ -391,6 +391,9 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     public var subject: String
     public var body: String
     public var attachments: [PendingAttachment]
+    /// The Gmail draft this was opened from (Mailboxes → Drafts), deleted
+    /// once this is sent so the draft doesn't linger after it's gone out.
+    public var gmailDraftID: String?
 
     public init(id: UUID = UUID(), kind: Kind, threadID: ThreadID? = nil, fromAccount: String? = nil,
                 to: String, cc: String? = nil, subject: String, body: String = "", attachments: [PendingAttachment] = []) {

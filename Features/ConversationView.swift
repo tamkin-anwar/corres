@@ -50,7 +50,7 @@ struct ConversationView: View {
 
     var body: some View {
         Group {
-            if let thread = store.threads.first(where: { $0.id == currentID }) {
+            if let thread = store.thread(currentID) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         Text(thread.subject)
@@ -76,6 +76,8 @@ struct ConversationView: View {
                             CalendarSuggestionCard(event: calendarEvent, sender: thread.sender, threadKey: thread.id.providerID)
                                 .padding(.horizontal, CorresSpace.page)
                         }
+                        mailboxNotice(for: thread)
+                            .padding(.horizontal, CorresSpace.page)
                         privacyLine(for: thread)
                             .padding(.horizontal, CorresSpace.page)
                         if unsubscribeService.canUnsubscribe(thread) && !thread.senderUnsubscribed {
@@ -215,7 +217,7 @@ struct ConversationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $composeDraft) { draft in
             ComposeView(store: store, outbox: outbox, draft: draft,
-                        sourceThread: store.threads.first(where: { $0.id == currentID }))
+                        sourceThread: store.thread(currentID))
         }
         .confirmationDialog("Move this conversation to Trash?",
                             isPresented: Binding(get: { confirmingTrash != nil }, set: { if !$0 { confirmingTrash = nil } }),
@@ -238,7 +240,7 @@ struct ConversationView: View {
         // Keyed on the latest message too, so a reply landing while the
         // conversation is open loads, is marked read and is summarized.
         .task(id: "\(currentID.account)|\(currentID.providerID)|\(currentThread?.latestMessageID ?? "")") {
-            guard let thread = store.threads.first(where: { $0.id == currentID }) else { return }
+            guard let thread = store.thread(currentID) else { return }
             // Loading the body and marking read are independent network
             // calls; neither should wait on the other.
             async let loaded: Void = threadActions.loadContent(for: thread)
@@ -250,11 +252,11 @@ struct ConversationView: View {
             await loaded
             await conversation
             // The event this email is about, once its full text is here.
-            if let current = store.threads.first(where: { $0.id == currentID }) {
+            if let current = store.thread(currentID) {
                 calendarEvent = await Self.findEvent(in: current)
             }
             // Covers the whole conversation once its history is here.
-            if proUnlocked, let current = store.threads.first(where: { $0.id == currentID }) {
+            if proUnlocked, let current = store.thread(currentID) {
                 await intelligence.prepareInsight(for: current, conversation: threadActions.messages(in: current))
             }
         }
@@ -265,7 +267,7 @@ struct ConversationView: View {
             // Like Mail and Superhuman, the next conversation takes its
             // place, so triage flows one message to the next.
             guard !stillExists else { return }
-            let live = Set(store.threads.map(\.id))
+            let live = Set(orderedIDs.filter { store.thread($0) != nil })
             let index = orderedIDs.firstIndex(of: currentID) ?? 0
             let neighbour = orderedIDs[min(index + 1, orderedIDs.count)...].first(where: live.contains)
                 ?? orderedIDs[..<index].last(where: live.contains)
@@ -289,8 +291,8 @@ struct ConversationView: View {
         if let splitSelection { splitSelection.wrappedValue = nil } else { systemDismiss() }
     }
 
-    private var threadExists: Bool { store.threads.contains { $0.id == currentID } }
-    private var currentThread: Correspondence? { store.threads.first { $0.id == currentID } }
+    private var threadExists: Bool { store.thread(currentID) != nil }
+    private var currentThread: Correspondence? { store.thread(currentID) }
     @AppStorage(CorresSettings.summariesKey) private var summariesOn = true
     @AppStorage(CorresSettings.summaryCollapsedKey) private var summaryCollapsed = false
     @AppStorage(AfterRemoval.key) private var afterRemoval = AfterRemoval.nextConversation.rawValue
@@ -331,6 +333,31 @@ struct ConversationView: View {
         let when = thread.receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
         let to = (thread.toRecipients.isEmpty || thread.isDirectRecipient) ? "To you" : "Cc you"
         return thread.senderEmail.map { "\($0) · \(when)" } ?? "\(to) · \(when)"
+    }
+
+    /// Opened from Trash or Spam (Mailboxes): says so, with the way back.
+    @ViewBuilder
+    private func mailboxNotice(for thread: Correspondence) -> some View {
+        let inTrash = thread.labelIds.contains("TRASH"), inSpam = thread.labelIds.contains("SPAM")
+        if inTrash || inSpam {
+            HStack(spacing: 8) {
+                Image(systemName: inTrash ? "trash" : "xmark.bin").font(.footnote)
+                Text(inTrash ? "In Trash" : "In Spam. Links and images may be unsafe.")
+                    .font(.footnote)
+                Spacer(minLength: 8)
+                Button(inTrash ? "Restore" : "Not Spam") {
+                    Task {
+                        await threadActions.moveToInbox(thread)
+                        dismiss()
+                    }
+                }
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(CorresPalette.accent)
+            }
+            .foregroundStyle(CorresPalette.secondary)
+            .padding(12)
+            .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
     }
 
     /// One quiet line that says what Corres did to protect this read:
@@ -521,7 +548,7 @@ struct ConversationView: View {
         guard !thread.isBodyLoaded else { return open(thread) }
         Task {
             await threadActions.loadContent(for: thread)
-            open(store.threads.first { $0.id == thread.id } ?? thread)
+            open(store.thread(thread.id) ?? thread)
         }
     }
 
@@ -533,7 +560,7 @@ struct ConversationView: View {
         draftingIntent = intent
         Task {
             if !thread.isBodyLoaded { await threadActions.loadContent(for: thread) }
-            let source = store.threads.first { $0.id == thread.id } ?? thread
+            let source = store.thread(thread.id) ?? thread
             let drafted = await intelligence.draftReply(to: source, intent: intent,
                                                         signOff: givenName.isEmpty || !CorresSettings.signature(for: source.id.account).isEmpty ? nil : givenName)
             draftingIntent = nil

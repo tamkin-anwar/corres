@@ -159,6 +159,28 @@ final class ThreadActionService {
         store.unhide(thread.id)
     }
 
+    // MARK: Mailboxes
+
+    /// Out of Trash or Spam, or back from the archive or a label: into the
+    /// Inbox, and into Corres's lists.
+    func moveToInbox(_ thread: Correspondence) async {
+        let labels = store.thread(thread.id)?.labelIds ?? thread.labelIds
+        let account = thread.id.account, id = thread.id.providerID
+        do {
+            if labels.contains("TRASH") {
+                try await client.untrashThread(threadId: id, account: account)
+                try await client.modifyThread(threadId: id, addLabelIds: ["INBOX"], account: account)
+            } else if labels.contains("SPAM") {
+                try await client.modifyThread(threadId: id, addLabelIds: ["INBOX"], removeLabelIds: ["SPAM"], account: account)
+            } else {
+                try await client.modifyThread(threadId: id, addLabelIds: ["INBOX"], account: account)
+            }
+            await store.adoptIntoInbox(thread)
+        } catch {
+            store.errorMessage = "Could not move this conversation to the Inbox. Please try again."
+        }
+    }
+
     /// Orthogonal to Archive/Trash: this never removes the thread, only
     /// flips `Correspondence.isUnread` (see its doc comment), via the shared
     /// `UNREAD` label `modifyThread` already supports. Optimistic, unlike
@@ -225,7 +247,7 @@ final class ThreadActionService {
     func toggleLabel(_ labelId: String, isOn: Bool, for thread: Correspondence) async {
         let failureMessage = "Could not update this label. Please try again."
         func labelIds(isOn: Bool) -> [String] {
-            var labelIds = self.store.threads.first { $0.id == thread.id }?.labelIds ?? thread.labelIds
+            var labelIds = self.store.thread(thread.id)?.labelIds ?? thread.labelIds
             if isOn {
                 if !labelIds.contains(labelId) { labelIds.append(labelId) }
             } else {

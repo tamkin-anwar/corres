@@ -187,6 +187,11 @@ final class OutboxService {
         }
         await store.send(draft, realThreadID: realThreadID)
         try? await repository.removeOutboxEntry(id: id)
+        // Sent in place of a Gmail draft: the draft goes.
+        if realThreadID != nil, let draftID = draft.gmailDraftID,
+           let account = resolveSendingAccount(draft: draft, thread: thread) {
+            try? await client.deleteDraft(id: draftID, account: account)
+        }
     }
 
     /// Stable for the lifetime of one outbox entry — derived from its own

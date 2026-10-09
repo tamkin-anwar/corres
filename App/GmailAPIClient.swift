@@ -471,6 +471,65 @@ struct GmailAPIClient {
         try await performChange(path: "threads/\(threadId)/trash", body: nil, account: account)
     }
 
+    /// Out of Trash, back where it was (Gmail restores its labels, so
+    /// mail that was in the Inbox returns there).
+    func untrashThread(threadId: String, account: String) async throws {
+        try await performChange(path: "threads/\(threadId)/untrash", body: nil, account: account)
+    }
+
+    /// A draft written anywhere (Gmail on the web, another app), deleted
+    /// once Corres has sent it in its place.
+    func deleteDraft(id: String, account: String) async throws {
+        try await performChange(path: "drafts/\(id)", body: nil, account: account, method: "DELETE")
+    }
+
+    // MARK: Mailboxes
+
+    /// A page of any mailbox: a system one (`SPAM`, `TRASH`, `STARRED`,
+    /// `SENT`), a label, or All Mail (no label). One row per conversation,
+    /// its newest message in that mailbox, the way Gmail lists them. Listed
+    /// by message, not by thread: one call, where fetching each thread to
+    /// find its newest message cost a call per row and ran into Gmail's
+    /// rate limit.
+    func listMailbox(labelId: String?, account: String, pageToken: String?,
+                     pageSize: Int = 25) async throws -> (items: [Correspondence], nextPageToken: String?) {
+        let token = try await accessToken(for: account)
+        var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
+        var queryItems = [URLQueryItem(name: "maxResults", value: String(pageSize * 2))]
+        if let labelId { queryItems.append(URLQueryItem(name: "labelIds", value: labelId)) }
+        if labelId == "SPAM" || labelId == "TRASH" { queryItems.append(URLQueryItem(name: "includeSpamTrash", value: "true")) }
+        if let pageToken { queryItems.append(URLQueryItem(name: "pageToken", value: pageToken)) }
+        components.queryItems = queryItems
+        let (data, response) = try await authorizedRequest(url: components.url!, token: token)
+        try validate(response)
+        let list = try JSONDecoder().decode(MessageListResponse.self, from: data)
+        // Newest first, so the first message seen for a thread is its newest.
+        var seen = Set<String>()
+        let ids = (list.messages ?? []).filter { seen.insert($0.threadId ?? $0.id).inserted }.map(\.id)
+        let fetched = try await fetchMetadata(ids: ids, account: account).items
+        let order = Dictionary(uniqueKeysWithValues: ids.enumerated().map { ($1, $0) })
+        return (fetched.sorted { (order[$0.latestMessageID ?? ""] ?? 0) < (order[$1.latestMessageID ?? ""] ?? 0) },
+                list.nextPageToken)
+    }
+
+    /// Drafts, newest first, with the draft id Gmail needs to delete one.
+    func listDrafts(account: String, pageToken: String?,
+                    pageSize: Int = 25) async throws -> (items: [(draftID: String, message: Correspondence)], nextPageToken: String?) {
+        let token = try await accessToken(for: account)
+        var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/drafts")!
+        var queryItems = [URLQueryItem(name: "maxResults", value: String(pageSize))]
+        if let pageToken { queryItems.append(URLQueryItem(name: "pageToken", value: pageToken)) }
+        components.queryItems = queryItems
+        let (data, response) = try await authorizedRequest(url: components.url!, token: token)
+        try validate(response)
+        let list = try JSONDecoder().decode(DraftListResponse.self, from: data)
+        let drafts = list.drafts ?? []
+        let fetched = try await fetchFull(ids: drafts.map(\.message.id), account: account).items
+        let byMessage = Dictionary(fetched.compactMap { item in item.latestMessageID.map { ($0, item) } },
+                                   uniquingKeysWith: { first, _ in first })
+        return (drafts.compactMap { draft in byMessage[draft.message.id].map { (draft.id, $0) } }, list.nextPageToken)
+    }
+
     /// Every change Corres makes to a mailbox goes through here, so each
     /// one recovers the same way from the two refusals that aren't really
     /// the person's problem, instead of surfacing "Gmail error 403":
@@ -479,14 +538,14 @@ struct GmailAPIClient {
     /// - Gmail's per-user rate limit, which it also reports as 403 (or 429):
     ///   wait as long as Gmail asks and try again, for up to about 90 seconds.
     /// Anything else is thrown with Gmail's own reason and message.
-    private func performChange(path: String, body: Data?, account: String) async throws {
+    private func performChange(path: String, body: Data?, account: String, method: String = "POST") async throws {
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/\(path)")!
         var refreshedToken = false
         var rateLimitRetries = 0
         while true {
             let token = try await accessToken(for: account)
             var request = URLRequest(url: url)
-            request.httpMethod = "POST"
+            request.httpMethod = method
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             if let body {
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -860,6 +919,16 @@ private extension Data {
         while base64.count % 4 != 0 { base64 += "=" }
         self.init(base64Encoded: base64)
     }
+}
+
+private struct DraftListResponse: Decodable {
+    struct Item: Decodable {
+        struct Message: Decodable { let id: String; let threadId: String? }
+        let id: String
+        let message: Message
+    }
+    let drafts: [Item]?
+    let nextPageToken: String?
 }
 
 private struct MessageListResponse: Decodable {

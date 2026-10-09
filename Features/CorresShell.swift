@@ -434,6 +434,9 @@ struct CorresShell: View {
                     .navigationTitle(title(for: selection))
                     .navigationBarTitleDisplayMode(selection == .brief ? .inline : .large)
                     .toolbar {
+                        if selection == .mail {
+                            ToolbarItem(placement: .topBarLeading) { mailboxesLink }
+                        }
                         ToolbarItem(placement: .topBarTrailing) {
                             Button { composeDraft = Draft(kind: .new, to: "", subject: "") } label: {
                                 Image(systemName: "square.and.pencil")
@@ -514,6 +517,17 @@ struct CorresShell: View {
         .accessibilityValue(displayedAccount ?? "Sample mail")
     }
 
+    private var mailboxesLink: some View {
+        NavigationLink {
+            MailboxesView(store: store, threadActions: threadActions, labelDirectory: labelDirectory, outbox: outbox,
+                          auth: auth, accounts: accountFilter.map { [$0] } ?? auth.accounts.map(\.email))
+        } label: {
+            Image(systemName: "folder").frame(minWidth: 44, minHeight: 44)
+        }
+        .accessibilityLabel("Mailboxes")
+        .accessibilityHint("Drafts, Sent, All Mail, Spam, Trash and labels")
+    }
+
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
       // While selecting, the list's own Select All / count / Done take the
@@ -530,6 +544,11 @@ struct CorresShell: View {
                 .accessibilityLabel(accountFilter == nil ? "All Inboxes" : accountFilter ?? "")
                 .accessibilityHint("Switch between all inboxes and one account")
             }
+        }
+        // Drafts, Sent, All Mail, Spam, Trash and labels: the rest of the
+        // mailbox, one tap from Mail (see `MailboxesView`).
+        if selection == .mail {
+            ToolbarItem(placement: .topBarLeading) { mailboxesLink }
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button { composeDraft = Draft(kind: .new, to: "", subject: "") } label: {

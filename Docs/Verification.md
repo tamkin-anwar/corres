@@ -2,6 +2,20 @@
 
 Final checks: September 18, 2026. Batch 1 App Store readiness sweep: September 21, 2026.
 
+## Mailboxes: Drafts, Sent, All Mail, Spam, Trash, labels (October 8, 2026)
+
+Gap: Corres showed the Inbox only. Drafts started elsewhere, archived mail, Spam, Trash and Gmail labels meant opening Gmail or Mail.
+
+Researched Mail (Mailboxes screen), Gmail and Spark (side drawers). Chose Mail's pattern: a Mailboxes screen pushed from a folder button on Mail (and on iPad's list column). A drawer from the left edge would compete with iOS's swipe back and with the rows' own leading swipe, and Apple's guidelines steer away from hidden drawers. Left out as duplicates: Gmail's categories (Mail's People/Updates), Purchases (Ask), Important.
+
+- Drafts, Snoozed (only when something is snoozed), Flagged, Sent, All Mail, Spam, Trash, and each account's labels (nested labels indented).
+- A mailbox is listed from Gmail a page at a time (one message list call per page, newest message per conversation); pull to refresh, scroll to load more, empty and error states.
+- Opened conversations are kept in memory only (`MailStore.browsed`), so Trash and Spam never appear in Mail, Needs You or the Brief. Reading, flag, labels and read state work on them like any other.
+- Actions: Restore (Trash), Not Spam (Spam), Move to Inbox (archived and labelled mail), Trash, Unflag (Flagged), Unsnooze (Snoozed), by swipe or long press. A conversation opened from Trash or Spam says so, with Restore or Not Spam.
+- Drafts open in Compose, as a threaded reply when they are one; once sent, the Gmail draft is deleted (`Draft.gmailDraftID`).
+
+Checked in the Simulator: the button, the screen and its sample-mail state. The Gmail mailboxes, Drafts and the actions were not exercised here (no Gmail account in the Simulator); they need checking on a device with a real account.
+
 ## Email reading: full sweep (October 8, 2026)
 
 What every kind of email looked like before, and what changed:
