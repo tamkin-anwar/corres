@@ -8,78 +8,88 @@
 
 /* Begin PBXBuildFile section */
 		036D19D2357FCAF354B35D8F /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 5662C63EE436AAF5D5F1FD05 /* GoogleSignIn */; };
+		0815B5A5F1484E9BA0484CE3 /* App/EntitlementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */; };
+		0DC12458B7C243E3A408FD10 /* App/SnippetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 865AF253964B45F6A4D8875F /* App/SnippetStore.swift */; };
+		105E14E4D7714D74A177FC8D /* Core/MailDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */; };
 		1210C83E3ABF3705EAA0C0D1 /* App/MailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B2D40AA7032720196B86FE /* App/MailStore.swift */; };
 		1729D2B584AB0024ED1C9BB4 /* Core/CorresSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3188DDEA4B4112FCE079024F /* Core/CorresSchema.swift */; };
 		180DDC0F37852583386242F8 /* Features/ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B711AF08239E828BF9969F3 /* Features/ConversationView.swift */; };
+		192CE0320F4A4F5F8C7D4F2C /* App/LinkOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D370982C074FF8839A73E6 /* App/LinkOpener.swift */; };
 		198AA1E8786592DABC5E015E /* DesignSystem/Materials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AEABBF5B1C933392981114 /* DesignSystem/Materials.swift */; };
+		1B3766733C22497596301550 /* Features/MultiSelectGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC8AB17E1D7432A8CFCE409 /* Features/MultiSelectGesture.swift */; };
+		1BA03B99003749AABDD410CB /* App/MailIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCE33A1D946429F9220EDC4 /* App/MailIntelligence.swift */; };
+		22827E0A314346DBB52A00F2 /* Widgets/CorresWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44A006B97B0A489DAF0F9B18 /* Widgets/CorresWidgets.swift */; };
+		23D3AB8DD02A4999883FF6B2 /* App/Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B03773975FDB401CA02B5F15 /* App/Keychain.swift */; };
+		2EBED90023A34A2EAC3923C9 /* Core/MailSignals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */; };
+		3113854F872440AD82EDE4FD /* App/AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */; };
+		35EF1AE6ABD2488C953C0213 /* Features/SnoozeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D88F20EF7A545638AB0EE70 /* Features/SnoozeSheet.swift */; };
+		38185E83F6BF4FCDBF51442D /* DesignSystem/CorrespondenceMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */; };
 		3A16A2272C5E0513B52F8189 /* Features/ScreenerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C56F5DE2502E92807210146E /* Features/ScreenerView.swift */; };
+		3B47738C7F21473DB5948605 /* Core/TimePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */; };
 		3EC3C3C05C7C482BB226F0F7 /* App/PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916D22A5A98347EDBD6063F8 /* App/PushNotificationService.swift */; };
 		48A5A9377BA4468386749647 /* App/AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 447B0387783A4EE385008A6B /* App/AppDelegate.swift */; };
 		5217E979DBA0B50FC2D1DA5D /* Core/MailRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63EB4BD12F7A4F4DE2BC78F7 /* Core/MailRepository.swift */; };
+		537C62D39E8646D090F06DA5 /* Features/AccountAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A1BCC0306E4172BBFF5CBF /* Features/AccountAvatar.swift */; };
 		5663E23856EA9C3DB7EC73D8 /* Core/SwiftDataMailRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F9C55B0E3533C78CF4C4F6 /* Core/SwiftDataMailRepository.swift */; };
 		5B0DBF797CEEFC17DE04B195 /* App/GmailMessageComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44B8B11C43712F4DF6C6A4B0 /* App/GmailMessageComposer.swift */; };
 		5B55F7DF9308406034F6D3C1 /* App/GmailSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2107F2DE31F9ED9AE7F9E54C /* App/GmailSyncService.swift */; };
+		61562B7EFBCA437FA5E0DBEA /* CorresWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */; };
+		66B455C3F7FE4E5A80CB7790 /* Features/EarlierMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */; };
 		6B9841FB4C0E4DED3FD28A36 /* Core/SampleCorrespondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF963A48F35EECBABCEAC67 /* Core/SampleCorrespondence.swift */; };
 		6C584DE0EEB4A0BF9EAE3C23 /* Core/Correspondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E055D7FFC136234D685E062 /* Core/Correspondence.swift */; };
 		70B7725BE97E7AAF5A521A5F /* App/GoogleAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F87B8DB17F1F3706C1461F47 /* App/GoogleAuthService.swift */; };
+		77485366CDAE444C800848E3 /* App/GmailQuotaGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */; };
 		7ADE31691A6CE5F5F6B4E8F0 /* App/OutboxService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0B80EE1611396DB315C571 /* App/OutboxService.swift */; };
 		8088289DE26E42F346EED9A3 /* App/CorresApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03285F34837864AED181DA0 /* App/CorresApp.swift */; };
+		81962B22B15B4C5CA3957CD5 /* Features/SwipePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CABE04674E546E4B8928799 /* Features/SwipePreferences.swift */; };
 		84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */; };
 		896ABC29D193F2031450A89B /* DesignSystem/CorrespondenceMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */; };
 		8EFE7A4258A57167DB2D4714 /* Core/GmailAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68DA0977ACFA46A1C9952B4 /* Core/GmailAccount.swift */; };
 		915836714C5888A247DFC316 /* Features/CorrespondenceList.swift in Sources */ = {isa = PBXBuildFile; fileRef = A84A2742DF9E08880CF52E5D /* Features/CorrespondenceList.swift */; };
+		95306CDC1B0B406B83615C9A /* App/SemanticTriageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E62FF2CAB366437C92797761 /* App/SemanticTriageService.swift */; };
+		9712EB6B6C414E27B62D1265 /* Features/AddToCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9007760E7EAB4EBEB34224FD /* Features/AddToCalendar.swift */; };
+		98064E766A9846B6ACFAD115 /* Features/PremiumSwipeRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A582894B2EE49E0BA022D01 /* Features/PremiumSwipeRow.swift */; };
+		9ADBDB8EA7A9457EBAB271E4 /* Features/AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */; };
+		9B3A020AEDAA4F449B17B527 /* Shared/WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */; };
 		9D52FB6C7F9BA8A3A75AA58C /* Features/BriefView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F27FB96B40EED99BFE20A6 /* Features/BriefView.swift */; };
+		9EB4BC82CCA048A18F899919 /* Shared/WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */; };
+		AC57B9FF8D85450BAEC4B66A /* Features/PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */; };
+		AFB2E1F7559842468CF8DF98 /* Core/DetectedItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F6E3D3ED4A43908B1C100E /* Core/DetectedItems.swift */; };
+		B38567BB8F8242BAAFBFF5E0 /* App/WidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C33E49C348642688FD36A86 /* App/WidgetBridge.swift */; };
 		B3C4C37B4AD4DE2EECA87225 /* Features/HTMLMessageBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FCDDD1329818B12922D64E /* Features/HTMLMessageBody.swift */; };
 		B4CF17BA7EBADAFFFE4C32D9 /* DesignSystem/Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FDAA185499F66241648B25 /* DesignSystem/Tokens.swift */; };
 		B66A15A79057947ECBB08EFC /* Features/WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A197A2D27A63A32E9B83006 /* Features/WelcomeView.swift */; };
+		B67D56F88C9340B68A93BFF6 /* App/AskService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A52B6D67E5444081ECC866 /* App/AskService.swift */; };
 		B9A73E7D7AC845889F7D3870 /* App/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B16B6325BA8F1CFBCC279108 /* App/Assets.xcassets */; };
 		BB3CA26C51C343ECA59840FF /* App/LabelDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4D571AAED54527AAC57F47 /* App/LabelDirectory.swift */; };
-		23D3AB8DD02A4999883FF6B2 /* App/Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B03773975FDB401CA02B5F15 /* App/Keychain.swift */; };
 		BCCDE07485714DBCB3F6052B /* App/UnsubscribeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A4AE45C4BB42BBAE8BE735 /* App/UnsubscribeService.swift */; };
-		81962B22B15B4C5CA3957CD5 /* Features/SwipePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CABE04674E546E4B8928799 /* Features/SwipePreferences.swift */; };
-		95306CDC1B0B406B83615C9A /* App/SemanticTriageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E62FF2CAB366437C92797761 /* App/SemanticTriageService.swift */; };
-		98064E766A9846B6ACFAD115 /* Features/PremiumSwipeRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A582894B2EE49E0BA022D01 /* Features/PremiumSwipeRow.swift */; };
-		CBAEF7A3115B4335A7A17995 /* App/GoogleTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */; };
 		BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */; };
-		63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */; };
+		C15747BA2BA949D890FAA45B /* App/CorresSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8BEA5EECE643858167C548 /* App/CorresSettings.swift */; };
 		C2D178FA2ECD796F4B6A79A3 /* Features/PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA57480437BE46588460ED61 /* Features/PreferencesView.swift */; };
+		C5FD4D482EA945EA9AE3AE5E /* App/CorresIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */; };
 		C957750BEBE3C33F032D5D7C /* Features/CorresShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A6D2AECED4C48E4222ADE95 /* Features/CorresShell.swift */; };
+		CBAEF7A3115B4335A7A17995 /* App/GoogleTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */; };
 		D3C2358BFDB254816ED9D71E /* App/PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F048BFA7B57836F484F1B9C1 /* App/PrivacyInfo.xcprivacy */; };
+		D5195C9FE186477BA44C6D4C /* App/DictationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F0F29A3B9945FDB1D3A7CC /* App/DictationService.swift */; };
 		D8779F4C9329B419FF7FD755 /* App/GmailAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682EC77E42F944FED8F83C02 /* App/GmailAPIClient.swift */; };
 		DA1D1527A8E832C86F278428 /* Features/WKWebViewPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E03C9ECA4EFCE45294D7EB28 /* Features/WKWebViewPool.swift */; };
+		DA2DA6E461714EA88E32A952 /* App/BriefNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F763700EF74BE78B3980EF /* App/BriefNotifier.swift */; };
 		E3ED3246FBF46344E2584016 /* Features/ComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17EC2216CF5E6F988F527EB5 /* Features/ComposeView.swift */; };
 		E79A8DBC3229495CA769B912 /* App/ThreadActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89705DCC26384892BF488BA2 /* App/ThreadActionService.swift */; };
 		E98FEC0BFF976467BBBDCC6E /* Features/Destination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E30C119A8AA5A9BF4A804F /* Features/Destination.swift */; };
 		EA144187FC763199BAADD12C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = C12665C738199993D8D54A23 /* GoogleSignInSwift */; };
-		3B47738C7F21473DB5948605 /* Core/TimePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */; };
-		1BA03B99003749AABDD410CB /* App/MailIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCE33A1D946429F9220EDC4 /* App/MailIntelligence.swift */; };
-		35EF1AE6ABD2488C953C0213 /* Features/SnoozeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D88F20EF7A545638AB0EE70 /* Features/SnoozeSheet.swift */; };
-		537C62D39E8646D090F06DA5 /* Features/AccountAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A1BCC0306E4172BBFF5CBF /* Features/AccountAvatar.swift */; };
-		77485366CDAE444C800848E3 /* App/GmailQuotaGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */; };
-		66B455C3F7FE4E5A80CB7790 /* Features/EarlierMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */; };
-		0DC12458B7C243E3A408FD10 /* App/SnippetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 865AF253964B45F6A4D8875F /* App/SnippetStore.swift */; };
-		D5195C9FE186477BA44C6D4C /* App/DictationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F0F29A3B9945FDB1D3A7CC /* App/DictationService.swift */; };
-		9B3A020AEDAA4F449B17B527 /* Shared/WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */; };
-		B38567BB8F8242BAAFBFF5E0 /* App/WidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C33E49C348642688FD36A86 /* App/WidgetBridge.swift */; };
-		22827E0A314346DBB52A00F2 /* Widgets/CorresWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44A006B97B0A489DAF0F9B18 /* Widgets/CorresWidgets.swift */; };
-		9EB4BC82CCA048A18F899919 /* Shared/WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */; };
-		38185E83F6BF4FCDBF51442D /* DesignSystem/CorrespondenceMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */; };
-		61562B7EFBCA437FA5E0DBEA /* CorresWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		3113854F872440AD82EDE4FD /* App/AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */; };
-		C5FD4D482EA945EA9AE3AE5E /* App/CorresIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */; };
-		B67D56F88C9340B68A93BFF6 /* App/AskService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A52B6D67E5444081ECC866 /* App/AskService.swift */; };
-		9ADBDB8EA7A9457EBAB271E4 /* Features/AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */; };
-		0815B5A5F1484E9BA0484CE3 /* App/EntitlementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */; };
-		AC57B9FF8D85450BAEC4B66A /* Features/PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */; };
-		2EBED90023A34A2EAC3923C9 /* Core/MailSignals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */; };
-		C15747BA2BA949D890FAA45B /* App/CorresSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8BEA5EECE643858167C548 /* App/CorresSettings.swift */; };
-		192CE0320F4A4F5F8C7D4F2C /* App/LinkOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D370982C074FF8839A73E6 /* App/LinkOpener.swift */; };
-		DA2DA6E461714EA88E32A952 /* App/BriefNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F763700EF74BE78B3980EF /* App/BriefNotifier.swift */; };
-		1B3766733C22497596301550 /* Features/MultiSelectGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC8AB17E1D7432A8CFCE409 /* Features/MultiSelectGesture.swift */; };
-		9712EB6B6C414E27B62D1265 /* Features/AddToCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9007760E7EAB4EBEB34224FD /* Features/AddToCalendar.swift */; };
-		105E14E4D7714D74A177FC8D /* Core/MailDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */; };
-		AFB2E1F7559842468CF8DF98 /* Core/DetectedItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F6E3D3ED4A43908B1C100E /* Core/DetectedItems.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		747FA3D082A74C558FAC6065 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 244210E48437B6556980A702 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C69DF3B7A0A94507982CAA18;
+			remoteInfo = CorresWidgets;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		E327868891D340BF93EFB082 /* Embed Foundation Extensions */ = {
@@ -95,112 +105,94 @@
 		};
 /* End PBXCopyFilesBuildPhase section */
 
-/* Begin PBXContainerItemProxy section */
-		747FA3D082A74C558FAC6065 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 244210E48437B6556980A702 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = C69DF3B7A0A94507982CAA18;
-			remoteInfo = CorresWidgets;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXTargetDependency section */
-		3FD96208F882409B8ABF585F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = C69DF3B7A0A94507982CAA18 /* CorresWidgets */;
-			targetProxy = 747FA3D082A74C558FAC6065 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin PBXFileReference section */
 		0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PersistedOutboxEntry.swift; sourceTree = SOURCE_ROOT; };
-		2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/HTTPBatch.swift; sourceTree = SOURCE_ROOT; };
+		11F6E3D3ED4A43908B1C100E /* Core/DetectedItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DetectedItems.swift; sourceTree = SOURCE_ROOT; };
 		16FDAA185499F66241648B25 /* DesignSystem/Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/Tokens.swift; sourceTree = SOURCE_ROOT; };
+		179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/EarlierMessages.swift; sourceTree = SOURCE_ROOT; };
 		17EC2216CF5E6F988F527EB5 /* Features/ComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ComposeView.swift; sourceTree = SOURCE_ROOT; };
+		1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/WidgetSnapshot.swift; sourceTree = SOURCE_ROOT; };
 		1B711AF08239E828BF9969F3 /* Features/ConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ConversationView.swift; sourceTree = SOURCE_ROOT; };
+		1D88F20EF7A545638AB0EE70 /* Features/SnoozeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SnoozeSheet.swift; sourceTree = SOURCE_ROOT; };
 		2107F2DE31F9ED9AE7F9E54C /* App/GmailSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GmailSyncService.swift; sourceTree = SOURCE_ROOT; };
+		2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GoogleTokenProvider.swift; sourceTree = SOURCE_ROOT; };
+		26F0F29A3B9945FDB1D3A7CC /* App/DictationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/DictationService.swift; sourceTree = SOURCE_ROOT; };
+		270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/EntitlementStore.swift; sourceTree = SOURCE_ROOT; };
+		2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/HTTPBatch.swift; sourceTree = SOURCE_ROOT; };
+		2CABE04674E546E4B8928799 /* Features/SwipePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SwipePreferences.swift; sourceTree = SOURCE_ROOT; };
 		3188DDEA4B4112FCE079024F /* Core/CorresSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/CorresSchema.swift; sourceTree = SOURCE_ROOT; };
 		37AEABBF5B1C933392981114 /* DesignSystem/Materials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/Materials.swift; sourceTree = SOURCE_ROOT; };
 		3A4D571AAED54527AAC57F47 /* App/LabelDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/LabelDirectory.swift; sourceTree = SOURCE_ROOT; };
-		B03773975FDB401CA02B5F15 /* App/Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/Keychain.swift; sourceTree = SOURCE_ROOT; };
-		C3A4AE45C4BB42BBAE8BE735 /* App/UnsubscribeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/UnsubscribeService.swift; sourceTree = SOURCE_ROOT; };
-		2CABE04674E546E4B8928799 /* Features/SwipePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SwipePreferences.swift; sourceTree = SOURCE_ROOT; };
-		E62FF2CAB366437C92797761 /* App/SemanticTriageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SemanticTriageService.swift; sourceTree = SOURCE_ROOT; };
-		7A582894B2EE49E0BA022D01 /* Features/PremiumSwipeRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PremiumSwipeRow.swift; sourceTree = SOURCE_ROOT; };
-		2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GoogleTokenProvider.swift; sourceTree = SOURCE_ROOT; };
+		3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppRouter.swift; sourceTree = SOURCE_ROOT; };
 		3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/CorrespondenceMark.swift; sourceTree = SOURCE_ROOT; };
+		3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/MailSignals.swift; sourceTree = SOURCE_ROOT; };
 		447B0387783A4EE385008A6B /* App/AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppDelegate.swift; sourceTree = SOURCE_ROOT; };
+		44A006B97B0A489DAF0F9B18 /* Widgets/CorresWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Widgets/CorresWidgets.swift; sourceTree = SOURCE_ROOT; };
 		44B8B11C43712F4DF6C6A4B0 /* App/GmailMessageComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GmailMessageComposer.swift; sourceTree = SOURCE_ROOT; };
 		4E055D7FFC136234D685E062 /* Core/Correspondence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Correspondence.swift; sourceTree = SOURCE_ROOT; };
+		54F763700EF74BE78B3980EF /* App/BriefNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/BriefNotifier.swift; sourceTree = SOURCE_ROOT; };
+		5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/MailDigest.swift; sourceTree = SOURCE_ROOT; };
 		62E30C119A8AA5A9BF4A804F /* Features/Destination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Destination.swift; sourceTree = SOURCE_ROOT; };
 		63EB4BD12F7A4F4DE2BC78F7 /* Core/MailRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/MailRepository.swift; sourceTree = SOURCE_ROOT; };
 		67FCDDD1329818B12922D64E /* Features/HTMLMessageBody.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/HTMLMessageBody.swift; sourceTree = SOURCE_ROOT; };
 		682EC77E42F944FED8F83C02 /* App/GmailAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GmailAPIClient.swift; sourceTree = SOURCE_ROOT; };
+		6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AskView.swift; sourceTree = SOURCE_ROOT; };
 		6AF963A48F35EECBABCEAC67 /* Core/SampleCorrespondence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/SampleCorrespondence.swift; sourceTree = SOURCE_ROOT; };
 		75B2D40AA7032720196B86FE /* App/MailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MailStore.swift; sourceTree = SOURCE_ROOT; };
+		78B06183ECCF424E8A22B6B4 /* Widgets/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Widgets/Info.plist; sourceTree = SOURCE_ROOT; };
+		7A582894B2EE49E0BA022D01 /* Features/PremiumSwipeRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PremiumSwipeRow.swift; sourceTree = SOURCE_ROOT; };
+		865AF253964B45F6A4D8875F /* App/SnippetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SnippetStore.swift; sourceTree = SOURCE_ROOT; };
 		89705DCC26384892BF488BA2 /* App/ThreadActionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ThreadActionService.swift; sourceTree = SOURCE_ROOT; };
 		8A6D2AECED4C48E4222ADE95 /* Features/CorresShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CorresShell.swift; sourceTree = SOURCE_ROOT; };
+		8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/TimePhrase.swift; sourceTree = SOURCE_ROOT; };
+		9007760E7EAB4EBEB34224FD /* Features/AddToCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AddToCalendar.swift; sourceTree = SOURCE_ROOT; };
 		916D22A5A98347EDBD6063F8 /* App/PushNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/PushNotificationService.swift; sourceTree = SOURCE_ROOT; };
 		97F9C55B0E3533C78CF4C4F6 /* Core/SwiftDataMailRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/SwiftDataMailRepository.swift; sourceTree = SOURCE_ROOT; };
 		9A197A2D27A63A32E9B83006 /* Features/WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/WelcomeView.swift; sourceTree = SOURCE_ROOT; };
+		9C33E49C348642688FD36A86 /* App/WidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/WidgetBridge.swift; sourceTree = SOURCE_ROOT; };
+		9E8BEA5EECE643858167C548 /* App/CorresSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CorresSettings.swift; sourceTree = SOURCE_ROOT; };
+		A5A52B6D67E5444081ECC866 /* App/AskService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AskService.swift; sourceTree = SOURCE_ROOT; };
 		A84A2742DF9E08880CF52E5D /* Features/CorrespondenceList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CorrespondenceList.swift; sourceTree = SOURCE_ROOT; };
 		A8792157CB4F27FB949C035F /* Corres.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = Corres.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACCE33A1D946429F9220EDC4 /* App/MailIntelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MailIntelligence.swift; sourceTree = SOURCE_ROOT; };
+		AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CorresIntents.swift; sourceTree = SOURCE_ROOT; };
+		B03773975FDB401CA02B5F15 /* App/Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/Keychain.swift; sourceTree = SOURCE_ROOT; };
 		B16B6325BA8F1CFBCC279108 /* App/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = App/Assets.xcassets; sourceTree = SOURCE_ROOT; };
+		B2D370982C074FF8839A73E6 /* App/LinkOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/LinkOpener.swift; sourceTree = SOURCE_ROOT; };
+		B8A1BCC0306E4172BBFF5CBF /* Features/AccountAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AccountAvatar.swift; sourceTree = SOURCE_ROOT; };
 		C03285F34837864AED181DA0 /* App/CorresApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CorresApp.swift; sourceTree = SOURCE_ROOT; };
+		C3A4AE45C4BB42BBAE8BE735 /* App/UnsubscribeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/UnsubscribeService.swift; sourceTree = SOURCE_ROOT; };
 		C56F5DE2502E92807210146E /* Features/ScreenerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ScreenerView.swift; sourceTree = SOURCE_ROOT; };
 		D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PersistedCorrespondence.swift; sourceTree = SOURCE_ROOT; };
 		D68DA0977ACFA46A1C9952B4 /* Core/GmailAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/GmailAccount.swift; sourceTree = SOURCE_ROOT; };
 		D6F27FB96B40EED99BFE20A6 /* Features/BriefView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/BriefView.swift; sourceTree = SOURCE_ROOT; };
+		D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CorresWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PaywallView.swift; sourceTree = SOURCE_ROOT; };
 		DC0B80EE1611396DB315C571 /* App/OutboxService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/OutboxService.swift; sourceTree = SOURCE_ROOT; };
 		E03C9ECA4EFCE45294D7EB28 /* Features/WKWebViewPool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/WKWebViewPool.swift; sourceTree = SOURCE_ROOT; };
+		E62FF2CAB366437C92797761 /* App/SemanticTriageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SemanticTriageService.swift; sourceTree = SOURCE_ROOT; };
 		F048BFA7B57836F484F1B9C1 /* App/PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = App/PrivacyInfo.xcprivacy; sourceTree = SOURCE_ROOT; };
 		F87B8DB17F1F3706C1461F47 /* App/GoogleAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GoogleAuthService.swift; sourceTree = SOURCE_ROOT; };
 		FA57480437BE46588460ED61 /* Features/PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PreferencesView.swift; sourceTree = SOURCE_ROOT; };
-		8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/TimePhrase.swift; sourceTree = SOURCE_ROOT; };
-		ACCE33A1D946429F9220EDC4 /* App/MailIntelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MailIntelligence.swift; sourceTree = SOURCE_ROOT; };
-		1D88F20EF7A545638AB0EE70 /* Features/SnoozeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SnoozeSheet.swift; sourceTree = SOURCE_ROOT; };
-		B8A1BCC0306E4172BBFF5CBF /* Features/AccountAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AccountAvatar.swift; sourceTree = SOURCE_ROOT; };
-		FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GmailQuotaGate.swift; sourceTree = SOURCE_ROOT; };
-		179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/EarlierMessages.swift; sourceTree = SOURCE_ROOT; };
-		865AF253964B45F6A4D8875F /* App/SnippetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SnippetStore.swift; sourceTree = SOURCE_ROOT; };
-		26F0F29A3B9945FDB1D3A7CC /* App/DictationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/DictationService.swift; sourceTree = SOURCE_ROOT; };
-		1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/WidgetSnapshot.swift; sourceTree = SOURCE_ROOT; };
-		9C33E49C348642688FD36A86 /* App/WidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/WidgetBridge.swift; sourceTree = SOURCE_ROOT; };
-		44A006B97B0A489DAF0F9B18 /* Widgets/CorresWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Widgets/CorresWidgets.swift; sourceTree = SOURCE_ROOT; };
-		78B06183ECCF424E8A22B6B4 /* Widgets/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Widgets/Info.plist; sourceTree = SOURCE_ROOT; };
-		FEB5C4BF79C6432CA56B4E65 /* Widgets/CorresWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Widgets/CorresWidgets.entitlements; sourceTree = SOURCE_ROOT; };
-		D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CorresWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppRouter.swift; sourceTree = SOURCE_ROOT; };
-		AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CorresIntents.swift; sourceTree = SOURCE_ROOT; };
-		A5A52B6D67E5444081ECC866 /* App/AskService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AskService.swift; sourceTree = SOURCE_ROOT; };
-		6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AskView.swift; sourceTree = SOURCE_ROOT; };
-		270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/EntitlementStore.swift; sourceTree = SOURCE_ROOT; };
-		DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PaywallView.swift; sourceTree = SOURCE_ROOT; };
-		3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/MailSignals.swift; sourceTree = SOURCE_ROOT; };
-		9E8BEA5EECE643858167C548 /* App/CorresSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CorresSettings.swift; sourceTree = SOURCE_ROOT; };
-		B2D370982C074FF8839A73E6 /* App/LinkOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/LinkOpener.swift; sourceTree = SOURCE_ROOT; };
-		54F763700EF74BE78B3980EF /* App/BriefNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/BriefNotifier.swift; sourceTree = SOURCE_ROOT; };
 		FCC8AB17E1D7432A8CFCE409 /* Features/MultiSelectGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/MultiSelectGesture.swift; sourceTree = SOURCE_ROOT; };
-		9007760E7EAB4EBEB34224FD /* Features/AddToCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AddToCalendar.swift; sourceTree = SOURCE_ROOT; };
-		5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/MailDigest.swift; sourceTree = SOURCE_ROOT; };
-		11F6E3D3ED4A43908B1C100E /* Core/DetectedItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DetectedItems.swift; sourceTree = SOURCE_ROOT; };
+		FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GmailQuotaGate.swift; sourceTree = SOURCE_ROOT; };
+		FEB5C4BF79C6432CA56B4E65 /* Widgets/CorresWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Widgets/CorresWidgets.entitlements; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		19699E6363444FB4A2F2B8B9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E2AA269EB967A8853A258BFA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				036D19D2357FCAF354B35D8F /* GoogleSignIn in Frameworks */,
 				EA144187FC763199BAADD12C /* GoogleSignInSwift in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		19699E6363444FB4A2F2B8B9 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -476,6 +468,14 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		3FD96208F882409B8ABF585F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C69DF3B7A0A94507982CAA18 /* CorresWidgets */;
+			targetProxy = 747FA3D082A74C558FAC6065 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
 		0B0C687DF8B6B8DC790B519C /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -485,6 +485,61 @@
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		3C69DF78F592460EA9B0A3BA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Widgets/CorresWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.widgets;
+				PRODUCT_NAME = CorresWidgets;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6B0FE7EFD9AA469794EDC920 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Widgets/CorresWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.widgets;
+				PRODUCT_NAME = CorresWidgets;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -501,9 +556,13 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Corres uses the microphone only while you dictate an email. Speech is transcribed on this iPhone.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Corres turns your dictation into text on this iPhone. Your voice is never sent to a server.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres;
 				PRODUCT_NAME = Corres;
@@ -539,9 +598,13 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Corres uses the microphone only while you dictate an email. Speech is transcribed on this iPhone.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Corres turns your dictation into text on this iPhone. Your voice is never sent to a server.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres;
 				PRODUCT_NAME = Corres;
@@ -549,53 +612,6 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		3C69DF78F592460EA9B0A3BA /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = Widgets/CorresWidgets.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_TEAM = 7GGTC43CG8;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Widgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Corres;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MARKETING_VERSION = 0.2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.widgets;
-				PRODUCT_NAME = CorresWidgets;
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-			};
-			name = Debug;
-		};
-		6B0FE7EFD9AA469794EDC920 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = Widgets/CorresWidgets.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_TEAM = 7GGTC43CG8;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Widgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Corres;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MARKETING_VERSION = 0.2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.widgets;
-				PRODUCT_NAME = CorresWidgets;
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Release;
 		};
