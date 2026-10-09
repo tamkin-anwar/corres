@@ -37,6 +37,18 @@ Built by [Anwar Creative Studio](https://anwarcreativestudio.com), alongside Art
 - Saved snippets with `{first name}`, and dictation in Compose, transcribed on the iPhone.
 - Snooze by typing a time ("in 3 days at 9am", "next friday") or picking a preset; custom short and long swipes in both directions, velocity-aware, with haptics.
 
+**Shaped around you**
+- Settings → Tab Bar: which screens are tabs, and in what order.
+- Settings → Email Toolbar: up to five actions under an email, from 18 (Move to, Labels, Report Spam, Block, Unsubscribe, VIP, Add to Calendar, Share, Print, Translate and more); the rest wait in ⋯.
+- Four swipes (short and long, each direction), each set to its own action.
+- Mailboxes → Edit: show, hide and reorder mailboxes and labels.
+
+**Reading**
+- Designed mail fits the screen with measured margins and a Dark mode mapped like Mail's; mail with its own dark styles uses them.
+- Quoted history folds behind •••; plain-text mail gets the same rendering, with its paragraphs rejoined.
+- Follows the iPhone's text size, pinch to zoom, and tappable links, addresses, phone numbers, flights and tracking numbers.
+- Mailboxes: Drafts, Snoozed, Flagged, Sent, All Mail, Spam, Trash and every Gmail label.
+
 **Intelligence, on this iPhone only**
 - Rules sort first; Apple Intelligence (Foundation Models) refines Needs You on-device.
 - A short summary of long emails. For very long ones it covers the opening and ending, and says so.
