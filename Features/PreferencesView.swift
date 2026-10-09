@@ -54,6 +54,11 @@ struct PreferencesView: View {
                         settingLabel("Swipes", "hand.draw")
                     }
                     NavigationLink {
+                        TabBarSettingsView()
+                    } label: {
+                        settingLabel("Tab Bar", "dock.rectangle")
+                    }
+                    NavigationLink {
                         SnippetSettingsView()
                     } label: {
                         settingLabel("Snippets", "text.badge.plus")
@@ -675,6 +680,85 @@ private struct ListSettingsView: View {
 }
 
 // MARK: - Swipes
+
+/// Settings → Tab Bar: which screens get a tab, and their order, the way
+/// Spark and Music let you arrange theirs. Drag to reorder; remove a tab
+/// and it moves to More, still reachable from links (the Brief's "All",
+/// widgets, Siri). Mail always stays.
+private struct TabBarSettingsView: View {
+    @AppStorage(CorresSettings.tabsKey) private var tabsRaw = ""
+    private var tabs: [Destination] { CorresSettings.tabs(from: tabsRaw) }
+    private var hidden: [Destination] { Destination.allCases.filter { !tabs.contains($0) } }
+
+    private func save(_ tabs: [Destination]) { tabsRaw = CorresSettings.raw(for: tabs) }
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(tabs) { destination in
+                    HStack(spacing: 12) {
+                        Image(systemName: destination.systemImage).frame(width: 26)
+                            .foregroundStyle(CorresPalette.accent)
+                        Text(destination.rawValue)
+                        Spacer()
+                        if destination == tabs.first {
+                            Text("Opens here").font(.footnote).foregroundStyle(CorresPalette.secondary)
+                        }
+                    }
+                    .deleteDisabled(destination == .mail)
+                }
+                .onMove { from, to in
+                    var updated = tabs
+                    updated.move(fromOffsets: from, toOffset: to)
+                    save(updated)
+                }
+                .onDelete { offsets in
+                    var updated = tabs
+                    updated.remove(atOffsets: offsets)
+                    save(updated)
+                }
+            } header: {
+                Text("Tabs")
+            } footer: {
+                Text("Drag to reorder. Corres opens to the first tab. Mail always stays.")
+            }
+            if !hidden.isEmpty {
+                Section {
+                    ForEach(hidden) { destination in
+                        Button {
+                            save(tabs + [destination])
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "plus.circle.fill").foregroundStyle(.green)
+                                Image(systemName: destination.systemImage).frame(width: 26)
+                                    .foregroundStyle(CorresPalette.secondary)
+                                Text(destination.rawValue).foregroundStyle(CorresPalette.ink)
+                            }
+                        }
+                        .accessibilityLabel("Add \(destination.rawValue)")
+                    }
+                } header: {
+                    Text("More")
+                } footer: {
+                    Text("Not in the tab bar, but still opens from the Brief, widgets and Siri.")
+                }
+            }
+            Section {
+                Button("Reset to Default") { tabsRaw = "" }
+                    .disabled(tabs == CorresSettings.defaultTabs)
+            }
+        }
+        .environment(\.editMode, .constant(.active))
+        // Rebuilt on each change: an always-editing List gave a newly
+        // added row no drag handle or remove button.
+        .id(tabsRaw)
+        .scrollContentBackground(.hidden)
+        .background(CorresPalette.canvas)
+        .navigationTitle("Tab Bar")
+        .navigationBarTitleDisplayMode(.inline)
+        .sensoryFeedback(.selection, trigger: tabsRaw)
+    }
+}
 
 private struct SwipeSettingsView: View {
     @AppStorage("corres.trailingShortSwipeAction") private var trailingShortRaw = PrimarySwipeAction.archive.rawValue

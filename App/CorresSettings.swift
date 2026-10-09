@@ -133,6 +133,27 @@ enum CorresSettings {
         TimePhrase.laterTodayIsEvening = defaults.bool(forKey: laterTodayEveningKey)
     }
 
+    // MARK: Tab bar
+
+    /// Settings → Tab Bar: which screens are tabs, in order. Mail is
+    /// always one (it's the everything view, and where Corres falls back
+    /// when other screens are locked); the first tab is where Corres opens.
+    static let tabsKey = "corres.tabs"
+    static let defaultTabs: [Destination] = [.brief, .needsYou, .waiting, .mail, .ask]
+
+    static func tabs(from raw: String) -> [Destination] {
+        var seen = Set<Destination>()
+        var tabs = raw.split(separator: ",").compactMap { Destination(rawValue: String($0)) }
+            .filter { seen.insert($0).inserted }
+        if raw.isEmpty { tabs = defaultTabs }
+        if !tabs.contains(.mail) { tabs.append(.mail) }
+        return tabs
+    }
+
+    static func raw(for tabs: [Destination]) -> String { tabs.map(\.rawValue).joined(separator: ",") }
+
+    static var tabs: [Destination] { tabs(from: defaults.string(forKey: tabsKey) ?? "") }
+
     static let followUpDaysKey = "corres.followUpDays"
     static let followUpChoices = [1, 2, 3, 5, 7]
     static var followUpDays: Int { defaults.object(forKey: followUpDaysKey) as? Int ?? 3 }

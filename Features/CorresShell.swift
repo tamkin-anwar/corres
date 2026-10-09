@@ -9,7 +9,27 @@ struct CorresShell: View {
     var labelDirectory: LabelDirectory
     @Bindable var pushService: PushNotificationService
     @Bindable var unsubscribeService: UnsubscribeService
-    @State private var selection = Destination.brief
+    /// Opens to the first tab in Settings → Tab Bar.
+    @State private var selection = CorresSettings.tabs.first ?? .mail
+    @AppStorage(CorresSettings.tabsKey) private var tabsRaw = ""
+    private var tabs: [Destination] { CorresSettings.tabs(from: tabsRaw) }
+
+    /// Goes to a screen: its tab when it has one, otherwise pushed onto
+    /// the tab you're on, so a link to a hidden screen (the Brief's
+    /// "All 4", a widget, Siri) still gets there.
+    private func show(_ destination: Destination) {
+        if tabs.contains(destination) || sizeClass == .regular {
+            selection = destination
+        } else {
+            var path = paths[selection] ?? NavigationPath()
+            path.append(destination)
+            paths[selection] = path
+        }
+    }
+
+    private var selectionBinding: Binding<Destination> {
+        Binding(get: { selection }, set: { show($0) })
+    }
     @State private var showingSettings = false
     @State private var showingScreener = false
     @State private var showingWelcome = false
@@ -63,19 +83,25 @@ struct CorresShell: View {
         router.pending = nil
         switch target {
         case .destination(let destination):
-            selection = destination
-            paths[destination] = NavigationPath()
+            if tabs.contains(destination) || sizeClass == .regular {
+                selection = destination
+                paths[destination] = NavigationPath()
+            } else {
+                paths[selection] = NavigationPath()
+                show(destination)
+            }
         case .compose:
             composeDraft = Draft(kind: .new, to: "", subject: "")
         case .composeTo(let to, let subject, let body):
             composeDraft = Draft(kind: .new, to: to, subject: subject, body: body)
         case .thread(let id):
             guard store.threads.contains(where: { $0.id == id }) else {
-                selection = .needsYou
+                show(.needsYou)
                 return
             }
             let thread = store.threads.first { $0.id == id }
-            let destination: Destination = thread?.attention == .waiting ? .waiting : (thread?.attention == .needsYou ? .needsYou : .mail)
+            let preferred: Destination = thread?.attention == .waiting ? .waiting : (thread?.attention == .needsYou ? .needsYou : .mail)
+            let destination = tabs.contains(preferred) || sizeClass == .regular ? preferred : .mail
             selection = destination
             let route = ConversationRoute(id: id, orderedIDs: [id])
             if sizeClass == .regular {
@@ -124,6 +150,8 @@ struct CorresShell: View {
             if phase != .active { Task { await threadActions.commitPendingRemoval() } }
         }
         .onChange(of: router.pending) { _, target in handle(target) }
+        // A tab hidden in Settings while it was showing.
+        .onChange(of: tabsRaw) { if sizeClass != .regular, !tabs.contains(selection) { selection = tabs.first ?? .mail } }
         .environment(\.proUnlocked, !requiresPro)
         // Right after someone connects their first Gmail account, offer the
         // trial once; after that it's only ever one tap away.
@@ -308,11 +336,11 @@ struct CorresShell: View {
             if requiresPro && destination != .mail {
                 ProLockView(destination: destination,
                             onUnlock: { showingPaywall = true },
-                            onOpenMail: { selection = .mail })
+                            onOpenMail: { show(.mail) })
             } else if destination == .ask {
                 AskView(ask: ask)
             } else if destination == .brief {
-                BriefView(store: store, sync: sync, auth: auth, selection: $selection, showingScreener: $showingScreener,
+                BriefView(store: store, sync: sync, auth: auth, selection: selectionBinding, showingScreener: $showingScreener,
                           accountFilter: accountFilter, isActive: selection == destination)
             } else {
                 CorrespondenceList(store: store, sync: sync, auth: auth, threadActions: threadActions,
@@ -335,7 +363,7 @@ struct CorresShell: View {
     /// iPhone: one tab per destination, conversations pushed on top.
     private var tabLayout: some View {
         TabView(selection: $selection) {
-            ForEach(Destination.allCases) { destination in
+            ForEach(tabs) { destination in
                 NavigationStack(path: path(for: destination)) {
                     destinationContent(for: destination)
                         .background(CorresPalette.canvas)
@@ -350,6 +378,13 @@ struct CorresShell: View {
                             ConversationView(store: store, outbox: outbox, threadActions: threadActions,
                                             labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
                                             route: route)
+                        }
+                        // A screen that isn't a tab, opened from a link.
+                        .navigationDestination(for: Destination.self) { pushed in
+                            destinationContent(for: pushed)
+                                .background(CorresPalette.canvas)
+                                .navigationTitle(title(for: pushed))
+                                .navigationBarTitleDisplayMode(pushed == .brief ? .inline : .large)
                         }
                 }
                 .tabItem { Label(destination.rawValue, systemImage: destination.systemImage) }

@@ -2,30 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Corres uses the microphone only while you dictate an email. Speech is transcribed on this iPhone.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Corres turns your dictation into text on this iPhone. Your voice is never sent to a server.</string>
-	<key>UILaunchScreen</key>
-	<dict>
-		<key>UIColorName</key>
-		<string>LaunchBackground</string>
-		<key>UIImageName</key>
-		<string>LaunchMark</string>
-	</dict>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-		<string>fetch</string>
-	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>studio.anwarcreative.corres.renewWatch</string>
 	</array>
-	<key>GIDClientID</key>
-	<string>211980968673-k961lt0jtath3ojt4r7ukb3j3jbn8ecl.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -36,5 +16,19 @@
 			</array>
 		</dict>
 	</array>
+	<key>GIDClientID</key>
+	<string>211980968673-k961lt0jtath3ojt4r7ukb3j3jbn8ecl.apps.googleusercontent.com</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>fetch</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+		<key>UIImageName</key>
+		<string>LaunchMark</string>
+	</dict>
 </dict>
 </plist>
