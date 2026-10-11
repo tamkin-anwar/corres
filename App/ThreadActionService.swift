@@ -161,6 +161,18 @@ final class ThreadActionService {
 
     // MARK: Mailboxes
 
+    /// Gmail's Move to: the label on, out of the Inbox. Archived only once
+    /// the label is on, so a failure never leaves it in neither place.
+    func moveToLabel(_ labelId: String, _ thread: Correspondence) async {
+        do {
+            try await client.modifyThread(threadId: thread.id.providerID, addLabelIds: [labelId], account: thread.id.account)
+        } catch {
+            store.errorMessage = "Could not move this conversation. Please try again."
+            return
+        }
+        await archive(thread, animated: false)
+    }
+
     /// Out of Trash or Spam, or back from the archive or a label: into the
     /// Inbox, and into Corres's lists.
     func moveToInbox(_ thread: Correspondence) async {

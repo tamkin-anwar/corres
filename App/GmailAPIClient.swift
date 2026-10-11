@@ -208,7 +208,7 @@ struct GmailAPIClient {
     /// All, correspondent signal), subject, threading, and unsubscribe.
     /// Metadata plus Gmail's own snippet is everything a row, triage, a
     /// notification, and local search need; the body comes later.
-    private static let metadataHeaders = ["From", "To", "Cc", "Subject", "Message-ID", "List-Unsubscribe", "List-Unsubscribe-Post"]
+    private static let metadataHeaders = ["From", "To", "Cc", "Reply-To", "Subject", "Message-ID", "List-Unsubscribe", "List-Unsubscribe-Post"]
 
     /// Sender, subject, snippet, labels, and headers for up to `batchSize`
     /// messages in one HTTP round trip. Returned threads have
@@ -712,6 +712,9 @@ struct GmailAPIClient {
         // bug, not a hypothetical).
         let toRecipients = Self.parseAddressList(headers["to"] ?? "")
         let ccRecipients = Self.parseAddressList(headers["cc"] ?? "")
+        // Where replies are meant to go, when not to the sender (support
+        // desks, booking systems and lists send from no-reply addresses).
+        let replyTo = Self.parseAddressList(headers["reply-to"] ?? "")
         let (listUnsubscribeMailto, listUnsubscribeURL) = Self.parseListUnsubscribe(headers["list-unsubscribe"] ?? "")
         // RFC 8058: present only when the sender is explicitly vouching the
         // https URL above is safe to POST to automatically, no page visit
@@ -747,7 +750,7 @@ struct GmailAPIClient {
             latestMessageID: message.id, receivedAt: receivedAt, dueAt: attention == .needsYou ? deadline : nil,
             reason: reason, attention: attention, attachments: attachments, isUnread: isUnread,
             labelIds: message.labelIds ?? [],
-            toRecipients: toRecipients, ccRecipients: ccRecipients,
+            toRecipients: toRecipients, ccRecipients: ccRecipients, replyTo: replyTo,
             listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
             listUnsubscribeOneClick: listUnsubscribeOneClick, isBodyLoaded: bodyLoaded,
             waitingSince: attention == .waiting ? receivedAt : nil)

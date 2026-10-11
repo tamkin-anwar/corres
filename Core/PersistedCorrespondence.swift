@@ -61,6 +61,7 @@ public final class PersistedCorrespondence {
     public var senderUnsubscribed: Bool = false
     public var toRecipients: [String] = []
     public var ccRecipients: [String] = []
+    public var replyTo: [String] = []
     public var triagedMessageID: String? = nil
     /// Defaults to `true`: every row that predates this column was synced
     /// with its full body already.
@@ -100,6 +101,7 @@ public final class PersistedCorrespondence {
         self.senderUnsubscribed = correspondence.senderUnsubscribed
         self.toRecipients = correspondence.toRecipients
         self.ccRecipients = correspondence.ccRecipients
+        self.replyTo = correspondence.replyTo
         self.triagedMessageID = correspondence.triagedMessageID
         self.isBodyLoaded = correspondence.isBodyLoaded
         self.waitingSince = correspondence.waitingSince
@@ -116,7 +118,7 @@ public final class PersistedCorrespondence {
                        imagesTrusted: imagesTrusted,
                        attachments: (try? JSONDecoder().decode([MailAttachment].self, from: attachmentsData)) ?? [],
                        isUnread: isUnread, labelIds: labelIds,
-                       toRecipients: toRecipients, ccRecipients: ccRecipients, triagedMessageID: triagedMessageID,
+                       toRecipients: toRecipients, ccRecipients: ccRecipients, replyTo: replyTo, triagedMessageID: triagedMessageID,
                        listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
                        listUnsubscribeOneClick: listUnsubscribeOneClick, senderUnsubscribed: senderUnsubscribed,
                        isBodyLoaded: isBodyLoaded, waitingSince: waitingSince, lastSentAt: lastSentAt)

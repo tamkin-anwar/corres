@@ -600,11 +600,11 @@ extension Correspondence {
         case .new:
             return Draft(kind: .new, to: "", subject: "")
         case .reply:
-            return Draft(kind: kind, threadID: id, fromAccount: id.account, to: senderEmail ?? sender,
+            return Draft(kind: kind, threadID: id, fromAccount: id.account, to: replyAddresses.joined(separator: ", "),
                          subject: subject.hasPrefix("Re: ") ? subject : "Re: \(subject)",
                          body: quoted)
         case .replyAll:
-            return Draft(kind: kind, threadID: id, fromAccount: id.account, to: senderEmail ?? sender,
+            return Draft(kind: kind, threadID: id, fromAccount: id.account, to: replyAddresses.joined(separator: ", "),
                          cc: replyAllCc.isEmpty ? nil : replyAllCc.joined(separator: ", "),
                          subject: subject.hasPrefix("Re: ") ? subject : "Re: \(subject)",
                          body: quoted)
@@ -613,25 +613,6 @@ extension Correspondence {
                          subject: subject.hasPrefix("Fwd: ") ? subject : "Fwd: \(subject)",
                          body: quoted)
         }
-    }
-
-    /// Everyone who was on the original message besides the sender (already
-    /// in `to`) and the account reading it (no reason to Cc yourself): a
-    /// real fix, not a new feature. `toRecipients`/`ccRecipients` weren't
-    /// captured at all before this, which meant "Reply All" silently
-    /// behaved exactly like "Reply" — reported and root-caused directly.
-    var replyAllCc: [String] {
-        let me = id.account.lowercased()
-        let originalSender = (senderEmail ?? "").lowercased()
-        var seen = Set([me, originalSender])
-        var result: [String] = []
-        for email in toRecipients + ccRecipients {
-            let lowered = email.lowercased()
-            guard !seen.contains(lowered) else { continue }
-            seen.insert(lowered)
-            result.append(email)
-        }
-        return result
     }
 }
 

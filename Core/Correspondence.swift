@@ -142,6 +142,9 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// "Reply," a real, reported correctness bug, not a missing feature.
     public let toRecipients: [String]
     public let ccRecipients: [String]
+    /// The message's Reply-To addresses: where a reply goes instead of the
+    /// sender, when set.
+    public let replyTo: [String]
     /// The `latestMessageID` semantic triage (`SemanticTriageService`) was
     /// last actually run against for this thread, or nil if it never has
     /// been. Deliberately left out of `updatingContent`'s explicit field
@@ -196,7 +199,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
                 latestMessageID: String? = nil, receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
                 isPinned: Bool = false, snoozedUntil: Date? = nil, senderDecision: SenderDecision = .approved,
                 imagesTrusted: Bool = false, attachments: [MailAttachment] = [], isUnread: Bool = false,
-                labelIds: [String] = [], toRecipients: [String] = [], ccRecipients: [String] = [],
+                labelIds: [String] = [], toRecipients: [String] = [], ccRecipients: [String] = [], replyTo: [String] = [],
                 triagedMessageID: String? = nil,
                 listUnsubscribeMailto: String? = nil, listUnsubscribeURL: String? = nil,
                 listUnsubscribeOneClick: Bool = false, senderUnsubscribed: Bool = false,
@@ -225,6 +228,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.toRecipients = toRecipients
         self.triagedMessageID = triagedMessageID
         self.ccRecipients = ccRecipients
+        self.replyTo = replyTo
         self.listUnsubscribeMailto = listUnsubscribeMailto
         self.listUnsubscribeURL = listUnsubscribeURL
         self.listUnsubscribeOneClick = listUnsubscribeOneClick
@@ -322,7 +326,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
             // always take the freshest known value, regardless of which
             // side sent the message that happened to trigger this update.
             labelIds: incoming.labelIds,
-            toRecipients: incoming.toRecipients, ccRecipients: incoming.ccRecipients,
+            toRecipients: incoming.toRecipients, ccRecipients: incoming.ccRecipients, replyTo: incoming.replyTo,
             // Per-message, like attachments: whatever the latest message
             // actually offers, not frozen from an earlier one.
             listUnsubscribeMailto: incoming.listUnsubscribeMailto, listUnsubscribeURL: incoming.listUnsubscribeURL,
@@ -396,6 +400,39 @@ extension Correspondence {
             if !name.isEmpty, !entry.hasPrefix("<") { return name }
             return entry.trimmingCharacters(in: CharacterSet(charactersIn: "<> "))
         }
+    }
+}
+
+extension Correspondence {
+    /// Who a reply goes to, as Mail and Gmail decide it: the message's
+    /// Reply-To when it has one (support desks and lists send from no-reply
+    /// addresses), the sender otherwise, and, when the last message is
+    /// yours, the people you wrote to. Replying to your own message used to
+    /// address the reply to you.
+    public var replyAddresses: [String] {
+        if isFromAccountOwner {
+            let others = toRecipients.filter { $0.lowercased() != id.account.lowercased() }
+            return others.isEmpty ? [senderEmail ?? sender] : others
+        }
+        if !replyTo.isEmpty { return replyTo }
+        return [senderEmail ?? sender]
+    }
+
+    /// Reply All's Cc: everyone else on the message, never you or anyone
+    /// already in To. A no-reply sender replaced by Reply-To isn't added
+    /// back.
+    public var replyAllCc: [String] {
+        let me = id.account.lowercased()
+        var seen = Set([me, (senderEmail ?? "").lowercased()] + replyAddresses.map { $0.lowercased() })
+        var result: [String] = []
+        let others = isFromAccountOwner ? ccRecipients : toRecipients + ccRecipients
+        for email in others {
+            let lowered = email.lowercased()
+            guard !seen.contains(lowered) else { continue }
+            seen.insert(lowered)
+            result.append(email)
+        }
+        return result
     }
 }
 

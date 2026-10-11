@@ -434,6 +434,7 @@ struct DraftsView: View {
     @State private var opening: String?
     @State private var composing: Draft?
     @State private var replyingTo: Correspondence?
+    @State private var openFailed = false
     private let client = GmailAPIClient()
 
     var body: some View {
@@ -489,6 +490,11 @@ struct DraftsView: View {
         }
         .refreshable { await load() }
         .task { if !loadedOnce { await load() } }
+        .alert("Couldn't open this draft", isPresented: $openFailed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Check your connection and try again.")
+        }
         .sheet(item: $composing, onDismiss: { Task { await load() } }) { draft in
             ComposeView(store: store, outbox: outbox, auth: auth, draft: draft, sourceThread: replyingTo)
         }
@@ -520,7 +526,12 @@ struct DraftsView: View {
         defer { opening = nil }
         let message = item.message
         let account = message.id.account
-        let conversation = (try? await client.fetchThreadMessages(threadId: message.id.providerID, account: account)) ?? []
+        // Without its conversation, a reply draft would go out as a new,
+        // unthreaded email: say so rather than open it wrong.
+        guard let conversation = try? await client.fetchThreadMessages(threadId: message.id.providerID, account: account) else {
+            openFailed = true
+            return
+        }
         let answered = conversation.last { !$0.labelIds.contains("DRAFT") }
         var draft = Draft(kind: answered == nil ? .new : .reply, threadID: answered?.id, fromAccount: account,
                           to: message.toRecipients.joined(separator: ", "),

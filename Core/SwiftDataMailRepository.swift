@@ -359,6 +359,7 @@ public actor SwiftDataMailRepository: MailRepository {
                 existing.listUnsubscribeOneClick = item.listUnsubscribeOneClick
                 existing.toRecipients = item.toRecipients
                 existing.ccRecipients = item.ccRecipients
+                existing.replyTo = item.replyTo
                 // A genuinely new message means whatever triage ran against
                 // the old one no longer applies; nil signals "needs triage
                 // again" to SemanticTriageService, the same as a brand-new

@@ -33,6 +33,9 @@ struct ConversationView: View {
     /// True while a forward's attachments download, so the button shows
     /// it's working instead of seeming to do nothing.
     @State private var preparingForward = false
+    /// A forward whose attachments didn't all download: said before it
+    /// opens, rather than sent on short without a word.
+    @State private var forwardMissing: (draft: Draft, missing: [String])?
     @Environment(\.dismiss) private var systemDismiss
     @Environment(\.conversationSelection) private var splitSelection
     @Environment(\.proUnlocked) private var proUnlocked
@@ -236,6 +239,17 @@ struct ConversationView: View {
             }
         }
         .animation(.snappy(duration: 0.25), value: preparingForward)
+        .alert(forwardMissing.map { $0.missing.count == 1 ? "One attachment couldn't be added" : "\($0.missing.count) attachments couldn't be added" } ?? "",
+               isPresented: Binding(get: { forwardMissing != nil }, set: { if !$0 { forwardMissing = nil } })) {
+            Button("Forward Without Them") {
+                if let pending = forwardMissing { composeDraft = pending.draft }
+                forwardMissing = nil
+            }
+            Button("Cancel", role: .cancel) { forwardMissing = nil }
+        } message: {
+            Text((forwardMissing?.missing.joined(separator: ", ") ?? "")
+                 + ". They may be too large to send on, or the connection dropped.")
+        }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $composeDraft) { draft in
@@ -655,7 +669,15 @@ struct ConversationView: View {
                 defer { preparingForward = false }
                 if !thread.isBodyLoaded { await threadActions.loadContent(for: thread) }
                 let source = store.thread(thread.id) ?? thread
-                open(source, attachments: await Self.downloadForForward(source))
+                let (files, missing) = await Self.downloadForForward(source)
+                if missing.isEmpty {
+                    open(source, attachments: files)
+                } else {
+                    var draft = source.draft(kind: kind)
+                    if let prefill { draft.body = prefill + draft.body }
+                    draft.attachments = files
+                    forwardMissing = (draft, missing)
+                }
             }
             return
         }
@@ -667,19 +689,25 @@ struct ConversationView: View {
     }
 
     /// The email's attachments as files to send on, up to Gmail's limit.
-    private static func downloadForForward(_ thread: Correspondence) async -> [PendingAttachment] {
-        guard let messageID = thread.latestMessageID else { return [] }
+    /// The email's attachments as files to send on, up to Gmail's limit,
+    /// and the names of any that couldn't come along.
+    private static func downloadForForward(_ thread: Correspondence) async -> (files: [PendingAttachment], missing: [String]) {
+        guard let messageID = thread.latestMessageID else { return ([], thread.attachments.map(\.filename)) }
         let client = GmailAPIClient()
         var files: [PendingAttachment] = []
+        var missing: [String] = []
         var total = 0
         for attachment in thread.attachments {
             guard total + attachment.sizeBytes <= Draft.maxAttachmentsBytes,
                   let data = try? await client.fetchAttachmentData(messageId: messageID, attachmentId: attachment.id,
-                                                                   account: thread.id.account) else { continue }
+                                                                   account: thread.id.account) else {
+                missing.append(attachment.filename)
+                continue
+            }
             total += data.count
             files.append(PendingAttachment(filename: attachment.filename, mimeType: attachment.mimeType, data: data))
         }
-        return files
+        return (files, missing)
     }
 
     /// Tapping a suggested direction drafts the full reply in the person's
@@ -922,12 +950,42 @@ struct ConversationView: View {
     @ViewBuilder
     private func menuContent(_ action: CorresSettings.ReadingAction, for thread: Correspondence) -> some View {
         if action == .moveTo {
-            ForEach(Attention.allCases, id: \.self) { attention in
-                Button {
-                    Task { await store.update(thread.id, to: attention) }
-                } label: {
-                    if thread.attention == attention { Label(attention.title, systemImage: "checkmark") }
-                    else { Text(attention.title) }
+            // Where Mail and Gmail move mail: out of the Inbox, into a
+            // label. Corres's own sorting is a section of its own below; on
+            // its own it read as a broken "Move to".
+            Section {
+                Button { Task { await threadActions.archive(thread, animated: false) } } label: {
+                    Label("Archive", systemImage: "archivebox")
+                }
+                Button(role: .destructive) { requestTrash(thread) } label: {
+                    Label("Trash", systemImage: "trash")
+                }
+                if !thread.isFromAccountOwner {
+                    Button { Task { await threadActions.reportSpam(thread, animated: false) } } label: {
+                        Label("Spam", systemImage: "xmark.bin")
+                    }
+                }
+            }
+            let labels = labelDirectory.labels(for: thread.id.account)
+            if !labels.isEmpty {
+                Section("Labels") {
+                    ForEach(labels) { label in
+                        Button {
+                            Task { await threadActions.moveToLabel(label.id, thread) }
+                        } label: {
+                            Label(label.name, systemImage: "tag")
+                        }
+                    }
+                }
+            }
+            Section("Sort Into") {
+                ForEach(Attention.allCases, id: \.self) { attention in
+                    Button {
+                        Task { await store.update(thread.id, to: attention) }
+                    } label: {
+                        if thread.attention == attention { Label(attention.title, systemImage: "checkmark") }
+                        else { Text(attention.title) }
+                    }
                 }
             }
         } else {
@@ -954,7 +1012,15 @@ struct ConversationView: View {
     private static func share(_ thread: Correspondence) {
         let text = "\(thread.subject)\nFrom: \(thread.sender)\(thread.senderEmail.map { " <\($0)>" } ?? "")\n\n\(plainText(of: thread))"
         let sheet = UIActivityViewController(activityItems: [text], applicationActivities: nil)
-        topViewController()?.present(sheet, animated: true)
+        guard let top = topViewController() else { return }
+        // iPad shows it as a popover, which must point at something or it
+        // crashes: anchored at the bottom centre, where the toolbar is.
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = top.view
+            popover.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.maxY - 80, width: 1, height: 1)
+            popover.permittedArrowDirections = [.down]
+        }
+        top.present(sheet, animated: true)
     }
 
     /// iOS's own print sheet (AirPrint, or Save to PDF from there).
