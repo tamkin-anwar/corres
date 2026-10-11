@@ -18,7 +18,13 @@ public enum MailDigest {
 
     /// Below this many words there's nothing a summary would add; the email
     /// already is one. About two short sentences.
-    public static let minimumWords = 35
+    /// Shorter than this, an email reads in about the time its summary
+    /// would: Mail and Gmail summarize only longer mail. At 35 words a
+    /// short reminder got a summary that repeated it, right above it.
+    public static let minimumWords = 100
+    /// A conversation is worth summarizing sooner: the summary saves
+    /// opening and piecing together several messages.
+    public static let minimumConversationWords = 80
 
     public enum Kind: String, Codable, Sendable, CaseIterable {
         case personal, receipt, shipping, code, invite, newsletter, notification
@@ -143,9 +149,21 @@ public enum MailDigest {
         text.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).filter { $0.contains(where: \.isLetter) || $0.contains(where: \.isNumber) }.count
     }
 
-    /// Whether a summary would say something the email's opening doesn't.
     public static func isWorthSummarizing(_ cleanedText: String) -> Bool {
         wordCount(cleanedText) >= minimumWords
+    }
+
+    /// Whether a summary only says what the email's opening already says,
+    /// so it would repeat the first lines shown right below it. Judged by
+    /// meaning words (word roots, so "booking" matches "book"), against the
+    /// opening of the email.
+    public static func restatesOpening(_ summary: String, of text: String, openingWords: Int = 70) -> Bool {
+        let opening = text.split(whereSeparator: \.isWhitespace).prefix(openingWords).joined(separator: " ")
+        let openingRoots = roots(in: opening)
+        let words = contentWords(in: summary)
+        guard words.count >= 3 else { return true }
+        let covered = words.filter { $0.keys.contains(where: openingRoots.contains) }.count
+        return Double(covered) / Double(words.count) >= 0.8
     }
 
     // MARK: - Kind

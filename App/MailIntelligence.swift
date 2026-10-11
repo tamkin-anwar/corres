@@ -43,7 +43,13 @@ final class MailIntelligence {
         /// summary.
         var messageCount = 1
         var createdAt = Date.now
+        /// Which rules made it; summaries saved under older rules (short
+        /// emails summarized, openings repeated) are made again.
+        var rules: Int? = MailIntelligence.summaryRules
     }
+
+    /// Bumped when what's worth summarizing changes.
+    nonisolated static let summaryRules = 2
 
     enum Tone: String, CaseIterable, Identifiable {
         case shorter = "Shorter", warmer = "Warmer", formal = "More formal", proofread = "Proofread"
@@ -94,7 +100,8 @@ final class MailIntelligence {
     private static let sampleAccount = "sample"
 
     func insight(for thread: Correspondence) -> Insight? {
-        insights[Self.key(for: thread)]
+        guard let insight = insights[Self.key(for: thread)], insight.rules == Self.summaryRules else { return nil }
+        return insight
     }
 
     func isPreparing(_ thread: Correspondence) -> Bool {
@@ -115,7 +122,7 @@ final class MailIntelligence {
     func prepareInsight(for thread: Correspondence, conversation: [Correspondence]? = nil) async {
         let key = Self.key(for: thread)
         let messages = (conversation?.isEmpty == false ? conversation : nil) ?? [thread]
-        if let existing = insights[key], existing.messageCount >= messages.count { return }
+        if let existing = insights[key], existing.rules == Self.summaryRules, existing.messageCount >= messages.count { return }
         guard thread.isBodyLoaded, !inFlight.contains(key) else { return }
         inFlight.insert(key)
         defer { inFlight.remove(key) }
@@ -127,7 +134,9 @@ final class MailIntelligence {
         }
         let isConversation = readable.count > 1
         let words = readable.reduce(0) { $0 + MailDigest.wordCount($1.text) }
-        let wantsSummary = words >= MailDigest.minimumWords
+        // A summary has to save reading: short emails get none (one
+        // repeated a short reminder word for word, right above it).
+        let wantsSummary = words >= (isConversation ? MailDigest.minimumConversationWords : MailDigest.minimumWords)
         // Nothing to answer when the last word is yours.
         // Only a person writing to you gets reply suggestions: never
         // automated or Gmail-categorized mail.
@@ -140,7 +149,12 @@ final class MailIntelligence {
         let kind = MailDigest.kind(subject: thread.subject, text: latest.text, senderEmail: thread.senderEmail,
                                    isBulk: isBulk, looksAutomated: thread.looksAutomated, hasEvent: false)
         let source = thread.subject + "\n" + readable.map { $0.sender + "\n" + $0.text }.joined(separator: "\n")
-        let fallback = wantsSummary ? MailDigest.extractiveSummary(text: latest.text, kind: kind) : nil
+        // Never one that only says what the email opens with, right below.
+        func adds(_ summary: String?) -> String? {
+            guard let summary, isConversation || !MailDigest.restatesOpening(summary, of: latest.text) else { return nil }
+            return summary
+        }
+        let fallback = wantsSummary ? adds(MailDigest.extractiveSummary(text: latest.text, kind: kind)) : nil
 
         guard isAvailable, #available(iOS 26.0, *),
               let result = await generate(thread: thread, messages: readable, kind: kind, isConversation: isConversation,
@@ -148,12 +162,13 @@ final class MailIntelligence {
             store(Insight(summary: fallback, replyIntents: [], isExtractive: true, messageCount: messages.count), for: key)
             return
         }
-        let summary = wantsSummary ? (result.summary ?? fallback) : nil
+        let written = adds(result.summary)
+        let summary = wantsSummary ? (written ?? fallback) : nil
         store(Insight(summary: summary,
-                      details: summary == nil || result.summary == nil ? [] : result.details,
+                      details: summary == nil || written == nil ? [] : result.details,
                       replyIntents: wantsReplies ? Array(result.replies.prefix(3)) : [],
                       coversWholeMessage: result.covered,
-                      isExtractive: wantsSummary && result.summary == nil,
+                      isExtractive: wantsSummary && written == nil,
                       messageCount: messages.count), for: key)
     }
 

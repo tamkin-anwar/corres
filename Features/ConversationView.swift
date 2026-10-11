@@ -237,6 +237,7 @@ struct ConversationView: View {
             htmlHeight = 200
             showRemoteImages = false
             calendarEvent = nil
+            nextStep = nil
             // Keep the list underneath scrolled to the conversation you're
             // on while it's hidden, so going back shows it already in place.
             router.returnAnchor = currentID
@@ -260,6 +261,7 @@ struct ConversationView: View {
             // The event this email is about, once its full text is here.
             if let current = store.thread(currentID) {
                 calendarEvent = await Self.findEvent(in: current)
+                nextStep = await Self.findNextStep(in: current)
             }
             // Covers the whole conversation once its history is here.
             if proUnlocked, let current = store.thread(currentID) {
@@ -326,6 +328,8 @@ struct ConversationView: View {
     @AppStorage(CorresSettings.confirmTrashKey) private var confirmTrash = false
     @State private var confirmingTrash: Correspondence?
     @State private var calendarEvent: EventSuggestion?
+    /// What the email asks you to do, with its link (`MailDigest.nextStep`).
+    @State private var nextStep: NextStep?
     private var loadsImages: Bool { remoteImages == CorresSettings.RemoteImages.always.rawValue }
 
     /// Settings → Reading → Ask before moving to Trash.
@@ -497,6 +501,10 @@ struct ConversationView: View {
                 .accessibilityLabel("Summarizing")
                 Hairline().padding(.vertical, 2)
             }
+            if let nextStep, !thread.isFromAccountOwner {
+                nextStepRow(nextStep)
+                Hairline().padding(.vertical, 2)
+            }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text("\(thread.attention.title): \(thread.reason)")
                     .font(.footnote)
@@ -523,6 +531,49 @@ struct ConversationView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .corresSurface(radius: 18)
         .animation(.easeOut(duration: 0.25), value: insight)
+    }
+
+    /// The email's one call to action, opened where links open.
+    private func nextStepRow(_ step: NextStep) -> some View {
+        Button { LinkOpener.open(step.url) } label: {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Label("Next step", systemImage: "arrow.turn.down.right")
+                        .labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(step.label).font(.body.weight(.semibold)).foregroundStyle(CorresPalette.ink)
+                        if !step.host.isEmpty {
+                            Text(step.host).font(.footnote).foregroundStyle(CorresPalette.secondary).lineLimit(1)
+                        }
+                    }
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Next step: \(step.label)")
+        .accessibilityHint("Opens \(step.host)")
+    }
+
+    /// Off the main thread: reading a designed email's links is a full pass
+    /// over its HTML.
+    private static func findNextStep(in thread: Correspondence) async -> NextStep? {
+        guard thread.isBodyLoaded else { return nil }
+        let isBulk = InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) != nil
+        let isPromotion = InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == .promotions
+        let body = thread.body, html = thread.htmlBody, subject = thread.subject, sender = thread.senderEmail
+        let automated = thread.looksAutomated
+        return await Task.detached(priority: .utility) {
+            // The whole text, not the cleaned one: cleaning drops what
+            // follows a sign-off, which is often exactly where the link is.
+            let whole = MailDigest.readableText(body: body, html: html)
+            let kind = isPromotion ? .newsletter
+                : MailDigest.kind(subject: subject, text: MailDigest.clean(whole), senderEmail: sender, isBulk: isBulk,
+                                  looksAutomated: automated, hasEvent: false)
+            return MailDigest.nextStep(text: whole, html: html, kind: kind)
+        }.value
     }
 
     private func labelChips(_ labels: [GmailUserLabel]) -> some View {

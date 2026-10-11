@@ -82,6 +82,7 @@
 		7C11B26349AC4D098ADB6CC6 /* Core/AskQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5657FD79441A48ACB789585C /* Core/AskQuery.swift */; };
 		F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
 		F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */; };
+		AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -183,6 +184,7 @@
 		5657FD79441A48ACB789585C /* Core/AskQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/AskQuery.swift; sourceTree = SOURCE_ROOT; };
 		89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PlainTextEmail.swift; sourceTree = SOURCE_ROOT; };
 		B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/MailboxesView.swift; sourceTree = SOURCE_ROOT; };
+		A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/NextStep.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -242,6 +244,7 @@
 				D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */,
 				0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */,
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
+				A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */,
 				B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */,
 				89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */,
 				5657FD79441A48ACB789585C /* Core/AskQuery.swift */,
@@ -422,6 +425,7 @@
 				84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */,
 				BE36A92E6CE823019F950463 /* Core/PersistedOutboxEntry.swift in Sources */,
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
+				AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */,
 				F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */,
 				F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */,
 				7C11B26349AC4D098ADB6CC6 /* Core/AskQuery.swift in Sources */,

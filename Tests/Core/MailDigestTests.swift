@@ -92,7 +92,9 @@ struct MailDigestTests {
 
     @Test func tooShortToSummarize() {
         #expect(!MailDigest.isWorthSummarizing("Thanks! See you then."))
-        #expect(MailDigest.isWorthSummarizing(String(repeating: "word ", count: 40)))
+        // A short email reads in the time its summary would.
+        #expect(!MailDigest.isWorthSummarizing(String(repeating: "word ", count: 40)))
+        #expect(MailDigest.isWorthSummarizing(String(repeating: "word ", count: 120)))
     }
 
     // MARK: Kind
