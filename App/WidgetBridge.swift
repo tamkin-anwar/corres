@@ -44,8 +44,11 @@ enum WidgetBridge {
         let needs = MailQuery.prioritized(threads, attention: .needsYou, now: now)
         let waiting = MailQuery.prioritized(threads, attention: .waiting, now: now)
         let unread = MailQuery.filter(threads, now: now).filter(\.isUnread).count
+        let known = Correspondence.knownSenderNames(threads)
+        // Waiting is your own messages: named for who you're waiting on.
         func item(_ thread: Correspondence) -> WidgetSnapshot.Item {
-            WidgetSnapshot.Item(account: thread.id.account, threadID: thread.id.providerID, sender: thread.sender,
+            WidgetSnapshot.Item(account: thread.id.account, threadID: thread.id.providerID,
+                                sender: thread.counterpartName(knownNames: known),
                                 subject: thread.subject, reason: thread.reason, receivedAt: thread.receivedAt,
                                 isUnread: thread.isUnread, dueLabel: thread.dueAt.map(dueLabel))
         }

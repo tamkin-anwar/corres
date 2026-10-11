@@ -38,3 +38,18 @@ struct ReplyAddressTests {
         #expect(mail.replyAllCc == ["alex@example.com"])
     }
 }
+
+extension ReplyAddressTests {
+    /// Waiting is your own messages: the Brief named you as the one who
+    /// hadn't replied.
+    @Test func waitingIsNamedForWhoYouWroteTo() {
+        let mine = message(from: me, to: ["sam.lee@example.com"])
+        #expect(mine.counterpartName() == "Sam Lee")
+        let fromSam = message(from: "sam.lee@example.com", to: [me])
+        let known = Correspondence.knownSenderNames([Correspondence(
+            id: ThreadID(account: me, providerID: "s"), sender: "Samantha Lee", senderEmail: "sam.lee@example.com",
+            organization: "", subject: "", excerpt: "", body: "", receivedAt: .now, dueAt: nil, reason: "", attention: .quiet)])
+        #expect(mine.counterpartName(knownNames: known) == "Samantha Lee")
+        #expect(fromSam.counterpartName() == "Someone")
+    }
+}

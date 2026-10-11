@@ -418,6 +418,40 @@ extension Correspondence {
         return [senderEmail ?? sender]
     }
 
+    /// The other person in a conversation: the sender, or, when the latest
+    /// message is yours (everything in Waiting), who you wrote to. Named as
+    /// they sign their own mail when any of it is here (`knownNames`, from
+    /// `knownSenderNames`), else from their address. Waiting used to read
+    /// "Tamkin hasn't replied" about your own message.
+    public func counterpartName(knownNames: [String: String] = [:]) -> String {
+        guard isFromAccountOwner, let address = (toRecipients + ccRecipients).first(where: {
+            $0.lowercased() != id.account.lowercased()
+        }) else { return sender }
+        let bare = address.components(separatedBy: "<").last?
+            .trimmingCharacters(in: CharacterSet(charactersIn: "<> ")).lowercased() ?? address.lowercased()
+        if let known = knownNames[bare] { return known }
+        if let named = recipientNames.first, !named.contains("@") { return named }
+        return Self.name(fromAddress: bare)
+    }
+
+    /// Everyone who has written to you, by address, as they sign.
+    public static func knownSenderNames(_ threads: [Correspondence]) -> [String: String] {
+        var names: [String: String] = [:]
+        for thread in threads where !thread.isFromAccountOwner {
+            if let email = thread.senderEmail?.lowercased(), names[email] == nil, !thread.sender.contains("@") {
+                names[email] = thread.sender
+            }
+        }
+        return names
+    }
+
+    /// "sam.lee@example.com" reads as "Sam Lee".
+    static func name(fromAddress address: String) -> String {
+        let local = address.components(separatedBy: "@").first ?? address
+        let words = local.split(whereSeparator: { ".-_+".contains($0) }).filter { !$0.allSatisfy(\.isNumber) }
+        return words.isEmpty ? address : words.map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined(separator: " ")
+    }
+
     /// Reply All's Cc: everyone else on the message, never you or anyone
     /// already in To. A no-reply sender replaced by Reply-To isn't added
     /// back.

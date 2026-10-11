@@ -40,7 +40,7 @@ struct CorrespondenceRow: View {
                     // Your own latest message: who it went to, never your
                     // name (or theirs as if they'd written to you).
                     Text(sentTo.map { "To: \($0)" }
-                         ?? (thread.isFromAccountOwner ? thread.recipientNames.first.map { "To: \($0)" } : nil)
+                         ?? (thread.isFromAccountOwner ? "To: \(thread.counterpartName())" : nil)
                          ?? thread.sender)
                         .font(.body.weight(thread.isUnread ? .semibold : .medium))
                         .foregroundStyle(thread.isUnread ? CorresPalette.ink : CorresPalette.secondary)
@@ -312,7 +312,8 @@ struct CorrespondenceList: View {
         if !thread.isFromAccountOwner { return thread.sender }
         guard let address = thread.toRecipients.first ?? thread.ccRecipients.first else { return thread.sender }
         let bare = address.components(separatedBy: "<").last?.trimmingCharacters(in: CharacterSet(charactersIn: "> ")).lowercased() ?? address
-        let name = store.threads.first { $0.senderEmail?.lowercased() == bare }?.sender ?? thread.recipientNames.first
+        let name = store.threads.first { $0.senderEmail?.lowercased() == bare && !$0.isFromAccountOwner }?.sender
+            ?? thread.counterpartName()
         let others = thread.toRecipients.count + thread.ccRecipients.count - 1
         return (name ?? address) + (others > 0 ? " +\(others)" : "")
     }
@@ -773,7 +774,7 @@ struct CorrespondenceList: View {
                 onTrailingLong: { perform(trailingLongAction, on: thread) }
             ) {
                 let row = CorrespondenceRow(thread: thread, showsReason: destination != .mail, accountTag: accountTag(for: thread),
-                                            sentTo: showingSent ? recipientName(for: thread) : nil)
+                                            sentTo: showingSent || thread.isFromAccountOwner ? recipientName(for: thread) : nil)
                 if isSelecting {
                     // Tapping selects, the way Mail's Select works.
                     Button { toggleSelection(thread.id) } label: {

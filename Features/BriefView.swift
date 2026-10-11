@@ -171,7 +171,8 @@ struct BriefView: View {
                let days = Calendar.current.dateComponents([.day], from: overdue.waitingReference, to: .now).day,
                days >= WaitChip.followUpAfterDays {
                 plain("; ")
-                strong(Self.firstName(overdue.sender))
+                // Who you're waiting on, not the sender of your own message.
+                strong(Self.firstName(overdue.counterpartName(knownNames: Correspondence.knownSenderNames(store.threads))))
                 plain(" hasn't replied in \(Self.spelled(days)) days.")
             } else {
                 plain(".")

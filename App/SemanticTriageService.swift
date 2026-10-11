@@ -155,8 +155,14 @@ final class SemanticTriageService {
         // it; a low-confidence "no action needed" on a thread that stays in
         // Needs You would otherwise contradict where the thread sits.
         let agrees = (to == .needsYou) == assessment.needsReply
+        // The reason is shown in the lists and the Brief, so it gets the
+        // same check as summaries and Ask: every name, number, date and
+        // statement in it must be in what the model read. Otherwise the
+        // rule's own reason stays.
+        let source = [thread.sender, thread.senderEmail ?? "", thread.subject, thread.excerpt].joined(separator: "\n")
+        let grounded = MailDigest.unsupportedClaims(in: assessment.reason, source: source).isEmpty
         await store.applySemanticTriage(thread.id, from: from, to: to,
-                                        reason: agrees ? assessment.reason : nil, messageID: messageID)
+                                        reason: agrees && grounded ? assessment.reason : nil, messageID: messageID)
     }
 
     /// A plain, non-`@available` tuple, deliberately: `TriageAssessment`
