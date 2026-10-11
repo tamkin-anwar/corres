@@ -133,6 +133,12 @@ struct ConversationView: View {
                             attachmentsList(thread.attachments, messageID: messageID, account: thread.id.account)
                                 .padding(.horizontal, CorresSpace.page)
                         }
+                        let later = laterMessages(in: thread)
+                        if !later.isEmpty {
+                            EarlierMessages(messages: later, account: thread.id.account)
+                                .padding(.horizontal, CorresSpace.page)
+                                .transition(.opacity)
+                        }
                     }
                     .padding(.top, 4).padding(.bottom, 24)
                     .readableWidth()
@@ -239,7 +245,7 @@ struct ConversationView: View {
         // the same behavior every real mail client already has.
         // Keyed on the latest message too, so a reply landing while the
         // conversation is open loads, is marked read and is summarized.
-        .task(id: "\(currentID.account)|\(currentID.providerID)|\(currentThread?.latestMessageID ?? "")") {
+        .task(id: "\(currentID.account)|\(currentID.providerID)|\(currentThread?.latestMessageID ?? "")|\(currentThread?.lastSentAt?.timeIntervalSince1970 ?? 0)") {
             guard let thread = store.thread(currentID) else { return }
             // Loading the body and marking read are independent network
             // calls; neither should wait on the other.
@@ -282,7 +288,26 @@ struct ConversationView: View {
 
     /// Everything in the conversation before the message shown in full.
     private func earlierMessages(in thread: Correspondence) -> [Correspondence]? {
-        threadActions.messages(in: thread)?.filter { $0.latestMessageID != thread.latestMessageID }
+        threadActions.messages(in: thread)?.filter {
+            $0.latestMessageID != thread.latestMessageID && !isSameSend($0, as: thread) && $0.receivedAt <= thread.receivedAt
+        }
+    }
+
+    /// Messages newer than the one shown (a reply you just sent, before
+    /// Gmail's copy makes it the conversation's latest): below it, in order,
+    /// not above it as if it came first.
+    private func laterMessages(in thread: Correspondence) -> [Correspondence] {
+        (threadActions.messages(in: thread) ?? []).filter {
+            $0.latestMessageID != thread.latestMessageID && !isSameSend($0, as: thread) && $0.receivedAt > thread.receivedAt
+        }
+    }
+
+    /// Gmail's copy of the very message shown, when the shown one is the
+    /// copy Corres saved as it sent (no message id yet): the same message,
+    /// never listed twice.
+    private func isSameSend(_ message: Correspondence, as thread: Correspondence) -> Bool {
+        thread.latestMessageID == nil && message.isFromAccountOwner && thread.isFromAccountOwner
+            && abs(message.receivedAt.timeIntervalSince(thread.receivedAt)) < 600
     }
 
     /// Leaves the conversation: pops it on iPhone, clears the detail
@@ -317,9 +342,9 @@ struct ConversationView: View {
 
     private func messageHeader(for thread: Correspondence) -> some View {
         HStack(spacing: 12) {
-            CorrespondentAvatar(initials: thread.initials, size: CGSize(width: 44, height: 44))
+            CorrespondentAvatar(initials: thread.isFromAccountOwner ? "Y" : thread.initials, size: CGSize(width: 44, height: 44))
             VStack(alignment: .leading, spacing: 2) {
-                Text(thread.sender).font(.body.weight(.semibold))
+                Text(thread.isFromAccountOwner ? "You" : thread.sender).font(.body.weight(.semibold))
                 Text(recipientLine(for: thread))
                     .font(.subheadline).foregroundStyle(CorresPalette.secondary)
                     .lineLimit(1)
@@ -331,6 +356,13 @@ struct ConversationView: View {
 
     private func recipientLine(for thread: Correspondence) -> String {
         let when = thread.receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
+        // Something you sent: who it went to. Never "To you".
+        if thread.isFromAccountOwner {
+            let names = thread.recipientNames
+            let to = names.isEmpty ? "Sent" : "To " + (names.count > 2 ? names.prefix(2).joined(separator: ", ") + " +\(names.count - 2)"
+                                                                          : names.joined(separator: ", "))
+            return "\(to) · \(when)"
+        }
         let to = (thread.toRecipients.isEmpty || thread.isDirectRecipient) ? "To you" : "Cc you"
         return thread.senderEmail.map { "\($0) · \(when)" } ?? "\(to) · \(when)"
     }

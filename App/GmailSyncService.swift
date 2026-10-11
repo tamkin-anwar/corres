@@ -186,6 +186,7 @@ final class GmailSyncService {
             setMissedMessageIDs(stillMissing, for: account)
             if !isFullListing { await backfillSentIfNeeded(account: account) }
             else { defaults.set(true, forKey: Self.sentBackfillKey(for: account)) }
+            await repairSentPlaceholders(account: account)
             return true
         } catch {
             errorMessage = "Could not sync Gmail. Please check your connection and try again."
@@ -288,6 +289,20 @@ final class GmailSyncService {
     /// before they replied (Gmail keeps only their reply as the latest)
     /// still shows in Sent. Sent messages are from you, so this can never
     /// put anyone in the Screener; marked done only once it succeeds.
+    /// Conversations you started that Corres recorded before it kept
+    /// Gmail's own copy: no message id, and (in builds before 5) the
+    /// recipient shown as the sender. Each is replaced by the real message,
+    /// once; upsert always lets the real copy replace a placeholder.
+    private func repairSentPlaceholders(account: String) async {
+        guard let threads = try? await repository.threads() else { return }
+        let broken = threads.filter { $0.id.account == account && $0.latestMessageID == nil && $0.lastSentAt != nil }
+        for thread in broken.prefix(20) {
+            guard let messages = try? await client.fetchThreadMessages(threadId: thread.id.providerID, account: account),
+                  let latest = messages.last else { continue }
+            _ = try? await repository.upsert([latest], isInitialSync: true)
+        }
+    }
+
     private func backfillSentIfNeeded(account: String) async {
         guard !defaults.bool(forKey: Self.sentBackfillKey(for: account)),
               let ids = try? await client.listRecentSent(account: account) else { return }

@@ -62,13 +62,58 @@ struct SwiftDataMailRepositoryTests {
         #expect(updated.waitingSince == nil)
     }
 
+    /// What a tester saw: a new email she sent showed as received from
+    /// the person she sent it to ("To you"), next to the real one.
+    @Test func aNewEmailIsRecordedAsGmailsCopyOfWhatWasSent() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let account = "ridita@example.com"
+        let threadID = ThreadID(account: account, providerID: "19a1")
+        let gmailCopy = Correspondence(
+            id: threadID, sender: "Ridita Rahman", senderEmail: account, organization: "", subject: "Testing Corres",
+            excerpt: "Hi, Corres is looking polished", body: "Hi, Corres is looking polished",
+            messageIdHeader: "abc@corres.app", latestMessageID: "m1", receivedAt: now.addingTimeInterval(-2), dueAt: nil,
+            reason: "", attention: .quiet, labelIds: ["SENT"], toRecipients: ["Tamkin Anwar <tamkin@example.com>"])
+        let draft = Draft(kind: .new, fromAccount: account, to: "tamkin@example.com", subject: "Testing Corres",
+                          body: "Hi, Corres is looking polished")
+        let created = try await repository.send(draft, sentAt: now, realThreadID: threadID, sentCopy: gmailCopy)
+        #expect(created.sender == "Ridita Rahman")
+        #expect(created.isFromAccountOwner)
+        #expect(created.recipientNames == ["Tamkin Anwar"])
+        #expect(created.latestMessageID == "m1")
+        #expect(created.lastSentAt == now)
+        #expect(!created.isUnread)
+    }
+
+    /// The copy Corres saved as it sent is stamped a moment after Gmail's,
+    /// so a "newer wins" check kept the placeholder forever. Gmail's copy
+    /// always replaces it.
+    @Test func gmailsCopyReplacesThePlaceholderEvenThoughItIsOlder() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let account = "ridita@example.com"
+        let threadID = ThreadID(account: account, providerID: "19a2")
+        let draft = Draft(kind: .new, fromAccount: account, to: "tamkin@example.com", subject: "Testing", body: "Hi")
+        _ = try await repository.send(draft, sentAt: now, realThreadID: threadID, sentCopy: nil)
+        let real = Correspondence(
+            id: threadID, sender: "Ridita Rahman", senderEmail: account, organization: "", subject: "Testing",
+            excerpt: "Hi", body: "Hi", latestMessageID: "m2", receivedAt: now.addingTimeInterval(-3), dueAt: nil,
+            reason: "", attention: .quiet, labelIds: ["SENT"], toRecipients: ["tamkin@example.com"])
+        _ = try await repository.upsert([real], isInitialSync: true)
+        let stored = try await repository.threads().first { $0.id == threadID }
+        #expect(stored?.latestMessageID == "m2")
+        #expect(stored?.sender == "Ridita Rahman")
+        #expect(try await repository.threads().filter { $0.id == threadID }.count == 1)
+    }
+
     @Test func newDraftCreatesATrimmedWaitingConversation() async throws {
         let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
         try await repository.seedIfNeeded(now: now)
         let before = try await repository.threads().count
         let draft = Draft(kind: .new, to: "  Nadia Osei  ", subject: "  Introduction  ", body: "Hello. Are you free Thursday?")
         let created = try await repository.send(draft, sentAt: now, realThreadID: nil)
-        #expect(created.sender == "Nadia Osei")
+        #expect(created.sender == "You")
+        #expect(created.isFromAccountOwner)
+        #expect(created.recipientNames == ["Nadia Osei"])
+        #expect(!created.isUnread)
         #expect(created.subject == "Introduction")
         #expect(created.attention == .waiting)
         #expect(try await repository.threads().count == before + 1)

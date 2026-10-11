@@ -127,7 +127,10 @@ struct CorresCoreTests {
         let draft = Draft(kind: .new, to: "Nadia Osei", subject: "Introduction", body: "Hello.")
         let created = try await repository.send(draft, sentAt: now, realThreadID: nil)
         #expect(created.attention == .waiting)
-        #expect(created.sender == "Nadia Osei")
+        // Yours, to them: never shown as if they had written to you.
+        #expect(created.sender == "You")
+        #expect(created.isFromAccountOwner)
+        #expect(created.recipientNames == ["Nadia Osei"])
         #expect(await repository.threads().count == before + 1)
     }
 

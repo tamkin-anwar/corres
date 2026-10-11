@@ -221,21 +221,16 @@ public actor SwiftDataMailRepository: MailRepository {
         return before != model.attentionRaw
     }
 
-    public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {
+    public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?, sentCopy: Correspondence?) throws -> Correspondence {
         guard let threadID = draft.threadID else {
-            let sender = draft.to.trimmingCharacters(in: .whitespacesAndNewlines)
-            let subject = draft.subject.trimmingCharacters(in: .whitespacesAndNewlines)
             // realThreadID is the real Gmail account + thread id when
             // OutboxService already sent this via Gmail; falling back to the
             // local "sample" account only when it stayed local-only (no
             // account connected).
             let (attention, reason) = Self.afterSending(draft, sentAt: sentAt)
-            let created = Correspondence(
-                id: realThreadID ?? ThreadID(account: Self.localAccount, providerID: UUID().uuidString),
-                sender: sender, organization: "", subject: subject,
-                excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
-                reason: reason, attention: attention, waitingSince: attention == .waiting ? sentAt : nil,
-                lastSentAt: sentAt)
+            let created = Correspondence.started(
+                by: draft, id: realThreadID ?? ThreadID(account: Self.localAccount, providerID: UUID().uuidString),
+                sentAt: sentAt, sentCopy: sentCopy, attention: attention, reason: reason)
             modelContext.insert(PersistedCorrespondence(from: created))
             try modelContext.save()
             return created
@@ -260,8 +255,13 @@ public actor SwiftDataMailRepository: MailRepository {
         // Sample and bare-name recipients have no address to check; treat
         // them as people.
         let toPeople = recipients.isEmpty || MailSignals.hasPersonRecipient(recipients, account: draft.fromAccount ?? "")
-        return InboxClassifier.afterYouWrote(asksSomething: MailSignals.asksSomething(draft.subject + "\n" + draft.body),
-                                             toPeople: toPeople, sentAt: sentAt, now: sentAt)
+        let result = InboxClassifier.afterYouWrote(asksSomething: MailSignals.asksSomething(draft.subject + "\n" + draft.body),
+                                                   toPeople: toPeople, sentAt: sentAt, now: sentAt)
+        // A new email isn't a reply.
+        if draft.kind == .new, result.reason == InboxClassifier.repliedReason {
+            return (result.attention, InboxClassifier.startedReason)
+        }
+        return result
     }
 
     public func remove(_ id: ThreadID) throws {
@@ -333,8 +333,12 @@ public actor SwiftDataMailRepository: MailRepository {
                     existing.lastSentAt = sent
                     changed = true
                 }
+                // A copy Corres saved itself (no message id yet) always gives
+                // way to Gmail's real one. Its time is when Corres saved it,
+                // a moment after Gmail's, so comparing times kept the
+                // placeholder forever.
                 guard let incomingMessageID = item.latestMessageID, incomingMessageID != existing.latestMessageID,
-                      item.receivedAt >= existing.receivedAt else { continue }
+                      item.receivedAt >= existing.receivedAt || existing.latestMessageID == nil else { continue }
                 let isFromAccountOwner = item.isFromAccountOwner
                 existing.sender = item.sender
                 existing.senderEmail = item.senderEmail

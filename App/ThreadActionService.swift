@@ -225,15 +225,22 @@ final class ThreadActionService {
     private(set) var history: [ThreadID: (latest: String?, messages: [Correspondence])] = [:]
 
     func messages(in thread: Correspondence) -> [Correspondence]? {
-        guard let entry = history[thread.id], entry.latest == thread.latestMessageID else { return nil }
+        guard let entry = history[thread.id], entry.latest == Self.historyKey(thread) else { return nil }
         return entry.messages
+    }
+
+    /// Changes when a message arrives or you send one, so a reply you just
+    /// sent shows in the conversation (your reply isn't its latest message
+    /// until Gmail's copy syncs).
+    private static func historyKey(_ thread: Correspondence) -> String {
+        "\(thread.latestMessageID ?? "")|\(thread.lastSentAt?.timeIntervalSince1970 ?? 0)"
     }
 
     func loadHistory(for thread: Correspondence) async {
         guard thread.id.account != Self.sampleAccount, messages(in: thread) == nil,
               let messages = try? await client.fetchThreadMessages(threadId: thread.id.providerID, account: thread.id.account)
         else { return }
-        history[thread.id] = (thread.latestMessageID, messages)
+        history[thread.id] = (Self.historyKey(thread), messages)
     }
 
     /// Adds or removes a single real Gmail label (from `LabelDirectory`),

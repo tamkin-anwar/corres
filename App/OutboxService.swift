@@ -185,7 +185,15 @@ final class OutboxService {
                 return
             }
         }
-        await store.send(draft, realThreadID: realThreadID)
+        // A new conversation is recorded as Gmail's own copy of what was
+        // sent: the real sender, recipients and message id (see
+        // `Correspondence.started`).
+        var sentCopy: Correspondence?
+        if thread == nil, let realThreadID,
+           let messages = try? await client.fetchThreadMessages(threadId: realThreadID.providerID, account: realThreadID.account) {
+            sentCopy = messages.last { $0.isFromAccountOwner } ?? messages.last
+        }
+        await store.send(draft, realThreadID: realThreadID, sentCopy: sentCopy)
         try? await repository.removeOutboxEntry(id: id)
         // Sent in place of a Gmail draft: the draft goes.
         if realThreadID != nil, let draftID = draft.gmailDraftID,

@@ -360,6 +360,45 @@ public struct PendingAttachment: Identifiable, Hashable, Sendable, Codable {
     }
 }
 
+extension Correspondence {
+    /// A conversation you just started, as Corres records it the moment it's
+    /// sent. Gmail's own copy (`sentCopy`) when Corres could fetch it: the
+    /// real sender, recipients, labels and message id. Otherwise built from
+    /// the draft, as yours: an earlier version used the recipient as the
+    /// sender, so a new email showed as received from them, "To you", next
+    /// to the real one.
+    public static func started(by draft: Draft, id: ThreadID, sentAt: Date, sentCopy: Correspondence?,
+                               attention: Attention, reason: String) -> Correspondence {
+        var started = sentCopy ?? Correspondence(
+            id: id, sender: "You", senderEmail: id.account, organization: "",
+            subject: draft.subject.trimmingCharacters(in: .whitespacesAndNewlines),
+            excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
+            reason: reason, attention: attention, isUnread: false, labelIds: ["SENT"],
+            toRecipients: Self.addresses(draft.to), ccRecipients: Self.addresses(draft.cc ?? ""))
+        started.reason = reason
+        started.attention = attention
+        started.isUnread = false
+        started.waitingSince = attention == .waiting ? sentAt : nil
+        started.lastSentAt = sentAt
+        return started
+    }
+
+    private static func addresses(_ list: String) -> [String] {
+        list.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+    }
+
+    /// Who a conversation went to, for showing a message you sent: "Maya
+    /// Chen" from "Maya Chen <maya@example.com>", or the address.
+    public var recipientNames: [String] {
+        (toRecipients + ccRecipients).map { entry in
+            let name = entry.components(separatedBy: "<").first?
+                .trimmingCharacters(in: CharacterSet.whitespaces.union(CharacterSet(charactersIn: "\""))) ?? ""
+            if !name.isEmpty, !entry.hasPrefix("<") { return name }
+            return entry.trimmingCharacters(in: CharacterSet(charactersIn: "<> "))
+        }
+    }
+}
+
 public struct Draft: Identifiable, Hashable, Sendable, Codable {
     public enum Kind: String, Hashable, Sendable, Codable { case new, reply, replyAll, forward }
 
@@ -543,13 +582,15 @@ public enum InboxClassifier {
     public static let fyiReason = "From a person, nothing asked. Kept out of Needs You."
     public static let askedReason = "You asked. No reply yet."
     public static let repliedReason = "You replied. Nothing pending."
+    /// A conversation you started: "replied" read wrong on a new email.
+    public static let startedReason = "You sent this. Nothing pending."
 
     /// Every reason these rules can produce for unread mail: a thread
     /// carrying one of these (and never triaged) still reflects a pure rule
     /// decision nobody has overridden, so re-running the rules is safe.
     public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason, staleReason,
                                                   readReason, questionReason, deadlineReason, obligationReason, copiedReason,
-                                                  askedReason, repliedReason, vipReason, fyiReason,
+                                                  askedReason, repliedReason, startedReason, vipReason, fyiReason,
                                                   BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,
                                                   BulkKind.updates.reason, BulkKind.automated.reason]
 

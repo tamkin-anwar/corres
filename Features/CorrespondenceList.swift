@@ -37,7 +37,11 @@ struct CorrespondenceRow: View {
             if showAvatars { CorrespondentAvatar(initials: thread.initials) }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(sentTo.map { "To: \($0)" } ?? thread.sender)
+                    // Your own latest message: who it went to, never your
+                    // name (or theirs as if they'd written to you).
+                    Text(sentTo.map { "To: \($0)" }
+                         ?? (thread.isFromAccountOwner ? thread.recipientNames.first.map { "To: \($0)" } : nil)
+                         ?? thread.sender)
                         .font(.body.weight(thread.isUnread ? .semibold : .medium))
                         .foregroundStyle(thread.isUnread ? CorresPalette.ink : CorresPalette.secondary)
                         .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
@@ -307,7 +311,8 @@ struct CorrespondenceList: View {
     private func recipientName(for thread: Correspondence) -> String {
         if !thread.isFromAccountOwner { return thread.sender }
         guard let address = thread.toRecipients.first ?? thread.ccRecipients.first else { return thread.sender }
-        let name = store.threads.first { $0.senderEmail?.lowercased() == address }?.sender
+        let bare = address.components(separatedBy: "<").last?.trimmingCharacters(in: CharacterSet(charactersIn: "> ")).lowercased() ?? address
+        let name = store.threads.first { $0.senderEmail?.lowercased() == bare }?.sender ?? thread.recipientNames.first
         let others = thread.toRecipients.count + thread.ccRecipients.count - 1
         return (name ?? address) + (others > 0 ? " +\(others)" : "")
     }

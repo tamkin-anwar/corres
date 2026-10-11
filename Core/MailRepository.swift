@@ -72,7 +72,9 @@ public protocol MailRepository: Sendable {
     /// later sync then recognizes the same thread rather than duplicating
     /// it. nil for a draft that stayed local-only (no Gmail account
     /// connected, or replying within an already-local/sample thread).
-    func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) async throws -> Correspondence
+    /// `sentCopy` is Gmail's own copy of a new message just sent, when
+    /// Corres could fetch it (see `Correspondence.started`).
+    func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?, sentCopy: Correspondence?) async throws -> Correspondence
     /// Removes a single thread outright, unconditionally, regardless of
     /// account. Used for Archive and Trash: both make a thread disappear
     /// from Corres entirely, the App layer already told Gmail about it (or
@@ -236,16 +238,12 @@ public actor SampleMailRepository: MailRepository {
     /// Sample threads always carry their full body.
     public func applyLoadedContent(_ items: [Correspondence]) -> Int { 0 }
 
-    public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) throws -> Correspondence {
+    public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?, sentCopy: Correspondence?) throws -> Correspondence {
         guard let threadID = draft.threadID else {
-            let sender = draft.to.trimmingCharacters(in: .whitespacesAndNewlines)
-            let subject = draft.subject.trimmingCharacters(in: .whitespacesAndNewlines)
-            let created = Correspondence(
-                id: realThreadID ?? ThreadID(account: account, providerID: UUID().uuidString),
-                sender: sender, organization: "", subject: subject,
-                excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
-                reason: "You started this conversation. Waiting for a response.",
-                attention: .waiting, waitingSince: sentAt, lastSentAt: sentAt)
+            let created = Correspondence.started(
+                by: draft, id: realThreadID ?? ThreadID(account: account, providerID: UUID().uuidString),
+                sentAt: sentAt, sentCopy: sentCopy, attention: .waiting,
+                reason: "You started this conversation. Waiting for a response.")
             items.insert(created, at: 0)
             return created
         }
@@ -370,5 +368,12 @@ public actor SampleMailRepository: MailRepository {
             map[senderKey(account: item.id.account, senderEmail: senderEmail)] = true
         }
         return map
+    }
+}
+
+extension MailRepository {
+    /// Without Gmail's copy of the sent message.
+    public func send(_ draft: Draft, sentAt: Date, realThreadID: ThreadID?) async throws -> Correspondence {
+        try await send(draft, sentAt: sentAt, realThreadID: realThreadID, sentCopy: nil)
     }
 }

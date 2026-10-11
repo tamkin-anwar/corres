@@ -348,12 +348,12 @@ final class MailStore {
     /// identity OutboxService already established by actually sending via
     /// Gmail (nil when the draft stayed local-only); see MailRepository.send.
     @discardableResult
-    func send(_ draft: Draft, realThreadID: ThreadID? = nil) async -> Bool {
+    func send(_ draft: Draft, realThreadID: ThreadID? = nil, sentCopy: Correspondence? = nil) async -> Bool {
         guard !sending.contains(draft.id) else { return false }
         sending.insert(draft.id)
         defer { sending.remove(draft.id) }
         do {
-            let updated = try await repository.send(draft, sentAt: .now, realThreadID: realThreadID)
+            let updated = try await repository.send(draft, sentAt: .now, realThreadID: realThreadID, sentCopy: sentCopy)
             if let index = allThreads.firstIndex(where: { $0.id == updated.id }) {
                 allThreads[index] = updated
             } else {
