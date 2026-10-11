@@ -9,6 +9,12 @@ import SwiftUI
 /// drawers. Only what Corres doesn't already do elsewhere: Gmail's
 /// categories are Mail's People and Updates, and finding receipts or
 /// purchases is a question for Ask.
+/// Opens the Mailboxes screen. A value on the navigation path, like a
+/// conversation, with every mailbox registered beside it in CorresShell:
+/// opened as a plain view instead, Mailboxes sat outside the path SwiftUI
+/// tracks, and nothing on it could open (every row did nothing).
+struct MailboxesRoute: Hashable {}
+
 enum Mailbox: Hashable, Identifiable {
     case drafts, snoozed, flagged, sent, allMail, spam, trash
     case label(id: String, name: String, account: String)
@@ -149,13 +155,6 @@ struct MailboxesView: View {
                     withAnimation(.snappy(duration: 0.25)) { isEditing.toggle() }
                 }
                 .fontWeight(isEditing ? .semibold : .regular)
-            }
-        }
-        .navigationDestination(for: Mailbox.self) { mailbox in
-            if mailbox == .drafts {
-                DraftsView(store: store, outbox: outbox, auth: auth, accounts: accounts)
-            } else {
-                MailboxView(mailbox: mailbox, store: store, threadActions: threadActions, accounts: accounts)
             }
         }
         .task { await labelDirectory.refreshIfConnected(accounts: accounts) }

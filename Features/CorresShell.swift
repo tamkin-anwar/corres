@@ -379,6 +379,7 @@ struct CorresShell: View {
                                             labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
                                             route: route)
                         }
+                        .modifier(MailboxDestinations(shell: self))
                         // A screen that isn't a tab, opened from a link.
                         .navigationDestination(for: Destination.self) { pushed in
                             destinationContent(for: pushed)
@@ -433,6 +434,7 @@ struct CorresShell: View {
                     .background(CorresPalette.canvas)
                     .navigationTitle(title(for: selection))
                     .navigationBarTitleDisplayMode(selection == .brief ? .inline : .large)
+                    .modifier(MailboxDestinations(shell: self))
                     .toolbar {
                         if selection == .mail {
                             ToolbarItem(placement: .topBarLeading) { mailboxesLink }
@@ -517,11 +519,11 @@ struct CorresShell: View {
         .accessibilityValue(displayedAccount ?? "Sample mail")
     }
 
+    /// The accounts Mailboxes shows: the one in view, or all of them.
+    fileprivate var mailboxAccounts: [String] { accountFilter.map { [$0] } ?? auth.accounts.map(\.email) }
+
     private var mailboxesLink: some View {
-        NavigationLink {
-            MailboxesView(store: store, threadActions: threadActions, labelDirectory: labelDirectory, outbox: outbox,
-                          auth: auth, accounts: accountFilter.map { [$0] } ?? auth.accounts.map(\.email))
-        } label: {
+        NavigationLink(value: MailboxesRoute()) {
             // The menu mark Gmail and Spark use for "everything else": a
             // folder read as "files", not mailboxes.
             Image(systemName: "line.3.horizontal").frame(minWidth: 44, minHeight: 44)
@@ -587,5 +589,27 @@ private struct AccountTitleMenu<Menu: View>: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+/// Mailboxes and each mailbox in it, registered at the root of a stack so
+/// they open from anywhere on it (see `MailboxesRoute`).
+private struct MailboxDestinations: ViewModifier {
+    let shell: CorresShell
+
+    func body(content: Content) -> some View {
+        content
+            .navigationDestination(for: MailboxesRoute.self) { _ in
+                MailboxesView(store: shell.store, threadActions: shell.threadActions, labelDirectory: shell.labelDirectory,
+                              outbox: shell.outbox, auth: shell.auth, accounts: shell.mailboxAccounts)
+            }
+            .navigationDestination(for: Mailbox.self) { mailbox in
+                if mailbox == .drafts {
+                    DraftsView(store: shell.store, outbox: shell.outbox, auth: shell.auth, accounts: shell.mailboxAccounts)
+                } else {
+                    MailboxView(mailbox: mailbox, store: shell.store, threadActions: shell.threadActions,
+                                accounts: shell.mailboxAccounts)
+                }
+            }
     }
 }
