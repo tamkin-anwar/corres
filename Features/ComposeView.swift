@@ -21,9 +21,14 @@ struct ComposeView: View {
     @State private var confirmingNoSubject = false
     @FocusState private var focusedField: Field?
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
-    @State private var pickedPhoto: PhotosPickerItem?
+    @State private var pickedPhotos: [PhotosPickerItem] = []
+    @State private var showingPhotoPicker = false
+    @State private var showingCamera = false
+    @State private var showingScanner = false
     @State private var showingFileImporter = false
     @State private var attachmentError: String?
+    /// A quiet line under the attachments ("made smaller to fit").
+    @State private var attachmentNote: String?
     @State private var rewriting: MailIntelligence.Tone?
     @State private var beforeRewrite: String?
     @Environment(MailIntelligence.self) private var intelligence
@@ -83,6 +88,17 @@ struct ComposeView: View {
                     field(title: "Subject", text: $draft.subject, isEditable: true)
                         .focused($focusedField, equals: .subject)
                     Divider().padding(.leading, CorresSpace.page)
+                    // Above the message, not below it: under the editor
+                    // the keyboard covered them, so attaching looked like
+                    // nothing had happened.
+                    if !draft.attachments.isEmpty {
+                        attachmentChips
+                        if let attachmentNote {
+                            Text(attachmentNote).font(.caption).foregroundStyle(CorresPalette.secondary)
+                                .padding(.horizontal, CorresSpace.page).padding(.bottom, 6)
+                        }
+                        Divider().padding(.leading, CorresSpace.page)
+                    }
                     TextEditor(text: $draft.body)
                         .focused($focusedField, equals: .body)
                         .font(.body)
@@ -90,10 +106,6 @@ struct ComposeView: View {
                         .frame(minHeight: 260)
                         .padding(.horizontal, CorresSpace.page - 5)
                         .padding(.vertical, 12)
-                    if !draft.attachments.isEmpty {
-                        Divider().padding(.leading, CorresSpace.page)
-                        attachmentChips
-                    }
                 }
                 .padding(.vertical, 12)
             }
@@ -106,9 +118,23 @@ struct ComposeView: View {
                     Button("Cancel", role: .cancel) { attemptDismiss() }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    // Each item only asks for its picker; the pickers are
+                    // presented from the screen (below). A PhotosPicker
+                    // inside the menu closed with the menu, so choosing
+                    // Photo Library did nothing at all.
                     Menu {
-                        PhotosPicker(selection: $pickedPhoto, matching: .images) {
-                            Label("Photo Library", systemImage: "photo")
+                        Button { showingPhotoPicker = true } label: {
+                            Label("Photo Library", systemImage: "photo.on.rectangle")
+                        }
+                        if CameraPicker.isAvailable {
+                            Button { showingCamera = true } label: {
+                                Label("Take Photo", systemImage: "camera")
+                            }
+                        }
+                        if DocumentScanner.isAvailable {
+                            Button { showingScanner = true } label: {
+                                Label("Scan Document", systemImage: "doc.viewfinder")
+                            }
                         }
                         Button { showingFileImporter = true } label: {
                             Label("Choose File", systemImage: "folder")
@@ -140,9 +166,25 @@ struct ComposeView: View {
                 focusedField = draft.to.isEmpty ? .to : .body
                 if draft.kind != .new { placeCursorAboveQuote() }
             }
-            .onChange(of: pickedPhoto) { _, newValue in
-                guard let newValue else { return }
-                Task { await addPhoto(newValue) }
+            .photosPicker(isPresented: $showingPhotoPicker, selection: $pickedPhotos, maxSelectionCount: 10,
+                          matching: .any(of: [.images, .videos]), photoLibrary: .shared())
+            .onChange(of: pickedPhotos) { _, items in
+                guard !items.isEmpty else { return }
+                Task { await addPhotos(items) }
+            }
+            .fullScreenCover(isPresented: $showingCamera) {
+                CameraPicker { image in
+                    if let file = AttachmentFiles.fromCamera(image, number: photoNumber) {
+                        addAttachment(filename: file.filename, mimeType: file.mimeType, data: file.data)
+                    }
+                }
+                .ignoresSafeArea()
+            }
+            .fullScreenCover(isPresented: $showingScanner) {
+                DocumentScanner { pdf in
+                    addAttachment(filename: "Scan \(scanNumber).pdf", mimeType: "application/pdf", data: pdf)
+                }
+                .ignoresSafeArea()
             }
             .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
                 if case .success(let urls) = result { addFiles(urls) }
@@ -413,23 +455,37 @@ struct ComposeView: View {
         name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined()
     }
 
+    /// One row that scrolls sideways, so ten photos don't push the message
+    /// off the screen: a thumbnail for pictures, the name and size, and a
+    /// remove button.
     private var attachmentChips: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(draft.attachments) { attachment in
-                HStack(spacing: 8) {
-                    Image(systemName: "paperclip").font(.footnote).foregroundStyle(CorresPalette.secondary)
-                    Text(attachment.filename).font(.footnote).lineLimit(1)
-                    Spacer(minLength: 8)
-                    Button {
-                        draft.attachments.removeAll { $0.id == attachment.id }
-                    } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(CorresPalette.secondary)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(draft.attachments) { attachment in
+                    HStack(spacing: 8) {
+                        AttachmentThumbnail(attachment: attachment)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(attachment.filename).font(.footnote.weight(.medium)).lineLimit(1)
+                            Text(ByteCountFormatter.string(fromByteCount: Int64(attachment.data.count), countStyle: .file))
+                                .font(.caption2).foregroundStyle(CorresPalette.secondary)
+                        }
+                        .frame(maxWidth: 140, alignment: .leading)
+                        Button {
+                            withAnimation(.snappy(duration: 0.2)) { draft.attachments.removeAll { $0.id == attachment.id } }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(CorresPalette.tertiary)
+                                .frame(minWidth: 28, minHeight: 28)
+                        }
+                        .accessibilityLabel("Remove \(attachment.filename)")
                     }
-                    .accessibilityLabel("Remove \(attachment.filename)")
+                    .padding(.leading, 6).padding(.trailing, 4).padding(.vertical, 6)
+                    .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .transition(.scale(scale: 0.9).combined(with: .opacity))
                 }
             }
+            .padding(.horizontal, CorresSpace.page).padding(.vertical, 8)
         }
-        .padding(.horizontal, CorresSpace.page).padding(.vertical, 8)
+        .animation(.snappy(duration: 0.2), value: draft.attachments.count)
     }
 
     /// Gmail's own 25 MB cap (`Draft.maxAttachmentsBytes`) is enforced here,
@@ -444,16 +500,34 @@ struct ComposeView: View {
         draft.attachments.append(PendingAttachment(filename: filename, mimeType: mimeType, data: data))
     }
 
-    private func addPhoto(_ item: PhotosPickerItem) async {
-        defer { pickedPhoto = nil }
-        guard let data = try? await item.loadTransferable(type: Data.self) else {
-            attachmentError = "Could not load that photo."
-            return
+    /// "Photo 3": counts the photos already attached, so names don't repeat.
+    private var photoNumber: Int {
+        draft.attachments.filter { $0.filename.hasPrefix("Photo ") || $0.filename.hasPrefix("Video ") }.count + 1
+    }
+    private var scanNumber: Int { draft.attachments.filter { $0.filename.hasPrefix("Scan ") }.count + 1 }
+
+    /// In the order picked. iPhone photos go as JPEG (see `AttachmentFiles`).
+    private func addPhotos(_ items: [PhotosPickerItem]) async {
+        defer { pickedPhotos = [] }
+        var failed = 0
+        var shrank = 0
+        for item in items {
+            guard var file = await AttachmentFiles.fromPhotosItem(item, number: photoNumber) else { failed += 1; continue }
+            // Too big to fit with the rest: made smaller, as Mail does,
+            // rather than refused. Videos and files keep their size.
+            if draft.attachmentsSizeBytes + file.data.count > Draft.maxAttachmentsBytes,
+               file.mimeType.hasPrefix("image/"), let smaller = AttachmentFiles.shrunk(file.data) {
+                file = (file.filename.replacingOccurrences(of: #"\.[A-Za-z0-9]+$"#, with: ".jpg", options: .regularExpression),
+                        "image/jpeg", smaller)
+                shrank += 1
+            }
+            addAttachment(filename: file.filename, mimeType: file.mimeType, data: file.data)
         }
-        let contentType = item.supportedContentTypes.first
-        let ext = contentType?.preferredFilenameExtension ?? "jpg"
-        let mimeType = contentType?.preferredMIMEType ?? "image/jpeg"
-        addAttachment(filename: "Photo-\(draft.attachments.count + 1).\(ext)", mimeType: mimeType, data: data)
+        if shrank > 0, failed == 0, attachmentError == nil {
+            attachmentNote = shrank == 1 ? "A photo was made smaller to fit Gmail's 25 MB limit."
+                                         : "\(shrank) photos were made smaller to fit Gmail's 25 MB limit."
+        }
+        if failed > 0 { attachmentError = failed == 1 ? "One item couldn't be loaded." : "\(failed) items couldn't be loaded." }
     }
 
     /// `.fileImporter` hands back security-scoped URLs: access must be
@@ -462,13 +536,8 @@ struct ComposeView: View {
     /// per Apple's own documented contract for these URLs.
     private func addFiles(_ urls: [URL]) {
         for url in urls {
-            guard url.startAccessingSecurityScopedResource() else {
-                attachmentError = "Could not access \(url.lastPathComponent)."
-                continue
-            }
-            defer { url.stopAccessingSecurityScopedResource() }
-            guard let data = try? Data(contentsOf: url) else {
-                attachmentError = "Could not read \(url.lastPathComponent)."
+            guard let data = AttachmentFiles.read(url) else {
+                attachmentError = "Could not open \(url.lastPathComponent)."
                 continue
             }
             let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
@@ -578,4 +647,36 @@ extension UIResponder {
     }
 
     @objc private func captureFirstResponder() { UIResponder.found = self }
+}
+
+/// A small preview of an attached picture, or its kind of file.
+private struct AttachmentThumbnail: View {
+    let attachment: PendingAttachment
+    @State private var image: UIImage?
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                Image(systemName: symbol).font(.footnote).foregroundStyle(CorresPalette.secondary)
+            }
+        }
+        .frame(width: 32, height: 32)
+        .background(CorresPalette.surfaceRaised)
+        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .task(id: attachment.id) {
+            guard attachment.mimeType.hasPrefix("image/") else { return }
+            let data = attachment.data
+            image = await Task.detached(priority: .utility) {
+                UIImage(data: data)?.preparingThumbnail(of: CGSize(width: 96, height: 96))
+            }.value
+        }
+    }
+
+    private var symbol: String {
+        if attachment.mimeType.hasPrefix("video/") { return "film" }
+        if attachment.mimeType == "application/pdf" { return "doc.richtext" }
+        return "doc"
+    }
 }

@@ -52,14 +52,34 @@ enum GmailMessageComposer {
             let base64 = attachment.data.base64EncodedString(
                 options: [.lineLength76Characters, .endLineWithCarriageReturn, .endLineWithLineFeed])
             parts += "--\(boundary)\r\n"
-                + "Content-Type: \(attachment.mimeType); name=\"\(attachment.filename)\"\r\n"
-                + "Content-Disposition: attachment; filename=\"\(attachment.filename)\"\r\n"
+                + "Content-Type: \(attachment.mimeType); name=\"\(headerName(attachment.filename))\"\r\n"
+                + "Content-Disposition: attachment; \(dispositionFilename(attachment.filename))\r\n"
                 + "Content-Transfer-Encoding: base64\r\n\r\n"
                 + base64 + "\r\n"
         }
         parts += "--\(boundary)--"
         let message = headers.joined(separator: "\r\n") + "\r\n\r\n" + parts
         return base64URLEncode(Data(message.utf8))
+    }
+
+    /// A filename as a header value: plain when it's ASCII (quotes and
+    /// backslashes escaped), RFC 2047 otherwise, so "Facture_été.pdf"
+    /// arrives with its name, not garbled.
+    private static func headerName(_ filename: String) -> String {
+        guard filename.allSatisfy(\.isASCII) else { return "=?UTF-8?B?\(Data(filename.utf8).base64EncodedString())?=" }
+        return filename.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+    }
+
+    /// RFC 2231 `filename*` for non-ASCII names (what Mail and Gmail send),
+    /// with the encoded-word form beside it for older readers.
+    private static func dispositionFilename(_ filename: String) -> String {
+        guard !filename.allSatisfy(\.isASCII) else { return "filename=\"\(headerName(filename))\"" }
+        let unreserved = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
+        let encoded = filename.unicodeScalars.map { scalar -> String in
+            scalar.isASCII && unreserved.contains(scalar) ? String(scalar)
+                : String(scalar).utf8.map { String(format: "%%%02X", $0) }.joined()
+        }.joined()
+        return "filename=\"\(headerName(filename))\"; filename*=UTF-8''\(encoded)"
     }
 
     /// RFC 2047 encoding for a non-ASCII subject; left untouched otherwise,

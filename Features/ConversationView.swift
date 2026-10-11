@@ -30,6 +30,9 @@ struct ConversationView: View {
     /// has fully closed, so the pop and the sheet dismissal never race.
     @State private var leaveAfterSnooze = false
     @State private var draftingIntent: String?
+    /// True while a forward's attachments download, so the button shows
+    /// it's working instead of seeming to do nothing.
+    @State private var preparingForward = false
     @Environment(\.dismiss) private var systemDismiss
     @Environment(\.conversationSelection) private var splitSelection
     @Environment(\.proUnlocked) private var proUnlocked
@@ -219,6 +222,20 @@ struct ConversationView: View {
             }
         }
         .background(CorresPalette.canvas)
+        .overlay(alignment: .top) {
+            if preparingForward {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Adding attachments…").font(.footnote.weight(.medium))
+                }
+                .padding(.horizontal, 14).padding(.vertical, 9)
+                .background(.regularMaterial, in: Capsule())
+                .padding(.top, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .accessibilityLabel("Adding attachments to the forward")
+            }
+        }
+        .animation(.snappy(duration: 0.25), value: preparingForward)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $composeDraft) { draft in
@@ -623,16 +640,46 @@ struct ConversationView: View {
     /// already started loading it; this only waits in the rare case the
     /// person taps Reply before that finishes.
     private func compose(_ kind: Draft.Kind, from thread: Correspondence, prefill: String? = nil) {
-        func open(_ source: Correspondence) {
+        func open(_ source: Correspondence, attachments: [PendingAttachment] = []) {
             var draft = source.draft(kind: kind)
             if let prefill { draft.body = prefill + draft.body }
+            draft.attachments = attachments
             composeDraft = draft
+        }
+        // A forward carries the email's attachments, as in Mail and Gmail;
+        // it used to drop them without a word.
+        if kind == .forward, !thread.attachments.isEmpty {
+            guard !preparingForward else { return }
+            preparingForward = true
+            Task {
+                defer { preparingForward = false }
+                if !thread.isBodyLoaded { await threadActions.loadContent(for: thread) }
+                let source = store.thread(thread.id) ?? thread
+                open(source, attachments: await Self.downloadForForward(source))
+            }
+            return
         }
         guard !thread.isBodyLoaded else { return open(thread) }
         Task {
             await threadActions.loadContent(for: thread)
             open(store.thread(thread.id) ?? thread)
         }
+    }
+
+    /// The email's attachments as files to send on, up to Gmail's limit.
+    private static func downloadForForward(_ thread: Correspondence) async -> [PendingAttachment] {
+        guard let messageID = thread.latestMessageID else { return [] }
+        let client = GmailAPIClient()
+        var files: [PendingAttachment] = []
+        var total = 0
+        for attachment in thread.attachments {
+            guard total + attachment.sizeBytes <= Draft.maxAttachmentsBytes,
+                  let data = try? await client.fetchAttachmentData(messageId: messageID, attachmentId: attachment.id,
+                                                                   account: thread.id.account) else { continue }
+            total += data.count
+            files.append(PendingAttachment(filename: attachment.filename, mimeType: attachment.mimeType, data: data))
+        }
+        return files
     }
 
     /// Tapping a suggested direction drafts the full reply in the person's
