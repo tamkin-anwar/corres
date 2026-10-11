@@ -30,3 +30,29 @@ struct ClaimGroundingTests {
         }
     }
 }
+
+/// Ask's answers get the same check as summaries before they're shown.
+struct AskAnswerGroundingTests {
+    @Test func aRealAnswerPasses() {
+        let email = """
+        Sam Lee <sam@example.com>
+        Budget for Q4
+        Hi Tamkin, could you send me the revised budget numbers by Friday? Thanks, Sam
+        """
+        #expect(MailDigest.unsupportedClaims(in: "Sam asked you to send the revised budget numbers by Friday.",
+                                             source: email).isEmpty)
+    }
+
+    @Test func anInventedAnswerFails() {
+        // What Ask showed: a person from its instructions and an amount
+        // from somewhere else, against a TestFlight email.
+        let email = """
+        TAMKIN NURUL ANWAR
+        Corres 0.2.0 (4) for iOS is now available to test.
+        Corres 0.2.0 (4) is ready to test on iOS. To test this app, open TestFlight on your device.
+        """
+        #expect(!MailDigest.unsupportedClaims(
+            in: "Maya asked you to approve a subscription renewal for $98.99/year starting Sep 22, 2027 until canceled.",
+            source: email).isEmpty)
+    }
+}

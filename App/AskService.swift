@@ -99,7 +99,7 @@ final class AskService {
         }
         let recorder = SourceRecorder()
         // The model's own keywords, still held to the person and dates the
-        // question named ("what did Maya ask" only reads Maya's mail).
+        // question named ("what did Sam ask" only reads Sam's mail).
         let tool = SearchMailTool(recorder: recorder) { [weak self] keywords in
             var narrowed = AskQuery(keywords)
             narrowed.person = query.person ?? narrowed.person
@@ -111,7 +111,7 @@ final class AskService {
         do {
             // Find first, then answer once. Left to search on its own, the
             // model kept searching after it had the email (nine searches
-            // for "What did Maya ask me?" and no answer after a minute).
+            // for "what did … ask me?" and no answer after a minute).
             // It searches itself only when Corres finds nothing, at most
             // three times.
             let found = await search(query, limit: 5)
@@ -131,17 +131,32 @@ final class AskService {
             let response = try await session.respond(to: prompt, generating: AskAnswer.self)
             guard !Task.isCancelled else { return }
             let result = response.content
-            answer = result.answer.trimmingCharacters(in: .whitespacesAndNewlines)
-            answerFound = result.found
             let seen = await recorder.threads
             // Only the emails the answer actually used count as sources.
-            let cited = result.sourceNumbers.compactMap { number in
+            let cited = seen.isEmpty ? [] : result.sourceNumbers.compactMap { number in
                 (1...seen.count).contains(number) ? seen[number - 1] : nil
             }
-            if result.found, !cited.isEmpty {
+            let text = result.answer.trimmingCharacters(in: .whitespacesAndNewlines)
+            // Every name, number, date and statement in the answer must be in
+            // the emails it came from, the same check summaries get. With
+            // nothing to answer from, the model copied an example out of its
+            // instructions ("Maya asked you to approve…") and attached an
+            // amount from an unrelated receipt.
+            let sourceText = cited.map { thread in
+                [thread.sender, thread.senderEmail ?? "", thread.subject,
+                 MailDigest.readableText(body: thread.body, html: thread.htmlBody)].joined(separator: "\n")
+            }.joined(separator: "\n\n")
+            let grounded = !cited.isEmpty && !text.isEmpty
+                && MailDigest.unsupportedClaims(in: text, source: sourceText).isEmpty
+            if result.found && grounded {
+                answer = text
+                answerFound = true
                 sources = cited.map(Source.init)
             } else {
-                answerFound = result.found && !seen.isEmpty
+                // Corres's own words, never the model's, when there's no
+                // answer: what it writes then is what went wrong.
+                answerFound = false
+                answer = seen.isEmpty ? "Nothing in your mail answers that." : "Couldn't find the answer in your mail. These came closest."
                 sources = Array(seen.prefix(4)).map(Source.init)
             }
         } catch {
@@ -168,6 +183,8 @@ final class AskService {
         let words = query.keywords
         let scored: [(Correspondence, Int)] = store.threads.compactMap { thread in
             guard !thread.isScreenedOut, query.matches(thread) else { return nil }
+            // "What did Sam ask me" is mail from Sam, never mail you sent.
+            if query.person != nil, thread.isFromAccountOwner { return nil }
             let head = (thread.sender + " " + (thread.senderEmail ?? "") + " " + thread.subject).lowercased()
             let body = (thread.excerpt + " " + thread.body).lowercased()
             var score = 0
@@ -196,14 +213,22 @@ final class AskService {
     /// and whether receipts, packages or trips are actually in there.
     func suggestions(now: Date = .now) -> [String] {
         let threads = store.threads.filter { !$0.isScreenedOut }
+        // Your own name, which services like TestFlight show as the sender
+        // of mail they send you from a no-reply address.
+        let ownNames = Set(([UserDefaults.standard.string(forKey: GoogleAuthService.givenNameKey) ?? ""]
+            + auth.accounts.map { $0.email.components(separatedBy: "@")[0] })
+            .map { $0.lowercased() }.filter { $0.count >= 2 })
         func isPerson(_ thread: Correspondence) -> Bool {
             !thread.isFromAccountOwner
+                && !Self.isNoReply(thread.senderEmail)
                 && InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == nil
         }
         func firstName(_ thread: Correspondence) -> String? {
             guard let first = thread.sender.split(separator: " ").first.map(String.init),
-                  first.count >= 2, first.allSatisfy({ $0.isLetter || $0 == "-" || $0 == "'" }) else { return nil }
-            return first
+                  first.count >= 2, first.allSatisfy({ $0.isLetter || $0 == "-" || $0 == "'" }),
+                  !ownNames.contains(first.lowercased()) else { return nil }
+            // "TAMKIN" reads as "Tamkin".
+            return first == first.uppercased() ? first.capitalized : first
         }
         var result: [String] = []
         let recentPeople = threads.filter { isPerson($0) && now.timeIntervalSince($0.receivedAt) < 14 * 86_400 }
@@ -241,13 +266,20 @@ final class AskService {
         return Array(result.prefix(5))
     }
 
+    /// An address nobody reads (no-reply, notifications), so not a person.
+    static func isNoReply(_ email: String?) -> Bool {
+        guard let local = email?.lowercased().components(separatedBy: "@").first else { return false }
+        return local.range(of: #"^(no[-_.]?reply|do[-_.]?not[-_.]?reply|notifications?|notify|mailer(-daemon)?|bounces?|alerts?|updates?)\b"#,
+                           options: .regularExpression) != nil
+    }
+
     @available(iOS 26.0, *)
     private static let answerInstructions = """
     You answer a question about the user's own email, using only the \
     numbered emails given. Quote dates, times, amounts and names exactly as \
     written. Answer in one to three short plain sentences addressed to the \
-    user ("Maya asked you to approve…", "Your flight to Denver leaves \
-    Thursday at 6:40 AM"), not a copied line. For "next" or "upcoming" \
+    user, not a copied line. Never use a name, amount or date that isn't in \
+    the emails. For "next" or "upcoming" \
     things, use only dates after today. Marketing and promotional emails \
     never count as an answer. List the numbers of the emails your answer \
     came from. If they don't contain the answer, set found to false and say \
@@ -266,9 +298,9 @@ final class AskService {
     about "next" or "upcoming" things, use only dates after today. Answer \
     only from the emails the search returns, quoting dates, times, amounts \
     and names exactly as written, in one to three short plain sentences \
-    that answer the question directly, addressed to the user ("Maya asked \
-    you to approve…", "Your flight to Denver leaves Thursday at 6:40 AM"), \
-    not a copied line from the email, and without mentioning the search tool. List the numbers of the emails your \
+    that answer the question directly, addressed to the user, not a copied \
+    line from the email, never with a name, amount or date the emails don't \
+    contain, and without mentioning the search tool. List the numbers of the emails your \
     answer came from. If they don't contain the answer, set found to false \
     and say briefly what you couldn't find.
     """
