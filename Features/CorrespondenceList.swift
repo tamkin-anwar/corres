@@ -315,7 +315,7 @@ struct CorrespondenceList: View {
         let name = store.threads.first { $0.senderEmail?.lowercased() == bare && !$0.isFromAccountOwner }?.sender
             ?? thread.counterpartName()
         let others = thread.toRecipients.count + thread.ccRecipients.count - 1
-        return (name ?? address) + (others > 0 ? " +\(others)" : "")
+        return name + (others > 0 ? " +\(others)" : "")
     }
 
     private var showsAccountTags: Bool { accountFilter == nil && (auth?.accounts.count ?? 0) > 1 }
