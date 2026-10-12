@@ -194,6 +194,9 @@ final class OutboxService {
             sentCopy = messages.last { $0.isFromAccountOwner } ?? messages.last
         }
         await store.send(draft, realThreadID: realThreadID, sentCopy: sentCopy)
+        if realThreadID != nil, let thread, draft.kind == .reply || draft.kind == .replyAll {
+            HabitWatcher.shared.replied(to: thread)
+        }
         try? await repository.removeOutboxEntry(id: id)
         // Sent in place of a Gmail draft: the draft goes.
         if realThreadID != nil, let draftID = draft.gmailDraftID,

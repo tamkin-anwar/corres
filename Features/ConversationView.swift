@@ -177,7 +177,7 @@ struct ConversationView: View {
                 .sheet(isPresented: $showingSnooze, onDismiss: {
                     if leaveAfterSnooze { dismiss() }
                 }) {
-                    SnoozeSheet { date in
+                    SnoozeSheet(kind: thread.mailKind) { date in
                         leaveAfterSnooze = true
                         Task { await store.snooze(thread.id, until: date) }
                     }
@@ -285,6 +285,7 @@ struct ConversationView: View {
             // calls; neither should wait on the other.
             async let loaded: Void = threadActions.loadContent(for: thread)
             async let conversation: Void = threadActions.loadHistory(for: thread)
+            HabitWatcher.shared.opened(thread)
             // Settings → Reading → Mark as read when opened.
             if thread.isUnread && markReadOnOpen {
                 await threadActions.setUnread(false, for: thread)

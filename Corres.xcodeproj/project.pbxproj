@@ -83,6 +83,8 @@
 		F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
 		F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */; };
 		AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */; };
+		CAB0E9895CCD45BD99F4AC71 /* App/HabitWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8203EAEE0A43CAABFDC66E /* App/HabitWatcher.swift */; };
+		38DC80ABBA79491A8D560B70 /* Core/SenderHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0420D138F474423E84B6A00A /* Core/SenderHabits.swift */; };
 		3B3706D3797F404AB536FA7C /* App/SenderLessons.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED71C59F2E034AE0B103EE98 /* App/SenderLessons.swift */; };
 		3472E1B8AB6742FE9040057F /* App/PeopleDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977F121DCAF14706A5639E69 /* App/PeopleDirectory.swift */; };
 		07978C01818E4A55987D6CDE /* Core/PeopleIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = D323E07BF00243989B4E0A2A /* Core/PeopleIndex.swift */; };
@@ -189,6 +191,8 @@
 		89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PlainTextEmail.swift; sourceTree = SOURCE_ROOT; };
 		B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/MailboxesView.swift; sourceTree = SOURCE_ROOT; };
 		A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/NextStep.swift; sourceTree = SOURCE_ROOT; };
+		8D8203EAEE0A43CAABFDC66E /* App/HabitWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/HabitWatcher.swift; sourceTree = SOURCE_ROOT; };
+		0420D138F474423E84B6A00A /* Core/SenderHabits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/SenderHabits.swift; sourceTree = SOURCE_ROOT; };
 		ED71C59F2E034AE0B103EE98 /* App/SenderLessons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SenderLessons.swift; sourceTree = SOURCE_ROOT; };
 		977F121DCAF14706A5639E69 /* App/PeopleDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/PeopleDirectory.swift; sourceTree = SOURCE_ROOT; };
 		D323E07BF00243989B4E0A2A /* Core/PeopleIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PeopleIndex.swift; sourceTree = SOURCE_ROOT; };
@@ -254,6 +258,8 @@
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
 				5CCE34B9D4A7493491FF8177 /* Features/AttachmentPickers.swift */,
 				A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */,
+				8D8203EAEE0A43CAABFDC66E /* App/HabitWatcher.swift */,
+				0420D138F474423E84B6A00A /* Core/SenderHabits.swift */,
 				ED71C59F2E034AE0B103EE98 /* App/SenderLessons.swift */,
 				977F121DCAF14706A5639E69 /* App/PeopleDirectory.swift */,
 				D323E07BF00243989B4E0A2A /* Core/PeopleIndex.swift */,
@@ -439,6 +445,8 @@
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
 				5FC893C8B4AE471494AD5F7C /* Features/AttachmentPickers.swift in Sources */,
 				AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */,
+				CAB0E9895CCD45BD99F4AC71 /* App/HabitWatcher.swift in Sources */,
+				38DC80ABBA79491A8D560B70 /* Core/SenderHabits.swift in Sources */,
 				3B3706D3797F404AB536FA7C /* App/SenderLessons.swift in Sources */,
 				3472E1B8AB6742FE9040057F /* App/PeopleDirectory.swift in Sources */,
 				07978C01818E4A55987D6CDE /* Core/PeopleIndex.swift in Sources */,

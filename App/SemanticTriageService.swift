@@ -116,8 +116,8 @@ final class SemanticTriageService {
                   thread.triagedMessageID != thread.latestMessageID else { return false }
             if thread.attention == .needsYou { return true }
             // You've said this sender's mail needs nothing; don't ask again.
-            if SenderLessons.isQuieted(thread.senderEmail) { return false }
             return Self.isPromotionCandidate(thread) && now.timeIntervalSince(thread.receivedAt) < Self.promotionWindow
+                && !SenderLessons.isQuieted(thread)
         }.sorted { $0.receivedAt > $1.receivedAt }
         guard !candidates.isEmpty else { return }
         await withTaskGroup(of: Void.self) { group in
@@ -138,7 +138,7 @@ final class SemanticTriageService {
     private func recheckPromotions(store: MailStore, only ids: Set<ThreadID>?) async {
         for thread in store.threads where (ids?.contains(thread.id) ?? true) && thread.wasPromotedByIntelligence {
             guard let messageID = thread.latestMessageID else { continue }
-            let reason: String? = SenderLessons.isQuieted(thread.senderEmail) ? InboxClassifier.lessonReason
+            let reason: String? = SenderLessons.isQuieted(thread) ? InboxClassifier.lessonReason
                 : MailDigest.isConfirmationAlert(thread.subject + "\n" + thread.excerpt) ? InboxClassifier.confirmationReason
                 : nil
             guard let reason else { continue }
@@ -160,7 +160,7 @@ final class SemanticTriageService {
         // the model never takes a person's mail out.
         if from == .needsYou,
            InboxClassifier.isVIP(thread.senderEmail) || InboxClassifier.sensitivity == .inclusive
-            || SenderLessons.isKept(thread.senderEmail) {
+            || SenderLessons.isKept(thread) {
             await store.applySemanticTriage(thread.id, from: from, to: from, reason: nil, messageID: messageID)
             return
         }

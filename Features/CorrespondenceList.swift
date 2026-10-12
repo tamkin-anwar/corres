@@ -436,7 +436,7 @@ struct CorrespondenceList: View {
                 }
             }
             .sheet(item: $snoozeTarget) { thread in
-                SnoozeSheet { date in Task { await store.snooze(thread.id, until: date) } }
+                SnoozeSheet(kind: thread.mailKind) { date in Task { await store.snooze(thread.id, until: date) } }
             }
             .searchable(text: $search, prompt: "Search conversations")
             .refreshable {

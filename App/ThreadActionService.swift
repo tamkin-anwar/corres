@@ -110,10 +110,9 @@ final class ThreadActionService {
         // back the rest of what it brought in from them, too.
         var alsoQuieted: [(ThreadID, String)] = []
         if attention == .quiet, !learned.isEmpty {
-            let senders = Set(moving.compactMap { $0.senderEmail?.lowercased() }.filter(SenderLessons.isQuieted))
             let movedIDs = Set(before.map(\.0))
             for other in store.threads where !movedIDs.contains(other.id) && other.wasPromotedByIntelligence
-                && senders.contains(other.senderEmail?.lowercased() ?? "") {
+                && SenderLessons.isQuieted(other) {
                 guard let messageID = other.latestMessageID else { continue }
                 alsoQuieted.append((other.id, other.reason))
                 await store.applySemanticTriage(other.id, from: .needsYou, to: .quiet,
@@ -234,6 +233,8 @@ final class ThreadActionService {
     /// changes one at a time rather than as a burst, which is what tripped
     /// its per-user rate limit when several rows were swiped in a row.
     private func enqueue(_ pending: PendingRemoval) {
+        // Counted once Undo has passed: an undone archive says nothing.
+        if pending.kind != .spam { HabitWatcher.shared.removed(pending.threads) }
         let previous = commitQueue
         commitQueue = Task { [weak self] in
             await previous?.value

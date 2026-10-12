@@ -21,12 +21,18 @@ enum SenderLessons {
         var name: String
         var kind: Kind
         var learnedAt: Date
-        var id: String { email }
+        /// The kind of their mail it's about ("receipts"), so quieting a
+        /// shop's newsletters leaves its receipts alone, where Apple's
+        /// Categorize Sender moves everything from them at once. Nil: all
+        /// of it (lessons from before kinds were kept).
+        var mailKind: MailDigest.Kind?
+        var id: String { email + "|" + (mailKind?.rawValue ?? "") }
 
         var summary: String {
+            let what = mailKind.map { "Its \($0.plural)" } ?? "Its mail"
             switch kind {
-            case .quiet: "Its mail needs no action from you"
-            case .keep: "Its mail belongs in Needs You"
+            case .quiet: return "\(what) need no action from you"
+            case .keep: return "\(what) belong in Needs You"
             }
         }
     }
@@ -37,22 +43,35 @@ enum SenderLessons {
     /// Settings → Sorting → Learn from My Changes.
     static var isEnabled: Bool { UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true }
 
+    /// Read once; checked for every thread on every sorting pass.
+    private static var cache: [Lesson]?
     static var all: [Lesson] {
         get {
-            guard let data = UserDefaults.standard.data(forKey: lessonsKey),
-                  let lessons = try? JSONDecoder().decode([Lesson].self, from: data) else { return [] }
-            return lessons
+            if let cache { return cache }
+            let loaded = UserDefaults.standard.data(forKey: lessonsKey)
+                .flatMap { try? JSONDecoder().decode([Lesson].self, from: $0) } ?? []
+            cache = loaded
+            return loaded
         }
-        set { UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: lessonsKey) }
+        set {
+            cache = newValue
+            UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: lessonsKey)
+        }
     }
 
-    private static func lesson(for email: String?) -> Lesson? {
-        guard isEnabled, let email = email?.lowercased() else { return nil }
-        return all.first { $0.email == email }
+    /// The lesson about this thread: its sender and its kind of mail.
+    private static func lesson(for thread: Correspondence) -> Lesson? {
+        guard isEnabled, let email = thread.senderEmail?.lowercased() else { return nil }
+        let theirs = all.filter { $0.email == email }
+        guard !theirs.isEmpty else { return nil }
+        // Working out the kind of email reads its text; only for senders
+        // with a lesson.
+        let kind = thread.mailKind
+        return theirs.first { $0.mailKind == nil || $0.mailKind == kind }
     }
 
-    static func isQuieted(_ email: String?) -> Bool { lesson(for: email)?.kind == .quiet }
-    static func isKept(_ email: String?) -> Bool { lesson(for: email)?.kind == .keep }
+    static func isQuieted(_ thread: Correspondence) -> Bool { lesson(for: thread)?.kind == .quiet }
+    static func isKept(_ thread: Correspondence) -> Bool { lesson(for: thread)?.kind == .keep }
 
     /// Learns from a move you made, and says what it learned (for the Undo
     /// pill), or nil when the move taught nothing.
@@ -66,17 +85,41 @@ enum SenderLessons {
         } else {
             return nil
         }
-        var lessons = all.filter { $0.email != email }
-        lessons.append(Lesson(email: email, name: thread.sender, kind: kind, learnedAt: .now))
+        let mailKind = thread.mailKind
+        var lessons = all.filter { !($0.email == email && ($0.mailKind == mailKind || $0.mailKind == nil)) }
+        lessons.append(Lesson(email: email, name: thread.sender, kind: kind, learnedAt: .now, mailKind: mailKind))
         all = lessons
-        return kind == .quiet ? "Won't flag \(thread.sender) again" : "\(thread.sender) stays in Needs You"
+        let what = "\(thread.sender)\u{2019}s \(mailKind.plural)"
+        return kind == .quiet ? "Won't flag \(what) again" : "\(what) stay in Needs You"
     }
 
-    static func forget(_ email: String) { all = all.filter { $0.email != email } }
+    static func forget(_ id: String) { all = all.filter { $0.id != id } }
     static func forgetAll() { all = [] }
 }
 
+extension MailDigest.Kind {
+    /// "receipts", for "Amazon's receipts".
+    var plural: String {
+        switch self {
+        case .personal: "emails"
+        case .receipt: "receipts"
+        case .shipping: "delivery updates"
+        case .code: "codes"
+        case .invite: "invitations"
+        case .newsletter: "newsletters"
+        case .notification: "notifications"
+        }
+    }
+}
+
 extension Correspondence {
+    /// What kind of email this is, from what's on hand (no body needed).
+    var mailKind: MailDigest.Kind {
+        MailDigest.kind(subject: subject, text: excerpt, senderEmail: senderEmail,
+                        isBulk: listUnsubscribeMailto != nil || listUnsubscribeURL != nil,
+                        looksAutomated: looksAutomated, hasEvent: false, labelIds: labelIds)
+    }
+
     /// In Needs You because the on-device model brought it in: automated
     /// mail, assessed at its latest message, with no rule of Corres's own
     /// behind it.

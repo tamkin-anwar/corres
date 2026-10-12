@@ -4,7 +4,24 @@ import SwiftUI
 /// of four presets. The parsed time is shown back as a real date before
 /// anything happens, so there's never a guess about when mail returns.
 struct SnoozeSheet: View {
+    /// What kind of email it is, so your usual snooze for it comes first.
+    var kind: MailDigest.Kind? = nil
     let onSnooze: (Date) -> Void
+
+    private static let habitsKey = "corres.snoozeHabits"
+    private static var habits: SnoozeHabits {
+        get { UserDefaults.standard.data(forKey: habitsKey).flatMap { try? JSONDecoder().decode(SnoozeHabits.self, from: $0) } ?? SnoozeHabits() }
+        set { UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: habitsKey) }
+    }
+    private var usual: SnoozeOption? {
+        guard SenderLessons.isEnabled, let kind else { return nil }
+        return Self.habits.usual(for: kind.rawValue).flatMap { key in SnoozeOption.allCases.first { "\($0)" == key } }
+    }
+    /// Your usual first, then the rest in their order.
+    private var options: [SnoozeOption] {
+        guard let usual else { return SnoozeOption.allCases }
+        return [usual] + SnoozeOption.allCases.filter { $0 != usual }
+    }
     @Environment(\.dismiss) private var dismiss
     @State private var phrase = ""
     @State private var pickingDate = false
@@ -21,19 +38,31 @@ struct SnoozeSheet: View {
                 VStack(alignment: .leading, spacing: 18) {
                     typedField
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                        ForEach(SnoozeOption.allCases, id: \.self) { option in
+                        ForEach(options, id: \.self) { option in
                             Button {
+                                if let kind, SenderLessons.isEnabled {
+                                    var habits = Self.habits
+                                    habits.record("\(option)", for: kind.rawValue)
+                                    Self.habits = habits
+                                }
                                 finish(option.date())
                             } label: {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(option.title).font(.body.weight(.semibold)).foregroundStyle(CorresPalette.ink)
                                     Text(Self.describe(option.date())).font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                                    if option == usual, let kind {
+                                        Label("Your usual for \(kind.plural)", systemImage: "sparkles")
+                                            .labelStyle(TightLabelStyle())
+                                            .font(.caption.weight(.medium)).foregroundStyle(CorresPalette.accent)
+                                            .padding(.top, 2)
+                                    }
                                 }
                                 .padding(.horizontal, 16).padding(.vertical, 14)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(CorresPalette.surfaceRaised, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                                 .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                    .strokeBorder(CorresPalette.line, lineWidth: 1 / displayScale))
+                                    .strokeBorder(option == usual ? CorresPalette.accent.opacity(0.6) : CorresPalette.line,
+                                                  lineWidth: option == usual ? 1 : 1 / displayScale))
                             }
                             .buttonStyle(CorresRowButtonStyle())
                         }

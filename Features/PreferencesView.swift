@@ -622,7 +622,7 @@ private struct LessonsView: View {
             Section {
                 Toggle("Learn from My Changes", isOn: $isEnabled)
             } footer: {
-                Text("When you say an email Apple Intelligence flagged needs no action, Corres stops flagging that sender. When you move a sender's automated email into Needs You, it keeps them there. Lessons stay on this iPhone.")
+                Text("When you say an email Apple Intelligence flagged needs no action, Corres stops flagging that kind of email from that sender; their other mail is untouched. When you move a sender's automated email into Needs You, it keeps that kind there. Corres also notices habits, like lists you never open or people you always read at once, and suggests a change, at most once a day. Everything stays on this iPhone.")
             }
             Section {
                 if lessons.isEmpty {
@@ -637,7 +637,7 @@ private struct LessonsView: View {
                         .accessibilityElement(children: .combine)
                     }
                     .onDelete { offsets in
-                        for index in offsets { SenderLessons.forget(lessons[index].email) }
+                        for index in offsets { SenderLessons.forget(lessons[index].id) }
                         lessons.remove(atOffsets: offsets)
                     }
                 }
@@ -646,13 +646,15 @@ private struct LessonsView: View {
             } footer: {
                 if !lessons.isEmpty { Text("Swipe a lesson to forget it.") }
             }
-            if !lessons.isEmpty {
-                Section {
+            Section {
                     Button("Forget Everything", role: .destructive) {
                         SenderLessons.forgetAll()
+                        HabitWatcher.shared.forgetAll()
+                        UserDefaults.standard.removeObject(forKey: "corres.snoozeHabits")
                         lessons = []
                     }
-                }
+            } footer: {
+                Text("Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes.")
             }
         }
         .scrollContentBackground(.hidden)
