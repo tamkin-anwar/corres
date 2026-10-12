@@ -312,3 +312,40 @@ struct MailSignalsTests {
         #expect(!MailSignals.isPaymentRequest("Your automatic payment of $80 is scheduled."))
     }
 }
+
+/// Tester feedback: a council email's signature survey and legal notice put
+/// it in Needs You as "Asks you something".
+struct SurveyAndNoticeTests {
+    let councilEmail = """
+    - Official -
+
+    ITW
+
+    Niloy Siddiqui
+    Housing Triage Officer
+    Portsmouth City Council
+
+    We would like to know how you found our customer service during this interaction. Please click the link to take part: https://www.research.net/r/CSFeedback2026EMAIL
+
+    This email is for the intended recipient(s) only.
+
+    If you have received this email due to an error in addressing, transmission or for any other reason, please reply to it and let the author know. If you are not the intended recipient, you must not use, disclose, distribute, copy or print it.
+    """
+
+    @Test func signatureSurveyAndNoticeAskNothing() {
+        #expect(!MailSignals.asksSomething(councilEmail))
+    }
+
+    @Test func aRealRequestBesideASurveyStillCounts() {
+        #expect(MailSignals.asksSomething("Could you send the signed form by Friday? How did we do? Take our short survey."))
+        #expect(!MailSignals.asksSomething("Thanks for calling. How did we do? Rate your experience at surveymonkey.com/r/x"))
+    }
+
+    @Test func markingLeavesThePreview() {
+        let thread = Correspondence(id: ThreadID(account: "a", providerID: "1"), sender: "Siddiqui, Niloy", organization: "",
+                                    subject: "ITW", excerpt: "- Official - ITW Niloy Siddiqui Housing Triage Officer", body: "",
+                                    receivedAt: .now, dueAt: nil, reason: "", attention: .quiet)
+        #expect(thread.excerpt == "ITW Niloy Siddiqui Housing Triage Officer")
+        #expect(thread.sender == "Niloy Siddiqui")
+    }
+}

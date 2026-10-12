@@ -1,3 +1,5 @@
+import Network
+import QuickLookThumbnailing
 import QuickLook
 import Translation
 import SwiftUI
@@ -159,6 +161,10 @@ struct ConversationView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .scrollIndicators(.hidden)
+                // Scrolled, the email passes under a clear frosted band, not
+                // straight under the back and next buttons (tester feedback:
+                // a signature overlapping them).
+                .modifier(HardTopEdge())
                 .safeAreaInset(edge: .bottom) { bottomChrome(for: thread) }
                 .background { keyboardCommands(for: thread) }
                 .sensoryFeedback(.selection, trigger: thread.isFlagged)
@@ -1241,11 +1247,16 @@ struct ConversationView: View {
     }
 }
 
-/// A tap downloads the attachment's bytes on demand (they are never fetched
-/// during sync, see `Correspondence.attachments`) and hands them to iOS's
-/// own QuickLook preview, matching Mail.app's own attachment-tap behavior:
-/// preview inline, with saving/sharing already built into that preview's
-/// own toolbar, rather than Corres inventing a separate save/share flow.
+/// An attachment, marked by what it is: a red PDF, a blue Word file, a
+/// green spreadsheet, as Gmail and Outlook mark them, and a real preview
+/// (the photo, a document's first page) once it's small enough to fetch
+/// as the email opens. Raised off the page so it reads as something to
+/// tap (tester feedback: it melted into the background, and every type
+/// looked the same).
+///
+/// A tap downloads it on demand (never during sync, see
+/// `Correspondence.attachments`) and opens iOS's own QuickLook, as Mail
+/// does, with saving and sharing in its toolbar.
 private struct AttachmentRow: View {
     let attachment: MailAttachment
     let messageID: String
@@ -1253,43 +1264,109 @@ private struct AttachmentRow: View {
     @State private var isDownloading = false
     @State private var previewURL: URL?
     @State private var downloadFailed = false
+    @State private var thumbnail: UIImage?
+    @Environment(\.displayScale) private var displayScale
     private let client = GmailAPIClient()
+
+    private var kind: AttachmentKind { AttachmentKind(filename: attachment.filename, mimeType: attachment.mimeType) }
+
+    /// Fetched just to draw the preview: small files only, and never in
+    /// Low Data Mode.
+    private static let previewLimit = 3_000_000
 
     var body: some View {
         Button {
             Task { await download() }
         } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "paperclip").foregroundStyle(CorresPalette.secondary)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(attachment.filename).font(.footnote.weight(.medium)).lineLimit(1)
-                    Text(formattedSize).font(.caption2).foregroundStyle(CorresPalette.secondary)
+            HStack(spacing: 12) {
+                badge
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(attachment.filename)
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(CorresPalette.ink)
+                        .lineLimit(2).truncationMode(.middle)
+                    Text("\(kind.label(filename: attachment.filename)) \u{00B7} \(formattedSize)")
+                        .font(.caption).foregroundStyle(CorresPalette.secondary)
                 }
                 Spacer(minLength: 8)
                 if isDownloading {
                     ProgressView()
                 } else {
-                    Image(systemName: "arrow.down.circle").foregroundStyle(CorresPalette.secondary)
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.title3)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(CorresPalette.accent)
                 }
             }
-            .padding(.horizontal, 14).padding(.vertical, 10)
-            .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(CorresPalette.line, lineWidth: 0.5))
+            .padding(12)
+            .background(CorresPalette.surfaceRaised, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(CorresPalette.line, lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.07), radius: 8, y: 3)
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .disabled(isDownloading)
         .buttonStyle(.plain)
+        .accessibilityLabel("\(kind.label(filename: attachment.filename)), \(attachment.filename), \(formattedSize)")
+        .accessibilityHint("Opens the attachment")
         .quickLookPreview($previewURL)
         .alert("Could not download this attachment", isPresented: $downloadFailed) {
             Button("OK", role: .cancel) {}
         } message: { Text("Please try again.") }
+        .task(id: attachment.id) { await loadThumbnail() }
         // Each download writes to a fresh, uniquely-named directory (see
-        // `download()`) and nothing ever removed the previous one: viewing
-        // several attachments in a long session left them all sitting in
-        // the temp directory indefinitely rather than only until this row
-        // no longer needs them. iOS does eventually reclaim `tmp/` under
-        // its own storage pressure, but that's a backstop, not a reason for
-        // Corres to litter it freely within a single session.
+        // `download()`); it goes when this row does, rather than piling up
+        // in tmp/ for the rest of the session.
         .onDisappear { cleanUpDownloadedFile() }
+    }
+
+    /// The preview when there is one; otherwise the type's own color and
+    /// symbol.
+    private var badge: some View {
+        ZStack {
+            if let thumbnail {
+                Image(uiImage: thumbnail).resizable().scaledToFill()
+
+            } else {
+                kind.color
+                Image(systemName: kind.symbol).font(.title3.weight(.semibold)).foregroundStyle(.white)
+            }
+        }
+        .frame(width: 48, height: 48)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        // On a preview, the type stays marked: "PDF" in red, a play button
+        // on a video.
+        .overlay(alignment: .bottomLeading) {
+            if thumbnail != nil, let tag = kind.tag {
+                Text(tag)
+                    .font(.system(size: 8, weight: .heavy)).foregroundStyle(.white)
+                    .padding(.horizontal, 3).padding(.vertical, 1)
+                    .background(kind.color, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+                    .padding(3)
+            }
+        }
+        .overlay {
+            if thumbnail != nil, kind == .video {
+                Image(systemName: "play.circle.fill").font(.title3).foregroundStyle(.white).shadow(radius: 2)
+            }
+        }
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(CorresPalette.line, lineWidth: thumbnail == nil ? 0 : 0.5))
+        .accessibilityHidden(true)
+    }
+
+    private func loadThumbnail() async {
+        guard thumbnail == nil, kind.hasPreview, attachment.sizeBytes <= Self.previewLimit, account != "sample" else { return }
+        if let cached = AttachmentThumbnails.cache.object(forKey: attachment.id as NSString) {
+            thumbnail = cached
+            return
+        }
+        guard !AttachmentThumbnails.isLowData,
+              let data = try? await client.fetchAttachmentData(messageId: messageID, attachmentId: attachment.id, account: account) else { return }
+        let size = CGSize(width: 48, height: 48)
+        let scale = displayScale
+        let filename = attachment.filename
+        let image = await AttachmentThumbnails.make(from: data, filename: filename, size: size, scale: scale)
+        guard let image, !Task.isCancelled else { return }
+        AttachmentThumbnails.cache.setObject(image, forKey: attachment.id as NSString)
+        withAnimation(.easeOut(duration: 0.2)) { thumbnail = image }
     }
 
     private func cleanUpDownloadedFile() {
@@ -1320,6 +1397,89 @@ private struct AttachmentRow: View {
             previewURL = url
         } catch {
             downloadFailed = true
+        }
+    }
+}
+
+/// Attachment previews, made once per attachment and kept while Corres
+/// runs.
+enum AttachmentThumbnails {
+    nonisolated(unsafe) static let cache: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.countLimit = 200
+        return cache
+    }()
+
+    /// Low Data Mode is on: no fetching just to draw a preview.
+    nonisolated(unsafe) private static var constrained = false
+    private static let monitor: NWPathMonitor = {
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { constrained = $0.isConstrained }
+        monitor.start(queue: DispatchQueue(label: "corres.attachments.path"))
+        return monitor
+    }()
+    static var isLowData: Bool {
+        _ = monitor
+        return constrained
+    }
+
+    /// QuickLook's own preview: a photo, a PDF's or document's first page,
+    /// a video's frame.
+    static func make(from data: Data, filename: String, size: CGSize, scale: CGFloat) async -> UIImage? {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("thumb-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        guard (try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)) != nil else { return nil }
+        let url = directory.appendingPathComponent(filename)
+        guard (try? data.write(to: url)) != nil else { return nil }
+        let request = QLThumbnailGenerator.Request(fileAt: url, size: CGSize(width: size.width * 2, height: size.height * 2),
+                                                   scale: scale, representationTypes: .thumbnail)
+        return try? await QLThumbnailGenerator.shared.generateBestRepresentation(for: request).uiImage
+    }
+}
+
+extension AttachmentKind {
+    var color: Color {
+        switch self {
+        case .pdf: Color(hex: 0xD93025)
+        case .word, .pages: Color(hex: 0x2B579A)
+        case .excel, .numbers: Color(hex: 0x217346)
+        case .powerpoint, .keynote: Color(hex: 0xC43E1C)
+        case .image: Color(hex: 0x7A4FD0)
+        case .video: Color(hex: 0xC2185B)
+        case .audio: Color(hex: 0xD9730D)
+        case .calendar: CorresPalette.accent
+        case .archive, .contact, .text, .other: Color(hex: 0x6B7280)
+        }
+    }
+
+    /// On a document's preview: "PDF", "DOC", "XLS", "PPT".
+    var tag: String? {
+        switch self {
+        case .pdf: "PDF"
+        case .word: "DOC"
+        case .excel: "XLS"
+        case .powerpoint: "PPT"
+        case .pages: "PAGES"
+        case .numbers: "NUM"
+        case .keynote: "KEY"
+        default: nil
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .pdf: "doc.richtext.fill"
+        case .word, .pages: "doc.text.fill"
+        case .excel, .numbers: "tablecells.fill"
+        case .powerpoint, .keynote: "rectangle.on.rectangle.angled.fill"
+        case .image: "photo.fill"
+        case .video: "play.rectangle.fill"
+        case .audio: "waveform"
+        case .archive: "doc.zipper"
+        case .calendar: "calendar"
+        case .contact: "person.crop.square.fill"
+        case .text: "doc.plaintext.fill"
+        case .other: "doc.fill"
         }
     }
 }
@@ -1355,6 +1515,17 @@ private struct TranslateSheet: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 17.4, *) {
             content.translationPresentation(isPresented: $isPresented, text: text)
+        } else {
+            content
+        }
+    }
+}
+
+/// iOS 26's hard scroll edge: the content goes under a frosted band.
+private struct HardTopEdge: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.scrollEdgeEffectStyle(.hard, for: .top)
         } else {
             content
         }

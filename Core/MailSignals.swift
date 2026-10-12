@@ -13,10 +13,48 @@ public enum MailSignals {
             if trimmed.hasPrefix(">") { continue }
             if trimmed.range(of: #"^On .+ wrote:$"#, options: .regularExpression) != nil { break }
             if trimmed.hasPrefix("-----Original Message-----") || trimmed.hasPrefix("---------- Forwarded message") { break }
+            // A legal notice ("If you have received this email in error,
+            // please reply…") asks nothing of the reader.
+            if trimmed.range(of: legalNoticePattern, options: .regularExpression) != nil { break }
+            if trimmed.range(of: protectiveMarkingLine, options: .regularExpression) != nil { continue }
             kept.append(line)
         }
-        return kept.joined(separator: "\n")
+        return withoutSurveys(kept.joined(separator: "\n"))
     }
+
+    /// "We would like to know how you found our customer service. Please
+    /// click the link to take part": a feedback survey, most often in a
+    /// signature or footer. Asks nothing of you that needs doing (tester
+    /// feedback: a council's signature survey put mail in Needs You).
+    private static let surveyPattern = #"(?i)\b(how (did we do|was (your|the) (experience|visit|stay|service|call|appointment)|would you rate|likely (are you|is it that you would) (to )?recommend|you found (our|the) (customer )?service)|rate (us|our service|your (experience|visit|interaction|call))|(take|complete|fill (in|out)|answer) (part in )?(our|a|this|the) (short |quick |brief |\d+[- ]minute )?(customer )?(survey|questionnaire|feedback form)|(customer|client) (satisfaction|experience|feedback) (survey|questionnaire)|feedback (survey|form|link)|we('d| would) (love|like) (to (hear|know|get) )?your (feedback|thoughts|views|opinion)s?|we('d| would) (love|like) to (hear|know) (how|what) you (found|thought)|tell us (how we did|what you think|about your experience)|share your (feedback|experience)|leave (us )?a review|click (on )?(the|this) link( below)? to (take part|participate|give (us )?(your )?feedback)|research\.net|surveymonkey|qualtrics|typeform|medallia|smartsurvey|surveygizmo|alchemer|forms\.office\.com|forms\.gle|feedbackify|trustpilot)\b"#
+
+    /// The text without its survey and feedback requests: each sentence (or
+    /// line) that carries one goes.
+    static func withoutSurveys(_ text: String) -> String {
+        guard text.range(of: surveyPattern, options: .regularExpression) != nil else { return text }
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false).map { line -> String in
+            let line = String(line)
+            guard line.range(of: surveyPattern, options: .regularExpression) != nil else { return line }
+            // Sentence by sentence, so a real request on the same line stays.
+            var kept: [String] = []
+            line.enumerateSubstrings(in: line.startIndex..., options: .bySentences) { sentence, _, _, _ in
+                guard let sentence, sentence.range(of: surveyPattern, options: .regularExpression) == nil else { return }
+                kept.append(sentence)
+            }
+            return kept.joined()
+        }
+        // "Please click the link to take part:" sits right before its link,
+        // on its own line: with the survey gone, a bare follow-on line goes too.
+        return lines.joined(separator: "\n")
+    }
+
+    /// Where an organization's legal notice starts: everything from there
+    /// down is boilerplate.
+    public static let legalNoticePattern = #"(?i)^(confidentiality notice|(privacy|legal|email) (notice|disclaimer|statement)|disclaimer:|this (e-?mail|message|communication)( and any (attachments?|files)( transmitted with it)?)? (is|are|may be|contains?|may contain) (for the (intended|named|exclusive|sole)|intended|confidential|private|privileged|strictly|monitored|recorded)|if you (have )?received this (e-?mail|message|communication)( in error| by mistake| due to)?|if you are not the (intended|named|addressee)|the (information|contents?) (in|of) this (e-?mail|message) (is|are|may be) (confidential|privileged|intended))"#
+
+    /// A UK government (or company) protective marking on its own line:
+    /// "- Official -", "OFFICIAL-SENSITIVE", "Classification: Internal".
+    public static let protectiveMarkingLine = #"(?i)^[\[\-–— ]*(official(-sensitive)?|unclassified|(classification|sensitivity): ?(official|public|internal|general|confidential)( use)?)[\]\-–— ]*$"#
 
     /// Phrases that ask the reader for something even without a question
     /// mark ("Let me know", "Please confirm").

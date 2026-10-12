@@ -98,7 +98,9 @@ public enum MailDigest {
             if line.hasPrefix(">") { index += 1; continue }
             if startsQuotedHistory(lines, at: index) { break }
             if line == "--" || line == "-- " || line == "—" { break }
-            if line.range(of: cutFromPattern, options: .regularExpression) != nil { break }
+            if line.range(of: cutFromPattern, options: .regularExpression) != nil
+                || line.range(of: MailSignals.legalNoticePattern, options: .regularExpression) != nil { break }
+            if line.range(of: MailSignals.protectiveMarkingLine, options: .regularExpression) != nil { index += 1; continue }
             if line.range(of: dropLinePattern, options: .regularExpression) != nil { index += 1; continue }
             kept.append(lines[index])
             index += 1

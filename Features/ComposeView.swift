@@ -1235,7 +1235,12 @@ private struct AttachmentThumbnail: View {
             if let image {
                 Image(uiImage: image).resizable().scaledToFill()
             } else {
-                Image(systemName: symbol).font(.footnote).foregroundStyle(CorresPalette.secondary)
+                // Marked by type, as in the email it arrives in.
+                let kind = AttachmentKind(filename: attachment.filename, mimeType: attachment.mimeType)
+                ZStack {
+                    kind.color
+                    Image(systemName: kind.symbol).font(.footnote.weight(.semibold)).foregroundStyle(.white)
+                }
             }
         }
         .frame(width: 32, height: 32)
@@ -1250,11 +1255,6 @@ private struct AttachmentThumbnail: View {
         }
     }
 
-    private var symbol: String {
-        if attachment.mimeType.hasPrefix("video/") { return "film" }
-        if attachment.mimeType == "application/pdf" { return "doc.richtext" }
-        return "doc"
-    }
 }
 
 private extension String {
