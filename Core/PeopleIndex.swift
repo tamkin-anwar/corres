@@ -166,7 +166,7 @@ public struct PeopleIndex: Codable, Sendable, Equatable {
 
     /// Addresses that are never a person to write to.
     public static func isAutomated(_ email: String) -> Bool {
-        email.range(of: #"(?i)^(no-?reply|do-?not-?reply|donotreply|notifications?|alerts?|mailer-daemon|postmaster|bounces?|news(letter)?|marketing|info|support|hello|team|updates?|account|accounts|billing|receipts?|orders?|shipping|security)([-_.+].*)?@|@(.*\.)?(bounce|email|mail|e|em|news|notifications?|reply)\.[^.]+\.[^.]+$"#,
+        email.range(of: #"(?i)^([^@]*[-_.])?(no[-_.]?reply|do-?not-?reply)@|^(no-?reply|do-?not-?reply|donotreply|notifications?|alerts?|mailer-daemon|postmaster|bounces?|news(letter)?|marketing|info|support|hello|team|updates?|account|accounts|billing|receipts?|orders?|shipping|security)([-_.+].*)?@|@(.*\.)?(bounce|email|mail|e|em|news|notifications?|reply)\.[^.]+\.[^.]+$"#,
                      options: .regularExpression) != nil
     }
 

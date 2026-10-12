@@ -283,4 +283,16 @@ struct MailSignalsTests {
         #expect(MailQuery.filter([labcorp, bill, today], now: now).count == 3)
         #expect(BriefSnapshot(threads: [labcorp, bill, today], now: now).needsYou == 2)
     }
+
+    /// Only what an email says up top is an obligation; fine print, news
+    /// and marketing urgency aren't.
+    @Test func obligationsAreStatedUpTop() {
+        #expect(MailSignals.isObligation("IMPORTANT DUE DATE REMINDER\nYour return is due on October 31."))
+        let finePrint = "These special offers end soon\n" + String(repeating: "Shop the latest phones and accessories. ", count: 30)
+            + "If you make your payments by the due date each month, the monthly payment applies."
+        #expect(!MailSignals.isObligation(finePrint))
+        #expect(!MailSignals.isObligation("LAST CHANCE: Your Domino's Rewards points expire tomorrow!"))
+        #expect(Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: "testflight_no_reply@email.apple.com"))
+        #expect(!Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: "sara.reply@x.com"))
+    }
 }

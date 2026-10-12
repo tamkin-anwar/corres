@@ -281,7 +281,8 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     }
 
     public static let automatedLocalPart =
-        #"^(no[-_.]?reply|do[-_.]?not[-_.]?reply|notifications?|alerts?|mailer-daemon|postmaster|bounces?)([-_.+][^@]*)?@"#
+        // A prefix too: "testflight_no_reply@" is as automated as "noreply@".
+        #"^([^@]*[-_.])?(no[-_.]?reply|do[-_.]?not[-_.]?reply|notifications?|alerts?|mailer-daemon|postmaster|bounces?)([-_.+][^@]*)?@"#
 
     public static func isAutomated(listUnsubscribeMailto: String?, listUnsubscribeURL: String?, senderEmail: String?) -> Bool {
         if listUnsubscribeMailto != nil || listUnsubscribeURL != nil { return true }

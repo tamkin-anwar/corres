@@ -79,10 +79,17 @@ public enum MailSignals {
     /// A welcome, receipt or autopay notice ("will be charged
     /// automatically", "thanks for your payment") is information, never an
     /// obligation, however many dates it names.
+    ///
+    /// Only the opening counts: a real reminder says what's due up top,
+    /// while "pay by the due date each month" in a sale's fine print or
+    /// "updates due on job numbers" in a news story said nothing to the
+    /// reader, yet brought both into Needs You.
     public static func isObligation(_ text: String) -> Bool {
-        let lower = text.lowercased()
+        let lower = String(text.prefix(obligationOpening)).lowercased()
         let action = #"\b(payment (is )?(due|failed|declined|overdue)|past due|amount due|due (date|on|by)|pay (by|now|your)|bill (is )?(due|ready)|balance (is )?due|invoice (is )?due|sign (by|the|your|here)|signature (requested|required|needed)|please sign|verify (your|by)|action (is )?required|expires? (on|in|soon|today|tomorrow)|expiring|renew (by|before|now)|appointment|check-in|reservation|rsvp|deadline)\b"#
-        let notice = #"\b(will be (charged|billed|renewed) (automatically|monthly|annually)|(automatically|auto-?) ?(charged|billed|renews?)|thank(s| you) for (your )?(payment|order|purchase)|payment (received|confirmed|successful)|receipt|welcome to)\b"#
+        // Marketing urgency is a sale, not an obligation: "LAST CHANCE,
+        // your rewards points expire tomorrow".
+        let notice = #"\b(last chance|don.?t miss|limited time|(points|rewards?) (expire|are expiring)|ends (today|tonight|soon)|\d+% off|will be (charged|billed|renewed) (automatically|monthly|annually)|(automatically|auto-?) ?(charged|billed|renews?)|thank(s| you) for (your )?(payment|order|purchase)|payment (received|confirmed|successful)|receipt|welcome to)\b"#
         guard lower.range(of: action, options: .regularExpression) != nil else { return false }
         // An appointment or reservation reminder stays even if it thanks you.
         let reminder = lower.range(of: #"\b(appointment|reservation|check-in|rsvp)\b"#, options: .regularExpression) != nil
@@ -100,6 +107,10 @@ public enum MailSignals {
         let task = #"\b(payment|pay (by|now|your)|bill|invoice|balance|amount due|past due|sign(ature)?|renew|expir|submit|application|form)\b"#
         return lower.range(of: event, options: .regularExpression) != nil && lower.range(of: task, options: .regularExpression) == nil
     }
+
+    /// How much of an email's start states its obligation, in characters:
+    /// the subject and the first few sentences.
+    static let obligationOpening = 600
 
     /// Whether anyone you wrote to is a person rather than a no-reply
     /// system address: waiting on `noreply@` makes no sense.
