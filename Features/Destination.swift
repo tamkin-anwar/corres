@@ -19,6 +19,23 @@ enum Destination: String, CaseIterable, Identifiable {
     }
 }
 
+/// Needs You, Waiting and Handled, each with what it means, for every
+/// "Move to" menu. The current one is ticked.
+struct AttentionChoices: View {
+    let current: Attention?
+    let choose: (Attention) -> Void
+
+    var body: some View {
+        ForEach(Attention.choices, id: \.self) { attention in
+            Button { choose(attention) } label: {
+                Text(attention.title)
+                Text(attention.explanation)
+                if attention == current { Image(systemName: "checkmark") }
+            }
+        }
+    }
+}
+
 /// Set only in the iPad/wide layout: which conversation the detail column
 /// shows. Lists and the Brief select into it instead of pushing, and a
 /// conversation closes by clearing it instead of popping.

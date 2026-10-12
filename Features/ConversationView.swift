@@ -537,7 +537,7 @@ struct ConversationView: View {
                 Hairline().padding(.vertical, 2)
             }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text("\(thread.attention.title): \(thread.reason)")
+                Text(statusLine(for: thread))
                     .font(.footnote)
                     .foregroundStyle(CorresPalette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -555,12 +555,9 @@ struct ConversationView: View {
                     .accessibilityHint("Takes this out of Needs You. It stays in Mail.")
                 }
                 Menu {
-                    ForEach([Attention.needsYou, .waiting, .quiet, .handled], id: \.self) { attention in
-                        Button {
+                    Section("Move to") {
+                        AttentionChoices(current: thread.attention) { attention in
                             Task { await store.update(thread.id, to: attention) }
-                        } label: {
-                            if thread.attention == attention { Label(attention.title, systemImage: "checkmark") }
-                            else { Text(attention.title) }
                         }
                     }
                 } label: {
@@ -574,6 +571,16 @@ struct ConversationView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .corresSurface(radius: 18)
         .animation(.easeOut(duration: 0.25), value: insight)
+    }
+
+    /// Where this conversation sits and why. Handled says where it went
+    /// rather than the reason it once needed you.
+    private func statusLine(for thread: Correspondence) -> String {
+        switch thread.attention {
+        case .handled: "Handled. It's off your lists and stays in Mail and in Mailboxes \u{2192} Handled."
+        case .quiet: thread.reason.isEmpty ? "No action needed." : "No action needed: \(thread.reason)"
+        default: thread.reason.isEmpty ? thread.attention.title : "\(thread.attention.title): \(thread.reason)"
+        }
     }
 
     /// The email's one call to action, opened where links open.
@@ -991,13 +998,8 @@ struct ConversationView: View {
                 }
             }
             Section("Sort Into") {
-                ForEach(Attention.allCases, id: \.self) { attention in
-                    Button {
-                        Task { await store.update(thread.id, to: attention) }
-                    } label: {
-                        if thread.attention == attention { Label(attention.title, systemImage: "checkmark") }
-                        else { Text(attention.title) }
-                    }
+                AttentionChoices(current: thread.attention) { attention in
+                    Task { await store.update(thread.id, to: attention) }
                 }
             }
         } else {

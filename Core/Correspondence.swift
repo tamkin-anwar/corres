@@ -18,10 +18,26 @@ public enum Attention: String, Codable, CaseIterable, Sendable {
         switch self {
         case .needsYou: "Needs You"
         case .waiting: "Waiting"
-        case .quiet: "For reference"
+        case .quiet: "No action needed"
         case .handled: "Handled"
         }
     }
+
+    /// What each one means, shown under its name wherever you choose one
+    /// (testers found the bare names arbitrary).
+    public var explanation: String {
+        switch self {
+        case .needsYou: "Asks something of you"
+        case .waiting: "You're waiting on their reply"
+        case .quiet: "Nothing for you to do"
+        case .handled: "Done: off your lists, still in Mail"
+        }
+    }
+
+    /// Where you can move a conversation yourself. "No action needed" is
+    /// Corres's own call for everything else; offered beside Handled it
+    /// did the same thing under a vaguer name, and a tester lost mail to it.
+    public static let choices: [Attention] = [.needsYou, .waiting, .handled]
 }
 
 /// The Screener: a sender earns entry once, the same instinct already

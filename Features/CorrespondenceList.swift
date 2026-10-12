@@ -53,6 +53,12 @@ struct CorrespondenceRow: View {
                         Image(systemName: "pin.fill").font(.caption2).foregroundStyle(CorresPalette.tertiary)
                             .accessibilityLabel("Pinned")
                     }
+                    // Mail you've marked Handled says so, so it's never
+                    // lost among the rest (a tester's report).
+                    if thread.attention == .handled {
+                        Image(systemName: "checkmark.circle.fill").font(.caption2).foregroundStyle(CorresPalette.swipeHandled)
+                            .accessibilityLabel("Handled")
+                    }
                     if !thread.attachments.isEmpty {
                         Image(systemName: "paperclip").font(.caption2).foregroundStyle(CorresPalette.tertiary)
                             .accessibilityLabel("Has attachments")
@@ -526,12 +532,10 @@ struct CorrespondenceList: View {
                 for thread in chosen { await threadActions?.setFlagged(anyUnflagged, for: thread) }
             }
             Menu {
-                ForEach([Attention.needsYou, .waiting, .quiet, .handled], id: \.self) { attention in
-                    Button(attention.title) {
-                        Task {
-                            for thread in chosen { await store.update(thread.id, to: attention) }
-                            endSelection()
-                        }
+                AttentionChoices(current: nil) { attention in
+                    Task {
+                        for thread in chosen { await store.update(thread.id, to: attention) }
+                        endSelection()
                     }
                 }
             } label: {
@@ -664,7 +668,7 @@ struct CorrespondenceList: View {
     @ViewBuilder
     private var listFooter: some View {
         if destination == .needsYou && !results.isEmpty {
-            Text("Sorted on this iPhone. Wrong call? Press and hold a conversation to move it.")
+            Text("Email that asks something of you, sorted on this iPhone. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes \u{2192} Handled. Wrong call? Press and hold to move it.")
                 .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 18)
         } else if destination == .waiting && !results.isEmpty {
@@ -857,10 +861,8 @@ struct CorrespondenceList: View {
             Label("Select", systemImage: "checkmark.circle")
         }
         Section("Move to") {
-            ForEach([Attention.needsYou, .waiting, .quiet, .handled], id: \.self) { attention in
-                if attention != thread.attention {
-                    Button(attention.title) { Task { await store.update(thread.id, to: attention) } }
-                }
+            AttentionChoices(current: thread.attention) { attention in
+                Task { await store.update(thread.id, to: attention) }
             }
         }
         Button {

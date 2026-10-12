@@ -16,7 +16,7 @@ import SwiftUI
 struct MailboxesRoute: Hashable {}
 
 enum Mailbox: Hashable, Identifiable {
-    case drafts, snoozed, flagged, sent, allMail, spam, trash
+    case drafts, snoozed, handled, flagged, sent, allMail, spam, trash
     case label(id: String, name: String, account: String)
 
     var id: String {
@@ -30,6 +30,7 @@ enum Mailbox: Hashable, Identifiable {
         switch self {
         case .drafts: "Drafts"
         case .snoozed: "Snoozed"
+        case .handled: "Handled"
         case .flagged: "Flagged"
         case .sent: "Sent"
         case .allMail: "All Mail"
@@ -43,6 +44,7 @@ enum Mailbox: Hashable, Identifiable {
         switch self {
         case .drafts: "doc"
         case .snoozed: "clock"
+        case .handled: "checkmark.circle"
         case .flagged: "flag"
         case .sent: "paperplane"
         case .allMail: "archivebox"
@@ -60,17 +62,21 @@ enum Mailbox: Hashable, Identifiable {
         case .spam: "SPAM"
         case .trash: "TRASH"
         case let .label(id, _, _): id
-        case .allMail, .drafts, .snoozed: nil
+        case .allMail, .drafts, .snoozed, .handled: nil
         }
     }
 
     /// Mail here can go back to the Inbox from the list.
-    var offersMoveToInbox: Bool { self != .drafts && self != .snoozed && self != .sent }
+    var offersMoveToInbox: Bool { self != .drafts && !isLocal && self != .sent }
+
+    /// Kept by Corres on this iPhone rather than fetched from Gmail.
+    var isLocal: Bool { self == .snoozed || self == .handled }
 
     var emptyMessage: String {
         switch self {
         case .drafts: "Drafts you start in Gmail show up here."
         case .snoozed: "Snoozed conversations wait here until they come back."
+        case .handled: "When you're done with something in Needs You or Waiting, mark it Handled. It leaves those lists, stays in Mail, and is kept here."
         case .flagged: "Flag a conversation to keep it here."
         case .spam: "No spam. Gmail empties Spam after 30 days."
         case .trash: "Trash is empty. Gmail empties it after 30 days."
@@ -98,14 +104,18 @@ struct MailboxesView: View {
     private var order: [String] { orderRaw.isEmpty ? [] : orderRaw.components(separatedBy: "\n") }
     private var hidden: Set<String> { Set(hiddenRaw.isEmpty ? [] : hiddenRaw.components(separatedBy: "\n")) }
 
+    private var handledCount: Int {
+        store.threads.filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.attention == .handled }.count
+    }
+
     private var snoozedCount: Int {
         let now = Date.now
-        return store.threads.filter { accounts.contains($0.id.account) && $0.isSnoozed(at: now) }.count
+        return store.threads.filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.isSnoozed(at: now) }.count
     }
 
     /// The built-in mailboxes there are to show: Gmail's only with Gmail.
     private var builtIns: [Mailbox] {
-        accounts.isEmpty ? [.snoozed] : [.drafts, .snoozed, .flagged, .sent, .allMail, .spam, .trash]
+        accounts.isEmpty ? [.snoozed, .handled] : [.drafts, .snoozed, .handled, .flagged, .sent, .allMail, .spam, .trash]
     }
 
     private func labels(for account: String) -> [Mailbox] {
@@ -181,6 +191,7 @@ struct MailboxesView: View {
         NavigationLink(value: mailbox) {
             LabeledContent {
                 if mailbox == .snoozed, snoozedCount > 0 { Text(snoozedCount, format: .number).monospacedDigit() }
+                if mailbox == .handled, handledCount > 0 { Text(handledCount, format: .number).monospacedDigit() }
             } label: {
                 Label(mailbox.title, systemImage: mailbox.systemImage)
             }
@@ -255,8 +266,12 @@ struct MailboxView: View {
     private var rows: [Correspondence] {
         if mailbox == .snoozed {
             let now = Date.now
-            return store.threads.filter { accounts.contains($0.id.account) && $0.isSnoozed(at: now) }
+            return store.threads.filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.isSnoozed(at: now) }
                 .sorted { ($0.snoozedUntil ?? .distantFuture) < ($1.snoozedUntil ?? .distantFuture) }
+        }
+        if mailbox == .handled {
+            return store.threads.filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.attention == .handled }
+                .sorted { $0.receivedAt > $1.receivedAt }
         }
         return items.filter { !removed.contains($0.id) }.map { store.thread($0.id) ?? $0 }
     }
@@ -277,7 +292,7 @@ struct MailboxView: View {
         .navigationTitle(mailbox.title)
         .navigationBarTitleDisplayMode(.large)
         .overlay {
-            if rows.isEmpty && (loadedOnce || mailbox == .snoozed) && !isLoading {
+            if rows.isEmpty && (loadedOnce || mailbox.isLocal) && !isLoading {
                 if loadFailed {
                     ContentUnavailableView {
                         Label("Couldn't load \(mailbox.title)", systemImage: "wifi.exclamationmark")
@@ -294,8 +309,8 @@ struct MailboxView: View {
                 ProgressView()
             }
         }
-        .refreshable { if mailbox != .snoozed { await reload() } }
-        .task { if !loadedOnce && mailbox != .snoozed { await loadMore() } }
+        .refreshable { if !mailbox.isLocal { await reload() } }
+        .task { if !loadedOnce && !mailbox.isLocal { await loadMore() } }
     }
 
     @ViewBuilder
@@ -332,6 +347,16 @@ struct MailboxView: View {
                 Label("Unsnooze", systemImage: "clock.arrow.circlepath")
             }
             .tint(CorresPalette.accent)
+        } else if mailbox == .handled {
+            // Not done after all: back where it asks for you.
+            Button { Task { await store.update(thread.id, to: .needsYou) } } label: {
+                Label("Needs You", systemImage: "exclamationmark.circle")
+            }
+            .tint(CorresPalette.accent)
+            Button { Task { await store.update(thread.id, to: .waiting) } } label: {
+                Label("Waiting", systemImage: "clock")
+            }
+            .tint(CorresPalette.swipeUnread)
         } else if mailbox.offersMoveToInbox && !thread.labelIds.contains("INBOX") {
             Button {
                 Task {
