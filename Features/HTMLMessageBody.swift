@@ -85,6 +85,13 @@ struct HTMLMessageBody: UIViewRepresentable {
         WKWebViewPool.shared.sizeRouter(for: webView).target = context.coordinator
         var processed = blockRemoteImages ? Self.blockingRemoteImages(in: html) : html
         processed = Self.strippingEmbeddedViewportMeta(processed)
+        // Remote stylesheets and fonts held the whole email back: WebKit
+        // paints nothing until a page's stylesheets arrive, and hides text
+        // for up to 3 seconds while a web font downloads. A newsletter
+        // loading Google Fonts sat blank for 4 seconds.
+        let styles = Self.deferringRemoteStyles(in: processed)
+        processed = styles.html
+        let lateStyles = blockRemoteImages ? [] : styles.urls
         // Hidden until didFinish: a pooled instance still shows whatever it
         // was last displaying until the new load actually finishes, and
         // revealing immediately would flash that stale content for a frame.
@@ -98,7 +105,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         // a real https origin.
         let kind: BodyKind = !designed ? .plain : analysis.hasOwnDarkMode ? .designedWithDarkMode : .designed
         webView.loadHTMLString(Self.wrap(processed, kind: kind, dark: dark, textSize: textSize,
-                                         load: context.coordinator.loadGeneration),
+                                         load: context.coordinator.loadGeneration, lateStyles: lateStyles),
                                baseURL: Self.placeholderBaseURL)
     }
 
@@ -482,6 +489,18 @@ struct HTMLMessageBody: UIViewRepresentable {
       window.addEventListener('resize', schedule);
       if (document.fonts) document.fonts.ready.then(schedule);
       measure();
+      // The email's own remote stylesheets, once it's showing
+      // (`deferringRemoteStyles`): added now, they can't hold it up.
+      const late = document.querySelector('meta[name="corres-styles"]');
+      if (late && late.content) {
+        late.content.split(' ').filter(Boolean).forEach(href => {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = decodeURI(href);
+          link.addEventListener('load', schedule);
+          document.head.appendChild(link);
+        });
+      }
     })();
     """#
 
@@ -654,7 +673,58 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// follow `overrideUserInterfaceStyle` in a `loadHTMLString` page on a
     /// real device. Designed mail is shown as its sender made it: light
     /// only, on white, in their colours.
-    private static func wrap(_ html: String, kind: BodyKind, dark: Bool, textSize: CGFloat, load: Int = 0) -> String {
+    /// An email's remote stylesheets (`<link rel=stylesheet>`, `@import`)
+    /// taken out of it, with their addresses, plus `font-display: swap` on
+    /// its web fonts so text shows at once in a system font until they
+    /// arrive. With remote content off (the default) the stylesheets never
+    /// load at all, like its images: they're fetched from the sender's
+    /// servers too. With it on, the sizing script adds them back once the
+    /// email is showing (`corres-styles`), where they can't hold it up.
+    static func deferringRemoteStyles(in html: String) -> (html: String, urls: [String]) {
+        var urls: [String] = []
+        var result = html
+        if let links = linkTagRegex {
+            let ns = result as NSString
+            var kept = ""
+            var last = 0
+            for match in links.matches(in: result, range: NSRange(location: 0, length: ns.length)) {
+                let tag = ns.substring(with: match.range)
+                let lower = tag.lowercased()
+                let remote = lower.range(of: #"href\s*=\s*["']?\s*(https?:)?//"#, options: .regularExpression) != nil
+                let isSheet = lower.range(of: #"rel\s*=\s*["']?[^"'>]*stylesheet"#, options: .regularExpression) != nil
+                // Hints that only open connections to the sender's servers.
+                let isHint = lower.range(of: #"rel\s*=\s*["']?[^"'>]*(preconnect|dns-prefetch|prefetch|preload|icon)"#, options: .regularExpression) != nil
+                guard remote, isSheet || isHint else { continue }
+                kept += ns.substring(with: NSRange(location: last, length: match.range.location - last))
+                last = match.range.location + match.range.length
+                if isSheet, let href = attribute("href", in: tag) { urls.append(href) }
+            }
+            kept += ns.substring(from: last)
+            result = kept
+        }
+        if let imports = importRegex {
+            let ns = result as NSString
+            for match in imports.matches(in: result, range: NSRange(location: 0, length: ns.length)) where match.numberOfRanges > 1 {
+                urls.append(ns.substring(with: match.range(at: 1)))
+            }
+            result = imports.stringByReplacingMatches(in: result, range: NSRange(location: 0, length: ns.length), withTemplate: "")
+        }
+        result = result.replacingOccurrences(of: #"(?i)@font-face\s*\{"#, with: "@font-face{font-display:swap;", options: .regularExpression)
+        return (result, urls.map { $0.hasPrefix("//") ? "https:" + $0 : $0 })
+    }
+
+    private static let linkTagRegex = try? NSRegularExpression(pattern: #"<link\b[^>]*>"#, options: [.caseInsensitive])
+    private static let importRegex = try? NSRegularExpression(
+        pattern: #"@import\s+(?:url\(\s*)?["']?((?:https?:)?//[^"')\s;]+)["']?\s*\)?[^;{}]*;"#, options: [.caseInsensitive])
+
+    private static func attribute(_ name: String, in tag: String) -> String? {
+        guard let range = tag.range(of: name + #"\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)"#, options: [.regularExpression, .caseInsensitive]) else { return nil }
+        let value = tag[range].split(separator: "=", maxSplits: 1).last.map(String.init) ?? ""
+        return value.trimmingCharacters(in: CharacterSet(charactersIn: "\"' ")).replacingOccurrences(of: "&amp;", with: "&")
+    }
+
+    private static func wrap(_ html: String, kind: BodyKind, dark: Bool, textSize: CGFloat, load: Int = 0,
+                             lateStyles: [String] = []) -> String {
         let adaptiveRules = """
             :root { color-scheme: light dark; }
             @media (prefers-color-scheme: dark) { body { color: #F2F3F5 !important; } a { color: #8FB4E8; } }
@@ -672,18 +742,21 @@ struct HTMLMessageBody: UIViewRepresentable {
                   color: inherit !important; }
                 """
         }
-        return wrapAdaptive(html, load: load, dark: dark, textSize: textSize, styles: styles,
+        return wrapAdaptive(html, load: load, dark: dark, textSize: textSize, styles: styles, lateStyles: lateStyles,
                             rootClass: kind == .plain ? "plain" : kind == .designed ? "designed" : "designed own-dark")
     }
 
     private static func wrapAdaptive(_ html: String, load: Int, dark: Bool, textSize: CGFloat, styles: String,
-                                     rootClass: String) -> String {
+                                     lateStyles: [String] = [], rootClass: String) -> String {
         let size = max(12, min(textSize, 40))
+        let late = lateStyles.compactMap { $0.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) }
+            .joined(separator: " ").replacingOccurrences(of: "\"", with: "%22").replacingOccurrences(of: "&", with: "&amp;")
         return """
         <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="corres-load" content="\(load)">
         <meta name="corres-dark" content="\(dark ? 1 : 0)">
         <meta name="corres-text-scale" content="\(String(format: "%.3f", size / 17))">
+        <meta name="corres-styles" content="\(late)">
         <style>
         body { font: -apple-system-body; font-size: \(String(format: "%.1f", size))px; line-height: 1.5; color: #141312 !important;
                margin: 0; padding: 0; -webkit-text-size-adjust: 100%;
