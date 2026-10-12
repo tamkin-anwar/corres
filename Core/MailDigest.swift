@@ -52,8 +52,13 @@ public enum MailDigest {
     public static func readableText(body: String, html: String?) -> String {
         let plain = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let html, !html.isEmpty else { return plain }
-        if wordCount(plain) >= 60 { return plain }
+        // Some senders' plain part only says to read the HTML one ("your
+        // email client might not support HTML", Epic Games).
+        let isPlaceholder = plain.range(of: #"(?i)(not support|unable to (display|view)|can'?t (display|see)|view (it|this( email)?) (online|in (a|your) browser)|html (formatted )?(e-?mail|version))"#,
+                                        options: .regularExpression) != nil && wordCount(plain) < 400
+        if wordCount(plain) >= 60 && !isPlaceholder { return plain }
         let converted = text(fromHTML: html)
+        if isPlaceholder, !converted.isEmpty { return converted }
         return wordCount(converted) > wordCount(plain) ? converted : plain
     }
 
@@ -74,7 +79,9 @@ public enum MailDigest {
         text = text.replacingOccurrences(of: #"(?i)</(p|div|tr|li|h[1-6]|table|blockquote|section|article)>"#, with: "\n", options: .regularExpression)
         text = text.replacingOccurrences(of: #"(?i)<li\b[^>]*>"#, with: "\n• ", options: .regularExpression)
         text = text.replacingOccurrences(of: #"(?i)</t[dh]>"#, with: " ", options: .regularExpression)
-        text = text.replacingOccurrences(of: #"<[^>]+>"#, with: " ", options: .regularExpression)
+        // A quoted attribute can hold a ">" (an image's alt text with "<br>"
+        // in it); a plain <[^>]+> stopped there and left CSS in the text.
+        text = text.replacingOccurrences(of: #"<(?:[^>"']|"[^"]*"|'[^']*')*>"#, with: " ", options: .regularExpression)
         return tidy(text.decodingHTMLEntities)
     }
 
@@ -168,22 +175,32 @@ public enum MailDigest {
 
     // MARK: - Kind
 
+    /// `labelIds` are Gmail's: its Promotions tab is marketing, and its
+    /// Updates tab is where receipts, bills and account notices land.
     public static func kind(subject: String, text: String, senderEmail: String?, isBulk: Bool,
-                            looksAutomated: Bool, hasEvent: Bool) -> Kind {
+                            looksAutomated: Bool, hasEvent: Bool, labelIds: [String] = []) -> Kind {
         let haystack = subject + "\n" + text.prefix(3_000)
         if verificationCode(in: haystack) != nil { return .code }
-        if haystack.range(of: #"(?i)\b(has shipped|have shipped|out for delivery|was delivered|been delivered|tracking (number|#)|on (its|the) way|estimated delivery|arriving (today|tomorrow|on))\b"#, options: .regularExpression) != nil {
-            return .shipping
-        }
-        if haystack.range(of: #"(?i)\b(receipt|order (confirmation|confirmed|number|#)|your order|invoice|payment (received|confirmation|confirmed|of)|you paid|amount (paid|charged|due)|total charged|renewal|has been charged|billing statement)\b"#, options: .regularExpression) != nil {
-            return .receipt
-        }
+        if labelIds.contains("CATEGORY_PROMOTIONS") { return .newsletter }
+        // The subject says what an email is; its body only does near the
+        // top of a short one. A newsletter's article about deliveries or
+        // "your order" isn't a receipt (Morning Brew, TLDR, LinkedIn were).
+        let opening = subject + "\n" + (wordCount(text) <= 300 ? String(text.prefix(400)) : "")
+        if opening.range(of: shippingCue, options: .regularExpression) != nil { return .shipping }
+        if opening.range(of: receiptCue, options: .regularExpression) != nil { return .receipt }
         if hasEvent || subject.range(of: #"(?i)^(invitation|updated invitation|accepted|declined):"#, options: .regularExpression) != nil {
             return .invite
         }
         if !isBulk && !looksAutomated { return .personal }
+        // Updates are notices unless they read like an issue of something.
+        // In real mail, notices and receipts run under ~450 words; Morning
+        // Brew, TLDR and LinkedIn's newsletters run 850 to 3,300.
+        if labelIds.contains("CATEGORY_UPDATES") { return wordCount(text) > 600 ? .newsletter : .notification }
         return isBulk && wordCount(text) > 120 ? .newsletter : .notification
     }
+
+    private static let shippingCue = #"(?i)\b(has shipped|have shipped|out for delivery|was delivered|been delivered|tracking (number|#)|on (its|the) way|estimated delivery|arriving (today|tomorrow|on)|picked up)\b"#
+    private static let receiptCue = #"(?i)\b(receipt|order (confirmation|confirmed|number|#|summary)|your order|invoice|payment (received|confirmation|confirmed|of|failed|declined|request|reminder)|payment (has|was) (failed|declined)|you paid|amount (paid|charged|due)|total charged|has been charged|billing statement|transaction|your (ride|trip) (with|to|on)|rent payment|statement is (ready|available)|bill is ready)\b"#
 
     // MARK: - Facts
 

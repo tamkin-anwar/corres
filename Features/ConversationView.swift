@@ -681,17 +681,17 @@ struct ConversationView: View {
         let isBulk = InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) != nil
         let isPromotion = InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == .promotions
         let body = thread.body, html = thread.htmlBody, subject = thread.subject, sender = thread.senderEmail
-        let automated = thread.looksAutomated
+        let automated = thread.looksAutomated, labelIds = thread.labelIds
         return await Task.detached(priority: .utility) {
             // The whole text, not the cleaned one: cleaning drops what
             // follows a sign-off, which is often exactly where the link is.
             let whole = MailDigest.readableText(body: body, html: html)
             let kind = isPromotion ? .newsletter
                 : MailDigest.kind(subject: subject, text: MailDigest.clean(whole), senderEmail: sender, isBulk: isBulk,
-                                  looksAutomated: automated, hasEvent: false)
+                                  looksAutomated: automated, hasEvent: false, labelIds: labelIds)
             let cleaned = MailDigest.clean(whole)
             return (MailDigest.nextStep(text: whole, html: html, kind: kind),
-                    MailDigest.glance(text: cleaned, kind: kind),
+                    MailDigest.glance(text: cleaned, subject: subject, kind: kind),
                     kind == .personal ? MailDigest.buriedAsk(text: cleaned) : nil)
         }.value
     }

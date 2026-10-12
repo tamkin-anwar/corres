@@ -225,17 +225,28 @@ struct GmailAPIClient {
     }
 
     #if DEBUG
-    /// The most recent Inbox mail, whole, for testing Corres's reading
-    /// against real mail on the developer's own Mac (Settings → Developer).
-    /// Never in a release build.
-    func exportCorpus(account: String, limit: Int) async throws -> [Correspondence] {
-        let token = try await accessToken(for: account)
-        let ids = try await listMessageIDs(token: token, label: "INBOX", limit: limit).ids.map(\.id)
+    /// The most recent mail, archived included, whole, for testing Corres's
+    /// reading against real mail on the developer's own Mac (Settings →
+    /// Developer). Never in a release build.
+    func exportCorpus(account: String, limit: Int) async throws -> (items: [Correspondence], missing: Int) {
+        // The real reason a token can't be had, not just "not signed in".
+        let token = try await GoogleTokenProvider.shared.accessToken(for: account)
+        let ids = try await listMessageIDs(token: token, label: "", limit: limit).ids.map(\.id)
         var items: [Correspondence] = []
-        for chunk in ids.chunked(into: Self.batchSize) {
-            items += try await fetchFull(ids: chunk, account: account).items
+        // Gmail answers a busy batch with some messages missing; those are
+        // asked for again, a few times, so the corpus is the whole Inbox.
+        var pending = ids
+        for _ in 1...4 where !pending.isEmpty {
+            var failed: [String] = []
+            for chunk in pending.chunked(into: Self.batchSize) {
+                let result = try await fetchFull(ids: chunk, account: account)
+                items += result.items
+                failed += result.failedIDs
+            }
+            pending = failed
+            if !pending.isEmpty { try? await Task.sleep(for: .seconds(5)) }
         }
-        return items
+        return (items, pending.count)
     }
     #endif
 
@@ -390,10 +401,9 @@ struct GmailAPIClient {
         var pageToken = startToken
         repeat {
             var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
-            var queryItems = [
-                URLQueryItem(name: "labelIds", value: label),
-                URLQueryItem(name: "maxResults", value: String(min(limit - ids.count, 500))),
-            ]
+            // An empty label lists All Mail (Spam and Trash left out).
+            var queryItems = [URLQueryItem(name: "maxResults", value: String(min(limit - ids.count, 500)))]
+            if !label.isEmpty { queryItems.append(URLQueryItem(name: "labelIds", value: label)) }
             if let pageToken { queryItems.append(URLQueryItem(name: "pageToken", value: pageToken)) }
             components.queryItems = queryItems
             let (data, response) = try await authorizedRequest(url: components.url!, token: token)

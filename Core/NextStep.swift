@@ -10,9 +10,15 @@ public struct NextStep: Equatable, Codable, Sendable {
     public let label: String
     public let url: URL
 
-    /// Where the link goes, for showing beside the label.
+    /// Where the link goes, for showing beside the label. Empty when it
+    /// only passes through a sender's click tracker ("click.e.example.com",
+    /// "track.pstmrk.it"), which isn't where it ends up and reads as
+    /// suspicious.
     public var host: String {
-        (url.host ?? "").replacingOccurrences(of: #"^www\."#, with: "", options: .regularExpression)
+        let host = (url.host ?? "").lowercased().replacingOccurrences(of: #"^www\."#, with: "", options: .regularExpression)
+        if host.range(of: #"^(click|clicks|track|tracking|links?|email|e|l|t|r|go|trk|mail|em|url\d*|ablink|ct)\.|pstmrk|sendgrid|awstrack|sailthru|list-manage|mailchimp|hubspotlinks|mandrillapp|mcsv\.net|exacttarget|rs6\.net|cmail\d*\.com"#,
+                      options: .regularExpression) != nil { return "" }
+        return host
     }
 
     public init(label: String, url: URL) {
@@ -31,16 +37,24 @@ extension MailDigest {
         guard !links.isEmpty else { return nil }
 
         // A link whose own words say what it does: "Book an appointment".
+        // Designed (HTML) mail is full of buttons; only one whose own words name
+        // the step counts, and never a sales one ("Book now", "Sign up").
+        // Guessing from the words around a link gave a news story about
+        // wages a "Pay" button.
+        // Plain-text notices read like letters ("Please visit the link to
+        // book"), so the words around a link count there.
+        let isDesigned = kind != .personal && html?.isEmpty == false
         var best: (link: Link, score: Int, label: String)?
         for (index, link) in links.enumerated() {
             let anchor = link.anchor.trimmingCharacters(in: .whitespacesAndNewlines)
+            if isDesigned, anchor.range(of: salesButton, options: .regularExpression) != nil { continue }
             var score = 0
             var label: String?
             if actionVerb(in: anchor) != nil, isReadableAnchor(anchor) {
                 score += 6
                 label = anchorLabel(anchor)
             }
-            if label == nil, let verb = actionVerb(in: link.context) {
+            if label == nil, !isDesigned, let verb = actionVerb(in: link.context) {
                 score += 3
                 label = verbLabel(verb)
             }
@@ -52,11 +66,13 @@ extension MailDigest {
 
         // One link, and a sentence that says what it's for: "Please visit
         // the link to book."
-        if links.count == 1, let verb = actionVerb(in: text) {
+        if links.count == 1, !isDesigned, let verb = actionVerb(in: text) {
             return NextStep(label: verbLabel(verb), url: links[0].url)
         }
         return nil
     }
+
+    private static let salesButton = #"(?i)\b(now|today|sign ?up|subscribe|shop|buy|deals?|offer|save|earn|join|explore|discover|learn more|get started|download|upgrade)\b"#
 
     struct Link {
         let url: URL
@@ -216,69 +232,103 @@ public struct Glance: Equatable, Codable, Sendable {
 extension MailDigest {
     /// The status and key figures of designed mail. Nil for mail people
     /// write, and when there's nothing clear enough to show.
-    public static func glance(text: String, kind: Kind) -> Glance? {
+    ///
+    /// Real receipts are laid out every way: a table row ("Total £14.62"),
+    /// a label over its amount (Lyft), one long run of text (Stripe's
+    /// "…Total $18.50 Amount paid $18.50…"), or a sentence (DoorDash's
+    /// "unable to process your recent payment of $9.99"). Each is read.
+    public static func glance(text: String, subject: String = "", kind: Kind) -> Glance? {
         guard [.receipt, .shipping, .notification].contains(kind) else { return nil }
         let lines = text.split(separator: "\n").map {
-            $0.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
-                .trimmingCharacters(in: .whitespaces)
-        }.filter { !$0.isEmpty && wordCount($0) <= 9 }
-
-        var status: String?
-        var isAlert = false
-        for line in lines.prefix(12) where wordCount(line) <= 5 && !line.contains("?") {
-            if line.range(of: alertStatus, options: .regularExpression) != nil { status = line; isAlert = true; break }
-            if status == nil, line.range(of: calmStatus, options: .regularExpression) != nil { status = line }
-        }
-
-        var total: Glance.Fact?, otherAmount: Glance.Fact?, date: Glance.Fact?, reference: Glance.Fact?
+            $0.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression).trimmingCharacters(in: .whitespaces)
+        }.filter { !$0.isEmpty }
+        // A short label alone on its line, its amount on the next, joined.
+        var merged: [String] = []
         for line in lines {
-            if total == nil || otherAmount == nil, let fact = labelled(line, valuePattern: "(" + amountPattern + ")") {
-                if fact.label.range(of: totalLabel, options: .regularExpression) != nil {
-                    if total == nil { total = fact }
-                } else if otherAmount == nil, fact.label.range(of: partLabel, options: .regularExpression) == nil {
-                    otherAmount = fact
-                }
-            }
-            if date == nil, let fact = labelled(line, valuePattern: #"(.*\d.*)"#),
-               fact.label.range(of: dateLabel, options: .regularExpression) != nil {
-                date = fact
-            }
-            if reference == nil, let fact = labelled(line, valuePattern: #"#?\s*((?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{3,})"#),
-               fact.label.range(of: referenceLabel, options: .regularExpression) != nil {
-                reference = fact
+            if let last = merged.last, wordCount(last) <= 6, !last.contains(where: \.isNumber) || last.count < 40,
+               line.range(of: "^(" + amountPattern + #")(\s+[A-Z]{3})?$"#, options: .regularExpression) != nil {
+                merged[merged.count - 1] = last + " " + line
+            } else {
+                merged.append(line)
             }
         }
-        let facts = [total ?? otherAmount, date, reference].compactMap { $0 }
+        let body = String(merged.joined(separator: "\n").prefix(8_000))
+
+        // What happened, in the same few words whoever sent it.
+        let top = subject + "\n" + merged.prefix(25).joined(separator: "\n")
+        var status = statusRules.first { top.range(of: $0.pattern, options: .regularExpression) != nil }
+        // A receipt, by its own subject, is for something paid.
+        if status == nil, subject.range(of: #"(?i)\breceipt\b"#, options: .regularExpression) != nil {
+            status = StatusRule(pattern: "", label: "Paid", isAlert: false)
+        }
+
+        var facts: [Glance.Fact] = []
+        if let amount = firstFact(in: body, labels: paidLabels) ?? firstFact(in: body, labels: dueLabels)
+            ?? firstFact(in: body, labels: totalLabels) ?? cardCharge(in: body) ?? proseAmount(in: body) {
+            facts.append(amount)
+        }
+        if let date = firstFact(in: body, labels: dateLabels, value: datePattern) { facts.append(date) }
+        if let reference = firstFact(in: body, labels: referenceLabels, value: #"#?\s*((?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{3,})\b"#) {
+            facts.append(reference)
+        }
         // A status alone, or a single figure without one, isn't a card.
         guard facts.count >= (status == nil ? 2 : 1) else { return nil }
-        if let status, facts.contains(where: { $0.value == status }) { return Glance(status: nil, isAlert: isAlert, facts: facts) }
-        return Glance(status: status.map(tidyStatus), isAlert: isAlert, facts: facts)
+        return Glance(status: status?.label, isAlert: status?.isAlert ?? false, facts: Array(facts.prefix(3)))
     }
 
-    /// "Total £14.62", "Total: £14.62", "Estimated delivery – Thu, 9 Oct":
-    /// a short label of words, then the value.
-    private static func labelled(_ line: String, valuePattern: String) -> Glance.Fact? {
-        let pattern = #"^([\p{L}][\p{L} '’&/().]{1,32})\s*[:\-–—]?\s+"# + valuePattern + #"\s*$"#
+    /// "Amount paid $18.50", "Total: £14.62": the label as written, the
+    /// value after it.
+    private static func firstFact(in text: String, labels: String, value: String? = nil) -> Glance.Fact? {
+        let pattern = #"(?i)(?<![\p{L}])("# + labels + #")\s*[:\-–—]?\s*"# + (value ?? "(" + amountPattern + ")")
         guard let regex = try? NSRegularExpression(pattern: pattern),
-              let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
-              let labelRange = Range(match.range(at: 1), in: line),
-              let valueRange = Range(match.range(at: 2), in: line) else { return nil }
-        let label = String(line[labelRange]).trimmingCharacters(in: .whitespaces.union(.init(charactersIn: ":-–—")))
-        let value = String(line[valueRange]).trimmingCharacters(in: .whitespaces)
-        guard wordCount(label) <= 4, !value.isEmpty else { return nil }
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let labelRange = Range(match.range(at: 1), in: text),
+              let valueRange = Range(match.range(at: 2), in: text) else { return nil }
+        let label = text[labelRange].lowercased().trimmingCharacters(in: .whitespaces.union(.init(charactersIn: "#")))
+        let value = String(text[valueRange]).trimmingCharacters(in: .whitespaces.union(.init(charactersIn: ",.")))
         return Glance.Fact(label: label.prefix(1).uppercased() + label.dropFirst(), value: value)
     }
 
-    private static func tidyStatus(_ line: String) -> String {
-        let trimmed = line.trimmingCharacters(in: .whitespaces.union(.init(charactersIn: ".!:")))
-        let cased = trimmed == trimmed.uppercased() ? trimmed.lowercased() : trimmed
-        return cased.prefix(1).uppercased() + cased.dropFirst()
+    /// Lyft's "Apple Pay (Discover) $21.83": what the card was charged.
+    private static func cardCharge(in text: String) -> Glance.Fact? {
+        let pattern = #"(?i)\b(apple pay|google pay|paypal|visa|mastercard|amex|american express|discover)\b[^\n]{0,30}?\s("# + amountPattern + ")"
+        guard let range = text.range(of: pattern, options: .regularExpression),
+              let amount = text[range].range(of: amountPattern, options: .regularExpression) else { return nil }
+        return Glance.Fact(label: "Charged", value: String(text[range][amount]))
     }
 
-    private static let alertStatus = #"(?i)\b(fail(ed|ure)?|declined|unsuccessful|overdue|past due|action (required|needed)|suspended|cancel(l)?ed|delayed|returned to sender|unable to deliver|could ?n[o']t (be )?(charge|deliver|process))\b"#
-    private static let calmStatus = #"(?i)\b(delivered|shipped|dispatched|out for delivery|on (its|the) way|order (confirmed|received|placed)|payment (received|confirmed|successful)|refund(ed)?|receipt|paid|booking confirmed|confirmed)\b"#
-    private static let totalLabel = #"(?i)^(grand |order |trip |amount )?total|amount (due|paid|charged|owed)|balance( due)?|you paid|you('ll| will) pay|charged|to pay|payment( amount)?|amount$"#
-    private static let partLabel = #"(?i)\b(sub ?total|fee|tax|vat|tip|discount|fare|shipping|delivery|promo|credit|savings?|item|price)\b"#
-    private static let dateLabel = #"(?i)^(due( date| by| on)?|pay by|payment due|(estimated |expected )?(delivery|arrival)( date)?|arriv(es|ing)|deliver(s|ing) (on|by)|renews( on)?|expires( on)?|ships( on)?|date)$"#
-    private static let referenceLabel = #"(?i)^(order|confirmation|booking|reservation|invoice|ticket|tracking|reference|ref|receipt)( (number|no\.?|#|id|code))?$"#
+    /// "your recent payment of $9.99", "a charge of €40".
+    private static func proseAmount(in text: String) -> Glance.Fact? {
+        let pattern = #"(?i)\b(payment|charge|bill|balance|refund) of ("# + amountPattern + ")"
+        guard let range = text.range(of: pattern, options: .regularExpression),
+              let amount = text[range].range(of: amountPattern, options: .regularExpression) else { return nil }
+        let noun = text[range].split(separator: " ").first.map { $0.lowercased() } ?? "amount"
+        return Glance.Fact(label: noun == "refund" ? "Refund" : "Amount", value: String(text[range][amount]))
+    }
+
+    private struct StatusRule { let pattern: String; let label: String; let isAlert: Bool }
+
+    /// Problems first: a failed payment's email also says "receipt".
+    private static let statusRules: [StatusRule] = [
+        .init(pattern: #"(?i)\b(payment|charge|card|transaction)\b[^\n.]{0,40}\b(failed|declined|unsuccessful|did ?n[o']t go through)\b|\b(unable|couldn'?t|could not|were not able) (to )?(process|charge|complete)\b[^\n.]{0,30}\b(payment|card|charge)|\bfailed payment\b|\bpayment failure\b"#,
+              label: "Payment failed", isAlert: true),
+        .init(pattern: #"(?i)\b(delivery|package|parcel|shipment)\b[^\n.]{0,30}\b(failed|delayed|exception|attempted)\b|\bunable to deliver\b|\bmissed (your )?delivery\b|\breturned to sender\b"#,
+              label: "Delivery problem", isAlert: true),
+        .init(pattern: #"(?i)\b(overdue|past due|late fee)\b"#, label: "Overdue", isAlert: true),
+        .init(pattern: #"(?i)\b(was|been|has been|is) delivered\b|^delivered\b"#, label: "Delivered", isAlert: false),
+        .init(pattern: #"(?i)\bout for delivery\b"#, label: "Out for delivery", isAlert: false),
+        .init(pattern: #"(?i)\b(has|have|was|been) (shipped|dispatched|picked up)\b|\bon (its|the) way\b"#, label: "On its way", isAlert: false),
+        .init(pattern: #"(?i)\brefund(ed| (has been |was )?(issued|processed))\b"#, label: "Refunded", isAlert: false),
+        .init(pattern: #"(?i)\b(payment (request|reminder|due)|amount due|bill is ready|statement is ready|rent (is )?due)\b"#, label: "Payment due", isAlert: false),
+        .init(pattern: #"(?i)\b(payment (received|confirmed|successful|processed)|successfully processed|thank you for your payment|receipt from)\b"#, label: "Paid", isAlert: false),
+        .init(pattern: #"(?i)\b(order (confirmed|received|placed)|we got your order|thanks? (you )?for your order)\b"#, label: "Order confirmed", isAlert: false),
+    ]
+
+    private static let paidLabels = #"amount paid|amount charged|total charged|you paid|charged|initial charge"#
+    private static let dueLabels = #"amount due|total due|balance due|minimum (?:payment )?due|payment due|amount owed|balance"#
+    private static let totalLabels = #"grand total|order total|trip total|total"#
+    private static let dateLabels = #"due date|due on|due by|pay by|payment due(?: date)?|estimated delivery(?: date)?|expected delivery|delivery date|arriving(?: on| by)?|arrives(?: on| by)?|renews on|expires on"#
+    private static let referenceLabels = #"order(?: number| no\.?| #| id)?|confirmation(?: number| code)?|booking(?: reference| number)?|reservation(?: number)?|invoice(?: number| no\.?| id)?|receipt(?: number| #)?|tracking(?: number| #)?|case(?: number| #)?"#
+    /// "Thu, 15 Oct", "October 20, 2026", "20 October 2026", "10/20/2026".
+    private static let datePattern = #"((?:(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?,?\s+)?(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?)(?:,?\s+\d{4})?|\d{1,2}/\d{1,2}(?:/\d{2,4})?)"#
 }

@@ -82,3 +82,12 @@ extension NextStepTests {
         #expect(MailDigest.nextStep(text: MailDigest.readableText(body: tetanus, html: nil), html: nil, kind: .notification)?.label == "Book")
     }
 }
+
+extension NextStepTests {
+    @Test func clickTrackersAreNotShownAsTheDestination() {
+        #expect(NextStep(label: "Review", url: URL(string: "https://click.e.usa.experian.com/?qs=1")!).host == "")
+        #expect(NextStep(label: "Reset", url: URL(string: "https://track.pstmrk.it/3s/x")!).host == "")
+        #expect(NextStep(label: "Review", url: URL(string: "https://na4.docusign.net/Signing")!).host == "na4.docusign.net")
+        #expect(NextStep(label: "Book", url: URL(string: "https://www.systmonline.tpp-uk.com/")!).host == "systmonline.tpp-uk.com")
+    }
+}

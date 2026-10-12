@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 import Testing
 @testable import CorresCore
 
@@ -11,14 +12,30 @@ import Testing
 struct CorpusReport {
     static let folder = ProcessInfo.processInfo.environment["CORRES_CORPUS"].map { URL(fileURLWithPath: $0) }
 
-    @Test(.enabled(if: folder != nil)) func report() throws {
+    @Test(.enabled(if: folder != nil)) func report() async throws {
         let folder = try #require(Self.folder)
         let files = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "json" }
         var rows: [String] = ["#\tkind\tattention\treason\tglance\task\tnext step\tsender\tsubject"]
         var index = 0
         for file in files {
-            let emails = try JSONDecoder().decode([Correspondence].self, from: Data(contentsOf: file))
+            // Sorted by the app's own storage and rules, as a sync would.
+            // As each one was when it arrived: unread. Sorting is decided
+            // then, and most of a real mailbox has been read (or archived)
+            // since.
+            let exported = try JSONDecoder().decode([Correspondence].self, from: Data(contentsOf: file)).map { email in
+                var arriving = email
+                arriving.isUnread = true
+                if !arriving.labelIds.contains("UNREAD") { arriving.labelIds.append("UNREAD") }
+                return arriving
+            }
+            let schema = Schema(CorresSchemaV1.models)
+            let container = try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self,
+                                               configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)])
+            let repository = SwiftDataMailRepository(modelContainer: container)
+            _ = try await repository.upsert(exported, isInitialSync: false)
+            _ = try await repository.applyLoadedContent(exported)
+            let emails = try await repository.threads().sorted { $0.receivedAt > $1.receivedAt }
             for email in emails {
                 index += 1
                 let whole = MailDigest.readableText(body: email.body, html: email.htmlBody)
@@ -26,8 +43,8 @@ struct CorpusReport {
                 let bulk = InboxClassifier.bulkKind(labelIds: email.labelIds, looksAutomated: email.looksAutomated)
                 let kind = bulk == .promotions ? .newsletter
                     : MailDigest.kind(subject: email.subject, text: cleaned, senderEmail: email.senderEmail,
-                                      isBulk: bulk != nil, looksAutomated: email.looksAutomated, hasEvent: false)
-                let glance = MailDigest.glance(text: cleaned, kind: kind).map { glance in
+                                      isBulk: bulk != nil, looksAutomated: email.looksAutomated, hasEvent: false, labelIds: email.labelIds)
+                let glance = MailDigest.glance(text: cleaned, subject: email.subject, kind: kind).map { glance in
                     ([glance.status.map { (glance.isAlert ? "!" : "") + $0 }].compactMap { $0 }
                         + glance.facts.map { "\($0.label)=\($0.value)" }).joined(separator: " | ")
                 } ?? ""
@@ -38,6 +55,20 @@ struct CorpusReport {
                 rows.append(fields.map { $0.replacingOccurrences(of: "\t", with: " ").replacingOccurrences(of: "\n", with: " ") }
                     .joined(separator: "\t"))
             }
+        }
+        // CORRES_CORPUS_DUMP=doordash,stripe writes those emails' text as
+        // Corres reads it, for seeing why something was or wasn't found.
+        if let dump = ProcessInfo.processInfo.environment["CORRES_CORPUS_DUMP"] {
+            let terms = dump.lowercased().split(separator: ",").map(String.init)
+            var out: [String] = []
+            for file in files {
+                for email in try JSONDecoder().decode([Correspondence].self, from: Data(contentsOf: file))
+                where terms.contains(where: { ((email.senderEmail ?? "") + " " + email.subject).lowercased().contains($0) }) {
+                    let text = MailDigest.clean(MailDigest.readableText(body: email.body, html: email.htmlBody))
+                    out.append("===== \(email.senderEmail ?? "") | \(email.subject)\n" + String(text.prefix(2500)))
+                }
+            }
+            try out.joined(separator: "\n\n").write(to: folder.appending(path: "dump.txt"), atomically: true, encoding: .utf8)
         }
         try rows.joined(separator: "\n").write(to: folder.appending(path: "report.tsv"), atomically: true, encoding: .utf8)
         print("[Corpus] \(index) emails → \(folder.appending(path: "report.tsv").path)")

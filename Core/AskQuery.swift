@@ -95,11 +95,11 @@ public struct AskQuery: Equatable, Sendable {
         case .receipts?:
             return MailDigest.kind(subject: thread.subject, text: thread.excerpt + "\n" + thread.body,
                                    senderEmail: thread.senderEmail, isBulk: true,
-                                   looksAutomated: thread.looksAutomated, hasEvent: false) == .receipt
+                                   looksAutomated: thread.looksAutomated, hasEvent: false, labelIds: thread.labelIds) == .receipt
         case .packages?:
             return MailDigest.kind(subject: thread.subject, text: thread.excerpt + "\n" + thread.body,
                                    senderEmail: thread.senderEmail, isBulk: true,
-                                   looksAutomated: thread.looksAutomated, hasEvent: false) == .shipping
+                                   looksAutomated: thread.looksAutomated, hasEvent: false, labelIds: thread.labelIds) == .shipping
         default:
             return true
         }

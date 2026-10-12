@@ -28,26 +28,28 @@ struct PreferencesView: View {
         Section {
             Button("Export Test Corpus (500 per account)") {
                 Task {
+                    guard corpusStatus != "Exporting…" else { return }
                     corpusStatus = "Exporting…"
                     let folder = URL.documentsDirectory.appending(path: "corpus")
                     try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-                    var total = 0
+                    var total = 0, missing = 0
                     for account in auth.accounts.map(\.email) {
                         do {
-                            let items = try await GmailAPIClient().exportCorpus(account: account, limit: 500)
+                            let (items, failed) = try await GmailAPIClient().exportCorpus(account: account, limit: 500)
+                            missing += failed
                             let data = try JSONEncoder().encode(items)
                             try data.write(to: folder.appending(path: "\(account).json"))
                             total += items.count
                         } catch {
-                            corpusStatus = "Failed for \(account): \(error.localizedDescription)"
+                            corpusStatus = "Failed for \(account): \(String(describing: error))"
                             return
                         }
                     }
-                    corpusStatus = "Saved \(total) emails to \(folder.path())"
+                    corpusStatus = "Saved \(total) emails" + (missing > 0 ? " (\(missing) Gmail didn't send)" : "") + " to \(folder.path())"
                     print("[Corpus] \(folder.path())")
                 }
             }
-            .disabled(auth.accounts.isEmpty)
+            .disabled(auth.accounts.isEmpty || corpusStatus == "Exporting…")
         } header: {
             Text("Developer")
         } footer: {

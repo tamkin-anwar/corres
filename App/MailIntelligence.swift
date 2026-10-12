@@ -148,7 +148,7 @@ final class MailIntelligence {
             return
         }
         let kind = MailDigest.kind(subject: thread.subject, text: latest.text, senderEmail: thread.senderEmail,
-                                   isBulk: isBulk, looksAutomated: thread.looksAutomated, hasEvent: false)
+                                   isBulk: isBulk, looksAutomated: thread.looksAutomated, hasEvent: false, labelIds: thread.labelIds)
         let source = thread.subject + "\n" + readable.map { $0.sender + "\n" + $0.text }.joined(separator: "\n")
         // Never one that only says what the email opens with, right below.
         func adds(_ summary: String?) -> String? {
