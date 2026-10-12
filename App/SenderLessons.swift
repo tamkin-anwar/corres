@@ -80,7 +80,10 @@ enum SenderLessons {
         let kind: Lesson.Kind
         if previous == .needsYou, attention == .quiet, thread.wasPromotedByIntelligence {
             kind = .quiet
-        } else if attention == .needsYou, previous != .needsYou, thread.looksAutomated {
+        } else if attention == .needsYou, previous == .quiet, thread.looksAutomated {
+            // Only from "No action needed", where Corres put it: bringing
+            // back something you'd marked Handled or Waiting isn't a
+            // correction of Corres, just a change of plan.
             kind = .keep
         } else {
             return nil

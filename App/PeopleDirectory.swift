@@ -109,24 +109,31 @@ final class PeopleDirectory {
             photos = [:]
             return
         }
-        let found: [(String, String, Data?)] = await Task.detached(priority: .utility) {
+        let found: [(String, String, UIImage?)] = await Task.detached(priority: .utility) {
             let keys = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactOrganizationNameKey, CNContactEmailAddressesKey,
                         CNContactImageDataAvailableKey, CNContactThumbnailImageDataKey] as [CNKeyDescriptor]
-            var found: [(String, String, Data?)] = []
+            var found: [(String, String, UIImage?)] = []
+            // Decoded here, off the main thread: hundreds of photos at
+            // launch would otherwise stutter the first screen.
+            var decoded: [Data: UIImage] = [:]
             try? CNContactStore().enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
                 let name = [contact.givenName, contact.familyName].filter { !$0.isEmpty }.joined(separator: " ")
-                let thumbnail = contact.imageDataAvailable ? contact.thumbnailImageData : nil
+                var photo: UIImage?
+                if contact.imageDataAvailable, let data = contact.thumbnailImageData {
+                    photo = decoded[data] ?? UIImage(data: data)?.preparingForDisplay()
+                    decoded[data] = photo
+                }
                 for address in contact.emailAddresses {
-                    found.append((name.isEmpty ? contact.organizationName : name, address.value as String, thumbnail))
+                    found.append((name.isEmpty ? contact.organizationName : name, address.value as String, photo))
                 }
             }
             return found
         }.value
         var index = PeopleIndex()
         var images: [String: UIImage] = [:]
-        for (name, email, thumbnail) in found {
+        for (name, email, photo) in found {
             index.recordContact(name: name, email: email)
-            if let thumbnail, let image = UIImage(data: thumbnail) { images[email.lowercased()] = image }
+            if let photo { images[email.lowercased()] = photo }
         }
         contacts = index
         photos = images
