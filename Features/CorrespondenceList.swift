@@ -340,7 +340,9 @@ struct CorrespondenceList: View {
     @State private var isSelecting = false
     @State private var rowFrames = RowFrames()
     /// The two-finger drag's starting row and what was selected before it.
-    @State private var dragAnchor: (index: Int, before: Set<ThreadID>)?
+    /// Where a selection drag started, what was selected then, and whether
+    /// it selects (started on an empty circle) or unselects (on a checked one).
+    @State private var dragAnchor: (index: Int, before: Set<ThreadID>, selects: Bool)?
     @State private var confirmingBulkTrash = false
     @State private var selected: Set<ThreadID> = []
 
@@ -419,7 +421,9 @@ struct CorrespondenceList: View {
                     Color.clear.frame(height: threadActions?.pendingRemoval == nil && threadActions?.lastChange == nil ? 0 : 56)
                 }
             }
-            .modifier(TwoFingerSelect(onChange: handleTwoFingerSelect))
+            .modifier(TwoFingerSelect(isSelecting: isSelecting, onChange: handleTwoFingerSelect))
+            // A light tick per row as a drag selects it, as in Mail.
+            .sensoryFeedback(.selection, trigger: selected.count) { _, _ in dragAnchor != nil }
             .toolbar(isSelecting ? .hidden : .automatic, for: .tabBar)
             .toolbar { selectionToolbar }
             .animation(.snappy(duration: 0.25), value: isSelecting)
@@ -468,22 +472,24 @@ struct CorrespondenceList: View {
         if selected.contains(id) { selected.remove(id) } else { selected.insert(id) }
     }
 
-    /// Two fingers down a list: select everything from the row where they
-    /// started to the row under them now, as in Mail. Dragging back up
-    /// unselects the rows left behind; what was already selected stays.
+    /// Two fingers down a list, or one down the circles in Select: select
+    /// (or, starting on a checked circle, unselect) everything from the row
+    /// where the drag started to the row under it now, as in Mail. Dragging
+    /// back up restores the rows left behind; the rest stays as it was.
     private func handleTwoFingerSelect(_ state: UIGestureRecognizer.State, _ point: CGPoint) {
         let order = rows.ids
         switch state {
         case .began:
             guard let id = rowFrames.id(at: point, in: order), let index = order.firstIndex(of: id) else { return }
             if !isSelecting { isSelecting = true }
-            dragAnchor = (index, selected)
-            selected.insert(id)
+            let selects = !selected.contains(id)
+            dragAnchor = (index, selected, selects)
+            if selects { selected.insert(id) } else { selected.remove(id) }
         case .changed:
             guard let anchor = dragAnchor, let id = rowFrames.id(at: point, in: order),
                   let index = order.firstIndex(of: id) else { return }
             let run = order[min(anchor.index, index)...max(anchor.index, index)]
-            let next = anchor.before.union(run)
+            let next = anchor.selects ? anchor.before.union(run) : anchor.before.subtracting(run)
             if next != selected { selected = next }
         default:
             dragAnchor = nil
@@ -997,13 +1003,17 @@ extension View {
 }
 
 
-/// The two-finger selection drag where it exists (iOS 18+).
+/// The selection drags where they exist (iOS 18+): two fingers anywhere,
+/// and in Select, one finger down the circles, as in Mail.
 private struct TwoFingerSelect: ViewModifier {
+    var isSelecting = false
     let onChange: (UIGestureRecognizer.State, CGPoint) -> Void
 
     func body(content: Content) -> some View {
         if #available(iOS 18.0, *) {
-            content.gesture(TwoFingerSelectGesture(onChange: onChange))
+            content
+                .gesture(TwoFingerSelectGesture(onChange: onChange))
+                .gesture(TwoFingerSelectGesture(fingers: 1, leadingZone: 56, isEnabled: isSelecting, onChange: onChange))
         } else {
             content
         }

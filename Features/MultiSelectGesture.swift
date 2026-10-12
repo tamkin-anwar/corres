@@ -17,8 +17,17 @@ final class RowFrames {
 /// exactly one finger, this takes exactly two. While it's selecting, the
 /// list doesn't scroll under the fingers, and it scrolls on its own near the
 /// top and bottom edges, the way Mail does.
+///
+/// With `fingers: 1` and a `leadingZone`, it's Mail's other selection
+/// drag: in Select, one finger down the column of circles. It only begins
+/// on the circles, so a drag anywhere else still scrolls.
 @available(iOS 18.0, *)
 struct TwoFingerSelectGesture: UIGestureRecognizerRepresentable {
+    var fingers = 2
+    /// One finger: how far from the list's leading edge a drag may start
+    /// (the circles' column), in points.
+    var leadingZone: CGFloat? = nil
+    var isEnabled = true
     /// Location in screen coordinates; `.began` / `.changed` / `.ended`.
     let onChange: (UIGestureRecognizer.State, CGPoint) -> Void
 
@@ -26,14 +35,16 @@ struct TwoFingerSelectGesture: UIGestureRecognizerRepresentable {
 
     func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
         let recognizer = UIPanGestureRecognizer()
-        recognizer.minimumNumberOfTouches = 2
-        recognizer.maximumNumberOfTouches = 2
+        recognizer.minimumNumberOfTouches = fingers
+        recognizer.maximumNumberOfTouches = fingers
         recognizer.delegate = context.coordinator
         return recognizer
     }
 
     func updateUIGestureRecognizer(_ recognizer: UIPanGestureRecognizer, context: Context) {
         context.coordinator.onChange = onChange
+        context.coordinator.leadingZone = leadingZone
+        recognizer.isEnabled = isEnabled
     }
 
     func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
@@ -61,6 +72,8 @@ struct TwoFingerSelectGesture: UIGestureRecognizerRepresentable {
 
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         var onChange: ((UIGestureRecognizer.State, CGPoint) -> Void)?
+        var leadingZone: CGFloat?
+        private var touchStart: CGPoint?
         weak var scrollView: UIScrollView?
         var lastPoint: CGPoint = .zero
         private var displayLink: CADisplayLink?
@@ -72,6 +85,7 @@ struct TwoFingerSelectGesture: UIGestureRecognizerRepresentable {
                 while let current = view, !(current is UIScrollView) { view = current.superview }
                 scrollView = view as? UIScrollView
             }
+            touchStart = touch.location(in: scrollView)
             return true
         }
 
@@ -80,6 +94,12 @@ struct TwoFingerSelectGesture: UIGestureRecognizerRepresentable {
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
             guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return false }
             let velocity = pan.velocity(in: pan.view)
+            if let leadingZone {
+                // On the circles, and clearly up or down: a sideways start
+                // is left alone.
+                guard let start = touchStart, start.x <= leadingZone else { return false }
+                return abs(velocity.y) > abs(velocity.x) * 1.2
+            }
             return abs(velocity.y) >= abs(velocity.x)
         }
 
