@@ -20,7 +20,7 @@ enum GmailMessageComposer {
     /// tell "never sent" apart from "sent, but the response was lost"
     /// before a retry.
     static func compose(from: String, to: String, cc: String? = nil, bcc: String? = nil, subject: String, body: String, inReplyTo: String?,
-                        messageID: String, attachments: [PendingAttachment] = []) -> String {
+                        messageID: String, attachments: [PendingAttachment] = [], html: String? = nil) -> String {
         var headers = [
             // "Tamkin Anwar <hello@studio.com>": the send-as address and
             // its name, encoded like To and Cc.
@@ -44,15 +44,28 @@ enum GmailMessageComposer {
             headers.append("In-Reply-To: \(reference)")
             headers.append("References: \(reference)")
         }
+        // The words: plain text, or, when formatted (bold, a list, a link),
+        // plain and HTML together, so every mail app shows its best version.
+        let text: (headers: String, content: String)
+        if let html {
+            let alternative = "corres-alt-\(UUID().uuidString)"
+            let encodedHTML = Data(html.utf8).base64EncodedString(
+                options: [.lineLength76Characters, .endLineWithCarriageReturn, .endLineWithLineFeed])
+            text = ("Content-Type: multipart/alternative; boundary=\"\(alternative)\"",
+                    "--\(alternative)\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n\(body)\r\n"
+                    + "--\(alternative)\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n\(encodedHTML)\r\n"
+                    + "--\(alternative)--")
+        } else {
+            text = ("Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit", body)
+        }
         guard !attachments.isEmpty else {
-            headers.append("Content-Type: text/plain; charset=UTF-8")
-            headers.append("Content-Transfer-Encoding: 8bit")
-            let message = headers.joined(separator: "\r\n") + "\r\n\r\n" + body
+            headers.append(text.headers)
+            let message = headers.joined(separator: "\r\n") + "\r\n\r\n" + text.content
             return base64URLEncode(Data(message.utf8))
         }
         let boundary = "corres-\(UUID().uuidString)"
         headers.append("Content-Type: multipart/mixed; boundary=\"\(boundary)\"")
-        var parts = "--\(boundary)\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n\(body)\r\n"
+        var parts = "--\(boundary)\r\n\(text.headers)\r\n\r\n\(text.content)\r\n"
         for attachment in attachments {
             // `.lineLength76Characters` alone inserts no line breaks at all
             // (per Foundation's own docs); both end-line options together

@@ -26,7 +26,7 @@ struct ComposeView: View {
     private var activeField: Field? { addressFocus ?? focusedField }
 
     private func focus(_ field: Field?) {
-        if let field, field.isAddress {
+        if let field, field.isAddress || field == .body {
             addressFocus = field
         } else {
             addressFocus = nil
@@ -57,6 +57,15 @@ struct ComposeView: View {
     }
     /// Bcc stays out of the way until asked for, as in Mail and Gmail.
     @State private var showsBcc = false
+    @State private var richEditor = RichEditorController()
+    /// Bumped whenever Compose itself changes the words (a rewrite, a
+    /// snippet, dictation, a new signature), the only time the editor takes
+    /// them from outside.
+    @State private var bodyRevision = 0
+    /// The Aa strip: bold, italic, underline, strikethrough, lists, link.
+    @State private var showsFormatting = false
+    @State private var addingLink = false
+    @State private var linkText = ""
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Fields and suggestions appearing: brief, no bounce (Apple's "brief
     /// and precise"), a plain fade with Reduce Motion.
@@ -137,13 +146,15 @@ struct ComposeView: View {
                         }
                         Divider().padding(.leading, CorresSpace.page)
                     }
-                    TextEditor(text: $draft.body)
-                        .focused($focusedField, equals: .body)
-                        .font(.body)
-                        .scrollContentBackground(.hidden)
-                        .frame(minHeight: 260)
-                        .padding(.horizontal, CorresSpace.page - 5)
-                        .padding(.vertical, 12)
+                    // Formatting (bold, lists, links) needs a UIKit text view;
+                    // its plain words still drive everything else.
+                    RichBodyEditor(text: $draft.body, html: $draft.bodyHTML, controller: richEditor, revision: bodyRevision,
+                                   isFocused: addressFocus == .body,
+                                   onFocus: { focused in
+                                       if focused { addressFocus = .body } else if addressFocus == .body { addressFocus = nil }
+                                   })
+                        .padding(.horizontal, CorresSpace.page)
+                        .padding(.vertical, 4)
                 }
                 .padding(.vertical, 12)
             }
@@ -274,7 +285,7 @@ struct ComposeView: View {
             }
             // Leaving To, Cc or Bcc turns a finished address into a chip.
             .onChange(of: addressFocus) { old, _ in
-                if let old { commitTyping(in: old) }
+                if let old, old.isAddress { commitTyping(in: old) }
                 selectedChip = nil
             }
             // Subject or the message took over.
@@ -361,8 +372,17 @@ struct ComposeView: View {
                 }
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 10)
             }
+            if showsFormatting { formattingStrip.transition(.move(edge: .bottom).combined(with: .opacity)) }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
+                    // Aa: bold, italic, lists, links, as Mail's Aa.
+                    Button {
+                        withAnimation(.snappy(duration: 0.25)) { showsFormatting.toggle() }
+                    } label: {
+                        Text("Aa").font(.subheadline.weight(.semibold)).frame(minWidth: 22)
+                    }
+                    .buttonStyle(CorresPillStyle())
+                    .accessibilityLabel(showsFormatting ? "Hide formatting" : "Formatting")
                     if dictation.isSupported {
                         Button {
                             if dictation.isListening { finishDictation() } else { Task { await dictation.start() } }
@@ -390,6 +410,7 @@ struct ComposeView: View {
                     if let beforeRewrite {
                         Button {
                             draft.body = beforeRewrite + ownText.quote
+                            bodyRevision += 1
                             self.beforeRewrite = nil
                         } label: {
                             Label("Undo", systemImage: "arrow.uturn.backward").labelStyle(TightLabelStyle())
@@ -425,6 +446,48 @@ struct ComposeView: View {
         } message: { Text(dictation.errorMessage ?? "") }
     }
 
+    /// Bold, italic, underline, strikethrough, bullets, numbers, link: each
+    /// lit when it's on where you're typing.
+    private var formattingStrip: some View {
+        HStack(spacing: 4) {
+            formatButton("bold", "Bold", on: richEditor.isBold) { richEditor.toggle(.bold) }
+            formatButton("italic", "Italic", on: richEditor.isItalic) { richEditor.toggle(.italic) }
+            formatButton("underline", "Underline", on: richEditor.isUnderline) { richEditor.toggle(.underline) }
+            formatButton("strikethrough", "Strikethrough", on: richEditor.isStrikethrough) { richEditor.toggle(.strikethrough) }
+            Divider().frame(height: 22).padding(.horizontal, 4)
+            formatButton("list.bullet", "Bulleted list", on: richEditor.isBulleted) { richEditor.toggleList(numbered: false) }
+            formatButton("list.number", "Numbered list", on: richEditor.isNumbered) { richEditor.toggleList(numbered: true) }
+            formatButton("link", "Add link", on: false) { linkText = ""; addingLink = true }
+        }
+        .padding(.horizontal, CorresSpace.page).padding(.top, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .alert("Add Link", isPresented: $addingLink) {
+            TextField("https://", text: $linkText)
+                .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+            Button("Add") {
+                let typed = linkText.trimmingCharacters(in: .whitespaces)
+                let withScheme = typed.contains("://") ? typed : "https://" + typed
+                if !typed.isEmpty, let url = URL(string: withScheme) { richEditor.addLink(url, title: nil) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Select words first to link them; otherwise the address itself is added.")
+        }
+    }
+
+    private func formatButton(_ symbol: String, _ label: String, on: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.body.weight(.medium))
+                .frame(width: 40, height: 36)
+                .foregroundStyle(on ? Color.white : CorresPalette.ink)
+                .background(on ? CorresPalette.accent : CorresPalette.surfaceRaised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
     /// The recipient's display name, for `{first name}` in snippets.
     private var recipientName: String? {
         if let sourceThread, draft.kind != .forward { return sourceThread.sender }
@@ -437,6 +500,7 @@ struct ComposeView: View {
         let trimmed = own.trimmingCharacters(in: .whitespacesAndNewlines)
         let joined = trimmed.isEmpty ? text : trimmed + (trimmed.hasSuffix("\n") ? "" : " ") + text
         draft.body = joined + quote
+        bodyRevision += 1
         beforeRewrite = nil
     }
 
@@ -455,6 +519,7 @@ struct ComposeView: View {
             guard let result else { return }
             beforeRewrite = text
             draft.body = result + quote
+            bodyRevision += 1
         }
     }
 
@@ -505,8 +570,10 @@ struct ComposeView: View {
         let newSignature = CorresSettings.signature(for: new)
         if !oldSignature.isEmpty, let range = draft.body.range(of: oldSignature) {
             draft.body.replaceSubrange(range, with: newSignature)
+            bodyRevision += 1
         } else if !newSignature.isEmpty {
             draft.body = Self.addingSignature(to: draft.body, account: new)
+            bodyRevision += 1
         }
     }
 
@@ -1247,11 +1314,15 @@ private struct AddressTextField: UIViewRepresentable {
         var parent: AddressTextField
         init(_ parent: AddressTextField) { self.parent = parent }
 
+        /// What the field last handed out (see RichBodyEditor's).
+        var lastText = ""
+
         @objc func changed(_ field: UITextField) {
             let value = field.text ?? ""
             if value != parent.text { parent.text = value }
             // The binding may have turned it into a chip; show what's left.
             if field.text != parent.text { field.text = parent.text }
+            lastText = field.text ?? ""
         }
         func textFieldDidBeginEditing(_ textField: UITextField) { if !parent.isFocused { parent.onFocus(true) } }
         func textFieldDidEndEditing(_ textField: UITextField) { if parent.isFocused { parent.onFocus(false) } }
@@ -1284,7 +1355,12 @@ private struct AddressTextField: UIViewRepresentable {
     func updateUIView(_ field: Field, context: Context) {
         context.coordinator.parent = self
         field.onEmptyBackspace = onEmptyBackspace
-        if field.text != text { field.text = text }
+        // Only what changed from outside (a chip made, a suggestion picked),
+        // never a value a keystroke behind what's typed.
+        if text != context.coordinator.lastText, field.text != text {
+            field.text = text
+            context.coordinator.lastText = text
+        }
         if field.placeholder != placeholder {
             field.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [.foregroundColor: UIColor.tertiaryLabel])
         }

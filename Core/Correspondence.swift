@@ -551,6 +551,9 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     public var bcc: String?
     public var subject: String
     public var body: String
+    /// The same words as HTML when they're formatted (bold, lists, links);
+    /// nil for plain text. Optional so older drafts decode.
+    public var bodyHTML: String?
     public var attachments: [PendingAttachment]
     /// The Gmail draft this was opened from (Mailboxes → Drafts), deleted
     /// once this is sent so the draft doesn't linger after it's gone out.
