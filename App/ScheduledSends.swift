@@ -1,0 +1,189 @@
+import Foundation
+import Observation
+import UserNotifications
+
+/// Send Later. Gmail's API can't schedule a send, so, like Apple Mail,
+/// Corres holds the email on this iPhone (never on a server) and sends it
+/// at the time you picked:
+/// - while Corres is open, on the minute;
+/// - in the background, whenever iOS lets it run (background refresh, and
+///   each new-mail push that wakes it);
+/// - and if iOS hasn't let it run by then, a notification asks you to open
+///   Corres, which sends it at once. Nothing goes early, nothing is lost.
+///
+/// Like Superhuman's, a scheduled reply waits if they answer first: it's
+/// held, with a notification, instead of following up on mail that's
+/// already been answered.
+@MainActor @Observable
+final class ScheduledSends {
+    static let shared = ScheduledSends()
+
+    struct Item: Codable, Identifiable, Equatable {
+        let id: UUID
+        var draft: Draft
+        var sendAt: Date
+        let scheduledAt: Date
+        /// They replied after it was scheduled; waiting for you to decide.
+        var heldBecauseReplied = false
+
+        static func == (a: Item, b: Item) -> Bool {
+            a.id == b.id && a.sendAt == b.sendAt && a.heldBecauseReplied == b.heldBecauseReplied
+        }
+    }
+
+    private(set) var items: [Item] = []
+    /// Set by the shell: says it's scheduled, with Undo.
+    var announce: ((Item) -> Void)?
+    private var timer: Task<Void, Never>?
+
+    private static var fileURL: URL { URL.applicationSupportDirectory.appending(path: "scheduled-sends.json") }
+
+    private init() {
+        if let data = try? Data(contentsOf: Self.fileURL),
+           let saved = try? JSONDecoder().decode([Item].self, from: data) {
+            items = saved
+        }
+    }
+
+    var nextSendAt: Date? { items.filter { !$0.heldBecauseReplied }.map(\.sendAt).min() }
+
+    // MARK: Scheduling
+
+    func schedule(_ draft: Draft, at date: Date) {
+        let item = Item(id: draft.id, draft: draft, sendAt: date, scheduledAt: .now)
+        items.removeAll { $0.id == item.id }
+        items.append(item)
+        items.sort { $0.sendAt < $1.sendAt }
+        save()
+        scheduleReminder(for: item)
+        AppDelegate.scheduleBackgroundRefresh()
+        announce?(item)
+    }
+
+    func reschedule(_ id: UUID, to date: Date) {
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        items[index].sendAt = date
+        items[index].heldBecauseReplied = false
+        items.sort { $0.sendAt < $1.sendAt }
+        save()
+        scheduleReminder(for: items.first { $0.id == id }!)
+    }
+
+    /// Taken off the schedule (Cancel, or opened to edit): its draft.
+    @discardableResult
+    func remove(_ id: UUID) -> Draft? {
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return nil }
+        let item = items.remove(at: index)
+        save()
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.reminderID(item.id)])
+        return item.draft
+    }
+
+    // MARK: Sending
+
+    /// Sends whatever is due. Called on launch, on foreground, from
+    /// background refresh and from each push that wakes Corres.
+    func sendDue(store: MailStore, outbox: OutboxService, now: Date = .now) async {
+        for item in items where !item.heldBecauseReplied && item.sendAt <= now {
+            let thread = item.draft.threadID.flatMap { store.thread($0) }
+            // A reply they've already answered: hold it, and ask.
+            if let thread, item.draft.kind != .new, !thread.isFromAccountOwner, thread.receivedAt > item.scheduledAt {
+                hold(item, because: thread.sender)
+                continue
+            }
+            remove(item.id)
+            await outbox.sendNow(item.draft, replyingTo: thread)
+        }
+        keepTime(store: store, outbox: outbox)
+    }
+
+    func sendNow(_ id: UUID, store: MailStore, outbox: OutboxService) async {
+        guard let item = items.first(where: { $0.id == id }) else { return }
+        remove(id)
+        await outbox.sendNow(item.draft, replyingTo: item.draft.threadID.flatMap { store.thread($0) })
+    }
+
+    /// While Corres is open, sends each one on its minute.
+    func keepTime(store: MailStore, outbox: OutboxService) {
+        timer?.cancel()
+        guard let next = nextSendAt else { return }
+        timer = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(max(1, next.timeIntervalSinceNow)))
+            guard !Task.isCancelled else { return }
+            await self?.sendDue(store: store, outbox: outbox)
+        }
+    }
+
+    private func hold(_ item: Item, because sender: String) {
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        items[index].heldBecauseReplied = true
+        save()
+        let content = UNMutableNotificationContent()
+        content.title = "Scheduled reply held"
+        content.body = "\(sender) replied to \u{201C}\(item.draft.subject)\u{201D} before it was sent. Open Corres to send it anyway or change it."
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: Self.reminderID(item.id), content: content, trigger: nil))
+    }
+
+    // MARK: Reminder
+
+    private static func reminderID(_ id: UUID) -> String { "corres.scheduled.\(id.uuidString)" }
+
+    /// A few minutes after its time, in case iOS never let Corres run: a
+    /// tap opens Corres, which sends it. Withdrawn the moment it's sent.
+    private func scheduleReminder(for item: Item) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [Self.reminderID(item.id)])
+        let content = UNMutableNotificationContent()
+        content.title = "Ready to send"
+        content.body = "\u{201C}\(item.draft.subject.isEmpty ? "Your email" : item.draft.subject)\u{201D} is waiting. Open Corres to send it."
+        content.userInfo = ["destination": "scheduled"]
+        let fire = max(item.sendAt.addingTimeInterval(3 * 60).timeIntervalSinceNow, 5)
+        center.add(UNNotificationRequest(identifier: Self.reminderID(item.id), content: content,
+                                         trigger: UNTimeIntervalNotificationTrigger(timeInterval: fire, repeats: false)))
+    }
+
+    private func save() {
+        guard let data = try? JSONEncoder().encode(items) else { return }
+        try? FileManager.default.createDirectory(at: URL.applicationSupportDirectory, withIntermediateDirectories: true)
+        try? data.write(to: Self.fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+    }
+
+    /// "Tomorrow at 8:00 AM", "Monday at 8:00 AM", "Oct 20 at 9:30 AM".
+    static func describe(_ date: Date) -> String {
+        let calendar = Calendar.current
+        let time = date.formatted(date: .omitted, time: .shortened)
+        if calendar.isDateInToday(date) { return "today at \(time)" }
+        if calendar.isDateInTomorrow(date) { return "tomorrow at \(time)" }
+        if let days = calendar.dateComponents([.day], from: .now, to: date).day, days < 6 {
+            return "\(date.formatted(.dateTime.weekday(.wide))) at \(time)"
+        }
+        return "\(date.formatted(.dateTime.month(.abbreviated).day())) at \(time)"
+    }
+
+    // MARK: Suggested times
+
+    /// The times offered on Send, as Mail and Spark offer them: this
+    /// evening (before 5 PM), tomorrow at the start of your day, Monday
+    /// morning from Friday on.
+    static func suggestions(now: Date = .now,
+                            morningHour: Int = UserDefaults.standard.object(forKey: CorresSettings.morningHourKey) as? Int ?? 8)
+        -> [(title: String, date: Date)] {
+        let calendar = Calendar.current
+        var result: [(String, Date)] = []
+        let hour = calendar.component(.hour, from: now)
+        if hour < 17, let evening = calendar.date(bySettingHour: 18, minute: 0, second: 0, of: now) {
+            result.append(("This Evening", evening))
+        }
+        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
+           let morning = calendar.date(bySettingHour: morningHour, minute: 0, second: 0, of: tomorrow) {
+            result.append(("Tomorrow Morning", morning))
+        }
+        let weekday = calendar.component(.weekday, from: now) // 1 Sunday … 7 Saturday
+        if [6, 7, 1].contains(weekday),
+           let monday = calendar.nextDate(after: now, matching: DateComponents(weekday: 2), matchingPolicy: .nextTime),
+           let morning = calendar.date(bySettingHour: morningHour, minute: 0, second: 0, of: monday) {
+            result.append(("Monday Morning", morning))
+        }
+        return result
+    }
+}

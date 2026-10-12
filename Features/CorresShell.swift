@@ -157,6 +157,17 @@ struct CorresShell: View {
         .onAppear { applyFocusFilter() }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { Task { await threadActions.commitPendingRemoval() } }
+            // Back in Corres: anything scheduled that's now due goes.
+            if phase == .active { Task { await ScheduledSends.shared.sendDue(store: store, outbox: outbox) } }
+        }
+        .task {
+            let scheduled = ScheduledSends.shared
+            scheduled.announce = { [threadActions] item in
+                threadActions.offerUndo("Sends \(ScheduledSends.describe(item.sendAt))", systemImage: "clock.arrow.circlepath") {
+                    if let draft = scheduled.remove(item.id) { composeDraft = draft }
+                }
+            }
+            await scheduled.sendDue(store: store, outbox: outbox)
         }
         .onChange(of: router.pending) { _, target in handle(target) }
         // A tab hidden in Settings while it was showing.

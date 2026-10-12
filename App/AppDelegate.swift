@@ -162,7 +162,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             await store.deleteSampleDataIfPresent()
         }
         await outbox.resumeAfterRelaunch()
-        scheduleBackgroundRefresh()
+        Self.scheduleBackgroundRefresh()
     }
 
     /// iOS decides the actual timing (usage patterns, battery, thermal
@@ -172,15 +172,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     /// submitted request is consumed the moment it executes; forgetting to
     /// resubmit here would make this run exactly once per install rather
     /// than recur.
-    private func scheduleBackgroundRefresh() {
+    static func scheduleBackgroundRefresh() {
         let request = BGAppRefreshTaskRequest(identifier: Self.backgroundRefreshIdentifier)
-        request.earliestBeginDate = Date(timeIntervalSinceNow: 4 * 60 * 60)
+        // Sooner when an email is scheduled to go: iOS treats this as the
+        // earliest moment, so the send isn't held up by a 4-hour wait.
+        let fourHours = Date(timeIntervalSinceNow: 4 * 60 * 60)
+        request.earliestBeginDate = ScheduledSends.shared.nextSendAt.map { min(max($0, .now), fourHours) } ?? fourHours
         try? BGTaskScheduler.shared.submit(request)
     }
 
     private func handleBackgroundRefresh(_ task: BGAppRefreshTask) {
-        scheduleBackgroundRefresh()
+        Self.scheduleBackgroundRefresh()
         let work = Task {
+            if store.state != .loaded { await store.load() }
+            await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
             await pushService.renewWatch(accounts: auth.accounts.map(\.email))
             task.setTaskCompleted(success: true)
         }
@@ -225,6 +230,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         let previousUnread = Dictionary(store.threads.map { ($0.id, $0.isUnread) }, uniquingKeysWith: { first, _ in first })
         guard await sync.syncAll(accounts: auth.accounts.map(\.email)) else { return .noData }
         await store.load()
+        // A push is also a chance to send what's scheduled.
+        await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
         func newlyUnreadThreads() -> [Correspondence] {
             store.threads.filter { thread in
                 thread.isUnread && previousUnread[thread.id] != true && !thread.isScreenedOut
@@ -292,6 +299,12 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
                                             didReceive response: UNNotificationResponse) async {
         let info = response.notification.request.content.userInfo
+        // "Ready to send": opening Corres sends what's due.
+        if info["destination"] as? String == "scheduled" {
+            await MainActor.run { AppRouter.shared.pending = .destination(.mail) }
+            await sendScheduledDue()
+            return
+        }
         if info["destination"] as? String == "brief" {
             await MainActor.run { AppRouter.shared.pending = .destination(.brief) }
             return
@@ -305,6 +318,11 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
         let typed = (response as? UNTextInputNotificationResponse)?.userText
         await handleNotificationAction(response.actionIdentifier, account: account, providerID: providerID, typed: typed)
+    }
+
+    private func sendScheduledDue() async {
+        if store.state != .loaded { await store.load() }
+        await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
     }
 
     /// Awaited to completion so iOS keeps the app alive until Gmail has it.

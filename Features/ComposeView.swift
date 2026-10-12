@@ -183,24 +183,65 @@ struct ComposeView: View {
                     .accessibilityLabel("Add Attachment")
                 }
                 ToolbarItem(placement: .confirmationAction) {
+                    // Tap sends; press and hold for Send Later, as in Mail.
                     Button("Send") { checkThenSend() }
-                        .fontWeight(.semibold)
-                        .prominentToolbarButton()
-                        .disabled(!canSend)
+                    .fontWeight(.semibold)
+                    .prominentToolbarButton()
+                    .disabled(!canSend)
+                    .contextMenu {
+                        Section("Send Later") {
+                            ForEach(ScheduledSends.suggestions(), id: \.date) { option in
+                                Button {
+                                    checkThenSend(at: option.date)
+                                } label: {
+                                    Text(option.title)
+                                    Text(ScheduledSends.describe(option.date).capitalizedFirst)
+                                }
+                            }
+                            Button { showingSendLaterPicker = true } label: { Label("Pick a Time\u{2026}", systemImage: "calendar") }
+                        }
+                    }
+                    .accessibilityHint("Press and hold to send later")
                 }
             }
             // "See attached", and nothing attached: Gmail and Outlook ask too.
             .confirmationDialog("Did you mean to attach something?", isPresented: $confirmingNoAttachment, titleVisibility: .visible) {
                 Button("Attach a File") { showingFileImporter = true }
                 Button("Attach a Photo") { showingPhotoPicker = true }
-                Button("Send Anyway") { checkThenSend(skippingAttachment: true) }
-                Button("Keep Editing", role: .cancel) {}
+                Button(pendingSendAt == nil ? "Send Anyway" : "Schedule Anyway") { checkThenSend(skippingAttachment: true) }
+                Button("Keep Editing", role: .cancel) { pendingSendAt = nil }
             } message: {
                 Text("Your email mentions an attachment, but nothing is attached.")
             }
             .confirmationDialog("Send without a subject?", isPresented: $confirmingNoSubject, titleVisibility: .visible) {
-                Button("Send") { sendAndDismiss() }
-                Button("Add a Subject", role: .cancel) { focusedField = .subject }
+                Button(pendingSendAt == nil ? "Send" : "Schedule") { sendAndDismiss() }
+                Button("Add a Subject", role: .cancel) { pendingSendAt = nil; focusedField = .subject }
+            }
+            .sheet(isPresented: $showingSendLaterPicker) {
+                NavigationStack {
+                    DatePicker("Send at", selection: $sendLaterDate, in: Date.now.addingTimeInterval(60)...,
+                               displayedComponents: [.date, .hourAndMinute])
+                        .datePickerStyle(.graphical)
+                        .tint(CorresPalette.accent)
+                        .padding(.horizontal, CorresSpace.page)
+                    Text("Corres sends it from this iPhone at that time, or the moment it can if your iPhone is off or offline.")
+                        .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                        .padding(.horizontal, CorresSpace.page)
+                    Spacer()
+                        .navigationTitle("Send Later")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showingSendLaterPicker = false } }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Schedule") {
+                                    showingSendLaterPicker = false
+                                    checkThenSend(at: sendLaterDate)
+                                }
+                                .fontWeight(.semibold)
+                            }
+                        }
+                }
+                .presentationDetents([.large])
             }
             // Mail's choices: keep it (saved to Drafts, a tap away at the
             // bottom of the screen) or delete it.
@@ -479,10 +520,15 @@ struct ComposeView: View {
     }
 
     @State private var confirmingNoAttachment = false
+    @State private var showingSendLaterPicker = false
+    @State private var sendLaterDate = Calendar.current.date(byAdding: .hour, value: 1, to: .now) ?? .now
+    /// When it's to go, if later; carried through the checks.
+    @State private var pendingSendAt: Date?
 
     /// The checks before anything goes: a promised attachment, then a
-    /// subject. Each asks once and never blocks.
-    private func checkThenSend(skippingAttachment: Bool = false) {
+    /// subject. Each asks once and never blocks. `at`: Send Later.
+    private func checkThenSend(at sendAt: Date? = nil, skippingAttachment: Bool = false) {
+        if let sendAt { pendingSendAt = sendAt }
         if !skippingAttachment, draft.attachments.isEmpty, MailDigest.mentionsAttachment(draft.body) {
             confirmingNoAttachment = true
         } else if !draft.hasSubject {
@@ -495,6 +541,11 @@ struct ComposeView: View {
     private func sendAndDismiss() {
         isFinished = true
         if outbox.shelved?.id == draft.id { outbox.clearShelf() }
+        if let sendAt = pendingSendAt {
+            ScheduledSends.shared.schedule(draft, at: sendAt)
+            dismiss()
+            return
+        }
         outbox.queueSend(draft, replyingTo: sourceThread)
         dismiss()
     }
@@ -1250,4 +1301,9 @@ private struct AddressTextField: UIViewRepresentable {
         let fitted = uiView.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: 32))
         return CGSize(width: max(90, fitted.width + 8), height: max(32, fitted.height))
     }
+}
+
+private extension String {
+    /// "tomorrow at 8:00 AM" → "Tomorrow at 8:00 AM".
+    var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
 }

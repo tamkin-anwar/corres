@@ -141,6 +141,21 @@ struct MailboxesView: View {
 
     var body: some View {
         List {
+            // What's waiting to go (Send Later), only while there is some.
+            if !ScheduledSends.shared.items.isEmpty, !isEditing {
+                Section {
+                    NavigationLink {
+                        ScheduledView(store: store, outbox: outbox, auth: auth)
+                    } label: {
+                        LabeledContent {
+                            Text(ScheduledSends.shared.items.count, format: .number).monospacedDigit()
+                        } label: {
+                            Label("Send Later", systemImage: "clock.arrow.circlepath")
+                        }
+                    }
+                    .listRowBackground(CorresPalette.surface)
+                }
+            }
             section(arranged(builtIns), header: nil)
             if accounts.isEmpty {
                 Section {} footer: {
