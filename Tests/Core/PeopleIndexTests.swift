@@ -123,5 +123,15 @@ struct PeopleIndexTests {
         #expect(Person.readable("Acme, Inc.") == "Acme, Inc.")
         #expect(Person.readable("Smith, Jones & Co") == "Smith, Jones & Co")
         #expect(Person.readable("Ridu🍦") == "Ridu🍦")
+        #expect(Person.readable("TAMKIN NURUL ANWAR") == "Tamkin Nurul Anwar")
+        #expect(Person.readable("LABCORP") == "Labcorp")
+        #expect(Person.readable("BANK OF AMERICA") == "Bank of America")
+        #expect(Person.readable("O'BRIEN, SEAN") == "Sean O'Brien")
+        #expect(Person.readable("JEAN-LUC PICARD") == "Jean-Luc Picard")
+        #expect(Person.readable("NASA") == "NASA")
+        #expect(Person.readable("CVS Pharmacy") == "CVS Pharmacy")
+        #expect(Person.readable("AT&T") == "AT&T")
+        #expect(Person.readable("USPS INFORMED DELIVERY") == "USPS Informed Delivery")
+        #expect(Person.readable("iCloud") == "iCloud")
     }
 }

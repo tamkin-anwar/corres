@@ -25,6 +25,7 @@ public struct Person: Codable, Hashable, Sendable, Identifiable {
     /// Outlook's "Manzo, Goretty@EDD" reads "Olivia Hoare", "Goretty
     /// Manzo". "Acme, Inc." and "Smith, Jones & Co" are left alone.
     public static func readable(_ name: String) -> String {
+        let name = calmed(name)
         let parts = name.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
         guard parts.count == 2, !parts[0].isEmpty, !parts[1].isEmpty,
               parts[0].split(separator: " ").count <= 2, !parts[0].contains("@") else { return name }
@@ -38,6 +39,42 @@ public struct Person: Codable, Hashable, Sendable, Identifiable {
               !companySuffixes.contains(given.lowercased().trimmingCharacters(in: .punctuationCharacters)),
               given.split(separator: " ").count <= 3 else { return name }
         return given + " " + parts[0]
+    }
+
+    /// A name shouted in capitals reads as a name: "TAMKIN NURUL ANWAR" is
+    /// "Tamkin Nurul Anwar", "LABCORP" is "Labcorp", "BANK OF AMERICA" is
+    /// "Bank of America". Acronyms stay: no vowel ("CVS", "BMW", "USPS"),
+    /// a digit or "&" ("AT&T", "3M"), or a single short word ("NASA").
+    /// Mixed case is left exactly as written ("McDonald", "iCloud").
+    static func calmed(_ name: String) -> String {
+        let letters = name.filter(\.isLetter)
+        guard letters.count >= 4, letters == letters.uppercased(), letters != letters.lowercased() else { return name }
+        let words = name.split(separator: " ", omittingEmptySubsequences: false)
+        let lettered = words.filter { $0.contains(where: \.isLetter) }
+        if lettered.count == 1, letters.count <= 4 { return name }
+        let small: Set<String> = ["of", "and", "the", "for", "at", "in", "on", "de", "la", "le", "du", "van", "von", "da", "di", "bin", "binti"]
+        let vowels = Set("AEIOUYÀÁÂÄÈÉÊËÌÍÎÏÒÓÔÖÙÚÛÜ")
+        // Common ones with a vowel in them.
+        let acronyms: Set<String> = ["USPS", "UPS", "USA", "USAA", "US", "UK", "EU", "UN", "UAE", "IRS", "AARP", "NASA", "UCLA", "IBM", "AI", "IT",
+                                     "ESPN", "NFL", "NBA", "MLB", "NHS", "BBC", "UBS", "AIG", "AOL", "HSBC", "IEEE", "LLC", "INC", "LTD", "PLC", "CEO", "VIP", "EA", "BRAC", "BUET", "DU"]
+        var index = 0
+        return words.map { word -> String in
+            defer { if word.contains(where: \.isLetter) { index += 1 } }
+            let text = String(word)
+            guard text.contains(where: \.isLetter) else { return text }
+            if text.contains(where: { $0.isNumber || $0 == "&" }) || !text.contains(where: { vowels.contains($0) })
+                || acronyms.contains(text.trimmingCharacters(in: .punctuationCharacters)) { return text }
+            let lower = text.lowercased()
+            if index > 0, small.contains(lower) { return lower }
+            // "O'BRIEN" → "O'Brien", "JEAN-LUC" → "Jean-Luc".
+            var result = ""
+            var capitalizeNext = true
+            for character in lower {
+                result += capitalizeNext ? character.uppercased() : String(character)
+                capitalizeNext = character == "-" || character == "'" || character == "’"
+            }
+            return result
+        }.joined(separator: " ")
     }
 
     /// "Sara Wiltshire <sara.wiltshire@example.com>", for a To field.

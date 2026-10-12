@@ -57,8 +57,14 @@ struct CorresShell: View {
 
     /// Pro screens lock only for real accounts once StoreKit has answered;
     /// sample mail stays fully open so people can try everything first.
+    ///
+    /// At launch, before StoreKit and the Keychain have answered, the last
+    /// known answer stands in (see `isProForDisplay`), and mail already on
+    /// screen counts as connected, so a Pro screen never flashes open and
+    /// then locks.
     private var requiresPro: Bool {
-        entitlements.hasLoaded && !entitlements.isPro && !auth.accounts.isEmpty
+        let connected = !auth.accounts.isEmpty || store.threads.contains { $0.id.account != "sample" }
+        return connected && !entitlements.isProForDisplay
     }
 
     @State private var focusSetFilter = false

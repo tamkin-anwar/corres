@@ -461,6 +461,19 @@ extension Correspondence {
         return names
     }
 
+    /// An appointment or event in Needs You whose day is over: nothing is
+    /// left to do, so it's out of Needs You (it stays in Mail), and shows
+    /// "Was Sep 28" rather than "Overdue".
+    public func isPastEvent(at now: Date = .now) -> Bool {
+        guard attention == .needsYou, let due = dueAt, due < Calendar.current.startOfDay(for: now) else { return false }
+        return MailSignals.isEvent(subject + "\n" + excerpt)
+    }
+
+    /// Where it sits now: a past event has left Needs You on its own.
+    public func attention(at now: Date) -> Attention {
+        isPastEvent(at: now) ? .quiet : attention
+    }
+
     /// "sam.lee@example.com" reads as "Sam Lee".
     static func name(fromAddress address: String) -> String {
         let local = address.components(separatedBy: "@").first ?? address
@@ -588,10 +601,10 @@ public struct BriefSnapshot: Equatable, Sendable {
         // counts link to; without the Screener check, Brief said 149 while
         // the Needs You list it opens showed 110.
         let active = threads.filter { !$0.isSnoozed(at: now) && !$0.isScreenedOut }
-        needsYou = active.filter { $0.attention == .needsYou }.count
+        needsYou = active.filter { $0.attention(at: now) == .needsYou }.count
         waiting = active.filter { $0.attention == .waiting }.count
         upcoming = active.filter {
-            guard $0.attention == .needsYou, let due = $0.dueAt else { return false }
+            guard $0.attention(at: now) == .needsYou, let due = $0.dueAt else { return false }
             return due >= now && due <= now.addingTimeInterval(horizon)
         }.count
     }
@@ -879,7 +892,7 @@ public enum MailQuery {
         let kept = threads.filter { item in
             (!hideSnoozed || !item.isSnoozed(at: now)) &&
             (!hideUnscreened || !item.isScreenedOut) &&
-            (attention == nil || item.attention == attention) &&
+            (attention == nil || item.attention(at: now) == attention) &&
             // Addresses too, and who it went to: mail you sent someone is
             // found by their name or address like mail they sent you.
             (query.isEmpty || ([item.sender, item.organization, item.subject, item.excerpt, item.senderEmail ?? ""]

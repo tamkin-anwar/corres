@@ -125,7 +125,7 @@ struct CorrespondenceRow: View {
                         ReasonLine(text: thread.reason, isIntelligence: thread.isIntelligenceReason)
                         if !typeSize.isAccessibilitySize { Spacer(minLength: 4) }
                         if let due = thread.dueAt, thread.attention == .needsYou {
-                            DueChip(date: due)
+                            DueChip(date: due, isEvent: MailSignals.isEvent(thread.subject + "\n" + thread.excerpt))
                         } else if thread.attention == .waiting {
                             WaitChip(since: thread.waitingReference)
                         }

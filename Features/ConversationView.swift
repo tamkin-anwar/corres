@@ -562,7 +562,7 @@ struct ConversationView: View {
                 Spacer(minLength: 8)
                 // One tap to take it out of Needs You (it stays in Mail);
                 // under Change alone, testers didn't find it.
-                if thread.attention == .needsYou {
+                if thread.attention(at: .now) == .needsYou {
                     Button {
                         Task { await threadActions.setAttention(.handled, for: thread) }
                     } label: {
@@ -594,6 +594,9 @@ struct ConversationView: View {
     /// Where this conversation sits and why. Handled says where it went
     /// rather than the reason it once needed you.
     private func statusLine(for thread: Correspondence) -> String {
+        if thread.isPastEvent(), let due = thread.dueAt {
+            return "Was on \(due.formatted(.dateTime.weekday(.wide).month(.wide).day())), so it's out of Needs You. It stays in Mail."
+        }
         switch thread.attention {
         case .handled: return "Handled. It's off your lists and stays in Mail and in Mailboxes \u{2192} Handled."
         case .quiet:

@@ -89,6 +89,18 @@ public enum MailSignals {
         return reminder || lower.range(of: notice, options: .regularExpression) == nil
     }
 
+    /// About something that happens on a day (an appointment, a class, a
+    /// flight), not something to get done by one (a bill, a signature).
+    /// Once that day is over there's nothing left to do: the email leaves
+    /// Needs You by itself, the way Gmail's "Happening soon" cards drop off
+    /// after the event. A missed payment is different, and stays overdue.
+    public static func isEvent(_ text: String) -> Bool {
+        let lower = text.lowercased()
+        let event = #"\b(appointments?|reservations?|check-?in|meeting|class(es)?|session|visit|interview|webinar|flight|booking|lesson|tour|consultation|exam|screening|event|concert|show(time)?|game|ceremony)\b"#
+        let task = #"\b(payment|pay (by|now|your)|bill|invoice|balance|amount due|past due|sign(ature)?|renew|expir|submit|application|form)\b"#
+        return lower.range(of: event, options: .regularExpression) != nil && lower.range(of: task, options: .regularExpression) == nil
+    }
+
     /// Whether anyone you wrote to is a person rather than a no-reply
     /// system address: waiting on `noreply@` makes no sense.
     public static func hasPersonRecipient(_ recipients: [String], account: String) -> Bool {

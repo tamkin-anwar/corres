@@ -261,4 +261,26 @@ struct MailSignalsTests {
         #expect(invite?.location == "Studio, 2nd floor")
         #expect(invite.flatMap { $0.end?.timeIntervalSince($0.start) } == 1_800)
     }
+
+    /// An appointment whose day is over leaves Needs You by itself; a
+    /// missed payment doesn't.
+    @Test func pastEventsLeaveNeedsYou() {
+        let now = Date(timeIntervalSince1970: 1_791_800_000)
+        func item(_ id: String, _ subject: String, _ excerpt: String, dueDaysAgo: Double) -> Correspondence {
+            Correspondence(id: ThreadID(account: "a", providerID: id), sender: id, organization: "", subject: subject,
+                           excerpt: excerpt, body: excerpt, receivedAt: now.addingTimeInterval(-20 * 86_400),
+                           dueAt: now.addingTimeInterval(-dueDaysAgo * 86_400), reason: "Time-sensitive.", attention: .needsYou)
+        }
+        let labcorp = item("lab", "It's almost time for your Labcorp appointment", "You have a Labcorp appointment in one day", dueDaysAgo: 14)
+        let bill = item("bill", "Your bill is past due", "Your payment of $40 was due", dueDaysAgo: 3)
+        let today = item("today", "Your appointment is today", "See you at 3pm", dueDaysAgo: 0)
+        #expect(labcorp.isPastEvent(at: now))
+        #expect(!bill.isPastEvent(at: now))
+        #expect(!today.isPastEvent(at: now))
+        let needsYou = MailQuery.filter([labcorp, bill, today], attention: .needsYou, now: now).map(\.id.providerID)
+        #expect(Set(needsYou) == ["bill", "today"])
+        // Still in Mail.
+        #expect(MailQuery.filter([labcorp, bill, today], now: now).count == 3)
+        #expect(BriefSnapshot(threads: [labcorp, bill, today], now: now).needsYou == 2)
+    }
 }

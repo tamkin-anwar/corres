@@ -47,6 +47,15 @@ final class EntitlementStore {
 
     var isPro: Bool { plan != .none || (hasBetaAccess && !previewAsFree) }
 
+    /// What the last check found, kept so launch shows the right screens at
+    /// once instead of the unlocked ones flashing before a lock (or a lock
+    /// before a subscriber's screens). Only a first guess: the real check
+    /// decides as soon as it answers.
+    private static let lastKnownProKey = "corres.lastKnownPro"
+    var isProForDisplay: Bool {
+        hasLoaded ? isPro : UserDefaults.standard.object(forKey: Self.lastKnownProKey) as? Bool ?? true
+    }
+
     // MARK: Beta access
     //
     // Testers get Pro without buying it, so they test the mail, not a
@@ -73,11 +82,15 @@ final class EntitlementStore {
 
     /// Beta build, installed from TestFlight or Xcode.
     private(set) var hasBetaAccess = false
+    private var betaChecked = false
 
     /// Settings → Beta → Preview as free user: the beta shows the locked
     /// app and paywall, for testing them.
     var previewAsFree = UserDefaults.standard.bool(forKey: EntitlementStore.previewAsFreeKey) {
-        didSet { UserDefaults.standard.set(previewAsFree, forKey: Self.previewAsFreeKey) }
+        didSet {
+            UserDefaults.standard.set(previewAsFree, forKey: Self.previewAsFreeKey)
+            if hasLoaded { UserDefaults.standard.set(isPro, forKey: Self.lastKnownProKey) }
+        }
     }
     static let previewAsFreeKey = "corres.beta.previewAsFree"
 
@@ -107,6 +120,7 @@ final class EntitlementStore {
 
     func start() async {
         hasBetaAccess = await Self.qualifiesForBetaAccess()
+        betaChecked = true
         await refresh()
         await loadProducts()
     }
@@ -152,7 +166,12 @@ final class EntitlementStore {
             }
         }
         plan = best
+        // Not "loaded" until the beta check has answered too: a StoreKit
+        // update landing first would lock a tester out for a moment, and
+        // remember them as free.
+        guard betaChecked else { return }
         hasLoaded = true
+        UserDefaults.standard.set(isPro, forKey: Self.lastKnownProKey)
     }
 
     func purchase(_ product: Product) async {

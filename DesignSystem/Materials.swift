@@ -83,23 +83,30 @@ struct TightLabelStyle: LabelStyle {
     }
 }
 
-/// A small outlined day marker ("Fri") for something due.
+/// A small outlined day marker ("Fri") for something due. Once the day
+/// has passed, an appointment or event reads "Was Sep 28" (it's over,
+/// nothing to do), and only a real deadline reads "Overdue", in red.
 struct DueChip: View {
     let date: Date
+    var isEvent = false
     @Environment(\.displayScale) private var displayScale
+
+    private var isPast: Bool { date < Calendar.current.startOfDay(for: .now) }
+    private var tint: Color { isPast ? (isEvent ? CorresPalette.tertiary : CorresPalette.alert) : CorresPalette.accent }
 
     var body: some View {
         Text(label)
             .font(.caption.weight(.semibold))
-            .foregroundStyle(CorresPalette.accent)
+            .foregroundStyle(tint)
             .padding(.horizontal, 8).padding(.vertical, 2)
-            .overlay(Capsule().strokeBorder(CorresPalette.accent.opacity(0.5), lineWidth: 1))
-            .accessibilityLabel("Due \(date.formatted(.dateTime.weekday(.wide).month().day()))")
+            .overlay(Capsule().strokeBorder(isPast && isEvent ? CorresPalette.line : tint.opacity(0.5), lineWidth: 1))
+            .accessibilityLabel(isPast ? (isEvent ? "Was on " : "Overdue, was due ") + date.formatted(.dateTime.weekday(.wide).month().day())
+                                       : "Due \(date.formatted(.dateTime.weekday(.wide).month().day()))")
     }
 
     private var label: String {
         let calendar = Calendar.current
-        if date < calendar.startOfDay(for: .now) { return "Overdue" }
+        if isPast { return isEvent ? "Was \(date.formatted(.dateTime.month(.abbreviated).day()))" : "Overdue" }
         if calendar.isDateInToday(date) { return "Today" }
         if calendar.isDateInTomorrow(date) { return "Tomorrow" }
         if let days = calendar.dateComponents([.day], from: .now, to: date).day, days < 6, days >= 0 {
