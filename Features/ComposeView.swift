@@ -57,6 +57,15 @@ struct ComposeView: View {
     }
     /// Bcc stays out of the way until asked for, as in Mail and Gmail.
     @State private var showsBcc = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Fields and suggestions appearing: brief, no bounce (Apple's "brief
+    /// and precise"), a plain fade with Reduce Motion.
+    private var reveal: Animation { reduceMotion ? .easeOut(duration: 0.15) : .snappy(duration: 0.3, extraBounce: 0) }
+    private var revealTransition: AnyTransition {
+        reduceMotion ? .opacity : .asymmetric(insertion: .opacity.combined(with: .offset(y: -8)), removal: .opacity)
+    }
+    /// Sent or deleted: nothing left to save when Compose closes.
+    @State private var isFinished = false
     /// The chip Backspace has picked, ready to go on the next Backspace
     /// (Mail's two-step delete, so one stray tap never loses a recipient).
     @State private var selectedChip: (field: Field, index: Int)?
@@ -88,22 +97,32 @@ struct ComposeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    // The address fields, animated together as focus moves
+                    // (suggestions in and out, Bcc opening); never the
+                    // message you're typing.
+                    VStack(alignment: .leading, spacing: 0) {
                     if draft.kind == .new, let accounts = auth?.accounts, accounts.count > 1 {
                         fromPicker(accounts)
                         Divider().padding(.leading, CorresSpace.page)
                     }
                     recipientField(.to)
-                    if activeField == .to { recipientSuggestions(for: .to) }
+                    if activeField == .to { recipientSuggestions(for: .to).transition(revealTransition) }
                     Divider().padding(.leading, CorresSpace.page)
                     recipientField(.cc)
-                    if activeField == .cc { recipientSuggestions(for: .cc) }
+                    if activeField == .cc { recipientSuggestions(for: .cc).transition(revealTransition) }
                     Divider().padding(.leading, CorresSpace.page)
                     if showsBcc || !(draft.bcc ?? "").isEmpty {
-                        recipientField(.bcc)
-                        if activeField == .bcc { recipientSuggestions(for: .bcc) }
-                        Divider().padding(.leading, CorresSpace.page)
+                        VStack(alignment: .leading, spacing: 0) {
+                            recipientField(.bcc)
+                            if activeField == .bcc { recipientSuggestions(for: .bcc).transition(revealTransition) }
+                            Divider().padding(.leading, CorresSpace.page)
+                        }
+                        .transition(revealTransition)
                     }
                     bccNotices
+                    }
+                    .animation(reveal, value: activeField)
+                    .animation(reveal, value: showsBcc)
                     field(title: "Subject", text: $draft.subject, isEditable: true)
                         .focused($focusedField, equals: .subject)
                     Divider().padding(.leading, CorresSpace.page)
@@ -176,11 +195,26 @@ struct ComposeView: View {
                 Button("Send") { sendAndDismiss() }
                 Button("Add a Subject", role: .cancel) { focusedField = .subject }
             }
-            .confirmationDialog("Delete this draft?", isPresented: $showingDiscardConfirmation, titleVisibility: .visible) {
-                Button("Delete Draft", role: .destructive) { dismiss() }
+            // Mail's choices: keep it (saved to Drafts, a tap away at the
+            // bottom of the screen) or delete it.
+            .confirmationDialog("Save this draft?", isPresented: $showingDiscardConfirmation, titleVisibility: .visible) {
+                Button("Save Draft") { dismiss() }
+                Button("Delete Draft", role: .destructive) {
+                    isFinished = true
+                    outbox.discard(draft, replyingTo: sourceThread)
+                    dismiss()
+                }
                 Button("Keep Editing", role: .cancel) {}
+            } message: {
+                Text("Saved drafts wait at the bottom of the screen and in Drafts, on every device.")
             }
-            .interactiveDismissDisabled(hasUnsavedChanges)
+            // Swiping Compose away never loses what you wrote: it's saved
+            // and tucked away, as Gmail saves and Mail minimizes.
+            .onDisappear {
+                if !isFinished, hasUnsavedChanges || draft.gmailDraftID != nil {
+                    outbox.shelve(draft, replyingTo: sourceThread)
+                }
+            }
             // Who to suggest: current as Compose opens, and your Sent
             // history read once if it hasn't been yet.
             .task {
@@ -393,7 +427,8 @@ struct ComposeView: View {
     }
 
     private func attemptDismiss() {
-        if hasUnsavedChanges { showingDiscardConfirmation = true } else { dismiss() }
+        // A saved draft always offers Delete too, not only once changed.
+        if hasUnsavedChanges || draft.gmailDraftID != nil { showingDiscardConfirmation = true } else { dismiss() }
     }
 
     /// Optimistic: the sheet closes the instant Send is tapped, matching the
@@ -435,6 +470,8 @@ struct ComposeView: View {
     }
 
     private func sendAndDismiss() {
+        isFinished = true
+        if outbox.shelved?.id == draft.id { outbox.clearShelf() }
         outbox.queueSend(draft, replyingTo: sourceThread)
         dismiss()
     }
@@ -685,9 +722,10 @@ struct ComposeView: View {
             .padding(.vertical, 6)
             if field == .cc, !showsBcc, (draft.bcc ?? "").isEmpty {
                 Button("Bcc") {
-                    showsBcc = true
+                    withAnimation(reveal) { showsBcc = true }
                     focus(.bcc)
                 }
+                .transition(.opacity)
                 .font(.subheadline).foregroundStyle(CorresPalette.accent)
                 .frame(minWidth: 44, minHeight: 44)
                 .accessibilityHint("Adds a Bcc field: people copied without the others seeing")

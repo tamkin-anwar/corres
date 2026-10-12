@@ -134,5 +134,8 @@ struct PeopleIndexTests {
         #expect(Person.readable("AT&T") == "AT&T")
         #expect(Person.readable("USPS INFORMED DELIVERY") == "USPS Informed Delivery")
         #expect(Person.readable("iCloud") == "iCloud")
+        #expect(Person.readable("TAMKIN NURUL ANWAR via TestFlight") == "Tamkin Nurul Anwar via TestFlight")
+        #expect(Person.readable("BRAC Bank PLC") == "BRAC Bank PLC")
+        #expect(Person.readable("Sara JONES") == "Sara JONES")
     }
 }

@@ -555,6 +555,23 @@ struct GmailAPIClient {
         try await performChange(path: "threads/\(threadId)/untrash", body: nil, account: account)
     }
 
+    /// Saves a draft in Gmail's Drafts, so it's there on every device:
+    /// creates one, or updates `existingID` in place. Returns the draft's id.
+    func saveDraft(raw: String, threadId: String?, existingID: String?, account: String) async throws -> String {
+        let token = try await accessToken(for: account)
+        let path = existingID.map { "drafts/\($0)" } ?? "drafts"
+        var request = URLRequest(url: URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/\(path)")!)
+        request.httpMethod = existingID == nil ? "POST" : "PUT"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var message: [String: Any] = ["raw": raw]
+        if let threadId { message["threadId"] = threadId }
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["message": message])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response)
+        return try JSONDecoder().decode(SavedDraft.self, from: data).id
+    }
+
     /// A draft written anywhere (Gmail on the web, another app), deleted
     /// once Corres has sent it in its place.
     func deleteDraft(id: String, account: String) async throws {
@@ -1036,6 +1053,8 @@ private struct HistoryListResponse: Decodable {
 private struct Profile: Decodable { let historyId: String? }
 
 private struct SentMessage: Decodable { let threadId: String }
+
+private struct SavedDraft: Decodable { let id: String }
 
 private struct AttachmentDataResponse: Decodable { let data: String }
 

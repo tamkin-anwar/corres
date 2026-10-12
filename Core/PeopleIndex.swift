@@ -48,8 +48,17 @@ public struct Person: Codable, Hashable, Sendable, Identifiable {
     /// Mixed case is left exactly as written ("McDonald", "iCloud").
     static func calmed(_ name: String) -> String {
         let letters = name.filter(\.isLetter)
-        guard letters.count >= 4, letters == letters.uppercased(), letters != letters.lowercased() else { return name }
+        guard letters.count >= 4, letters != letters.lowercased() else { return name }
         let words = name.split(separator: " ", omittingEmptySubsequences: false)
+        // "TAMKIN NURUL ANWAR via TestFlight": a run of shouted words in an
+        // otherwise written name. Only words in capitals change.
+        func isShouted(_ word: Substring) -> Bool {
+            let wordLetters = word.filter(\.isLetter)
+            return wordLetters.count >= 3 && wordLetters == wordLetters.uppercased() && wordLetters != wordLetters.lowercased()
+        }
+        if letters != letters.uppercased() {
+            guard words.filter(isShouted).count >= 2 else { return name }
+        }
         let lettered = words.filter { $0.contains(where: \.isLetter) }
         if lettered.count == 1, letters.count <= 4 { return name }
         let small: Set<String> = ["of", "and", "the", "for", "at", "in", "on", "de", "la", "le", "du", "van", "von", "da", "di", "bin", "binti"]
@@ -61,7 +70,7 @@ public struct Person: Codable, Hashable, Sendable, Identifiable {
         return words.map { word -> String in
             defer { if word.contains(where: \.isLetter) { index += 1 } }
             let text = String(word)
-            guard text.contains(where: \.isLetter) else { return text }
+            guard text.contains(where: \.isLetter), text == text.uppercased() else { return text }
             if text.contains(where: { $0.isNumber || $0 == "&" }) || !text.contains(where: { vowels.contains($0) })
                 || acronyms.contains(text.trimmingCharacters(in: .punctuationCharacters)) { return text }
             let lower = text.lowercased()

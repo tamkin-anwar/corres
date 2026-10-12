@@ -44,6 +44,50 @@ final class OutboxService {
     private(set) var pending: Pending?
     private(set) var failed: FailedSend?
 
+    /// An email you stepped away from mid-way, kept like Mail's tucked-away
+    /// compose: a pill at the bottom reopens it where you left off, and it's
+    /// saved in Gmail's Drafts too, so it's on every device and survives a
+    /// restart. Gmail saves as you go; Mail keeps it to hand. Corres does
+    /// both.
+    struct Shelved: Identifiable {
+        var draft: Draft
+        var id: UUID { draft.id }
+        var isSavedToGmail: Bool { draft.gmailDraftID != nil }
+    }
+    private(set) var shelved: Shelved?
+
+    /// Puts an unfinished email aside and saves it to Gmail's Drafts
+    /// (updating the same draft if it was saved before).
+    func shelve(_ draft: Draft, replyingTo thread: Correspondence?) {
+        shelved = Shelved(draft: draft)
+        Task {
+            guard let account = resolveSendingAccount(draft: draft, thread: thread), auth.isConnected(account) else { return }
+            let raw = GmailMessageComposer.compose(from: account, to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
+                                                    body: draft.body, inReplyTo: thread?.messageIdHeader,
+                                                    messageID: Self.rfc822MessageID(for: draft.id),
+                                                    attachments: draft.attachments)
+            guard let id = try? await client.saveDraft(raw: raw, threadId: thread?.id.providerID,
+                                                       existingID: draft.gmailDraftID, account: account) else { return }
+            if shelved?.id == draft.id { shelved?.draft.gmailDraftID = id }
+        }
+    }
+
+    /// Opened again from the pill: it's in Compose now, not on the shelf.
+    func takeShelved() -> Draft? {
+        defer { shelved = nil }
+        return shelved?.draft
+    }
+
+    /// Put away for good (the pill's ✕): it stays in Gmail's Drafts.
+    func clearShelf() { shelved = nil }
+
+    /// Delete Draft: gone here and from Gmail's Drafts.
+    func discard(_ draft: Draft, replyingTo thread: Correspondence?) {
+        if shelved?.id == draft.id { shelved = nil }
+        guard let draftID = draft.gmailDraftID, let account = resolveSendingAccount(draft: draft, thread: thread) else { return }
+        Task { try? await client.deleteDraft(id: draftID, account: account) }
+    }
+
     private let store: MailStore
     private let auth: GoogleAuthService
     private let repository: any MailRepository

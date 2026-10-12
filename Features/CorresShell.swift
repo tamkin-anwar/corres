@@ -146,6 +146,7 @@ struct CorresShell: View {
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: threadActions.pendingRemoval?.id)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: threadActions.lastChange?.id)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: HabitWatcher.shared.offer)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.shelved?.id)
         }
         // Premium apps confirm what just happened in the hand, not only on screen.
         .sensoryFeedback(.success, trigger: outbox.pending?.id) { _, new in new != nil }
@@ -192,7 +193,8 @@ struct CorresShell: View {
         .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService, unsubscriber: unsubscribeService) }
         .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
         .sheet(isPresented: $showingPaywall) { PaywallView() }
-        .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, auth: auth, draft: draft, sourceThread: nil)
+        .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, auth: auth, draft: draft,
+                                                                     sourceThread: draft.threadID.flatMap { store.thread($0) })
             .environment(\.proUnlocked, !requiresPro) }
         .fullScreenCover(isPresented: $showingWelcome) {
             WelcomeView {
@@ -340,6 +342,33 @@ struct CorresShell: View {
                     }
                     withAnimation(.spring(duration: 0.25)) { bannerDrag = 0 }
                 })
+            .accessibilityElement(children: .contain)
+            .padding(.bottom, 92)
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+        } else if let shelved = outbox.shelved, composeDraft == nil {
+            // The email you stepped away from, a tap from where you left
+            // it, like Mail's tucked-away compose.
+            HStack(spacing: 10) {
+                Image(systemName: "square.and.pencil").foregroundStyle(CorresPalette.secondary)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(shelved.draft.subject.isEmpty ? "Draft" : shelved.draft.subject)
+                        .font(.subheadline.weight(.medium)).lineLimit(1)
+                    Text(shelved.isSavedToGmail ? "Saved to Drafts" : "Saving to Drafts…")
+                        .font(.caption).foregroundStyle(CorresPalette.secondary)
+                }
+                .frame(maxWidth: 200, alignment: .leading)
+                Button("Open") { composeDraft = outbox.takeShelved() }
+                    .font(.subheadline.weight(.semibold))
+                Button { outbox.clearShelf() } label: {
+                    Image(systemName: "xmark").font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.secondary)
+                        .frame(width: 28, height: 28)
+                }
+                .accessibilityLabel("Put away. It stays in Drafts.")
+            }
+            .padding(.leading, 16).padding(.trailing, 8).frame(minHeight: 48)
+            .corresGlass(in: Capsule())
+            .fixedSize()
+            .onTapGesture { composeDraft = outbox.takeShelved() }
             .accessibilityElement(children: .contain)
             .padding(.bottom, 92)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
