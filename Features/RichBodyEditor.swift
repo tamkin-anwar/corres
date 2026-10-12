@@ -234,7 +234,7 @@ struct RichBodyEditor: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeUIView(context: Context) -> UITextView {
-        let view = UITextView()
+        let view = PasteTidyTextView()
         view.delegate = context.coordinator
         view.isScrollEnabled = false
         view.backgroundColor = .clear
@@ -279,5 +279,46 @@ struct RichBodyEditor: UIViewRepresentable {
         let width = proposal.width ?? 320
         let fitted = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
         return CGSize(width: width, height: max(260, fitted.height))
+    }
+}
+
+/// Pasted from a web page or Notes: the words keep their bold, italic,
+/// underline, strikethrough and links, in the message's own font and
+/// color, never the page's (black text that vanishes in Dark Mode, a
+/// 30-point heading in the middle of a sentence).
+final class PasteTidyTextView: UITextView {
+    override func paste(_ sender: Any?) {
+        guard let pasted = Self.pasteboardAttributedString() else {
+            super.paste(sender)
+            return
+        }
+        let body = RichEditorController.bodyFont
+        let tidy = NSMutableAttributedString(string: pasted.string)
+        pasted.enumerateAttributes(in: NSRange(location: 0, length: pasted.length)) { attributes, range, _ in
+            let traits = (attributes[.font] as? UIFont)?.fontDescriptor.symbolicTraits.intersection([.traitBold, .traitItalic]) ?? []
+            var kept: [NSAttributedString.Key: Any] = [
+                .font: body.fontDescriptor.withSymbolicTraits(traits).map { UIFont(descriptor: $0, size: body.pointSize) } ?? body,
+                .foregroundColor: UIColor.label,
+            ]
+            if let underline = attributes[.underlineStyle] { kept[.underlineStyle] = underline }
+            if let strike = attributes[.strikethroughStyle] { kept[.strikethroughStyle] = strike }
+            if let link = attributes[.link] { kept[.link] = link }
+            tidy.setAttributes(kept, range: range)
+        }
+        let range = selectedRange
+        textStorage.replaceCharacters(in: range, with: tidy)
+        selectedRange = NSRange(location: range.location + tidy.length, length: 0)
+        delegate?.textViewDidChange?(self)
+    }
+
+    private static func pasteboardAttributedString() -> NSAttributedString? {
+        let board = UIPasteboard.general
+        for (type, documentType) in [("public.rtf", NSAttributedString.DocumentType.rtf), ("public.html", .html)] {
+            if let data = board.data(forPasteboardType: type),
+               let string = try? NSAttributedString(data: data, options: [.documentType: documentType], documentAttributes: nil) {
+                return string
+            }
+        }
+        return nil
     }
 }

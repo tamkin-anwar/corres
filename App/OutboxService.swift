@@ -54,6 +54,8 @@ final class OutboxService {
         var draft: Draft
         var id: UUID { draft.id }
         var isSavedToGmail: Bool { draft.gmailDraftID != nil }
+        /// Gmail couldn't be reached (offline, or sample mail): kept here.
+        var couldNotSave = false
     }
     private(set) var shelved: Shelved?
 
@@ -82,13 +84,19 @@ final class OutboxService {
         saving[draft.id] = Task {
             defer { if background != .invalid { UIApplication.shared.endBackgroundTask(background) } }
             await previous?.value
-            guard let account = resolveSendingAccount(draft: draft, thread: thread), auth.isConnected(account) else { return }
+            guard let account = resolveSendingAccount(draft: draft, thread: thread), auth.isConnected(account) else {
+                if shelved?.id == draft.id { shelved?.couldNotSave = true }
+                return
+            }
             let raw = GmailMessageComposer.compose(from: fromHeader(draft, account: account), to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
                                                     body: draft.body, inReplyTo: thread?.messageIdHeader,
                                                     messageID: Self.rfc822MessageID(for: draft.id),
                                                     attachments: draft.attachments, html: draft.bodyHTML, calendar: draft.calendarReply)
             guard let id = try? await client.saveDraft(raw: raw, threadId: thread?.id.providerID,
-                                                       existingID: gmailDraftID(for: draft), account: account) else { return }
+                                                       existingID: gmailDraftID(for: draft), account: account) else {
+                if shelved?.id == draft.id { shelved?.couldNotSave = true }
+                return
+            }
             gmailDraftIDs[draft.id] = id
             if shelved?.id == draft.id { shelved?.draft.gmailDraftID = id }
         }

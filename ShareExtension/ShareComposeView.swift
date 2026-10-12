@@ -412,8 +412,8 @@ struct ShareComposeView: View {
     private var signedOut: some View {
         VStack(spacing: 14) {
             Image(systemName: "envelope.badge.person.crop").font(.system(size: 44)).foregroundStyle(CorresPalette.accent)
-            Text("Open Corres to Start").font(.title3.weight(.semibold))
-            Text("Add your email account in Corres, then share again to write right here.")
+            Text("Open Corres First").font(.title3.weight(.semibold))
+            Text("Open Corres once (and add your email account if you haven\u{2019}t), then share again to write right here.")
                 .font(.subheadline).foregroundStyle(CorresPalette.secondary).multilineTextAlignment(.center)
         }
         .padding(32)

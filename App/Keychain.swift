@@ -40,7 +40,9 @@ enum Keychain {
         }
     }
 
-    /// Moves a token saved before sharing existed into the shared group.
+    /// Moves a token saved before sharing existed into the shared group:
+    /// the shared copy is added first, and the old one removed only once
+    /// that worked, so a sign-in is never lost on the way.
     static func share(key: String) {
         let inShared: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -49,7 +51,28 @@ enum Keychain {
         ]
         guard SecItemCopyMatching(inShared as CFDictionary, nil) == errSecItemNotFound,
               let value = get(key: key) else { return }
-        set(value, key: key)
+        var added = inShared
+        added[kSecValueData as String] = Data(value.utf8)
+        added[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        guard SecItemAdd(added as CFDictionary, nil) == errSecSuccess else { return }
+        // Every other copy of it (the app's own group) goes.
+        let all: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecReturnAttributes as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+        ]
+        var found: AnyObject?
+        guard SecItemCopyMatching(all as CFDictionary, &found) == errSecSuccess,
+              let items = found as? [[String: Any]] else { return }
+        for item in items {
+            guard let group = item[kSecAttrAccessGroup as String] as? String, group != sharedGroup else { continue }
+            SecItemDelete([
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrAccount as String: key,
+                kSecAttrAccessGroup as String: group,
+            ] as CFDictionary)
+        }
     }
 
     static func get(key: String) -> String? {

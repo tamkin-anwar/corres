@@ -61,7 +61,14 @@ struct SharedContent {
                     } else {
                         content.text += (content.text.isEmpty ? "" : "\n") + url.absoluteString
                     }
-                } else if let file = types.first(where: { $0.conforms(to: .data) && !$0.conforms(to: .plainText) && $0 != .url && $0 != .fileURL })
+                } else if !types.contains(.fileURL), !types.contains(where: { $0.conforms(to: .vCard) }),
+                          types.contains(where: { $0.conforms(to: .text) }) {
+                    // Words (a note, a selection, rich text): into the message,
+                    // never attached as an .rtf.
+                    if let text = await loadText(provider, types: types), !text.isEmpty {
+                        content.text += (content.text.isEmpty ? "" : "\n\n") + text
+                    }
+                } else if let file = types.first(where: { $0.conforms(to: .data) && $0 != .url && $0 != .fileURL })
                             ?? types.first(where: { $0 == .fileURL }) {
                     if let loaded = await loadFile(provider, type: file) { content.files.append(loaded) }
                 } else if types.contains(where: { $0.conforms(to: .text) }),
@@ -134,6 +141,21 @@ struct SharedContent {
                                                     data: data, isImage: false))
             }
         }
+    }
+
+    @MainActor
+    private static func loadText(_ provider: NSItemProvider, types: [UTType]) async -> String? {
+        if types.contains(where: { $0.conforms(to: .plainText) }),
+           let text = try? await provider.loadItem(forTypeIdentifier: UTType.plainText.identifier) as? String {
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        for (type, document) in [(UTType.rtf, NSAttributedString.DocumentType.rtf), (.html, .html)] where types.contains(where: { $0.conforms(to: type) }) {
+            if let data = await loadData(provider, type: type),
+               let string = try? NSAttributedString(data: data, options: [.documentType: document], documentAttributes: nil) {
+                return string.string.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+        return nil
     }
 
     @MainActor

@@ -70,6 +70,8 @@ final class ScheduledSends {
         items.sort { $0.sendAt < $1.sendAt }
         save()
         scheduleReminder(for: items.first { $0.id == id }!)
+        // Sooner now, perhaps: iOS is told the new earliest moment.
+        AppDelegate.scheduleBackgroundRefresh()
     }
 
     /// Taken off the schedule (Cancel, or opened to edit): its draft.
