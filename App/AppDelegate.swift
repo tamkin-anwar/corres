@@ -209,7 +209,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // already unread before this sync (the person just hasn't gotten
         // to it yet) must not re-trigger a notification every time
         // something else in the account also changes.
-        let previousUnread = Dictionary(uniqueKeysWithValues: store.threads.map { ($0.id, $0.isUnread) })
+        let previousUnread = Dictionary(store.threads.map { ($0.id, $0.isUnread) }, uniquingKeysWith: { first, _ in first })
         guard await sync.syncAll(accounts: auth.accounts.map(\.email)) else { return .noData }
         await store.load()
         func newlyUnreadThreads() -> [Correspondence] {

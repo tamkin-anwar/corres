@@ -279,14 +279,47 @@ public enum EventFinder {
               let dates = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else { return nil }
         let arrivedToday = Calendar.current.isDate(receivedAt, inSameDayAs: now)
         let ns = own as NSString
-        let timed = dates.matches(in: own, range: NSRange(location: 0, length: ns.length)).compactMap { match -> (Date, TimeInterval)? in
-            guard let date = match.date, date > now, date < now.addingTimeInterval(92 * 86_400) else { return nil }
+        let calendar = Calendar.current
+        // Each date the detector finds is a day, a time, or both. A time on
+        // its own ("doors open 19:15", "7.15pm") comes back as today at that
+        // time, so a meeting on Thursday the 15th showed as today at 19:15.
+        struct Found { let date: Date; let duration: TimeInterval; let hasTime: Bool; let hasDay: Bool }
+        let found = dates.matches(in: own, range: NSRange(location: 0, length: ns.length)).compactMap { match -> Found? in
+            guard let date = match.date else { return nil }
             let phrase = ns.substring(with: match.range).lowercased()
-            guard phrase.range(of: #"\d:\d\d|\d\s?(am|pm)\b|noon"#, options: .regularExpression) != nil else { return nil }
-            let explicit = phrase.range(of: #"\d{1,4}[/.-]\d{1,2}|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d"#,
-                                        options: .regularExpression) != nil
-            guard explicit || arrivedToday else { return nil }
-            return (date, match.duration)
+            let hasTime = phrase.range(of: #"\d:\d\d|\d[.:]\d\d\s?(am|pm)\b|\d\s?(am|pm)\b|noon"#, options: .regularExpression) != nil
+            // A day: a weekday or month name, a numeric date (not "7.15pm"),
+            // or today/tomorrow.
+            // In any language: a time alone comes back as today (or
+            // tomorrow, once it's passed), so a date on any other day means
+            // the phrase named one.
+            let dayOffset = calendar.dateComponents([.day], from: calendar.startOfDay(for: now),
+                                                    to: calendar.startOfDay(for: date)).day ?? 0
+            let hasDay = dayOffset > 1 || dayOffset < 0
+                || phrase.range(of: #"\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\b\d{1,4}[/-]\d{1,2}\b|\b\d{1,2}\.\d{1,2}\.\d{2,4}\b|\b(today|tonight|tomorrow)\b"#,
+                                options: .regularExpression) != nil
+            // "Tomorrow" in an email from days ago isn't tomorrow now.
+            let isRelative = phrase.range(of: #"\b(today|tonight|tomorrow)\b"#, options: .regularExpression) != nil
+            if isRelative, !arrivedToday { return nil }
+            return Found(date: date, duration: match.duration, hasTime: hasTime, hasDay: hasDay)
+        }
+        let window = { (date: Date) in date > now && date < now.addingTimeInterval(92 * 86_400) }
+        // Day and time together.
+        var timed = found.filter { $0.hasTime && $0.hasDay && window($0.date) }.map { ($0.date, $0.duration) }
+        // Day in one place, time in another ("Thursday 15 October … from
+        // 19:15"): put together, as Mail does.
+        if timed.isEmpty, let day = found.filter({ $0.hasDay && !$0.hasTime }).map(\.date)
+            .filter({ calendar.startOfDay(for: $0) >= calendar.startOfDay(for: now) && $0 < now.addingTimeInterval(92 * 86_400) })
+            .min(), let time = found.first(where: { $0.hasTime && !$0.hasDay }) {
+            let clock = calendar.dateComponents([.hour, .minute], from: time.date)
+            if let combined = calendar.date(bySettingHour: clock.hour ?? 0, minute: clock.minute ?? 0, second: 0, of: day),
+               window(combined) {
+                timed = [(combined, time.duration)]
+            }
+        }
+        // A time alone means today only in mail that came today.
+        if timed.isEmpty, arrivedToday {
+            timed = found.filter { $0.hasTime && !$0.hasDay && window($0.date) }.map { ($0.date, $0.duration) }
         }
         guard let (start, duration) = timed.min(by: { $0.0 < $1.0 }) else { return nil }
 

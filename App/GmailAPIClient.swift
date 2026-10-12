@@ -507,7 +507,7 @@ struct GmailAPIClient {
         var seen = Set<String>()
         let ids = (list.messages ?? []).filter { seen.insert($0.threadId ?? $0.id).inserted }.map(\.id)
         let fetched = try await fetchMetadata(ids: ids, account: account).items
-        let order = Dictionary(uniqueKeysWithValues: ids.enumerated().map { ($1, $0) })
+        let order = Dictionary(ids.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
         return (fetched.sorted { (order[$0.latestMessageID ?? ""] ?? 0) < (order[$1.latestMessageID ?? ""] ?? 0) },
                 list.nextPageToken)
     }

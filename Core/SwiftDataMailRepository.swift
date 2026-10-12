@@ -297,7 +297,8 @@ public actor SwiftDataMailRepository: MailRepository {
     @discardableResult
     public func upsert(_ incoming: [Correspondence], isInitialSync: Bool) throws -> Int {
         let existingModels = try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>())
-        var existingByCompositeID = Dictionary(uniqueKeysWithValues: existingModels.map { ($0.compositeID, $0) })
+        // Never `uniqueKeysWithValues`: it crashes on a duplicate, on every sync.
+        var existingByCompositeID = Dictionary(existingModels.map { ($0.compositeID, $0) }, uniquingKeysWith: { first, _ in first })
         var knownSenderDecisions = Self.senderDecisions(in: existingModels)
         let knownImageTrust = Self.imageTrust(in: existingModels)
         let knownUnsubscribed = Self.unsubscribed(in: existingModels)

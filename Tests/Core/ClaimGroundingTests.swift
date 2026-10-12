@@ -56,3 +56,44 @@ struct AskAnswerGroundingTests {
             source: email).isEmpty)
     }
 }
+
+/// Amounts in taka and rupees get the same check as dollars and pounds.
+struct CurrencyGroundingTests {
+    @Test func aWrongTakaAmountIsCaught() {
+        let email = "Your bKash payment of ৳1,250 to Daraz was successful."
+        #expect(MailDigest.unsupportedClaims(in: "You paid ৳1,250 to Daraz.", source: email).isEmpty)
+        #expect(!MailDigest.unsupportedClaims(in: "You paid ৳2,500 to Daraz.", source: email).isEmpty)
+        #expect(!MailDigest.unsupportedClaims(in: "You paid Tk 3,000 to Daraz.", source: email).isEmpty)
+    }
+}
+
+/// Numbers read the same in every locale.
+struct WorldNumberTests {
+    @Test func groupingStylesMatch() {
+        #expect(MailDigest.canonicalNumber("1,250") == "1250")
+        #expect(MailDigest.canonicalNumber("1.250") == "1250")
+        #expect(MailDigest.canonicalNumber("1,25,000") == "125000")
+        #expect(MailDigest.canonicalNumber("1,250.00") == "1250")
+        #expect(MailDigest.canonicalNumber("1.250,00") == "1250")
+        #expect(MailDigest.canonicalNumber("12.50") == "12.5")
+        #expect(MailDigest.canonicalNumber("15.10.2026") == "15.10.2026")
+    }
+
+    @Test func amountsInAnyFormatAreChecked() {
+        // A European receipt summarized in US style, and a wrong one.
+        let euro = "Betrag: 1.250,00 € für Ihre Bestellung bei Zalando."
+        #expect(MailDigest.unsupportedClaims(in: "You paid €1,250 to Zalando.", source: euro).isEmpty)
+        #expect(!MailDigest.unsupportedClaims(in: "You paid €1,520 to Zalando.", source: euro).isEmpty)
+        // Bengali digits and lakh grouping.
+        let bangla = "আপনার পেমেন্ট ৳১,২৫,০০০ Daraz-এ সফল হয়েছে।"
+        #expect(MailDigest.unsupportedClaims(in: "You paid ৳125,000 to Daraz.", source: bangla).isEmpty)
+        #expect(!MailDigest.unsupportedClaims(in: "You paid ৳152,000 to Daraz.", source: bangla).isEmpty)
+    }
+
+    @Test func amountsInAnyCurrencyAreFound() {
+        let facts = MailDigest.facts(in: "Total ₦45,000 paid. Also AED 120 and 3.500 kr on file. Rs. 899 refund.")
+        #expect(facts.contains { $0.contains("45,000") })
+        #expect(facts.contains { $0.contains("AED 120") })
+        #expect(facts.contains { $0.contains("899") })
+    }
+}

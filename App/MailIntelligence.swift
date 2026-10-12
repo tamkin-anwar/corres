@@ -590,7 +590,7 @@ final class MailIntelligence {
             var toSave = insights
             if toSave.count > Self.cacheLimit {
                 let keep = toSave.sorted { $0.value.createdAt > $1.value.createdAt }.prefix(Self.cacheLimit)
-                toSave = Dictionary(uniqueKeysWithValues: keep.map { ($0.key, $0.value) })
+                toSave = Dictionary(keep.map { ($0.key, $0.value) }, uniquingKeysWith: { first, _ in first })
             }
             guard let data = try? JSONEncoder().encode(toSave) else { return }
             try? data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])

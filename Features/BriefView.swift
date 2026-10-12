@@ -7,6 +7,11 @@ struct BriefView: View {
     /// exercises the scrolls==true/refreshable path that uses these.
     var sync: GmailSyncService?
     var auth: GoogleAuthService?
+    /// For the Needs You rows' swipes (Handled, Archive, and the Mail list's
+    /// right-hand swipes).
+    var threadActions: ThreadActionService?
+    @AppStorage("corres.leadingShortSwipeAction") private var leadingShortRaw = LeadingSwipeAction.pin.rawValue
+    @AppStorage("corres.leadingLongSwipeAction") private var leadingLongRaw = LeadingSwipeAction.unread.rawValue
     @Binding var selection: Destination
     @Binding var showingScreener: Bool
     /// See `CorresShell`'s doc comment: nil merges every connected account,
@@ -151,13 +156,19 @@ struct BriefView: View {
             let top = Array(priorities.prefix(2))
             for (index, thread) in top.enumerated() {
                 if index == 1 { plain(" ") }
-                let name = Self.firstName(thread.sender)
+                // The full name: a first name alone is ambiguous at any
+                // workplace with several Jacks (tester feedback).
+                let name = thread.sender
+                let first = Self.firstName(thread.sender)
                 let reason = thread.reason.trimmingCharacters(in: .whitespacesAndNewlines.union(.init(charactersIn: ".")))
                 // Reasons often already lead with the person ("Maya asked
-                // you…"); bold that name in place instead of repeating it.
+                // you…"): the full name in its place, not said twice.
                 if reason.lowercased().hasPrefix(name.lowercased() + " ") {
-                    strong(String(reason.prefix(name.count)))
+                    strong(name)
                     plain(String(reason.dropFirst(name.count)) + ".")
+                } else if reason.lowercased().hasPrefix(first.lowercased() + " ") {
+                    strong(name)
+                    plain(String(reason.dropFirst(first.count)) + ".")
                 } else {
                     strong(name)
                     plain(": \(Self.sentenceCase(reason)).")
@@ -172,7 +183,7 @@ struct BriefView: View {
                days >= WaitChip.followUpAfterDays {
                 plain("; ")
                 // Who you're waiting on, not the sender of your own message.
-                strong(Self.firstName(overdue.counterpartName(knownNames: Correspondence.knownSenderNames(store.threads))))
+                strong(overdue.counterpartName(knownNames: Correspondence.knownSenderNames(store.threads)))
                 plain(" hasn't replied in \(Self.spelled(days)) days.")
             } else {
                 plain(".")
@@ -204,23 +215,80 @@ struct BriefView: View {
                 let orderedIDs = shown.map(\.id)
                 ForEach(Array(shown.enumerated()), id: \.element.id) { index, thread in
                     let route = ConversationRoute(id: thread.id, orderedIDs: orderedIDs)
-                    if let splitSelection {
-                        Button { splitSelection.wrappedValue = route } label: {
-                            CorrespondenceRow(thread: thread, showsReason: true)
-                                .background(splitSelection.wrappedValue == route ? CorresPalette.accent.opacity(0.12) : .clear)
+                    // Real swipes, like the Mail list: a sideways drag on a
+                    // plain button ended as a tap and opened the email.
+                    // Left: Handled (out of Needs You, still in Mail), or
+                    // Archive further; right: the Mail list's own swipes.
+                    PremiumSwipeRow(
+                        leadingShort: leadingVisual(for: leadingShort, thread: thread),
+                        leadingLong: leadingVisual(for: leadingLong, thread: thread),
+                        trailingShort: SwipeVisual(title: "Handled", systemImage: "checkmark.circle.fill",
+                                                   tint: CorresPalette.swipeHandled, removesRow: true),
+                        trailingLong: SwipeVisual(title: "Archive", systemImage: "archivebox.fill",
+                                                  tint: CorresPalette.swipeArchive, removesRow: true),
+                        onLeadingShort: { perform(leadingShort, on: thread) },
+                        onLeadingLong: { perform(leadingLong, on: thread) },
+                        onTrailingShort: { markHandled(thread) },
+                        onTrailingLong: { Task { await threadActions?.archive(thread) } }
+                    ) {
+                        if let splitSelection {
+                            Button { splitSelection.wrappedValue = route } label: {
+                                CorrespondenceRow(thread: thread, showsReason: true)
+                                    .background(splitSelection.wrappedValue == route ? CorresPalette.accent.opacity(0.12) : .clear)
+                            }
+                            .buttonStyle(CorresRowButtonStyle())
+                        } else {
+                            NavigationLink(value: route) {
+                                CorrespondenceRow(thread: thread, showsReason: true)
+                            }
+                            .buttonStyle(CorresRowButtonStyle())
                         }
-                        .buttonStyle(CorresRowButtonStyle())
-                    } else {
-                        NavigationLink(value: route) {
-                            CorrespondenceRow(thread: thread, showsReason: true)
-                        }
-                        .buttonStyle(CorresRowButtonStyle())
+                    }
+                    .contextMenu {
+                        Button { markHandled(thread) } label: { Label("Handled", systemImage: "checkmark.circle") }
+                        Button { Task { await threadActions?.archive(thread) } } label: { Label("Archive", systemImage: "archivebox") }
                     }
                     if index < shown.count - 1 { Hairline(leading: showAvatars ? 77 : 25) }
                 }
             }
             .padding(.vertical, 4)
             .corresSurface()
+        }
+    }
+
+    private var leadingShort: LeadingSwipeAction { LeadingSwipeAction(rawValue: leadingShortRaw) ?? .pin }
+    private var leadingLong: LeadingSwipeAction { LeadingSwipeAction(rawValue: leadingLongRaw) ?? .unread }
+
+    /// Out of Needs You, still in Mail: for what you've dealt with or
+    /// decided to leave. The row leaves as the swipe lands.
+    private func markHandled(_ thread: Correspondence) {
+        withAnimation(.snappy(duration: 0.3)) { store.hide(thread.id) }
+        Task {
+            await store.update(thread.id, to: .handled)
+            store.unhide(thread.id)
+        }
+    }
+
+    private func leadingVisual(for action: LeadingSwipeAction, thread: Correspondence) -> SwipeVisual {
+        switch action {
+        case .pin:
+            SwipeVisual(title: thread.isPinned ? "Unpin" : "Pin",
+                        systemImage: thread.isPinned ? "pin.slash.fill" : "pin.fill", tint: CorresPalette.swipePin)
+        case .unread:
+            SwipeVisual(title: thread.isUnread ? "Read" : "Unread",
+                        systemImage: thread.isUnread ? "envelope.open.fill" : "envelope.badge.fill",
+                        tint: CorresPalette.swipeUnread)
+        case .flag:
+            SwipeVisual(title: thread.isFlagged ? "Unflag" : "Flag",
+                        systemImage: thread.isFlagged ? "flag.slash.fill" : "flag.fill", tint: CorresPalette.swipeFlag)
+        }
+    }
+
+    private func perform(_ action: LeadingSwipeAction, on thread: Correspondence) {
+        switch action {
+        case .pin: Task { await store.setPinned(!thread.isPinned, for: thread.id) }
+        case .unread: Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
+        case .flag: Task { await threadActions?.setFlagged(!thread.isFlagged, for: thread) }
         }
     }
 

@@ -200,15 +200,26 @@ public enum MailDigest {
     /// Facts already in the email, exactly as written, for the model to
     /// quote rather than retype: amounts, codes, order/booking numbers and
     /// dates. At most eight, in the order they appear.
+    /// An amount of money in any currency, written any way: a currency
+    /// symbol (Unicode's whole currency category: $ € £ ¥ ৳ ₹ ₦ ₱ ₩ …) or
+    /// ISO code (every one iOS knows, plus "Tk" and "Rs"), before or after
+    /// a number in any grouping style.
+    static let amountPattern: String = {
+        let codes = (Locale.Currency.isoCurrencies.map(\.identifier) + ["Tk", "Rs", "Tsh", "Ksh"]).joined(separator: "|")
+        let number = #"\d(?:[\d.,'\u00A0\u202F]*\d)?"#
+        return #"\p{Sc}\s?"# + number + #"|\b(?:"# + codes + #")\.?\s?"# + number
+            + #"|"# + number + #"\s?(?:\p{Sc}|\b(?:"# + codes + #")\b)"#
+    }()
+
     public static func facts(in text: String) -> [String] {
         let source = String(text.prefix(8_000))
         var found: [(Int, String)] = []
         func add(_ range: Range<String.Index>) {
-            let value = String(source[range]).trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters.subtracting(.init(charactersIn: "$€£#"))))
+            let value = String(source[range]).trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters.subtracting(.init(charactersIn: "#"))))
             guard !value.isEmpty, !found.contains(where: { $0.1 == value }) else { return }
             found.append((source.distance(from: source.startIndex, to: range.lowerBound), value))
         }
-        for range in source.regexRanges(of: #"[$€£¥]\s?\d[\d,]*(\.\d{1,2})?|\b\d[\d,]*(\.\d{2})?\s?(USD|EUR|GBP|CAD|AUD)\b"#) { add(range) }
+        for range in source.regexRanges(of: amountPattern) { add(range) }
         for range in source.regexRanges(of: #"(?i:\b(order|confirmation|booking|reservation|invoice|ticket|case|tracking)\s*(number|no\.?|#|id|code)?\s*(is)?\s*:?\s*#?)(?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{3,}\b"#) { add(range) }
         if let code = verificationCode(in: source), let range = source.range(of: code) { add(range) }
         if let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) {
@@ -227,13 +238,14 @@ public enum MailDigest {
     /// isn't, empty when the summary is faithful.
     public static func unsupportedClaims(in summary: String, source: String) -> [String] {
         let lowerSource = source.lowercased()
-        let sourceDigits = lowerSource.replacingOccurrences(of: ",", with: "")
         var unsupported: [String] = []
 
         // Numbers match whole, never inside a longer one: "28" isn't
-        // supported by "$1,284.63".
-        let sourceNumbers = Set(numberTokens(in: sourceDigits))
-        for token in numberTokens(in: summary.replacingOccurrences(of: ",", with: "")) where !sourceNumbers.contains(token) {
+        // supported by "$1,284.63". Compared as values, in any locale:
+        // "1,250.00", "1.250,00", "1,25,000"-style grouping and Bengali or
+        // Arabic digits all read the same (`canonicalNumber`).
+        let sourceNumbers = Set(numberTokens(in: lowerSource))
+        for token in numberTokens(in: summary) where !sourceNumbers.contains(token) {
             // "3:00" is supported by a bare "3" ("3pm").
             if token.hasSuffix(":00"), sourceNumbers.contains(String(token.dropLast(3))) { continue }
             unsupported.append(token)
@@ -421,7 +433,41 @@ public enum MailDigest {
     /// Whole numbers as written: "1284.63", "2026", "3:30", "10". Commas
     /// must already be removed.
     private static func numberTokens(in text: String) -> [String] {
-        text.regexRanges(of: #"(?<![\d.])\d+(?:[.:]\d+)*"#).map { String(text[$0]) }
+        let ascii = asciiDigits(text)
+        return ascii.regexRanges(of: #"(?<![\d.,])\d+(?:[.,:'\u00A0\u202F]\d+)*"#).map { canonicalNumber(String(ascii[$0])) }
+    }
+
+    /// Any script's digits as 0–9: "১২৫০" (Bengali) reads as "1250".
+    static func asciiDigits(_ text: String) -> String {
+        guard text.contains(where: { $0.isNumber && !$0.isASCII }) else { return text }
+        return String(text.map { character -> Character in
+            guard !character.isASCII, let value = character.wholeNumberValue, (0...9).contains(value) else { return character }
+            return Character(String(value))
+        })
+    }
+
+    /// A number as its value, whatever the locale writes: grouping removed
+    /// ("1,250", "1.250", "1,25,000" → "1250"/"125000"), the decimal part
+    /// kept without trailing zeros ("1,250.00" and "1.250,00" → "1250";
+    /// "12.50" → "12.5"). Times ("3:00") and dates ("15.10.2026") as written.
+    static func canonicalNumber(_ token: String) -> String {
+        if token.contains(":") { return token }
+        let separators: Set<Character> = [".", ",", "'", "\u{00A0}", "\u{202F}"]
+        let parts = token.split(whereSeparator: { separators.contains($0) }).map(String.init)
+        let used = token.filter { separators.contains($0) }
+        guard parts.count > 1, let last = parts.last, let lastSeparator = used.last else { return token }
+        // Grouping only: one kind of separator, ending in a group of three.
+        if last.count == 3, Set(used).count == 1, lastSeparator != "." || parts.count > 2 || parts[0].count <= 3 {
+            return parts.joined()
+        }
+        // A decimal part: the last separator, used nowhere earlier.
+        if (1...2).contains(last.count), !used.dropLast().contains(lastSeparator) {
+            var decimals = last
+            while decimals.hasSuffix("0") { decimals.removeLast() }
+            let whole = parts.dropLast().joined()
+            return decimals.isEmpty ? whole : whole + "." + decimals
+        }
+        return token
     }
 
     public static func isFaithful(_ summary: String, source: String) -> Bool {
@@ -470,7 +516,7 @@ public enum MailDigest {
         let scored = sentences.enumerated().map { index, sentence -> (Int, Double, String) in
             var score = max(0, 3.0 - Double(index) * 0.4)
             if MailSignals.asksSomething(sentence) { score += 4 }
-            if sentence.range(of: #"[$€£]\s?\d|\b\d{1,2}(:\d{2})?\s?(am|pm)\b|\b(due|by|before|deadline|expires?)\b"#, options: [.regularExpression, .caseInsensitive]) != nil { score += 2 }
+            if sentence.range(of: #"\p{Sc}\s?\d|\b(tk|rs|bdt|inr|usd|eur|gbp)\.?\s?\d|\b\d{1,2}(:\d{2})?\s?(am|pm)\b|\b(due|by|before|deadline|expires?)\b"#, options: [.regularExpression, .caseInsensitive]) != nil { score += 2 }
             let words = wordCount(sentence)
             if words < 6 { score -= 2 }
             if words > 45 { score -= 1.5 }

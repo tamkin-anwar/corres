@@ -542,6 +542,18 @@ struct ConversationView: View {
                     .foregroundStyle(CorresPalette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
+                // One tap to take it out of Needs You (it stays in Mail);
+                // under Change alone, testers didn't find it.
+                if thread.attention == .needsYou {
+                    Button {
+                        Task { await store.update(thread.id, to: .handled) }
+                    } label: {
+                        Label("Handled", systemImage: "checkmark.circle")
+                            .font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                            .frame(minHeight: 32)
+                    }
+                    .accessibilityHint("Takes this out of Needs You. It stays in Mail.")
+                }
                 Menu {
                     ForEach([Attention.needsYou, .waiting, .quiet, .handled], id: \.self) { attention in
                         Button {
