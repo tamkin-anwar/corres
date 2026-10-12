@@ -138,4 +138,13 @@ struct PeopleIndexTests {
         #expect(Person.readable("BRAC Bank PLC") == "BRAC Bank PLC")
         #expect(Person.readable("Sara JONES") == "Sara JONES")
     }
+
+    @Test func namesMailSentWithOnlyAnAddress() {
+        #expect(Person.name(forAddress: "ant.wilson@supabase.com") == "Ant Wilson")
+        #expect(Person.name(forAddress: "no-reply@vitu.com") == "Vitu")
+        #expect(Person.name(forAddress: "notifications@mail.doordash.com") == "Doordash")
+        #expect(Person.name(forAddress: "noreply@portsmouthcc.gov.uk") == "Portsmouthcc")
+        #expect(Person.name(forAddress: "sara.w@gmail.com") == "Sara W")
+        #expect(Person.name(forAddress: "x7@gmail.com") == "X7")
+    }
 }

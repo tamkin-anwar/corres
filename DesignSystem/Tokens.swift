@@ -110,10 +110,11 @@ struct CorresSurface: ViewModifier {
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.colorScheme) private var scheme
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.onReadingPage) private var onReadingPage
 
     func body(content: Content) -> some View {
         content
-            .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .background(CorresPalette.card(scheme, onReadingPage: onReadingPage), in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .strokeBorder(CorresPalette.line, lineWidth: contrast == .increased ? 1.5 : 1 / displayScale)
@@ -122,7 +123,43 @@ struct CorresSurface: ViewModifier {
     }
 }
 
+extension CorresPalette {
+    /// The page an email is read on: white in light mode, as the email
+    /// itself almost always is (Mail and Gmail read on white), so a
+    /// designed email doesn't sit as a white slab on Ivory; Obsidian in
+    /// dark mode, where emails are darkened to match it.
+    static func readingPage(_ scheme: ColorScheme) -> Color { scheme == .dark ? canvas : .white }
+
+    /// A card: on the white reading page, Ivory, so it stays a card;
+    /// everywhere else the usual surface.
+    static func card(_ scheme: ColorScheme, onReadingPage: Bool) -> Color {
+        onReadingPage && scheme == .light ? canvas : surface
+    }
+}
+
+private struct OnReadingPageKey: EnvironmentKey { static let defaultValue = false }
+
+extension EnvironmentValues {
+    /// Inside the reading view, whose light page is white.
+    var onReadingPage: Bool {
+        get { self[OnReadingPageKey.self] }
+        set { self[OnReadingPageKey.self] = newValue }
+    }
+}
+
+/// A card's fill, aware of the white reading page.
+struct CorresCardFill<S: InsettableShape>: ViewModifier {
+    let shape: S
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.onReadingPage) private var onReadingPage
+    func body(content: Content) -> some View {
+        content.background(CorresPalette.card(scheme, onReadingPage: onReadingPage), in: shape)
+    }
+}
+
 extension View {
+    func corresCardFill<S: InsettableShape>(in shape: S) -> some View { modifier(CorresCardFill(shape: shape)) }
+
     /// `rasterize` is accepted for source compatibility and ignored: the
     /// new surface is a flat fill and hairline, cheap enough to draw live,
     /// and skipping `.drawingGroup()` keeps text at the display's native

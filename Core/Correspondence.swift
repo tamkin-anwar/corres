@@ -221,7 +221,9 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
                 listUnsubscribeOneClick: Bool = false, senderUnsubscribed: Bool = false,
                 isBodyLoaded: Bool = true, waitingSince: Date? = nil, lastSentAt: Date? = nil) {
         self.id = id
-        self.sender = Person.readable(sender)
+        // Sent with only an address: a name made from it, as people read it.
+        self.sender = sender.contains("@") && PeopleIndex.isAddress(sender.trimmingCharacters(in: .whitespaces))
+            ? Person.name(forAddress: sender.trimmingCharacters(in: .whitespaces)) : Person.readable(sender)
         self.senderEmail = senderEmail
         self.organization = organization
         self.subject = subject

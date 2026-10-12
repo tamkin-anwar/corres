@@ -41,6 +41,32 @@ public struct Person: Codable, Hashable, Sendable, Identifiable {
         return given + " " + parts[0]
     }
 
+    /// A name for mail sent with only an address: a person's address reads
+    /// as them ("ant.wilson@supabase.com" is "Ant Wilson"), a system's as
+    /// its company ("no-reply@vitu.com" is "Vitu"). Gmail and Mail show
+    /// the bare address.
+    public static func name(forAddress email: String) -> String {
+        let lower = email.lowercased()
+        let parts = lower.split(separator: "@")
+        guard parts.count == 2 else { return email }
+        let local = String(parts[0]), domain = String(parts[1])
+        let localWords = local.split(whereSeparator: { ".-_+".contains($0) }).filter { !$0.allSatisfy(\.isNumber) }
+        let looksPersonal = !PeopleIndex.isAutomated(lower) && (2...3).contains(localWords.count)
+            && localWords.allSatisfy { $0.count >= 2 && $0.allSatisfy(\.isLetter) }
+        if looksPersonal {
+            return localWords.map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined(separator: " ")
+        }
+        // The company: "mail.doordash.com" → "Doordash", "council.gov.uk" → "Council".
+        let labels = domain.split(separator: ".").map(String.init)
+        guard labels.count >= 2 else { return email }
+        let secondLevel: Set<String> = ["co", "com", "org", "gov", "ac", "net", "edu", "ltd", "plc", "nhs"]
+        let organization = labels.count >= 3 && secondLevel.contains(labels[labels.count - 2]) ? labels[labels.count - 3] : labels[labels.count - 2]
+        guard organization.count >= 2, !["gmail", "googlemail", "outlook", "hotmail", "yahoo", "icloud", "me", "aol", "proton", "protonmail", "live"].contains(organization) else {
+            return localWords.isEmpty ? email : localWords.map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined(separator: " ")
+        }
+        return organization.prefix(1).uppercased() + organization.dropFirst()
+    }
+
     /// A name shouted in capitals reads as a name: "TAMKIN NURUL ANWAR" is
     /// "Tamkin Nurul Anwar", "LABCORP" is "Labcorp", "BANK OF AMERICA" is
     /// "Bank of America". Acronyms stay: no vowel ("CVS", "BMW", "USPS"),

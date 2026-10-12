@@ -41,7 +41,7 @@ struct EarlierMessages: View {
                 if index < visible.count - 1 { Hairline(leading: 14) }
             }
         }
-        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .corresCardFill(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(CorresPalette.line, lineWidth: 1 / displayScale))
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }

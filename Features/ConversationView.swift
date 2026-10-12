@@ -14,6 +14,7 @@ struct ConversationRoute: Hashable {
 }
 
 struct ConversationView: View {
+    @Environment(\.colorScheme) private var colorSchemeForPage
     let store: MailStore
     let outbox: OutboxService
     let threadActions: ThreadActionService
@@ -238,7 +239,8 @@ struct ConversationView: View {
                 ContentUnavailableView("Conversation unavailable", systemImage: "text.bubble")
             }
         }
-        .background(CorresPalette.canvas)
+        .background(CorresPalette.readingPage(colorSchemeForPage))
+        .environment(\.onReadingPage, true)
         .overlay(alignment: .top) {
             if preparingForward {
                 HStack(spacing: 8) {
@@ -454,7 +456,7 @@ struct ConversationView: View {
             }
             .foregroundStyle(CorresPalette.secondary)
             .padding(12)
-            .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .corresCardFill(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
     }
 
@@ -1266,6 +1268,7 @@ private struct AttachmentRow: View {
     @State private var downloadFailed = false
     @State private var thumbnail: UIImage?
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.colorScheme) private var colorScheme
     private let client = GmailAPIClient()
 
     private var kind: AttachmentKind { AttachmentKind(filename: attachment.filename, mimeType: attachment.mimeType) }
@@ -1298,9 +1301,15 @@ private struct AttachmentRow: View {
                 }
             }
             .padding(12)
-            .background(CorresPalette.surfaceRaised, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(CorresPalette.line, lineWidth: 0.5))
-            .shadow(color: .black.opacity(0.07), radius: 8, y: 3)
+            // A card in either appearance: white with a real edge and a soft
+            // shadow on Ivory (the near-white surface melted into the page
+            // in light mode), raised gray with a light edge on Obsidian,
+            // where shadows don't show.
+            .background(colorScheme == .dark ? Color(uiColor: .secondarySystemBackground) : .white,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.14 : 0.12), lineWidth: 1))
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0 : 0.08), radius: 10, y: 4)
             .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .disabled(isDownloading)
