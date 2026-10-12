@@ -46,7 +46,7 @@ struct CorrespondentAvatar: View {
 
     var body: some View {
         let side = min(size.width, size.height)
-        Text(initials.isEmpty ? "·" : initials)
+        Text(initials.isEmpty ? "·" : initials.uppercased())
             .font(.system(size: side * 0.34, weight: .semibold))
             .foregroundStyle(CorresPalette.ink)
             .frame(width: side, height: side)

@@ -16,7 +16,7 @@ public struct NextStep: Equatable, Codable, Sendable {
     /// suspicious.
     public var host: String {
         let host = (url.host ?? "").lowercased().replacingOccurrences(of: #"^www\."#, with: "", options: .regularExpression)
-        if host.range(of: #"^(click|clicks|track|tracking|links?|email|e|l|t|r|go|trk|mail|em|url\d*|ablink|ct)\.|pstmrk|sendgrid|awstrack|sailthru|list-manage|mailchimp|hubspotlinks|mandrillapp|mcsv\.net|exacttarget|rs6\.net|cmail\d*\.com"#,
+        if host.range(of: #"^(click|clicks|track|tracking|links?|email|e|l|t|r|go|trk|mail|em|url\d*|ablink|ct)\.|^(track|click|trk|link)[a-z0-9]{0,4}\.|pstmrk|sendgrid|awstrack|sailthru|list-manage|mailchimp|hubspotlinks|mandrillapp|mcsv\.net|exacttarget|rs6\.net|cmail\d*\.com"#,
                       options: .regularExpression) != nil { return "" }
         return host
     }
@@ -142,6 +142,7 @@ extension MailDigest {
 
     private static let actionPatterns: [(String, String)] = [
         (#"\b(book|booking|schedule|reschedule)\b"#, "book"),
+        (#"\b(update|fix|change) (your )?(payment|card|billing)( (method|info(rmation)?|details))?\b"#, "update"),
         (#"\b(pay|payment due|make a payment)\b"#, "pay"),
         (#"\b(track|tracking)\b"#, "track"),
         (#"\b(confirm|confirmation required)\b"#, "confirm"),
@@ -161,6 +162,7 @@ extension MailDigest {
         switch verb {
         case "book": "Book"
         case "pay": "Pay"
+        case "update": "Update payment"
         case "track": "Track package"
         case "confirm": "Confirm"
         case "verify": "Verify"

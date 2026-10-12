@@ -259,8 +259,11 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// recorded.
     public var waitingReference: Date { waitingSince ?? receivedAt }
 
+    /// "MF" for "myFICO Member Services", "MB" for "☕ Morning Brew":
+    /// capitals, from words that start with a letter or digit.
     public var initials: String {
-        sender.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined()
+        sender.split(separator: " ").compactMap { $0.first(where: { $0.isLetter || $0.isNumber }) }
+            .prefix(2).map { String($0).uppercased() }.joined()
     }
 
     public func isSnoozed(at now: Date) -> Bool {
@@ -703,6 +706,8 @@ public enum InboxClassifier {
     public static let startedReason = "You sent this. Nothing pending."
     /// You told Corres a sender's mail needs nothing from you.
     public static let lessonReason = "You said mail like this needs no action."
+    /// A payment failed, a card was declined, an account is on hold.
+    public static let failureReason = "Something failed that only you can fix."
     /// "You allowed Corres access…": nothing to do unless it wasn't you.
     public static let confirmationReason = "Confirms something you did. Nothing to do unless it wasn't you."
 
@@ -712,7 +717,7 @@ public enum InboxClassifier {
     public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason, staleReason,
                                                   readReason, questionReason, deadlineReason, obligationReason, copiedReason,
                                                   askedReason, repliedReason, startedReason, vipReason, fyiReason,
-                                                  lessonReason, confirmationReason,
+                                                  lessonReason, confirmationReason, failureReason,
                                                   BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,
                                                   BulkKind.updates.reason, BulkKind.automated.reason]
 
@@ -814,6 +819,10 @@ public enum InboxClassifier {
             // Thursday never is (promotions aren't promotable).
             if kind.isPromotable, !stale, deadline != nil, MailSignals.isObligation(text) {
                 return (.needsYou, obligationReason)
+            }
+            // A failed payment needs you whether or not it names a date.
+            if kind.isPromotable, !stale, MailSignals.isFailure(text) {
+                return (.needsYou, failureReason)
             }
             return (.quiet, kind.reason)
         }

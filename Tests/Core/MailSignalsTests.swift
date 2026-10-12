@@ -295,4 +295,13 @@ struct MailSignalsTests {
         #expect(Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: "testflight_no_reply@email.apple.com"))
         #expect(!Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: "sara.reply@x.com"))
     }
+
+    @Test func failuresNeedYouWithoutADate() {
+        #expect(MailSignals.isFailure("Action Required: Your DashPass payment has failed - we'll retry soon\nWe were unable to process your recent payment of $9.99"))
+        #expect(MailSignals.isFailure("Your card was declined"))
+        #expect(!MailSignals.isFailure("Thanks for your payment of $9.99"))
+        let placed = InboxClassifier.initialAttention(isUnread: true, labelIds: ["CATEGORY_UPDATES"], looksAutomated: true,
+                                                      text: "Action Required: Your DashPass payment has failed")
+        #expect(placed.attention == .needsYou && placed.reason == InboxClassifier.failureReason)
+    }
 }

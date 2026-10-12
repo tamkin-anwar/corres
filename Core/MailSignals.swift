@@ -108,6 +108,15 @@ public enum MailSignals {
         return lower.range(of: event, options: .regularExpression) != nil && lower.range(of: task, options: .regularExpression) == nil
     }
 
+    /// Something has gone wrong that only you can fix, date or not: a
+    /// payment that failed, a card declined, an account on hold. Said up
+    /// top, like any obligation.
+    public static func isFailure(_ text: String) -> Bool {
+        let lower = String(text.prefix(obligationOpening)).lowercased()
+        return lower.range(of: #"\b(payment (has |was )?(failed|declined|unsuccessful)|unable to process your (recent )?(\w+ )?payment|card (was |has been )?declined|(account|subscription|service) (is |has been )?(suspended|on hold|locked|past due))\b"#,
+                           options: .regularExpression) != nil
+    }
+
     /// How much of an email's start states its obligation, in characters:
     /// the subject and the first few sentences.
     static let obligationOpening = 600

@@ -90,4 +90,9 @@ extension NextStepTests {
         #expect(NextStep(label: "Review", url: URL(string: "https://na4.docusign.net/Signing")!).host == "na4.docusign.net")
         #expect(NextStep(label: "Book", url: URL(string: "https://www.systmonline.tpp-uk.com/")!).host == "systmonline.tpp-uk.com")
     }
+
+    @Test func clickTrackersArentShownAsTheDestination() {
+        #expect(NextStep(label: "Update payment", url: URL(string: "https://tracksg.doordash.com/x")!).host == "")
+        #expect(NextStep(label: "Pay", url: URL(string: "https://www.trackmybill.com/pay")!).host == "trackmybill.com")
+    }
 }
