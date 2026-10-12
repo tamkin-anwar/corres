@@ -19,14 +19,20 @@ enum GmailMessageComposer {
     /// `GmailAPIClient.findMessage` later look this exact send up by it, to
     /// tell "never sent" apart from "sent, but the response was lost"
     /// before a retry.
-    static func compose(from: String, to: String, cc: String? = nil, subject: String, body: String, inReplyTo: String?,
+    static func compose(from: String, to: String, cc: String? = nil, bcc: String? = nil, subject: String, body: String, inReplyTo: String?,
                         messageID: String, attachments: [PendingAttachment] = []) -> String {
         var headers = [
             "From: \(from)",
-            "To: \(addressList(to))",
         ]
+        // Bcc alone leaves no To header at all, as Gmail and Mail send it.
+        if !to.trimmingCharacters(in: .whitespaces).isEmpty { headers.append("To: \(addressList(to))") }
         if let cc, !cc.trimmingCharacters(in: .whitespaces).isEmpty {
             headers.append("Cc: \(addressList(cc))")
+        }
+        // Gmail delivers to Bcc and takes the header out of what anyone
+        // receives; only your own Sent copy keeps it.
+        if let bcc, !bcc.trimmingCharacters(in: .whitespaces).isEmpty {
+            headers.append("Bcc: \(addressList(bcc))")
         }
         headers.append("Subject: \(encodedSubject(subject))")
         headers.append("Message-ID: <\(messageID)>")

@@ -425,6 +425,16 @@ extension Correspondence {
     /// addresses), the sender otherwise, and, when the last message is
     /// yours, the people you wrote to. Replying to your own message used to
     /// address the reply to you.
+    /// You got this without being in its To or Cc: Bcc'd, or forwarded to
+    /// you by a rule. Replying to all would show everyone you had it, so
+    /// Compose says so first, as Gmail does. Not for mailing lists, where
+    /// nobody is listed by name.
+    public var reachedYouHidden: Bool {
+        guard !isFromAccountOwner, listUnsubscribeMailto == nil, listUnsubscribeURL == nil else { return false }
+        let me = id.account.lowercased()
+        return !(toRecipients + ccRecipients).contains { $0.lowercased() == me }
+    }
+
     public var replyAddresses: [String] {
         if isFromAccountOwner {
             let others = toRecipients.filter { $0.lowercased() != id.account.lowercased() }
@@ -527,6 +537,9 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     /// key as `nil` automatically for a genuinely `Optional` property (the
     /// same reasoning already applied to `fromAccount` above).
     public var cc: String?
+    /// Like `cc`; optional for the same reason. Never stored on the sent
+    /// message's local copy or shown to anyone else.
+    public var bcc: String?
     public var subject: String
     public var body: String
     public var attachments: [PendingAttachment]
@@ -535,13 +548,14 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     public var gmailDraftID: String?
 
     public init(id: UUID = UUID(), kind: Kind, threadID: ThreadID? = nil, fromAccount: String? = nil,
-                to: String, cc: String? = nil, subject: String, body: String = "", attachments: [PendingAttachment] = []) {
+                to: String, cc: String? = nil, bcc: String? = nil, subject: String, body: String = "", attachments: [PendingAttachment] = []) {
         self.id = id
         self.kind = kind
         self.threadID = threadID
         self.fromAccount = fromAccount
         self.to = to
         self.cc = cc
+        self.bcc = bcc
         self.subject = subject
         self.body = body
         self.attachments = attachments
@@ -549,18 +563,19 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
 
     /// A recipient is enough; a missing subject is asked about, not
     /// blocked, the way Mail and Gmail both handle it.
+    /// Bcc alone is enough too, as in Mail and Gmail.
     public var isSendable: Bool {
-        !to.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        [to, cc ?? "", bcc ?? ""].contains { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 
     public var hasSubject: Bool { !subject.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
-    /// Every address in To and Cc is shaped like one ("maya@x.com" or
+    /// Every address in To, Cc and Bcc is shaped like one ("maya@x.com" or
     /// "Maya <maya@x.com>"), so a typo is caught before the undo window,
     /// not reported as a failed send after it.
     public var recipientsLookValid: Bool {
         // Split where an address list splits: `"Doe, Jane" <jane@x.com>` is one.
-        let all = PeopleIndex.entries(in: to) + PeopleIndex.entries(in: cc ?? "")
+        let all = PeopleIndex.entries(in: to) + PeopleIndex.entries(in: cc ?? "") + PeopleIndex.entries(in: bcc ?? "")
         return !all.isEmpty && all.allSatisfy { PeopleIndex.parse($0) != nil }
     }
 

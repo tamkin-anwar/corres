@@ -52,4 +52,22 @@ extension ReplyAddressTests {
         #expect(mine.counterpartName(knownNames: known) == "Samantha Lee")
         #expect(fromSam.counterpartName() == "Someone")
     }
+
+    /// Bcc'd (or forwarded by a rule): Reply All would show everyone.
+    @Test func bccdMailIsNoticed() {
+        func mail(to: [String], cc: [String] = []) -> Correspondence {
+            Correspondence(id: ThreadID(account: "me@x.test", providerID: UUID().uuidString), sender: "Ana", senderEmail: "ana@y.test",
+                           organization: "", subject: "Plans", excerpt: "", body: "", receivedAt: .now, dueAt: nil,
+                           reason: "", attention: .needsYou, toRecipients: to, ccRecipients: cc)
+        }
+        #expect(mail(to: ["bo@y.test"]).reachedYouHidden)
+        #expect(!mail(to: ["bo@y.test"], cc: ["Me@X.test"]).reachedYouHidden)
+        #expect(!mail(to: ["me@x.test"]).reachedYouHidden)
+    }
+
+    @Test func bccAloneIsSendable() {
+        #expect(Draft(kind: .new, to: "", bcc: "a@x.test", subject: "Hi").isSendable)
+        #expect(Draft(kind: .new, to: "", bcc: "a@x.test", subject: "Hi").recipientsLookValid)
+        #expect(!Draft(kind: .new, to: "", bcc: "not an address", subject: "Hi").recipientsLookValid)
+    }
 }

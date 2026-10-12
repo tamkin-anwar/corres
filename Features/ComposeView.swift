@@ -20,6 +20,19 @@ struct ComposeView: View {
     @State private var showingDiscardConfirmation = false
     @State private var confirmingNoSubject = false
     @FocusState private var focusedField: Field?
+    /// To, Cc and Bcc are UIKit fields (`AddressTextField`), which
+    /// SwiftUI's focus state can't hold, so they keep their own.
+    @State private var addressFocus: Field?
+    private var activeField: Field? { addressFocus ?? focusedField }
+
+    private func focus(_ field: Field?) {
+        if let field, field.isAddress {
+            addressFocus = field
+        } else {
+            addressFocus = nil
+            focusedField = field
+        }
+    }
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
     @State private var pickedPhotos: [PhotosPickerItem] = []
     @State private var showingPhotoPicker = false
@@ -37,7 +50,16 @@ struct ComposeView: View {
     @Environment(\.proUnlocked) private var proUnlocked
     @State private var dictation = DictationService()
 
-    private enum Field { case to, cc, subject, body }
+    private enum Field {
+        case to, cc, bcc, subject, body
+        var isAddress: Bool { self == .to || self == .cc || self == .bcc }
+        var title: String { self == .cc ? "Cc" : self == .bcc ? "Bcc" : "To" }
+    }
+    /// Bcc stays out of the way until asked for, as in Mail and Gmail.
+    @State private var showsBcc = false
+    /// The chip Backspace has picked, ready to go on the next Backspace
+    /// (Mail's two-step delete, so one stray tap never loses a recipient).
+    @State private var selectedChip: (field: Field, index: Int)?
 
     init(store: MailStore, outbox: OutboxService, auth: GoogleAuthService? = nil, draft: Draft, sourceThread: Correspondence?) {
         self.store = store
@@ -65,11 +87,17 @@ struct ComposeView: View {
                         Divider().padding(.leading, CorresSpace.page)
                     }
                     recipientField(.to)
-                    if focusedField == .to { recipientSuggestions(for: .to) }
+                    if activeField == .to { recipientSuggestions(for: .to) }
                     Divider().padding(.leading, CorresSpace.page)
                     recipientField(.cc)
-                    if focusedField == .cc { recipientSuggestions(for: .cc) }
+                    if activeField == .cc { recipientSuggestions(for: .cc) }
                     Divider().padding(.leading, CorresSpace.page)
+                    if showsBcc || !(draft.bcc ?? "").isEmpty {
+                        recipientField(.bcc)
+                        if activeField == .bcc { recipientSuggestions(for: .bcc) }
+                        Divider().padding(.leading, CorresSpace.page)
+                    }
+                    bccNotices
                     field(title: "Subject", text: $draft.subject, isEditable: true)
                         .focused($focusedField, equals: .subject)
                     Divider().padding(.leading, CorresSpace.page)
@@ -154,12 +182,17 @@ struct ComposeView: View {
                 people?.update(from: store.threads, accounts: accounts)
                 await people?.backfillIfNeeded(accounts: accounts)
             }
-            // Leaving To or Cc turns a finished address into a chip.
-            .onChange(of: focusedField) { old, _ in
-                if old == .to || old == .cc, let old { commitTyping(in: old) }
+            // Leaving To, Cc or Bcc turns a finished address into a chip.
+            .onChange(of: addressFocus) { old, _ in
+                if let old { commitTyping(in: old) }
+                selectedChip = nil
+            }
+            // Subject or the message took over.
+            .onChange(of: focusedField) { _, new in
+                if new != nil { addressFocus = nil }
             }
             .onAppear {
-                focusedField = draft.to.isEmpty ? .to : .body
+                focus(draft.to.isEmpty ? .to : .body)
                 if draft.kind != .new { placeCursorAboveQuote() }
             }
             .photosPicker(isPresented: $showingPhotoPicker, selection: $pickedPhotos, maxSelectionCount: 10,
@@ -349,7 +382,7 @@ struct ComposeView: View {
     /// a reply or forward already has non-empty fields before the user types
     /// a single character, so "has content" alone would nag on every cancel.
     private var hasUnsavedChanges: Bool {
-        draft.to != initialDraft.to || draft.cc != initialDraft.cc || draft.subject != initialDraft.subject
+        draft.to != initialDraft.to || draft.cc != initialDraft.cc || draft.bcc != initialDraft.bcc || draft.subject != initialDraft.subject
             || draft.body != initialDraft.body || !draft.attachments.isEmpty
     }
 
@@ -404,7 +437,11 @@ struct ComposeView: View {
 
     /// The text of the To or Cc field.
     private func addressText(_ field: Field) -> String {
-        field == .cc ? (draft.cc ?? "") : draft.to
+        switch field {
+        case .cc: draft.cc ?? ""
+        case .bcc: draft.bcc ?? ""
+        default: draft.to
+        }
     }
 
     /// The name being typed after the last chip.
@@ -414,7 +451,11 @@ struct ComposeView: View {
 
     private func setAddresses(_ field: Field, finished: [String], typing: String) {
         let text = finished.map { $0 + ", " }.joined() + typing
-        if field == .cc { draft.cc = text } else { draft.to = text }
+        switch field {
+        case .cc: draft.cc = text
+        case .bcc: draft.bcc = text
+        default: draft.to = text
+        }
     }
 
     /// What's typed becomes a chip once it's a whole address.
@@ -427,7 +468,7 @@ struct ComposeView: View {
 
     /// Who's already addressed, and you, never offered again.
     private var alreadyAddressed: Set<String> {
-        let entries = PeopleIndex.entries(in: draft.to) + PeopleIndex.entries(in: draft.cc ?? "")
+        let entries = PeopleIndex.entries(in: draft.to) + PeopleIndex.entries(in: draft.cc ?? "") + PeopleIndex.entries(in: draft.bcc ?? "")
         let accounts = (auth?.accounts.map(\.email) ?? []).map { $0.lowercased() }
         return Set(entries.compactMap { PeopleIndex.parse($0)?.email } + accounts)
     }
@@ -468,7 +509,7 @@ struct ComposeView: View {
                     }
                 }
                 .accessibilityLabel("\(person.displayName), \(person.email)")
-                .accessibilityHint("Adds them to \(field == .cc ? "Cc" : "To")")
+                .accessibilityHint("Adds them to \(field.title)")
                 .accessibilityAction(named: "Don\u{2019}t Suggest") { people?.hide(person.email) }
                 if person.id != found.last?.id {
                     Divider().padding(.leading, CorresSpace.page + 44)
@@ -543,7 +584,7 @@ struct ComposeView: View {
                                 }
                             }
                             .accessibilityLabel("\(person.displayName), \(person.email)")
-                            .accessibilityHint("Adds them to \(field == .cc ? "Cc" : "To")")
+                            .accessibilityHint("Adds them to \(field.title)")
                         }
                     }
                     .padding(.horizontal, CorresSpace.page)
@@ -568,6 +609,7 @@ struct ComposeView: View {
             get: { PeopleIndex.split(addressText(field)).typing },
             set: { value in
                 let current = PeopleIndex.split(addressText(field)).finished
+                if !value.isEmpty { selectedChip = nil }
                 let trimmed = value.trimmingCharacters(in: .whitespaces)
                 if value.contains(where: { $0 == "," || $0 == ";" }) {
                     let parts = PeopleIndex.split(value)
@@ -579,30 +621,123 @@ struct ComposeView: View {
                 }
             })
         return HStack(alignment: .top, spacing: 12) {
-            Text(field == .cc ? "Cc" : "To").font(.subheadline).foregroundStyle(CorresPalette.secondary)
+            Text(field.title).font(.subheadline).foregroundStyle(CorresPalette.secondary)
                 .frame(width: 64, alignment: .leading).frame(minHeight: 44)
             FlowLayout(spacing: 6, lineSpacing: 6) {
                 ForEach(Array(finished.enumerated()), id: \.offset) { index, entry in
                     recipientChip(entry, at: index, in: field)
                 }
-                TextField(finished.isEmpty ? (field == .cc ? "Optional" : "Recipient") : "", text: typing)
-                    .textInputAutocapitalization(.never)
-                    .keyboardType(.emailAddress)
-                    .autocorrectionDisabled()
-                    .textContentType(.emailAddress)
-                    .submitLabel(.next)
-                    .onSubmit {
-                        commitTyping(in: field)
-                        focusedField = field == .to ? .subject : .subject
-                    }
-                    .focused($focusedField, equals: field)
+                // UIKit underneath: SwiftUI's TextField never reports a
+                // Backspace in an empty field, which is how Mail removes
+                // the last recipient. The first picks it, the second
+                // removes it, so one stray press never loses anyone.
+                AddressTextField(text: typing, placeholder: finished.isEmpty ? (field == .to ? "Recipient" : "Optional") : "",
+                                 isFocused: addressFocus == field,
+                                 onFocus: { focused in
+                                     if focused { addressFocus = field } else if addressFocus == field { addressFocus = nil }
+                                 },
+                                 onEmptyBackspace: { backspace(in: field) },
+                                 onSubmit: {
+                                     commitTyping(in: field)
+                                     focus(.subject)
+                                 })
+                    .accessibilityLabel(field.title)
+                    .frame(minWidth: 90, minHeight: 32)
                     .frame(minWidth: 90, minHeight: 32)
             }
             .padding(.vertical, 6)
+            if field == .cc, !showsBcc, (draft.bcc ?? "").isEmpty {
+                Button("Bcc") {
+                    showsBcc = true
+                    focus(.bcc)
+                }
+                .font(.subheadline).foregroundStyle(CorresPalette.accent)
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityHint("Adds a Bcc field: people copied without the others seeing")
+            }
         }
         .padding(.horizontal, CorresSpace.page).frame(minHeight: 44)
         .contentShape(Rectangle())
-        .onTapGesture { focusedField = field }
+        .onTapGesture { focus(field) }
+    }
+
+    /// Backspace with nothing typed: picks the last recipient, and a
+    /// second press removes it, as in Mail.
+    private func backspace(in field: Field) {
+        let current = PeopleIndex.split(addressText(field)).finished
+        guard !current.isEmpty else { return }
+        if let chosen = selectedChip, chosen.field == field, current.indices.contains(chosen.index) {
+            var remaining = current
+            remaining.remove(at: chosen.index)
+            setAddresses(field, finished: remaining, typing: "")
+            selectedChip = nil
+        } else {
+            selectedChip = (field, current.count - 1)
+        }
+    }
+
+    // MARK: - Bcc, when it matters
+
+    /// Bcc is out of the way until it matters, and then Corres says so:
+    /// - replying to all on an email you were Bcc'd on would show everyone
+    ///   you had it (Gmail warns since 2026; here it's one tap to fix);
+    /// - a new email to a crowd in To shows them all each other's
+    ///   addresses (one tap moves them to Bcc).
+    @ViewBuilder
+    private var bccNotices: some View {
+        if draft.kind == .replyAll, let source = sourceThread, source.reachedYouHidden, !dismissedHiddenNotice {
+            bccNotice("You weren't in To or Cc on this email, so you were Bcc'd or it was forwarded to you. Replying to all lets everyone see you had it.",
+                      action: "Reply to Sender Only") {
+                draft.to = source.replyAddresses.joined(separator: ", ")
+                draft.cc = nil
+                dismissedHiddenNotice = true
+            }
+        }
+        let crowd = PeopleIndex.entries(in: draft.to)
+        if draft.kind == .new, crowd.count >= Self.crowdSize, (draft.bcc ?? "").isEmpty, !dismissedCrowdNotice {
+            bccNotice("Sending to \(crowd.count) people? In Bcc, they won't see each other's addresses.",
+                      action: "Move All to Bcc") {
+                draft.bcc = draft.to
+                draft.to = ""
+                showsBcc = true
+                dismissedCrowdNotice = true
+            }
+        }
+    }
+
+    /// Enough people in To that showing them each other's addresses is
+    /// probably not meant: a class, a team list, a party invite.
+    private static let crowdSize = 8
+    @State private var dismissedHiddenNotice = false
+    @State private var dismissedCrowdNotice = false
+
+    private func bccNotice(_ text: String, action: String, perform: @escaping () -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(text, systemImage: "eye.slash")
+                .labelStyle(TightLabelStyle())
+                .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(action) { withAnimation(.snappy) { perform() } }
+                .font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                .frame(minHeight: 32)
+        }
+        .padding(.horizontal, CorresSpace.page).padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(CorresPalette.accent.opacity(0.06))
+    }
+
+    /// Moves one recipient to another of To, Cc and Bcc: thanking someone
+    /// for an introduction and moving them to Bcc (Superhuman's Instant
+    /// Intro), or taking a long Cc list out of view.
+    private func move(_ index: Int, from field: Field, to target: Field) {
+        var from = PeopleIndex.split(addressText(field)).finished
+        guard from.indices.contains(index) else { return }
+        let entry = from.remove(at: index)
+        setAddresses(field, finished: from, typing: PeopleIndex.split(addressText(field)).typing)
+        let into = PeopleIndex.split(addressText(target))
+        setAddresses(target, finished: into.finished + [entry], typing: into.typing)
+        if target == .bcc { showsBcc = true }
+        selectedChip = nil
     }
 
     private func recipientChip(_ entry: String, at index: Int, in field: Field) -> some View {
@@ -614,18 +749,27 @@ struct ComposeView: View {
                     Button { UIPasteboard.general.string = email } label: { Label("Copy Address", systemImage: "doc.on.doc") }
                 }
             }
+            Section {
+                ForEach([Field.to, .cc, .bcc].filter { $0 != field }, id: \.self) { target in
+                    Button { move(index, from: field, to: target) } label: {
+                        Label("Move to \(target.title)", systemImage: target == .bcc ? "eye.slash" : "arrow.right")
+                    }
+                }
+            }
             Button(role: .destructive) {
                 var finished = PeopleIndex.split(addressText(field)).finished
                 if finished.indices.contains(index) { finished.remove(at: index) }
                 setAddresses(field, finished: finished, typing: PeopleIndex.split(addressText(field)).typing)
             } label: { Label("Remove", systemImage: "minus.circle") }
         } label: {
+            let isSelected = selectedChip?.field == field && selectedChip?.index == index
+            let tint = parsed == nil ? CorresPalette.alert : CorresPalette.accent
             Text(label)
                 .font(.subheadline)
-                .foregroundStyle(parsed == nil ? CorresPalette.alert : CorresPalette.accent)
+                .foregroundStyle(isSelected ? Color.white : tint)
                 .lineLimit(1)
                 .padding(.horizontal, 10).padding(.vertical, 5)
-                .background((parsed == nil ? CorresPalette.alert : CorresPalette.accent).opacity(0.12), in: Capsule())
+                .background(isSelected ? tint : tint.opacity(0.12), in: Capsule())
         }
         .accessibilityLabel(parsed == nil ? "\(entry), not a valid address" : "\(label), \(parsed?.email ?? "")")
         .accessibilityHint("Shows options for this recipient")
@@ -897,3 +1041,81 @@ struct FlowLayout: Layout {
     }
 }
 
+/// An address field that hears Backspace even when it's empty (UIKit's
+/// `deleteBackward`), which SwiftUI's TextField doesn't pass on. Focus is
+/// kept in step with Compose's own `addressFocus`.
+private struct AddressTextField: UIViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+    var isFocused: Bool
+    var onFocus: (Bool) -> Void
+    var onEmptyBackspace: () -> Void
+    var onSubmit: () -> Void
+
+    final class Field: UITextField {
+        var onEmptyBackspace: (() -> Void)?
+        override func deleteBackward() {
+            if (text ?? "").isEmpty { onEmptyBackspace?() }
+            super.deleteBackward()
+        }
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: AddressTextField
+        init(_ parent: AddressTextField) { self.parent = parent }
+
+        @objc func changed(_ field: UITextField) {
+            let value = field.text ?? ""
+            if value != parent.text { parent.text = value }
+            // The binding may have turned it into a chip; show what's left.
+            if field.text != parent.text { field.text = parent.text }
+        }
+        func textFieldDidBeginEditing(_ textField: UITextField) { if !parent.isFocused { parent.onFocus(true) } }
+        func textFieldDidEndEditing(_ textField: UITextField) { if parent.isFocused { parent.onFocus(false) } }
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            parent.onSubmit()
+            return false
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> Field {
+        let field = Field()
+        field.delegate = context.coordinator
+        field.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .editingChanged)
+        field.autocapitalizationType = .none
+        field.autocorrectionType = .no
+        field.spellCheckingType = .no
+        field.keyboardType = .emailAddress
+        field.textContentType = .emailAddress
+        field.returnKeyType = .next
+        field.font = .preferredFont(forTextStyle: .body)
+        field.adjustsFontForContentSizeCategory = true
+        field.textColor = .label
+        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return field
+    }
+
+    func updateUIView(_ field: Field, context: Context) {
+        context.coordinator.parent = self
+        field.onEmptyBackspace = onEmptyBackspace
+        if field.text != text { field.text = text }
+        if field.placeholder != placeholder {
+            field.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [.foregroundColor: UIColor.tertiaryLabel])
+        }
+        // A beat later: becoming first responder while SwiftUI is still
+        // laying out is ignored.
+        if isFocused, !field.isFirstResponder {
+            DispatchQueue.main.async { field.becomeFirstResponder() }
+        } else if !isFocused, field.isFirstResponder {
+            DispatchQueue.main.async { field.resignFirstResponder() }
+        }
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: Field, context: Context) -> CGSize? {
+        let fitted = uiView.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: 32))
+        return CGSize(width: max(90, fitted.width + 8), height: max(32, fitted.height))
+    }
+}
