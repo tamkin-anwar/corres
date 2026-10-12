@@ -1,6 +1,7 @@
 import Contacts
 import Foundation
 import Observation
+import UIKit
 
 /// Who Corres offers as you type a name: in To and Cc, and in search
 /// ("Sara Wiltshire" as you type "sara"). A tester expected it, as Mail
@@ -27,6 +28,12 @@ final class PeopleDirectory {
     /// People you've said not to suggest.
     private var hidden: Set<String> = []
     private var contacts = PeopleIndex()
+    /// Contacts photos by address, decoded once.
+    private var photos: [String: UIImage] = [:]
+
+    /// The person's Contacts photo, if you've allowed Contacts and they
+    /// have one.
+    func photo(for email: String) -> UIImage? { photos[email.lowercased()] }
     private var looked: Set<String> = []
     private(set) var isLookingUp = false
     private let client = GmailAPIClient()
@@ -99,22 +106,30 @@ final class PeopleDirectory {
         if #available(iOS 18.0, *), status == .limited { allowed = true }
         guard allowed, CorresSettings.suggestContacts else {
             contacts = PeopleIndex()
+            photos = [:]
             return
         }
-        let found: [(String, String)] = await Task.detached(priority: .utility) {
-            let keys = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactOrganizationNameKey, CNContactEmailAddressesKey] as [CNKeyDescriptor]
-            var found: [(String, String)] = []
+        let found: [(String, String, Data?)] = await Task.detached(priority: .utility) {
+            let keys = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactOrganizationNameKey, CNContactEmailAddressesKey,
+                        CNContactImageDataAvailableKey, CNContactThumbnailImageDataKey] as [CNKeyDescriptor]
+            var found: [(String, String, Data?)] = []
             try? CNContactStore().enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
                 let name = [contact.givenName, contact.familyName].filter { !$0.isEmpty }.joined(separator: " ")
+                let thumbnail = contact.imageDataAvailable ? contact.thumbnailImageData : nil
                 for address in contact.emailAddresses {
-                    found.append((name.isEmpty ? contact.organizationName : name, address.value as String))
+                    found.append((name.isEmpty ? contact.organizationName : name, address.value as String, thumbnail))
                 }
             }
             return found
         }.value
         var index = PeopleIndex()
-        for (name, email) in found { index.recordContact(name: name, email: email) }
+        var images: [String: UIImage] = [:]
+        for (name, email, thumbnail) in found {
+            index.recordContact(name: name, email: email)
+            if let thumbnail, let image = UIImage(data: thumbnail) { images[email.lowercased()] = image }
+        }
         contacts = index
+        photos = images
     }
 
     /// Settings → Composing → Suggest from Contacts changed.

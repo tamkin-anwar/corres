@@ -71,7 +71,7 @@ struct ScreenerView: View {
     private func card(for group: SenderGroup) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
-                CorrespondentAvatar(initials: initials(for: group.sender))
+                CorrespondentAvatar(initials: initials(for: group.sender), email: group.senderEmail)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(group.sender).font(.body.weight(.semibold)).lineLimit(1)
                     Text(group.senderEmail).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(1)

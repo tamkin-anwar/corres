@@ -34,7 +34,7 @@ struct CorrespondenceRow: View {
                 .frame(width: 7, height: 7)
                 .padding(.top, 17)
                 .accessibilityHidden(true)
-            if showAvatars { CorrespondentAvatar(initials: thread.initials) }
+            if showAvatars { CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail) }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     // Your own latest message: who it went to, never your
@@ -625,7 +625,7 @@ struct CorrespondenceList: View {
                     Button { search = person.email } label: {
                         HStack(spacing: 10) {
                             CorrespondentAvatar(initials: person.displayName.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined(),
-                                                size: CGSize(width: 32, height: 32))
+                                                email: person.email, size: CGSize(width: 32, height: 32))
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(person.displayName).font(.subheadline.weight(.medium)).foregroundStyle(CorresPalette.ink).lineLimit(1)
                                 Text(person.email).font(.caption).foregroundStyle(CorresPalette.secondary).lineLimit(1)

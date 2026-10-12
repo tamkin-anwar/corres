@@ -189,6 +189,9 @@ public struct PeopleIndex: Codable, Sendable, Equatable {
             // "HighGainProject" is read as "High Gain Project".
             || person.name.replacingOccurrences(of: #"([a-z])([A-Z])"#, with: "$1 $2", options: .regularExpression)
                 .range(of: #"(?i)\b(coordinator|team|support|services?|project|tech|evaluations?|department|dept|office|desk|admissions|registrar|bursar|finance|payroll|accounts|recruit\w*|careers|center|centre|group|store|shop|customer|help|info|admin|billing|notifications?|operations|inc|llc|ltd)\b"#, options: .regularExpression) != nil
+            // "TASTeam", "ITSupport": a desk word run on at the end.
+            || (!person.name.contains(" ") && person.name.range(of: #"(?i)(team|support|desk|services?|office|admin|helpdesk|notifications?)$"#, options: .regularExpression) != nil
+                && person.name.count > 5)
             || (person.name.count > 3 && person.name == person.name.uppercased() && person.name.contains(where: \.isLetter) && person.name.contains(" "))
     }
 

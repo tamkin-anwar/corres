@@ -611,6 +611,57 @@ private struct ReadingSettingsView: View {
 
 // MARK: - Sorting
 
+/// Every lesson Corres has learned from your corrections, with a way to
+/// forget each one: learning you can see and undo, not a black box.
+private struct LessonsView: View {
+    @State private var lessons = SenderLessons.all.sorted { $0.learnedAt > $1.learnedAt }
+    @AppStorage(SenderLessons.enabledKey) private var isEnabled = true
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Learn from My Changes", isOn: $isEnabled)
+            } footer: {
+                Text("When you say an email Apple Intelligence flagged needs no action, Corres stops flagging that sender. When you move a sender's automated email into Needs You, it keeps them there. Lessons stay on this iPhone.")
+            }
+            Section {
+                if lessons.isEmpty {
+                    Text("Nothing yet. Corres learns as you correct it.").foregroundStyle(CorresPalette.secondary)
+                } else {
+                    ForEach(lessons) { lesson in
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(lesson.name).font(.body)
+                            Text("\(lesson.summary) · \(lesson.learnedAt.formatted(.relative(presentation: .named)))")
+                                .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                    .onDelete { offsets in
+                        for index in offsets { SenderLessons.forget(lessons[index].email) }
+                        lessons.remove(atOffsets: offsets)
+                    }
+                }
+            } header: {
+                Text("Lessons")
+            } footer: {
+                if !lessons.isEmpty { Text("Swipe a lesson to forget it.") }
+            }
+            if !lessons.isEmpty {
+                Section {
+                    Button("Forget Everything", role: .destructive) {
+                        SenderLessons.forgetAll()
+                        lessons = []
+                    }
+                }
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(CorresPalette.canvas)
+        .navigationTitle("What Corres Has Learned")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 private struct SortingSettingsView: View {
     let store: MailStore
     @State private var vipsStorage: [String] = CorresSettings.vips.sorted()
@@ -657,6 +708,15 @@ private struct SortingSettingsView: View {
                 Text("VIPs")
             } footer: {
                 Text("A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove.")
+            }
+            Section {
+                NavigationLink {
+                    LessonsView()
+                } label: {
+                    Label("What Corres Has Learned", systemImage: "brain")
+                }
+            } footer: {
+                Text("Corres learns from your corrections, on this iPhone. Every lesson is listed here, and you can make it forget any of them.")
             }
             Section {
                 Picker("Needs You", selection: $sensitivity) {

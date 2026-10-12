@@ -59,7 +59,7 @@ struct EarlierMessages: View {
                 }
             } label: {
                 HStack(spacing: 10) {
-                    CorrespondentAvatar(initials: isMine ? "Y" : message.initials,
+                    CorrespondentAvatar(initials: isMine ? "Y" : message.initials, email: isMine ? nil : message.senderEmail,
                                         size: CGSize(width: 30, height: 30))
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(alignment: .firstTextBaseline) {

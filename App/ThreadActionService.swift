@@ -98,17 +98,43 @@ final class ThreadActionService {
     }
 
     func setAttention(_ attention: Attention, for threads: [Correspondence]) async {
-        let before = threads.filter { $0.attention != attention }.map { ($0.id, $0.attention) }
+        let moving = threads.filter { $0.attention != attention }
+        let before = moving.map { ($0.id, $0.attention) }
         guard !before.isEmpty else { return }
+        // What the move teaches (SenderLessons), learned before the move so
+        // the thread still shows how it got where it was.
+        let lessonsBefore = SenderLessons.all
+        let learned = moving.compactMap { SenderLessons.learn(from: $0, was: $0.attention, now: attention) }
         for (id, _) in before { await store.update(id, to: attention) }
+        // "No action needed" on a sender's mail the model brought in takes
+        // back the rest of what it brought in from them, too.
+        var alsoQuieted: [(ThreadID, String)] = []
+        if attention == .quiet, !learned.isEmpty {
+            let senders = Set(moving.compactMap { $0.senderEmail?.lowercased() }.filter(SenderLessons.isQuieted))
+            let movedIDs = Set(before.map(\.0))
+            for other in store.threads where !movedIDs.contains(other.id) && other.wasPromotedByIntelligence
+                && senders.contains(other.senderEmail?.lowercased() ?? "") {
+                guard let messageID = other.latestMessageID else { continue }
+                alsoQuieted.append((other.id, other.reason))
+                await store.applySemanticTriage(other.id, from: .needsYou, to: .quiet,
+                                                reason: InboxClassifier.lessonReason, messageID: messageID)
+            }
+        }
         let count = before.count == 1 ? "" : " \(before.count)"
-        let title = switch attention {
+        let moved = switch attention {
         case .handled: "Marked\(count) Handled"
         case .quiet: "Marked\(count) as no action needed"
         default: "Moved\(count) to \(attention.title)"
         }
-        offerUndo(title, systemImage: attention == .handled ? "checkmark.circle" : "arrow.right.circle") { [store] in
+        let title = learned.count == 1 && before.count == 1 ? learned[0] : moved
+        let icon = !learned.isEmpty ? "brain" : attention == .handled ? "checkmark.circle" : "arrow.right.circle"
+        offerUndo(title, systemImage: icon) { [store] in
+            SenderLessons.all = lessonsBefore
             for (id, was) in before { await store.update(id, to: was) }
+            for (id, reason) in alsoQuieted {
+                guard let messageID = store.thread(id)?.latestMessageID else { continue }
+                await store.applySemanticTriage(id, from: .quiet, to: .needsYou, reason: reason, messageID: messageID)
+            }
         }
     }
 

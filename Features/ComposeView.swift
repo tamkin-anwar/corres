@@ -491,7 +491,7 @@ struct ComposeView: View {
             ForEach(found) { person in
                 Button { choose(person, in: field) } label: {
                     HStack(spacing: 10) {
-                        CorrespondentAvatar(initials: Self.initials(for: person.displayName), size: CGSize(width: 34, height: 34))
+                        CorrespondentAvatar(initials: Self.initials(for: person.displayName), email: person.email, size: CGSize(width: 34, height: 34))
                         VStack(alignment: .leading, spacing: 1) {
                             Text(person.displayName).font(.subheadline.weight(.medium)).foregroundStyle(CorresPalette.ink)
                                 .lineLimit(1)
@@ -563,7 +563,7 @@ struct ComposeView: View {
                         ForEach(top) { person in
                             Button { choose(person, in: field) } label: {
                                 VStack(spacing: 6) {
-                                    CorrespondentAvatar(initials: Self.initials(for: person.displayName), size: CGSize(width: 52, height: 52))
+                                    CorrespondentAvatar(initials: Self.initials(for: person.displayName), email: person.email, size: CGSize(width: 52, height: 52))
                                     Text(person.displayName)
                                         .font(.caption).foregroundStyle(CorresPalette.ink)
                                         .multilineTextAlignment(.center).lineLimit(2)
@@ -585,6 +585,28 @@ struct ComposeView: View {
                             }
                             .accessibilityLabel("\(person.displayName), \(person.email)")
                             .accessibilityHint("Adds them to \(field.title)")
+                        }
+                        // Photos and everyone in Contacts, asked once,
+                        // at the end of the row rather than as a pop-up.
+                        if people?.canAskForContacts == true, CorresSettings.suggestContacts {
+                            Button {
+                                Task { await people?.includeContacts() }
+                            } label: {
+                                VStack(spacing: 6) {
+                                    Image(systemName: "person.crop.circle.badge.plus")
+                                        .font(.system(size: 22, weight: .regular))
+                                        .foregroundStyle(CorresPalette.accent)
+                                        .frame(width: 52, height: 52)
+                                        .background(CorresPalette.accent.opacity(0.1), in: Circle())
+                                    Text("Add from Contacts")
+                                        .font(.caption).foregroundStyle(CorresPalette.accent)
+                                        .multilineTextAlignment(.center).lineLimit(2)
+                                        .frame(width: 72)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Shows people from your Contacts, with their photos. Stays on this iPhone.")
                         }
                     }
                     .padding(.horizontal, CorresSpace.page)

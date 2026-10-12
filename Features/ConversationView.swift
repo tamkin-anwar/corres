@@ -387,7 +387,8 @@ struct ConversationView: View {
 
     private func messageHeader(for thread: Correspondence) -> some View {
         HStack(spacing: 12) {
-            CorrespondentAvatar(initials: thread.isFromAccountOwner ? "Y" : thread.initials, size: CGSize(width: 44, height: 44))
+            CorrespondentAvatar(initials: thread.isFromAccountOwner ? "Y" : thread.initials,
+                                email: thread.isFromAccountOwner ? nil : thread.senderEmail, size: CGSize(width: 44, height: 44))
             VStack(alignment: .leading, spacing: 2) {
                 Text(thread.isFromAccountOwner ? "You" : thread.sender).font(.body.weight(.semibold))
                 Text(recipientLine(for: thread))

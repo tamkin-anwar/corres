@@ -103,6 +103,7 @@ struct PeopleIndexTests {
         index.recordSent(to: "Intake Coordinator <intake@clinic.example>", at: daysAgo(1))
         index.recordSent(to: "ACME TECH <hi@acme.example>", at: daysAgo(1))
         index.recordSent(to: "HighGainProject <hg@x.example>", at: daysAgo(1))
+        index.recordSent(to: "TASTeam <tas@x.example>", at: daysAgo(1))
         index.recordSent(to: "Academic Finance Assistant <af@uni.example>", at: daysAgo(1))
         index.recordSent(to: "ebc123@unsub.beehiiv.com", at: daysAgo(1))
         index.recordSent(to: "news@brand.example", at: daysAgo(1), subject: "unsubscribe")

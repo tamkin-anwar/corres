@@ -700,6 +700,10 @@ public enum InboxClassifier {
     public static let repliedReason = "You replied. Nothing pending."
     /// A conversation you started: "replied" read wrong on a new email.
     public static let startedReason = "You sent this. Nothing pending."
+    /// You told Corres a sender's mail needs nothing from you.
+    public static let lessonReason = "You said mail like this needs no action."
+    /// "You allowed Corres access…": nothing to do unless it wasn't you.
+    public static let confirmationReason = "Confirms something you did. Nothing to do unless it wasn't you."
 
     /// Every reason these rules can produce for unread mail: a thread
     /// carrying one of these (and never triaged) still reflects a pure rule
@@ -707,6 +711,7 @@ public enum InboxClassifier {
     public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason, staleReason,
                                                   readReason, questionReason, deadlineReason, obligationReason, copiedReason,
                                                   askedReason, repliedReason, startedReason, vipReason, fyiReason,
+                                                  lessonReason, confirmationReason,
                                                   BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,
                                                   BulkKind.updates.reason, BulkKind.automated.reason]
 

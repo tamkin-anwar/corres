@@ -105,6 +105,7 @@ final class SemanticTriageService {
 
     private func runPass(store: MailStore, only ids: Set<ThreadID>?) async {
         let now = Date.now
+        await recheckPromotions(store: store, only: ids)
         // Newest first: what just arrived is what the person is about to
         // look at, so it gets assessed before an older backlog does.
         let candidates = store.threads.filter { thread in
@@ -114,6 +115,8 @@ final class SemanticTriageService {
                   thread.latestMessageID != nil,
                   thread.triagedMessageID != thread.latestMessageID else { return false }
             if thread.attention == .needsYou { return true }
+            // You've said this sender's mail needs nothing; don't ask again.
+            if SenderLessons.isQuieted(thread.senderEmail) { return false }
             return Self.isPromotionCandidate(thread) && now.timeIntervalSince(thread.receivedAt) < Self.promotionWindow
         }.sorted { $0.receivedAt > $1.receivedAt }
         guard !candidates.isEmpty else { return }
@@ -125,6 +128,21 @@ final class SemanticTriageService {
             }
             for _ in 0..<Self.concurrency { addNext() }
             while await group.next() != nil { addNext() }
+        }
+    }
+
+    /// What the model brought into Needs You is checked again on every
+    /// pass, against rules learned since: an alert that only confirms
+    /// something you did, or a sender you've said needs no action. A
+    /// mistake doesn't sit in Needs You until you clear it yourself.
+    private func recheckPromotions(store: MailStore, only ids: Set<ThreadID>?) async {
+        for thread in store.threads where (ids?.contains(thread.id) ?? true) && thread.wasPromotedByIntelligence {
+            guard let messageID = thread.latestMessageID else { continue }
+            let reason: String? = SenderLessons.isQuieted(thread.senderEmail) ? InboxClassifier.lessonReason
+                : MailDigest.isConfirmationAlert(thread.subject + "\n" + thread.excerpt) ? InboxClassifier.confirmationReason
+                : nil
+            guard let reason else { continue }
+            await store.applySemanticTriage(thread.id, from: .needsYou, to: .quiet, reason: reason, messageID: messageID)
         }
     }
 
@@ -141,7 +159,8 @@ final class SemanticTriageService {
         // A VIP always stays; with sorting set to Everything from people,
         // the model never takes a person's mail out.
         if from == .needsYou,
-           InboxClassifier.isVIP(thread.senderEmail) || InboxClassifier.sensitivity == .inclusive {
+           InboxClassifier.isVIP(thread.senderEmail) || InboxClassifier.sensitivity == .inclusive
+            || SenderLessons.isKept(thread.senderEmail) {
             await store.applySemanticTriage(thread.id, from: from, to: from, reason: nil, messageID: messageID)
             return
         }

@@ -28,16 +28,21 @@ extension View {
     }
 }
 
-/// A round monogram. Initials are set in SF at a fixed ratio of the circle
-/// so they stay optically centered at any size.
+/// A round monogram, or the person's photo from your Contacts once you've
+/// allowed them (read on this iPhone, never fetched from a server: no
+/// Gravatar, no tracking pixel of a logo). Initials are set in SF at a
+/// fixed ratio of the circle so they stay optically centered at any size.
 struct CorrespondentAvatar: View {
     let initials: String
+    /// Whose photo to show, when Contacts has one.
+    var email: String? = nil
     /// Drives the view's own frame; pass a smaller size rather than
     /// wrapping the default in an external `.frame()`, which never
     /// rescales the fixed internal content.
     var size = CGSize(width: 42, height: 42)
     var highlighted = false
     @Environment(\.displayScale) private var displayScale
+    @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
 
     var body: some View {
         let side = min(size.width, size.height)
@@ -46,6 +51,12 @@ struct CorrespondentAvatar: View {
             .foregroundStyle(CorresPalette.ink)
             .frame(width: side, height: side)
             .background(CorresPalette.avatarFill, in: Circle())
+            .overlay {
+                if let email, let photo = people?.photo(for: email) {
+                    Image(uiImage: photo).resizable().scaledToFill()
+                        .frame(width: side, height: side).clipShape(Circle())
+                }
+            }
             .overlay(Circle().strokeBorder(CorresPalette.line, lineWidth: 1 / displayScale))
             .overlay {
                 if highlighted {
