@@ -65,7 +65,7 @@ final class OutboxService {
             let raw = GmailMessageComposer.compose(from: fromHeader(draft, account: account), to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
                                                     body: draft.body, inReplyTo: thread?.messageIdHeader,
                                                     messageID: Self.rfc822MessageID(for: draft.id),
-                                                    attachments: draft.attachments, html: draft.bodyHTML)
+                                                    attachments: draft.attachments, html: draft.bodyHTML, calendar: draft.calendarReply)
             guard let id = try? await client.saveDraft(raw: raw, threadId: thread?.id.providerID,
                                                        existingID: draft.gmailDraftID, account: account) else { return }
             if shelved?.id == draft.id { shelved?.draft.gmailDraftID = id }
@@ -383,7 +383,7 @@ final class OutboxService {
         let raw = GmailMessageComposer.compose(from: fromHeader(draft, account: account), to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
                                                 body: draft.body, inReplyTo: thread?.messageIdHeader,
                                                 messageID: Self.rfc822MessageID(for: id),
-                                                attachments: draft.attachments, html: draft.bodyHTML)
+                                                attachments: draft.attachments, html: draft.bodyHTML, calendar: draft.calendarReply)
         let threadId = try await client.send(raw: raw, threadId: thread?.id.providerID, account: account)
         return ThreadID(account: account, providerID: threadId)
     }

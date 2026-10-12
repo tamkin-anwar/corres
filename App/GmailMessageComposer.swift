@@ -20,7 +20,8 @@ enum GmailMessageComposer {
     /// tell "never sent" apart from "sent, but the response was lost"
     /// before a retry.
     static func compose(from: String, to: String, cc: String? = nil, bcc: String? = nil, subject: String, body: String, inReplyTo: String?,
-                        messageID: String, attachments: [PendingAttachment] = [], html: String? = nil) -> String {
+                        messageID: String, attachments: [PendingAttachment] = [], html: String? = nil,
+                        calendar: String? = nil) -> String {
         var headers = [
             // "Tamkin Anwar <hello@studio.com>": the send-as address and
             // its name, encoded like To and Cc.
@@ -46,15 +47,22 @@ enum GmailMessageComposer {
         }
         // The words: plain text, or, when formatted (bold, a list, a link),
         // plain and HTML together, so every mail app shows its best version.
+        // An answer to an invitation adds its calendar part, which the
+        // organizer's calendar reads (RFC 6047).
         let text: (headers: String, content: String)
-        if let html {
+        if html != nil || calendar != nil {
             let alternative = "corres-alt-\(UUID().uuidString)"
-            let encodedHTML = Data(html.utf8).base64EncodedString(
-                options: [.lineLength76Characters, .endLineWithCarriageReturn, .endLineWithLineFeed])
-            text = ("Content-Type: multipart/alternative; boundary=\"\(alternative)\"",
-                    "--\(alternative)\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n\(body)\r\n"
-                    + "--\(alternative)\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n\(encodedHTML)\r\n"
-                    + "--\(alternative)--")
+            func base64(_ string: String) -> String {
+                Data(string.utf8).base64EncodedString(options: [.lineLength76Characters, .endLineWithCarriageReturn, .endLineWithLineFeed])
+            }
+            var content = "--\(alternative)\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n\(body)\r\n"
+            if let html {
+                content += "--\(alternative)\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n\(base64(html))\r\n"
+            }
+            if let calendar {
+                content += "--\(alternative)\r\nContent-Type: text/calendar; charset=UTF-8; method=REPLY\r\nContent-Transfer-Encoding: base64\r\n\r\n\(base64(calendar))\r\n"
+            }
+            text = ("Content-Type: multipart/alternative; boundary=\"\(alternative)\"", content + "--\(alternative)--")
         } else {
             text = ("Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit", body)
         }

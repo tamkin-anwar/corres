@@ -554,6 +554,9 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     /// The same words as HTML when they're formatted (bold, lists, links);
     /// nil for plain text. Optional so older drafts decode.
     public var bodyHTML: String?
+    /// An answer to a calendar invitation (iTIP METHOD:REPLY), sent as the
+    /// email's calendar part. Optional so older drafts decode.
+    public var calendarReply: String?
     public var attachments: [PendingAttachment]
     /// The Gmail draft this was opened from (Mailboxes → Drafts), deleted
     /// once this is sent so the draft doesn't linger after it's gone out.
