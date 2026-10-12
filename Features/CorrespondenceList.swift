@@ -50,7 +50,7 @@ struct CorrespondenceRow: View {
                             .accessibilityLabel("Flagged")
                     }
                     if thread.isPinned {
-                        Image(systemName: "pin.fill").font(.caption2).foregroundStyle(CorresPalette.tertiary)
+                        Image(systemName: "pin.fill").font(.caption2).foregroundStyle(CorresPalette.pin)
                             .accessibilityLabel("Pinned")
                     }
                     // Mail you've marked Handled says so, so it's never

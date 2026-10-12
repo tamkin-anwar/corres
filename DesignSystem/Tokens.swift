@@ -50,6 +50,10 @@ enum CorresPalette {
     static let alert = Color(uiColor: .systemRed)
     static let swipeUnread = Color(hex: 0x0B68D9) // blue, 5.25:1
     static let swipePin = Color(hex: 0x0E7C86) // teal, 4.95:1
+    /// A pinned row's mark: the same teal as the swipe that pinned it, as a
+    /// flagged row's mark is the flag swipe's orange. Grey sank into the
+    /// grey preview text. 4.95:1 on the light canvas, 3.9:1 on the dark.
+    static let pin = swipePin
     static let swipeSnooze = Color(hex: 0x4A5560)
     /// iOS Mail's own flag orange (#FF9500) is only 2.2:1 against white, too
     /// faint for a white swipe icon or a row indicator on the light canvas.
