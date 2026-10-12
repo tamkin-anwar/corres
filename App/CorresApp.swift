@@ -61,6 +61,7 @@ struct CorresApp: App {
                 // by the refresh itself, so the pull-to-refresh spinner ends
                 // when mail arrives, not when the on-device model finishes.
                 .onChange(of: appDelegate.sync.lastCompletedSync) {
+                    Task { await FollowUps.shared.check(store: appDelegate.store) }
                     // Who to suggest in To, Cc and search: synced mail now,
                     // and each account's Sent history once.
                     Task {

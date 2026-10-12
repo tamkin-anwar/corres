@@ -186,6 +186,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         let work = Task {
             if store.state != .loaded { await store.load() }
             await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
+            await FollowUps.shared.check(store: store)
             await pushService.renewWatch(accounts: auth.accounts.map(\.email))
             task.setTaskCompleted(success: true)
         }
@@ -230,8 +231,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         let previousUnread = Dictionary(store.threads.map { ($0.id, $0.isUnread) }, uniquingKeysWith: { first, _ in first })
         guard await sync.syncAll(accounts: auth.accounts.map(\.email)) else { return .noData }
         await store.load()
-        // A push is also a chance to send what's scheduled.
+        // A push is also a chance to send what's scheduled, and to see
+        // whether a follow-up reminder is due or answered.
         await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
+        await FollowUps.shared.check(store: store)
         func newlyUnreadThreads() -> [Correspondence] {
             store.threads.filter { thread in
                 thread.isUnread && previousUnread[thread.id] != true && !thread.isScreenedOut

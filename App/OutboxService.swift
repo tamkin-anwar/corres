@@ -247,6 +247,11 @@ final class OutboxService {
             sentCopy = messages.last { $0.isFromAccountOwner } ?? messages.last
         }
         await store.send(draft, realThreadID: realThreadID, sentCopy: sentCopy)
+        if let after = draft.followUpAfter, let threadID = realThreadID ?? thread?.id {
+            let first = PeopleIndex.entries(in: draft.to).first.flatMap(PeopleIndex.parse)
+            let recipient = first.map { $0.name.isEmpty ? $0.email : Person.readable($0.name) } ?? "them"
+            FollowUps.shared.add(threadID, after: after, recipient: recipient, subject: draft.subject)
+        }
         if realThreadID != nil, let thread, draft.kind == .reply || draft.kind == .replyAll {
             HabitWatcher.shared.replied(to: thread)
         }

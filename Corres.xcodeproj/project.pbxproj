@@ -83,6 +83,7 @@
 		F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
 		F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */; };
 		AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */; };
+		0FC1AEC8A0924D76B68B12C6 /* App/FollowUps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5714C136B1C144BA9986F7BD /* App/FollowUps.swift */; };
 		2D1AEA72759A4140970CC4B7 /* Features/InvitationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C84FA9213442ABAFDA59F7 /* Features/InvitationCard.swift */; };
 		4865B921A9244517869EF251 /* Core/Invitation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */; };
 		41387F9C3E2A416A8BE80730 /* Features/CategoryMove.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13615D80EFCC4152B5A62CA7 /* Features/CategoryMove.swift */; };
@@ -202,6 +203,7 @@
 		89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PlainTextEmail.swift; sourceTree = SOURCE_ROOT; };
 		B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/MailboxesView.swift; sourceTree = SOURCE_ROOT; };
 		A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/NextStep.swift; sourceTree = SOURCE_ROOT; };
+		5714C136B1C144BA9986F7BD /* App/FollowUps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/FollowUps.swift; sourceTree = SOURCE_ROOT; };
 		C2C84FA9213442ABAFDA59F7 /* Features/InvitationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/InvitationCard.swift; sourceTree = SOURCE_ROOT; };
 		0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Invitation.swift; sourceTree = SOURCE_ROOT; };
 		13615D80EFCC4152B5A62CA7 /* Features/CategoryMove.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CategoryMove.swift; sourceTree = SOURCE_ROOT; };
@@ -280,6 +282,7 @@
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
 				5CCE34B9D4A7493491FF8177 /* Features/AttachmentPickers.swift */,
 				A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */,
+				5714C136B1C144BA9986F7BD /* App/FollowUps.swift */,
 				C2C84FA9213442ABAFDA59F7 /* Features/InvitationCard.swift */,
 				0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */,
 				13615D80EFCC4152B5A62CA7 /* Features/CategoryMove.swift */,
@@ -478,6 +481,7 @@
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
 				5FC893C8B4AE471494AD5F7C /* Features/AttachmentPickers.swift in Sources */,
 				AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */,
+				0FC1AEC8A0924D76B68B12C6 /* App/FollowUps.swift in Sources */,
 				2D1AEA72759A4140970CC4B7 /* Features/InvitationCard.swift in Sources */,
 				4865B921A9244517869EF251 /* Core/Invitation.swift in Sources */,
 				41387F9C3E2A416A8BE80730 /* Features/CategoryMove.swift in Sources */,

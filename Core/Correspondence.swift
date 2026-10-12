@@ -557,6 +557,9 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     /// An answer to a calendar invitation (iTIP METHOD:REPLY), sent as the
     /// email's calendar part. Optional so older drafts decode.
     public var calendarReply: String?
+    /// "Remind me if no reply": how long after sending. Optional so older
+    /// drafts decode.
+    public var followUpAfter: TimeInterval?
     public var attachments: [PendingAttachment]
     /// The Gmail draft this was opened from (Mailboxes → Drafts), deleted
     /// once this is sent so the draft doesn't linger after it's gone out.

@@ -158,7 +158,12 @@ struct CorresShell: View {
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { Task { await threadActions.commitPendingRemoval() } }
             // Back in Corres: anything scheduled that's now due goes.
-            if phase == .active { Task { await ScheduledSends.shared.sendDue(store: store, outbox: outbox) } }
+            if phase == .active {
+                Task {
+                    await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
+                    await FollowUps.shared.check(store: store)
+                }
+            }
         }
         .task {
             let scheduled = ScheduledSends.shared

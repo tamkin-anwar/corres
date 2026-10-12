@@ -211,6 +211,16 @@ struct ComposeView: View {
                             }
                             Button { showingSendLaterPicker = true } label: { Label("Pick a Time\u{2026}", systemImage: "calendar") }
                         }
+                        // Sends now; brings it back to Needs You if nobody
+                        // answers by then.
+                        Section("Send, Remind Me If No Reply") {
+                            ForEach([("In 1 Day", 1.0), ("In 3 Days", 3.0), ("In 1 Week", 7.0)], id: \.1) { option in
+                                Button {
+                                    draft.followUpAfter = option.1 * 86_400
+                                    checkThenSend()
+                                } label: { Label(option.0, systemImage: "bell.badge") }
+                            }
+                        }
                     }
                     .accessibilityHint("Press and hold to send later")
                 }
@@ -220,13 +230,13 @@ struct ComposeView: View {
                 Button("Attach a File") { showingFileImporter = true }
                 Button("Attach a Photo") { showingPhotoPicker = true }
                 Button(pendingSendAt == nil ? "Send Anyway" : "Schedule Anyway") { checkThenSend(skippingAttachment: true) }
-                Button("Keep Editing", role: .cancel) { pendingSendAt = nil }
+                Button("Keep Editing", role: .cancel) { pendingSendAt = nil; draft.followUpAfter = nil }
             } message: {
                 Text("Your email mentions an attachment, but nothing is attached.")
             }
             .confirmationDialog("Send without a subject?", isPresented: $confirmingNoSubject, titleVisibility: .visible) {
                 Button(pendingSendAt == nil ? "Send" : "Schedule") { sendAndDismiss() }
-                Button("Add a Subject", role: .cancel) { pendingSendAt = nil; focusedField = .subject }
+                Button("Add a Subject", role: .cancel) { pendingSendAt = nil; draft.followUpAfter = nil; focusedField = .subject }
             }
             .sheet(isPresented: $showingSendLaterPicker) {
                 NavigationStack {
