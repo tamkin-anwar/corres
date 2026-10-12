@@ -15,7 +15,7 @@ struct CategoryMenuItems: View {
     let choose: (CategoryChoice) -> Void
 
     var body: some View {
-        let current = InboxCategory.of(thread, override: SenderLessons.category(for: thread))
+        let current = InboxCategory.of(thread, override: SenderLessons.category(for: thread), context: CategoryContextCache.latest)
         Menu {
             ForEach(InboxCategory.allCases.filter { $0 != current }, id: \.self) { category in
                 Button { choose(CategoryChoice(thread: thread, category: category)) } label: {

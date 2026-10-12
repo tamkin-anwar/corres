@@ -167,6 +167,22 @@ extension Correspondence {
 
 /// The Mail tab's quick filters. Everything stays in one chronological
 /// list; these only narrow it, and never hide mail anywhere else.
+/// Where each sender's mail mostly sits, worked out once per change to the
+/// mail, not once per row.
+@MainActor
+enum CategoryContextCache {
+    private static var revision: Int?
+    private(set) static var latest = InboxCategory.Context()
+
+    static func context(_ store: MailStore) -> InboxCategory.Context {
+        if revision != store.revision {
+            latest = InboxCategory.context(for: store.threads)
+            revision = store.revision
+        }
+        return latest
+    }
+}
+
 /// Primary first, as Gmail's tabs and Mail's categories open; Promotions,
 /// Social and Updates beside it; Everything one tap away. Where an email
 /// sits follows what you've taught Corres (`SenderLessons.category`).
@@ -175,23 +191,23 @@ enum MailFilter: String, CaseIterable, Identifiable {
          social = "Social", updates = "Updates", flagged = "Flagged", sent = "Sent"
     var id: String { rawValue }
 
-    @MainActor func includes(_ thread: Correspondence) -> Bool {
+    @MainActor func includes(_ thread: Correspondence, context: InboxCategory.Context? = nil) -> Bool {
         switch self {
         case .everything: true
         case .unread: thread.isUnread
         case .flagged: thread.isFlagged
         case .sent: thread.lastSentAt != nil
-        case .primary: category(thread) == .primary
-        case .promotions: category(thread) == .promotions
-        case .social: category(thread) == .social
-        case .updates: category(thread) == .updates
+        case .primary: category(thread, context) == .primary
+        case .promotions: category(thread, context) == .promotions
+        case .social: category(thread, context) == .social
+        case .updates: category(thread, context) == .updates
         }
     }
 
     var isCategory: Bool { [.primary, .promotions, .social, .updates].contains(self) }
 
-    @MainActor private func category(_ thread: Correspondence) -> InboxCategory {
-        InboxCategory.of(thread, override: SenderLessons.category(for: thread))
+    @MainActor private func category(_ thread: Correspondence, _ context: InboxCategory.Context?) -> InboxCategory {
+        InboxCategory.of(thread, override: SenderLessons.category(for: thread), context: context ?? CategoryContextCache.latest)
     }
 }
 
@@ -319,7 +335,8 @@ struct CorrespondenceList: View {
         // order confirmation in Updates is still found from Primary.
         let searching = !search.trimmingCharacters(in: .whitespaces).isEmpty
         guard !(searching && mailFilter.isCategory) else { return all }
-        let filtered = all.filter(mailFilter.includes)
+        let context = CategoryContextCache.context(store)
+        let filtered = all.filter { mailFilter.includes($0, context: context) }
         // Sent reads like a Sent mailbox: by when you sent, newest first.
         guard mailFilter == .sent else { return filtered }
         return filtered.sorted { ($0.lastSentAt ?? .distantPast) > ($1.lastSentAt ?? .distantPast) }
@@ -360,7 +377,7 @@ struct CorrespondenceList: View {
     /// The two-finger drag's starting row and what was selected before it.
     /// Where a selection drag started, what was selected then, and whether
     /// it selects (started on an empty circle) or unselects (on a checked one).
-    @State private var dragAnchor: (index: Int, before: Set<ThreadID>, selects: Bool)?
+    @State private var dragAnchor: (id: ThreadID, before: Set<ThreadID>, selects: Bool)?
     @State private var confirmingBulkTrash = false
     @State private var selected: Set<ThreadID> = []
 
@@ -499,15 +516,18 @@ struct CorrespondenceList: View {
         let order = rows.ids
         switch state {
         case .began:
-            guard let id = rowFrames.id(at: point, in: order), let index = order.firstIndex(of: id) else { return }
+            guard let id = rowFrames.id(at: point, in: order) else { return }
             if !isSelecting { isSelecting = true }
             let selects = !selected.contains(id)
-            dragAnchor = (index, selected, selects)
+            dragAnchor = (id, selected, selects)
             if selects { selected.insert(id) } else { selected.remove(id) }
         case .changed:
+            // By id, found again in the list as it is now: new mail or a
+            // re-sort mid-drag left a remembered position past the end of
+            // the list, and the range crashed.
             guard let anchor = dragAnchor, let id = rowFrames.id(at: point, in: order),
-                  let index = order.firstIndex(of: id) else { return }
-            let run = order[min(anchor.index, index)...max(anchor.index, index)]
+                  let index = order.firstIndex(of: id), let start = order.firstIndex(of: anchor.id) else { return }
+            let run = order[min(start, index)...max(start, index)]
             let next = anchor.selects ? anchor.before.union(run) : anchor.before.subtracting(run)
             if next != selected { selected = next }
         default:

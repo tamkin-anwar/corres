@@ -36,6 +36,7 @@ struct CorpusReport {
             _ = try await repository.upsert(exported, isInitialSync: false)
             _ = try await repository.applyLoadedContent(exported)
             let emails = try await repository.threads().sorted { $0.receivedAt > $1.receivedAt }
+            let categories = InboxCategory.context(for: emails)
             for email in emails {
                 index += 1
                 let whole = MailDigest.readableText(body: email.body, html: email.htmlBody)
@@ -51,7 +52,7 @@ struct CorpusReport {
                 let ask = kind == .personal ? MailDigest.buriedAsk(text: cleaned) ?? "" : ""
                 let step = MailDigest.nextStep(text: whole, html: email.htmlBody, kind: kind).map { "\($0.label) → \($0.host)" } ?? ""
                 let fields = ["\(index)", kind.rawValue, email.attention.rawValue, email.reason, glance, ask, step,
-                              email.senderEmail ?? email.sender, email.subject, InboxCategory.of(email).rawValue]
+                              email.senderEmail ?? email.sender, email.subject, InboxCategory.of(email, context: categories, now: email.receivedAt.addingTimeInterval(600)).rawValue]
                 rows.append(fields.map { $0.replacingOccurrences(of: "\t", with: " ").replacingOccurrences(of: "\n", with: " ") }
                     .joined(separator: "\t"))
             }
