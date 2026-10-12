@@ -531,6 +531,11 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     /// falls back to the first connected account (see `OutboxService`),
     /// matching pre-multi-account behavior for anyone with just one.
     public var fromAccount: String?
+    /// One of the account's Gmail send-as addresses ("hello@studio.com"),
+    /// with its display name, when sending as other than the account's own
+    /// address. Optional, like `cc`, so older queued sends decode.
+    public var fromAddress: String?
+    public var fromName: String?
     public var to: String
     /// Comma-separated, matching `to`'s own shape; empty/nil both mean "no
     /// Cc." `Optional`, not a plain `String = ""`, specifically so an

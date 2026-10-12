@@ -62,7 +62,7 @@ final class OutboxService {
         shelved = Shelved(draft: draft)
         Task {
             guard let account = resolveSendingAccount(draft: draft, thread: thread), auth.isConnected(account) else { return }
-            let raw = GmailMessageComposer.compose(from: account, to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
+            let raw = GmailMessageComposer.compose(from: fromHeader(draft, account: account), to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
                                                     body: draft.body, inReplyTo: thread?.messageIdHeader,
                                                     messageID: Self.rfc822MessageID(for: draft.id),
                                                     attachments: draft.attachments)
@@ -148,6 +148,15 @@ final class OutboxService {
     /// via Gmail when an account is connected (a new compose has no
     /// existing thread to join, so it's simply sent without a `threadId`
     /// or In-Reply-To/References; Gmail assigns it a fresh one).
+    /// Straight out, no Undo window, awaited to the end: a reply typed in a
+    /// notification, where iOS gives Corres only seconds in the background.
+    /// Still through the durable outbox, so a lost connection retries.
+    func sendNow(_ draft: Draft, replyingTo thread: Correspondence?) async {
+        let id = UUID()
+        try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .pending))
+        await commit(draft, thread: thread, id: id)
+    }
+
     func queueSend(_ draft: Draft, replyingTo thread: Correspondence?) {
         // Compose is modal, so only one send is ever mid-undo-window at a
         // time; if a second arrives anyway, the first has already had its
@@ -282,6 +291,16 @@ final class OutboxService {
     /// "From" picker (`draft.fromAccount`), falling back to the first
     /// connected account for anyone with just one, where there was never a
     /// picker to begin with.
+    /// Who it's from: the send-as address picked in Compose (or the
+    /// account's own), with its Gmail display name.
+    private func fromHeader(_ draft: Draft, account: String) -> String {
+        let directory = SendAsDirectory.shared
+        let address = draft.fromAddress ?? account
+        let name = draft.fromName ?? directory.addresses(for: account).first { $0.email == address.lowercased() }?.name ?? ""
+        guard !name.isEmpty else { return address }
+        return "\(name) <\(address)>"
+    }
+
     private func resolveSendingAccount(draft: Draft, thread: Correspondence?) -> String? {
         if let thread, thread.id.account != Self.sampleAccount { return thread.id.account }
         return draft.fromAccount ?? auth.primaryAccount?.email
@@ -361,7 +380,7 @@ final class OutboxService {
     /// one.
     private func sendViaGmail(draft: Draft, thread: Correspondence?, account: String, id: UUID) async throws -> ThreadID {
         guard auth.isConnected(account) else { throw GmailAPIClient.ClientError.notSignedIn }
-        let raw = GmailMessageComposer.compose(from: account, to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
+        let raw = GmailMessageComposer.compose(from: fromHeader(draft, account: account), to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
                                                 body: draft.body, inReplyTo: thread?.messageIdHeader,
                                                 messageID: Self.rfc822MessageID(for: id),
                                                 attachments: draft.attachments)

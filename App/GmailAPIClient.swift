@@ -555,6 +555,35 @@ struct GmailAPIClient {
         try await performChange(path: "threads/\(threadId)/untrash", body: nil, account: account)
     }
 
+    /// An address this account can send as (Gmail → Settings → Accounts →
+    /// Send mail as), verified.
+    struct SendAs: Codable, Hashable, Sendable {
+        let email: String
+        let name: String
+        let isDefault: Bool
+        let isPrimary: Bool
+    }
+
+    func sendAs(account: String) async throws -> [SendAs] {
+        let token = try await accessToken(for: account)
+        let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/settings/sendAs")!
+        let (data, response) = try await authorizedRequest(url: url, token: token)
+        try validate(response)
+        struct List: Decodable {
+            struct Item: Decodable {
+                let sendAsEmail: String
+                let displayName: String?
+                let isDefault: Bool?
+                let isPrimary: Bool?
+                let verificationStatus: String?
+            }
+            let sendAs: [Item]?
+        }
+        return (try JSONDecoder().decode(List.self, from: data).sendAs ?? [])
+            .filter { $0.isPrimary == true || $0.verificationStatus == nil || $0.verificationStatus == "accepted" }
+            .map { SendAs(email: $0.sendAsEmail.lowercased(), name: $0.displayName ?? "", isDefault: $0.isDefault ?? false, isPrimary: $0.isPrimary ?? false) }
+    }
+
     /// Saves a draft in Gmail's Drafts, so it's there on every device:
     /// creates one, or updates `existingID` in place. Returns the draft's id.
     func saveDraft(raw: String, threadId: String?, existingID: String?, account: String) async throws -> String {

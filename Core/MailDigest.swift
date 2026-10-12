@@ -253,6 +253,23 @@ public enum MailDigest {
     /// Every number, month, weekday, relative day, proper name, address and
     /// code a summary mentions must be in the email itself. Returns what
     /// isn't, empty when the summary is faithful.
+    /// Whether what you wrote says something is attached ("see attached",
+    /// "I've attached", "PFA"), so Send can ask before it goes without one,
+    /// as Gmail and Outlook do. Only your own words count: the quoted
+    /// email you're replying to often mentions its own attachments.
+    public static func mentionsAttachment(_ body: String) -> Bool {
+        var own = body
+        if let quote = own.range(of: #"\n\s*On .{4,200}wrote:\s*\n"#, options: .regularExpression) {
+            own = String(own[..<quote.lowerBound])
+        }
+        own = own.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix(">") }
+            .joined(separator: "\n")
+        return own.range(of: #"(?i)\b(attached|attaching|attachments?|enclosed|pfa|please find (the )?(attached|enclosed))\b"#,
+                         options: .regularExpression) != nil
+            && own.range(of: #"(?i)\b(no|without( an?)?|forgot (the|to)) attach"#, options: .regularExpression) == nil
+    }
+
     /// An alert confirming something you just did ("You allowed Corres
     /// access", "New sign-in on iPhone") whose only ask is conditional: act
     /// if it wasn't you. Worth seeing, never a to-do on its own; an

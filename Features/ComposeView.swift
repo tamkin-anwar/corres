@@ -101,8 +101,8 @@ struct ComposeView: View {
                     // (suggestions in and out, Bcc opening); never the
                     // message you're typing.
                     VStack(alignment: .leading, spacing: 0) {
-                    if draft.kind == .new, let accounts = auth?.accounts, accounts.count > 1 {
-                        fromPicker(accounts)
+                    if fromOptions.count > 1 {
+                        fromPicker
                         Divider().padding(.leading, CorresSpace.page)
                     }
                     recipientField(.to)
@@ -183,13 +183,20 @@ struct ComposeView: View {
                     .accessibilityLabel("Add Attachment")
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Send") {
-                        if draft.hasSubject { sendAndDismiss() } else { confirmingNoSubject = true }
-                    }
+                    Button("Send") { checkThenSend() }
                         .fontWeight(.semibold)
                         .prominentToolbarButton()
                         .disabled(!canSend)
                 }
+            }
+            // "See attached", and nothing attached: Gmail and Outlook ask too.
+            .confirmationDialog("Did you mean to attach something?", isPresented: $confirmingNoAttachment, titleVisibility: .visible) {
+                Button("Attach a File") { showingFileImporter = true }
+                Button("Attach a Photo") { showingPhotoPicker = true }
+                Button("Send Anyway") { checkThenSend(skippingAttachment: true) }
+                Button("Keep Editing", role: .cancel) {}
+            } message: {
+                Text("Your email mentions an attachment, but nothing is attached.")
             }
             .confirmationDialog("Send without a subject?", isPresented: $confirmingNoSubject, titleVisibility: .visible) {
                 Button("Send") { sendAndDismiss() }
@@ -219,6 +226,8 @@ struct ComposeView: View {
             // history read once if it hasn't been yet.
             .task {
                 let accounts = auth?.accounts.map(\.email) ?? []
+                await SendAsDirectory.shared.refresh(accounts: accounts)
+                chooseDefaultFrom()
                 people?.update(from: store.threads, accounts: accounts)
                 await people?.backfillIfNeeded(accounts: accounts)
             }
@@ -469,6 +478,20 @@ struct ComposeView: View {
         return !isReal || draft.recipientsLookValid
     }
 
+    @State private var confirmingNoAttachment = false
+
+    /// The checks before anything goes: a promised attachment, then a
+    /// subject. Each asks once and never blocks.
+    private func checkThenSend(skippingAttachment: Bool = false) {
+        if !skippingAttachment, draft.attachments.isEmpty, MailDigest.mentionsAttachment(draft.body) {
+            confirmingNoAttachment = true
+        } else if !draft.hasSubject {
+            confirmingNoSubject = true
+        } else {
+            sendAndDismiss()
+        }
+    }
+
     private func sendAndDismiss() {
         isFinished = true
         if outbox.shelved?.id == draft.id { outbox.clearShelf() }
@@ -522,7 +545,8 @@ struct ComposeView: View {
     private var alreadyAddressed: Set<String> {
         let entries = PeopleIndex.entries(in: draft.to) + PeopleIndex.entries(in: draft.cc ?? "") + PeopleIndex.entries(in: draft.bcc ?? "")
         let accounts = (auth?.accounts.map(\.email) ?? []).map { $0.lowercased() }
-        return Set(entries.compactMap { PeopleIndex.parse($0)?.email } + accounts)
+        // Your send-as addresses are you, not someone to write to.
+        return Set(entries.compactMap { PeopleIndex.parse($0)?.email } + accounts).union(SendAsDirectory.shared.allAddresses)
     }
 
     private func suggestions(for field: Field) -> [Person] {
@@ -947,23 +971,56 @@ struct ComposeView: View {
     /// Only shown for a brand-new compose with more than one account
     /// connected: a reply/forward already has its account fixed by which
     /// thread it belongs to, so there is nothing to choose there.
-    private func fromPicker(_ accounts: [GmailAccount]) -> some View {
+    /// Every address this can go from: each account's own and its Gmail
+    /// send-as addresses. A reply stays in its conversation's account, so
+    /// only that account's.
+    private var fromOptions: [(account: String, address: GmailAPIClient.SendAs)] {
+        let accounts = draft.kind == .new ? (auth?.accounts.map(\.email) ?? []) : [draft.threadID?.account ?? draft.fromAccount].compactMap { $0 }
+        return accounts.filter { $0 != "sample" }.flatMap { account in
+            SendAsDirectory.shared.addresses(for: account).map { (account, $0) }
+        }
+    }
+
+    private var fromSelection: String {
+        let account = draft.fromAccount ?? draft.threadID?.account ?? auth?.primaryAccount?.email ?? ""
+        return account + "|" + (draft.fromAddress ?? account).lowercased()
+    }
+
+    private var fromPicker: some View {
         HStack(spacing: 12) {
             Text("From").font(.subheadline).foregroundStyle(CorresPalette.secondary).frame(width: 64, alignment: .leading)
             Picker("From", selection: Binding(
-                get: { draft.fromAccount ?? accounts.first?.email ?? "" },
+                get: { fromSelection },
                 set: { newValue in
+                    guard let option = fromOptions.first(where: { $0.account + "|" + $0.address.email == newValue }) else { return }
                     let previous = draft.fromAccount
-                    draft.fromAccount = newValue
-                    swapSignature(from: previous, to: newValue)
+                    draft.fromAccount = option.account
+                    draft.fromAddress = option.address.isPrimary ? nil : option.address.email
+                    draft.fromName = option.address.name.isEmpty ? nil : option.address.name
+                    if previous != option.account { swapSignature(from: previous, to: option.account) }
                 }
             )) {
-                ForEach(accounts) { account in Text(account.email).tag(account.email) }
+                ForEach(fromOptions, id: \.address.email) { option in
+                    Text(option.address.email).tag(option.account + "|" + option.address.email)
+                }
             }
             .labelsHidden()
             Spacer()
         }
         .padding(.horizontal, CorresSpace.page).frame(minHeight: 44)
+    }
+
+    /// New mail from Gmail's default send-as address; a reply from the
+    /// address of yours it was sent to. Only when nothing's been picked.
+    private func chooseDefaultFrom() {
+        guard draft.fromAddress == nil else { return }
+        let directory = SendAsDirectory.shared
+        let account = draft.fromAccount ?? draft.threadID?.account ?? auth?.primaryAccount?.email ?? ""
+        let pick = sourceThread.flatMap { directory.address(for: account, answering: $0) }
+            ?? (draft.kind == .new ? directory.defaultAddress(for: account) : nil)
+        guard let pick, !pick.isPrimary else { return }
+        draft.fromAddress = pick.email
+        draft.fromName = pick.name.isEmpty ? nil : pick.name
     }
 
     private func field(title: String, text: Binding<String>, isEditable: Bool) -> some View {

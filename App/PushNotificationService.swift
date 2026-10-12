@@ -226,6 +226,7 @@ final class PushNotificationService {
     static let messageCategory = "corres.message"
     static let archiveAction = "corres.archive"
     static let markReadAction = "corres.markRead"
+    static let replyAction = "corres.reply"
 
     /// Registered every launch; iOS shows these under a long-press on any
     /// single-conversation notification, without opening Corres.
@@ -234,7 +235,12 @@ final class PushNotificationService {
                                            options: [], icon: UNNotificationActionIcon(systemImageName: "archivebox"))
         let markRead = UNNotificationAction(identifier: markReadAction, title: "Mark as Read",
                                             options: [], icon: UNNotificationActionIcon(systemImageName: "envelope.open"))
-        let category = UNNotificationCategory(identifier: messageCategory, actions: [archive, markRead],
+        // Mail's and Gmail's quick reply: typed in the notification, sent
+        // from it.
+        let reply = UNTextInputNotificationAction(identifier: replyAction, title: "Reply", options: [],
+                                                  icon: UNNotificationActionIcon(systemImageName: "arrowshape.turn.up.left"),
+                                                  textInputButtonTitle: "Send", textInputPlaceholder: "Reply")
+        let category = UNNotificationCategory(identifier: messageCategory, actions: [reply, archive, markRead],
                                               intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }

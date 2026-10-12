@@ -300,4 +300,14 @@ struct MailDigestTests {
         #expect(MailDigest.isConfirmationAlert("If you didn&#39;t make this change, reset your password"))
         #expect(!MailDigest.isConfirmationAlert("Your payment failed. Update your card by Friday."))
     }
+
+    @Test func noticesAMissingAttachment() {
+        #expect(MailDigest.mentionsAttachment("Hi Sara, see attached for the plan."))
+        #expect(MailDigest.mentionsAttachment("I've attached the invoice."))
+        #expect(MailDigest.mentionsAttachment("PFA the report"))
+        #expect(!MailDigest.mentionsAttachment("Sounds good, see you Friday."))
+        // Their attachment, quoted: not yours.
+        #expect(!MailDigest.mentionsAttachment("Thanks!\n\nOn Mon, Oct 12, 2026 at 9:00 AM, Sara <s@x.com> wrote:\n> I've attached the plan."))
+        #expect(!MailDigest.mentionsAttachment("Thanks!\n> see attached"))
+    }
 }

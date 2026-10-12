@@ -303,11 +303,12 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             }
             return
         }
-        await handleNotificationAction(response.actionIdentifier, account: account, providerID: providerID)
+        let typed = (response as? UNTextInputNotificationResponse)?.userText
+        await handleNotificationAction(response.actionIdentifier, account: account, providerID: providerID, typed: typed)
     }
 
     /// Awaited to completion so iOS keeps the app alive until Gmail has it.
-    private func handleNotificationAction(_ action: String, account: String, providerID: String) async {
+    private func handleNotificationAction(_ action: String, account: String, providerID: String, typed: String? = nil) async {
         if store.state != .loaded { await store.load() }
         guard let thread = store.threads.first(where: { $0.id == ThreadID(account: account, providerID: providerID) }) else { return }
         switch action {
@@ -315,6 +316,19 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             await threadActions.archive(thread)
             await threadActions.commitPendingRemoval()
         case PushNotificationService.markReadAction:
+            await threadActions.setUnread(false, for: thread)
+        case PushNotificationService.replyAction:
+            let text = (typed ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { return }
+            // As a reply written in Compose: your words, your signature,
+            // then the email quoted; from the address it was sent to.
+            var draft = thread.draft(kind: .reply)
+            draft.body = ComposeView.addingSignature(to: text + draft.body, account: account)
+            if let address = SendAsDirectory.shared.address(for: account, answering: thread), !address.isPrimary {
+                draft.fromAddress = address.email
+                draft.fromName = address.name.isEmpty ? nil : address.name
+            }
+            await outbox.sendNow(draft, replyingTo: thread)
             await threadActions.setUnread(false, for: thread)
         case UNNotificationDefaultActionIdentifier:
             // Tapping the notification opens that conversation.
