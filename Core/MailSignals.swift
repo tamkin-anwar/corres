@@ -117,6 +117,20 @@ public enum MailSignals {
                            options: .regularExpression) != nil
     }
 
+    /// A payment asked of you, with its amount, date or not: "payment in
+    /// the amount of $188.00 is required to complete your application".
+    /// Said up top. Not a receipt, an autopay notice, or a reminder that
+    /// thanks you if you've already paid.
+    public static func isPaymentRequest(_ text: String) -> Bool {
+        let lower = String(text.prefix(obligationOpening)).lowercased()
+        guard lower.range(of: #"\b(payment (request(ed)?|(in the amount of [^.]{1,40} )?(is )?required)|please (make|submit) (a |your )?payment|(amount|balance) (is )?(now )?due)\b"#,
+                          options: .regularExpression) != nil,
+              lower.range(of: MailDigest.amountPattern, options: .regularExpression) != nil
+        else { return false }
+        return lower.range(of: #"\b(if you('ve| have) already paid|thank(s| you) for your payment|payment (received|confirmed|successful)|autopay|automatic payment)\b"#,
+                           options: .regularExpression) == nil
+    }
+
     /// How much of an email's start states its obligation, in characters:
     /// the subject and the first few sentences.
     static let obligationOpening = 600

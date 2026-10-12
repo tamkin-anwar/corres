@@ -716,6 +716,8 @@ public enum InboxClassifier {
     public static let lessonReason = "You said mail like this needs no action."
     /// A payment failed, a card was declined, an account is on hold.
     public static let failureReason = "Something failed that only you can fix."
+    /// A payment asked of you, with its amount.
+    public static let paymentReason = "Asks you to pay."
     /// "You allowed Corres access…": nothing to do unless it wasn't you.
     public static let confirmationReason = "Confirms something you did. Nothing to do unless it wasn't you."
 
@@ -725,7 +727,7 @@ public enum InboxClassifier {
     public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason, staleReason,
                                                   readReason, questionReason, deadlineReason, obligationReason, copiedReason,
                                                   askedReason, repliedReason, startedReason, vipReason, fyiReason,
-                                                  lessonReason, confirmationReason, failureReason,
+                                                  lessonReason, confirmationReason, failureReason, paymentReason,
                                                   BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,
                                                   BulkKind.updates.reason, BulkKind.automated.reason]
 
@@ -831,6 +833,9 @@ public enum InboxClassifier {
             // A failed payment needs you whether or not it names a date.
             if kind.isPromotable, !stale, MailSignals.isFailure(text) {
                 return (.needsYou, failureReason)
+            }
+            if kind.isPromotable, !stale, MailSignals.isPaymentRequest(text) {
+                return (.needsYou, paymentReason)
             }
             return (.quiet, kind.reason)
         }

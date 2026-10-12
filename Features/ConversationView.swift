@@ -279,6 +279,7 @@ struct ConversationView: View {
         // the same behavior every real mail client already has.
         // Keyed on the latest message too, so a reply landing while the
         // conversation is open loads, is marked read and is summarized.
+        .categoryMoveDialog($categoryChoice, threadActions: threadActions)
         .task(id: "\(currentID.account)|\(currentID.providerID)|\(currentThread?.latestMessageID ?? "")|\(currentThread?.lastSentAt?.timeIntervalSince1970 ?? 0)") {
             guard let thread = store.thread(currentID) else { return }
             // Loading the body and marking read are independent network
@@ -367,6 +368,7 @@ struct ConversationView: View {
     @State private var calendarEvent: EventSuggestion?
     /// What the email asks you to do, with its link (`MailDigest.nextStep`).
     @State private var nextStep: NextStep?
+    @State private var categoryChoice: CategoryChoice?
     /// A receipt's or bill's status and figures, and what a long email asks
     /// of you, read from the email itself.
     @State private var glance: Glance?
@@ -580,6 +582,7 @@ struct ConversationView: View {
                             Task { await threadActions.setAttention(attention, for: thread) }
                         }
                     }
+                    CategoryMenuItems(thread: thread) { categoryChoice = $0 }
                 } label: {
                     Text("Change").font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.accent)
                         .frame(minHeight: 32)

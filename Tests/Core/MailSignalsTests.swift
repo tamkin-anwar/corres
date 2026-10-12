@@ -304,4 +304,11 @@ struct MailSignalsTests {
                                                       text: "Action Required: Your DashPass payment has failed")
         #expect(placed.attention == .needsYou && placed.reason == InboxClassifier.failureReason)
     }
+
+    @Test func paymentRequestsNeedYou() {
+        #expect(MailSignals.isPaymentRequest("Vehicle Registration Renewal Payment Request. Payment in the amount of $188.00 is required to complete the application."))
+        #expect(!MailSignals.isPaymentRequest("Rent is due on the first of each month. If you have already paid rent, thank you!"))
+        #expect(!MailSignals.isPaymentRequest("Thanks for your payment of $40.00."))
+        #expect(!MailSignals.isPaymentRequest("Your automatic payment of $80 is scheduled."))
+    }
 }

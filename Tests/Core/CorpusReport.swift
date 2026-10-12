@@ -16,7 +16,7 @@ struct CorpusReport {
         let folder = try #require(Self.folder)
         let files = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "json" }
-        var rows: [String] = ["#\tkind\tattention\treason\tglance\task\tnext step\tsender\tsubject"]
+        var rows: [String] = ["#\tkind\tattention\treason\tglance\task\tnext step\tsender\tsubject\tcategory"]
         var index = 0
         for file in files {
             // Sorted by the app's own storage and rules, as a sync would.
@@ -51,7 +51,7 @@ struct CorpusReport {
                 let ask = kind == .personal ? MailDigest.buriedAsk(text: cleaned) ?? "" : ""
                 let step = MailDigest.nextStep(text: whole, html: email.htmlBody, kind: kind).map { "\($0.label) → \($0.host)" } ?? ""
                 let fields = ["\(index)", kind.rawValue, email.attention.rawValue, email.reason, glance, ask, step,
-                              email.senderEmail ?? email.sender, email.subject]
+                              email.senderEmail ?? email.sender, email.subject, InboxCategory.of(email).rawValue]
                 rows.append(fields.map { $0.replacingOccurrences(of: "\t", with: " ").replacingOccurrences(of: "\n", with: " ") }
                     .joined(separator: "\t"))
             }

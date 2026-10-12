@@ -180,7 +180,10 @@ public enum MailDigest {
     public static func kind(subject: String, text: String, senderEmail: String?, isBulk: Bool,
                             looksAutomated: Bool, hasEvent: Bool, labelIds: [String] = []) -> Kind {
         let haystack = subject + "\n" + text.prefix(3_000)
-        if verificationCode(in: haystack) != nil { return .code }
+        // A code email is short and says so up top; a newsletter with
+        // "code:" somewhere in a story is not one.
+        let words = text.split(whereSeparator: \.isWhitespace).count
+        if words <= 300, verificationCode(in: subject + "\n" + text.prefix(400)) != nil { return .code }
         if labelIds.contains("CATEGORY_PROMOTIONS") { return .newsletter }
         // The subject says what an email is; its body only does near the
         // top of a short one. A newsletter's article about deliveries or

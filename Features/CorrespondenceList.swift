@@ -167,19 +167,29 @@ extension Correspondence {
 
 /// The Mail tab's quick filters. Everything stays in one chronological
 /// list; these only narrow it, and never hide mail anywhere else.
+/// Primary first, as Gmail's tabs and Mail's categories open; Promotions,
+/// Social and Updates beside it; Everything one tap away. Where an email
+/// sits follows what you've taught Corres (`SenderLessons.category`).
 enum MailFilter: String, CaseIterable, Identifiable {
-    case everything = "Everything", unread = "Unread", people = "People", flagged = "Flagged", sent = "Sent", updates = "Updates"
+    case primary = "Primary", everything = "Everything", unread = "Unread", promotions = "Promotions",
+         social = "Social", updates = "Updates", flagged = "Flagged", sent = "Sent"
     var id: String { rawValue }
 
-    func includes(_ thread: Correspondence) -> Bool {
+    @MainActor func includes(_ thread: Correspondence) -> Bool {
         switch self {
         case .everything: true
         case .unread: thread.isUnread
         case .flagged: thread.isFlagged
         case .sent: thread.lastSentAt != nil
-        case .people: InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == nil
-        case .updates: InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) != nil
+        case .primary: category(thread) == .primary
+        case .promotions: category(thread) == .promotions
+        case .social: category(thread) == .social
+        case .updates: category(thread) == .updates
         }
+    }
+
+    @MainActor private func category(_ thread: Correspondence) -> InboxCategory {
+        InboxCategory.of(thread, override: SenderLessons.category(for: thread))
     }
 }
 
@@ -205,7 +215,9 @@ struct CorrespondenceList: View {
     var isActive = true
     @State private var search = ""
     @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
-    @State private var mailFilter = MailFilter.everything
+    /// Remembered: Mail opens where you left it, Primary at first.
+    @AppStorage("corres.mailFilter") private var mailFilter = MailFilter.primary
+    @State private var categoryChoice: CategoryChoice?
     @State private var snoozeTarget: Correspondence?
     @Environment(\.conversationSelection) private var splitSelection
     /// Same four `UserDefaults` keys `PreferencesView`'s own pickers
@@ -442,6 +454,7 @@ struct CorrespondenceList: View {
             .sheet(item: $snoozeTarget) { thread in
                 SnoozeSheet(kind: thread.mailKind) { date in Task { await store.snooze(thread.id, until: date) } }
             }
+            .categoryMoveDialog($categoryChoice, threadActions: threadActions)
             .searchable(text: $search, prompt: "Search conversations")
             .refreshable {
                 _ = await sync?.syncAll(accounts: auth?.accounts.map(\.email) ?? [])
@@ -905,6 +918,7 @@ struct CorrespondenceList: View {
                 Task { await threadActions?.setAttention(attention, for: thread) }
             }
         }
+        CategoryMenuItems(thread: thread) { categoryChoice = $0 }
         Button {
             snoozeTarget = thread
         } label: {

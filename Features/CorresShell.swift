@@ -335,14 +335,20 @@ struct CorresShell: View {
             HStack(spacing: 10) {
                 Image(systemName: change.systemImage)
                     .foregroundStyle(CorresPalette.secondary)
+                // Long ones ("Mail from Teddy Baldassarre goes to
+                // Promotions") wrap inside the screen instead of running
+                // off it.
                 Text(change.title).font(.subheadline.weight(.medium))
+                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 Button("Undo") { threadActions.undoLastChange() }
                     .font(.subheadline.weight(.semibold))
                     .padding(.leading, 4)
+                    .fixedSize()
             }
-            .padding(.horizontal, 18).frame(minHeight: 44)
-            .corresGlass(in: Capsule())
-            .fixedSize()
+            .padding(.horizontal, 18).padding(.vertical, 6).frame(minHeight: 44)
+            .corresGlass(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .frame(maxWidth: 380)
+            .padding(.horizontal, CorresSpace.page)
             .offset(y: bannerDrag)
             .opacity(1 - min(abs(bannerDrag) / 120, 0.6))
             .gesture(DragGesture(minimumDistance: 8)

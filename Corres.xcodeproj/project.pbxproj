@@ -83,6 +83,8 @@
 		F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
 		F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */; };
 		AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */; };
+		41387F9C3E2A416A8BE80730 /* Features/CategoryMove.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13615D80EFCC4152B5A62CA7 /* Features/CategoryMove.swift */; };
+		ADEE2F4E079248CBAABDC92F /* Core/InboxCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B676FBAD72F4613B0B8D1E5 /* Core/InboxCategory.swift */; };
 		38DF5311B2B14316A70F4362 /* Features/RichBodyEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7008E5B4442D4DCF8D989BCC /* Features/RichBodyEditor.swift */; };
 		7DAEC24B32C646ADB1214C4E /* Core/RichBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69625E99E49B4770B184FC5C /* Core/RichBody.swift */; };
 		3AF320BEE8594EA484BF95FB /* Features/ScheduledView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7EB64324064A458EA7E9B2 /* Features/ScheduledView.swift */; };
@@ -198,6 +200,8 @@
 		89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PlainTextEmail.swift; sourceTree = SOURCE_ROOT; };
 		B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/MailboxesView.swift; sourceTree = SOURCE_ROOT; };
 		A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/NextStep.swift; sourceTree = SOURCE_ROOT; };
+		13615D80EFCC4152B5A62CA7 /* Features/CategoryMove.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CategoryMove.swift; sourceTree = SOURCE_ROOT; };
+		5B676FBAD72F4613B0B8D1E5 /* Core/InboxCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/InboxCategory.swift; sourceTree = SOURCE_ROOT; };
 		7008E5B4442D4DCF8D989BCC /* Features/RichBodyEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RichBodyEditor.swift; sourceTree = SOURCE_ROOT; };
 		69625E99E49B4770B184FC5C /* Core/RichBody.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/RichBody.swift; sourceTree = SOURCE_ROOT; };
 		AE7EB64324064A458EA7E9B2 /* Features/ScheduledView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ScheduledView.swift; sourceTree = SOURCE_ROOT; };
@@ -272,6 +276,8 @@
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
 				5CCE34B9D4A7493491FF8177 /* Features/AttachmentPickers.swift */,
 				A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */,
+				13615D80EFCC4152B5A62CA7 /* Features/CategoryMove.swift */,
+				5B676FBAD72F4613B0B8D1E5 /* Core/InboxCategory.swift */,
 				7008E5B4442D4DCF8D989BCC /* Features/RichBodyEditor.swift */,
 				69625E99E49B4770B184FC5C /* Core/RichBody.swift */,
 				AE7EB64324064A458EA7E9B2 /* Features/ScheduledView.swift */,
@@ -466,6 +472,8 @@
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
 				5FC893C8B4AE471494AD5F7C /* Features/AttachmentPickers.swift in Sources */,
 				AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */,
+				41387F9C3E2A416A8BE80730 /* Features/CategoryMove.swift in Sources */,
+				ADEE2F4E079248CBAABDC92F /* Core/InboxCategory.swift in Sources */,
 				38DF5311B2B14316A70F4362 /* Features/RichBodyEditor.swift in Sources */,
 				7DAEC24B32C646ADB1214C4E /* Core/RichBody.swift in Sources */,
 				3AF320BEE8594EA484BF95FB /* Features/ScheduledView.swift in Sources */,

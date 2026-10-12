@@ -137,6 +137,39 @@ final class ThreadActionService {
         }
     }
 
+    /// Into Primary, Promotions, Social or Updates: this email, this kind of
+    /// the sender's mail, or everything they send (Gmail and Mail only
+    /// offer the sender). The emails already here move now, and Gmail's
+    /// own category changes too, so Gmail learns it as well; later mail is
+    /// placed by the rule as it arrives. Said, with Undo.
+    func setCategory(_ category: InboxCategory, for thread: Correspondence, scope: SenderLessons.CategoryScope) async {
+        let (said, undoRule) = SenderLessons.setCategory(category, for: thread, scope: scope)
+        let moving: [Correspondence] = scope == .thisEmail ? [thread]
+            : Array(store.threads.filter { $0.senderEmail?.lowercased() == thread.senderEmail?.lowercased()
+                && SenderLessons.category(for: $0) == category }.prefix(50))
+        var before: [(ThreadID, [String])] = []
+        for item in moving where item.id.account != Self.sampleAccount {
+            let labels = item.labelIds
+            before.append((item.id, labels))
+            let next = labels.filter { !InboxCategory.gmailLabels.contains($0) } + [category.gmailLabel]
+            await store.setLabelIds(next, for: item.id)
+            try? await client.modifyThread(threadId: item.id.providerID, addLabelIds: [category.gmailLabel],
+                                           removeLabelIds: Array(InboxCategory.gmailLabels.subtracting([category.gmailLabel])),
+                                           account: item.id.account)
+        }
+        store.listsShouldRebuild()
+        offerUndo(said, systemImage: "tray.and.arrow.down") { [store, client] in
+            undoRule()
+            for (id, labels) in before {
+                await store.setLabelIds(labels, for: id)
+                let added = labels.filter(InboxCategory.gmailLabels.contains)
+                try? await client.modifyThread(threadId: id.providerID, addLabelIds: added,
+                                               removeLabelIds: Array(InboxCategory.gmailLabels.subtracting(added)), account: id.account)
+            }
+            store.listsShouldRebuild()
+        }
+    }
+
     /// Read/unread from a swipe, a menu or Select, with Undo. (Opening an
     /// email marks it read through `setUnread` directly, with no Undo.)
     func toggleUnread(_ isUnread: Bool, for threads: [Correspondence]) async {
