@@ -404,7 +404,7 @@ extension Correspondence {
     }
 
     private static func addresses(_ list: String) -> [String] {
-        list.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        PeopleIndex.entries(in: list)
     }
 
     /// Who a conversation went to, for showing a message you sent: "Maya
@@ -546,8 +546,9 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     /// "Maya <maya@x.com>"), so a typo is caught before the undo window,
     /// not reported as a failed send after it.
     public var recipientsLookValid: Bool {
-        let all = (to + "," + (cc ?? "")).split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        return !all.isEmpty && all.allSatisfy { $0.range(of: #"[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+"#, options: .regularExpression) != nil }
+        // Split where an address list splits: `"Doe, Jane" <jane@x.com>` is one.
+        let all = PeopleIndex.entries(in: to) + PeopleIndex.entries(in: cc ?? "")
+        return !all.isEmpty && all.allSatisfy { PeopleIndex.parse($0) != nil }
     }
 
     public var attachmentsSizeBytes: Int { attachments.reduce(0) { $0 + $1.data.count } }
@@ -879,8 +880,10 @@ public enum MailQuery {
             (!hideSnoozed || !item.isSnoozed(at: now)) &&
             (!hideUnscreened || !item.isScreenedOut) &&
             (attention == nil || item.attention == attention) &&
-            (query.isEmpty || [item.sender, item.organization, item.subject, item.excerpt]
-                .contains { $0.localizedStandardContains(query) })
+            // Addresses too, and who it went to: mail you sent someone is
+            // found by their name or address like mail they sent you.
+            (query.isEmpty || ([item.sender, item.organization, item.subject, item.excerpt, item.senderEmail ?? ""]
+                + item.toRecipients + item.ccRecipients).contains { $0.localizedStandardContains(query) })
         }
         return sortedNewestFirst(kept)
     }

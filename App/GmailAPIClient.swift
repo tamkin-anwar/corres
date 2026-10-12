@@ -215,13 +215,13 @@ struct GmailAPIClient {
     /// `isBodyLoaded == false`; see `fetchFull`.
     func fetchMetadata(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
         let query = "format=metadata" + Self.metadataHeaders.map { "&metadataHeaders=\($0)" }.joined()
-        return try await batchFetch(ids: ids, query: query, bodyLoaded: false, account: account)
+        return try await batchFetch(ids: ids, query: query, account: account) { map($0, account: account, bodyLoaded: false) }
     }
 
     /// The complete message (body, HTML, attachment list), for filling in
     /// threads synced metadata-first, or loading one the moment it's opened.
     func fetchFull(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
-        try await batchFetch(ids: ids, query: "format=full", bodyLoaded: true, account: account)
+        try await batchFetch(ids: ids, query: "format=full", account: account) { map($0, account: account, bodyLoaded: true) }
     }
 
     #if DEBUG
@@ -289,12 +289,12 @@ struct GmailAPIClient {
     /// the batch, and a whole-request network failure retries everything.
     /// A 404 part means the message was deleted in the meantime; it's
     /// dropped rather than retried forever.
-    private func batchFetch(ids: [String], query: String, bodyLoaded: Bool,
-                            account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
+    private func batchFetch<Item>(ids: [String], query: String, account: String,
+                                  transform: (GmailMessage) -> Item) async throws -> (items: [Item], failedIDs: [String]) {
         guard !ids.isEmpty else { return ([], []) }
         let token = try await accessToken(for: account)
         var pending = Array(ids.prefix(Self.batchSize))
-        var items: [Correspondence] = []
+        var items: [Item] = []
         for attempt in 1...Self.batchAttempts {
             guard !pending.isEmpty else { break }
             await GmailQuotaGate.shared.reserve(pending.count * GmailQuotaGate.unitsPerMessageFetch, for: account)
@@ -318,7 +318,7 @@ struct GmailAPIClient {
                         retry.append(id)
                         continue
                     }
-                    items.append(map(message, account: account, bodyLoaded: bodyLoaded))
+                    items.append(transform(message))
                 }
             } else {
                 retry = pending
@@ -352,6 +352,57 @@ struct GmailAPIClient {
         try validate(response)
         let list = try JSONDecoder().decode(MessageListResponse.self, from: data)
         return try await fetchMetadata(ids: list.messages?.map(\.id) ?? [], account: account).items
+    }
+
+    // MARK: - People
+
+    /// Who one message was from and to, as written ("Sara Wiltshire
+    /// <sara@…>"), names kept, for suggesting recipients. Synced mail keeps
+    /// only bare addresses.
+    struct Addressing: Sendable {
+        let from: String
+        let recipients: [String]
+        let date: Date
+    }
+
+    /// Your recent Sent mail's recipients: who you write to, the strongest
+    /// sign of who you'll write to next. Headers only, a few bytes each.
+    func sentAddressing(account: String, limit: Int) async throws -> [Addressing] {
+        let token = try await accessToken(for: account)
+        let ids = try await listMessageIDs(token: token, label: "SENT", limit: limit).ids.map(\.id)
+        return try await addressing(ids: ids, account: account)
+    }
+
+    /// Mail from or to someone matching `name` anywhere in the mailbox, for
+    /// finding a person who isn't in synced mail (archived years ago).
+    func addressing(matching name: String, account: String) async throws -> [Addressing] {
+        let token = try await accessToken(for: account)
+        let term = name.replacingOccurrences(of: "\"", with: "")
+        var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
+        components.queryItems = [
+            URLQueryItem(name: "q", value: "{from:\"\(term)\" to:\"\(term)\" cc:\"\(term)\"}"),
+            URLQueryItem(name: "maxResults", value: "15"),
+        ]
+        let (data, response) = try await authorizedRequest(url: components.url!, token: token)
+        try validate(response)
+        let list = try JSONDecoder().decode(MessageListResponse.self, from: data)
+        return try await addressing(ids: list.messages?.map(\.id) ?? [], account: account)
+    }
+
+    private func addressing(ids: [String], account: String) async throws -> [Addressing] {
+        let query = "format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc"
+        var found: [Addressing] = []
+        for chunk in ids.chunked(into: Self.batchSize) {
+            found += try await batchFetch(ids: chunk, query: query, account: account) { message in
+                let headers = Dictionary((message.payload?.headers ?? []).map { ($0.name.lowercased(), $0.value) },
+                                         uniquingKeysWith: { first, _ in first })
+                let date = message.internalDate.flatMap { Double($0) }.map { Date(timeIntervalSince1970: $0 / 1000) } ?? .now
+                return Addressing(from: headers["from"] ?? "",
+                                  recipients: PeopleIndex.entries(in: headers["to"] ?? "") + PeopleIndex.entries(in: headers["cc"] ?? ""),
+                                  date: date)
+            }.items
+        }
+        return found
     }
 
     /// Looks up a message this client itself composed, by the `Message-ID`

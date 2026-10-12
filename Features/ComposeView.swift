@@ -33,23 +33,11 @@ struct ComposeView: View {
     @State private var beforeRewrite: String?
     @Environment(MailIntelligence.self) private var intelligence
     @Environment(SnippetStore.self) private var snippets
+    @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
     @Environment(\.proUnlocked) private var proUnlocked
     @State private var dictation = DictationService()
 
     private enum Field { case to, cc, subject, body }
-
-    /// Someone typed into "To" can be filled in without spelling out a full
-    /// address, the same convenience Gmail and Apple Mail both offer.
-    /// Deliberately scoped to who has ever emailed *me* (real, already-known
-    /// senders in `store.threads`), not a real contacts-book: Corres has no
-    /// first-class record of who a person has sent *to* that never replied,
-    /// only of who has actually corresponded with them, which is the data
-    /// actually available and the case the request was made against.
-    private struct RecipientSuggestion: Identifiable, Hashable {
-        let name: String
-        let email: String
-        var id: String { email }
-    }
 
     init(store: MailStore, outbox: OutboxService, auth: GoogleAuthService? = nil, draft: Draft, sourceThread: Correspondence?) {
         self.store = store
@@ -76,14 +64,11 @@ struct ComposeView: View {
                         fromPicker(accounts)
                         Divider().padding(.leading, CorresSpace.page)
                     }
-                    field(title: "To", text: $draft.to, isEditable: true)
-                        .focused($focusedField, equals: .to)
-                    if !toSuggestions.isEmpty {
-                        recipientSuggestionsList
-                    }
+                    recipientField(.to)
+                    if focusedField == .to { recipientSuggestions(for: .to) }
                     Divider().padding(.leading, CorresSpace.page)
-                    field(title: "Cc", text: Binding(get: { draft.cc ?? "" }, set: { draft.cc = $0 }), isEditable: true)
-                        .focused($focusedField, equals: .cc)
+                    recipientField(.cc)
+                    if focusedField == .cc { recipientSuggestions(for: .cc) }
                     Divider().padding(.leading, CorresSpace.page)
                     field(title: "Subject", text: $draft.subject, isEditable: true)
                         .focused($focusedField, equals: .subject)
@@ -162,6 +147,17 @@ struct ComposeView: View {
                 Button("Keep Editing", role: .cancel) {}
             }
             .interactiveDismissDisabled(hasUnsavedChanges)
+            // Who to suggest: current as Compose opens, and your Sent
+            // history read once if it hasn't been yet.
+            .task {
+                let accounts = auth?.accounts.map(\.email) ?? []
+                people?.update(from: store.threads, accounts: accounts)
+                await people?.backfillIfNeeded(accounts: accounts)
+            }
+            // Leaving To or Cc turns a finished address into a chip.
+            .onChange(of: focusedField) { old, _ in
+                if old == .to || old == .cc, let old { commitTyping(in: old) }
+            }
             .onAppear {
                 focusedField = draft.to.isEmpty ? .to : .body
                 if draft.kind != .new { placeCursorAboveQuote() }
@@ -404,38 +400,60 @@ struct ComposeView: View {
         dismiss()
     }
 
-    /// Most recently corresponded with first, matching how Gmail's own
-    /// suggestions are recency-weighted, not alphabetical.
-    private var knownContacts: [RecipientSuggestion] {
-        var seenEmails: Set<String> = []
-        var contacts: [RecipientSuggestion] = []
-        for thread in store.threads.sorted(by: { $0.receivedAt > $1.receivedAt }) {
-            guard thread.id.account != "sample", let email = thread.senderEmail,
-                  !seenEmails.contains(email) else { continue }
-            seenEmails.insert(email)
-            contacts.append(RecipientSuggestion(name: thread.sender, email: email))
-        }
-        return contacts
+    // MARK: - Recipients
+
+    /// The text of the To or Cc field.
+    private func addressText(_ field: Field) -> String {
+        field == .cc ? (draft.cc ?? "") : draft.to
     }
 
-    private var toSuggestions: [RecipientSuggestion] {
-        let query = draft.to.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty, focusedField == .to else { return [] }
-        return Array(knownContacts.filter { $0.name.localizedCaseInsensitiveContains(query) || $0.email.localizedCaseInsensitiveContains(query) }.prefix(5))
+    /// The name being typed after the last chip.
+    private func typedName(in field: Field) -> String {
+        PeopleIndex.split(addressText(field)).typing.trimmingCharacters(in: .whitespaces)
     }
 
-    private var recipientSuggestionsList: some View {
+    private func setAddresses(_ field: Field, finished: [String], typing: String) {
+        let text = finished.map { $0 + ", " }.joined() + typing
+        if field == .cc { draft.cc = text } else { draft.to = text }
+    }
+
+    /// What's typed becomes a chip once it's a whole address.
+    private func commitTyping(in field: Field) {
+        let (finished, typing) = PeopleIndex.split(addressText(field))
+        let typed = typing.trimmingCharacters(in: .whitespaces)
+        guard PeopleIndex.parse(typed) != nil else { return }
+        setAddresses(field, finished: finished + [typed], typing: "")
+    }
+
+    /// Who's already addressed, and you, never offered again.
+    private var alreadyAddressed: Set<String> {
+        let entries = PeopleIndex.entries(in: draft.to) + PeopleIndex.entries(in: draft.cc ?? "")
+        let accounts = (auth?.accounts.map(\.email) ?? []).map { $0.lowercased() }
+        return Set(entries.compactMap { PeopleIndex.parse($0)?.email } + accounts)
+    }
+
+    private func suggestions(for field: Field) -> [Person] {
+        let typed = typedName(in: field)
+        guard !typed.isEmpty else { return [] }
+        return people?.suggestions(for: typed, excluding: alreadyAddressed, limit: 5) ?? []
+    }
+
+    /// Whoever you're typing, from your own mail: people you write to
+    /// first. Picking one completes the name you're on and leaves the field
+    /// ready for the next, as Mail and Gmail do.
+    @ViewBuilder
+    private func recipientSuggestions(for field: Field) -> some View {
+        let typed = typedName(in: field)
+        let found = suggestions(for: field)
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(toSuggestions) { suggestion in
-                Button {
-                    draft.to = suggestion.email
-                    focusedField = .subject
-                } label: {
+            ForEach(found) { person in
+                Button { choose(person, in: field) } label: {
                     HStack(spacing: 10) {
-                        CorrespondentAvatar(initials: Self.initials(for: suggestion.name), size: CGSize(width: 34, height: 34))
+                        CorrespondentAvatar(initials: Self.initials(for: person.displayName), size: CGSize(width: 34, height: 34))
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(suggestion.name).font(.subheadline.weight(.medium)).foregroundStyle(CorresPalette.ink)
-                            Text(suggestion.email).font(.caption).foregroundStyle(CorresPalette.secondary)
+                            Text(person.displayName).font(.subheadline.weight(.medium)).foregroundStyle(CorresPalette.ink)
+                                .lineLimit(1)
+                            Text(person.email).font(.caption).foregroundStyle(CorresPalette.secondary).lineLimit(1)
                         }
                         Spacer(minLength: 8)
                     }
@@ -443,12 +461,124 @@ struct ComposeView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                if suggestion.id != toSuggestions.last?.id {
+                .contextMenu {
+                    Button { people?.hide(person.email) } label: {
+                        Label("Don\u{2019}t Suggest \(person.displayName)", systemImage: "person.crop.circle.badge.minus")
+                    }
+                }
+                .accessibilityLabel("\(person.displayName), \(person.email)")
+                .accessibilityHint("Adds them to \(field == .cc ? "Cc" : "To")")
+                .accessibilityAction(named: "Don\u{2019}t Suggest") { people?.hide(person.email) }
+                if person.id != found.last?.id {
                     Divider().padding(.leading, CorresSpace.page + 44)
                 }
             }
+            // Someone Corres doesn't know yet may be in Contacts; asked
+            // only then, once.
+            if found.isEmpty, typed.count >= 2, people?.canAskForContacts == true, people?.isLookingUp != true {
+                Button {
+                    Task { await people?.includeContacts() }
+                } label: {
+                    Label("Include People from Your Contacts", systemImage: "person.crop.circle.badge.plus")
+                        .font(.subheadline).foregroundStyle(CorresPalette.accent)
+                        .padding(.horizontal, CorresSpace.page).padding(.vertical, 10)
+                }
+                .buttonStyle(.plain)
+            }
+            if found.isEmpty, people?.isLookingUp == true, typed.count >= 3 {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.mini)
+                    Text("Looking in your mail for \u{201C}\(typed)\u{201D}…").font(.caption).foregroundStyle(CorresPalette.secondary)
+                }
+                .padding(.horizontal, CorresSpace.page).padding(.vertical, 10)
+            }
         }
-        .background(CorresPalette.surface)
+        .background(found.isEmpty ? Color.clear : CorresPalette.surface)
+        // Someone not in synced mail (archived long ago): Gmail is asked,
+        // once typing pauses.
+        .task(id: typed) {
+            guard typed.count >= 3, found.isEmpty, let people else { return }
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            await people.lookUp(typed, accounts: auth?.accounts.map(\.email) ?? [])
+        }
+    }
+
+    private func choose(_ person: Person, in field: Field) {
+        setAddresses(field, finished: PeopleIndex.split(addressText(field)).finished + [person.address], typing: "")
+    }
+
+    /// To or Cc as Mail shows them: each recipient a chip (tap for its
+    /// address or to remove it), then room to type the next. A comma, a
+    /// space after a whole address, Return, or leaving the field finishes
+    /// one; pasting a list makes a chip of each.
+    private func recipientField(_ field: Field) -> some View {
+        let (finished, _) = PeopleIndex.split(addressText(field))
+        let typing = Binding<String>(
+            get: { PeopleIndex.split(addressText(field)).typing },
+            set: { value in
+                let current = PeopleIndex.split(addressText(field)).finished
+                let trimmed = value.trimmingCharacters(in: .whitespaces)
+                if value.contains(where: { $0 == "," || $0 == ";" }) {
+                    let parts = PeopleIndex.split(value)
+                    setAddresses(field, finished: current + parts.finished, typing: parts.typing)
+                } else if value.hasSuffix(" "), PeopleIndex.parse(trimmed) != nil, !trimmed.contains(" ") {
+                    setAddresses(field, finished: current + [trimmed], typing: "")
+                } else {
+                    setAddresses(field, finished: current, typing: value)
+                }
+            })
+        return HStack(alignment: .top, spacing: 12) {
+            Text(field == .cc ? "Cc" : "To").font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                .frame(width: 64, alignment: .leading).frame(minHeight: 44)
+            FlowLayout(spacing: 6, lineSpacing: 6) {
+                ForEach(Array(finished.enumerated()), id: \.offset) { index, entry in
+                    recipientChip(entry, at: index, in: field)
+                }
+                TextField(finished.isEmpty ? (field == .cc ? "Optional" : "Recipient") : "", text: typing)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.emailAddress)
+                    .autocorrectionDisabled()
+                    .textContentType(.emailAddress)
+                    .submitLabel(.next)
+                    .onSubmit {
+                        commitTyping(in: field)
+                        focusedField = field == .to ? .subject : .subject
+                    }
+                    .focused($focusedField, equals: field)
+                    .frame(minWidth: 90, minHeight: 32)
+            }
+            .padding(.vertical, 6)
+        }
+        .padding(.horizontal, CorresSpace.page).frame(minHeight: 44)
+        .contentShape(Rectangle())
+        .onTapGesture { focusedField = field }
+    }
+
+    private func recipientChip(_ entry: String, at index: Int, in field: Field) -> some View {
+        let parsed = PeopleIndex.parse(entry)
+        let label = parsed.map { $0.name.isEmpty ? (people?.suggestions(for: $0.email, limit: 1).first { $0.email == parsed?.email }?.displayName ?? $0.email) : $0.name } ?? entry
+        return Menu {
+            if let email = parsed?.email {
+                Section(email) {
+                    Button { UIPasteboard.general.string = email } label: { Label("Copy Address", systemImage: "doc.on.doc") }
+                }
+            }
+            Button(role: .destructive) {
+                var finished = PeopleIndex.split(addressText(field)).finished
+                if finished.indices.contains(index) { finished.remove(at: index) }
+                setAddresses(field, finished: finished, typing: PeopleIndex.split(addressText(field)).typing)
+            } label: { Label("Remove", systemImage: "minus.circle") }
+        } label: {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(parsed == nil ? CorresPalette.alert : CorresPalette.accent)
+                .lineLimit(1)
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background((parsed == nil ? CorresPalette.alert : CorresPalette.accent).opacity(0.12), in: Capsule())
+        }
+        .accessibilityLabel(parsed == nil ? "\(entry), not a valid address" : "\(label), \(parsed?.email ?? "")")
+        .accessibilityHint("Shows options for this recipient")
     }
 
     private static func initials(for name: String) -> String {
@@ -661,3 +791,59 @@ private struct AttachmentThumbnail: View {
         return "doc"
     }
 }
+
+/// Lays chips out in lines, wrapping like text; the last view (the text
+/// field) takes what's left of its line.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 6
+    var lineSpacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        let rows = arrange(subviews, width: width)
+        let height = rows.map(\.height).reduce(0, +) + lineSpacing * CGFloat(max(rows.count - 1, 0))
+        return CGSize(width: proposal.width ?? rows.map(\.width).max() ?? 0, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in arrange(subviews, width: bounds.width) {
+            var x = bounds.minX
+            for item in row.items {
+                let size = item.size
+                subviews[item.index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2),
+                                           proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += row.height + lineSpacing
+        }
+    }
+
+    private struct Row { var items: [(index: Int, size: CGSize)] = []; var width: CGFloat = 0; var height: CGFloat = 0 }
+
+    private func arrange(_ subviews: Subviews, width: CGFloat) -> [Row] {
+        var rows: [Row] = [Row()]
+        for index in subviews.indices {
+            let isLast = index == subviews.indices.last
+            var size = subviews[index].sizeThatFits(.unspecified)
+            size.width = min(size.width, width)
+            let used = rows[rows.count - 1].width + (rows[rows.count - 1].items.isEmpty ? 0 : spacing)
+            if isLast {
+                // The field fills the rest of the line, or a line of its own.
+                let rest = width - used
+                if rest < size.width, !rows[rows.count - 1].items.isEmpty { rows.append(Row()) }
+                let start = rows[rows.count - 1].width + (rows[rows.count - 1].items.isEmpty ? 0 : spacing)
+                size.width = max(size.width, width - start)
+            } else if used + size.width > width, !rows[rows.count - 1].items.isEmpty {
+                rows.append(Row())
+            }
+            var row = rows[rows.count - 1]
+            row.width += (row.items.isEmpty ? 0 : spacing) + size.width
+            row.height = max(row.height, size.height)
+            row.items.append((index, size))
+            rows[rows.count - 1] = row
+        }
+        return rows
+    }
+}
+

@@ -204,6 +204,7 @@ struct CorrespondenceList: View {
     /// all stay alive), and catches up the moment it's shown again.
     var isActive = true
     @State private var search = ""
+    @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
     @State private var mailFilter = MailFilter.everything
     @State private var snoozeTarget: Correspondence?
     @Environment(\.conversationSelection) private var splitSelection
@@ -604,10 +605,43 @@ struct CorrespondenceList: View {
                 }
             }
             .padding(.horizontal, CorresSpace.page)
+            peopleMatches
             if destination == .mail { filterBar }
         }
         .padding(.bottom, 6)
         .readableWidth()
+    }
+
+    /// Typing a name in search offers the person, as Spark does: tap and
+    /// you see everything with them, to and from, the whole mailbox
+    /// (Gmail is searched for their address).
+    @ViewBuilder
+    private var peopleMatches: some View {
+        let typed = search.trimmingCharacters(in: .whitespaces)
+        let found = typed.count >= 2 && !typed.contains("@") ? (people?.suggestions(for: typed, limit: 3) ?? []) : []
+        if !found.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(found) { person in
+                    Button { search = person.email } label: {
+                        HStack(spacing: 10) {
+                            CorrespondentAvatar(initials: person.displayName.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined(),
+                                                size: CGSize(width: 32, height: 32))
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(person.displayName).font(.subheadline.weight(.medium)).foregroundStyle(CorresPalette.ink).lineLimit(1)
+                                Text(person.email).font(.caption).foregroundStyle(CorresPalette.secondary).lineLimit(1)
+                            }
+                            Spacer(minLength: 8)
+                            Text("All mail").font(.caption.weight(.medium)).foregroundStyle(CorresPalette.accent)
+                        }
+                        .padding(.horizontal, CorresSpace.page).padding(.vertical, 7)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(person.displayName), \(person.email)")
+                    .accessibilityHint("Shows all mail with them")
+                }
+            }
+        }
     }
 
     private var summaryLine: String {

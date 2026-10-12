@@ -23,10 +23,10 @@ enum GmailMessageComposer {
                         messageID: String, attachments: [PendingAttachment] = []) -> String {
         var headers = [
             "From: \(from)",
-            "To: \(to)",
+            "To: \(addressList(to))",
         ]
         if let cc, !cc.trimmingCharacters(in: .whitespaces).isEmpty {
-            headers.append("Cc: \(cc)")
+            headers.append("Cc: \(addressList(cc))")
         }
         headers.append("Subject: \(encodedSubject(subject))")
         headers.append("Message-ID: <\(messageID)>")
@@ -60,6 +60,22 @@ enum GmailMessageComposer {
         parts += "--\(boundary)--"
         let message = headers.joined(separator: "\r\n") + "\r\n\r\n" + parts
         return base64URLEncode(Data(message.utf8))
+    }
+
+    /// To and Cc as headers: "Sara Wiltshire <sara@…>" as written; a name
+    /// with a comma or other special character quoted, and one in any other
+    /// script ("Zoë", "রিদিতা") RFC 2047-encoded, so it arrives as typed.
+    static func addressList(_ field: String) -> String {
+        PeopleIndex.entries(in: field).map { entry in
+            guard let (name, email) = PeopleIndex.parse(entry) else { return entry }
+            guard !name.isEmpty else { return email }
+            if !name.allSatisfy(\.isASCII) { return "=?UTF-8?B?\(Data(name.utf8).base64EncodedString())?= <\(email)>" }
+            if name.rangeOfCharacter(from: CharacterSet(charactersIn: "()<>[]:;@\\,.\"")) != nil {
+                let escaped = name.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+                return "\"\(escaped)\" <\(email)>"
+            }
+            return "\(name) <\(email)>"
+        }.joined(separator: ", ")
     }
 
     /// A filename as a header value: plain when it's ASCII (quotes and

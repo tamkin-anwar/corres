@@ -465,9 +465,19 @@ private struct ComposingSettingsView: View {
     @AppStorage(CorresSettings.undoSendKey) private var undoSeconds = 5
     @AppStorage(CorresSettings.defaultReplyKey) private var defaultReply = CorresSettings.DefaultReply.reply.rawValue
     @AppStorage(CorresSettings.defaultFromKey) private var defaultFrom = ""
+    @AppStorage(CorresSettings.suggestContactsKey) private var suggestContacts = true
+    @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
 
     var body: some View {
         Form {
+            Section {
+                Toggle("Suggest from Contacts", isOn: $suggestContacts)
+                    .onChange(of: suggestContacts) { Task { await people?.contactsSettingChanged() } }
+            } header: {
+                Text("Addressing")
+            } footer: {
+                Text("As you type a name in To, Cc or search, Corres suggests people you email, the ones you write to most first, and people in your Contacts once you allow it. All on this iPhone. Press and hold a suggestion to stop seeing it.")
+            }
             if auth.accounts.isEmpty {
                 Section {
                     SignatureEditor(account: "sample")

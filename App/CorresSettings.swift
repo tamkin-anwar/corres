@@ -61,6 +61,12 @@ enum CorresSettings {
         defaults.string(forKey: openLinksKey).flatMap(OpenLinks.init) ?? .inCorres
     }
 
+    // MARK: People
+
+    /// Settings → Composing → Suggest from Contacts (once allowed).
+    static let suggestContactsKey = "corres.suggestContacts"
+    static var suggestContacts: Bool { defaults.object(forKey: suggestContactsKey) as? Bool ?? true }
+
     // MARK: Summaries
 
     /// Settings → Reading → Summarize emails.

@@ -28,6 +28,7 @@ struct CorresApp: App {
                 .environment(appDelegate.router)
                 .environment(appDelegate.askService)
                 .environment(appDelegate.entitlements)
+                .environment(appDelegate.people)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
                 // Set on the window itself, so everything already open (the
                 // Settings sheet you're changing it from, Compose, Welcome)
@@ -49,6 +50,10 @@ struct CorresApp: App {
                     // the first tap.
                     try? await Task.sleep(for: .seconds(1.5))
                     await WKWebViewPool.shared.prewarm()
+                    // People to suggest, ready before the first Compose.
+                    let accounts = appDelegate.auth.accounts.map(\.email)
+                    appDelegate.people.update(from: appDelegate.store.threads, accounts: accounts)
+                    await appDelegate.people.backfillIfNeeded(accounts: accounts)
                 }
                 // One place covers every foreground sync path (pull-to-refresh
                 // on Brief or a list, connecting an account in Preferences),
@@ -56,6 +61,13 @@ struct CorresApp: App {
                 // by the refresh itself, so the pull-to-refresh spinner ends
                 // when mail arrives, not when the on-device model finishes.
                 .onChange(of: appDelegate.sync.lastCompletedSync) {
+                    // Who to suggest in To, Cc and search: synced mail now,
+                    // and each account's Sent history once.
+                    Task {
+                        let accounts = appDelegate.auth.accounts.map(\.email)
+                        appDelegate.people.update(from: appDelegate.store.threads, accounts: accounts)
+                        await appDelegate.people.backfillIfNeeded(accounts: accounts)
+                    }
                     Task {
                         await appDelegate.store.refresh()
                         await appDelegate.semanticTriageService.triageIfNeeded(store: appDelegate.store)
@@ -89,6 +101,10 @@ struct CorresApp: App {
                 // work on each swipe.
                 .onChange(of: appDelegate.store.revision) {
                     WidgetBridge.scheduleUpdate(from: appDelegate.store.threads)
+                }
+                // Removing the last account forgets who you correspond with.
+                .onChange(of: appDelegate.auth.accounts.isEmpty) { _, isEmpty in
+                    if isEmpty { appDelegate.people.reset() }
                 }
                 .onChange(of: appDelegate.entitlements.isPro) { _, isPro in
                     WidgetBridge.isLocked = !isPro
