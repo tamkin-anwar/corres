@@ -74,6 +74,12 @@ struct ComposeView: View {
                 ?? auth?.primaryAccount?.email
         }
         initial.body = Self.addingSignature(to: initial.body, account: initial.fromAccount ?? initial.threadID?.account ?? "sample")
+        // A reply, Reply All or a saved draft arrives with its people
+        // already written in: chips from the start, as in Mail, not text
+        // that looks half-typed.
+        initial.to = Self.chipped(initial.to)
+        initial.cc = initial.cc.map(Self.chipped)
+        initial.bcc = initial.bcc.map(Self.chipped)
         self._draft = State(initialValue: initial)
         self.initialDraft = initial
     }
@@ -456,6 +462,15 @@ struct ComposeView: View {
         case .bcc: draft.bcc = text
         default: draft.to = text
         }
+    }
+
+    /// "a@x.com, Sara <s@y.com>" as chips: a trailing finished address
+    /// counts as one.
+    private static func chipped(_ field: String) -> String {
+        let (finished, typing) = PeopleIndex.split(field)
+        let typed = typing.trimmingCharacters(in: .whitespaces)
+        guard PeopleIndex.parse(typed) != nil else { return field }
+        return (finished + [typed]).map { $0 + ", " }.joined()
     }
 
     /// What's typed becomes a chip once it's a whole address.
