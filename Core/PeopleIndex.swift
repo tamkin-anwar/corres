@@ -14,8 +14,16 @@ public struct Person: Codable, Hashable, Sendable, Identifiable {
     public var lastContact: Date
     public var id: String { email }
 
-    /// "Sara Wiltshire", or "Sara Wiltshire" from sara.wiltshire@….
-    public var displayName: String { name.isEmpty ? Correspondence.name(fromAddress: email) : name }
+    /// "Sara Wiltshire", or "Sara Wiltshire" from sara.wiltshire@…; a
+    /// directory's "Hoare, Olivia" reads "Olivia Hoare".
+    public var displayName: String {
+        guard !name.isEmpty else { return Correspondence.name(fromAddress: email) }
+        let parts = name.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        if parts.count == 2, !parts[0].isEmpty, !parts[1].isEmpty, !parts[0].contains(" ") {
+            return parts[1] + " " + parts[0]
+        }
+        return name
+    }
 
     /// "Sara Wiltshire <sara.wiltshire@example.com>", for a To field.
     public var address: String {
@@ -175,6 +183,26 @@ public struct PeopleIndex: Codable, Sendable, Equatable {
     }
 
     // MARK: Suggesting
+
+    /// Who to offer before anything is typed, as Gmail does: the people
+    /// you're in touch with now. Someone you write to counts for far more
+    /// than someone who writes to you, and this month far more than last
+    /// year; a sender who has never heard back from you only after a few
+    /// emails. Names read one way ("Hoare, Olivia" is "Olivia Hoare"), but
+    /// two addresses are never merged by name: two people can share one,
+    /// so Compose tells same-named people apart by their address.
+    public func top(limit: Int = 6, excluding: Set<String> = [], favored: Set<String> = [], now: Date = .now) -> [Person] {
+        let ranked = people.values
+            .filter { !excluding.contains($0.email) && ($0.sent > 0 || $0.received >= 3) && $0.lastContact > .distantPast }
+            .map { person -> (Person, Double) in
+                let days = max(0, now.timeIntervalSince(person.lastContact) / 86_400)
+                let score = log2(1 + Double(person.sent)) * 2.5 + log2(1 + Double(person.received)) * 0.5
+                    + 5 * exp(-days / 21) + (favored.contains(person.email) ? 1 : 0)
+                return (person, score)
+            }
+            .sorted { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0.email < $1.0.email }
+        return ranked.prefix(limit).map(\.0)
+    }
 
     /// The people `query` most likely means, best first: every word typed
     /// starts a word of their name or address ("sar", "sara wil",

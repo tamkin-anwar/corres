@@ -68,4 +68,26 @@ struct PeopleIndexTests {
         #expect(PeopleIndex.split(#""Doe, Jane" <j@x.com>, b@y.com, mi"#) == ([#""Doe, Jane" <j@x.com>"#, "b@y.com"], "mi"))
         #expect(PeopleIndex.split("a@x.com, sara ") == (["a@x.com"], "sara "))
     }
+
+    /// Before typing: who you're in touch with now, each once.
+    @Test func topPeopleBeforeTyping() {
+        var index = PeopleIndex()
+        for day in [1.0, 3, 6] { index.recordSent(to: "Hoare, Olivia <olivia.hoare@work.co.uk>", at: daysAgo(day)) }
+        index.recordSent(to: "Olivia Hoare <olivia@gmail.com>", at: daysAgo(40))
+        index.recordSent(to: "Ridu <ridita.r@gmail.com>", at: daysAgo(2))
+        index.recordSent(to: "Old Colleague <old@x.com>", at: daysAgo(400))
+        // Writes to you a lot, never heard back: still a person in touch.
+        for day in [1.0, 2, 4] { index.recordReceived(from: "Ash", email: "ash@x.com", at: daysAgo(day), isAutomated: false) }
+        // Wrote once: not yet.
+        index.recordReceived(from: "Stranger", email: "s@x.com", at: daysAgo(1), isAutomated: false)
+        let top = index.top(now: now)
+        #expect(top.first?.displayName == "Olivia Hoare")
+        // Two addresses, maybe two people: both offered, never merged.
+        #expect(top.filter { $0.displayName == "Olivia Hoare" }.count == 2)
+        #expect(top.map(\.email).contains("ridita.r@gmail.com"))
+        #expect(top.map(\.email).contains("ash@x.com"))
+        #expect(!top.map(\.email).contains("s@x.com"))
+        #expect(top.last?.email == "old@x.com")
+        #expect(!index.top(excluding: ["ridita.r@gmail.com"], now: now).map(\.email).contains("ridita.r@gmail.com"))
+    }
 }

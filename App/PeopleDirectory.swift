@@ -63,6 +63,11 @@ final class PeopleDirectory {
                           favored: Set(contacts.people.keys), limit: limit)
     }
 
+    /// Before anything is typed: who you're in touch with now.
+    func top(excluding: Set<String> = [], limit: Int = 6) -> [Person] {
+        index.top(limit: limit, excluding: excluding.union(hidden), favored: Set(contacts.people.keys))
+    }
+
     /// "Don't Suggest": never offered again (until all accounts are removed).
     func hide(_ email: String) {
         hidden.insert(email.lowercased())

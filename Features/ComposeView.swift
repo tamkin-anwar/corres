@@ -445,6 +445,7 @@ struct ComposeView: View {
     private func recipientSuggestions(for field: Field) -> some View {
         let typed = typedName(in: field)
         let found = suggestions(for: field)
+        if typed.isEmpty { suggestedPeople(for: field) }
         VStack(alignment: .leading, spacing: 0) {
             ForEach(found) { person in
                 Button { choose(person, in: field) } label: {
@@ -501,6 +502,54 @@ struct ComposeView: View {
             try? await Task.sleep(for: .milliseconds(400))
             guard !Task.isCancelled else { return }
             await people.lookUp(typed, accounts: auth?.accounts.map(\.email) ?? [])
+        }
+    }
+
+    /// Before you type, as Gmail does it: the people you're in touch with
+    /// now, one tap each. Gone the moment you start typing.
+    @ViewBuilder
+    private func suggestedPeople(for field: Field) -> some View {
+        let top = people?.top(excluding: alreadyAddressed) ?? []
+        // Same name, different address: maybe different people. Say which.
+        let names = top.map(\.displayName)
+        if !top.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Suggested").font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.secondary)
+                    .padding(.horizontal, CorresSpace.page)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 14) {
+                        ForEach(top) { person in
+                            Button { choose(person, in: field) } label: {
+                                VStack(spacing: 6) {
+                                    CorrespondentAvatar(initials: Self.initials(for: person.displayName), size: CGSize(width: 52, height: 52))
+                                    Text(person.displayName)
+                                        .font(.caption).foregroundStyle(CorresPalette.ink)
+                                        .multilineTextAlignment(.center).lineLimit(2)
+                                        .frame(width: 72)
+                                    if names.filter({ $0 == person.displayName }).count > 1 {
+                                        Text(person.email.split(separator: "@").last.map(String.init) ?? person.email)
+                                            .font(.caption2).foregroundStyle(CorresPalette.secondary)
+                                            .lineLimit(1).frame(width: 72)
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Text(person.email)
+                                Button { people?.hide(person.email) } label: {
+                                    Label("Don\u{2019}t Suggest \(person.displayName)", systemImage: "person.crop.circle.badge.minus")
+                                }
+                            }
+                            .accessibilityLabel("\(person.displayName), \(person.email)")
+                            .accessibilityHint("Adds them to \(field == .cc ? "Cc" : "To")")
+                        }
+                    }
+                    .padding(.horizontal, CorresSpace.page)
+                }
+            }
+            .padding(.vertical, 10)
+            .transition(.opacity)
         }
     }
 
