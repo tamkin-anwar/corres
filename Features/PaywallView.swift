@@ -249,7 +249,7 @@ struct PaywallView: View {
         VStack(spacing: 14) {
             HStack(spacing: 22) {
                 Button("Restore") { Task { await entitlements.restore() } }
-                Button("Redeem code") {
+                Button("Redeem Code") {
                     // Close this sheet first so Apple's sheet isn't stacked on it.
                     dismiss()
                     Task {
@@ -288,7 +288,7 @@ struct ProLockView: View {
                 .font(.body).foregroundStyle(CorresPalette.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-            Button("Try Corres Pro free", action: onUnlock)
+            Button("Try Corres Pro Free", action: onUnlock)
                 .buttonStyle(CorresButtonStyle())
                 .padding(.top, 6)
             Button("Go to Mail", action: onOpenMail)

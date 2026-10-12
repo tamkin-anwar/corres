@@ -27,9 +27,9 @@ struct SendersView: View {
                     }
                 }
                 .pickerStyle(.menu)
-                Picker("Sort by", selection: $order) {
-                    Text("Most recent").tag(SenderDirectory.Order.recent)
-                    Text("Most email").tag(SenderDirectory.Order.most)
+                Picker("Sort By", selection: $order) {
+                    Text("Most Recent").tag(SenderDirectory.Order.recent)
+                    Text("Most Email").tag(SenderDirectory.Order.most)
                     Text("Name").tag(SenderDirectory.Order.name)
                 }
                 .pickerStyle(.menu)

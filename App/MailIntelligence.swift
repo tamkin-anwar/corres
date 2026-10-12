@@ -53,7 +53,7 @@ final class MailIntelligence {
     nonisolated static let summaryRules = 3
 
     enum Tone: String, CaseIterable, Identifiable {
-        case shorter = "Shorter", warmer = "Warmer", formal = "More formal", proofread = "Proofread"
+        case shorter = "Shorter", warmer = "Warmer", formal = "More Formal", proofread = "Proofread"
         var id: String { rawValue }
         var instruction: String {
             switch self {

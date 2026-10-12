@@ -67,7 +67,7 @@ struct SnoozeSheet: View {
                             .buttonStyle(CorresRowButtonStyle())
                         }
                     }
-                    Toggle("Pick a date and time", isOn: $pickingDate.animation(.easeOut(duration: 0.2)))
+                    Toggle("Pick a Date and Time", isOn: $pickingDate.animation(.easeOut(duration: 0.2)))
                         .tint(CorresPalette.accent)
                     if pickingDate {
                         DatePicker("Return on", selection: $pickedDate, in: Date.now..., displayedComponents: [.date, .hourAndMinute])

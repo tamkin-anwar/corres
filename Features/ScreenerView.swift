@@ -58,7 +58,7 @@ struct ScreenerView: View {
                 }
             }
             .background(CorresPalette.canvas)
-            .navigationTitle("New senders")
+            .navigationTitle("New Senders")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

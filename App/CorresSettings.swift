@@ -39,7 +39,7 @@ enum CorresSettings {
     enum RemoteImages: String, CaseIterable, Identifiable {
         case ask, always
         var id: String { rawValue }
-        var title: String { self == .ask ? "Ask first" : "Always load" }
+        var title: String { self == .ask ? "Ask First" : "Always Load" }
     }
     static var remoteImages: RemoteImages {
         defaults.string(forKey: remoteImagesKey).flatMap(RemoteImages.init) ?? .ask
@@ -55,7 +55,7 @@ enum CorresSettings {
     enum OpenLinks: String, CaseIterable, Identifiable {
         case inCorres, browser
         var id: String { rawValue }
-        var title: String { self == .inCorres ? "In Corres" : "Default browser" }
+        var title: String { self == .inCorres ? "In Corres" : "Default Browser" }
     }
     static var openLinks: OpenLinks {
         defaults.string(forKey: openLinksKey).flatMap(OpenLinks.init) ?? .inCorres
@@ -203,9 +203,9 @@ enum CorresSettings {
         var group: String {
             switch self {
             case .archive, .trash, .flag, .snooze, .unread, .pin: "Everyday"
-            case .replyAll, .forward, .share, .print: "Send and share"
+            case .replyAll, .forward, .share, .print: "Send and Share"
             case .moveTo, .labels, .vip, .calendar, .translate: "Organize"
-            case .spam, .block, .unsubscribe: "Unwanted mail"
+            case .spam, .block, .unsubscribe: "Unwanted Mail"
             }
         }
     }

@@ -69,8 +69,8 @@ enum AfterRemoval: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .nextConversation: "Open next conversation"
-        case .list: "Return to the list"
+        case .nextConversation: "Open Next Conversation"
+        case .list: "Return to the List"
         }
     }
 }

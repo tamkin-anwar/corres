@@ -900,7 +900,7 @@ struct CorrespondenceList: View {
         } label: {
             Label("Select", systemImage: "checkmark.circle")
         }
-        Section("Move to") {
+        Section("Move To") {
             AttentionChoices(current: thread.attention) { attention in
                 Task { await threadActions?.setAttention(attention, for: thread) }
             }

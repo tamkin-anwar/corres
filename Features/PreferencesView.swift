@@ -147,7 +147,7 @@ struct PreferencesView: View {
                         LabeledContent {
                             Text("Read on this iPhone")
                         } label: {
-                            settingLabel("Private by design", "lock.shield")
+                            settingLabel("Private by Design", "lock.shield")
                         }
                     }
                 }
@@ -204,14 +204,14 @@ struct PreferencesView: View {
             .padding(.vertical, 2)
             switch entitlements.plan {
             case .none:
-                Button("Try Corres Pro free") { showingPaywall = true }
+                Button("Try Corres Pro Free") { showingPaywall = true }
             case .monthly, .annual:
-                Button("Manage subscription") { managingSubscription = true }
+                Button("Manage Subscription") { managingSubscription = true }
             case .lifetime:
                 EmptyView()
             }
-            Button("Restore purchases") { Task { await entitlements.restore() } }
-            Button("Redeem code") {
+            Button("Restore Purchases") { Task { await entitlements.restore() } }
+            Button("Redeem Code") {
                     // Close this sheet first so Apple's sheet isn't stacked on it.
                     dismiss()
                     Task {
@@ -220,13 +220,13 @@ struct PreferencesView: View {
                     }
                 }
             if EntitlementStore.isBetaBuild && entitlements.hasBetaAccess {
-                Toggle("Preview as free user", isOn: Bindable(entitlements).previewAsFree)
+                Toggle("Preview as Free User", isOn: Bindable(entitlements).previewAsFree)
             }
         } header: {
             Text("Plan").accessibilityIdentifier(EntitlementStore.buildKind)
         } footer: {
             if entitlements.isPro && entitlements.plan == .none {
-                Text("Pro is included while you test the beta. Preview as free user shows the app as it is without Pro.")
+                Text("Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro.")
             } else if !entitlements.isPro {
                 Text("Without Pro, Mail keeps working: read, reply, archive and search. Brief, Needs You, Waiting, Ask and the on-device intelligence need Pro.")
             }
@@ -247,7 +247,7 @@ struct PreferencesView: View {
             let date = renews.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "soon"
             return inTrial ? "Free trial · first charge \(date)" : "Renews \(date)"
         case .lifetime(let familyShared):
-            return familyShared ? "Lifetime · shared by your family" : "Lifetime · yours for good"
+            return familyShared ? "One-time purchase · shared with you by family" : "One-time purchase · never renews"
         }
     }
 
@@ -288,7 +288,7 @@ struct PreferencesView: View {
                     if auth.isSigningIn || sync.isSyncing {
                         ProgressView()
                     } else {
-                        settingLabel("Add account", "plus")
+                        settingLabel("Add Account", "plus")
                     }
                 }
                 .disabled(auth.isSigningIn || sync.isSyncing)
@@ -414,7 +414,7 @@ private struct AccountDetailView: View {
                             Text(last, format: .relative(presentation: .named))
                         }
                     } label: {
-                        Label("Sync now", systemImage: "arrow.triangle.2.circlepath")
+                        Label("Sync Now", systemImage: "arrow.triangle.2.circlepath")
                     }
                 }
                 .disabled(syncing || sync.isSyncing)
@@ -512,11 +512,11 @@ private struct ComposingSettingsView: View {
                         Text(seconds == 0 ? "Off" : "\(seconds) seconds").tag(seconds)
                     }
                 }
-                Picker("Default reply", selection: $defaultReply) {
+                Picker("Default Reply", selection: $defaultReply) {
                     ForEach(CorresSettings.DefaultReply.allCases) { Text($0.title).tag($0.rawValue) }
                 }
                 if auth.accounts.count > 1 {
-                    Picker("Send new mail from", selection: $defaultFrom) {
+                    Picker("Send New Mail From", selection: $defaultFrom) {
                         ForEach(auth.accounts) { Text($0.email).tag($0.email) }
                     }
                 }
@@ -576,18 +576,18 @@ private struct ReadingSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Key details", isOn: $keyDetails)
-                Toggle("Summarize emails", isOn: $summaries)
+                Toggle("Key Details", isOn: $keyDetails)
+                Toggle("Summarize Emails", isOn: $summaries)
             } header: {
-                Text("At the top of each email")
+                Text("At the Top of Each Email")
             } footer: {
-                Text("Key details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. "
+                Text("Key Details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. "
                      + (intelligence.isAvailable
                         ? "Summaries are written on this iPhone and checked against the email: every name, number and date has to be in it. Summaries are part of Corres Pro."
                         : "Summaries need Apple Intelligence, and are part of Corres Pro."))
             }
             Section {
-                Picker("Remote images", selection: $remoteImages) {
+                Picker("Remote Images", selection: $remoteImages) {
                     ForEach(CorresSettings.RemoteImages.allCases) { Text($0.title).tag($0.rawValue) }
                 }
             } footer: {
@@ -596,13 +596,13 @@ private struct ReadingSettingsView: View {
                      : "Images load as soon as you open an email. Senders using tracking images can see when you opened it.")
             }
             Section {
-                Toggle("Mark as read when opened", isOn: $markReadOnOpen)
-                Toggle("Ask before moving to Trash", isOn: $confirmTrash)
-                Picker("After archiving", selection: $afterRemoval) {
-                    Text("Next conversation").tag(AfterRemoval.nextConversation.rawValue)
-                    Text("Back to list").tag(AfterRemoval.list.rawValue)
+                Toggle("Mark as Read When Opened", isOn: $markReadOnOpen)
+                Toggle("Ask Before Moving to Trash", isOn: $confirmTrash)
+                Picker("After Archiving", selection: $afterRemoval) {
+                    Text("Next Conversation").tag(AfterRemoval.nextConversation.rawValue)
+                    Text("Back to List").tag(AfterRemoval.list.rawValue)
                 }
-                Picker("Open links", selection: $openLinks) {
+                Picker("Open Links", selection: $openLinks) {
                     ForEach(CorresSettings.OpenLinks.allCases) { Text($0.title).tag($0.rawValue) }
                 }
             } footer: {
@@ -683,16 +683,16 @@ private struct SortingSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Screen new senders", isOn: $screenNewSenders)
+                Toggle("Screen New Senders", isOn: $screenNewSenders)
                     .onChange(of: screenNewSenders) {
                         CorresSettings.applyToCore()
                         store.listsShouldRebuild()
                     }
             } header: {
-                Text("New senders")
+                Text("New Senders")
             } footer: {
                 Text(screenNewSenders
-                     ? "Someone's first email waits in New senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden."
+                     ? "Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden."
                      : "Someone's first email shows like anyone else's, marked New, and you can allow or block them right from the email. Blocked senders stay hidden.")
             }
             Section {
@@ -731,29 +731,29 @@ private struct SortingSettingsView: View {
                 Picker("Needs You", selection: $sensitivity) {
                     Text("Focused").tag(InboxClassifier.Sensitivity.focused.rawValue)
                     Text("Balanced").tag(InboxClassifier.Sensitivity.balanced.rawValue)
-                    Text("Everything from people").tag(InboxClassifier.Sensitivity.inclusive.rawValue)
+                    Text("Everything from People").tag(InboxClassifier.Sensitivity.inclusive.rawValue)
                 }
-                Picker("Follow up after", selection: $followUpDays) {
+                Picker("Follow Up After", selection: $followUpDays) {
                     ForEach(CorresSettings.followUpChoices, id: \.self) { Text($0 == 1 ? "1 day" : "\($0) days").tag($0) }
                 }
             } footer: {
                 Text(sensitivityDetail + " Waiting turns into Follow up once someone hasn't replied in that long.")
             }
             Section {
-                Picker("Start of day", selection: $morningHour) {
+                Picker("Start of Day", selection: $morningHour) {
                     ForEach(6...10, id: \.self) { hour in
                         Text(Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: .now)!
                                 .formatted(date: .omitted, time: .shortened)).tag(hour)
                     }
                 }
-                Picker("Later today", selection: $laterTodayEvening) {
-                    Text("In 3 hours").tag(false)
-                    Text("This evening, 6 PM").tag(true)
+                Picker("Later Today", selection: $laterTodayEvening) {
+                    Text("In 3 Hours").tag(false)
+                    Text("This Evening, 6 PM").tag(true)
                 }
             } header: {
                 Text("Snooze")
             } footer: {
-                Text("Tomorrow and Next week come back at the start of your day; This weekend an hour later, on Saturday.")
+                Text("Tomorrow and Next Week come back at the start of your day; This Weekend an hour later, on Saturday.")
             }
         }
         .scrollContentBackground(.hidden)
@@ -793,17 +793,17 @@ private struct ListSettingsView: View {
             Section {
                 Picker("Preview", selection: $previewLines) {
                     Text("None").tag(0)
-                    Text("1 line").tag(1)
-                    Text("2 lines").tag(2)
-                    Text("3 lines").tag(3)
+                    Text("1 Line").tag(1)
+                    Text("2 Lines").tag(2)
+                    Text("3 Lines").tag(3)
                 }
-                Toggle("Show pictures", isOn: $showAvatars)
-                Toggle("Summaries as preview", isOn: $summaryInList)
+                Toggle("Show Pictures", isOn: $showAvatars)
+                Toggle("Summaries as Preview", isOn: $summaryInList)
             } footer: {
                 Text("How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits. With summaries as preview, an email Corres has summarized shows its summary instead of its opening words. Part of Corres Pro.")
             }
             Section {
-                Picker("App icon badge", selection: $badge) {
+                Picker("App Icon Badge", selection: $badge) {
                     ForEach(CorresSettings.Badge.allCases) { Text($0.title).tag($0.rawValue) }
                 }
             } footer: {
@@ -931,7 +931,7 @@ private struct ReadingBarSettingsView: View {
                     save(updated)
                 }
             } header: {
-                Text("On the bar")
+                Text("On the Bar")
             } footer: {
                 Text("Drag to reorder, up to \(CorresSettings.readingBarLimit). Reply always stays beside the bar.")
             }
@@ -981,20 +981,20 @@ private struct SwipeSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Picker("Short swipe", selection: $trailingShortRaw) {
+                Picker("Short Swipe", selection: $trailingShortRaw) {
                     ForEach(PrimarySwipeAction.allCases) { Text($0.title).tag($0.rawValue) }
                 }
-                Picker("Long swipe", selection: $trailingLongRaw) {
+                Picker("Long Swipe", selection: $trailingLongRaw) {
                     ForEach(PrimarySwipeAction.allCases) { Text($0.title).tag($0.rawValue) }
                 }
             } header: {
                 Label("Swipe left", systemImage: "arrow.left")
             }
             Section {
-                Picker("Short swipe", selection: $leadingShortRaw) {
+                Picker("Short Swipe", selection: $leadingShortRaw) {
                     ForEach(LeadingSwipeAction.allCases) { Text($0.settingsTitle).tag($0.rawValue) }
                 }
-                Picker("Long swipe", selection: $leadingLongRaw) {
+                Picker("Long Swipe", selection: $leadingLongRaw) {
                     ForEach(LeadingSwipeAction.allCases) { Text($0.settingsTitle).tag($0.rawValue) }
                 }
             } header: {
@@ -1113,7 +1113,7 @@ private struct NotificationSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Toggle("New mail", isOn: Binding(
+                Toggle("New Mail", isOn: Binding(
                     get: { pushService.isEnabled },
                     set: { newValue in
                         Task {
@@ -1127,7 +1127,7 @@ private struct NotificationSettingsView: View {
             }
             if pushService.isEnabled {
                 Section {
-                    Picker("Notify me about", selection: $level) {
+                    Picker("Notify Me About", selection: $level) {
                         ForEach(PushNotificationService.Level.allCases) { option in
                             Text(option.title).tag(option.rawValue)
                         }
@@ -1135,7 +1135,7 @@ private struct NotificationSettingsView: View {
                     .pickerStyle(.inline)
                     .labelsHidden()
                 } header: {
-                    Text("Notify me about")
+                    Text("Notify Me About")
                 } footer: {
                     Text((PushNotificationService.Level(rawValue: level) ?? .people).detail
                          + " Everything is always in Corres when you open it.")
@@ -1151,12 +1151,12 @@ private struct NotificationSettingsView: View {
                 if screenNewSenders {
                 Section {
                     Toggle("Time-sensitive", isOn: $newTimeSensitive)
-                    Toggle("From a person", isOn: $newPeople)
-                    Toggle("Everything else", isOn: $newOther)
+                    Toggle("From a Person", isOn: $newPeople)
+                    Toggle("Everything Else", isOn: $newOther)
                 } header: {
-                    Text("New senders")
+                    Text("New Senders")
                 } footer: {
-                    Text("Someone's first email waits in New senders until you allow them. These still notify, marked \u{201C}New sender\u{201D}, and you can allow or block them right from the email. Blocked senders never notify.")
+                    Text("Someone's first email waits in New Senders until you allow them. These still notify, marked \u{201C}New sender\u{201D}, and you can allow or block them right from the email. Blocked senders never notify.")
                 }
                 }
             }
@@ -1197,7 +1197,7 @@ private struct PrivacyView: View {
         }
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
-        .navigationTitle("Private by design")
+        .navigationTitle("Private by Design")
         .navigationBarTitleDisplayMode(.inline)
     }
 

@@ -429,7 +429,7 @@ struct CorresShell: View {
             } description: {
                 Text("Your sample conversations could not be opened.")
             } actions: {
-                Button("Try again") { Task { await store.load() } }
+                Button("Try Again") { Task { await store.load() } }
             }
         case .loaded:
             if requiresPro && destination != .mail {

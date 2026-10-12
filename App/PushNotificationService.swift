@@ -165,9 +165,9 @@ final class PushNotificationService {
 
         var title: String {
             switch self {
-            case .everything: "All new mail"
-            case .people: "People and time-sensitive"
-            case .needsYou: "Only what needs me"
+            case .everything: "All New Mail"
+            case .people: "People and Time-Sensitive"
+            case .needsYou: "Only What Needs Me"
             }
         }
 

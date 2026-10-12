@@ -455,7 +455,7 @@ struct ConversationView: View {
                          ? "\(trackers) \(trackers == 1 ? "tracker" : "trackers") blocked · Remote images off"
                          : "Remote images off · \(blocked) blocked")
                     Spacer(minLength: 8)
-                    Button("Show images") {
+                    Button("Show Images") {
                         showRemoteImages = true
                         if let senderEmail = thread.senderEmail {
                             Task { await store.trustSenderImages(senderEmail, account: thread.id.account) }
@@ -575,7 +575,7 @@ struct ConversationView: View {
                     .accessibilityHint("Takes this out of Needs You. It stays in Mail.")
                 }
                 Menu {
-                    Section("Move to") {
+                    Section("Move To") {
                         AttentionChoices(current: thread.attention) { attention in
                             Task { await threadActions.setAttention(attention, for: thread) }
                         }
@@ -1286,10 +1286,10 @@ enum SnoozeOption: CaseIterable {
 
     var title: String {
         switch self {
-        case .laterToday: "Later today"
+        case .laterToday: "Later Today"
         case .tomorrow: "Tomorrow"
-        case .thisWeekend: "This weekend"
-        case .nextWeek: "Next week"
+        case .thisWeekend: "This Weekend"
+        case .nextWeek: "Next Week"
         }
     }
 
