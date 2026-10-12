@@ -224,6 +224,21 @@ struct GmailAPIClient {
         try await batchFetch(ids: ids, query: "format=full", bodyLoaded: true, account: account)
     }
 
+    #if DEBUG
+    /// The most recent Inbox mail, whole, for testing Corres's reading
+    /// against real mail on the developer's own Mac (Settings → Developer).
+    /// Never in a release build.
+    func exportCorpus(account: String, limit: Int) async throws -> [Correspondence] {
+        let token = try await accessToken(for: account)
+        let ids = try await listMessageIDs(token: token, label: "INBOX", limit: limit).ids.map(\.id)
+        var items: [Correspondence] = []
+        for chunk in ids.chunked(into: Self.batchSize) {
+            items += try await fetchFull(ids: chunk, account: account).items
+        }
+        return items
+    }
+    #endif
+
     /// Every message in a conversation, oldest first, with full bodies:
     /// what the conversation view shows above the latest message. Fetched
     /// when a thread is opened, never during sync, so it costs nothing

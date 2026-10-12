@@ -17,6 +17,45 @@ struct PreferencesView: View {
     @State private var showingPaywall = false
     @State private var managingSubscription = false
 
+    #if DEBUG
+    @State private var corpusStatus: String?
+
+    /// Development builds only: saves recent Inbox mail as JSON in the
+    /// app's Documents/corpus folder, for running Corres's reading over
+    /// real mail on this Mac (`CORRES_CORPUS=… swift test --filter Corpus`).
+    /// Never committed, never in TestFlight or the App Store.
+    private var developerSection: some View {
+        Section {
+            Button("Export Test Corpus (500 per account)") {
+                Task {
+                    corpusStatus = "Exporting…"
+                    let folder = URL.documentsDirectory.appending(path: "corpus")
+                    try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                    var total = 0
+                    for account in auth.accounts.map(\.email) {
+                        do {
+                            let items = try await GmailAPIClient().exportCorpus(account: account, limit: 500)
+                            let data = try JSONEncoder().encode(items)
+                            try data.write(to: folder.appending(path: "\(account).json"))
+                            total += items.count
+                        } catch {
+                            corpusStatus = "Failed for \(account): \(error.localizedDescription)"
+                            return
+                        }
+                    }
+                    corpusStatus = "Saved \(total) emails to \(folder.path())"
+                    print("[Corpus] \(folder.path())")
+                }
+            }
+            .disabled(auth.accounts.isEmpty)
+        } header: {
+            Text("Developer")
+        } footer: {
+            if let corpusStatus { Text(corpusStatus).textSelection(.enabled) }
+        }
+    }
+    #endif
+
     var body: some View {
         NavigationStack {
             Form {
@@ -103,6 +142,9 @@ struct PreferencesView: View {
                         }
                     }
                 }
+                #if DEBUG
+                developerSection
+                #endif
                 aboutFooter
             }
             .scrollContentBackground(.hidden)
