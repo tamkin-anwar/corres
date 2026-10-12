@@ -349,11 +349,11 @@ struct MailboxView: View {
             .tint(CorresPalette.accent)
         } else if mailbox == .handled {
             // Not done after all: back where it asks for you.
-            Button { Task { await store.update(thread.id, to: .needsYou) } } label: {
+            Button { Task { await threadActions.setAttention(.needsYou, for: thread) } } label: {
                 Label("Needs You", systemImage: "exclamationmark.circle")
             }
             .tint(CorresPalette.accent)
-            Button { Task { await store.update(thread.id, to: .waiting) } } label: {
+            Button { Task { await threadActions.setAttention(.waiting, for: thread) } } label: {
                 Label("Waiting", systemImage: "clock")
             }
             .tint(CorresPalette.swipeUnread)

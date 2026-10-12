@@ -138,6 +138,7 @@ struct CorresShell: View {
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.pending?.id)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.failed?.id)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: threadActions.pendingRemoval?.id)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: threadActions.lastChange?.id)
         }
         // Premium apps confirm what just happened in the hand, not only on screen.
         .sensoryFeedback(.success, trigger: outbox.pending?.id) { _, new in new != nil }
@@ -305,6 +306,33 @@ struct CorresShell: View {
             .padding(.horizontal, 20).padding(.vertical, 14)
             .corresGlass(in: Capsule())
             .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+        } else if let change = threadActions.lastChange {
+            // Handled, read, flag, pin, Move to: the same pill as Archive,
+            // so a mis-swipe is one tap from undone. A flick puts it away.
+            HStack(spacing: 10) {
+                Image(systemName: change.systemImage)
+                    .foregroundStyle(CorresPalette.secondary)
+                Text(change.title).font(.subheadline.weight(.medium))
+                Button("Undo") { threadActions.undoLastChange() }
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.leading, 4)
+            }
+            .padding(.horizontal, 18).frame(minHeight: 44)
+            .corresGlass(in: Capsule())
+            .fixedSize()
+            .offset(y: bannerDrag)
+            .opacity(1 - min(abs(bannerDrag) / 120, 0.6))
+            .gesture(DragGesture(minimumDistance: 8)
+                .onChanged { bannerDrag = $0.translation.height }
+                .onEnded { value in
+                    if abs(value.translation.height) > 24 || abs(value.predictedEndTranslation.height) > 60 {
+                        threadActions.dismissLastChange()
+                    }
+                    withAnimation(.spring(duration: 0.25)) { bannerDrag = 0 }
+                })
+            .accessibilityElement(children: .contain)
+            .padding(.bottom, 92)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         }
     }

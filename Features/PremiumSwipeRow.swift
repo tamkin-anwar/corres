@@ -73,6 +73,9 @@ struct PremiumSwipeRow<Content: View>: View {
             content
                 .offset(x: offset)
         }
+        // Nothing paints past the row while it moves: in a rounded card
+        // (the Brief) the colour and the row stay inside, as they do at rest.
+        .clipped()
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { rowWidth = max($0, 1) }
         .modifier(SwipeGesture(isEnabled: isEnabled && !isCommitting,
                                allowsPositive: allowsPositive, allowsNegative: allowsNegative,

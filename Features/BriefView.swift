@@ -256,6 +256,8 @@ struct BriefView: View {
                 }
             }
             .padding(.vertical, 4)
+            // A swipe's colour stays inside the card's corners, start to finish.
+            .clipShape(RoundedRectangle(cornerRadius: CorresSpace.radius, style: .continuous))
             .corresSurface()
         }
     }
@@ -268,7 +270,7 @@ struct BriefView: View {
     private func markHandled(_ thread: Correspondence) {
         withAnimation(.snappy(duration: 0.3)) { store.hide(thread.id) }
         Task {
-            await store.update(thread.id, to: .handled)
+            await threadActions?.setAttention(.handled, for: thread)
             store.unhide(thread.id)
         }
     }
@@ -290,9 +292,9 @@ struct BriefView: View {
 
     private func perform(_ action: LeadingSwipeAction, on thread: Correspondence) {
         switch action {
-        case .pin: Task { await store.setPinned(!thread.isPinned, for: thread.id) }
-        case .unread: Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
-        case .flag: Task { await threadActions?.setFlagged(!thread.isFlagged, for: thread) }
+        case .pin: Task { await threadActions?.togglePinned(thread) }
+        case .unread: Task { await threadActions?.toggleUnread(!thread.isUnread, for: [thread]) }
+        case .flag: Task { await threadActions?.toggleFlagged(!thread.isFlagged, for: [thread]) }
         }
     }
 

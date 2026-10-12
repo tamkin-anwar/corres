@@ -564,7 +564,7 @@ struct ConversationView: View {
                 // under Change alone, testers didn't find it.
                 if thread.attention == .needsYou {
                     Button {
-                        Task { await store.update(thread.id, to: .handled) }
+                        Task { await threadActions.setAttention(.handled, for: thread) }
                     } label: {
                         Label("Handled", systemImage: "checkmark.circle")
                             .font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.accent)
@@ -575,7 +575,7 @@ struct ConversationView: View {
                 Menu {
                     Section("Move to") {
                         AttentionChoices(current: thread.attention) { attention in
-                            Task { await store.update(thread.id, to: attention) }
+                            Task { await threadActions.setAttention(attention, for: thread) }
                         }
                     }
                 } label: {
@@ -595,9 +595,14 @@ struct ConversationView: View {
     /// rather than the reason it once needed you.
     private func statusLine(for thread: Correspondence) -> String {
         switch thread.attention {
-        case .handled: "Handled. It's off your lists and stays in Mail and in Mailboxes \u{2192} Handled."
-        case .quiet: thread.reason.isEmpty ? "No action needed." : "No action needed: \(thread.reason)"
-        default: thread.reason.isEmpty ? thread.attention.title : "\(thread.attention.title): \(thread.reason)"
+        case .handled: return "Handled. It's off your lists and stays in Mail and in Mailboxes \u{2192} Handled."
+        case .quiet:
+            // The reason often ends by saying so itself ("Marketing
+            // newsletter, no action needed"); say it once.
+            let reason = thread.reason.replacingOccurrences(of: #"(?i)[\s,;.—–-]*no action (is )?needed[.!]?"#, with: "", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return reason.isEmpty ? "No action needed." : "No action needed: \(reason)"
+        default: return thread.reason.isEmpty ? thread.attention.title : "\(thread.attention.title): \(thread.reason)"
         }
     }
 
@@ -962,10 +967,10 @@ struct ConversationView: View {
                 requestTrash(thread)
             }.keyboardShortcut(.delete, modifiers: .command)
             Button(thread.isFlagged ? "Unflag" : "Flag") {
-                Task { await threadActions.setFlagged(!thread.isFlagged, for: thread) }
+                Task { await threadActions.toggleFlagged(!thread.isFlagged, for: [thread]) }
             }.keyboardShortcut("l", modifiers: [.command, .shift])
             Button(thread.isUnread ? "Mark as Read" : "Mark as Unread") {
-                Task { await threadActions.setUnread(!thread.isUnread, for: thread) }
+                Task { await threadActions.toggleUnread(!thread.isUnread, for: [thread]) }
             }.keyboardShortcut("u", modifiers: [.command, .shift])
             Button("Snooze") { showingSnooze = true }.keyboardShortcut("s", modifiers: [.command, .control])
             Button("Previous Conversation") { goToPrevious() }.keyboardShortcut(.upArrow, modifiers: [.command, .control])
@@ -1014,10 +1019,10 @@ struct ConversationView: View {
         switch action {
         case .archive: Task { await threadActions.archive(thread, animated: false) }
         case .trash: requestTrash(thread)
-        case .flag: Task { await threadActions.setFlagged(!thread.isFlagged, for: thread) }
+        case .flag: Task { await threadActions.toggleFlagged(!thread.isFlagged, for: [thread]) }
         case .snooze: showingSnooze = true
-        case .unread: Task { await threadActions.setUnread(!thread.isUnread, for: thread) }
-        case .pin: Task { await store.setPinned(!thread.isPinned, for: thread.id) }
+        case .unread: Task { await threadActions.toggleUnread(!thread.isUnread, for: [thread]) }
+        case .pin: Task { await threadActions.togglePinned(thread) }
         case .replyAll: compose(.replyAll, from: thread)
         case .forward: compose(.forward, from: thread)
         case .spam: Task { await threadActions.reportSpam(thread, animated: false) }
@@ -1069,7 +1074,7 @@ struct ConversationView: View {
             }
             Section("Sort Into") {
                 AttentionChoices(current: thread.attention) { attention in
-                    Task { await store.update(thread.id, to: attention) }
+                    Task { await threadActions.setAttention(attention, for: thread) }
                 }
             }
         } else {

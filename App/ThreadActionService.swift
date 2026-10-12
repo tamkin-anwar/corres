@@ -55,6 +55,90 @@ final class ThreadActionService {
     private var removalTask: Task<Void, Never>?
     static let undoSeconds = 5
 
+    /// The last change you made by hand that isn't a removal (Handled,
+    /// Needs You, read, flag, pin), offered back for a few seconds the way
+    /// Archive is. Gmail offers Undo only for some actions; here every
+    /// swipe and menu choice can be taken back.
+    struct UndoableChange: Identifiable {
+        let id = UUID()
+        let title: String
+        let systemImage: String
+        let undo: @MainActor () async -> Void
+    }
+
+    private(set) var lastChange: UndoableChange?
+    private var changeTask: Task<Void, Never>?
+
+    func offerUndo(_ title: String, systemImage: String, undo: @escaping @MainActor () async -> Void) {
+        let change = UndoableChange(title: title, systemImage: systemImage, undo: undo)
+        lastChange = change
+        changeTask?.cancel()
+        changeTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.undoSeconds))
+            guard !Task.isCancelled, let self, self.lastChange?.id == change.id else { return }
+            self.lastChange = nil
+        }
+    }
+
+    func undoLastChange() {
+        guard let change = lastChange else { return }
+        changeTask?.cancel()
+        lastChange = nil
+        Task { await change.undo() }
+    }
+
+    func dismissLastChange() {
+        changeTask?.cancel()
+        lastChange = nil
+    }
+
+    /// Moves conversations to Needs You, Waiting or Handled, with Undo.
+    func setAttention(_ attention: Attention, for thread: Correspondence) async {
+        await setAttention(attention, for: [thread])
+    }
+
+    func setAttention(_ attention: Attention, for threads: [Correspondence]) async {
+        let before = threads.filter { $0.attention != attention }.map { ($0.id, $0.attention) }
+        guard !before.isEmpty else { return }
+        for (id, _) in before { await store.update(id, to: attention) }
+        let count = before.count == 1 ? "" : " \(before.count)"
+        let title = switch attention {
+        case .handled: "Marked\(count) Handled"
+        case .quiet: "Marked\(count) as no action needed"
+        default: "Moved\(count) to \(attention.title)"
+        }
+        offerUndo(title, systemImage: attention == .handled ? "checkmark.circle" : "arrow.right.circle") { [store] in
+            for (id, was) in before { await store.update(id, to: was) }
+        }
+    }
+
+    /// Read/unread from a swipe, a menu or Select, with Undo. (Opening an
+    /// email marks it read through `setUnread` directly, with no Undo.)
+    func toggleUnread(_ isUnread: Bool, for threads: [Correspondence]) async {
+        let before = threads.map { ($0, $0.isUnread) }
+        for thread in threads { await setUnread(isUnread, for: thread) }
+        let count = threads.count == 1 ? "" : " \(threads.count)"
+        offerUndo("Marked\(count) as \(isUnread ? "unread" : "read")", systemImage: isUnread ? "envelope.badge" : "envelope.open") { [weak self] in
+            for (thread, was) in before { await self?.setUnread(was, for: thread) }
+        }
+    }
+
+    func toggleFlagged(_ isFlagged: Bool, for threads: [Correspondence]) async {
+        let before = threads.map { ($0, $0.isFlagged) }
+        for thread in threads { await setFlagged(isFlagged, for: thread) }
+        offerUndo(isFlagged ? "Flagged" : "Unflagged", systemImage: isFlagged ? "flag" : "flag.slash") { [weak self] in
+            for (thread, was) in before { await self?.setFlagged(was, for: thread) }
+        }
+    }
+
+    func togglePinned(_ thread: Correspondence) async {
+        let was = thread.isPinned
+        await store.setPinned(!was, for: thread.id)
+        offerUndo(was ? "Unpinned" : "Pinned", systemImage: was ? "pin.slash" : "pin") { [store] in
+            await store.setPinned(was, for: thread.id)
+        }
+    }
+
     /// `animated: false` from inside a conversation: the list underneath
     /// isn't on screen, so it should already be settled when you go back,
     /// rather than animating the row away as it comes into view.
@@ -103,6 +187,7 @@ final class ThreadActionService {
             withTransaction(transaction) { for thread in threads { store.hide(thread.id) } }
         }
         let pending = PendingRemoval(threads: threads, kind: kind)
+        dismissLastChange()
         pendingRemoval = pending
         // One sleep, not a per-second countdown: the pill shows no timer,
         // and ticking `pendingRemoval` every second redrew the list and the

@@ -416,7 +416,7 @@ struct CorrespondenceList: View {
                 if isSelecting {
                     selectionBar
                 } else {
-                    Color.clear.frame(height: threadActions?.pendingRemoval == nil ? 0 : 56)
+                    Color.clear.frame(height: threadActions?.pendingRemoval == nil && threadActions?.lastChange == nil ? 0 : 56)
                 }
             }
             .modifier(TwoFingerSelect(onChange: handleTwoFingerSelect))
@@ -527,15 +527,15 @@ struct CorrespondenceList: View {
         let anyUnflagged = chosen.contains { !$0.isFlagged }
         return HStack(spacing: 0) {
             bulkButton(anyUnread ? "envelope.open" : "envelope.badge", anyUnread ? "Mark as Read" : "Mark as Unread") {
-                for thread in chosen { await threadActions?.setUnread(!anyUnread, for: thread) }
+                await threadActions?.toggleUnread(!anyUnread, for: chosen)
             }
             bulkButton(anyUnflagged ? "flag" : "flag.slash", anyUnflagged ? "Flag" : "Unflag") {
-                for thread in chosen { await threadActions?.setFlagged(anyUnflagged, for: thread) }
+                await threadActions?.toggleFlagged(anyUnflagged, for: chosen)
             }
             Menu {
                 AttentionChoices(current: nil) { attention in
                     Task {
-                        for thread in chosen { await store.update(thread.id, to: attention) }
+                        await threadActions?.setAttention(attention, for: chosen)
                         endSelection()
                     }
                 }
@@ -770,7 +770,7 @@ struct CorrespondenceList: View {
             let leaves = destination != .mail
             if leaves { withAnimation(.snappy(duration: 0.3)) { store.hide(thread.id) } }
             Task {
-                await store.update(thread.id, to: .handled)
+                await threadActions?.setAttention(.handled, for: thread)
                 if leaves { store.unhide(thread.id) }
             }
         }
@@ -778,9 +778,9 @@ struct CorrespondenceList: View {
 
     private func perform(_ action: LeadingSwipeAction, on thread: Correspondence) {
         switch action {
-        case .pin: Task { await store.setPinned(!thread.isPinned, for: thread.id) }
-        case .unread: Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
-        case .flag: Task { await threadActions?.setFlagged(!thread.isFlagged, for: thread) }
+        case .pin: Task { await threadActions?.togglePinned(thread) }
+        case .unread: Task { await threadActions?.toggleUnread(!thread.isUnread, for: [thread]) }
+        case .flag: Task { await threadActions?.toggleFlagged(!thread.isFlagged, for: [thread]) }
         }
     }
 
@@ -896,7 +896,7 @@ struct CorrespondenceList: View {
         }
         Section("Move to") {
             AttentionChoices(current: thread.attention) { attention in
-                Task { await store.update(thread.id, to: attention) }
+                Task { await threadActions?.setAttention(attention, for: thread) }
             }
         }
         Button {
@@ -914,12 +914,12 @@ struct CorrespondenceList: View {
             }
 
         Button {
-            Task { await threadActions?.setFlagged(!thread.isFlagged, for: thread) }
+            Task { await threadActions?.toggleFlagged(!thread.isFlagged, for: [thread]) }
         } label: {
             Label(thread.isFlagged ? "Unflag" : "Flag", systemImage: thread.isFlagged ? "flag.slash" : "flag")
         }
         Button {
-            Task { await threadActions?.setUnread(!thread.isUnread, for: thread) }
+            Task { await threadActions?.toggleUnread(!thread.isUnread, for: [thread]) }
         } label: {
             Label(thread.isUnread ? "Mark as Read" : "Mark as Unread", systemImage: thread.isUnread ? "envelope.open" : "envelope.badge")
         }
