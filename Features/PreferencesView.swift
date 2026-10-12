@@ -10,6 +10,8 @@ struct PreferencesView: View {
     var auth: GoogleAuthService
     var sync: GmailSyncService
     @Bindable var pushService: PushNotificationService
+    /// For unsubscribing from Settings → Senders.
+    var unsubscriber: UnsubscribeService? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(MailIntelligence.self) private var intelligence
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
@@ -73,6 +75,11 @@ struct PreferencesView: View {
                         SortingSettingsView(store: store)
                     } label: {
                         settingLabel("Sorting", "line.3.horizontal.decrease")
+                    }
+                    NavigationLink {
+                        SendersView(store: store, unsubscriber: unsubscriber)
+                    } label: {
+                        settingLabel("Senders", "person.2")
                     }
                     NavigationLink {
                         ListSettingsView(store: store)

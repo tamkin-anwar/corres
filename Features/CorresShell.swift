@@ -189,7 +189,7 @@ struct CorresShell: View {
                 self.accountFilter = nil
             }
         }
-        .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService) }
+        .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService, unsubscriber: unsubscribeService) }
         .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, auth: auth, draft: draft, sourceThread: nil)
