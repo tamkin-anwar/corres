@@ -73,7 +73,7 @@ public enum RichBody {
         return "<div dir=\"auto\" style=\"font-family:-apple-system,Helvetica,Arial,sans-serif\">\(html)</div>"
     }
 
-    /// "• Milk" or "- Milk": a bulleted item; "1. Milk": a numbered one.
+    /// "• Milk": a bulleted item; "1. Milk": a numbered one.
     static func listItem(in line: String) -> (tag: String, prefixLength: Int)? {
         if line.hasPrefix("• ") { return ("ul", 2) }
         if let match = line.range(of: #"^\d{1,3}\. "#, options: .regularExpression) {
@@ -97,7 +97,8 @@ public enum RichBody {
             if run.italic { piece = "<i>\(piece)</i>" }
             if run.underline { piece = "<u>\(piece)</u>" }
             if run.strikethrough { piece = "<s>\(piece)</s>" }
-            if let link = run.link { piece = "<a href=\"\(escape(link.absoluteString))\">\(piece)</a>" }
+            // Web and mail links only: nothing that runs in the reader's app.
+            if let link = run.link, ["http", "https", "mailto"].contains(link.scheme?.lowercased() ?? "") { piece = "<a href=\"\(escape(link.absoluteString))\">\(piece)</a>" }
             out += piece
         }
         return out

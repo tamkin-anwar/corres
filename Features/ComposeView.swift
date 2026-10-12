@@ -17,6 +17,7 @@ struct ComposeView: View {
     @State var draft: Draft
     private let initialDraft: Draft
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showingDiscardConfirmation = false
     @State private var confirmingNoSubject = false
     @FocusState private var focusedField: Field?
@@ -276,6 +277,11 @@ struct ComposeView: View {
                 Button("Keep Editing", role: .cancel) {}
             } message: {
                 Text("Saved drafts wait at the bottom of the screen and in Drafts, on every device.")
+            }
+            // Leaving Corres mid-email: saved to Drafts, in case iOS closes
+            // Corres while it's in the background.
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .background, !isFinished, hasUnsavedChanges { outbox.autosave(draft, replyingTo: sourceThread) }
             }
             // Swiping Compose away never loses what you wrote: it's saved
             // and tucked away, as Gmail saves and Mail minimizes.
@@ -619,7 +625,12 @@ struct ComposeView: View {
         isFinished = true
         if outbox.shelved?.id == draft.id { outbox.clearShelf() }
         if let sendAt = pendingSendAt {
-            ScheduledSends.shared.schedule(draft, at: sendAt)
+            // Send Later holds it now; a copy left in Drafts could also be
+            // sent from another device.
+            outbox.removeGmailDraft(of: draft, replyingTo: sourceThread)
+            var scheduled = draft
+            scheduled.gmailDraftID = nil
+            ScheduledSends.shared.schedule(scheduled, at: sendAt)
             dismiss()
             return
         }

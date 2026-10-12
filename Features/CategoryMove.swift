@@ -50,13 +50,16 @@ extension View {
                            titleVisibility: .visible, presenting: choice.wrappedValue) { pick in
             let sender = pick.thread.sender
             let kind = pick.thread.mailKind
-            if kind != .personal {
+            // Your own email: just this one, never "everything from You".
+            if kind != .personal, !pick.thread.isFromAccountOwner {
                 Button("All of \(sender)\u{2019}s \(kind.plural.capitalized)") {
                     Task { await threadActions?.setCategory(pick.category, for: pick.thread, scope: .thisKind) }
                 }
             }
-            Button("Everything from \(sender)") {
-                Task { await threadActions?.setCategory(pick.category, for: pick.thread, scope: .sender) }
+            if !pick.thread.isFromAccountOwner {
+                Button("Everything from \(sender)") {
+                    Task { await threadActions?.setCategory(pick.category, for: pick.thread, scope: .sender) }
+                }
             }
             Button("Just This Email") {
                 Task { await threadActions?.setCategory(pick.category, for: pick.thread, scope: .thisEmail) }

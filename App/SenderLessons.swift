@@ -75,8 +75,10 @@ enum SenderLessons {
 
     /// The lesson about this thread: its sender and its kind of mail; a
     /// rule for that kind wins over one for everything they send.
-    private static func lesson(for thread: Correspondence, where wanted: (Lesson) -> Bool) -> Lesson? {
-        guard isEnabled, let email = thread.senderEmail?.lowercased() else { return nil }
+    /// Where mail goes is a rule you made, so it holds with Learn from My
+    /// Changes off; that setting is about what Corres works out itself.
+    private static func lesson(for thread: Correspondence, where wanted: (Lesson) -> Bool, always: Bool = false) -> Lesson? {
+        guard isEnabled || always, let email = thread.senderEmail?.lowercased() else { return nil }
         let theirs = all.filter { $0.email == email && wanted($0) }
         guard !theirs.isEmpty else { return nil }
         // Working out the kind of email reads its text; only for senders
@@ -110,7 +112,7 @@ enum SenderLessons {
     /// mail) goes, if anywhere.
     static func category(for thread: Correspondence) -> InboxCategory? {
         if let raw = threadCategories[key(thread)], let category = InboxCategory(rawValue: raw) { return category }
-        return lesson(for: thread, where: { $0.category != nil })?.category
+        return lesson(for: thread, where: { $0.category != nil }, always: true)?.category
     }
 
     enum CategoryScope { case thisEmail, thisKind, sender }
@@ -122,7 +124,7 @@ enum SenderLessons {
         let beforeLessons = all
         let beforeThreads = threadCategories
         let undo = { all = beforeLessons; threadCategories = beforeThreads }
-        guard scope != .thisEmail, isEnabled, let email = thread.senderEmail?.lowercased() else {
+        guard scope != .thisEmail, let email = thread.senderEmail?.lowercased() else {
             threadCategories[key(thread)] = category.rawValue
             return ("Moved to \(category.title)", undo)
         }

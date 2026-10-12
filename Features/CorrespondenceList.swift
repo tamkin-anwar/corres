@@ -188,6 +188,8 @@ enum MailFilter: String, CaseIterable, Identifiable {
         }
     }
 
+    var isCategory: Bool { [.primary, .promotions, .social, .updates].contains(self) }
+
     @MainActor private func category(_ thread: Correspondence) -> InboxCategory {
         InboxCategory.of(thread, override: SenderLessons.category(for: thread))
     }
@@ -313,6 +315,10 @@ struct CorrespondenceList: View {
             all = MailQuery.filter(scopedThreads, attention: destination.attention, search: search)
         }
         guard destination == .mail, mailFilter != .everything else { return all }
+        // Search looks in every category, as Gmail's and Mail's do: an
+        // order confirmation in Updates is still found from Primary.
+        let searching = !search.trimmingCharacters(in: .whitespaces).isEmpty
+        guard !(searching && mailFilter.isCategory) else { return all }
         let filtered = all.filter(mailFilter.includes)
         // Sent reads like a Sent mailbox: by when you sent, newest first.
         guard mailFilter == .sent else { return filtered }

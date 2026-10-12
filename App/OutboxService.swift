@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import Observation
 
 /// Makes Send feel instant: ComposeView dismisses the moment the button is
@@ -60,14 +61,35 @@ final class OutboxService {
     /// (updating the same draft if it was saved before).
     func shelve(_ draft: Draft, replyingTo thread: Correspondence?) {
         shelved = Shelved(draft: draft)
-        Task {
+        autosave(draft, replyingTo: thread)
+    }
+
+    /// Each email's Gmail draft, by Corres's own id: reopened from the pill
+    /// before its save came back, or saved again while one was in flight,
+    /// it still updates (and, once sent, deletes) that one draft instead of
+    /// leaving a second behind in Drafts.
+    private var gmailDraftIDs: [UUID: String] = [:]
+    private var saving: [UUID: Task<Void, Never>] = [:]
+
+    private func gmailDraftID(for draft: Draft) -> String? { draft.gmailDraftID ?? gmailDraftIDs[draft.id] }
+
+    /// Saved to Gmail's Drafts without leaving Compose: as Corres goes to
+    /// the background, so nothing written is lost if iOS closes it there.
+    func autosave(_ draft: Draft, replyingTo thread: Correspondence?) {
+        let previous = saving[draft.id]
+        // iOS allows a few seconds more in the background to finish it.
+        let background = UIApplication.shared.beginBackgroundTask(withName: "Save draft")
+        saving[draft.id] = Task {
+            defer { if background != .invalid { UIApplication.shared.endBackgroundTask(background) } }
+            await previous?.value
             guard let account = resolveSendingAccount(draft: draft, thread: thread), auth.isConnected(account) else { return }
             let raw = GmailMessageComposer.compose(from: fromHeader(draft, account: account), to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
                                                     body: draft.body, inReplyTo: thread?.messageIdHeader,
                                                     messageID: Self.rfc822MessageID(for: draft.id),
                                                     attachments: draft.attachments, html: draft.bodyHTML, calendar: draft.calendarReply)
             guard let id = try? await client.saveDraft(raw: raw, threadId: thread?.id.providerID,
-                                                       existingID: draft.gmailDraftID, account: account) else { return }
+                                                       existingID: gmailDraftID(for: draft), account: account) else { return }
+            gmailDraftIDs[draft.id] = id
             if shelved?.id == draft.id { shelved?.draft.gmailDraftID = id }
         }
     }
@@ -75,7 +97,9 @@ final class OutboxService {
     /// Opened again from the pill: it's in Compose now, not on the shelf.
     func takeShelved() -> Draft? {
         defer { shelved = nil }
-        return shelved?.draft
+        guard var draft = shelved?.draft else { return nil }
+        draft.gmailDraftID = gmailDraftID(for: draft)
+        return draft
     }
 
     /// Put away for good (the pill's ✕): it stays in Gmail's Drafts.
@@ -84,8 +108,21 @@ final class OutboxService {
     /// Delete Draft: gone here and from Gmail's Drafts.
     func discard(_ draft: Draft, replyingTo thread: Correspondence?) {
         if shelved?.id == draft.id { shelved = nil }
-        guard let draftID = draft.gmailDraftID, let account = resolveSendingAccount(draft: draft, thread: thread) else { return }
-        Task { try? await client.deleteDraft(id: draftID, account: account) }
+        removeGmailDraft(of: draft, replyingTo: thread)
+    }
+
+    /// Takes its Gmail draft away, once any save in flight lands: when it's
+    /// deleted, and when it's scheduled (Send Later holds it now, and a
+    /// copy left in Drafts could be sent from another device as well).
+    func removeGmailDraft(of draft: Draft, replyingTo thread: Correspondence?) {
+        let inFlight = saving[draft.id]
+        Task {
+            await inFlight?.value
+            saving[draft.id] = nil
+            guard let draftID = gmailDraftID(for: draft), let account = resolveSendingAccount(draft: draft, thread: thread) else { return }
+            gmailDraftIDs[draft.id] = nil
+            try? await client.deleteDraft(id: draftID, account: account)
+        }
     }
 
     private let store: MailStore
@@ -151,10 +188,14 @@ final class OutboxService {
     /// Straight out, no Undo window, awaited to the end: a reply typed in a
     /// notification, where iOS gives Corres only seconds in the background.
     /// Still through the durable outbox, so a lost connection retries.
-    func sendNow(_ draft: Draft, replyingTo thread: Correspondence?) async {
-        let id = UUID()
+    ///
+    /// `asEarlierAttempt`: this draft may have been tried before under its
+    /// own id (the Share sheet, before it lost its connection), so it keeps
+    /// that Message-ID and Gmail is asked first, and it never goes twice.
+    func sendNow(_ draft: Draft, replyingTo thread: Correspondence?, asEarlierAttempt: Bool = false) async {
+        let id = asEarlierAttempt ? draft.id : UUID()
         try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .pending))
-        await commit(draft, thread: thread, id: id)
+        await commit(draft, thread: thread, id: id, checkForExistingSendFirst: asEarlierAttempt)
     }
 
     func queueSend(_ draft: Draft, replyingTo thread: Correspondence?) {
@@ -257,9 +298,13 @@ final class OutboxService {
         }
         try? await repository.removeOutboxEntry(id: id)
         // Sent in place of a Gmail draft: the draft goes.
-        if realThreadID != nil, let draftID = draft.gmailDraftID,
-           let account = resolveSendingAccount(draft: draft, thread: thread) {
-            try? await client.deleteDraft(id: draftID, account: account)
+        if realThreadID != nil {
+            await saving[draft.id]?.value
+            saving[draft.id] = nil
+            if let draftID = gmailDraftID(for: draft), let account = resolveSendingAccount(draft: draft, thread: thread) {
+                gmailDraftIDs[draft.id] = nil
+                try? await client.deleteDraft(id: draftID, account: account)
+            }
         }
     }
 

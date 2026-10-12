@@ -26,7 +26,15 @@ struct InvitationTests {
         #expect(invite.organizerEmail == "sara@portsmouth.ac.uk")
         #expect(invite.summary == "Project review, round 2")
         #expect(invite.sequence == 2)
+        #expect(invite.invitedAddress(among: ["other@gmail.com", "ME@x.test"], fallback: "other@gmail.com") == "me@x.test")
+        #expect(invite.invitedAddress(among: ["other@gmail.com"], fallback: "other@gmail.com") == "other@gmail.com")
         #expect(Invitation.parse(ics.replacingOccurrences(of: "METHOD:REQUEST", with: "METHOD:PUBLISH")) == nil)
+    }
+
+    @Test func answersOneDateOfASeries() {
+        let one = ics.replacingOccurrences(of: "SEQUENCE:2\r", with: "SEQUENCE:2\r\nRECURRENCE-ID;TZID=Europe/London:20261016T140000\r")
+        let reply = Invitation.parse(one)!.reply(.declined, attendee: "me@x.test", name: nil)
+        #expect(reply.contains("RECURRENCE-ID;TZID=Europe/London:20261016T140000"))
     }
 
     @Test func repliesTheWayCalendarsExpect() {

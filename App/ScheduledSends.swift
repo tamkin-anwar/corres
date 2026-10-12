@@ -25,6 +25,9 @@ final class ScheduledSends {
         let scheduledAt: Date
         /// They replied after it was scheduled; waiting for you to decide.
         var heldBecauseReplied = false
+        /// Tried once already, in the Share sheet: sent under its own
+        /// Message-ID, after asking Gmail. Optional so saved items decode.
+        var fromShareSheet: Bool?
 
         static func == (a: Item, b: Item) -> Bool {
             a.id == b.id && a.sendAt == b.sendAt && a.heldBecauseReplied == b.heldBecauseReplied
@@ -86,6 +89,10 @@ final class ScheduledSends {
     func sendDue(store: MailStore, outbox: OutboxService, now: Date = .now) async {
         adoptShared(now: now)
         for item in items where !item.heldBecauseReplied && item.sendAt <= now {
+            // Two checks can overlap (a push as Corres opens): whichever
+            // takes it off the list first is the one that sends it.
+            guard let current = items.first(where: { $0.id == item.id }), !current.heldBecauseReplied,
+                  current.sendAt <= now else { continue }
             let thread = item.draft.threadID.flatMap { store.thread($0) }
             // A reply they've already answered: hold it, and ask.
             if let thread, item.draft.kind != .new, !thread.isFromAccountOwner, thread.receivedAt > item.scheduledAt {
@@ -93,7 +100,7 @@ final class ScheduledSends {
                 continue
             }
             remove(item.id)
-            await outbox.sendNow(item.draft, replyingTo: thread)
+            await outbox.sendNow(item.draft, replyingTo: thread, asEarlierAttempt: item.fromShareSheet == true)
         }
         keepTime(store: store, outbox: outbox)
     }
@@ -104,7 +111,7 @@ final class ScheduledSends {
         let shared = ShareOutbox.takeAll()
         guard !shared.isEmpty else { return }
         for draft in shared where !items.contains(where: { $0.id == draft.id }) {
-            items.append(Item(id: draft.id, draft: draft, sendAt: now, scheduledAt: now))
+            items.append(Item(id: draft.id, draft: draft, sendAt: now, scheduledAt: now, fromShareSheet: true))
         }
         items.sort { $0.sendAt < $1.sendAt }
         save()
@@ -113,7 +120,8 @@ final class ScheduledSends {
     func sendNow(_ id: UUID, store: MailStore, outbox: OutboxService) async {
         guard let item = items.first(where: { $0.id == id }) else { return }
         remove(id)
-        await outbox.sendNow(item.draft, replyingTo: item.draft.threadID.flatMap { store.thread($0) })
+        await outbox.sendNow(item.draft, replyingTo: item.draft.threadID.flatMap { store.thread($0) },
+                             asEarlierAttempt: item.fromShareSheet == true)
     }
 
     /// While Corres is open, sends each one on its minute.

@@ -858,7 +858,8 @@ struct ConversationView: View {
     private func answer(_ invitation: Invitation, with response: Invitation.Response, in thread: Correspondence) {
         let account = thread.id.account
         let address = SendAsDirectory.shared.address(for: account, answering: thread)
-        let me = address?.email ?? account
+        let me = invitation.invitedAddress(among: [account] + SendAsDirectory.shared.addresses(for: account).map(\.email),
+                                           fallback: address?.email ?? account)
         let name = address?.name.isEmpty == false ? address?.name : nil
         let verb = response == .tentative ? "Tentatively accepted" : response.verb
         var draft = Draft(kind: .reply, threadID: thread.id, fromAccount: account, to: invitation.organizerEmail,

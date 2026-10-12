@@ -147,26 +147,33 @@ final class ThreadActionService {
         let moving: [Correspondence] = scope == .thisEmail ? [thread]
             : Array(store.threads.filter { $0.senderEmail?.lowercased() == thread.senderEmail?.lowercased()
                 && SenderLessons.category(for: $0) == category }.prefix(50))
+        // Here at once, with Undo; Gmail follows behind, one email at a
+        // time (up to 50 round trips, too slow to wait on before saying so).
         var before: [(ThreadID, [String])] = []
         for item in moving where item.id.account != Self.sampleAccount {
-            let labels = item.labelIds
-            before.append((item.id, labels))
-            let next = labels.filter { !InboxCategory.gmailLabels.contains($0) } + [category.gmailLabel]
-            await store.setLabelIds(next, for: item.id)
-            try? await client.modifyThread(threadId: item.id.providerID, addLabelIds: [category.gmailLabel],
-                                           removeLabelIds: Array(InboxCategory.gmailLabels.subtracting([category.gmailLabel])),
-                                           account: item.id.account)
+            before.append((item.id, item.labelIds))
+            await store.setLabelIds(item.labelIds.filter { !InboxCategory.gmailLabels.contains($0) } + [category.gmailLabel], for: item.id)
         }
         store.listsShouldRebuild()
-        offerUndo(said, systemImage: "tray.and.arrow.down") { [store, client] in
+        let client = client
+        let forward = Task {
+            for (id, _) in before {
+                try? await client.modifyThread(threadId: id.providerID, addLabelIds: [category.gmailLabel],
+                                               removeLabelIds: Array(InboxCategory.gmailLabels.subtracting([category.gmailLabel])),
+                                               account: id.account)
+            }
+        }
+        offerUndo(said, systemImage: "tray.and.arrow.down") { [store] in
             undoRule()
+            for (id, labels) in before { await store.setLabelIds(labels, for: id) }
+            store.listsShouldRebuild()
+            // After the move has reached Gmail, so Gmail ends where it began.
+            await forward.value
             for (id, labels) in before {
-                await store.setLabelIds(labels, for: id)
                 let added = labels.filter(InboxCategory.gmailLabels.contains)
                 try? await client.modifyThread(threadId: id.providerID, addLabelIds: added,
                                                removeLabelIds: Array(InboxCategory.gmailLabels.subtracting(added)), account: id.account)
             }
-            store.listsShouldRebuild()
         }
     }
 

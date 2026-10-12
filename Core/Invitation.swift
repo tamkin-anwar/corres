@@ -13,6 +13,10 @@ public struct Invitation: Equatable, Sendable {
     let organizerLine: String
     let startLine: String
     let recurrenceLine: String?
+    /// One date of a repeating event: the answer is for that date only.
+    let recurrenceIDLine: String?
+    /// Everyone invited, by address, to find which of yours it was sent to.
+    public let attendees: [String]
 
     public enum Response: String, Sendable {
         case accepted = "ACCEPTED", tentative = "TENTATIVE", declined = "DECLINED"
@@ -29,7 +33,9 @@ public struct Invitation: Equatable, Sendable {
     /// Only a request (an invitation), not a published calendar or a
     /// cancellation.
     public static func parse(_ ics: String) -> Invitation? {
-        let unfolded = ics.replacingOccurrences(of: "\r\n ", with: "").replacingOccurrences(of: "\n ", with: "")
+        // Long lines continue on the next after a space or a tab (RFC 5545).
+        let unfolded = ics.replacingOccurrences(of: "\r\n ", with: "").replacingOccurrences(of: "\r\n\t", with: "")
+            .replacingOccurrences(of: "\n ", with: "").replacingOccurrences(of: "\n\t", with: "")
             .replacingOccurrences(of: "\r", with: "")
         let lines = unfolded.split(separator: "\n").map(String.init)
         guard lines.contains(where: { $0.uppercased().hasPrefix("METHOD:REQUEST") }),
@@ -46,9 +52,21 @@ public struct Invitation: Equatable, Sendable {
               let mailto = organizer.range(of: "mailto:", options: .caseInsensitive) else { return nil }
         let email = String(organizer[mailto.upperBound...]).trimmingCharacters(in: .whitespaces).lowercased()
         let summary = (value("SUMMARY") ?? "Event").replacingOccurrences(of: "\\,", with: ",")
+        let attendees = event.filter { $0.uppercased().hasPrefix("ATTENDEE") }.compactMap { line -> String? in
+            guard let mailto = line.range(of: "mailto:", options: .caseInsensitive) else { return nil }
+            return String(line[mailto.upperBound...]).trimmingCharacters(in: .whitespaces).lowercased()
+        }
         return Invitation(uid: uid, organizerEmail: email, summary: summary,
                           sequence: Int(value("SEQUENCE") ?? "") ?? 0,
-                          organizerLine: organizer, startLine: start, recurrenceLine: line("RRULE"))
+                          organizerLine: organizer, startLine: start, recurrenceLine: line("RRULE"),
+                          recurrenceIDLine: line("RECURRENCE-ID"), attendees: attendees)
+    }
+
+    /// Which of your addresses it was sent to (an alias, say), so the
+    /// organizer's calendar marks you, not a stranger; else `fallback`.
+    public func invitedAddress(among yours: [String], fallback: String) -> String {
+        let mine = Set(yours.map { $0.lowercased() })
+        return attendees.first { mine.contains($0) } ?? fallback
     }
 
     /// The reply, as the calendar part of an email to the organizer.
@@ -68,6 +86,7 @@ public struct Invitation: Equatable, Sendable {
             startLine,
         ]
         if let recurrenceLine { lines.append(recurrenceLine) }
+        if let recurrenceIDLine { lines.append(recurrenceIDLine) }
         lines += [
             organizerLine,
             "ATTENDEE;PARTSTAT=\(response.rawValue)\(who):mailto:\(attendee)",

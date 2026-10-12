@@ -31,7 +31,7 @@ struct OutOfOfficeView: View {
                 Section {
                     Button("Allow Corres to Change Out of Office") { Task { await allow() } }
                 } footer: {
-                    Text("Google asks once for permission to change this setting for \(account). Corres asks only now, not when you sign in.")
+                    Text(message ?? "Google asks once for permission to change this setting for \(account). Corres asks only now, not when you sign in.")
                 }
             case .failed:
                 Section {
@@ -57,7 +57,11 @@ struct OutOfOfficeView: View {
                         TextField("Subject", text: Binding(get: { vacation.responseSubject ?? "" },
                                                            set: { vacation.responseSubject = $0 }))
                         TextField("I'm away until…", text: Binding(get: { vacation.responseBodyPlainText ?? "" },
-                                                                   set: { vacation.responseBodyPlainText = $0 }), axis: .vertical)
+                                                                   set: {
+                                                                       vacation.responseBodyPlainText = $0
+                                                                       // Changed here: this is the message now.
+                                                                       vacation.responseBodyHtml = nil
+                                                                   }), axis: .vertical)
                             .lineLimit(4...10)
                     }
                     Section {
@@ -67,9 +71,10 @@ struct OutOfOfficeView: View {
                 }
                 Section {
                     Button(saving ? "Saving\u{2026}" : "Save") { Task { await save() } }
-                        .disabled(saving)
+                        .disabled(saving || isMissingMessage)
                 } footer: {
-                    if let message { Text(message) }
+                    if isMissingMessage { Text("Write the message Gmail should send.") }
+                    else if let message { Text(message) }
                 }
             }
         }
@@ -87,12 +92,24 @@ struct OutOfOfficeView: View {
     private func load() async {
         guard !account.isEmpty else { return }
         state = .loading
+        message = nil
         guard await auth.canManageSettings(account) else { state = .needsPermission; return }
         do {
-            let loaded = try await client.vacation(account: account)
+            var loaded = try await client.vacation(account: account)
+            // Written on Gmail's website: shown as its words.
+            if (loaded.responseBodyPlainText ?? "").isEmpty, let html = loaded.responseBodyHtml,
+               let text = try? NSAttributedString(data: Data(html.utf8),
+                                                  options: [.documentType: NSAttributedString.DocumentType.html,
+                                                            .characterEncoding: String.Encoding.utf8.rawValue],
+                                                  documentAttributes: nil).string {
+                loaded.responseBodyPlainText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
             vacation = loaded
             if let ms = loaded.startTime.flatMap(Double.init) { start = Date(timeIntervalSince1970: ms / 1000) }
             if let ms = loaded.endTime.flatMap(Double.init) { end = Date(timeIntervalSince1970: ms / 1000); hasEnd = true }
+            // On with no end date (set elsewhere): kept that way, not given
+            // a week's end on the next save.
+            else if loaded.enableAutoReply { hasEnd = false }
             state = .ready
         } catch {
             state = .failed
@@ -100,7 +117,17 @@ struct OutOfOfficeView: View {
     }
 
     private func allow() async {
-        if await auth.grantSettings(for: account) { await load() }
+        message = nil
+        if await auth.grantSettings(for: account) {
+            await load()
+        } else {
+            message = "Google didn\u{2019}t give Corres permission. Make sure you pick \(account) and tick the Gmail settings box."
+        }
+    }
+
+    /// On with no message would send an empty reply.
+    private var isMissingMessage: Bool {
+        vacation.enableAutoReply && (vacation.responseBodyPlainText ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func save() async {

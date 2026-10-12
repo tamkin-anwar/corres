@@ -590,6 +590,9 @@ struct GmailAPIClient {
         var enableAutoReply: Bool
         var responseSubject: String?
         var responseBodyPlainText: String?
+        /// Set on Gmail's website (formatted). Kept as it is unless the
+        /// message is changed here; Gmail sends this one when both exist.
+        var responseBodyHtml: String?
         var restrictToContacts: Bool?
         var restrictToDomain: Bool?
         var startTime: String?
