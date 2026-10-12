@@ -77,6 +77,11 @@ struct PreferencesView: View {
                         settingLabel("Sorting", "line.3.horizontal.decrease")
                     }
                     NavigationLink {
+                        OutOfOfficeView(auth: auth)
+                    } label: {
+                        settingLabel("Out of Office", "airplane")
+                    }
+                    NavigationLink {
                         SendersView(store: store, unsubscriber: unsubscriber)
                     } label: {
                         settingLabel("Senders", "person.2")

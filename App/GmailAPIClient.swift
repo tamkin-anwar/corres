@@ -584,6 +584,37 @@ struct GmailAPIClient {
             .map { SendAs(email: $0.sendAsEmail.lowercased(), name: $0.displayName ?? "", isDefault: $0.isDefault ?? false, isPrimary: $0.isPrimary ?? false) }
     }
 
+    /// Gmail's vacation reply (Out of Office). Times are milliseconds since
+    /// 1970, as Gmail keeps them.
+    struct Vacation: Codable, Equatable, Sendable {
+        var enableAutoReply: Bool
+        var responseSubject: String?
+        var responseBodyPlainText: String?
+        var restrictToContacts: Bool?
+        var restrictToDomain: Bool?
+        var startTime: String?
+        var endTime: String?
+    }
+
+    func vacation(account: String) async throws -> Vacation {
+        let token = try await accessToken(for: account)
+        let (data, response) = try await authorizedRequest(
+            url: URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/settings/vacation")!, token: token)
+        try validate(response)
+        return try JSONDecoder().decode(Vacation.self, from: data)
+    }
+
+    func setVacation(_ vacation: Vacation, account: String) async throws {
+        let token = try await accessToken(for: account)
+        var request = URLRequest(url: URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/settings/vacation")!)
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(vacation)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        try validate(response)
+    }
+
     /// Saves a draft in Gmail's Drafts, so it's there on every device:
     /// creates one, or updates `existingID` in place. Returns the draft's id.
     func saveDraft(raw: String, threadId: String?, existingID: String?, account: String) async throws -> String {

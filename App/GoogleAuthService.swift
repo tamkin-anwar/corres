@@ -142,6 +142,34 @@ final class GoogleAuthService {
     /// whole point of this batch. Signing in an already-connected account
     /// again (e.g. to refresh a revoked grant) is a harmless no-op merge.
     static let modifyScope = "https://www.googleapis.com/auth/gmail.modify"
+    /// Out of Office (Gmail's vacation reply). Asked for only when someone
+    /// opens it, never at sign-in, so nobody else sees a longer consent.
+    static let settingsScope = "https://www.googleapis.com/auth/gmail.settings.basic"
+
+    /// Whether this account's login allows settings like Out of Office.
+    func canManageSettings(_ email: String) async -> Bool {
+        if await GoogleTokenProvider.shared.grantedScopes(for: email) == nil {
+            // Scopes come with a fresh token; a cached one doesn't say.
+            await GoogleTokenProvider.shared.invalidateAccessToken(for: email)
+            _ = try? await GoogleTokenProvider.shared.accessToken(for: email)
+        }
+        return await GoogleTokenProvider.shared.grantedScopes(for: email)?.contains(Self.settingsScope) ?? false
+    }
+
+    /// Asks Google for the settings permission on this account, keeping
+    /// everything it already allows.
+    func grantSettings(for email: String) async -> Bool {
+        guard let presenter = Self.rootViewController() else { return false }
+        do {
+            let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presenter, hint: email,
+                                                                   additionalScopes: Self.gmailScopes + [Self.settingsScope])
+            guard result.user.profile?.email.lowercased() == email.lowercased() else { return false }
+            await GoogleTokenProvider.shared.store(refreshToken: result.user.refreshToken.tokenString, for: email)
+            return Set(result.user.grantedScopes ?? []).contains(Self.settingsScope)
+        } catch {
+            return false
+        }
+    }
 
     /// `hint` pre-selects an account in Google's picker, for reconnecting
     /// one whose permissions are incomplete. Gmail scopes are requested in
