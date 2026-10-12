@@ -509,18 +509,21 @@ private struct ReadingSettingsView: View {
     @AppStorage(CorresSettings.openLinksKey) private var openLinks = CorresSettings.OpenLinks.inCorres.rawValue
     @AppStorage(AfterRemoval.key) private var afterRemoval = AfterRemoval.nextConversation.rawValue
     @AppStorage(CorresSettings.summariesKey) private var summaries = true
+    @AppStorage(CorresSettings.keyDetailsKey) private var keyDetails = true
     @Environment(MailIntelligence.self) private var intelligence
 
     var body: some View {
         Form {
             Section {
+                Toggle("Key details", isOn: $keyDetails)
                 Toggle("Summarize emails", isOn: $summaries)
             } header: {
-                Text("Summaries")
+                Text("At the top of each email")
             } footer: {
-                Text(intelligence.isAvailable
-                     ? "A short summary at the top of each email and conversation, written on this iPhone and checked against the email: every name, number and date in it has to be in the email. Part of Corres Pro."
-                     : "Without Apple Intelligence, summaries are the email's own key sentence, taken word for word. Part of Corres Pro.")
+                Text("Key details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. "
+                     + (intelligence.isAvailable
+                        ? "Summaries are written on this iPhone and checked against the email: every name, number and date has to be in it. Summaries are part of Corres Pro."
+                        : "Summaries need Apple Intelligence, and are part of Corres Pro."))
             }
             Section {
                 Picker("Remote images", selection: $remoteImages) {

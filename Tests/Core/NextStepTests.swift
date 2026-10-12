@@ -68,11 +68,9 @@ struct NextStepTests {
         #expect(!MailDigest.restatesOpening(summary, of: email))
     }
 
-    /// Quoted from the email, the fallback picks its opening lines here,
-    /// which the restatement check catches before it's shown.
-    @Test func theFallbackQuotingTheOpeningIsCaught() {
-        let fallback = MailDigest.extractiveSummary(text: MailDigest.clean(tetanus), kind: .notification)
-        #expect(fallback.map { MailDigest.restatesOpening($0, of: tetanus) } ?? true)
+    /// Nothing buried to point at in a short reminder.
+    @Test func aShortReminderHasNoBuriedAsk() {
+        #expect(MailDigest.buriedAsk(text: MailDigest.clean(tetanus)) == nil)
     }
 }
 

@@ -269,6 +269,8 @@ struct ConversationView: View {
             showRemoteImages = false
             calendarEvent = nil
             nextStep = nil
+            glance = nil
+            buriedAsk = nil
             // Keep the list underneath scrolled to the conversation you're
             // on while it's hidden, so going back shows it already in place.
             router.returnAnchor = currentID
@@ -292,7 +294,10 @@ struct ConversationView: View {
             // The event this email is about, once its full text is here.
             if let current = store.thread(currentID) {
                 calendarEvent = await Self.findEvent(in: current)
-                nextStep = await Self.findNextStep(in: current)
+                let aids = await Self.readingAids(in: current)
+                nextStep = aids.nextStep
+                glance = aids.glance
+                buriedAsk = aids.ask
             }
             // Covers the whole conversation once its history is here.
             if proUnlocked, let current = store.thread(currentID) {
@@ -361,6 +366,11 @@ struct ConversationView: View {
     @State private var calendarEvent: EventSuggestion?
     /// What the email asks you to do, with its link (`MailDigest.nextStep`).
     @State private var nextStep: NextStep?
+    /// A receipt's or bill's status and figures, and what a long email asks
+    /// of you, read from the email itself.
+    @State private var glance: Glance?
+    @State private var buriedAsk: String?
+    @AppStorage(CorresSettings.keyDetailsKey) private var keyDetailsOn = true
     private var loadsImages: Bool { remoteImages == CorresSettings.RemoteImages.always.rawValue }
 
     /// Settings → Reading → Ask before moving to Trash.
@@ -462,14 +472,14 @@ struct ConversationView: View {
     /// Gmail's), what it covers, the summary, and any key points it left out.
     private func summaryBlock(_ insight: MailIntelligence.Insight, summary: String) -> some View {
         let isConversation = insight.messageCount > 1
-        let title = insight.isExtractive ? "From the email" : (isConversation ? "The conversation so far" : "In short")
+        let title = isConversation ? "The conversation so far" : "In short"
         let coverage: String? = isConversation && insight.coversWholeMessage ? "\(insight.messageCount) messages" : nil
         return VStack(alignment: .leading, spacing: 8) {
             Button {
                 withAnimation(.easeOut(duration: 0.2)) { summaryCollapsed.toggle() }
             } label: {
                 HStack(spacing: 8) {
-                    Label(title, systemImage: insight.isExtractive ? "text.quote" : "sparkle")
+                    Label(title, systemImage: "sparkle")
                         .labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
                     Spacer(minLength: 8)
                     if let coverage {
@@ -487,7 +497,7 @@ struct ConversationView: View {
                 Text(summary)
                     .font(.subheadline).lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityLabel(insight.isExtractive ? "From the email: \(summary)" : summary)
+                    .accessibilityLabel(summary)
                 if !insight.details.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
                         ForEach(insight.details, id: \.self) { point in
@@ -530,6 +540,14 @@ struct ConversationView: View {
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Summarizing")
+                Hairline().padding(.vertical, 2)
+            }
+            if keyDetailsOn, let glance {
+                glanceBlock(glance)
+                Hairline().padding(.vertical, 2)
+            } else if keyDetailsOn, insight?.summary == nil, !isPreparing, let buriedAsk, !thread.isFromAccountOwner {
+                // A written summary already leads with the ask.
+                askBlock(buriedAsk, due: thread.attention == .needsYou ? thread.dueAt : nil)
                 Hairline().padding(.vertical, 2)
             }
             if let nextStep, !thread.isFromAccountOwner {
@@ -583,6 +601,55 @@ struct ConversationView: View {
         }
     }
 
+    /// A receipt's, delivery's or bill's status and key figures, the way
+    /// Wallet lays out a pass: the status first, then label and value.
+    private func glanceBlock(_ glance: Glance) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let status = glance.status {
+                Label(status, systemImage: glance.isAlert ? "exclamationmark.circle.fill" : "checkmark.circle")
+                    .labelStyle(TightLabelStyle())
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(glance.isAlert ? CorresPalette.alert : CorresPalette.ink)
+            } else {
+                Label("At a glance", systemImage: "list.bullet.rectangle").labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
+            }
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 22) { glanceFacts(glance) }
+                VStack(alignment: .leading, spacing: 8) { glanceFacts(glance) }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private func glanceFacts(_ glance: Glance) -> some View {
+        ForEach(glance.facts, id: \.self) { fact in
+            VStack(alignment: .leading, spacing: 1) {
+                Text(fact.label).font(.caption).foregroundStyle(CorresPalette.secondary)
+                Text(fact.value).font(.body.weight(.semibold)).monospacedDigit().foregroundStyle(CorresPalette.ink)
+                    .textSelection(.enabled)
+            }
+            .fixedSize()
+        }
+    }
+
+    /// What a long email asks of you, in the sender's words, so it isn't
+    /// missed halfway down.
+    private func askBlock(_ ask: String, due: Date?) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 8) {
+                Label("Asks you", systemImage: "questionmark.bubble").labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
+                Spacer(minLength: 8)
+                if let due { DueChip(date: due) }
+            }
+            Text("\u{201C}\(ask)\u{201D}")
+                .font(.subheadline).lineSpacing(3).foregroundStyle(CorresPalette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
     /// The email's one call to action, opened where links open.
     private func nextStepRow(_ step: NextStep) -> some View {
         Button { LinkOpener.open(step.url) } label: {
@@ -609,8 +676,8 @@ struct ConversationView: View {
 
     /// Off the main thread: reading a designed email's links is a full pass
     /// over its HTML.
-    private static func findNextStep(in thread: Correspondence) async -> NextStep? {
-        guard thread.isBodyLoaded else { return nil }
+    private static func readingAids(in thread: Correspondence) async -> (nextStep: NextStep?, glance: Glance?, ask: String?) {
+        guard thread.isBodyLoaded else { return (nil, nil, nil) }
         let isBulk = InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) != nil
         let isPromotion = InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == .promotions
         let body = thread.body, html = thread.htmlBody, subject = thread.subject, sender = thread.senderEmail
@@ -622,7 +689,10 @@ struct ConversationView: View {
             let kind = isPromotion ? .newsletter
                 : MailDigest.kind(subject: subject, text: MailDigest.clean(whole), senderEmail: sender, isBulk: isBulk,
                                   looksAutomated: automated, hasEvent: false)
-            return MailDigest.nextStep(text: whole, html: html, kind: kind)
+            let cleaned = MailDigest.clean(whole)
+            return (MailDigest.nextStep(text: whole, html: html, kind: kind),
+                    MailDigest.glance(text: cleaned, kind: kind),
+                    kind == .personal ? MailDigest.buriedAsk(text: cleaned) : nil)
         }.value
     }
 

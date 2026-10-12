@@ -199,62 +199,36 @@ struct MailDigestTests {
 
     // MARK: Summary from the email's own sentences
 
-    @Test func extractivePrefersTheAskOverTheGreeting() {
-        let text = """
-        Hi Tamkin,
-        Hope you're doing well!
-        We finished the second round of designs last week and the team is happy with them.
-        Could you review the pricing page and send feedback by Wednesday?
-        Best regards,
-        Sofia
-        """
-        let summary = MailDigest.extractiveSummary(text: text, kind: .personal)
-        #expect(summary == "Could you review the pricing page and send feedback by Wednesday?")
+    private static let longAsk = """
+    Hi Tamkin,
+    Hope you're doing well!
+    We finished the second round of designs last week and the team is happy with them. The new homepage \
+    tested well with the five customers we showed it to, and the onboarding flow is a lot shorter than the \
+    first version. Engineering has started on the components we agreed on, and the marketing site should \
+    follow in a couple of weeks once copy is final. There are a few open questions about the illustrations \
+    but nothing blocking. We also moved the launch review to the following week so the team has time to \
+    test everything properly on older phones and on the smaller screens our customers still use.
+    Could you review the pricing page and send feedback by Wednesday?
+    Best regards,
+    Sofia
+    """
+
+    @Test func theAskIsFoundWhenItsBuried() {
+        #expect(MailDigest.buriedAsk(text: Self.longAsk) == "Could you review the pricing page and send feedback by Wednesday?")
     }
 
-    @Test func extractiveNeverAddsWords() {
-        let text = "Your subscription renews on Oct 28 for $9.99. No action is needed if you want to keep it. Manage it anytime in Settings."
-        let summary = MailDigest.extractiveSummary(text: text, kind: .receipt) ?? ""
-        #expect(MailDigest.isFaithful(summary, source: text))
-        #expect(summary.contains("$9.99"))
+    /// Up top it's read anyway; in a short email there's nothing to find.
+    @Test func noAskWhenItsInPlainSight() {
+        #expect(MailDigest.buriedAsk(text: "Could you send the deck by Friday? Thanks, Sofia") == nil)
+        let opening = "Could you review the pricing page by Wednesday? " + String(repeating: "We made progress on the designs this week. ", count: 15)
+        #expect(MailDigest.buriedAsk(text: opening) == nil)
     }
 
-    @Test func extractiveCodeReturnsTheSentenceWithTheCode() {
-        let text = "Hello,\nYour verification code is 551209. It expires in 10 minutes.\nIf you didn't ask for this, ignore this email."
-        #expect(MailDigest.extractiveSummary(text: text, kind: .code) == "Your verification code is 551209.")
-    }
-
-    /// An Uber receipt's layout read as text: headings, table rows and a
-    /// button, with an upsell question. Its summary was the upsell and the
-    /// button ("Want to switch your payment method? Download the receipt
-    /// in a PDF format Download PDF"). Nothing beats that.
-    @Test func designedReceiptNeverQuotesItsButtonsOrUpsell() {
-        let text = """
-        Failed payment
-        8 Oct 2026 , 08:27
-        Thanks for riding, Niloy
-        Total £14.62
-        Trip fare £12.10
-        Booking fee £2.52
-        Want to switch your payment method?
-        Download the receipt in a PDF format Download PDF
-        Visit the Help Centre
-        Uber B.V. Registered in the Netherlands.
-        """
-        let summary = MailDigest.extractiveSummary(text: text, kind: .receipt)
-        #expect(summary == nil)
-    }
-
-    @Test func designedMailKeepsItsRealSentence() {
-        let text = """
-        Payment failed
-        We couldn't charge your Visa ending 4242 for your trip on 8 Oct.
-        Need help with a payment?
-        Update payment method
-        You're receiving this email because you have an account.
-        """
-        #expect(MailDigest.extractiveSummary(text: text, kind: .notification)
-                == "We couldn't charge your Visa ending 4242 for your trip on 8 Oct.")
+    /// Sales and help questions aren't asks.
+    @Test func promptQuestionsAreNotAsks() {
+        let text = String(repeating: "Here is what changed in your plan this month. ", count: 12)
+            + "Want to switch your payment method? Need help? Questions? Not you?"
+        #expect(MailDigest.buriedAsk(text: text) == nil)
     }
 
     @Test func promptQuestionsAndBoilerplateAreRecognized() {
@@ -267,12 +241,6 @@ struct MailDigestTests {
         #expect(MailDigest.isBoilerplate("© 2026 Uber Technologies Inc."))
         #expect(MailDigest.isBoilerplate("Please do not reply to this email."))
         #expect(!MailDigest.isBoilerplate("Your order has shipped and arrives Thursday."))
-    }
-
-    /// People skip full stops; a personal email's last line still counts.
-    @Test func personalMailNeedsNoFullStop() {
-        let text = "Hey\nCan you grab the keys from Ash before 6 tonight\nthanks"
-        #expect(MailDigest.extractiveSummary(text: text, kind: .personal) == "Can you grab the keys from Ash before 6 tonight")
     }
 
     // MARK: Conversations and long emails

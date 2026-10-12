@@ -9,14 +9,16 @@ import Observation
 ///
 /// Built on Apple's Foundation Models framework (the on-device model behind
 /// Apple Intelligence), like `SemanticTriageService`. There is deliberately
-/// no cloud fallback: mail never leaves the device. On an iPhone without
-/// Apple Intelligence, summaries are taken word for word from the email
-/// instead (see `MailDigest.extractiveSummary`).
+/// no cloud fallback: mail never leaves the device. Without Apple
+/// Intelligence there's no summary: quoting the email's own sentences
+/// above the email never saved reading, and picked up buttons and sales
+/// lines from designed mail. Receipts, deliveries and bills get their
+/// key figures instead, with or without it (`MailDigest.glance`).
 ///
 /// Summaries are held to the email: every number, date, name and code in
 /// one must be in the email itself (`MailDigest.unsupportedClaims`). One
-/// that isn't gets one stricter retry, then the word-for-word summary; a
-/// wrong summary is never shown.
+/// that isn't gets one stricter retry, then none; a wrong summary is
+/// never shown.
 ///
 /// Everything is advisory. A drafted reply lands in the compose sheet for
 /// the person to read and edit; nothing here ever sends, files, or changes
@@ -35,9 +37,8 @@ final class MailIntelligence {
         /// False when the email or conversation was too long for the
         /// on-device model to read whole; the card says so.
         var coversWholeMessage = true
-        /// Taken word for word from the email rather than written by the
-        /// model (no Apple Intelligence, or the model's summary failed the
-        /// accuracy check).
+        /// Summaries quoted from the email (rules 2 and before); kept so
+        /// saved ones still decode, never set now.
         var isExtractive = false
         /// How many messages it covers; more than one is a conversation
         /// summary.
@@ -49,7 +50,7 @@ final class MailIntelligence {
     }
 
     /// Bumped when what's worth summarizing changes.
-    nonisolated static let summaryRules = 2
+    nonisolated static let summaryRules = 3
 
     enum Tone: String, CaseIterable, Identifiable {
         case shorter = "Shorter", warmer = "Warmer", formal = "More formal", proofread = "Proofread"
@@ -154,21 +155,18 @@ final class MailIntelligence {
             guard let summary, isConversation || !MailDigest.restatesOpening(summary, of: latest.text) else { return nil }
             return summary
         }
-        let fallback = wantsSummary ? adds(MailDigest.extractiveSummary(text: latest.text, kind: kind)) : nil
-
         guard isAvailable, #available(iOS 26.0, *),
               let result = await generate(thread: thread, messages: readable, kind: kind, isConversation: isConversation,
                                           source: source, wantsSummary: wantsSummary) else {
-            store(Insight(summary: fallback, replyIntents: [], isExtractive: true, messageCount: messages.count), for: key)
+            store(Insight(summary: nil, replyIntents: [], messageCount: messages.count), for: key)
             return
         }
         let written = adds(result.summary)
-        let summary = wantsSummary ? (written ?? fallback) : nil
+        let summary = wantsSummary ? written : nil
         store(Insight(summary: summary,
                       details: summary == nil || written == nil ? [] : result.details,
                       replyIntents: wantsReplies ? Array(result.replies.prefix(3)) : [],
                       coversWholeMessage: result.covered,
-                      isExtractive: wantsSummary && written == nil,
                       messageCount: messages.count), for: key)
     }
 

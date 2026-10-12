@@ -69,6 +69,10 @@ enum CorresSettings {
     /// Whether the summary card is folded down to its heading; remembered,
     /// the way Gmail remembers a collapsed summary.
     static let summaryCollapsedKey = "corres.summaryCollapsed"
+    /// Settings → Reading → Key details: a receipt's or bill's status and
+    /// figures, and what a long email asks of you, read from the email
+    /// itself (no Apple Intelligence needed).
+    static let keyDetailsKey = "corres.keyDetails"
 
     // MARK: Lists
 

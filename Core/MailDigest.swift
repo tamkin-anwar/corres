@@ -500,48 +500,23 @@ public enum MailDigest {
         "utc", "gmt", "a.m", "p.m", "am", "pm", "okay", "yes", "no", "email", "note", "reply", "re", "fwd",
     ]
 
-    // MARK: - Summary from the email's own sentences
+    // MARK: - The ask, from the email's own sentences
 
-    /// One or two sentences taken word for word from the email: the one that
-    /// asks something or names a deadline, amount or code first, else the
-    /// first real sentence after the greeting. Never adds a word the email
-    /// doesn't have, so it can't be wrong, only less concise.
-    public static func extractiveSummary(text: String, kind: Kind) -> String? {
-        let all = self.sentences(in: text)
-        if kind == .code, let code = verificationCode(in: text),
-           let sentence = all.first(where: { $0.contains(code) }) {
-            return clipped(sentence)
+    /// What a person's email asks of you, in their own words: the request
+    /// or question addressed to you, preferring one with a deadline or an
+    /// amount. Only for an email long enough that it could be missed, and
+    /// only when it's past the opening lines, where it would be read anyway.
+    /// Never a sentence the email doesn't have, never a guess at one.
+    public static func buriedAsk(text: String) -> String? {
+        guard wordCount(text) >= minimumWords else { return nil }
+        let asks = sentences(in: text).filter { sentence in
+            MailSignals.asksSomething(sentence) && !isBoilerplate(sentence) && !isPromptQuestion(sentence)
+                && wordCount(sentence) >= 5
         }
-        // Designed mail (receipts, notifications) is laid out, not written:
-        // its headings and buttons arrive as lines with no full stop, and
-        // its questions are sales ("Want to switch your payment method?"
-        // was shown as an Uber receipt's summary). Only its real sentences
-        // count, and nothing at all beats boilerplate.
-        let isDesigned = kind != .personal
-        let sentences = all.filter { sentence in
-            !isBoilerplate(sentence) && !isPromptQuestion(sentence) && (!isDesigned || endsLikeASentence(sentence))
-        }
-        guard !sentences.isEmpty else { return nil }
-        let scored = sentences.enumerated().map { index, sentence -> (Int, Double, String) in
-            var score = max(0, 3.0 - Double(index) * 0.4)
-            if MailSignals.asksSomething(sentence) { score += isDesigned ? 1 : 4 }
-            if sentence.range(of: #"\p{Sc}\s?\d|\b(tk|rs|bdt|inr|usd|eur|gbp)\.?\s?\d|\b\d{1,2}(:\d{2})?\s?(am|pm)\b|\b(due|by|before|deadline|expires?)\b"#, options: [.regularExpression, .caseInsensitive]) != nil { score += 2 }
-            let words = wordCount(sentence)
-            if words < 6 { score -= 2 }
-            if words > 45 { score -= 1.5 }
-            return (index, score, sentence)
-        }
-        guard let best = scored.max(by: { $0.1 < $1.1 }), best.1 > 0 else { return nil }
-        var chosen = [best]
-        if wordCount(best.2) < 14, let next = scored.first(where: { $0.0 == best.0 + 1 }), wordCount(next.2) >= 5 {
-            chosen.append(next)
-        }
-        return clipped(chosen.sorted { $0.0 < $1.0 }.map(\.2).joined(separator: " "))
-    }
-
-    /// Ends the way written sentences do, not a heading or a button.
-    static func endsLikeASentence(_ sentence: String) -> Bool {
-        sentence.range(of: #"[.!?…:][)"'’”]*$"#, options: .regularExpression) != nil
+        let pressing = asks.first { $0.range(of: #"\p{Sc}\s?\d|\b\d{1,2}(:\d{2})?\s?(am|pm)\b|\b(due|by|before|deadline|until|tomorrow|today|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b"#, options: [.regularExpression, .caseInsensitive]) != nil }
+        guard let ask = pressing ?? asks.first, let range = text.range(of: ask) else { return nil }
+        guard wordCount(String(text[..<range.lowerBound])) >= 40 else { return nil }
+        return clipped(ask)
     }
 
     /// The parts of an email that are about the email or the app, never

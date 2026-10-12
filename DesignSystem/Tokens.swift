@@ -45,6 +45,9 @@ enum CorresPalette {
     static let swipeHandled = Color(hex: 0x1F8045) // green, 4.96:1
     static let swipeArchive = Color(hex: 0x8B45C8) // purple, 5.55:1
     static let swipeTrash = Color(hex: 0xD2342A) // red, 4.92:1
+    /// Something gone wrong in an email itself ("Payment failed"); the
+    /// system red, which keeps its contrast in light and dark.
+    static let alert = Color(uiColor: .systemRed)
     static let swipeUnread = Color(hex: 0x0B68D9) // blue, 5.25:1
     static let swipePin = Color(hex: 0x0E7C86) // teal, 4.95:1
     static let swipeSnooze = Color(hex: 0x4A5560)
