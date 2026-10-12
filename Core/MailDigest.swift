@@ -507,15 +507,24 @@ public enum MailDigest {
     /// first real sentence after the greeting. Never adds a word the email
     /// doesn't have, so it can't be wrong, only less concise.
     public static func extractiveSummary(text: String, kind: Kind) -> String? {
-        let sentences = self.sentences(in: text)
-        guard !sentences.isEmpty else { return nil }
+        let all = self.sentences(in: text)
         if kind == .code, let code = verificationCode(in: text),
-           let sentence = sentences.first(where: { $0.contains(code) }) {
+           let sentence = all.first(where: { $0.contains(code) }) {
             return clipped(sentence)
         }
+        // Designed mail (receipts, notifications) is laid out, not written:
+        // its headings and buttons arrive as lines with no full stop, and
+        // its questions are sales ("Want to switch your payment method?"
+        // was shown as an Uber receipt's summary). Only its real sentences
+        // count, and nothing at all beats boilerplate.
+        let isDesigned = kind != .personal
+        let sentences = all.filter { sentence in
+            !isBoilerplate(sentence) && !isPromptQuestion(sentence) && (!isDesigned || endsLikeASentence(sentence))
+        }
+        guard !sentences.isEmpty else { return nil }
         let scored = sentences.enumerated().map { index, sentence -> (Int, Double, String) in
             var score = max(0, 3.0 - Double(index) * 0.4)
-            if MailSignals.asksSomething(sentence) { score += 4 }
+            if MailSignals.asksSomething(sentence) { score += isDesigned ? 1 : 4 }
             if sentence.range(of: #"\p{Sc}\s?\d|\b(tk|rs|bdt|inr|usd|eur|gbp)\.?\s?\d|\b\d{1,2}(:\d{2})?\s?(am|pm)\b|\b(due|by|before|deadline|expires?)\b"#, options: [.regularExpression, .caseInsensitive]) != nil { score += 2 }
             let words = wordCount(sentence)
             if words < 6 { score -= 2 }
@@ -528,6 +537,26 @@ public enum MailDigest {
             chosen.append(next)
         }
         return clipped(chosen.sorted { $0.0 < $1.0 }.map(\.2).joined(separator: " "))
+    }
+
+    /// Ends the way written sentences do, not a heading or a button.
+    static func endsLikeASentence(_ sentence: String) -> Bool {
+        sentence.range(of: #"[.!?…:][)"'’”]*$"#, options: .regularExpression) != nil
+    }
+
+    /// The parts of an email that are about the email or the app, never
+    /// what it says: footers, legal lines, app and download prompts.
+    static func isBoilerplate(_ sentence: String) -> Bool {
+        sentence.range(of: boilerplatePattern, options: .regularExpression) != nil
+    }
+
+    private static let boilerplatePattern = #"(?i)\b(do not reply|don'?t reply|no-?reply|unsubscribe|you('re| are) receiving this|(this|the) (e-?mail|message) (was|is) (sent|intended)|sent to you because|all rights reserved|privacy (policy|notice|statement)|terms (of (use|service)|and conditions)|in (your|a) (web )?browser|having trouble (viewing|seeing)|address book|(email|notification|communication) preferences|download (the|our|your) (app|receipt|invoice|statement|pdf)|pdf format|get the app|app store|google play|follow us|registered (office|in)|company (no|number)|customer service is available)\b|©"#
+
+    /// Questions an email asks to sell or help, not ones it needs answered:
+    /// "Want to…?", "Need help?", "Questions?", "Not you?".
+    static func isPromptQuestion(_ sentence: String) -> Bool {
+        sentence.range(of: #"(?i)^(want|wanna|need|needing|looking|ready|interested|curious|tired|enjoying|love|loving|did you know|why not|have (any )?questions|got (a )?questions|questions|not you|didn'?t (request|ask|make)|wasn'?t (this )?you|forgot|having (issues|problems|trouble)|can'?t find)\b[^?]{0,90}\?"#,
+                       options: .regularExpression) != nil
     }
 
     /// Real sentences: greetings, pleasantries, sign-offs, bare link labels

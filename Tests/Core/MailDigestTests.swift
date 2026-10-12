@@ -224,6 +224,57 @@ struct MailDigestTests {
         #expect(MailDigest.extractiveSummary(text: text, kind: .code) == "Your verification code is 551209.")
     }
 
+    /// An Uber receipt's layout read as text: headings, table rows and a
+    /// button, with an upsell question. Its summary was the upsell and the
+    /// button ("Want to switch your payment method? Download the receipt
+    /// in a PDF format Download PDF"). Nothing beats that.
+    @Test func designedReceiptNeverQuotesItsButtonsOrUpsell() {
+        let text = """
+        Failed payment
+        8 Oct 2026 , 08:27
+        Thanks for riding, Niloy
+        Total £14.62
+        Trip fare £12.10
+        Booking fee £2.52
+        Want to switch your payment method?
+        Download the receipt in a PDF format Download PDF
+        Visit the Help Centre
+        Uber B.V. Registered in the Netherlands.
+        """
+        let summary = MailDigest.extractiveSummary(text: text, kind: .receipt)
+        #expect(summary == nil)
+    }
+
+    @Test func designedMailKeepsItsRealSentence() {
+        let text = """
+        Payment failed
+        We couldn't charge your Visa ending 4242 for your trip on 8 Oct.
+        Need help with a payment?
+        Update payment method
+        You're receiving this email because you have an account.
+        """
+        #expect(MailDigest.extractiveSummary(text: text, kind: .notification)
+                == "We couldn't charge your Visa ending 4242 for your trip on 8 Oct.")
+    }
+
+    @Test func promptQuestionsAndBoilerplateAreRecognized() {
+        for question in ["Want to switch your payment method?", "Need help?", "Questions?", "Not you?",
+                         "Didn't request this?", "Looking for something else?"] {
+            #expect(MailDigest.isPromptQuestion(question), "\(question)")
+        }
+        #expect(!MailDigest.isPromptQuestion("Could you send the revised budget by Thursday?"))
+        #expect(!MailDigest.isPromptQuestion("Need you to sign the lease by Friday."))
+        #expect(MailDigest.isBoilerplate("© 2026 Uber Technologies Inc."))
+        #expect(MailDigest.isBoilerplate("Please do not reply to this email."))
+        #expect(!MailDigest.isBoilerplate("Your order has shipped and arrives Thursday."))
+    }
+
+    /// People skip full stops; a personal email's last line still counts.
+    @Test func personalMailNeedsNoFullStop() {
+        let text = "Hey\nCan you grab the keys from Ash before 6 tonight\nthanks"
+        #expect(MailDigest.extractiveSummary(text: text, kind: .personal) == "Can you grab the keys from Ash before 6 tonight")
+    }
+
     // MARK: Conversations and long emails
 
     @Test func transcriptKeepsOrderAndMarksTheLatest() {
