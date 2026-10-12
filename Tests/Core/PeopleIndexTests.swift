@@ -67,6 +67,8 @@ struct PeopleIndexTests {
         #expect(PeopleIndex.split("Sara <s@x.com>, ") == (["Sara <s@x.com>"], ""))
         #expect(PeopleIndex.split(#""Doe, Jane" <j@x.com>, b@y.com, mi"#) == ([#""Doe, Jane" <j@x.com>"#, "b@y.com"], "mi"))
         #expect(PeopleIndex.split("a@x.com, sara ") == (["a@x.com"], "sara "))
+        // Still typing a quoted name: its comma doesn't finish anything.
+        #expect(PeopleIndex.split(#""Doe, Ja"#) == ([], #""Doe, Ja"#))
     }
 
     /// Before typing: who you're in touch with now, each once.
@@ -89,5 +91,37 @@ struct PeopleIndexTests {
         #expect(!top.map(\.email).contains("s@x.com"))
         #expect(top.last?.email == "old@x.com")
         #expect(!index.top(excluding: ["ridita.r@gmail.com"], now: now).map(\.email).contains("ridita.r@gmail.com"))
+    }
+
+    /// People first: desks, unsubscribe requests and your own other
+    /// addresses don't crowd out the people you write to.
+    @Test func topPeopleArePeople() {
+        var index = PeopleIndex()
+        for day in [1.0, 2, 3, 4, 5, 6, 7] { index.recordSent(to: "Lime CX <support@lime.zendesk.com>", at: daysAgo(day)) }
+        index.recordSent(to: "Bimmer Tech 3635 <service@bimmer.example>", at: daysAgo(1))
+        index.recordSent(to: "Ridu <ridita.r@gmail.com>", at: daysAgo(9))
+        index.recordSent(to: "Intake Coordinator <intake@clinic.example>", at: daysAgo(1))
+        index.recordSent(to: "ACME TECH <hi@acme.example>", at: daysAgo(1))
+        index.recordSent(to: "HighGainProject <hg@x.example>", at: daysAgo(1))
+        index.recordSent(to: "Academic Finance Assistant <af@uni.example>", at: daysAgo(1))
+        index.recordSent(to: "ebc123@unsub.beehiiv.com", at: daysAgo(1))
+        index.recordSent(to: "news@brand.example", at: daysAgo(1), subject: "unsubscribe")
+        index.recordSent(to: "Tamkin Anwar <tamkin@other.example>", at: daysAgo(1))
+        let top = index.top(ownNames: ["Tamkin Anwar"], now: now)
+        #expect(top.first?.email == "ridita.r@gmail.com")
+        #expect(top.contains { $0.email == "support@lime.zendesk.com" })
+        #expect(!top.contains { $0.email.contains("unsub") || $0.email == "news@brand.example" })
+        #expect(!top.contains { $0.email == "tamkin@other.example" })
+        // Typed, the desk is still there.
+        #expect(index.suggestions(for: "lime", now: now).first?.email == "support@lime.zendesk.com")
+    }
+
+    @Test func directoryNamesReadNaturally() {
+        #expect(Person.readable("Hoare, Olivia") == "Olivia Hoare")
+        #expect(Person.readable("Manzo, Goretty@EDD") == "Goretty Manzo")
+        #expect(Person.readable("Wiltshire, Sara (Finance)") == "Sara Wiltshire")
+        #expect(Person.readable("Acme, Inc.") == "Acme, Inc.")
+        #expect(Person.readable("Smith, Jones & Co") == "Smith, Jones & Co")
+        #expect(Person.readable("Ridu🍦") == "Ridu🍦")
     }
 }

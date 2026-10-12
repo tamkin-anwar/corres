@@ -293,4 +293,11 @@ struct MailDigestTests {
         #expect(!text.contains("Preview text only."))
         #expect(!text.contains("Filler"))
     }
+
+    @Test func confirmationAlertsAreNotToDos() {
+        #expect(MailDigest.isConfirmationAlert("You allowed Corres access to some of your Google Account data. If you didn’t allow Corres access, someone else may be trying"))
+        #expect(MailDigest.isConfirmationAlert("New sign-in on iPhone. If this was you, you don't need to do anything."))
+        #expect(MailDigest.isConfirmationAlert("If you didn&#39;t make this change, reset your password"))
+        #expect(!MailDigest.isConfirmationAlert("Your payment failed. Update your card by Friday."))
+    }
 }

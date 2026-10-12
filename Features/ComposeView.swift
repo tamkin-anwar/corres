@@ -509,7 +509,8 @@ struct ComposeView: View {
     /// now, one tap each. Gone the moment you start typing.
     @ViewBuilder
     private func suggestedPeople(for field: Field) -> some View {
-        let top = people?.top(excluding: alreadyAddressed) ?? []
+        let ownNames = Set((auth?.accounts ?? []).compactMap { auth?.profile(for: $0.email)?.name })
+        let top = people?.top(excluding: alreadyAddressed, ownNames: ownNames) ?? []
         // Same name, different address: maybe different people. Say which.
         let names = top.map(\.displayName)
         if !top.isEmpty {

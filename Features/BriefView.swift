@@ -61,7 +61,11 @@ struct BriefView: View {
         let pending = accountFilter == nil ? store.pendingSenderThreads : store.pendingSenderThreads.filter { $0.id.account == accountFilter }
         return Set(pending.compactMap(\.senderEmail)).count
     }
-    private var isConnected: Bool { !(auth?.accounts.isEmpty ?? true) }
+    /// Real mail on screen counts too: accounts are restored a moment after
+    /// launch, and the Brief shouldn't flash "Sample" over your own mail.
+    private var isConnected: Bool {
+        !(auth?.accounts.isEmpty ?? true) || store.threads.contains { $0.id.account != "sample" }
+    }
 
     var body: some View {
         if scrolls {

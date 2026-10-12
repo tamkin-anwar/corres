@@ -362,6 +362,7 @@ struct GmailAPIClient {
     struct Addressing: Sendable {
         let from: String
         let recipients: [String]
+        let subject: String
         let date: Date
     }
 
@@ -390,7 +391,7 @@ struct GmailAPIClient {
     }
 
     private func addressing(ids: [String], account: String) async throws -> [Addressing] {
-        let query = "format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc"
+        let query = "format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Subject"
         var found: [Addressing] = []
         for chunk in ids.chunked(into: Self.batchSize) {
             found += try await batchFetch(ids: chunk, query: query, account: account) { message in
@@ -399,7 +400,7 @@ struct GmailAPIClient {
                 let date = message.internalDate.flatMap { Double($0) }.map { Date(timeIntervalSince1970: $0 / 1000) } ?? .now
                 return Addressing(from: headers["from"] ?? "",
                                   recipients: PeopleIndex.entries(in: headers["to"] ?? "") + PeopleIndex.entries(in: headers["cc"] ?? ""),
-                                  date: date)
+                                  subject: headers["subject"] ?? "", date: date)
             }.items
         }
         return found

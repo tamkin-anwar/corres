@@ -221,7 +221,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
                 listUnsubscribeOneClick: Bool = false, senderUnsubscribed: Bool = false,
                 isBodyLoaded: Bool = true, waitingSince: Date? = nil, lastSentAt: Date? = nil) {
         self.id = id
-        self.sender = sender
+        self.sender = Person.readable(sender)
         self.senderEmail = senderEmail
         self.organization = organization
         self.subject = subject

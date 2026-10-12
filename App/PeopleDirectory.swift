@@ -40,13 +40,19 @@ final class PeopleDirectory {
         var history: PeopleIndex
         var backfilled: Set<String>
         var hidden: Set<String>
+        /// Bumped when what's read from Sent mail changes, so it's read again.
+        var version: Int?
     }
+    /// 2: unsubscribe requests and bounce addresses aren't people.
+    private static let version = 2
 
     init() {
         if let data = try? Data(contentsOf: Self.fileURL), let saved = try? JSONDecoder().decode(Saved.self, from: data) {
-            history = saved.history
-            backfilled = saved.backfilled
             hidden = saved.hidden
+            if saved.version == Self.version {
+                history = saved.history
+                backfilled = saved.backfilled
+            }
         }
         Task { await loadContacts() }
     }
@@ -64,8 +70,10 @@ final class PeopleDirectory {
     }
 
     /// Before anything is typed: who you're in touch with now.
-    func top(excluding: Set<String> = [], limit: Int = 6) -> [Person] {
-        index.top(limit: limit, excluding: excluding.union(hidden), favored: Set(contacts.people.keys))
+    /// Your own names (as on your accounts), so another address of yours
+    /// isn't offered as someone to write to.
+    func top(excluding: Set<String> = [], ownNames: Set<String> = [], limit: Int = 6) -> [Person] {
+        index.top(limit: limit, excluding: excluding.union(hidden), favored: Set(contacts.people.keys), ownNames: ownNames)
     }
 
     /// "Don't Suggest": never offered again (until all accounts are removed).
@@ -123,7 +131,7 @@ final class PeopleDirectory {
             guard let sent = try? await client.sentAddressing(account: account, limit: Self.sentHistoryLimit) else { continue }
             for message in sent {
                 for recipient in message.recipients where PeopleIndex.parse(recipient)?.email != account.lowercased() {
-                    history.recordSent(to: recipient, at: message.date)
+                    history.recordSent(to: recipient, at: message.date, subject: message.subject)
                 }
             }
             backfilled.insert(account)
@@ -147,7 +155,7 @@ final class PeopleDirectory {
                 let sender = PeopleIndex.parse(message.from)
                 if let sender, mine.contains(sender.email) {
                     for recipient in message.recipients where !mine.contains(PeopleIndex.parse(recipient)?.email ?? "") {
-                        history.recordSent(to: recipient, at: message.date)
+                        history.recordSent(to: recipient, at: message.date, subject: message.subject)
                     }
                 } else if let sender {
                     history.recordReceived(from: sender.name, email: sender.email, at: message.date, isAutomated: false)
@@ -167,7 +175,7 @@ final class PeopleDirectory {
     }
 
     private func save() {
-        guard let data = try? JSONEncoder().encode(Saved(history: history, backfilled: backfilled, hidden: hidden)) else { return }
+        guard let data = try? JSONEncoder().encode(Saved(history: history, backfilled: backfilled, hidden: hidden, version: Self.version)) else { return }
         try? FileManager.default.createDirectory(at: URL.applicationSupportDirectory, withIntermediateDirectories: true)
         try? data.write(to: Self.fileURL, options: [.atomic, .completeFileProtection])
     }

@@ -149,7 +149,8 @@ final class SemanticTriageService {
         if from == .needsYou {
             to = (!assessment.needsReply && assessment.confidence >= 1) ? .quiet : .needsYou
         } else {
-            to = (assessment.needsReply && assessment.confidence >= 2) ? .needsYou : .quiet
+            let confirmation = MailDigest.isConfirmationAlert(thread.subject + "\n" + thread.excerpt)
+            to = (assessment.needsReply && assessment.confidence >= 2 && !confirmation) ? .needsYou : .quiet
         }
         // Only show the model's own reason when the outcome agrees with
         // it; a low-confidence "no action needed" on a thread that stays in

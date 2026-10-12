@@ -253,6 +253,16 @@ public enum MailDigest {
     /// Every number, month, weekday, relative day, proper name, address and
     /// code a summary mentions must be in the email itself. Returns what
     /// isn't, empty when the summary is faithful.
+    /// An alert confirming something you just did ("You allowed Corres
+    /// access", "New sign-in on iPhone") whose only ask is conditional: act
+    /// if it wasn't you. Worth seeing, never a to-do on its own; an
+    /// on-device model once promoted one as "unauthorized access claim
+    /// requires verification".
+    public static func isConfirmationAlert(_ text: String) -> Bool {
+        text.range(of: #"(?i)\b(if (you|this) (didn\S{0,5}t|did not|wasn\S{0,5}t|was not|don\S{0,5}t recogni[sz]e)|if this was you|wasn\S{0,5}t you\?)"#,
+                   options: .regularExpression) != nil
+    }
+
     public static func unsupportedClaims(in summary: String, source: String) -> [String] {
         let lowerSource = source.lowercased()
         var unsupported: [String] = []
