@@ -84,6 +84,7 @@ final class ScheduledSends {
     /// Sends whatever is due. Called on launch, on foreground, from
     /// background refresh and from each push that wakes Corres.
     func sendDue(store: MailStore, outbox: OutboxService, now: Date = .now) async {
+        adoptShared(now: now)
         for item in items where !item.heldBecauseReplied && item.sendAt <= now {
             let thread = item.draft.threadID.flatMap { store.thread($0) }
             // A reply they've already answered: hold it, and ask.
@@ -95,6 +96,18 @@ final class ScheduledSends {
             await outbox.sendNow(item.draft, replyingTo: thread)
         }
         keepTime(store: store, outbox: outbox)
+    }
+
+    /// Written in the Share sheet with no connection: sent now, from here,
+    /// and listed in Send Later until it goes.
+    private func adoptShared(now: Date) {
+        let shared = ShareOutbox.takeAll()
+        guard !shared.isEmpty else { return }
+        for draft in shared where !items.contains(where: { $0.id == draft.id }) {
+            items.append(Item(id: draft.id, draft: draft, sendAt: now, scheduledAt: now))
+        }
+        items.sort { $0.sendAt < $1.sendAt }
+        save()
     }
 
     func sendNow(_ id: UUID, store: MailStore, outbox: OutboxService) async {

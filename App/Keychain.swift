@@ -9,7 +9,14 @@ import Security
 /// GoogleTokenProvider exist for. No dependency beyond the Security
 /// framework: a token this small and single-purpose doesn't need a
 /// third-party wrapper.
+///
+/// Kept in the App Group's keychain group, so the Share extension can send
+/// as the same accounts (an App Group is also a keychain access group on
+/// iOS; no other app can read it). Tokens saved before sharing existed sit
+/// in the app's own group and are moved over by `share(key:)`.
 enum Keychain {
+    static let sharedGroup = "group.studio.anwarcreative.corres"
+
     static func set(_ value: String, key: String) {
         let data = Data(value.utf8)
         let query: [String: Any] = [
@@ -24,7 +31,25 @@ enum Keychain {
         // BGAppRefreshTask token refreshes, which can run before the person
         // has unlocked the device this session.
         attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-        SecItemAdd(attributes as CFDictionary, nil)
+        var shared = attributes
+        shared[kSecAttrAccessGroup as String] = sharedGroup
+        // Never lose a sign-in: if the shared group is refused, keep it
+        // where it always was (sharing just waits).
+        if SecItemAdd(shared as CFDictionary, nil) != errSecSuccess {
+            SecItemAdd(attributes as CFDictionary, nil)
+        }
+    }
+
+    /// Moves a token saved before sharing existed into the shared group.
+    static func share(key: String) {
+        let inShared: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecAttrAccessGroup as String: sharedGroup,
+        ]
+        guard SecItemCopyMatching(inShared as CFDictionary, nil) == errSecItemNotFound,
+              let value = get(key: key) else { return }
+        set(value, key: key)
     }
 
     static func get(key: String) -> String? {

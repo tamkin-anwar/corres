@@ -83,6 +83,13 @@ final class PeopleDirectory {
         index.top(limit: limit, excluding: excluding.union(hidden), favored: Set(contacts.people.keys), ownNames: ownNames)
     }
 
+    /// Everyone Compose would suggest, for the Share extension.
+    func forSharing() -> (index: PeopleIndex, favored: Set<String>) {
+        var shared = index
+        shared.remove(hidden)
+        return (shared, Set(contacts.people.keys))
+    }
+
     /// "Don't Suggest": never offered again (until all accounts are removed).
     func hide(_ email: String) {
         hidden.insert(email.lowercased())

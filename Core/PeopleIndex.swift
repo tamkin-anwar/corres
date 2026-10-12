@@ -106,6 +106,11 @@ public struct PeopleIndex: Codable, Sendable, Equatable {
 
     public init() {}
 
+    /// Leaves these addresses out (people you said not to suggest).
+    public mutating func remove(_ emails: Set<String>) {
+        for email in emails { people[email] = nil }
+    }
+
     // MARK: Recording
 
     /// One address field's entries, as written: "Sara <s@x.com>, b@y.com".

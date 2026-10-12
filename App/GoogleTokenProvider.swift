@@ -1,5 +1,4 @@
 import Foundation
-import GoogleSignIn
 
 /// Turns a connected account's email into a valid Gmail access token,
 /// independent of whichever account happens to be GoogleSignIn's own single
@@ -60,7 +59,9 @@ actor GoogleTokenProvider {
         guard let refreshToken = Keychain.get(key: Self.keychainKey(for: email)) else {
             throw TokenError.noRefreshToken
         }
-        guard let clientID = GIDSignIn.sharedInstance.configuration?.clientID else {
+        // The same client GoogleSignIn reads; from Info.plist, so the Share
+        // extension (which doesn't link GoogleSignIn) can refresh too.
+        guard let clientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String else {
             throw TokenError.noClientID
         }
         var request = URLRequest(url: URL(string: "https://oauth2.googleapis.com/token")!)
@@ -108,6 +109,11 @@ actor GoogleTokenProvider {
     func removeRefreshToken(for email: String) {
         Keychain.delete(key: Self.keychainKey(for: email))
         cache[email] = nil
+    }
+
+    /// Lets the Share extension use this account's sign-in too.
+    func share(_ email: String) {
+        Keychain.share(key: Self.keychainKey(for: email))
     }
 
     func hasRefreshToken(for email: String) -> Bool {

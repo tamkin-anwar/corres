@@ -83,6 +83,9 @@
 		F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
 		F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */; };
 		AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */; };
+		A7CABCC3BA0A4956B5B14AE8 /* Shared/ShareSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79EF12712C774AD993901777 /* Shared/ShareSnapshot.swift */; };
+		E49D258957D640C299F58256 /* App/ShareBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B82102449D24E8E9476036E /* App/ShareBridge.swift */; };
+		0A348A8A0E8240AF977995B1 /* Features/ComposeFields.swift in Sources */ = {isa = PBXBuildFile; fileRef = 783548898D6B4BFC87B56174 /* Features/ComposeFields.swift */; };
 		B82696FAC3244A5898E6A8B6 /* Features/OutOfOfficeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D41A2038764132BB1178C6 /* Features/OutOfOfficeView.swift */; };
 		0FC1AEC8A0924D76B68B12C6 /* App/FollowUps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5714C136B1C144BA9986F7BD /* App/FollowUps.swift */; };
 		2D1AEA72759A4140970CC4B7 /* Features/InvitationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C84FA9213442ABAFDA59F7 /* Features/InvitationCard.swift */; };
@@ -102,6 +105,42 @@
 		3472E1B8AB6742FE9040057F /* App/PeopleDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977F121DCAF14706A5639E69 /* App/PeopleDirectory.swift */; };
 		07978C01818E4A55987D6CDE /* Core/PeopleIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = D323E07BF00243989B4E0A2A /* Core/PeopleIndex.swift */; };
 		5FC893C8B4AE471494AD5F7C /* Features/AttachmentPickers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CCE34B9D4A7493491FF8177 /* Features/AttachmentPickers.swift */; };
+		5025F4CBFD734B7DAB659261 /* Core/AskQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5657FD79441A48ACB789585C /* Core/AskQuery.swift */; };
+		7C4FCFEE79A74E73B92F4996 /* Core/CorresSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3188DDEA4B4112FCE079024F /* Core/CorresSchema.swift */; };
+		C951A66F628243348D7C2341 /* Core/Correspondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E055D7FFC136234D685E062 /* Core/Correspondence.swift */; };
+		60551B0BA2B64E1AA21374B4 /* Core/DetectedItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F6E3D3ED4A43908B1C100E /* Core/DetectedItems.swift */; };
+		0B70FE10207E42098B73B6D3 /* Core/GmailAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68DA0977ACFA46A1C9952B4 /* Core/GmailAccount.swift */; };
+		09DCDF772B3A460AADD676CF /* Core/HTTPBatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */; };
+		A161991240E249D09332F2B3 /* Core/InboxCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B676FBAD72F4613B0B8D1E5 /* Core/InboxCategory.swift */; };
+		6CB56B962BEB4153AA57EFAA /* Core/Invitation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */; };
+		75FF1DB11A2F4DF3A542B283 /* Core/MailDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */; };
+		2EA33B82A3A748E083D6B319 /* Core/MailRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63EB4BD12F7A4F4DE2BC78F7 /* Core/MailRepository.swift */; };
+		8E475FAA950B4831816A869C /* Core/MailSignals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */; };
+		301A2A2377164723AF7ACA95 /* Core/NextStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */; };
+		BD5E8336F2DE44C6898C9CE3 /* Core/PeopleIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = D323E07BF00243989B4E0A2A /* Core/PeopleIndex.swift */; };
+		BE9AE5B4E859454CA57536CF /* Core/PersistedCorrespondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */; };
+		9F4F9967E0084B348A32C19F /* Core/PersistedOutboxEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */; };
+		765A1625A62D4BD8ADE6D17C /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
+		6F7B014B668142FCAA36863E /* Core/RichBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69625E99E49B4770B184FC5C /* Core/RichBody.swift */; };
+		D9223792E11E4C8D810F7333 /* Core/SampleCorrespondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF963A48F35EECBABCEAC67 /* Core/SampleCorrespondence.swift */; };
+		B87C64BEDE054A4E9314F25E /* Core/SenderDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8779CEB27F41BCB50AEF84 /* Core/SenderDirectory.swift */; };
+		6CED0897EC45422083FCDB18 /* Core/SenderHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0420D138F474423E84B6A00A /* Core/SenderHabits.swift */; };
+		0B3C10D9213A4A7CBB30432A /* Core/SwiftDataMailRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F9C55B0E3533C78CF4C4F6 /* Core/SwiftDataMailRepository.swift */; };
+		D7BECB303F4045769E09C091 /* Core/TimePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */; };
+		F88C0B1728314F2BA7365261 /* App/GmailAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682EC77E42F944FED8F83C02 /* App/GmailAPIClient.swift */; };
+		918BE1AEC682492D80D6A8F9 /* App/GmailQuotaGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */; };
+		D032A0AE741C4454A868F874 /* App/GoogleTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */; };
+		1AE6F52F8FE249259920E4C4 /* App/Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B03773975FDB401CA02B5F15 /* App/Keychain.swift */; };
+		A83C8F8240A443FEB8A0BF04 /* App/GmailMessageComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44B8B11C43712F4DF6C6A4B0 /* App/GmailMessageComposer.swift */; };
+		6BC7C185165347ACA6E09026 /* Shared/ShareSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79EF12712C774AD993901777 /* Shared/ShareSnapshot.swift */; };
+		90E8415E00594F7984BB076F /* DesignSystem/Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FDAA185499F66241648B25 /* DesignSystem/Tokens.swift */; };
+		CF26B012EC424B9EBF1B765B /* Features/ComposeFields.swift in Sources */ = {isa = PBXBuildFile; fileRef = 783548898D6B4BFC87B56174 /* Features/ComposeFields.swift */; };
+		18C5607147894B2D8F160B2F /* ShareExtension/ShareComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64E976E153F34E71B15BBEA3 /* ShareExtension/ShareComposeView.swift */; };
+		35EA1A1F4CF641F987B45D47 /* ShareExtension/ShareComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F439174FD9544F64BCE4708A /* ShareExtension/ShareComposer.swift */; };
+		D68F295023C24C09A7D79E2E /* ShareExtension/ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84768D78CFBA430CAD90DA64 /* ShareExtension/ShareViewController.swift */; };
+		36F3238E768946198C834D5D /* ShareExtension/SharedContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8E3DCAFB6D4991A321D3FC /* ShareExtension/SharedContent.swift */; };
+		A689ADA4CCA148ACA56539DE /* App/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B16B6325BA8F1CFBCC279108 /* App/Assets.xcassets */; };
+		E3DD019BA8C5426A84DE14F2 /* CorresShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0CB72D373C9C4A0A956F4172 /* CorresShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -111,6 +150,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = C69DF3B7A0A94507982CAA18;
 			remoteInfo = CorresWidgets;
+		};
+		916F97F119454A82ADE5259B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 244210E48437B6556980A702 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0D6A807ACDA44B5BE049D1B;
+			remoteInfo = CorresShare;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -122,6 +168,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				61562B7EFBCA437FA5E0DBEA /* CorresWidgets.appex in Embed Foundation Extensions */,
+				E3DD019BA8C5426A84DE14F2 /* CorresShare.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -204,6 +251,9 @@
 		89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PlainTextEmail.swift; sourceTree = SOURCE_ROOT; };
 		B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/MailboxesView.swift; sourceTree = SOURCE_ROOT; };
 		A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/NextStep.swift; sourceTree = SOURCE_ROOT; };
+		79EF12712C774AD993901777 /* Shared/ShareSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/ShareSnapshot.swift; sourceTree = SOURCE_ROOT; };
+		1B82102449D24E8E9476036E /* App/ShareBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ShareBridge.swift; sourceTree = SOURCE_ROOT; };
+		783548898D6B4BFC87B56174 /* Features/ComposeFields.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ComposeFields.swift; sourceTree = SOURCE_ROOT; };
 		11D41A2038764132BB1178C6 /* Features/OutOfOfficeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/OutOfOfficeView.swift; sourceTree = SOURCE_ROOT; };
 		5714C136B1C144BA9986F7BD /* App/FollowUps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/FollowUps.swift; sourceTree = SOURCE_ROOT; };
 		C2C84FA9213442ABAFDA59F7 /* Features/InvitationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/InvitationCard.swift; sourceTree = SOURCE_ROOT; };
@@ -223,6 +273,13 @@
 		977F121DCAF14706A5639E69 /* App/PeopleDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/PeopleDirectory.swift; sourceTree = SOURCE_ROOT; };
 		D323E07BF00243989B4E0A2A /* Core/PeopleIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PeopleIndex.swift; sourceTree = SOURCE_ROOT; };
 		5CCE34B9D4A7493491FF8177 /* Features/AttachmentPickers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AttachmentPickers.swift; sourceTree = SOURCE_ROOT; };
+		64E976E153F34E71B15BBEA3 /* ShareExtension/ShareComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtension/ShareComposeView.swift; sourceTree = SOURCE_ROOT; };
+		F439174FD9544F64BCE4708A /* ShareExtension/ShareComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtension/ShareComposer.swift; sourceTree = SOURCE_ROOT; };
+		84768D78CFBA430CAD90DA64 /* ShareExtension/ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtension/ShareViewController.swift; sourceTree = SOURCE_ROOT; };
+		7E8E3DCAFB6D4991A321D3FC /* ShareExtension/SharedContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtension/SharedContent.swift; sourceTree = SOURCE_ROOT; };
+		E4E8BC7DF77D4F9290306C20 /* ShareExtension/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = ShareExtension/Info.plist; sourceTree = SOURCE_ROOT; };
+		7984516A791C43B887176786 /* ShareExtension/CorresShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension/CorresShare.entitlements; sourceTree = SOURCE_ROOT; };
+		0CB72D373C9C4A0A956F4172 /* CorresShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CorresShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -242,6 +299,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		80E445F0E0534510B5A8C63B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -250,6 +314,7 @@
 			children = (
 				A8792157CB4F27FB949C035F /* Corres.app */,
 				D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */,
+				0CB72D373C9C4A0A956F4172 /* CorresShare.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -258,6 +323,7 @@
 			isa = PBXGroup;
 			children = (
 				D0528F5DA84E44AFB36E205D /* Widgets */,
+				6C2CCD0809534B30AC626ABD /* ShareExtension */,
 				C03285F34837864AED181DA0 /* App/CorresApp.swift */,
 				682EC77E42F944FED8F83C02 /* App/GmailAPIClient.swift */,
 				44B8B11C43712F4DF6C6A4B0 /* App/GmailMessageComposer.swift */,
@@ -284,6 +350,9 @@
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
 				5CCE34B9D4A7493491FF8177 /* Features/AttachmentPickers.swift */,
 				A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */,
+				79EF12712C774AD993901777 /* Shared/ShareSnapshot.swift */,
+				1B82102449D24E8E9476036E /* App/ShareBridge.swift */,
+				783548898D6B4BFC87B56174 /* Features/ComposeFields.swift */,
 				11D41A2038764132BB1178C6 /* Features/OutOfOfficeView.swift */,
 				5714C136B1C144BA9986F7BD /* App/FollowUps.swift */,
 				C2C84FA9213442ABAFDA59F7 /* Features/InvitationCard.swift */,
@@ -361,6 +430,19 @@
 			name = Widgets;
 			sourceTree = "<group>";
 		};
+		6C2CCD0809534B30AC626ABD /* ShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				64E976E153F34E71B15BBEA3 /* ShareExtension/ShareComposeView.swift */,
+				F439174FD9544F64BCE4708A /* ShareExtension/ShareComposer.swift */,
+				84768D78CFBA430CAD90DA64 /* ShareExtension/ShareViewController.swift */,
+				7E8E3DCAFB6D4991A321D3FC /* ShareExtension/SharedContent.swift */,
+				E4E8BC7DF77D4F9290306C20 /* ShareExtension/Info.plist */,
+				7984516A791C43B887176786 /* ShareExtension/CorresShare.entitlements */,
+			);
+			name = ShareExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -377,6 +459,7 @@
 			);
 			dependencies = (
 				3FD96208F882409B8ABF585F /* PBXTargetDependency */,
+				082B1DBE695044168BE6890B /* PBXTargetDependency */,
 			);
 			name = Corres;
 			packageProductDependencies = (
@@ -402,6 +485,23 @@
 			name = CorresWidgets;
 			productName = CorresWidgets;
 			productReference = D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		C0D6A807ACDA44B5BE049D1B /* CorresShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DB26A6668C2E447AA3FCDA71 /* Build configuration list for PBXNativeTarget "CorresShare" */;
+			buildPhases = (
+				90449C69988B4171A2039F6E /* Sources */,
+				80E445F0E0534510B5A8C63B /* Frameworks */,
+				5CA2BDC86B694A39AEB29FF8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CorresShare;
+			productName = CorresShare;
+			productReference = 0CB72D373C9C4A0A956F4172 /* CorresShare.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -430,6 +530,7 @@
 			targets = (
 				34A04005BCAF206EEC990BD9 /* Corres */,
 				C69DF3B7A0A94507982CAA18 /* CorresWidgets */,
+				C0D6A807ACDA44B5BE049D1B /* CorresShare */,
 			);
 		};
 /* End PBXProject section */
@@ -448,6 +549,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5CA2BDC86B694A39AEB29FF8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A689ADA4CCA148ACA56539DE /* App/Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -484,6 +593,9 @@
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
 				5FC893C8B4AE471494AD5F7C /* Features/AttachmentPickers.swift in Sources */,
 				AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */,
+				A7CABCC3BA0A4956B5B14AE8 /* Shared/ShareSnapshot.swift in Sources */,
+				E49D258957D640C299F58256 /* App/ShareBridge.swift in Sources */,
+				0A348A8A0E8240AF977995B1 /* Features/ComposeFields.swift in Sources */,
 				B82696FAC3244A5898E6A8B6 /* Features/OutOfOfficeView.swift in Sources */,
 				0FC1AEC8A0924D76B68B12C6 /* App/FollowUps.swift in Sources */,
 				2D1AEA72759A4140970CC4B7 /* Features/InvitationCard.swift in Sources */,
@@ -558,6 +670,47 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		90449C69988B4171A2039F6E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5025F4CBFD734B7DAB659261 /* Core/AskQuery.swift in Sources */,
+				7C4FCFEE79A74E73B92F4996 /* Core/CorresSchema.swift in Sources */,
+				C951A66F628243348D7C2341 /* Core/Correspondence.swift in Sources */,
+				60551B0BA2B64E1AA21374B4 /* Core/DetectedItems.swift in Sources */,
+				0B70FE10207E42098B73B6D3 /* Core/GmailAccount.swift in Sources */,
+				09DCDF772B3A460AADD676CF /* Core/HTTPBatch.swift in Sources */,
+				A161991240E249D09332F2B3 /* Core/InboxCategory.swift in Sources */,
+				6CB56B962BEB4153AA57EFAA /* Core/Invitation.swift in Sources */,
+				75FF1DB11A2F4DF3A542B283 /* Core/MailDigest.swift in Sources */,
+				2EA33B82A3A748E083D6B319 /* Core/MailRepository.swift in Sources */,
+				8E475FAA950B4831816A869C /* Core/MailSignals.swift in Sources */,
+				301A2A2377164723AF7ACA95 /* Core/NextStep.swift in Sources */,
+				BD5E8336F2DE44C6898C9CE3 /* Core/PeopleIndex.swift in Sources */,
+				BE9AE5B4E859454CA57536CF /* Core/PersistedCorrespondence.swift in Sources */,
+				9F4F9967E0084B348A32C19F /* Core/PersistedOutboxEntry.swift in Sources */,
+				765A1625A62D4BD8ADE6D17C /* Core/PlainTextEmail.swift in Sources */,
+				6F7B014B668142FCAA36863E /* Core/RichBody.swift in Sources */,
+				D9223792E11E4C8D810F7333 /* Core/SampleCorrespondence.swift in Sources */,
+				B87C64BEDE054A4E9314F25E /* Core/SenderDirectory.swift in Sources */,
+				6CED0897EC45422083FCDB18 /* Core/SenderHabits.swift in Sources */,
+				0B3C10D9213A4A7CBB30432A /* Core/SwiftDataMailRepository.swift in Sources */,
+				D7BECB303F4045769E09C091 /* Core/TimePhrase.swift in Sources */,
+				F88C0B1728314F2BA7365261 /* App/GmailAPIClient.swift in Sources */,
+				918BE1AEC682492D80D6A8F9 /* App/GmailQuotaGate.swift in Sources */,
+				D032A0AE741C4454A868F874 /* App/GoogleTokenProvider.swift in Sources */,
+				1AE6F52F8FE249259920E4C4 /* App/Keychain.swift in Sources */,
+				A83C8F8240A443FEB8A0BF04 /* App/GmailMessageComposer.swift in Sources */,
+				6BC7C185165347ACA6E09026 /* Shared/ShareSnapshot.swift in Sources */,
+				90E8415E00594F7984BB076F /* DesignSystem/Tokens.swift in Sources */,
+				CF26B012EC424B9EBF1B765B /* Features/ComposeFields.swift in Sources */,
+				18C5607147894B2D8F160B2F /* ShareExtension/ShareComposeView.swift in Sources */,
+				35EA1A1F4CF641F987B45D47 /* ShareExtension/ShareComposer.swift in Sources */,
+				D68F295023C24C09A7D79E2E /* ShareExtension/ShareViewController.swift in Sources */,
+				36F3238E768946198C834D5D /* ShareExtension/SharedContent.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -565,6 +718,11 @@
 			isa = PBXTargetDependency;
 			target = C69DF3B7A0A94507982CAA18 /* CorresWidgets */;
 			targetProxy = 747FA3D082A74C558FAC6065 /* PBXContainerItemProxy */;
+		};
+		082B1DBE695044168BE6890B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C0D6A807ACDA44B5BE049D1B /* CorresShare */;
+			targetProxy = 916F97F119454A82ADE5259B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -711,6 +869,61 @@
 			};
 			name = Release;
 		};
+		344166B8982441FA9E7D9016 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/CorresShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.share;
+				PRODUCT_NAME = CorresShare;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		48A4F3C7A29A4791A524F53F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/CorresShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.share;
+				PRODUCT_NAME = CorresShare;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -737,6 +950,15 @@
 			buildConfigurations = (
 				3C69DF78F592460EA9B0A3BA /* Debug */,
 				6B0FE7EFD9AA469794EDC920 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DB26A6668C2E447AA3FCDA71 /* Build configuration list for PBXNativeTarget "CorresShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				344166B8982441FA9E7D9016 /* Debug */,
+				48A4F3C7A29A4791A524F53F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -52,6 +52,7 @@ struct CorresShell: View {
     @Environment(AppRouter.self) private var router
     @Environment(AskService.self) private var ask
     @Environment(EntitlementStore.self) private var entitlements
+    @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
     @State private var showingPaywall = false
     @AppStorage("corres.paywallOffered") private var paywallOffered = false
 
@@ -157,6 +158,8 @@ struct CorresShell: View {
         .onAppear { applyFocusFilter() }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { Task { await threadActions.commitPendingRemoval() } }
+            // Leaving Corres: the Share sheet gets who you've written to since.
+            if phase == .background { Task { await ShareBridge.update(auth: auth, people: people, threads: store.threads) } }
             // Back in Corres: anything scheduled that's now due goes.
             if phase == .active {
                 Task {
@@ -173,6 +176,7 @@ struct CorresShell: View {
                 }
             }
             await scheduled.sendDue(store: store, outbox: outbox)
+            await ShareBridge.update(auth: auth, people: people, threads: store.threads)
         }
         .onChange(of: router.pending) { _, target in handle(target) }
         // A tab hidden in Settings while it was showing.
@@ -202,6 +206,7 @@ struct CorresShell: View {
         // explanation; falling back to "All Inboxes" is the same recovery
         // Preferences' own disconnect flow already expects.
         .onChange(of: auth.accounts) { _, accounts in
+            Task { await ShareBridge.update(auth: auth, people: people, threads: store.threads) }
             if let accountFilter, !accounts.contains(where: { $0.email == accountFilter }) {
                 self.accountFilter = nil
             }
