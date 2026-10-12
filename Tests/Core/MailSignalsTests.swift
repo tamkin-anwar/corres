@@ -346,6 +346,13 @@ struct SurveyAndNoticeTests {
                                     subject: "ITW", excerpt: "- Official - ITW Niloy Siddiqui Housing Triage Officer", body: "",
                                     receivedAt: .now, dueAt: nil, reason: "", attention: .quiet)
         #expect(thread.excerpt == "ITW Niloy Siddiqui Housing Triage Officer")
+        func preview(_ text: String) -> String {
+            Correspondence(id: ThreadID(account: "a", providerID: "2"), sender: "S", organization: "", subject: "", excerpt: text,
+                           body: "", receivedAt: .now, dueAt: nil, reason: "", attention: .quiet).excerpt
+        }
+        #expect(preview("Official results are in") == "Official results are in")
+        #expect(preview("OFFICIAL Housing update") == "Housing update")
+        #expect(preview("[OFFICIAL-SENSITIVE] Case notes") == "Case notes")
         #expect(thread.sender == "Niloy Siddiqui")
     }
 }

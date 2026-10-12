@@ -61,8 +61,10 @@ public struct Person: Codable, Hashable, Sendable, Identifiable {
         guard labels.count >= 2 else { return email }
         let secondLevel: Set<String> = ["co", "com", "org", "gov", "ac", "net", "edu", "ltd", "plc", "nhs"]
         let organization = labels.count >= 3 && secondLevel.contains(labels[labels.count - 2]) ? labels[labels.count - 3] : labels[labels.count - 2]
+        // A personal mailbox that isn't plainly a name ("tamkinanwar7@
+        // gmail.com"): the address says it best.
         guard organization.count >= 2, !["gmail", "googlemail", "outlook", "hotmail", "yahoo", "icloud", "me", "aol", "proton", "protonmail", "live"].contains(organization) else {
-            return localWords.isEmpty ? email : localWords.map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined(separator: " ")
+            return email
         }
         return organization.prefix(1).uppercased() + organization.dropFirst()
     }

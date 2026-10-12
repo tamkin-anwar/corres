@@ -43,8 +43,6 @@ public enum MailSignals {
             }
             return kept.joined()
         }
-        // "Please click the link to take part:" sits right before its link,
-        // on its own line: with the survey gone, a bare follow-on line goes too.
         return lines.joined(separator: "\n")
     }
 

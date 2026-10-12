@@ -144,7 +144,7 @@ struct PeopleIndexTests {
         #expect(Person.name(forAddress: "no-reply@vitu.com") == "Vitu")
         #expect(Person.name(forAddress: "notifications@mail.doordash.com") == "Doordash")
         #expect(Person.name(forAddress: "noreply@portsmouthcc.gov.uk") == "Portsmouthcc")
-        #expect(Person.name(forAddress: "sara.w@gmail.com") == "Sara W")
-        #expect(Person.name(forAddress: "x7@gmail.com") == "X7")
+        #expect(Person.name(forAddress: "sara.wiltshire@gmail.com") == "Sara Wiltshire")
+        #expect(Person.name(forAddress: "tamkinanwar7@gmail.com") == "tamkinanwar7@gmail.com")
     }
 }

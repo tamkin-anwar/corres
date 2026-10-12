@@ -228,7 +228,9 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         self.organization = organization
         self.subject = subject
         // "- Official - ITW…": a protective marking isn't the email.
-        self.excerpt = excerpt.range(of: #"(?i)^\s*[\[\-–— ]*(official(-sensitive)?|unclassified)[\]\-–— ]+\s*"#,
+        // Only a marking: set off by dashes or brackets ("- Official -",
+        // "[OFFICIAL]") or in capitals; "Official results are in" stays.
+        self.excerpt = excerpt.range(of: #"^\s*(?:(?i:[\[\-–—]\s*(official(-sensitive)?|unclassified)\s*[\]\-–—])|(OFFICIAL(-SENSITIVE)?|UNCLASSIFIED)(?=\s))\s*"#,
                                      options: .regularExpression).map { String(excerpt[$0.upperBound...]) } ?? excerpt
         self.body = body
         self.htmlBody = htmlBody
