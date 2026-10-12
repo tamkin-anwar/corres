@@ -92,7 +92,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // launch, background or foreground alike: registering even one
         // async tick late is a documented source of silent failures where
         // iOS never runs the task at all.
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundRefreshIdentifier, using: nil) { [weak self] task in
+        // On the main queue: this delegate runs on the main actor, and with
+        // `nil` iOS ran the handler on its own background queue, which
+        // Swift stops with a crash (every TestFlight crash so far: the app
+        // woken in the background, phone locked, to refresh).
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundRefreshIdentifier, using: .main) { [weak self] task in
             guard let self, let refreshTask = task as? BGAppRefreshTask else {
                 task.setTaskCompleted(success: false)
                 return
@@ -180,8 +184,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         }
         // Ignoring the expiration handler damages this task's standing
         // with iOS's own scheduling model; an ungracefully-killed task
-        // gets future requests deprioritized.
-        task.expirationHandler = {
+        // gets future requests deprioritized. Made outside the main actor:
+        // iOS calls it on a queue of its own.
+        task.expirationHandler = Self.expirationHandler(cancelling: work, task: task)
+    }
+
+    nonisolated private static func expirationHandler(cancelling work: Task<Void, Never>,
+                                                      task: BGAppRefreshTask) -> @Sendable () -> Void {
+        nonisolated(unsafe) let task = task
+        return {
             work.cancel()
             task.setTaskCompleted(success: false)
         }
