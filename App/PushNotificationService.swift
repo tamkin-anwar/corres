@@ -242,6 +242,28 @@ final class PushNotificationService {
 
     /// Registered every launch; iOS shows these under a long-press on any
     /// single-conversation notification, without opening Corres.
+    /// A device token only works on the APNs server for the build it came
+    /// from: "development" for a build run from Xcode, "production" for
+    /// TestFlight and the App Store, where Xcode signs the app for
+    /// production (Apple's "Sending notification requests to APNs").
+    /// Read from the build's own provisioning profile; TestFlight and App
+    /// Store builds carry none, and are always production.
+    static let apnsEnvironment: String = {
+        #if targetEnvironment(simulator)
+        return "development"
+        #else
+        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+              let raw = try? Data(contentsOf: url),
+              let text = String(data: raw, encoding: .isoLatin1),
+              let start = text.range(of: "<?xml"), let end = text.range(of: "</plist>"),
+              let profile = try? PropertyListSerialization.propertyList(
+                  from: Data(text[start.lowerBound..<end.upperBound].utf8), format: nil) as? [String: Any],
+              let entitlements = profile["Entitlements"] as? [String: Any],
+              let environment = entitlements["aps-environment"] as? String else { return "production" }
+        return environment == "development" ? "development" : "production"
+        #endif
+    }()
+
     static func registerNotificationActions() {
         let archive = UNNotificationAction(identifier: archiveAction, title: "Archive",
                                            options: [], icon: UNNotificationActionIcon(systemImageName: "archivebox"))
@@ -285,6 +307,10 @@ final class PushNotificationService {
         var request = URLRequest(url: Self.relayBaseURL.appendingPathComponent(path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var body = body
+        // Which of Apple's two push servers this phone's token belongs to,
+        // so the relay wakes it through the right one.
+        if path.hasPrefix("register") { body["apnsEnvironment"] = Self.apnsEnvironment }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         _ = try await URLSession.shared.data(for: request)
     }

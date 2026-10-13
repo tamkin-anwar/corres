@@ -17,9 +17,16 @@ const devices = firestore.collection('devices');
 // it watches and a hash of its secret (clientState). Only the hash is kept.
 const graphSubscriptions = firestore.collection('graphSubscriptions');
 
-const APNS_HOST = process.env.APNS_PRODUCTION === 'true'
-  ? 'api.push.apple.com'
-  : 'api.sandbox.push.apple.com';
+// A device token belongs to one of Apple's two APNs servers: development
+// for a build run from Xcode, production for TestFlight and the App Store.
+// Sent to the other one it fails with BadDeviceToken. The app says which
+// when it registers (`apnsEnvironment`); devices registered before it did
+// are tried on production, then development, and the one that works is kept.
+const APNS_HOSTS = {
+  production: 'api.push.apple.com',
+  development: 'api.sandbox.push.apple.com',
+};
+const APNS_ENVIRONMENTS = Object.keys(APNS_HOSTS);
 
 // APNs provider tokens (ES256 JWTs) are valid up to one hour; cached and
 // rebuilt just under that so a burst of pushes doesn't re-sign one per push.
@@ -54,10 +61,10 @@ function buildAPNsToken() {
 // content-available so the app's background handler runs and syncs for
 // itself. Background pushes must use apns-priority 5, not the default 10
 // (Apple silently drops/throttles priority-10 background pushes).
-function sendSilentPush(deviceToken) {
+function sendSilentPush(deviceToken, environment) {
   return new Promise((resolve) => {
-    const client = http2.connect(`https://${APNS_HOST}`);
-    client.on('error', () => resolve(false));
+    const client = http2.connect(`https://${APNS_HOSTS[environment]}`);
+    client.on('error', () => resolve({ status: 0, reason: 'ConnectionError' }));
     const request = client.request({
       ':method': 'POST',
       ':path': `/3/device/${deviceToken}`,
@@ -68,11 +75,48 @@ function sendSilentPush(deviceToken) {
     });
     request.setEncoding('utf8');
     let status = 0;
+    let body = '';
     request.on('response', (headers) => { status = headers[':status']; });
-    request.on('end', () => { client.close(); resolve(status === 200); });
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      client.close();
+      let reason = null;
+      try { reason = body ? JSON.parse(body).reason : null; } catch { reason = null; }
+      resolve({ status, reason });
+    });
     request.write(JSON.stringify({ aps: { 'content-available': 1 } }));
     request.end();
   });
+}
+
+// Wakes one registered device through the server its token belongs to.
+// A token Apple says is gone (410 Unregistered, after an app is deleted)
+// is forgotten; one that fails on its server is tried on the other, in
+// case it was registered wrongly, and the record is corrected.
+async function wakeDevice(doc) {
+  const known = doc.data().apnsEnvironment;
+  const order = APNS_ENVIRONMENTS.includes(known)
+    ? [known, ...APNS_ENVIRONMENTS.filter((e) => e !== known)]
+    : APNS_ENVIRONMENTS;
+  for (const environment of order) {
+    const { status, reason } = await sendSilentPush(doc.id, environment);
+    if (status === 200) {
+      if (environment !== known) await doc.ref.set({ apnsEnvironment: environment }, { merge: true });
+      return;
+    }
+    if (status === 410) {
+      await doc.ref.delete();
+      return;
+    }
+    // Only a wrong-server token is worth trying elsewhere; anything else
+    // (throttling, a network error) will be the same on both.
+    if (reason !== 'BadDeviceToken') return;
+  }
+}
+
+function environmentFrom(body) {
+  const environment = body && body.apnsEnvironment;
+  return APNS_ENVIRONMENTS.includes(environment) ? { apnsEnvironment: environment } : {};
 }
 
 // A real APNs device token is a 64-character hex string (32 raw bytes,
@@ -120,6 +164,7 @@ async function handleRegister(req, res) {
   await devices.doc(deviceToken).set({
     emailAddresses: Firestore.FieldValue.arrayUnion(emailAddress),
     updatedAt: Firestore.FieldValue.serverTimestamp(),
+    ...environmentFrom(req.body),
   }, { merge: true });
   res.status(204).send();
 }
@@ -165,7 +210,7 @@ async function handlePubSub(req, res) {
   }
   if (emailAddress) {
     const matches = await devices.where('emailAddresses', 'array-contains', emailAddress).get();
-    await Promise.all(matches.docs.map((doc) => sendSilentPush(doc.id)));
+    await Promise.all(matches.docs.map(wakeDevice));
   }
   res.status(204).send();
 }
@@ -194,6 +239,7 @@ async function handleRegisterGraph(req, res) {
   await devices.doc(deviceToken).set({
     emailAddresses: Firestore.FieldValue.arrayUnion(emailAddress),
     updatedAt: Firestore.FieldValue.serverTimestamp(),
+    ...environmentFrom(req.body),
   }, { merge: true });
   res.status(204).send();
 }
@@ -223,7 +269,7 @@ async function handleGraph(req, res) {
   }
   for (const emailAddress of accounts) {
     const matches = await devices.where('emailAddresses', 'array-contains', emailAddress).get();
-    await Promise.all(matches.docs.map((device) => sendSilentPush(device.id)));
+    await Promise.all(matches.docs.map(wakeDevice));
   }
   res.status(202).send();
 }
