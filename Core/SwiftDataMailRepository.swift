@@ -201,7 +201,8 @@ public actor SwiftDataMailRepository: MailRepository {
             let recent = now.timeIntervalSince(model.receivedAt) < InboxClassifier.waitingWindow
             let automated = Correspondence.isAutomated(listUnsubscribeMailto: model.listUnsubscribeMailto,
                                                        listUnsubscribeURL: model.listUnsubscribeURL,
-                                                       senderEmail: model.senderEmail)
+                                                       senderEmail: model.senderEmail, senderName: model.sender,
+                                                       body: model.isBodyLoaded ? model.body : nil, html: model.htmlBody)
             let bulk = InboxClassifier.bulkKind(labelIds: model.labelIds, looksAutomated: automated)
             if recent {
                 due = bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text, now: now)

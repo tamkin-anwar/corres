@@ -902,7 +902,8 @@ struct GmailAPIClient {
                       listUnsubscribeMailto: String?, listUnsubscribeURL: String?, listUnsubscribeOneClick: Bool,
                       bodyLoaded: Bool) -> Correspondence {
         let automated = Correspondence.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto,
-                                                   listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail)
+                                                   listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail,
+                                                   senderName: sender, body: bodyLoaded ? body : nil, html: htmlBody)
         // What the message itself says: the subject plus the full text
         // when it's here, or the service's snippet (the opening) until it is.
         let text = subject + "\n" + body

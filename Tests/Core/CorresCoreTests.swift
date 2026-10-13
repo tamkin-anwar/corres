@@ -467,6 +467,29 @@ struct CorresCoreTests {
         #expect(!Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: "jane@x.test"))
     }
 
+    /// Bulk mail with no List-Unsubscribe: a website's name sent from
+    /// another website, and flyers made only of fetched pictures.
+    @Test func bulkMailWithoutUnsubscribeIsCaught() {
+        func automated(_ email: String, name: String? = nil, body: String? = nil, html: String? = nil) -> Bool {
+            Correspondence.isAutomated(listUnsubscribeMailto: nil, listUnsubscribeURL: nil, senderEmail: email,
+                                       senderName: name, body: body, html: html)
+        }
+        #expect(automated("customerservice.asjks@retail.ispy-tech.com", name: "Healthcare.com-ACA"))
+        #expect(!automated("noreply-reservations@mail.booking.com".replacingOccurrences(of: "noreply-", with: "res-"), name: "Booking.com"))
+        #expect(!automated("orders@amazon.com", name: "Amazon.com"))
+        #expect(!automated("jane@x.test", name: "Jane Smith"))
+
+        let flyer = #"<a href="https://x"><img src="https://cdn.x/flyer.png"></a>"#
+        #expect(automated("deals@x.test", body: "", html: flyer))
+        // A person's photo is embedded, not fetched.
+        #expect(!automated("mom@x.test", body: "", html: #"<img src="cid:photo1">"#))
+        // A real letter with a logo in its signature is read, not looked at.
+        #expect(!automated("jane@x.test", body: "Hi Tamkin, can we move Thursday's call to Friday afternoon instead?",
+                           html: #"<p>Hi</p><img src="https://x/logo.png">"#))
+        // Until the body is here, only the snippet is known: no judgement.
+        #expect(!automated("deals@x.test", body: nil, html: flyer))
+    }
+
     @Test func gmailSnippetEntitiesAreDecoded() {
         #expect("Don&#39;t Fear The End".decodingHTMLEntities == "Don't Fear The End")
         #expect("Tom &amp; Jerry &lt;3 &quot;hi&quot;".decodingHTMLEntities == "Tom & Jerry <3 \"hi\"")

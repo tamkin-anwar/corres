@@ -286,19 +286,50 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// context alongside the message itself, not used to decide anything on
     /// its own.
     public var looksAutomated: Bool {
-        Self.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail)
+        Self.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail,
+                         senderName: sender, body: isBodyLoaded ? body : nil, html: htmlBody)
     }
 
     public static let automatedLocalPart =
         // A prefix too: "testflight_no_reply@" is as automated as "noreply@".
         #"^([^@]*[-_.])?(no[-_.]?reply|do[-_.]?not[-_.]?reply|notifications?|alerts?|mailer-daemon|postmaster|bounces?)([-_.+][^@]*)?@"#
 
-    public static func isAutomated(listUnsubscribeMailto: String?, listUnsubscribeURL: String?, senderEmail: String?) -> Bool {
+    /// `senderName`, `body` (the full text, once loaded) and `html` catch
+    /// bulk mail with no List-Unsubscribe, the kind Gmail would file as
+    /// spam but Outlook's Focused often lets through.
+    public static func isAutomated(listUnsubscribeMailto: String?, listUnsubscribeURL: String?, senderEmail: String?,
+                                   senderName: String? = nil, body: String? = nil, html: String? = nil) -> Bool {
         if listUnsubscribeMailto != nil || listUnsubscribeURL != nil { return true }
         guard let senderEmail else { return false }
         // "noreply@", but also "noreply-purchases@", "no_reply.alerts@",
         // "donotreply@" and system senders like "notifications@".
-        return senderEmail.lowercased().range(of: automatedLocalPart, options: .regularExpression) != nil
+        if senderEmail.lowercased().range(of: automatedLocalPart, options: .regularExpression) != nil { return true }
+        if let senderName, namesAnotherSite(senderName, senderEmail: senderEmail) { return true }
+        if let body, let html, isRemoteImageOnly(body: body, html: html) { return true }
+        return false
+    }
+
+    /// "Healthcare.com-ACA" <customerservice@retail.ispy-tech.com>: a name
+    /// that is a website, sent from a different one. A real Booking.com
+    /// email comes from booking.com (or mail.booking.com); a person's name
+    /// is never a domain.
+    static func namesAnotherSite(_ name: String, senderEmail: String) -> Bool {
+        guard let match = name.lowercased().range(of: #"\b[a-z0-9-]+\.(com|net|org|co|io|gov|us|info|biz)\b"#, options: .regularExpression)
+        else { return false }
+        let named = String(name.lowercased()[match])
+        let domain = senderEmail.lowercased().components(separatedBy: "@").last ?? ""
+        return !(domain == named || domain.hasSuffix("." + named))
+    }
+
+    /// Nothing to read but pictures fetched from the web: a flyer, not a
+    /// letter. A person's photo is embedded in the email (cid: or data:),
+    /// never fetched, so it never counts.
+    static func isRemoteImageOnly(body: String, html: String) -> Bool {
+        let words = body.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
+        guard words < 8 else { return false }
+        let lower = html.lowercased()
+        guard lower.range(of: #"<img[^>]+src\s*=\s*["']?https?:"#, options: .regularExpression) != nil else { return false }
+        return lower.range(of: #"<img[^>]+src\s*=\s*["']?(cid|data):"#, options: .regularExpression) == nil
     }
 
     /// Whether `account` was addressed directly (`To`) rather than only
