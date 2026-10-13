@@ -646,7 +646,7 @@ struct CorrespondenceList: View {
                 // see GmailSyncService.search's doc comment.
                 if sync?.isSearchingRemote == true {
                     ProgressView().controlSize(.mini)
-                    Text("Searching Gmail…").font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                    Text("Searching your mail…").font(.subheadline).foregroundStyle(CorresPalette.secondary)
                 }
             }
             .padding(.horizontal, CorresSpace.page)

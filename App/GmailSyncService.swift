@@ -12,7 +12,7 @@ import Observation
 @MainActor @Observable
 final class GmailSyncService {
     private let repository: any MailRepository
-    private let client = GmailAPIClient()
+    private let client = MailClient()
     private let defaults = UserDefaults.standard
     private(set) var isSyncing = false
     private(set) var isSearchingRemote = false
@@ -189,7 +189,7 @@ final class GmailSyncService {
             await repairSentPlaceholders(account: account)
             return true
         } catch {
-            errorMessage = "Could not sync Gmail. Please check your connection and try again."
+            errorMessage = "Could not sync your mail. Please check your connection and try again."
             return false
         }
     }

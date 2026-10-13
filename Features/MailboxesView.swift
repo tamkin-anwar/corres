@@ -74,12 +74,12 @@ enum Mailbox: Hashable, Identifiable {
 
     var emptyMessage: String {
         switch self {
-        case .drafts: "Drafts you start in Gmail show up here."
+        case .drafts: "Drafts you start anywhere show up here."
         case .snoozed: "Snoozed conversations wait here until they come back."
         case .handled: "When you're done with something in Needs You or Waiting, mark it Handled. It leaves those lists, stays in Mail, and is kept here."
         case .flagged: "Flag a conversation to keep it here."
-        case .spam: "No spam. Gmail empties Spam after 30 days."
-        case .trash: "Trash is empty. Gmail empties it after 30 days."
+        case .spam: "No spam. Spam is emptied after 30 days."
+        case .trash: "Trash is empty. It's emptied after 30 days."
         default: "Nothing here."
         }
     }
@@ -159,7 +159,7 @@ struct MailboxesView: View {
             section(arranged(builtIns), header: nil)
             if accounts.isEmpty {
                 Section {} footer: {
-                    Text("Connect Gmail to see Drafts, Sent, All Mail, Spam, Trash and your labels.")
+                    Text("Connect Gmail or Outlook to see Drafts, Sent, All Mail, Spam, Trash and your labels.")
                 }
             }
             ForEach(accounts, id: \.self) { account in
@@ -271,7 +271,7 @@ struct MailboxView: View {
     @State private var loadedOnce = false
     @State private var removed: Set<ThreadID> = []
     @Environment(\.conversationSelection) private var splitSelection
-    private let client = GmailAPIClient()
+    private let client = MailClient()
 
     private var mailboxAccounts: [String] {
         if case let .label(_, _, account) = mailbox { return [account] }
@@ -475,7 +475,7 @@ struct DraftsView: View {
     @State private var composing: Draft?
     @State private var replyingTo: Correspondence?
     @State private var openFailed = false
-    private let client = GmailAPIClient()
+    private let client = MailClient()
 
     var body: some View {
         List {

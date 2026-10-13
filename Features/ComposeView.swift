@@ -1056,7 +1056,7 @@ struct ComposeView: View {
     /// the undo window.
     private func addAttachment(filename: String, mimeType: String, data: Data) {
         guard draft.attachmentsSizeBytes + data.count <= Draft.maxAttachmentsBytes else {
-            attachmentError = "\(filename) would put this message over Gmail's 25 MB limit."
+            attachmentError = "\(filename) would put this message over the 25 MB limit."
             return
         }
         draft.attachments.append(PendingAttachment(filename: filename, mimeType: mimeType, data: data))
@@ -1086,8 +1086,8 @@ struct ComposeView: View {
             addAttachment(filename: file.filename, mimeType: file.mimeType, data: file.data)
         }
         if shrank > 0, failed == 0, attachmentError == nil {
-            attachmentNote = shrank == 1 ? "A photo was made smaller to fit Gmail's 25 MB limit."
-                                         : "\(shrank) photos were made smaller to fit Gmail's 25 MB limit."
+            attachmentNote = shrank == 1 ? "A photo was made smaller to fit the 25 MB limit."
+                                         : "\(shrank) photos were made smaller to fit the 25 MB limit."
         }
         if failed > 0 { attachmentError = failed == 1 ? "One item couldn't be loaded." : "\(failed) items couldn't be loaded." }
     }

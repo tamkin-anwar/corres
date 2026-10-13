@@ -62,8 +62,11 @@ final class GoogleAuthService {
     func restoreConnectedAccounts() async {
         let storedEmails = defaults.stringArray(forKey: Self.connectedAccountsKey) ?? []
         var restored: [GmailAccount] = []
-        for email in storedEmails where await GoogleTokenProvider.shared.hasRefreshToken(for: email) {
-            restored.append(GmailAccount(email: email))
+        for email in storedEmails {
+            let signedIn = MailAccounts.provider(for: email) == .microsoft
+                ? await OutlookTokenProvider.shared.hasRefreshToken(for: email)
+                : await GoogleTokenProvider.shared.hasRefreshToken(for: email)
+            if signedIn { restored.append(GmailAccount(email: email)) }
         }
         if restored.isEmpty {
             await migrateLegacySingleAccountIfPresent(into: &restored)
@@ -98,7 +101,8 @@ final class GoogleAuthService {
            let stored = try? JSONDecoder().decode([String: AccountProfile].self, from: data) {
             profiles = stored
         }
-        for account in accounts where profiles[account.email] == nil || defaults.string(forKey: Self.givenNameKey) == nil {
+        for account in accounts where MailAccounts.provider(for: account.email) == .google
+            && (profiles[account.email] == nil || defaults.string(forKey: Self.givenNameKey) == nil) {
             guard let token = try? await GoogleTokenProvider.shared.accessToken(for: account.email),
                   let url = URL(string: "https://openidconnect.googleapis.com/v1/userinfo") else { continue }
             var request = URLRequest(url: url)
@@ -148,6 +152,8 @@ final class GoogleAuthService {
 
     /// Whether this account's login allows settings like Out of Office.
     func canManageSettings(_ email: String) async -> Bool {
+        // Outlook's sign-in includes mailbox settings.
+        if MailAccounts.provider(for: email) == .microsoft { return true }
         if await GoogleTokenProvider.shared.grantedScopes(for: email) == nil {
             // Scopes come with a fresh token; a cached one doesn't say.
             await GoogleTokenProvider.shared.invalidateAccessToken(for: email)
@@ -220,6 +226,38 @@ final class GoogleAuthService {
         }
     }
 
+    private let microsoft = MicrosoftSignIn()
+
+    /// Connects an Outlook account (Outlook.com, Hotmail, Live, or work or
+    /// school Microsoft 365), alongside any others.
+    func signInOutlook(hint: String? = nil) async {
+        isSigningIn = true
+        defer { isSigningIn = false }
+        do {
+            let result = try await microsoft.signIn(hint: hint)
+            MailAccounts.setProvider(.microsoft, for: result.email)
+            if defaults.string(forKey: Self.givenNameKey) == nil, let given = result.givenName, !given.isEmpty {
+                defaults.set(given, forKey: Self.givenNameKey)
+            }
+            setProfile(for: result.email, name: result.name, photo: nil)
+            if !accounts.contains(where: { $0.email == result.email }) {
+                accounts.append(GmailAccount(email: result.email))
+                persistAccountList()
+            }
+        } catch MicrosoftSignIn.SignInError.cancelled {
+            // Changed their mind: nothing to say.
+        } catch MicrosoftSignIn.SignInError.notConfigured {
+            errorMessage = "Outlook sign-in isn't set up in this build yet."
+        } catch {
+            errorMessage = "Could not connect Outlook. Please try again."
+        }
+    }
+
+    /// Signs an account in again, with its own service.
+    func reconnect(_ email: String) async {
+        if MailAccounts.provider(for: email) == .microsoft { await signInOutlook(hint: email) } else { await signIn(hint: email) }
+    }
+
     /// Disconnects exactly one account, leaving any others connected: the
     /// per-account equivalent of the old single-account `signOut()`.
     func signOut(_ email: String) async {
@@ -227,7 +265,13 @@ final class GoogleAuthService {
         persistAccountList()
         profiles[email] = nil
         if let data = try? JSONEncoder().encode(profiles) { defaults.set(data, forKey: Self.profilesKey) }
-        await GoogleTokenProvider.shared.removeRefreshToken(for: email)
+        if MailAccounts.provider(for: email) == .microsoft {
+            await OutlookTokenProvider.shared.remove(email)
+            await OutlookFolders.shared.forget(email)
+        } else {
+            await GoogleTokenProvider.shared.removeRefreshToken(for: email)
+        }
+        MailAccounts.forget(email)
         // GoogleSignIn's own session only ever tracks one account; clearing
         // it is only meaningful when the disconnected account happens to be
         // the one it currently holds, but calling it unconditionally when no

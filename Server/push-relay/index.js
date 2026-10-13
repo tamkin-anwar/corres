@@ -13,6 +13,9 @@ const http2 = require('http2');
 
 const firestore = new Firestore();
 const devices = firestore.collection('devices');
+// Outlook (Microsoft Graph) subscriptions: subscription id → the account
+// it watches and a hash of its secret (clientState). Only the hash is kept.
+const graphSubscriptions = firestore.collection('graphSubscriptions');
 
 const APNS_HOST = process.env.APNS_PRODUCTION === 'true'
   ? 'api.push.apple.com'
@@ -167,6 +170,64 @@ async function handlePubSub(req, res) {
   res.status(204).send();
 }
 
+const SUBSCRIPTION_ID_PATTERN = /^[A-Za-z0-9-]{8,128}$/;
+const CLIENT_STATE_PATTERN = /^[0-9a-f]{32,128}$/i;
+
+function hash(value) {
+  return crypto.createHash('sha256').update(value).digest('hex');
+}
+
+// The app made an Outlook subscription with Graph itself (Graph checked
+// this relay's URL as it did); it tells the relay which account that
+// subscription watches and its secret, and which device to wake.
+async function handleRegisterGraph(req, res) {
+  const { subscriptionId, clientState, emailAddress, deviceToken } = req.body || {};
+  if (!subscriptionId || !clientState || !emailAddress || !deviceToken
+      || !SUBSCRIPTION_ID_PATTERN.test(subscriptionId) || !CLIENT_STATE_PATTERN.test(clientState)
+      || !EMAIL_PATTERN.test(emailAddress) || !DEVICE_TOKEN_PATTERN.test(deviceToken)) {
+    res.status(400).send('subscriptionId, clientState, emailAddress and deviceToken are required and must be well formed');
+    return;
+  }
+  await graphSubscriptions.doc(subscriptionId).set({
+    emailAddress, clientStateHash: hash(clientState), updatedAt: Firestore.FieldValue.serverTimestamp(),
+  });
+  await devices.doc(deviceToken).set({
+    emailAddresses: Firestore.FieldValue.arrayUnion(emailAddress),
+    updatedAt: Firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+  res.status(204).send();
+}
+
+// Microsoft Graph's change notifications for Outlook mail. Graph first
+// checks the URL by sending a validationToken, echoed back as plain text
+// within 10 seconds. After that each notification names its subscription
+// and carries the secret the app chose (clientState): only a match wakes
+// the account's devices, so a guessed URL can't push anything. Like the
+// Gmail path, nothing about the message itself is read or kept, and the
+// endpoint always answers 202 so Graph doesn't retry.
+async function handleGraph(req, res) {
+  const validationToken = req.query && req.query.validationToken;
+  if (validationToken) {
+    res.set('Content-Type', 'text/plain');
+    res.status(200).send(String(validationToken));
+    return;
+  }
+  const notifications = (req.body && Array.isArray(req.body.value)) ? req.body.value.slice(0, 100) : [];
+  const accounts = new Set();
+  for (const notification of notifications) {
+    const { subscriptionId, clientState } = notification || {};
+    if (!subscriptionId || !clientState || !SUBSCRIPTION_ID_PATTERN.test(subscriptionId)) continue;
+    const doc = await graphSubscriptions.doc(subscriptionId).get();
+    if (!doc.exists || doc.data().clientStateHash !== hash(String(clientState))) continue;
+    accounts.add(doc.data().emailAddress);
+  }
+  for (const emailAddress of accounts) {
+    const matches = await devices.where('emailAddresses', 'array-contains', emailAddress).get();
+    await Promise.all(matches.docs.map((device) => sendSilentPush(device.id)));
+  }
+  res.status(202).send();
+}
+
 // Deliberately two separate Cloud Functions sharing this one source file,
 // not one function routing on `req.path` the way this used to. A single
 // Cloud Function/Cloud Run service has exactly one IAM invoker policy for
@@ -192,6 +253,7 @@ functions.http('corresPushRelay', async (req, res) => {
   switch (req.path) {
     case '/register': return handleRegister(req, res);
     case '/unregister': return handleUnregister(req, res);
+    case '/register-graph': return handleRegisterGraph(req, res);
     default: res.status(404).send('Unknown route');
   }
 });
@@ -202,4 +264,15 @@ functions.http('corresPushRelayPubSub', async (req, res) => {
     return;
   }
   return handlePubSub(req, res);
+});
+
+// Outlook's notification target: public, because Microsoft Graph calls it
+// with no Google identity; each notification is checked against its
+// subscription's secret instead (see handleGraph).
+functions.http('corresPushRelayGraph', async (req, res) => {
+  if (req.method !== 'POST') {
+    res.status(405).send('POST only');
+    return;
+  }
+  return handleGraph(req, res);
 });

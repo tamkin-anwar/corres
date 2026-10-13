@@ -882,18 +882,37 @@ struct GmailAPIClient {
         // right.
         let listUnsubscribeOneClick = listUnsubscribeURL != nil
             && (headers["list-unsubscribe-post"]?.lowercased().contains("one-click") ?? false)
+        return Self.build(account: account, threadID: message.threadId ?? message.id, messageID: message.id,
+                          sender: sender, senderEmail: senderEmail, organization: organization, subject: subject,
+                          excerpt: (message.snippet ?? "").decodingHTMLEntities, body: body, htmlBody: htmlBody,
+                          messageIdHeader: messageIdHeader, receivedAt: receivedAt, isUnread: isUnread,
+                          labelIds: message.labelIds ?? [], attachments: attachments, toRecipients: toRecipients,
+                          ccRecipients: ccRecipients, replyTo: replyTo, listUnsubscribeMailto: listUnsubscribeMailto,
+                          listUnsubscribeURL: listUnsubscribeURL, listUnsubscribeOneClick: listUnsubscribeOneClick,
+                          bodyLoaded: bodyLoaded)
+    }
+
+    /// One email as Corres keeps it, and where it starts (Needs You, Waiting,
+    /// or quiet), decided the same way whichever service it came from:
+    /// Gmail here, Outlook in `OutlookClient`.
+    static func build(account: String, threadID: String, messageID: String, sender: String, senderEmail: String,
+                      organization: String, subject: String, excerpt: String, body: String, htmlBody: String?,
+                      messageIdHeader: String?, receivedAt: Date, isUnread: Bool, labelIds: [String],
+                      attachments: [MailAttachment], toRecipients: [String], ccRecipients: [String], replyTo: [String],
+                      listUnsubscribeMailto: String?, listUnsubscribeURL: String?, listUnsubscribeOneClick: Bool,
+                      bodyLoaded: Bool) -> Correspondence {
         let automated = Correspondence.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto,
                                                    listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail)
         // What the message itself says: the subject plus the full text
-        // when it's here, or Gmail's snippet (the opening) until it is.
+        // when it's here, or the service's snippet (the opening) until it is.
         let text = subject + "\n" + body
         let asks = MailSignals.asksSomething(text)
         let fromYou = senderEmail.lowercased() == account.lowercased()
-        let bulk = InboxClassifier.bulkKind(labelIds: message.labelIds ?? [], looksAutomated: automated)
+        let bulk = InboxClassifier.bulkKind(labelIds: labelIds, looksAutomated: automated)
         let deadline = fromYou ? nil
             : (bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text) : bulk == nil ? MailSignals.deadline(in: text) : nil)
         var (attention, reason) = InboxClassifier.initialAttention(
-            isUnread: isUnread, labelIds: message.labelIds ?? [], looksAutomated: automated, receivedAt: receivedAt,
+            isUnread: isUnread, labelIds: labelIds, looksAutomated: automated, receivedAt: receivedAt,
             isCopiedOnly: Correspondence.isCopiedOnly(account: account, to: toRecipients, cc: ccRecipients),
             asksSomething: asks, deadline: deadline, text: text, isVIP: InboxClassifier.isVIP(senderEmail))
         if fromYou {
@@ -902,12 +921,12 @@ struct GmailAPIClient {
                 sentAt: receivedAt)
         }
         return Correspondence(
-            id: ThreadID(account: account, providerID: message.threadId ?? message.id),
+            id: ThreadID(account: account, providerID: threadID),
             sender: sender, senderEmail: senderEmail, organization: organization, subject: subject,
-            excerpt: (message.snippet ?? "").decodingHTMLEntities, body: body, htmlBody: htmlBody, messageIdHeader: messageIdHeader,
-            latestMessageID: message.id, receivedAt: receivedAt, dueAt: attention == .needsYou ? deadline : nil,
+            excerpt: excerpt, body: body, htmlBody: htmlBody, messageIdHeader: messageIdHeader,
+            latestMessageID: messageID, receivedAt: receivedAt, dueAt: attention == .needsYou ? deadline : nil,
             reason: reason, attention: attention, attachments: attachments, isUnread: isUnread,
-            labelIds: message.labelIds ?? [],
+            labelIds: labelIds,
             toRecipients: toRecipients, ccRecipients: ccRecipients, replyTo: replyTo,
             listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
             listUnsubscribeOneClick: listUnsubscribeOneClick, isBodyLoaded: bodyLoaded,
@@ -950,7 +969,7 @@ struct GmailAPIClient {
     }
 
     /// "Name" <email@domain.com> or a bare address.
-    private static func parseFrom(_ raw: String) -> (name: String, email: String) {
+    static func parseFrom(_ raw: String) -> (name: String, email: String) {
         if let ltIndex = raw.firstIndex(of: "<"), let gtIndex = raw.firstIndex(of: ">"), ltIndex < gtIndex {
             let email = String(raw[raw.index(after: ltIndex)..<gtIndex]).trimmingCharacters(in: .whitespaces)
             var name = String(raw[..<ltIndex]).trimmingCharacters(in: .whitespaces)
@@ -968,7 +987,7 @@ struct GmailAPIClient {
     /// which a naive `.split(separator: ",")` would wrongly treat as two
     /// entries), then reuses `parseFrom` per entry. Returns bare, lowercased
     /// addresses, ready for direct use in a `To`/`Cc` field.
-    private static func parseAddressList(_ raw: String) -> [String] {
+    static func parseAddressList(_ raw: String) -> [String] {
         guard !raw.isEmpty else { return [] }
         var entries: [String] = []
         var current = ""
@@ -997,7 +1016,7 @@ struct GmailAPIClient {
     /// as a second entry.
     private static let angleBracketURIRegex = try? NSRegularExpression(pattern: #"<([^>]+)>"#)
 
-    private static func parseListUnsubscribe(_ raw: String) -> (mailto: String?, url: String?) {
+    static func parseListUnsubscribe(_ raw: String) -> (mailto: String?, url: String?) {
         guard let regex = angleBracketURIRegex, !raw.isEmpty else { return (nil, nil) }
         let range = NSRange(raw.startIndex..., in: raw)
         var mailto: String?
@@ -1015,7 +1034,7 @@ struct GmailAPIClient {
         return (mailto, url)
     }
 
-    private static func organization(fromEmail email: String) -> String {
+    static func organization(fromEmail email: String) -> String {
         guard let domain = email.split(separator: "@").last else { return "" }
         let name = domain.split(separator: ".").first.map(String.init) ?? String(domain)
         return name.prefix(1).uppercased() + name.dropFirst()

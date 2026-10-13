@@ -34,7 +34,7 @@ final class ShareComposer {
     /// Total size at each photo size, worked out once the photos are in.
     var totals: [PhotoSize: Int] = [:]
 
-    private let client = GmailAPIClient()
+    private let client = MailClient()
     private let draftID = UUID()
 
     init() {
@@ -238,12 +238,13 @@ final class ShareComposer {
         return name?.isEmpty == false ? name : nil
     }
 
-    private func raw(_ draft: Draft) -> String {
+    private func raw(_ draft: Draft, withAttachments: Bool = true) -> String {
         let address = draft.fromAddress ?? draft.fromAccount ?? ""
         let name = fromName(address) ?? ""
         return GmailMessageComposer.compose(from: name.isEmpty ? address : "\(name) <\(address)>", to: draft.to, cc: draft.cc,
                                             bcc: draft.bcc, subject: draft.subject, body: draft.body, inReplyTo: nil,
-                                            messageID: "\(draft.id.uuidString)@corres.app", attachments: draft.attachments)
+                                            messageID: "\(draft.id.uuidString)@corres.app",
+                                            attachments: withAttachments ? draft.attachments : [])
     }
 
     func send() async {
@@ -251,7 +252,8 @@ final class ShareComposer {
         let draft = draft()
         phase = .sending
         do {
-            try await client.send(raw: raw(draft), threadId: nil, account: account)
+            let full = raw(draft), bare = raw(draft, withAttachments: false)
+            try await client.send(attachments: draft.attachments, threadId: nil, account: account) { $0 ? full : bare }
             phase = .sent
         } catch let error as URLError where Self.neverReachedGmail(error) {
             // Corres sends it as soon as it can (the same Message-ID, so
@@ -273,7 +275,9 @@ final class ShareComposer {
         guard let account else { return false }
         let draft = draft()
         phase = .sending
-        let saved = (try? await client.saveDraft(raw: raw(draft), threadId: nil, existingID: nil, account: account)) != nil
+        let full = raw(draft), bare = raw(draft, withAttachments: false)
+        let saved = (try? await client.saveDraft(attachments: draft.attachments, threadId: nil, existingID: nil, account: account,
+                                                 compose: { $0 ? full : bare })) != nil
         phase = saved ? .sent : .editing
         return saved
     }

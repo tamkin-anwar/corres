@@ -207,7 +207,7 @@ struct ConversationView: View {
                         confirmingBlock = nil
                     }
                 } message: {
-                    Text("Their mail is hidden in Corres from now on, with no notice to them. Your Gmail account isn't changed.")
+                    Text("Their mail is hidden in Corres from now on, with no notice to them. Your email account isn't changed.")
                 }
                 .sheet(isPresented: $addingEvent) {
                     if let calendarEvent {
@@ -814,7 +814,7 @@ struct ConversationView: View {
     /// and the names of any that couldn't come along.
     private static func downloadForForward(_ thread: Correspondence) async -> (files: [PendingAttachment], missing: [String]) {
         guard let messageID = thread.latestMessageID else { return ([], thread.attachments.map(\.filename)) }
-        let client = GmailAPIClient()
+        let client = MailClient()
         var files: [PendingAttachment] = []
         var missing: [String] = []
         var total = 0
@@ -856,7 +856,7 @@ struct ConversationView: View {
         guard let invite = thread.attachments.first(where: {
                   $0.mimeType.lowercased().hasPrefix("text/calendar") || $0.filename.lowercased().hasSuffix(".ics") }),
               let messageID = thread.latestMessageID, thread.id.account != "sample",
-              let data = try? await GmailAPIClient().fetchAttachmentData(messageId: messageID, attachmentId: invite.id,
+              let data = try? await MailClient().fetchAttachmentData(messageId: messageID, attachmentId: invite.id,
                                                                           account: thread.id.account),
               let text = String(data: data, encoding: .utf8) else { return nil }
         return Invitation.parse(text)
@@ -885,7 +885,7 @@ struct ConversationView: View {
         if let invite = thread.attachments.first(where: {
                $0.mimeType.lowercased().hasPrefix("text/calendar") || $0.filename.lowercased().hasSuffix(".ics") }),
            let messageID = thread.latestMessageID, thread.id.account != "sample",
-           let data = try? await GmailAPIClient().fetchAttachmentData(messageId: messageID, attachmentId: invite.id,
+           let data = try? await MailClient().fetchAttachmentData(messageId: messageID, attachmentId: invite.id,
                                                                        account: thread.id.account),
            let text = String(data: data, encoding: .utf8), let event = EventFinder.fromInvite(text) {
             return event
@@ -1269,7 +1269,7 @@ private struct AttachmentRow: View {
     @State private var thumbnail: UIImage?
     @Environment(\.displayScale) private var displayScale
     @Environment(\.colorScheme) private var colorScheme
-    private let client = GmailAPIClient()
+    private let client = MailClient()
 
     private var kind: AttachmentKind { AttachmentKind(filename: attachment.filename, mimeType: attachment.mimeType) }
 

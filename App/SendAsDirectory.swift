@@ -11,7 +11,7 @@ final class SendAsDirectory {
     static let shared = SendAsDirectory()
 
     private(set) var byAccount: [String: [GmailAPIClient.SendAs]] = [:]
-    private let client = GmailAPIClient()
+    private let client = MailClient()
     private static let key = "corres.sendAs"
     private var refreshed: Set<String> = []
 

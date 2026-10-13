@@ -88,12 +88,15 @@ final class OutboxService {
                 if shelved?.id == draft.id { shelved?.couldNotSave = true }
                 return
             }
-            let raw = GmailMessageComposer.compose(from: fromHeader(draft, account: account), to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
-                                                    body: draft.body, inReplyTo: thread?.messageIdHeader,
-                                                    messageID: Self.rfc822MessageID(for: draft.id),
-                                                    attachments: draft.attachments, html: draft.bodyHTML, calendar: draft.calendarReply)
-            guard let id = try? await client.saveDraft(raw: raw, threadId: thread?.id.providerID,
-                                                       existingID: gmailDraftID(for: draft), account: account) else {
+            let from = fromHeader(draft, account: account)
+            let existing = gmailDraftID(for: draft)
+            guard let id = try? await client.saveDraft(attachments: draft.attachments, threadId: thread?.id.providerID,
+                                                       existingID: existing, account: account, compose: { withAttachments in
+                GmailMessageComposer.compose(from: from, to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
+                                             body: draft.body, inReplyTo: thread?.messageIdHeader,
+                                             messageID: Self.rfc822MessageID(for: draft.id),
+                                             attachments: withAttachments ? draft.attachments : [], html: draft.bodyHTML, calendar: draft.calendarReply)
+            }) else {
                 if shelved?.id == draft.id { shelved?.couldNotSave = true }
                 return
             }
@@ -136,7 +139,7 @@ final class OutboxService {
     private let store: MailStore
     private let auth: GoogleAuthService
     private let repository: any MailRepository
-    private let client = GmailAPIClient()
+    private let client = MailClient()
     private var task: Task<Void, Never>?
     /// The draft/thread behind the current `pending`, kept alongside it so a
     /// second `queueSend` while one is still mid-undo-window can commit the
@@ -321,7 +324,7 @@ final class OutboxService {
     /// relaunch, is asking Gmail about the exact same `Message-ID` an
     /// earlier attempt for this same entry would have stamped on the
     /// message it sent, not a fresh one Gmail could never have seen before.
-    private static func rfc822MessageID(for id: UUID) -> String { "\(id.uuidString)@corres.app" }
+    nonisolated private static func rfc822MessageID(for id: UUID) -> String { "\(id.uuidString)@corres.app" }
 
     /// Re-derives the source thread from a persisted draft's `threadID`
     /// (the durable outbox only stores the `Draft`, not a `Correspondence`
@@ -438,11 +441,13 @@ final class OutboxService {
     /// one.
     private func sendViaGmail(draft: Draft, thread: Correspondence?, account: String, id: UUID) async throws -> ThreadID {
         guard auth.isConnected(account) else { throw GmailAPIClient.ClientError.notSignedIn }
-        let raw = GmailMessageComposer.compose(from: fromHeader(draft, account: account), to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
-                                                body: draft.body, inReplyTo: thread?.messageIdHeader,
-                                                messageID: Self.rfc822MessageID(for: id),
-                                                attachments: draft.attachments, html: draft.bodyHTML, calendar: draft.calendarReply)
-        let threadId = try await client.send(raw: raw, threadId: thread?.id.providerID, account: account)
+        let from = fromHeader(draft, account: account)
+        let threadId = try await client.send(attachments: draft.attachments, threadId: thread?.id.providerID, account: account) { withAttachments in
+            GmailMessageComposer.compose(from: from, to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
+                                         body: draft.body, inReplyTo: thread?.messageIdHeader,
+                                         messageID: Self.rfc822MessageID(for: id),
+                                         attachments: withAttachments ? draft.attachments : [], html: draft.bodyHTML, calendar: draft.calendarReply)
+        }
         return ThreadID(account: account, providerID: threadId)
     }
 }

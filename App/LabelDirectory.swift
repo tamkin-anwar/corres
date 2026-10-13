@@ -14,7 +14,7 @@ import Observation
 final class LabelDirectory {
     private(set) var labelsByAccount: [String: [GmailUserLabel]] = [:]
     private(set) var isLoading = false
-    private let client = GmailAPIClient()
+    private let client = MailClient()
 
     /// Best-effort, deliberately silent on failure: a label chip or the
     /// "Labels" toggle menu just shows nothing new if this fails, not a

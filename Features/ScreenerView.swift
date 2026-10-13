@@ -45,8 +45,8 @@ struct ScreenerView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
                             Text(MailQuery.holdsNewSenders
-                                 ? "Their mail reaches Corres only once you allow them. Blocking hides them quietly, for good. Neither changes your Gmail account."
-                                 : "Their mail already shows in Corres. Allow marks them as known; Block hides them quietly, for good. Neither changes your Gmail account.")
+                                 ? "Their mail reaches Corres only once you allow them. Blocking hides them quietly, for good. Neither changes your email account."
+                                 : "Their mail already shows in Corres. Allow marks them as known; Block hides them quietly, for good. Neither changes your email account.")
                                 .font(.subheadline).foregroundStyle(CorresPalette.secondary)
                                 .padding(.horizontal, 4).padding(.bottom, 4)
                             ForEach(groups) { group in card(for: group) }

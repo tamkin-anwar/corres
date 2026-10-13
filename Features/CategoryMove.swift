@@ -65,7 +65,7 @@ extension View {
                 Task { await threadActions?.setCategory(pick.category, for: pick.thread, scope: .thisEmail) }
             }
         } message: { pick in
-            Text("Corres remembers this for the mail you choose, and Gmail learns it too. Change it any time in Settings > Sorting > What Corres Has Learned.")
+            Text("Corres remembers this for the mail you choose, and \(MailAccounts.provider(for: pick.thread.id.account).title) learns it too. Change it any time in Settings > Sorting > What Corres Has Learned.")
         }
     }
 }

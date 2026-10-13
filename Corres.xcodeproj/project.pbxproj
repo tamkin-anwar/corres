@@ -83,6 +83,11 @@
 		F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
 		F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */; };
 		AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */; };
+		458E116F4E6A4AB3BB988817 /* Shared/MailAccounts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09185C5DABE3431684F5BB68 /* Shared/MailAccounts.swift */; };
+		9C1A0854B3844622B0F4CAD1 /* App/MailClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4EE9AD8F80B43F692ADA7B7 /* App/MailClient.swift */; };
+		07EEA5D25B394DF4893F7433 /* App/OutlookTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */; };
+		86477A19A0EF4C339E3D8442 /* App/OutlookClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC8BE109A8184BD9AF037CDA /* App/OutlookClient.swift */; };
+		ADE33F6306CB404D99EA98D7 /* App/MicrosoftSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = D69CF92E53CD42029DAD53AC /* App/MicrosoftSignIn.swift */; };
 		77371C6C9A8242249DE0C135 /* Core/AttachmentKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C16B27D69CB4F8FA44B529D /* Core/AttachmentKind.swift */; };
 		A7CABCC3BA0A4956B5B14AE8 /* Shared/ShareSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79EF12712C774AD993901777 /* Shared/ShareSnapshot.swift */; };
 		E49D258957D640C299F58256 /* App/ShareBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B82102449D24E8E9476036E /* App/ShareBridge.swift */; };
@@ -142,6 +147,11 @@
 		36F3238E768946198C834D5D /* ShareExtension/SharedContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8E3DCAFB6D4991A321D3FC /* ShareExtension/SharedContent.swift */; };
 		A689ADA4CCA148ACA56539DE /* App/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B16B6325BA8F1CFBCC279108 /* App/Assets.xcassets */; };
 		E3DD019BA8C5426A84DE14F2 /* CorresShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0CB72D373C9C4A0A956F4172 /* CorresShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4DB61078AB034E89B20BB2FB /* App/MailClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4EE9AD8F80B43F692ADA7B7 /* App/MailClient.swift */; };
+		5F52078F01F443F1BAD3394E /* App/OutlookClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC8BE109A8184BD9AF037CDA /* App/OutlookClient.swift */; };
+		0F6031E618B242D5A00A5999 /* App/OutlookTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */; };
+		A1DA771E4AB7471196DFE162 /* Shared/MailAccounts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09185C5DABE3431684F5BB68 /* Shared/MailAccounts.swift */; };
+		7218669C3F294DDA919034B5 /* Core/AttachmentKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C16B27D69CB4F8FA44B529D /* Core/AttachmentKind.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -252,6 +262,11 @@
 		89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PlainTextEmail.swift; sourceTree = SOURCE_ROOT; };
 		B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/MailboxesView.swift; sourceTree = SOURCE_ROOT; };
 		A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/NextStep.swift; sourceTree = SOURCE_ROOT; };
+		09185C5DABE3431684F5BB68 /* Shared/MailAccounts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/MailAccounts.swift; sourceTree = SOURCE_ROOT; };
+		B4EE9AD8F80B43F692ADA7B7 /* App/MailClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MailClient.swift; sourceTree = SOURCE_ROOT; };
+		087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/OutlookTokenProvider.swift; sourceTree = SOURCE_ROOT; };
+		DC8BE109A8184BD9AF037CDA /* App/OutlookClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/OutlookClient.swift; sourceTree = SOURCE_ROOT; };
+		D69CF92E53CD42029DAD53AC /* App/MicrosoftSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MicrosoftSignIn.swift; sourceTree = SOURCE_ROOT; };
 		3C16B27D69CB4F8FA44B529D /* Core/AttachmentKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/AttachmentKind.swift; sourceTree = SOURCE_ROOT; };
 		79EF12712C774AD993901777 /* Shared/ShareSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/ShareSnapshot.swift; sourceTree = SOURCE_ROOT; };
 		1B82102449D24E8E9476036E /* App/ShareBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ShareBridge.swift; sourceTree = SOURCE_ROOT; };
@@ -352,6 +367,11 @@
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
 				5CCE34B9D4A7493491FF8177 /* Features/AttachmentPickers.swift */,
 				A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */,
+				09185C5DABE3431684F5BB68 /* Shared/MailAccounts.swift */,
+				B4EE9AD8F80B43F692ADA7B7 /* App/MailClient.swift */,
+				087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */,
+				DC8BE109A8184BD9AF037CDA /* App/OutlookClient.swift */,
+				D69CF92E53CD42029DAD53AC /* App/MicrosoftSignIn.swift */,
 				3C16B27D69CB4F8FA44B529D /* Core/AttachmentKind.swift */,
 				79EF12712C774AD993901777 /* Shared/ShareSnapshot.swift */,
 				1B82102449D24E8E9476036E /* App/ShareBridge.swift */,
@@ -596,6 +616,11 @@
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
 				5FC893C8B4AE471494AD5F7C /* Features/AttachmentPickers.swift in Sources */,
 				AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */,
+				458E116F4E6A4AB3BB988817 /* Shared/MailAccounts.swift in Sources */,
+				9C1A0854B3844622B0F4CAD1 /* App/MailClient.swift in Sources */,
+				07EEA5D25B394DF4893F7433 /* App/OutlookTokenProvider.swift in Sources */,
+				86477A19A0EF4C339E3D8442 /* App/OutlookClient.swift in Sources */,
+				ADE33F6306CB404D99EA98D7 /* App/MicrosoftSignIn.swift in Sources */,
 				77371C6C9A8242249DE0C135 /* Core/AttachmentKind.swift in Sources */,
 				A7CABCC3BA0A4956B5B14AE8 /* Shared/ShareSnapshot.swift in Sources */,
 				E49D258957D640C299F58256 /* App/ShareBridge.swift in Sources */,
@@ -712,6 +737,11 @@
 				35EA1A1F4CF641F987B45D47 /* ShareExtension/ShareComposer.swift in Sources */,
 				D68F295023C24C09A7D79E2E /* ShareExtension/ShareViewController.swift in Sources */,
 				36F3238E768946198C834D5D /* ShareExtension/SharedContent.swift in Sources */,
+				4DB61078AB034E89B20BB2FB /* App/MailClient.swift in Sources */,
+				5F52078F01F443F1BAD3394E /* App/OutlookClient.swift in Sources */,
+				0F6031E618B242D5A00A5999 /* App/OutlookTokenProvider.swift in Sources */,
+				A1DA771E4AB7471196DFE162 /* Shared/MailAccounts.swift in Sources */,
+				7218669C3F294DDA919034B5 /* Core/AttachmentKind.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

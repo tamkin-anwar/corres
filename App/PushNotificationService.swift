@@ -23,11 +23,13 @@ final class PushNotificationService {
     /// real but temporarily unreachable relay.
     static let relayBaseURL = URL(string: "https://us-central1-corres-509320.cloudfunctions.net/corres-push-relay")!
     static let pubsubTopicName = "projects/corres-509320/topics/gmail-push"
+    /// Where Microsoft Graph sends Outlook's new-mail notifications.
+    static let graphNotificationURL = URL(string: "https://us-central1-corres-509320.cloudfunctions.net/corres-push-relay-graph")!
 
     private(set) var isEnabled: Bool
     var errorMessage: String?
 
-    private let client = GmailAPIClient()
+    private let client = MailClient()
     private let defaults = UserDefaults.standard
     private static let enabledKey = "corres.push.enabled"
     private static let deviceTokenKey = "corres.push.deviceTokenHex"
@@ -116,6 +118,16 @@ final class PushNotificationService {
         await withTaskGroup(of: Void.self) { group in
             for account in accounts {
                 group.addTask {
+                    // Outlook: a Graph subscription, its secret handed to
+                    // the relay, so only Microsoft's real notifications wake
+                    // this device.
+                    if MailAccounts.provider(for: account) == .microsoft {
+                        guard let deviceTokenHex,
+                              let subscription = try? await OutlookClient().subscribe(account: account, notificationURL: Self.graphNotificationURL) else { return }
+                        try? await self.post(path: "register-graph", body: ["subscriptionId": subscription.id, "clientState": subscription.secret,
+                                                                            "emailAddress": account, "deviceToken": deviceTokenHex])
+                        return
+                    }
                     // `watch` is `@discardableResult` on its own
                     // declaration, but that doesn't propagate through
                     // `try?`, which still warns its own result is unused;

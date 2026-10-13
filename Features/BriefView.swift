@@ -353,7 +353,7 @@ struct BriefView: View {
 
     private var privacyNote: some View {
         Label(isConnected ? "Sorted on this iPhone. Corres doesn't send your mail to its own servers or to an AI service."
-                          : "Fictional mail. Connect Gmail in Settings when you're ready.",
+                          : "Fictional mail. Connect Gmail or Outlook in Settings when you're ready.",
               systemImage: "lock")
             .labelStyle(TightLabelStyle())
             .font(.footnote)

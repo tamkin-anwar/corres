@@ -37,7 +37,7 @@ struct PreferencesView: View {
                     var total = 0, missing = 0
                     for account in auth.accounts.map(\.email) {
                         do {
-                            let (items, failed) = try await GmailAPIClient().exportCorpus(account: account, limit: 500)
+                            let (items, failed) = try await MailClient().exportCorpus(account: account, limit: 500)
                             missing += failed
                             let data = try JSONEncoder().encode(items)
                             try data.write(to: folder.appending(path: "\(account).json"))
@@ -125,7 +125,7 @@ struct PreferencesView: View {
                         NotificationSettingsView(auth: auth, pushService: pushService)
                     } label: {
                         LabeledContent {
-                            Text(auth.accounts.isEmpty ? "Needs Gmail" : (pushService.isEnabled ? "On" : "Off"))
+                            Text(auth.accounts.isEmpty ? "Needs an Account" : (pushService.isEnabled ? "On" : "Off"))
                         } label: {
                             settingLabel("Notifications", "bell.badge")
                         }
@@ -266,16 +266,21 @@ struct PreferencesView: View {
                     HStack(spacing: 12) {
                         CorrespondenceMark().frame(width: 40, height: 40)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Connect your Gmail").font(.headline)
+                            Text("Connect Your Email").font(.headline)
                             Text("You're looking at sample mail.").font(.subheadline).foregroundStyle(CorresPalette.secondary)
                         }
                     }
-                    Button(action: connect) {
+                    Button { connect(.google) } label: {
                         if auth.isSigningIn || sync.isSyncing { ProgressView() } else { Text("Continue with Google") }
                     }
                     .buttonStyle(CorresButtonStyle())
                     .disabled(auth.isSigningIn || sync.isSyncing)
-                    Text("Corres never sees your Google password. Your mail is sorted and read on this iPhone.")
+                    Button { connect(.microsoft) } label: {
+                        Text("Continue with Microsoft")
+                    }
+                    .buttonStyle(CorresButtonStyle())
+                    .disabled(auth.isSigningIn || sync.isSyncing)
+                    Text("Gmail, Outlook.com, Hotmail and work or school Microsoft 365. Corres never sees your password, and your mail is sorted and read on this iPhone.")
                         .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 }
                 .padding(.vertical, 8)
@@ -289,7 +294,11 @@ struct PreferencesView: View {
                         accountRow(account)
                     }
                 }
-                Button(action: connect) {
+                // Which service, as Mail asks: Gmail or Outlook.
+                Menu {
+                    Button("Gmail") { connect(.google) }
+                    Button("Outlook") { connect(.microsoft) }
+                } label: {
                     if auth.isSigningIn || sync.isSyncing {
                         ProgressView()
                     } else {
@@ -320,10 +329,10 @@ struct PreferencesView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func connect() {
+    private func connect(_ provider: MailProvider) {
         Task {
             let previousCount = auth.accounts.count
-            await auth.signIn()
+            if provider == .microsoft { await auth.signInOutlook() } else { await auth.signIn() }
             // Only the newly added account needs a fresh sync; the others,
             // if any, are already current.
             // Cancelled sign-in: keep the sample mail, there's nothing to
@@ -398,7 +407,7 @@ private struct AccountDetailView: View {
                     AccountAvatar(email: account.email, name: profile?.name, photoURL: profile?.photoURL, size: 76)
                     if let name = profile?.name { Text(name).font(.title3.weight(.semibold)) }
                     Text(account.email).font(.subheadline).foregroundStyle(CorresPalette.secondary)
-                    Label("Gmail", systemImage: "envelope").font(.caption).foregroundStyle(CorresPalette.tertiary)
+                    Label(MailAccounts.provider(for: account.email).title, systemImage: "envelope").font(.caption).foregroundStyle(CorresPalette.tertiary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -424,7 +433,7 @@ private struct AccountDetailView: View {
                 }
                 .disabled(syncing || sync.isSyncing)
                 Button {
-                    Task { await auth.signIn(hint: account.email) }
+                    Task { await auth.reconnect(account.email) }
                 } label: {
                     Label("Reconnect with Google", systemImage: "key")
                 }
@@ -441,7 +450,7 @@ private struct AccountDetailView: View {
             Section {
                 Button("Remove Account", role: .destructive) { confirmingRemoval = true }
             } footer: {
-                Text("Removes this account and its mail from Corres on this iPhone. Nothing is deleted from Gmail.")
+                Text("Removes this account and its mail from Corres on this iPhone. Nothing is deleted from \(MailAccounts.provider(for: account.email).title).")
             }
         }
         .scrollContentBackground(.hidden)
@@ -463,7 +472,7 @@ private struct AccountDetailView: View {
                 dismiss()
             }
         } message: {
-            Text("Its mail is removed from this iPhone. It stays in Gmail.")
+            Text("Its mail is removed from this iPhone. It stays in \(MailAccounts.provider(for: account.email).title).")
         }
     }
 }

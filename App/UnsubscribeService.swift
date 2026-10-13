@@ -28,7 +28,7 @@ final class UnsubscribeService {
     enum Outcome: Equatable { case done, opened, failed }
 
     var errorMessage: String?
-    private let client = GmailAPIClient()
+    private let client = MailClient()
 
     func canUnsubscribe(_ thread: Correspondence) -> Bool {
         thread.listUnsubscribeMailto != nil || thread.listUnsubscribeURL != nil

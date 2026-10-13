@@ -36,7 +36,7 @@ final class PeopleDirectory {
     func photo(for email: String) -> UIImage? { photos[email.lowercased()] }
     private var looked: Set<String> = []
     private(set) var isLookingUp = false
-    private let client = GmailAPIClient()
+    private let client = MailClient()
 
     private static let sentHistoryLimit = 500
     private static var fileURL: URL {

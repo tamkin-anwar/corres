@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Settings → Out of Office: Gmail's vacation reply, from the phone, as
-/// Gmail and Outlook offer it (Mail and Spark don't). Gmail sends the
+/// Settings → Out of Office: Gmail's vacation reply or Outlook's automatic
+/// replies, from the phone, as Gmail and Outlook offer it (Mail and Spark
+/// don't). The service sends the
 /// replies itself, so they go out with this iPhone off.
 struct OutOfOfficeView: View {
     let auth: GoogleAuthService
@@ -13,9 +14,13 @@ struct OutOfOfficeView: View {
     @State private var state: LoadState = .loading
     @State private var saving = false
     @State private var message: String?
-    private let client = GmailAPIClient()
+    private let client = MailClient()
 
     enum LoadState { case loading, needsPermission, ready, failed }
+
+    private var isOutlook: Bool { MailAccounts.provider(for: account) == .microsoft }
+    /// Who sends the replies: "Gmail" or "Outlook".
+    private var service: String { MailAccounts.provider(for: account).title }
 
     var body: some View {
         Form {
@@ -37,13 +42,13 @@ struct OutOfOfficeView: View {
                 Section {
                     Button("Try Again") { Task { await load() } }
                 } footer: {
-                    Text("Couldn't reach Gmail. Check your connection.")
+                    Text("Couldn't reach \(service). Check your connection.")
                 }
             case .ready:
                 Section {
                     Toggle("Out of Office", isOn: $vacation.enableAutoReply)
                 } footer: {
-                    Text("While it's on, Gmail answers new email with your message, once per sender every few days, and sends it even with this iPhone off.")
+                    Text("While it's on, \(service) answers new email with your message and sends it even with this iPhone off.")
                 }
                 if vacation.enableAutoReply {
                     Section("When") {
@@ -54,8 +59,11 @@ struct OutOfOfficeView: View {
                         }
                     }
                     Section("Message") {
-                        TextField("Subject", text: Binding(get: { vacation.responseSubject ?? "" },
-                                                           set: { vacation.responseSubject = $0 }))
+                        // Outlook's automatic reply has no subject of its own.
+                        if !isOutlook {
+                            TextField("Subject", text: Binding(get: { vacation.responseSubject ?? "" },
+                                                               set: { vacation.responseSubject = $0 }))
+                        }
                         TextField("I'm away until…", text: Binding(get: { vacation.responseBodyPlainText ?? "" },
                                                                    set: {
                                                                        vacation.responseBodyPlainText = $0
@@ -73,7 +81,7 @@ struct OutOfOfficeView: View {
                     Button(saving ? "Saving\u{2026}" : "Save") { Task { await save() } }
                         .disabled(saving || isMissingMessage)
                 } footer: {
-                    if isMissingMessage { Text("Write the message Gmail should send.") }
+                    if isMissingMessage { Text("Write the message \(service) should send.") }
                     else if let message { Text(message) }
                 }
             }
@@ -140,7 +148,7 @@ struct OutOfOfficeView: View {
             try await client.setVacation(updated, account: account)
             vacation = updated
             message = updated.enableAutoReply
-                ? "On. Gmail will reply from \(start.formatted(date: .abbreviated, time: .shortened))\(hasEnd ? " until \(end.formatted(date: .abbreviated, time: .shortened))" : "")."
+                ? "On. \(service) will reply from \(start.formatted(date: .abbreviated, time: .shortened))\(hasEnd ? " until \(end.formatted(date: .abbreviated, time: .shortened))" : "")."
                 : "Off. No automatic replies."
         } catch {
             message = "Couldn't save. Please try again."

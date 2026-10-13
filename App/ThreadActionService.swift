@@ -18,7 +18,7 @@ final class ThreadActionService {
 
     private let store: MailStore
     private let auth: GoogleAuthService
-    private let client = GmailAPIClient()
+    private let client = MailClient()
     private static let sampleAccount = "sample"
 
     init(store: MailStore, auth: GoogleAuthService) {
@@ -534,13 +534,13 @@ final class ThreadActionService {
             } else if status == 403 && reason == nil && hasModify != true {
                 askToReconnect(account)
             } else if let reason, GmailAPIClient.rateLimitReasons.contains(reason) {
-                errorMessage = "Gmail is limiting how fast changes can be made right now. Give it a moment and try again."
+                errorMessage = "\(MailAccounts.provider(for: account).title) is limiting how fast changes can be made right now. Give it a moment and try again."
             } else {
                 // Unexplained: show Gmail's own words, and offer Reconnect
                 // for any 403, the one thing within the person's reach.
                 if status == 403 { reconnectAccount = account }
                 let detail = [message, reason.map { "(\($0), \(status))" } ?? "(\(status))"].compactMap { $0 }.joined(separator: " ")
-                errorMessage = "\(failureMessage)\n\nGmail said: \(detail)"
+                errorMessage = "\(failureMessage)\n\n\(MailAccounts.provider(for: account).title) said: \(detail)"
             }
         case GmailAPIClient.ClientError.badResponse(let status) where status == 403 && hasModify != true:
             askToReconnect(account)
@@ -548,7 +548,7 @@ final class ThreadActionService {
             reconnectAccount = account
             errorMessage = "\(account) needs to sign in again before Corres can change its mail."
         case GmailAPIClient.ClientError.badResponse(let status):
-            errorMessage = "\(failureMessage) (Gmail error \(status))"
+            errorMessage = "\(failureMessage) (\(MailAccounts.provider(for: account).title) error \(status))"
         default:
             errorMessage = failureMessage
         }
@@ -556,6 +556,6 @@ final class ThreadActionService {
 
     private func askToReconnect(_ account: String) {
         reconnectAccount = account
-        errorMessage = "Corres can read \(account) but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and leave every Gmail permission checked."
+        errorMessage = "Corres can read \(account) but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for."
     }
 }

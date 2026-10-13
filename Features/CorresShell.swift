@@ -241,7 +241,7 @@ struct CorresShell: View {
                 Button("Reconnect") {
                     threadActions.errorMessage = nil
                     threadActions.reconnectAccount = nil
-                    Task { await auth.signIn(hint: account) }
+                    Task { await auth.reconnect(account) }
                 }
                 Button("Not Now", role: .cancel) {
                     threadActions.errorMessage = nil
@@ -253,7 +253,7 @@ struct CorresShell: View {
         } message: { Text(threadActions.errorMessage ?? "Please try again.") }
         // Reconnect can start from the action-failure alert above, outside
         // Preferences, so its outcome has to be visible here too.
-        .alert("Gmail connection", isPresented: Binding(
+        .alert("Account Connection", isPresented: Binding(
             get: { auth.errorMessage != nil && !showingSettings },
             set: { if !$0 { auth.errorMessage = nil } }
         )) {
