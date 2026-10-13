@@ -122,6 +122,33 @@ final class GoogleAuthService {
             }
             setProfile(for: account.email, name: json["name"] as? String, photo: photo)
         }
+        for account in accounts where MailAccounts.provider(for: account.email) == .microsoft
+            && profiles[account.email]?.photoURL == nil {
+            await fillOutlookPhoto(for: account.email)
+        }
+    }
+
+    /// An Outlook account's photo, from Microsoft Graph. Unlike Google's it
+    /// has no public address, so it's fetched once with the account's token
+    /// and kept on this iPhone. An account with no photo is asked again
+    /// after a week, in case one has been added since.
+    private func fillOutlookPhoto(for email: String) async {
+        let checkedKey = "corres.outlookPhotoChecked.\(email.lowercased())"
+        if let checked = defaults.object(forKey: checkedKey) as? Date, Date.now.timeIntervalSince(checked) < 7 * 86_400 { return }
+        guard let token = try? await OutlookTokenProvider.shared.accessToken(for: email) else { return }
+        defaults.set(Date.now, forKey: checkedKey)
+        // The 240px size where the account has one (work and school), the
+        // original otherwise (personal Microsoft accounts have no sizes).
+        for path in ["photos/240x240/$value", "photo/$value"] {
+            guard let url = URL(string: "https://graph.microsoft.com/v1.0/me/\(path)") else { continue }
+            var request = URLRequest(url: url)
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            guard let (data, response) = try? await URLSession.shared.data(for: request),
+                  (response as? HTTPURLResponse)?.statusCode == 200, UIImage(data: data) != nil,
+                  let file = ProfilePhotoCache.saveLocal(data, named: email) else { continue }
+            setProfile(for: email, name: profiles[email]?.name, photo: file)
+            return
+        }
     }
 
     /// One-time upgrade path: reads whatever GoogleSignIn's own single-slot
@@ -239,7 +266,9 @@ final class GoogleAuthService {
             if defaults.string(forKey: Self.givenNameKey) == nil, let given = result.givenName, !given.isEmpty {
                 defaults.set(given, forKey: Self.givenNameKey)
             }
-            setProfile(for: result.email, name: result.name, photo: nil)
+            setProfile(for: result.email, name: result.name, photo: profiles[result.email]?.photoURL)
+            defaults.removeObject(forKey: "corres.outlookPhotoChecked.\(result.email.lowercased())")
+            Task { await fillOutlookPhoto(for: result.email) }
             if !accounts.contains(where: { $0.email == result.email }) {
                 accounts.append(GmailAccount(email: result.email))
                 persistAccountList()

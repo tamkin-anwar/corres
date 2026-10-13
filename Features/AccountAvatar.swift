@@ -59,6 +59,14 @@ actor ProfilePhotoCache {
     func image(for url: URL?) async -> UIImage? {
         guard let url else { return nil }
         if let cached = memory[url] { return cached }
+        // A photo kept on this iPhone (Outlook's, see `saveLocal`).
+        // Found by name: an app update can move the app's folder.
+        if url.isFileURL {
+            let file = Self.localFolder?.appendingPathComponent(url.lastPathComponent) ?? url
+            let image = (try? Data(contentsOf: file)).flatMap(UIImage.init(data:))
+            memory[url] = image
+            return image
+        }
         let file = Self.fileURL(for: url)
         if let data = try? Data(contentsOf: file), let image = UIImage(data: data) {
             memory[url] = image
@@ -71,6 +79,27 @@ actor ProfilePhotoCache {
         try? data.write(to: file, options: .atomic)
         memory[url] = image
         return image
+    }
+
+    /// Keeps a photo fetched with an account's own sign-in (Outlook's has
+    /// no public address), in Application Support so it isn't purged like
+    /// Caches. Returns its file address for the account's profile.
+    nonisolated static var localFolder: URL? {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("ProfilePhotos", isDirectory: true)
+    }
+
+    nonisolated static func saveLocal(_ data: Data, named name: String) -> URL? {
+        guard let folder = localFolder else { return nil }
+        let digest = SHA256.hash(data: Data(name.lowercased().utf8)).map { String(format: "%02x", $0) }.joined()
+        let file = folder.appendingPathComponent(digest + ".img")
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try data.write(to: file, options: .atomic)
+            return file
+        } catch {
+            return nil
+        }
     }
 
     private static func fileURL(for url: URL) -> URL {
