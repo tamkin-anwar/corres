@@ -17,6 +17,7 @@ struct HTMLMessageBody: UIViewRepresentable {
     @Binding var height: CGFloat
     var blockRemoteImages = true
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
     /// Read so a change of text size in Settings redraws the email.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -58,7 +59,13 @@ struct HTMLMessageBody: UIViewRepresentable {
         // can be done safely (`sizingScript`), otherwise kept on white.
         let analysis = Self.analysis(of: html)
         let designed = analysis.isDesigned
-        let dark = colorScheme == .dark
+        // Only while Corres is in front. Leaving it, iOS redraws the app in
+        // the other appearance for its app-switcher snapshot; reloading for
+        // that flip left a dark-mode email on white, since the reload back
+        // ran while the web view was suspended in the background. Back in
+        // front, the real appearance is checked again.
+        let dark = scenePhase == .active || context.coordinator.lastDark == nil
+            ? colorScheme == .dark : (context.coordinator.lastDark ?? (colorScheme == .dark))
         // The person's text size (Settings → Display & Brightness → Text
         // Size), which Mail follows too. 17pt is the default.
         let textSize = UIFont.preferredFont(forTextStyle: .body, compatibleWith: webView.traitCollection).pointSize
