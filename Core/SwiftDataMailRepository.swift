@@ -124,6 +124,18 @@ public actor SwiftDataMailRepository: MailRepository {
             model.htmlBody = item.htmlBody
             model.attachmentsData = (try? JSONEncoder().encode(item.attachments)) ?? Data()
             model.isBodyLoaded = true
+            // Outlook's headers (List-Unsubscribe) come with the full message,
+            // not the listing, and with them which of Gmail's categories its
+            // "Other" mail belongs to. Gmail's arrive earlier and stay.
+            if item.listUnsubscribeMailto != nil || item.listUnsubscribeURL != nil {
+                model.listUnsubscribeMailto = item.listUnsubscribeMailto
+                model.listUnsubscribeURL = item.listUnsubscribeURL
+                model.listUnsubscribeOneClick = item.listUnsubscribeOneClick
+                let categories = item.labelIds.filter { $0.hasPrefix("CATEGORY_") }
+                if !categories.isEmpty {
+                    model.labelIds = model.labelIds.filter { !$0.hasPrefix("CATEGORY_") } + categories
+                }
+            }
             // The snippet was only the opening; the whole message can hold
             // the question or the deadline.
             Self.applyRules(to: model, correspondents: correspondents, now: .now)

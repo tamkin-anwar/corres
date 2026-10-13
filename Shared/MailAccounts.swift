@@ -33,6 +33,28 @@ enum MailAccounts {
         defaults.set(map, forKey: key)
     }
 
+    /// A short tag telling an account apart from the others in a shared
+    /// inbox: the service or company it belongs to ("GMAIL", "OUTLOOK",
+    /// "ANWARLOG"), or, when two accounts share one, the start of each
+    /// address.
+    static func tag(for account: String, among accounts: [String]) -> String {
+        func service(_ address: String) -> String {
+            let domain = address.lowercased().components(separatedBy: "@").last ?? address
+            switch domain {
+            case "gmail.com", "googlemail.com": return "GMAIL"
+            case "outlook.com", "hotmail.com", "live.com", "msn.com": return "OUTLOOK"
+            case "icloud.com", "me.com", "mac.com": return "ICLOUD"
+            case "yahoo.com": return "YAHOO"
+            default: return String((domain.components(separatedBy: ".").first ?? domain).prefix(8)).uppercased()
+            }
+        }
+        let mine = service(account)
+        let shared = accounts.filter { $0.lowercased() != account.lowercased() && service($0) == mine }
+        guard !shared.isEmpty else { return mine }
+        let local = account.components(separatedBy: "@").first ?? account
+        return String(local.prefix(8)).uppercased()
+    }
+
     static func forget(_ account: String) {
         var map = defaults.dictionary(forKey: key) as? [String: String] ?? [:]
         map[account.lowercased()] = nil

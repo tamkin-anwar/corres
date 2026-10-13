@@ -364,8 +364,7 @@ struct CorrespondenceList: View {
 
     private func accountTag(for thread: Correspondence) -> String? {
         guard showsAccountTags else { return nil }
-        let local = thread.id.account.components(separatedBy: "@").first ?? thread.id.account
-        return String(local.prefix(8)).uppercased()
+        return MailAccounts.tag(for: thread.id.account, among: auth?.accounts.map(\.email) ?? [])
     }
 
     @Environment(AppRouter.self) private var router

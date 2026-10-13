@@ -607,6 +607,26 @@ struct SwiftDataMailRepositoryTests {
         #expect(byID["t2"]?.isBodyLoaded == false)
     }
 
+    /// Outlook's List-Unsubscribe arrives with the full message, and with it
+    /// which category its "Other" mail is: both land when the body does.
+    @Test func loadedContentBringsOutlookUnsubscribeAndCategory() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let id = ThreadID(account: "me@live.com", providerID: "t1")
+        func item(loaded: Bool, unsubscribe: String?, category: String) -> Correspondence {
+            Correspondence(id: id, sender: "Shop", organization: "", subject: "Sale", excerpt: "", body: "",
+                           latestMessageID: "m1", receivedAt: now, dueAt: nil, reason: "r", attention: .quiet,
+                           labelIds: ["INBOX", "UNREAD", category], listUnsubscribeURL: unsubscribe, isBodyLoaded: loaded)
+        }
+        try await repository.upsert([item(loaded: false, unsubscribe: nil, category: "CATEGORY_UPDATES")], isInitialSync: true)
+        try await repository.applyLoadedContent([item(loaded: true, unsubscribe: "https://shop.example/u", category: "CATEGORY_PROMOTIONS")])
+
+        let thread = try #require(try await repository.threads().first)
+        #expect(thread.listUnsubscribeURL == "https://shop.example/u")
+        #expect(thread.labelIds.contains("CATEGORY_PROMOTIONS"))
+        #expect(!thread.labelIds.contains("CATEGORY_UPDATES"))
+        #expect(thread.labelIds.contains("UNREAD"))
+    }
+
     /// A flag set in iOS Mail or Gmail arrives as a STARRED label change.
     @Test func remoteStarShowsAsFlag() async throws {
         let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
