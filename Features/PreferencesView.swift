@@ -15,6 +15,9 @@ struct PreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(MailIntelligence.self) private var intelligence
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
+    @AppStorage(AccountPreferences.colorCodingKey) private var colorCoding = true
+    /// Redraws the account rows when one is renamed or recoloured.
+    @AppStorage(AccountPreferences.revisionKey) private var accountsRevision = 0
     @Environment(EntitlementStore.self) private var entitlements
     @State private var showingPaywall = false
     @State private var managingSubscription = false
@@ -306,23 +309,34 @@ struct PreferencesView: View {
                     }
                 }
                 .disabled(auth.isSigningIn || sync.isSyncing)
+                if auth.accounts.count > 1 {
+                    Toggle(isOn: $colorCoding) { settingLabel("Color-Code Accounts", "paintpalette") }
+                        .onChange(of: colorCoding) { AccountPreferences.changed() }
+                }
             } header: {
                 Text("Accounts")
             } footer: {
-                Text("Every account shares one inbox, newest first. Switch to one account from the top of any screen.")
+                Text(auth.accounts.count > 1
+                     ? "Every account shares All Inboxes, newest first, each marked with its color. Switch to one account by tapping your photo."
+                     : "Every account shares one inbox, newest first. Switch to one account from the top of any screen.")
             }
         }
     }
 
+    /// Its name in Corres over its address, as Spark lists accounts, with
+    /// its colour once there's more than one.
     private func accountRow(_ account: GmailAccount) -> some View {
         let profile = auth.profile(for: account.email)
+        let color = AccountPreferences.color(for: account.email, among: auth.accounts.map(\.email))
         return HStack(spacing: 12) {
             AccountAvatar(email: account.email, name: profile?.name, photoURL: profile?.photoURL, size: 40)
             VStack(alignment: .leading, spacing: 1) {
-                Text(profile?.name ?? account.email).font(.body.weight(.medium)).lineLimit(1)
-                if profile?.name != nil {
-                    Text(account.email).font(.footnote).foregroundStyle(CorresPalette.secondary).lineLimit(1)
-                }
+                Text(AccountPreferences.nickname(for: account.email)).font(.body.weight(.medium)).lineLimit(1)
+                Text(account.email).font(.footnote).foregroundStyle(CorresPalette.secondary).lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            if let color {
+                Circle().fill(color).frame(width: 10, height: 10).accessibilityHidden(true)
             }
         }
         .padding(.vertical, 2)
@@ -385,9 +399,10 @@ struct PreferencesView: View {
 
 // MARK: - Account detail
 
-/// One account: who it is, when it last synced, and the two things a
-/// person might need to do to it. Removing it takes its mail off this
-/// iPhone; nothing is deleted from Gmail.
+/// One account, set the way Spark sets one, in Corres's words: what Corres
+/// calls it and its colour, the name your email is from, whether it's in
+/// All Inboxes, its own notifications and signatures. Removing it takes
+/// its mail off this iPhone; nothing is deleted from the account.
 private struct AccountDetailView: View {
     @Environment(MailIntelligence.self) private var intelligence
     let account: GmailAccount
@@ -398,6 +413,29 @@ private struct AccountDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var confirmingRemoval = false
     @State private var syncing = false
+    @AppStorage private var nickname: String
+    @AppStorage private var senderName: String
+    @AppStorage private var showsInAllInboxes: Bool
+    @AppStorage private var notify: String
+    @AppStorage(AccountPreferences.colorCodingKey) private var colorCoding = true
+    @AppStorage(AccountPreferences.revisionKey) private var accountsRevision = 0
+
+    init(account: GmailAccount, store: MailStore, auth: GoogleAuthService, sync: GmailSyncService, pushService: PushNotificationService) {
+        self.account = account
+        self.store = store
+        self.auth = auth
+        self.sync = sync
+        self.pushService = pushService
+        let email = account.email
+        _nickname = AppStorage(wrappedValue: "", AccountPreferences.nicknameKey(for: email))
+        _senderName = AppStorage(wrappedValue: "", AccountPreferences.senderNameKey(for: email))
+        _showsInAllInboxes = AppStorage(wrappedValue: true, AccountPreferences.allInboxesKey(for: email))
+        _notify = AppStorage(wrappedValue: AccountPreferences.notify(for: email).rawValue, AccountPreferences.notifyKey(for: email))
+    }
+
+    private var provider: MailProvider { MailAccounts.provider(for: account.email) }
+    private var emails: [String] { auth.accounts.map(\.email) }
+    private var tone: AccountPreferences.Tone { AccountPreferences.tone(for: account.email, among: emails) }
 
     var body: some View {
         let profile = auth.profile(for: account.email)
@@ -405,13 +443,83 @@ private struct AccountDetailView: View {
             Section {
                 VStack(spacing: 10) {
                     AccountAvatar(email: account.email, name: profile?.name, photoURL: profile?.photoURL, size: 76)
-                    if let name = profile?.name { Text(name).font(.title3.weight(.semibold)) }
+                        .padding(4)
+                        .overlay(Circle().strokeBorder(colorCoding && emails.count > 1 ? tone.color : .clear, lineWidth: 2.5))
+                    Text(AccountPreferences.nickname(for: account.email)).font(.title3.weight(.semibold))
                     Text(account.email).font(.subheadline).foregroundStyle(CorresPalette.secondary)
-                    Label(MailAccounts.provider(for: account.email).title, systemImage: "envelope").font(.caption).foregroundStyle(CorresPalette.tertiary)
+                    if AccountPreferences.nickname(for: account.email) != provider.title {
+                        Label(provider.title, systemImage: "envelope").font(.caption).foregroundStyle(CorresPalette.tertiary)
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
                 .listRowBackground(Color.clear)
+            }
+            Section {
+                LabeledContent("Name") {
+                    TextField(MailAccounts.serviceName(for: account.email), text: $nickname)
+                        .multilineTextAlignment(.trailing)
+                        .submitLabel(.done)
+                }
+                LabeledContent("Your Name") {
+                    TextField(profile?.name ?? "Name", text: $senderName)
+                        .multilineTextAlignment(.trailing)
+                        .textContentType(.name)
+                        .submitLabel(.done)
+                }
+            } footer: {
+                Text("Name is what Corres calls this account, like Work or Personal. Your Name is who your email is from.")
+            }
+            if emails.count > 1 {
+                Section {
+                    if colorCoding {
+                        TonePicker(selection: Binding(
+                            get: { tone.id },
+                            set: { UserDefaults.standard.set($0, forKey: AccountPreferences.toneKey(for: account.email)); AccountPreferences.changed() }
+                        ))
+                    }
+                    Toggle("Show in All Inboxes", isOn: $showsInAllInboxes)
+                } header: {
+                    Text(colorCoding ? "Color" : "All Inboxes")
+                } footer: {
+                    Text(showsInAllInboxes
+                         ? "Its mail is marked with this color in All Inboxes, so you can tell your accounts apart at a glance."
+                         : "Kept out of All Inboxes, Needs You, Waiting and the Brief. It still syncs; switch to it by tapping your photo.")
+                }
+            }
+            if pushService.isEnabled {
+                Section {
+                    Picker("Notifications", selection: $notify) {
+                        ForEach(AccountPreferences.Notify.allCases) { Text($0.title).tag($0.rawValue) }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                } header: {
+                    Text("Notifications")
+                } footer: {
+                    Text(notifyFooter)
+                }
+            }
+            Section {
+                SignatureDefaultPicker(account: account.email, reply: false)
+                SignatureDefaultPicker(account: account.email, reply: true)
+                NavigationLink("Edit Signatures") { SignaturesView(auth: auth) }
+            } header: {
+                Text("Signatures")
+            } footer: {
+                Text("Pick another for one email from Signature, below what you're writing.")
+            }
+            let aliases = SendAsDirectory.shared.addresses(for: account.email).filter { !$0.isPrimary }
+            if !aliases.isEmpty {
+                Section {
+                    ForEach(aliases, id: \.email) { alias in
+                        LabeledContent(alias.email) { if !alias.name.isEmpty { Text(alias.name) } }
+                    }
+                } header: {
+                    Text("Also Sends As")
+                } footer: {
+                    Text("Choose one from From when you write. Add or remove them in \(provider.title)'s settings.")
+                }
             }
             Section {
                 Button {
@@ -435,28 +543,23 @@ private struct AccountDetailView: View {
                 Button {
                     Task { await auth.reconnect(account.email) }
                 } label: {
-                    Label("Reconnect with Google", systemImage: "key")
+                    Label(provider == .microsoft ? "Reconnect with Microsoft" : "Reconnect with Google", systemImage: "key")
                 }
             } footer: {
                 Text("If marking as read, archiving or flagging stops working, reconnect and keep every permission checked.")
             }
-            if pushService.isEnabled {
-                Section {
-                    AccountNotificationToggle(email: account.email)
-                } footer: {
-                    Text("Turn off to keep this account quiet while its mail still syncs and sorts.")
-                }
-            }
             Section {
                 Button("Remove Account", role: .destructive) { confirmingRemoval = true }
             } footer: {
-                Text("Removes this account and its mail from Corres on this iPhone. Nothing is deleted from \(MailAccounts.provider(for: account.email).title).")
+                Text("Removes this account and its mail from Corres on this iPhone. Nothing is deleted from \(provider.title).")
             }
         }
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
-        .navigationTitle("Account")
+        .navigationTitle(AccountPreferences.nickname(for: account.email))
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: nickname) { AccountPreferences.changed() }
+        .onChange(of: showsInAllInboxes) { AccountPreferences.changed() }
         .confirmationDialog("Remove \(account.email)?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
             Button("Remove Account", role: .destructive) {
                 let email = account.email
@@ -472,7 +575,182 @@ private struct AccountDetailView: View {
                 dismiss()
             }
         } message: {
-            Text("Its mail is removed from this iPhone. It stays in \(MailAccounts.provider(for: account.email).title).")
+            Text("Its mail is removed from this iPhone. It stays in \(provider.title).")
+        }
+    }
+
+    private var notifyFooter: String {
+        let choice = AccountPreferences.Notify(rawValue: notify) ?? .standard
+        switch choice {
+        case .standard: return "Follows Settings → Notifications: \(PushNotificationService.Level.current.title)."
+        case .off: return "This account stays quiet. Its mail still syncs and sorts."
+        case .everything: return PushNotificationService.Level.everything.detail
+        case .people: return PushNotificationService.Level.people.detail
+        case .needsYou: return PushNotificationService.Level.needsYou.detail
+        }
+    }
+}
+
+/// The eight account colours as swatches, the chosen one ringed.
+private struct TonePicker: View {
+    @Binding var selection: Int
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(AccountPreferences.tones) { tone in
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { selection = tone.id }
+                } label: {
+                    Circle().fill(tone.color)
+                        .frame(width: 26, height: 26)
+                        .padding(4)
+                        .overlay(Circle().strokeBorder(selection == tone.id ? tone.color : .clear, lineWidth: 2))
+                        .overlay {
+                            if selection == tone.id {
+                                Image(systemName: "checkmark").font(.caption.weight(.bold)).foregroundStyle(.white)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(tone.name)
+                .accessibilityAddTraits(selection == tone.id ? .isSelected : [])
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+// MARK: - Signatures
+
+/// Which signature an account adds to new mail, or to replies and forwards.
+private struct SignatureDefaultPicker: View {
+    let account: String
+    let reply: Bool
+    @AppStorage private var selection: String
+    @AppStorage(Signatures.key) private var library = Data()
+
+    init(account: String, reply: Bool) {
+        self.account = account
+        self.reply = reply
+        _selection = AppStorage(wrappedValue: Signatures.defaultID(for: account, reply: reply), Signatures.defaultKey(for: account, reply: reply))
+    }
+
+    var body: some View {
+        Picker(reply ? "Replies & Forwards" : "New Emails", selection: $selection) {
+            Text("None").tag("")
+            ForEach(Signatures.all) { Text($0.name).tag($0.id) }
+        }
+    }
+}
+
+/// Every signature: add, edit, delete, and each account's two defaults,
+/// as Gmail's signature settings, on one screen.
+private struct SignaturesView: View {
+    var auth: GoogleAuthService
+    @State private var signatures = Signatures.all
+    @State private var editing: Signature?
+
+    private var accounts: [String] { auth.accounts.isEmpty ? ["sample"] : auth.accounts.map(\.email) }
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach(signatures) { signature in
+                    Button { editing = signature } label: {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(signature.name).font(.body.weight(.medium)).foregroundStyle(CorresPalette.ink)
+                            Text(signature.text).font(.footnote).foregroundStyle(CorresPalette.secondary).lineLimit(2)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+                .onDelete { offsets in
+                    for index in offsets { Signatures.delete(signatures[index].id) }
+                    signatures = Signatures.all
+                }
+                Button {
+                    editing = Signature(name: "", text: "")
+                } label: {
+                    Label("Add Signature", systemImage: "plus")
+                }
+            } footer: {
+                Text("Added below what you write, above the email you're replying to.")
+            }
+            if !signatures.isEmpty {
+                ForEach(accounts, id: \.self) { account in
+                    Section {
+                        SignatureDefaultPicker(account: account, reply: false)
+                        SignatureDefaultPicker(account: account, reply: true)
+                    } header: {
+                        Text(account == "sample" ? "Defaults" : AccountPreferences.nickname(for: account) + " · " + account)
+                    }
+                }
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(CorresPalette.canvas)
+        .navigationTitle("Signatures")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $editing) { signature in
+            SignatureEditor(signature: signature, accounts: accounts) { edited in
+                var saved = edited
+                // Unnamed: "Signature", then "Signature 2", as Gmail numbers them.
+                if saved.name.isEmpty { saved.name = signatures.isEmpty ? "Signature" : "Signature \(signatures.count + 1)" }
+                var all = Signatures.all
+                if let index = all.firstIndex(where: { $0.id == saved.id }) { all[index] = saved } else { all.append(saved) }
+                let isFirst = Signatures.all.isEmpty
+                Signatures.all = all
+                // The first signature becomes every account's default, as
+                // the single signature did before.
+                if isFirst {
+                    for account in accounts {
+                        Signatures.setDefault(saved.id, for: account, reply: false)
+                        Signatures.setDefault(saved.id, for: account, reply: true)
+                    }
+                }
+                signatures = Signatures.all
+            }
+        }
+    }
+}
+
+private struct SignatureEditor: View {
+    @State var signature: Signature
+    let accounts: [String]
+    let onSave: (Signature) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Best regards,\nYour name\nTitle · Company", text: $signature.text, axis: .vertical)
+                        .lineLimit(4...14)
+                }
+                Section {
+                    TextField("Name, like Full or Short", text: $signature.name)
+                } footer: {
+                    Text("Only you see the name, when choosing a signature.")
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(CorresPalette.canvas)
+            .navigationTitle(signature.name.isEmpty ? "New Signature" : signature.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel", role: .cancel) { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        signature.name = signature.name.trimmingCharacters(in: .whitespaces)
+                        onSave(signature)
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                    .disabled(signature.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
         }
     }
 }
@@ -499,26 +777,17 @@ private struct ComposingSettingsView: View {
             } footer: {
                 Text("As you type a name in To, Cc or search, Corres suggests people you email, the ones you write to most first, and people in your Contacts once you allow it. All on this iPhone. Press and hold a suggestion to stop seeing it.")
             }
-            if auth.accounts.isEmpty {
-                Section {
-                    SignatureEditor(account: "sample")
-                } header: {
-                    Text("Signature")
-                } footer: {
-                    Text("Added below what you write, above the email you're replying to.")
-                }
-            } else {
-                ForEach(auth.accounts) { account in
-                    Section {
-                        SignatureEditor(account: account.email)
-                    } header: {
-                        Text(auth.accounts.count > 1 ? "Signature · \(account.email)" : "Signature")
-                    } footer: {
-                        if account.email == auth.accounts.last?.email {
-                            Text("Added below what you write, above the email you're replying to. Each account keeps its own.")
-                        }
+            Section {
+                NavigationLink {
+                    SignaturesView(auth: auth)
+                } label: {
+                    LabeledContent("Signatures") {
+                        let count = Signatures.all.count
+                        Text(count == 0 ? "None" : "\(count)")
                     }
                 }
+            } footer: {
+                Text("Keep several, like a full one for new email and a short one for replies, and choose each account's.")
             }
             Section {
                 Picker("Undo Send", selection: $undoSeconds) {
@@ -545,33 +814,6 @@ private struct ComposingSettingsView: View {
         .onAppear {
             if defaultFrom.isEmpty, let first = auth.accounts.first { defaultFrom = first.email }
         }
-    }
-}
-
-private struct SignatureEditor: View {
-    let account: String
-    @State private var text = ""
-
-    var body: some View {
-        TextField("None", text: $text, axis: .vertical)
-            .lineLimit(2...8)
-            .onAppear { text = UserDefaults.standard.string(forKey: CorresSettings.signatureKey(for: account)) ?? "" }
-            .onChange(of: text) { _, value in
-                UserDefaults.standard.set(value, forKey: CorresSettings.signatureKey(for: account))
-            }
-    }
-}
-
-/// Observed through @AppStorage, so the switch redraws when flipped.
-private struct AccountNotificationToggle: View {
-    @AppStorage private var isOn: Bool
-
-    init(email: String) {
-        _isOn = AppStorage(wrappedValue: true, CorresSettings.accountNotificationsKey(for: email))
-    }
-
-    var body: some View {
-        Toggle(isOn: $isOn) { Label("Notifications", systemImage: "bell") }
     }
 }
 

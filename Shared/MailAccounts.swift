@@ -40,19 +40,26 @@ enum MailAccounts {
     static func tag(for account: String, among accounts: [String]) -> String {
         func service(_ address: String) -> String {
             let domain = address.lowercased().components(separatedBy: "@").last ?? address
-            switch domain {
-            case "gmail.com", "googlemail.com": return "GMAIL"
-            case "outlook.com", "hotmail.com", "live.com", "msn.com": return "OUTLOOK"
-            case "icloud.com", "me.com", "mac.com": return "ICLOUD"
-            case "yahoo.com": return "YAHOO"
-            default: return String((domain.components(separatedBy: ".").first ?? domain).prefix(8)).uppercased()
-            }
+            return personalServices[domain]?.uppercased()
+                ?? String((domain.components(separatedBy: ".").first ?? domain).prefix(8)).uppercased()
         }
         let mine = service(account)
         let shared = accounts.filter { $0.lowercased() != account.lowercased() && service($0) == mine }
         guard !shared.isEmpty else { return mine }
         let local = account.components(separatedBy: "@").first ?? account
         return String(local.prefix(8)).uppercased()
+    }
+
+    private static let personalServices = [
+        "gmail.com": "Gmail", "googlemail.com": "Gmail",
+        "outlook.com": "Outlook", "hotmail.com": "Outlook", "live.com": "Outlook", "msn.com": "Outlook",
+        "icloud.com": "iCloud", "me.com": "iCloud", "mac.com": "iCloud", "yahoo.com": "Yahoo",
+    ]
+
+    /// "Gmail", "Outlook", or a work address's domain ("anwarlogistics.com").
+    static func serviceName(for account: String) -> String {
+        let domain = account.lowercased().components(separatedBy: "@").last ?? account
+        return personalServices[domain] ?? domain
     }
 
     static func forget(_ account: String) {

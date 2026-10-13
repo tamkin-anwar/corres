@@ -83,6 +83,8 @@
 		F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
 		F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */; };
 		AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */; };
+		ABC796611ECB4D8FBC3469D5 /* Features/AccountSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11C4F91D2B48CB902EBE32 /* Features/AccountSwitcher.swift */; };
+		45D8ED42E6314D2D939EEB14 /* App/AccountPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91707F3623234ACCBFFCDC95 /* App/AccountPreferences.swift */; };
 		458E116F4E6A4AB3BB988817 /* Shared/MailAccounts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09185C5DABE3431684F5BB68 /* Shared/MailAccounts.swift */; };
 		9C1A0854B3844622B0F4CAD1 /* App/MailClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4EE9AD8F80B43F692ADA7B7 /* App/MailClient.swift */; };
 		07EEA5D25B394DF4893F7433 /* App/OutlookTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */; };
@@ -262,6 +264,8 @@
 		89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PlainTextEmail.swift; sourceTree = SOURCE_ROOT; };
 		B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/MailboxesView.swift; sourceTree = SOURCE_ROOT; };
 		A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/NextStep.swift; sourceTree = SOURCE_ROOT; };
+		CC11C4F91D2B48CB902EBE32 /* Features/AccountSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AccountSwitcher.swift; sourceTree = SOURCE_ROOT; };
+		91707F3623234ACCBFFCDC95 /* App/AccountPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AccountPreferences.swift; sourceTree = SOURCE_ROOT; };
 		09185C5DABE3431684F5BB68 /* Shared/MailAccounts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/MailAccounts.swift; sourceTree = SOURCE_ROOT; };
 		B4EE9AD8F80B43F692ADA7B7 /* App/MailClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MailClient.swift; sourceTree = SOURCE_ROOT; };
 		087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/OutlookTokenProvider.swift; sourceTree = SOURCE_ROOT; };
@@ -367,6 +371,8 @@
 				2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */,
 				5CCE34B9D4A7493491FF8177 /* Features/AttachmentPickers.swift */,
 				A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */,
+				CC11C4F91D2B48CB902EBE32 /* Features/AccountSwitcher.swift */,
+				91707F3623234ACCBFFCDC95 /* App/AccountPreferences.swift */,
 				09185C5DABE3431684F5BB68 /* Shared/MailAccounts.swift */,
 				B4EE9AD8F80B43F692ADA7B7 /* App/MailClient.swift */,
 				087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */,
@@ -616,6 +622,8 @@
 				63EF1EB83A714A0EB45DB39F /* Core/HTTPBatch.swift in Sources */,
 				5FC893C8B4AE471494AD5F7C /* Features/AttachmentPickers.swift in Sources */,
 				AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */,
+				ABC796611ECB4D8FBC3469D5 /* Features/AccountSwitcher.swift in Sources */,
+				45D8ED42E6314D2D939EEB14 /* App/AccountPreferences.swift in Sources */,
 				458E116F4E6A4AB3BB988817 /* Shared/MailAccounts.swift in Sources */,
 				9C1A0854B3844622B0F4CAD1 /* App/MailClient.swift in Sources */,
 				07EEA5D25B394DF4893F7433 /* App/OutlookTokenProvider.swift in Sources */,

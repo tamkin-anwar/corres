@@ -63,6 +63,9 @@ struct ComposeView: View {
     /// snippet, dictation, a new signature), the only time the editor takes
     /// them from outside.
     @State private var bodyRevision = 0
+    /// The signature in the email now: the account's default, until
+    /// another is picked from Signature below the email.
+    @State private var signatureText = ""
     /// The Aa strip: bold, italic, underline, strikethrough, lists, link.
     @State private var showsFormatting = false
     @State private var addingLink = false
@@ -92,7 +95,9 @@ struct ComposeView: View {
             initial.fromAccount = CorresSettings.defaultFromAccount.flatMap { connected.contains($0) ? $0 : nil }
                 ?? auth?.primaryAccount?.email
         }
-        initial.body = Self.addingSignature(to: initial.body, account: initial.fromAccount ?? initial.threadID?.account ?? "sample")
+        let signature = CorresSettings.signature(for: initial.fromAccount ?? initial.threadID?.account ?? "sample", reply: initial.kind != .new)
+        initial.body = Self.adding(signature: signature, to: initial.body)
+        self._signatureText = State(initialValue: initial.body.contains(signature) ? signature : "")
         // A reply, Reply All or a saved draft arrives with its people
         // already written in: chips from the start, as in Mail, not text
         // that looks half-typed.
@@ -422,6 +427,7 @@ struct ComposeView: View {
                             .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.5))
                     }
                     .foregroundStyle(CorresPalette.ink)
+                    signatureMenu
                     if intelligence.isAvailable && proUnlocked {
                     if let beforeRewrite {
                         Button {
@@ -567,10 +573,9 @@ struct ComposeView: View {
     /// (a real Gmail delivery when replying/forwarding a connected thread,
     /// plus local bookkeeping) happens in OutboxService after a short undo
     /// window; see its doc comment and ADR 005.
-    /// The account's signature, between where you type and the quoted
-    /// email, the way Mail places it.
-    static func addingSignature(to body: String, account: String?) -> String {
-        let signature = CorresSettings.signature(for: account)
+    /// A signature, between where you type and the quoted email, the way
+    /// Mail places it.
+    static func adding(signature: String, to body: String) -> String {
         guard !signature.isEmpty, !body.contains(signature) else { return body }
         if let quote = body.range(of: #"\n\nOn .+ wrote:\n"#, options: .regularExpression) {
             var result = body
@@ -582,14 +587,52 @@ struct ComposeView: View {
 
     /// Switching From swaps in that account's signature.
     private func swapSignature(from old: String?, to new: String?) {
-        let oldSignature = CorresSettings.signature(for: old)
-        let newSignature = CorresSettings.signature(for: new)
-        if !oldSignature.isEmpty, let range = draft.body.range(of: oldSignature) {
-            draft.body.replaceSubrange(range, with: newSignature)
-            bodyRevision += 1
-        } else if !newSignature.isEmpty {
-            draft.body = Self.addingSignature(to: draft.body, account: new)
-            bodyRevision += 1
+        replaceSignature(with: CorresSettings.signature(for: new, reply: draft.kind != .new))
+    }
+
+    /// Puts `text` where the current signature is (or adds it), and takes
+    /// the signature out entirely for none.
+    private func replaceSignature(with text: String) {
+        if !signatureText.isEmpty, let range = draft.body.range(of: signatureText) {
+            if text.isEmpty {
+                var lower = range.lowerBound
+                if draft.body[..<lower].hasSuffix("\n\n") { lower = draft.body.index(lower, offsetBy: -2) }
+                draft.body.removeSubrange(lower..<range.upperBound)
+            } else {
+                draft.body.replaceSubrange(range, with: text)
+            }
+        } else if !text.isEmpty {
+            draft.body = Self.adding(signature: text, to: draft.body)
+        }
+        signatureText = text
+        bodyRevision += 1
+    }
+
+    /// Settings → Signatures, for this one email: as Gmail's pen and
+    /// Spark's signature button. Only once there's more than one to pick.
+    @ViewBuilder
+    private var signatureMenu: some View {
+        let all = Signatures.all
+        if all.count > 1 || (all.count == 1 && signatureText.isEmpty) {
+            Menu {
+                ForEach(all) { signature in
+                    let text = signature.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    Button { replaceSignature(with: text) } label: {
+                        if text == signatureText { Label(signature.name, systemImage: "checkmark") } else { Text(signature.name) }
+                    }
+                }
+                Divider()
+                Button { replaceSignature(with: "") } label: {
+                    if signatureText.isEmpty { Label("No Signature", systemImage: "checkmark") } else { Text("No Signature") }
+                }
+            } label: {
+                Label("Signature", systemImage: "signature").labelStyle(TightLabelStyle())
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 15).frame(minHeight: 36)
+                    .background(CorresPalette.surfaceRaised, in: Capsule())
+                    .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.5))
+            }
+            .foregroundStyle(CorresPalette.ink)
         }
     }
 

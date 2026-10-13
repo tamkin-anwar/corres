@@ -255,10 +255,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // picked up by the next foreground sync instead.
         await semanticTriageService.triageIfNeeded(store: store, only: Set(newlyUnreadThreads().map(\.id)))
         let newlyUnread = newlyUnreadThreads()
-        // Settings → Notifications (see PushNotificationService.Level).
-        // Settings → an account → Notifications can mute one account.
-        let toNotify = (newlyUnread.filter(PushNotificationService.Level.current.includes) + newSenders)
-            .filter { CorresSettings.notifies(for: $0.id.account) }
+        // Settings → Notifications (see PushNotificationService.Level), or
+        // the account's own choice in Settings → the account.
+        let toNotify = (newlyUnread.filter { AccountPreferences.level(for: $0.id.account)?.includes($0) == true }
+                        + newSenders.filter { AccountPreferences.level(for: $0.id.account) != nil })
             // During a Focus limited to one account, only that account notifies.
             .filter { thread in CorresFocusFilter.activeAccount.map { $0 == thread.id.account } ?? true }
         pushService.notifyAboutNewMail(toNotify)
@@ -344,7 +344,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             // As a reply written in Compose: your words, your signature,
             // then the email quoted; from the address it was sent to.
             var draft = thread.draft(kind: .reply)
-            draft.body = ComposeView.addingSignature(to: text + draft.body, account: account)
+            draft.body = ComposeView.adding(signature: CorresSettings.signature(for: account, reply: true), to: text + draft.body)
             if let address = SendAsDirectory.shared.address(for: account, answering: thread), !address.isPrimary {
                 draft.fromAddress = address.email
                 draft.fromName = address.name.isEmpty ? nil : address.name

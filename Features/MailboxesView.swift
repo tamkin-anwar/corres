@@ -332,7 +332,7 @@ struct MailboxView: View {
     private func content(_ rows: [Correspondence], orderedIDs: [ThreadID]) -> some View {
         ForEach(rows) { thread in
             NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
-                CorrespondenceRow(thread: thread, accountTag: accounts.count > 1 ? MailAccounts.tag(for: thread.id.account, among: accounts) : nil,
+                CorrespondenceRow(thread: thread, accountTag: accounts.count > 1 ? AccountTag.make(for: thread.id.account, among: accounts) : nil,
                                   sentTo: mailbox == .sent ? recipient(of: thread) : nil)
             }
             .hidingDisclosureIndicator()

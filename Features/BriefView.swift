@@ -22,6 +22,8 @@ struct BriefView: View {
     /// catches up the moment it's shown again.
     var isActive = true
     @AppStorage(GoogleAuthService.givenNameKey) private var givenName = ""
+    /// Redraws when an account is renamed, recoloured or hidden from All Inboxes.
+    @AppStorage(AccountPreferences.revisionKey) private var accountsRevision = 0
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
     @Environment(\.conversationSelection) private var splitSelection
 
@@ -31,7 +33,7 @@ struct BriefView: View {
     /// every archive or pin in Mail paid for it too.
     private final class Digest {
         /// The minute too, so due times and snoozes still move on their own.
-        var key: (revision: Int, minute: Int, account: String?)?
+        var key: (revision: Int, minute: Int, account: String?, accounts: Int)?
         var snapshot = BriefSnapshot(threads: [], now: .now)
         var priorities: [Correspondence] = []
         var waiting: [Correspondence] = []
@@ -43,11 +45,12 @@ struct BriefView: View {
         let cache = digestCache
         if !isActive, cache.key != nil { return cache }
         let minute = Int(Date.now.timeIntervalSince1970 / 60)
-        if let key = cache.key, key.revision == store.revision, key.minute == minute, key.account == accountFilter {
+        if let key = cache.key, key.revision == store.revision, key.minute == minute, key.account == accountFilter,
+           key.accounts == AccountPreferences.revision {
             return cache
         }
-        let scoped = accountFilter.map { account in store.threads.filter { $0.id.account == account } } ?? store.threads
-        cache.key = (store.revision, minute, accountFilter)
+        let scoped = AccountPreferences.scope(store.threads, account: accountFilter, all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
+        cache.key = (store.revision, minute, accountFilter, AccountPreferences.revision)
         cache.snapshot = BriefSnapshot(threads: scoped, now: .now)
         cache.priorities = MailQuery.prioritized(scoped, attention: .needsYou)
         cache.waiting = MailQuery.prioritized(scoped, attention: .waiting)
@@ -58,7 +61,7 @@ struct BriefView: View {
     private var priorities: [Correspondence] { digest.priorities }
     private var waiting: [Correspondence] { digest.waiting }
     private var pendingSenderCount: Int {
-        let pending = accountFilter == nil ? store.pendingSenderThreads : store.pendingSenderThreads.filter { $0.id.account == accountFilter }
+        let pending = AccountPreferences.scope(store.pendingSenderThreads, account: accountFilter, all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
         return Set(pending.compactMap(\.senderEmail)).count
     }
     /// Real mail on screen counts too: accounts are restored a moment after

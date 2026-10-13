@@ -31,6 +31,7 @@ struct CorresShell: View {
         Binding(get: { selection }, set: { show($0) })
     }
     @State private var showingSettings = false
+    @State private var showingAccounts = false
     @State private var showingScreener = false
     @State private var showingWelcome = false
     @State private var composeDraft: Draft?
@@ -41,6 +42,8 @@ struct CorresShell: View {
     /// `store.threads`, not separate data: Core's `ThreadID.account` already
     /// scopes every thread, so this needed no Core changes at all.
     @State private var accountFilter: String?
+    /// Redraws when an account is renamed, recoloured or hidden from All Inboxes.
+    @AppStorage(AccountPreferences.revisionKey) private var accountsRevision = 0
     @AppStorage("corres.hasExplored") private var hasExplored = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
@@ -209,6 +212,15 @@ struct CorresShell: View {
             Task { await ShareBridge.update(auth: auth, people: people, threads: store.threads) }
             if let accountFilter, !accounts.contains(where: { $0.email == accountFilter }) {
                 self.accountFilter = nil
+            }
+        }
+        .sheet(isPresented: $showingAccounts) {
+            AccountSwitcher(store: store, auth: auth, selection: $accountFilter) {
+                // After the switcher has gone, so the two sheets don't collide.
+                Task {
+                    try? await Task.sleep(for: .milliseconds(400))
+                    showingSettings = true
+                }
             }
         }
         .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService, unsubscriber: unsubscribeService) }
@@ -480,7 +492,7 @@ struct CorresShell: View {
         switch destination {
         case .brief: ""
         case .mail:
-            if let accountFilter { accountFilter.components(separatedBy: "@").first ?? accountFilter }
+            if let accountFilter { AccountPreferences.nickname(for: accountFilter) }
             else { auth.accounts.count > 1 ? "All Inboxes" : "Mail" }
         default: destination.rawValue
         }
@@ -498,7 +510,6 @@ struct CorresShell: View {
                         // lists use the system large title, set in New York
                         // (see CorresApp.init), which collapses on scroll.
                         .navigationBarTitleDisplayMode(destination == .brief ? .inline : .large)
-                        .modifier(AccountTitleMenu(isEnabled: auth.accounts.count > 1) { accountMenu })
                         .toolbar { toolbarContent }
                         .navigationDestination(for: ConversationRoute.self) { route in
                             ConversationView(store: store, outbox: outbox, threadActions: threadActions,
@@ -598,7 +609,7 @@ struct CorresShell: View {
     }
 
     private func sidebarCount(for destination: Destination) -> Int? {
-        let scoped = accountFilter.map { filter in store.threads.filter { $0.id.account == filter } } ?? store.threads
+        let scoped = AccountPreferences.scope(store.threads, account: accountFilter, all: auth.accounts.map(\.email), by: \.id.account)
         switch destination {
         case .needsYou: return MailQuery.filter(scoped, attention: .needsYou).count
         case .waiting: return MailQuery.filter(scoped, attention: .waiting).count
@@ -622,8 +633,13 @@ struct CorresShell: View {
             Button {
                 accountFilter = account.email
             } label: {
-                if accountFilter == account.email { Label(account.email, systemImage: "checkmark") }
-                else { Text(account.email) }
+                // Its name in Corres ("Work", "Gmail"), the address beneath.
+                if accountFilter == account.email {
+                    Label(AccountPreferences.nickname(for: account.email), systemImage: "checkmark")
+                } else {
+                    Text(AccountPreferences.nickname(for: account.email))
+                }
+                Text(account.email)
             }
         }
     }
@@ -632,21 +648,37 @@ struct CorresShell: View {
     /// the first connected one in the merged view.
     private var displayedAccount: String? { accountFilter ?? auth.accounts.first?.email }
 
+    /// With one account, Settings. With several, Gmail's account switcher
+    /// (`AccountSwitcher`): All Inboxes, each account, then Settings.
+    @ViewBuilder
     private var accountButton: some View {
-        Button { showingSettings = true } label: {
-            AccountAvatar(email: displayedAccount,
-                          name: displayedAccount.flatMap { auth.profile(for: $0)?.name },
-                          photoURL: displayedAccount.flatMap { auth.profile(for: $0)?.photoURL })
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Circle())
+        let avatar = AccountAvatar(email: displayedAccount,
+                                   name: displayedAccount.flatMap { auth.profile(for: $0)?.name },
+                                   photoURL: displayedAccount.flatMap { auth.profile(for: $0)?.photoURL })
+            // Viewing one account: a ring in its colour says which.
+            .padding(accountFilter == nil ? 0 : 3)
+            .overlay {
+                if let accountFilter, let color = AccountPreferences.color(for: accountFilter, among: auth.accounts.map(\.email)) {
+                    Circle().strokeBorder(color, lineWidth: 2)
+                }
+            }
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Circle())
+        if auth.accounts.count > 1 {
+            Button { showingAccounts = true } label: { avatar }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Accounts and settings")
+                .accessibilityValue(accountFilter.map(AccountPreferences.nickname(for:)) ?? "All Inboxes")
+        } else {
+            Button { showingSettings = true } label: { avatar }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Account and settings")
+                .accessibilityValue(displayedAccount ?? "Sample mail")
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Account and settings")
-        .accessibilityValue(displayedAccount ?? "Sample mail")
     }
 
     /// The accounts Mailboxes shows: the one in view, or all of them.
-    fileprivate var mailboxAccounts: [String] { accountFilter.map { [$0] } ?? auth.accounts.map(\.email) }
+    fileprivate var mailboxAccounts: [String] { accountFilter.map { [$0] } ?? AccountPreferences.allInboxesAccounts(auth.accounts.map(\.email)) }
 
     private var mailboxesLink: some View {
         NavigationLink(value: MailboxesRoute()) {
@@ -663,18 +695,6 @@ struct CorresShell: View {
       // While selecting, the list's own Select All / count / Done take the
       // bar, as in Mail.
       if !router.isSelecting {
-        // Tapping the title also switches (on the lists), but the Brief has
-        // no title, so a visible control is the one path that always works.
-        if auth.accounts.count > 1 {
-            ToolbarItem(placement: .topBarLeading) {
-                Menu { accountMenu } label: {
-                    Image(systemName: accountFilter == nil ? "tray.2" : "person.crop.circle")
-                        .frame(minWidth: 44, minHeight: 44)
-                }
-                .accessibilityLabel(accountFilter == nil ? "All Inboxes" : accountFilter ?? "")
-                .accessibilityHint("Switch between all inboxes and one account")
-            }
-        }
         // Drafts, Sent, All Mail, Spam, Trash and labels: the rest of the
         // mailbox, one tap from Mail (see `MailboxesView`).
         if selection == .mail {
@@ -700,21 +720,6 @@ struct CorresShell: View {
             ToolbarItem(placement: .topBarTrailing) { accountButton }
         }
       }
-    }
-}
-
-/// The title-tap account switcher, attached only when there's a choice to
-/// make: an empty title menu still draws a disclosure arrow.
-private struct AccountTitleMenu<Menu: View>: ViewModifier {
-    let isEnabled: Bool
-    @ViewBuilder let menu: () -> Menu
-
-    func body(content: Content) -> some View {
-        if isEnabled {
-            content.toolbarTitleMenu { menu() }
-        } else {
-            content
-        }
     }
 }
 

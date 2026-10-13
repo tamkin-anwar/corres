@@ -841,7 +841,7 @@ struct ConversationView: View {
             if !thread.isBodyLoaded { await threadActions.loadContent(for: thread) }
             let source = store.thread(thread.id) ?? thread
             let drafted = await intelligence.draftReply(to: source, intent: intent,
-                                                        signOff: givenName.isEmpty || !CorresSettings.signature(for: source.id.account).isEmpty ? nil : givenName)
+                                                        signOff: givenName.isEmpty || !CorresSettings.signature(for: source.id.account, reply: true).isEmpty ? nil : givenName)
             draftingIntent = nil
             compose(.reply, from: source, prefill: drafted ?? "")
         }

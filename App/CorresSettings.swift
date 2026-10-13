@@ -27,10 +27,9 @@ enum CorresSettings {
     static let defaultFromKey = "corres.defaultFromAccount"
     static var defaultFromAccount: String? { defaults.string(forKey: defaultFromKey) }
 
-    static func signatureKey(for account: String) -> String { "corres.signature.\(account.lowercased())" }
-    static func signature(for account: String?) -> String {
-        guard let account else { return "" }
-        return (defaults.string(forKey: signatureKey(for: account)) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    /// The account's signature for new mail, or for a reply (see `Signatures`).
+    static func signature(for account: String?, reply: Bool = false) -> String {
+        Signatures.text(for: account, reply: reply)
     }
 
     // MARK: Reading

@@ -1,5 +1,17 @@
 import SwiftUI
 
+/// Which account an email in All Inboxes came from: the account's name,
+/// and its colour when colour coding is on (Settings → the account).
+struct AccountTag: Hashable {
+    let text: String
+    let color: Color?
+
+    @MainActor static func make(for account: String, among accounts: [String]) -> AccountTag {
+        AccountTag(text: AccountPreferences.tag(for: account, among: accounts),
+                   color: AccountPreferences.color(for: account, among: accounts))
+    }
+}
+
 /// A flat, dense row in the Mail/Spark list anatomy: unread dot, a round
 /// monogram, sender and time, subject, a one-line preview, and, in the
 /// curated lists, the one-line reason it's there.
@@ -8,7 +20,7 @@ struct CorrespondenceRow: View {
     /// The "why this is here" line; shown in Needs You, Waiting, and the Brief.
     var showsReason = false
     /// A short account marker, shown only in the merged view of several accounts.
-    var accountTag: String?
+    var accountTag: AccountTag?
     /// In Sent: who you wrote to, shown in place of the sender, with the
     /// time you sent it.
     var sentTo: String?
@@ -75,11 +87,21 @@ struct CorrespondenceRow: View {
                             .accessibilityLabel("New sender")
                     }
                     if let accountTag {
-                        Text(accountTag)
-                            .font(.caption2.weight(.semibold)).tracking(0.4)
-                            .foregroundStyle(CorresPalette.tertiary)
-                            .padding(.horizontal, 5).padding(.vertical, 1)
-                            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(CorresPalette.line, lineWidth: 1))
+                        // The colour is a dot and a tinted outline, not the
+                        // text: gold or teal text would fail contrast on white.
+                        HStack(spacing: 4) {
+                            if let color = accountTag.color {
+                                Circle().fill(color).frame(width: 6, height: 6)
+                            }
+                            Text(accountTag.text)
+                        }
+                        .font(.caption2.weight(.semibold)).tracking(0.4)
+                        .foregroundStyle(CorresPalette.tertiary)
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .overlay(RoundedRectangle(cornerRadius: 5)
+                            .strokeBorder(accountTag.color.map { $0.opacity(0.5) } ?? CorresPalette.line, lineWidth: 1))
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(accountTag.text) account")
                     }
                     if !typeSize.isAccessibilitySize {
                         Text(Self.timestamp(sentTo != nil ? (thread.lastSentAt ?? thread.receivedAt) : thread.receivedAt))
@@ -270,8 +292,8 @@ struct CorrespondenceList: View {
     @State private var scrollPosition: ThreadID?
 
     private var scopedThreads: [Correspondence] {
-        guard let accountFilter else { return store.threads }
-        return store.threads.filter { $0.id.account == accountFilter }
+        // All Inboxes leaves out accounts turned off for it in Settings.
+        AccountPreferences.scope(store.threads, account: accountFilter, all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
     }
 
     /// The rows as last built, and what they were built from. A plain
@@ -283,6 +305,8 @@ struct CorrespondenceList: View {
             /// their own on the next redraw, as they did before caching.
             let minute: Int
             let account: String?
+            /// Settings → an account: its name, colour, All Inboxes.
+            let accounts: Int
             let destination: Destination
             let search: String
             let filter: MailFilter
@@ -294,6 +318,7 @@ struct CorrespondenceList: View {
         var unread = 0
     }
     @State private var rowsCache = RowsCache()
+    @AppStorage(AccountPreferences.revisionKey) private var accountsRevision = 0
 
     /// Filtered and sorted once per change to the mail or the view, not on
     /// every read: `results` is read a dozen times per redraw and once per
@@ -304,7 +329,7 @@ struct CorrespondenceList: View {
         let cache = rowsCache
         if !isActive, cache.key != nil { return cache }
         let key = RowsCache.Key(revision: store.revision, minute: Int(Date.now.timeIntervalSince1970 / 60),
-                                account: accountFilter, destination: destination,
+                                account: accountFilter, accounts: accountsRevision, destination: destination,
                                 search: search, filter: mailFilter)
         guard cache.key != key else { return cache }
         let built = buildResults()
@@ -362,9 +387,9 @@ struct CorrespondenceList: View {
 
     private var showsAccountTags: Bool { accountFilter == nil && (auth?.accounts.count ?? 0) > 1 }
 
-    private func accountTag(for thread: Correspondence) -> String? {
+    private func accountTag(for thread: Correspondence) -> AccountTag? {
         guard showsAccountTags else { return nil }
-        return MailAccounts.tag(for: thread.id.account, among: auth?.accounts.map(\.email) ?? [])
+        return AccountTag.make(for: thread.id.account, among: auth?.accounts.map(\.email) ?? [])
     }
 
     @Environment(AppRouter.self) private var router
@@ -487,7 +512,7 @@ struct CorrespondenceList: View {
             // person keeps typing before that. Reaches past what's already
             // synced locally; see GmailSyncService.search's doc comment.
             .task(id: search) {
-                let accounts = accountFilter.map { [$0] } ?? (auth?.accounts.map(\.email) ?? [])
+                let accounts = accountFilter.map { [$0] } ?? AccountPreferences.allInboxesAccounts(auth?.accounts.map(\.email) ?? [])
                 guard !accounts.isEmpty else { return }
                 try? await Task.sleep(for: .milliseconds(450))
                 guard !Task.isCancelled else { return }
@@ -984,7 +1009,7 @@ struct CorrespondenceList: View {
 
     private func loadOlderMail() {
         guard let sync, let auth else { return }
-        let accounts = accountFilter.map { [$0] } ?? auth.accounts.map(\.email)
+        let accounts = accountFilter.map { [$0] } ?? AccountPreferences.allInboxesAccounts(auth.accounts.map(\.email))
         guard sync.hasOlderMail(accounts: accounts) else { return }
         Task {
             if await sync.loadOlder(accounts: accounts) { await store.refresh() }

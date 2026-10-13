@@ -357,7 +357,9 @@ final class OutboxService {
     private func fromHeader(_ draft: Draft, account: String) -> String {
         let directory = SendAsDirectory.shared
         let address = draft.fromAddress ?? account
-        let name = draft.fromName ?? directory.addresses(for: account).first { $0.email == address.lowercased() }?.name ?? ""
+        // Settings → the account → Your Name, for the account's own address.
+        let ownName = address.lowercased() == account.lowercased() ? AccountPreferences.senderName(for: account) : nil
+        let name = draft.fromName ?? ownName ?? directory.addresses(for: account).first { $0.email == address.lowercased() }?.name ?? ""
         guard !name.isEmpty else { return address }
         return "\(name) <\(address)>"
     }
