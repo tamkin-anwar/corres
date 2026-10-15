@@ -23,11 +23,7 @@ enum LinkOpener {
                 UIApplication.shared.open(url)
             }
         case "mailto":
-            let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-            let query = Dictionary((components?.queryItems ?? []).map { ($0.name.lowercased(), $0.value ?? "") },
-                                   uniquingKeysWith: { first, _ in first })
-            AppRouter.shared.pending = .composeTo(to: components?.path ?? "", subject: query["subject"] ?? "",
-                                                  body: query["body"] ?? "")
+            AppRouter.shared.pending = AppRouter.compose(mailto: url)
         case "tel", "sms", "facetime", "facetime-audio", "maps", "calshow":
             UIApplication.shared.open(url)
         default:

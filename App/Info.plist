@@ -15,6 +15,16 @@
 				<string>corres</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>Email</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>mailto</string>
+			</array>
+		</dict>
 	</array>
 	<key>GIDClientID</key>
 	<string>211980968673-k961lt0jtath3ojt4r7ukb3j3jbn8ecl.apps.googleusercontent.com</string>

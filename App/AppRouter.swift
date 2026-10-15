@@ -10,7 +10,8 @@ final class AppRouter {
         case destination(Destination)
         case thread(ThreadID)
         case compose
-        /// A `mailto:` link tapped inside an email.
+        /// A `mailto:` link, tapped inside an email or anywhere on the
+        /// iPhone once Corres is the default mail app.
         case composeTo(to: String, subject: String, body: String)
     }
 
@@ -26,6 +27,10 @@ final class AppRouter {
 
     /// Returns false for URLs that aren't Corres's (Google sign-in callbacks).
     func open(_ url: URL) -> Bool {
+        if url.scheme?.lowercased() == "mailto" {
+            pending = Self.compose(mailto: url)
+            return true
+        }
         guard url.scheme == WidgetSnapshot.urlScheme else { return false }
         switch url.host {
         case "thread":
@@ -44,5 +49,15 @@ final class AppRouter {
         default: pending = .destination(.brief)
         }
         return true
+    }
+
+    /// A new message from a `mailto:` link: the addresses in the link and
+    /// any `to=` field, plus its subject and body.
+    static func compose(mailto url: URL) -> Target {
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let query = Dictionary((components?.queryItems ?? []).map { ($0.name.lowercased(), $0.value ?? "") },
+                               uniquingKeysWith: { first, _ in first })
+        let to = [components?.path ?? "", query["to"] ?? ""].filter { !$0.isEmpty }.joined(separator: ",")
+        return .composeTo(to: to, subject: query["subject"] ?? "", body: query["body"] ?? "")
     }
 }
