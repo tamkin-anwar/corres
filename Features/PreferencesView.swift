@@ -55,6 +55,27 @@ struct PreferencesView: View {
                 }
             }
             .disabled(auth.accounts.isEmpty || corpusStatus == "Exporting…")
+            Button("Audit Summaries on Test Corpus") {
+                Task {
+                    guard !(corpusStatus ?? "").hasPrefix("Auditing") else { return }
+                    let folder = URL.documentsDirectory.appending(path: "corpus")
+                    let files = ((try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? [])
+                        .filter { $0.pathExtension == "json" }
+                    let emails = files.flatMap { (try? JSONDecoder().decode([Correspondence].self, from: Data(contentsOf: $0))) ?? [] }
+                    guard !emails.isEmpty else {
+                        corpusStatus = "Export a test corpus first."
+                        return
+                    }
+                    let report = await intelligence.auditSummaries(emails) { done, total in
+                        corpusStatus = "Auditing \(done) of \(total)…"
+                    }
+                    let file = folder.appending(path: "summaries.tsv")
+                    try? report.write(to: file, atomically: true, encoding: .utf8)
+                    corpusStatus = (report.split(separator: "\n").last.map(String.init) ?? "") + " → \(file.path())"
+                    print("[Audit] \(file.path())")
+                }
+            }
+            .disabled(!intelligence.isAvailable || (corpusStatus ?? "").hasPrefix("Auditing"))
         } header: {
             Text("Developer")
         } footer: {

@@ -216,6 +216,56 @@ final class MailIntelligence {
         scheduleSave()
     }
 
+    #if DEBUG
+    /// What one summary went through, for `auditSummaries`.
+    struct AuditTrace {
+        var first: String
+        var firstUnsupported: [String]
+        var firstWrongVoice: Bool
+        var final = ""
+        var finalUnsupported: [String] = []
+        var faithful = false
+    }
+
+    private var auditTrace: AuditTrace?
+
+    /// Development builds only: summarizes each email afresh and returns a
+    /// TSV row per email that wanted a summary: the first draft and what
+    /// the grounding check flagged, the retry, and whether one was shown.
+    /// For checking whether `MailDigest.unsupportedClaims` rejects good
+    /// summaries on real mail, which only the in-app model can show.
+    func auditSummaries(_ threads: [Correspondence], progress: (Int, Int) -> Void) async -> String {
+        func field(_ text: String) -> String {
+            text.replacingOccurrences(of: "\t", with: " ").replacingOccurrences(of: "\n", with: " ")
+        }
+        var rows = ["#\tresult\tsender\tsubject\tfirst draft\tflagged\twrong voice\tfinal\tstill flagged\tshown"]
+        var tally: [String: Int] = [:]
+        for (index, thread) in threads.enumerated() {
+            guard !Task.isCancelled else { break }
+            progress(index + 1, threads.count)
+            let key = Self.key(for: thread)
+            insights[key] = nil
+            auditTrace = nil
+            await prepareInsight(for: thread)
+            let shown = insights[key]?.summary
+            guard let trace = auditTrace else { continue }
+            let result: String
+            if trace.firstUnsupported.isEmpty && !trace.firstWrongVoice {
+                result = shown == nil ? "dropped (repeats opening)" : "first try"
+            } else {
+                result = shown == nil ? (trace.faithful ? "dropped (repeats opening)" : "rejected twice") : "fixed on retry"
+            }
+            tally[result, default: 0] += 1
+            rows.append([String(index), result, thread.sender, thread.subject, trace.first,
+                         trace.firstUnsupported.joined(separator: " | "), trace.firstWrongVoice ? "yes" : "",
+                         trace.final, trace.finalUnsupported.joined(separator: " | "), shown ?? ""].map(field).joined(separator: "\t"))
+        }
+        let summary = tally.sorted { $0.value > $1.value }.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
+        print("[Audit] \(summary)")
+        return rows.joined(separator: "\n") + "\n# " + summary + "\n"
+    }
+    #endif
+
     // MARK: - Model calls
 
     private struct Generated {
@@ -282,6 +332,7 @@ final class MailIntelligence {
             let wrongVoice = MailDigest.speaksAsSender(summary)
             #if DEBUG
             if !unsupported.isEmpty || wrongVoice { print("[Summary] retrying \(thread.subject): \(summary) — unsupported \(unsupported) voice \(wrongVoice)") }
+            auditTrace = AuditTrace(first: summary, firstUnsupported: unsupported, firstWrongVoice: wrongVoice)
             #endif
             if !unsupported.isEmpty || wrongVoice {
                 // One stricter try, told exactly what it got wrong.
@@ -312,6 +363,9 @@ final class MailIntelligence {
         if wantsSummary && !faithful {
             print("[Summary] word-for-word fallback for \(thread.subject): \(summary) — \(MailDigest.unsupportedClaims(in: summary, source: source))")
         }
+        auditTrace?.final = summary
+        auditTrace?.finalUnsupported = MailDigest.unsupportedClaims(in: summary, source: source)
+        auditTrace?.faithful = faithful
         #endif
         let details = digest.keyPoints
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(.init(charactersIn: "-•"))) }
