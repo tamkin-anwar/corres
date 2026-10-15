@@ -1061,7 +1061,7 @@ struct ConversationView: View {
     private func isAvailable(_ action: CorresSettings.ReadingAction, for thread: Correspondence) -> Bool {
         let fromSomeoneElse = thread.senderEmail != nil && !thread.isFromAccountOwner
         switch action {
-        case .labels: return !labelDirectory.labels(for: thread.id.account).isEmpty
+        case .labels: return labelDirectory.labels(for: thread.id.account).contains { !$0.isFolder }
         case .vip, .block: return fromSomeoneElse
         case .unsubscribe: return unsubscribeService.canUnsubscribe(thread) && !thread.senderUnsubscribed
         case .calendar: return calendarEvent != nil && !thread.isFromAccountOwner
@@ -1116,14 +1116,16 @@ struct ConversationView: View {
                     }
                 }
             }
-            let labels = labelDirectory.labels(for: thread.id.account)
+            // Places to move it: Gmail's labels, Outlook's folders (an
+            // Outlook category is a tag, not a place).
+            let labels = labelDirectory.labels(for: thread.id.account).filter { !$0.isCategory }
             if !labels.isEmpty {
-                Section("Labels") {
+                Section(labels.contains(where: \.isFolder) ? "Folders" : "Labels") {
                     ForEach(labels) { label in
                         Button {
                             Task { await threadActions.moveToLabel(label.id, thread) }
                         } label: {
-                            Label(label.name, systemImage: "tag")
+                            Label(label.name, systemImage: label.isFolder ? "folder" : "tag")
                         }
                     }
                 }
@@ -1134,7 +1136,9 @@ struct ConversationView: View {
                 }
             }
         } else {
-            ForEach(labelDirectory.labels(for: thread.id.account)) { label in
+            // Tags to put on and take off: Gmail's labels, Outlook's
+            // categories (a folder is a place, under Move to).
+            ForEach(labelDirectory.labels(for: thread.id.account).filter { !$0.isFolder }) { label in
                 let isOn = thread.labelIds.contains(label.id)
                 Button {
                     Task { await threadActions.toggleLabel(label.id, isOn: !isOn, for: thread) }

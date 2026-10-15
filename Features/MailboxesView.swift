@@ -50,7 +50,7 @@ enum Mailbox: Hashable, Identifiable {
         case .allMail: "archivebox"
         case .spam: "xmark.bin"
         case .trash: "trash"
-        case .label: "tag"
+        case .label(let id, _, _): id.hasPrefix("folder:") ? "folder" : "tag"
         }
     }
 
@@ -119,8 +119,9 @@ struct MailboxesView: View {
     }
 
     private func labels(for account: String) -> [Mailbox] {
+        // Outlook's folders before its categories; within each, by name.
         labelDirectory.labels(for: account)
-            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            .sorted { ($0.isFolder ? 0 : 1, $0.name.lowercased()) < ($1.isFolder ? 0 : 1, $1.name.lowercased()) }
             .map { .label(id: $0.id, name: $0.name, account: account) }
     }
 

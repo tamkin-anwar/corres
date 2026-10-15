@@ -330,6 +330,15 @@ struct OutlookClient: Sendable {
             // Archive: out of the Inbox, into Archive. Back: into the Inbox.
             if removeLabelIds.contains("INBOX"), inInbox { move(message.id, to: "archive") }
             if addLabelIds.contains("INBOX"), !inInbox, message.parentFolderId != folders.sent { move(message.id, to: "inbox") }
+            // Move to one of the person's folders, and back out of it.
+            if let folder = addLabelIds.first(where: { $0.hasPrefix("folder:") }).map({ String($0.dropFirst(7)) }),
+               message.parentFolderId != folder, message.parentFolderId != folders.sent, message.parentFolderId != folders.drafts {
+                move(message.id, to: folder)
+            }
+            if let folder = removeLabelIds.first(where: { $0.hasPrefix("folder:") }).map({ String($0.dropFirst(7)) }),
+               message.parentFolderId == folder {
+                move(message.id, to: "inbox")
+            }
             if addLabelIds.contains("SPAM") { move(message.id, to: "junkemail") }
             if removeLabelIds.contains("SPAM"), message.parentFolderId == folders.junk { move(message.id, to: "inbox") }
         }
@@ -410,6 +419,9 @@ struct OutlookClient: Sendable {
             case "STARRED":
                 let filter = "flag/flagStatus eq 'flagged'".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
                 url = "\(Self.base)/me/messages?$select=\(Self.listFields)&$top=\(pageSize)&$filter=\(filter)"
+            case let label? where label.hasPrefix("folder:"):
+                let id = String(label.dropFirst(7)).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+                url = "\(Self.base)/me/mailFolders/\(id)/messages?\(top)"
             case let label? where label.hasPrefix("cat:"):
                 let name = String(label.dropFirst(4)).replacingOccurrences(of: "'", with: "''")
                 let filter = "categories/any(c:c eq '\(name)')".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
@@ -428,9 +440,32 @@ struct OutlookClient: Sendable {
         return (listed.items.map { ($0.latestMessageID ?? $0.id.providerID, $0) }, listed.nextPageToken)
     }
 
+    /// The person's own folders (and those inside them, as "Parent/Child",
+    /// Gmail's way of naming nested labels), then their categories.
     func fetchUserLabels(account: String) async throws -> [GmailUserLabel] {
-        let page: GraphPage<GraphCategory> = try await getJSON("\(Self.base)/me/outlook/masterCategories", account: account)
-        return page.value.map { GmailUserLabel(id: "cat:\($0.displayName)", name: $0.displayName) }
+        let known = try await OutlookFolders.shared.ids(for: account, client: self)
+        let builtIn = Set([known.inbox, known.sent, known.trash, known.junk, known.drafts].compactMap { $0 })
+        // Outlook's own system folders that aren't mail you filed.
+        let skipped: Set<String> = ["outbox", "conversation history", "sync issues", "rss feeds", "rss subscriptions", "scheduled"]
+        var folders: [GmailUserLabel] = []
+        func add(_ list: [GraphFolder], prefix: String, depth: Int) async {
+            for folder in list where !builtIn.contains(folder.id) && !skipped.contains(folder.displayName.lowercased()) {
+                let name = prefix.isEmpty ? folder.displayName : "\(prefix)/\(folder.displayName)"
+                folders.append(GmailUserLabel(id: "folder:\(folder.id)", name: name))
+                if (folder.childFolderCount ?? 0) > 0, depth < 3,
+                   let children: GraphPage<GraphFolder> = try? await getJSON("\(Self.base)/me/mailFolders/\(folder.id)/childFolders?$top=100&$select=id,displayName,childFolderCount", account: account) {
+                    await add(children.value, prefix: name, depth: depth + 1)
+                }
+            }
+        }
+        let top: GraphPage<GraphFolder> = try await getJSON("\(Self.base)/me/mailFolders?$top=100&$select=id,displayName,childFolderCount", account: account)
+        await add(top.value, prefix: "", depth: 0)
+        // Every Outlook account starts with six colour categories nobody
+        // named ("Blue category"); left as they came, they're clutter.
+        let categories = ((try? await getJSON("\(Self.base)/me/outlook/masterCategories", account: account) as GraphPage<GraphCategory>)?.value ?? [])
+            .filter { $0.displayName.range(of: #"^(Blue|Green|Orange|Purple|Red|Yellow) category$"#, options: .regularExpression) == nil }
+        return folders.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            + categories.map { GmailUserLabel(id: "cat:\($0.displayName)", name: $0.displayName) }
     }
 
     /// Gmail's watch has no Outlook twin by that name; Outlook's
@@ -530,6 +565,12 @@ struct OutlookClient: Sendable {
         case folders.junk: labels.append("SPAM")
         case folders.drafts: labels.append("DRAFT")
         default: break
+        }
+        // One of the person's own folders: a label, as Gmail's are, so its
+        // mailbox lists it.
+        if let folder = message.parentFolderId,
+           ![folders.inbox, folders.sent, folders.trash, folders.junk, folders.drafts].contains(folder) {
+            labels.append("folder:\(folder)")
         }
         if message.isRead == false { labels.append("UNREAD") }
         if message.flag?.flagStatus == "flagged" { labels.append("STARRED") }
@@ -812,6 +853,7 @@ struct GraphMessage: Decodable, Sendable {
 }
 
 private struct GraphCategory: Decodable { let displayName: String }
+private struct GraphFolder: Decodable { let id: String; let displayName: String; let childFolderCount: Int? }
 
 private struct GraphErrorEnvelope: Decodable {
     struct Inner: Decodable { let code: String?; let message: String? }

@@ -1149,6 +1149,11 @@ private struct WatchResponse: Decodable { let historyId: String? }
 struct GmailUserLabel: Identifiable, Hashable, Sendable {
     let id: String
     let name: String
+
+    /// An Outlook folder: mail is moved into it, never tagged with it.
+    var isFolder: Bool { id.hasPrefix("folder:") }
+    /// An Outlook category: a tag, never a place to move mail.
+    var isCategory: Bool { id.hasPrefix("cat:") }
 }
 
 private struct LabelListResponse: Decodable {
