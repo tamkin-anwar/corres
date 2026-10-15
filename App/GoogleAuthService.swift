@@ -32,18 +32,17 @@ final class GoogleAuthService {
         !(UserDefaults.standard.stringArray(forKey: connectedAccountsKey) ?? []).isEmpty
     }
 
-    /// `gmail.readonly`, `gmail.send`, and now `gmail.modify` (Archive/Trash/
-    /// read state) all requested upfront at connect time, one consent
-    /// screen, rather than `gmail.modify`'s old incremental request-on-first-
-    /// use pattern: incremental scope grants need a live `GIDGoogleUser` for
-    /// the account in question, which this design only ever has for
-    /// whichever account GoogleSignIn's own session currently holds, not for
-    /// every connected account. Requesting everything upfront sidesteps that
-    /// entirely. All three remain Google's "sensitive," not "restricted,"
-    /// scopes; see Docs/Architecture.md ADR 005.
+    /// Requested upfront at connect time, one consent screen (incremental
+    /// grants need a live `GIDGoogleUser` for the account, which this design
+    /// only has for whichever account GoogleSignIn's session holds).
+    ///
+    /// Only `gmail.modify`: it reads, organizes and sends, everything Corres
+    /// does except Out of Office (`settingsScope`, asked for only there).
+    /// `gmail.readonly` and `gmail.send` were redundant beside it, and
+    /// Google's verification rejects scopes an app doesn't need. Note that
+    /// `gmail.modify` is a *restricted* scope (Google's verification plus an
+    /// annual CASA security assessment), not merely sensitive.
     private static let gmailScopes = [
-        "https://www.googleapis.com/auth/gmail.readonly",
-        "https://www.googleapis.com/auth/gmail.send",
         "https://www.googleapis.com/auth/gmail.modify",
     ]
 
