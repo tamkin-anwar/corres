@@ -77,30 +77,43 @@ enum AccountPreferences {
 
     static func toneKey(for account: String) -> String { key("tone", account) }
 
-    /// The account's tone; until one is picked, its service's own colour:
-    /// Gmail red and Outlook blue, the colours people already know them
-    /// by. A second account of the same service, or any other, takes the
-    /// next free tone, so two accounts never start alike.
+    /// The account's tone; until one is picked, its email company's own
+    /// colour (`brandTone`), the one people already know it by. A second
+    /// account of the same company, or one with no brand colour, takes
+    /// the next free tone, so two accounts never start alike. Any can be
+    /// changed in Settings → the account.
     static func tone(for account: String, among accounts: [String]) -> Tone {
         if let saved = defaults.object(forKey: toneKey(for: account)) as? Int, let tone = tones.first(where: { $0.id == saved }) {
             return tone
         }
         var taken = Set(accounts.compactMap { defaults.object(forKey: toneKey(for: $0)) as? Int })
         for other in accounts where defaults.object(forKey: toneKey(for: other)) == nil {
-            let preferred = serviceTone(for: other).flatMap { taken.contains($0) ? nil : $0 }
+            let preferred = brandTone(for: other).flatMap { taken.contains($0) ? nil : $0 }
             let id = preferred ?? tones.first { !taken.contains($0.id) }?.id ?? tones[taken.count % tones.count].id
             if other == account { return tones.first { $0.id == id } ?? tones[0] }
             taken.insert(id)
         }
-        return serviceTone(for: account).flatMap { id in tones.first { $0.id == id } } ?? tones[0]
+        return brandTone(for: account).flatMap { id in tones.first { $0.id == id } } ?? tones[0]
     }
 
-    /// Gmail's red, Outlook's blue; nil for anything else.
-    private static func serviceTone(for account: String) -> Int? {
-        switch MailAccounts.serviceName(for: account) {
-        case "Gmail": 7
-        case "Outlook": 0
-        default: MailAccounts.provider(for: account) == .microsoft ? 0 : MailAccounts.provider(for: account) == .google ? 7 : nil
+    /// Each email company's own colour, matched to the nearest tone:
+    /// Gmail's red, Outlook's blue, iCloud's sky (teal beside Outlook's
+    /// blue), Yahoo's and Proton's purple, Zoho's gold. A work address
+    /// takes its provider's: Google Workspace red, Microsoft 365 blue.
+    private static func brandTone(for account: String) -> Int? {
+        let domain = account.lowercased().components(separatedBy: "@").last ?? ""
+        let byDomain: [String: Int] = [
+            "gmail.com": 7, "googlemail.com": 7,
+            "outlook.com": 0, "hotmail.com": 0, "live.com": 0, "msn.com": 0,
+            "icloud.com": 5, "me.com": 5, "mac.com": 5,
+            "yahoo.com": 3, "ymail.com": 3, "aol.com": 0,
+            "proton.me": 3, "protonmail.com": 3, "pm.me": 3,
+            "zoho.com": 6, "zohomail.com": 6, "fastmail.com": 0,
+        ]
+        if let tone = byDomain[domain] { return tone }
+        switch MailAccounts.provider(for: account) {
+        case .google: return 7
+        case .microsoft: return 0
         }
     }
 
