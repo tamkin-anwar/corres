@@ -89,17 +89,57 @@ function sendSilentPush(deviceToken, environment) {
   });
 }
 
+// A visible alert for one new email, filled in on the iPhone by Corres's
+// notification extension: the push names only the account and the
+// message, never anything from it. "New email" is what shows if the
+// extension can't fetch it in time. Priority 10, and not throttled the way
+// background pushes are, so it arrives as fast as the service's own app.
+function sendAlertPush(deviceToken, environment, emailAddress, messageId) {
+  return new Promise((resolve) => {
+    const client = http2.connect(`https://${APNS_HOSTS[environment]}`);
+    client.on('error', () => resolve({ status: 0, reason: 'ConnectionError' }));
+    const request = client.request({
+      ':method': 'POST',
+      ':path': `/3/device/${deviceToken}`,
+      authorization: `bearer ${buildAPNsToken()}`,
+      'apns-topic': process.env.APNS_BUNDLE_ID,
+      'apns-push-type': 'alert',
+      'apns-priority': '10',
+      'apns-collapse-id': crypto.createHash('sha256').update(messageId).digest('hex').slice(0, 64),
+    });
+    request.setEncoding('utf8');
+    let status = 0;
+    let body = '';
+    request.on('response', (headers) => { status = headers[':status']; });
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      client.close();
+      let reason = null;
+      try { reason = body ? JSON.parse(body).reason : null; } catch { reason = null; }
+      resolve({ status, reason });
+    });
+    request.write(JSON.stringify({
+      aps: { alert: { title: 'New email', body: emailAddress }, sound: 'default', 'mutable-content': 1 },
+      account: emailAddress,
+      message: messageId,
+    }));
+    request.end();
+  });
+}
+
 // Wakes one registered device through the server its token belongs to.
 // A token Apple says is gone (410 Unregistered, after an app is deleted)
 // is forgotten; one that fails on its server is tried on the other, in
 // case it was registered wrongly, and the record is corrected.
-async function wakeDevice(doc) {
+async function wakeDevice(doc, alert) {
   const known = doc.data().apnsEnvironment;
   const order = APNS_ENVIRONMENTS.includes(known)
     ? [known, ...APNS_ENVIRONMENTS.filter((e) => e !== known)]
     : APNS_ENVIRONMENTS;
   for (const environment of order) {
-    const { status, reason } = await sendSilentPush(doc.id, environment);
+    const { status, reason } = alert
+      ? await sendAlertPush(doc.id, environment, alert.emailAddress, alert.messageId)
+      : await sendSilentPush(doc.id, environment);
     if (status === 200) {
       if (environment !== known) await doc.ref.set({ apnsEnvironment: environment }, { merge: true });
       return;
@@ -210,12 +250,14 @@ async function handlePubSub(req, res) {
   }
   if (emailAddress) {
     const matches = await devices.where('emailAddresses', 'array-contains', emailAddress).get();
-    await Promise.all(matches.docs.map(wakeDevice));
+    await Promise.all(matches.docs.map((doc) => wakeDevice(doc)));
   }
   res.status(204).send();
 }
 
 const SUBSCRIPTION_ID_PATTERN = /^[A-Za-z0-9-]{8,128}$/;
+// Graph message ids: base64url-ish, a few hundred characters at most.
+const MESSAGE_ID_PATTERN = /^[A-Za-z0-9+/=_-]{8,512}$/;
 const CLIENT_STATE_PATTERN = /^[0-9a-f]{32,128}$/i;
 
 function hash(value) {
@@ -236,8 +278,13 @@ async function handleRegisterGraph(req, res) {
   await graphSubscriptions.doc(subscriptionId).set({
     emailAddress, clientStateHash: hash(clientState), updatedAt: Firestore.FieldValue.serverTimestamp(),
   });
+  // "alerts": "1" from builds whose notification extension shows each new
+  // email itself; anything else (older builds, notifications off for the
+  // account) keeps the quiet background wake-up only.
+  const alerts = req.body.alerts === '1';
   await devices.doc(deviceToken).set({
     emailAddresses: Firestore.FieldValue.arrayUnion(emailAddress),
+    alertAccounts: alerts ? Firestore.FieldValue.arrayUnion(emailAddress) : Firestore.FieldValue.arrayRemove(emailAddress),
     updatedAt: Firestore.FieldValue.serverTimestamp(),
     ...environmentFrom(req.body),
   }, { merge: true });
@@ -259,17 +306,28 @@ async function handleGraph(req, res) {
     return;
   }
   const notifications = (req.body && Array.isArray(req.body.value)) ? req.body.value.slice(0, 100) : [];
-  const accounts = new Set();
+  // Each account, and the new messages Graph named for it (only ids).
+  const accounts = new Map();
   for (const notification of notifications) {
-    const { subscriptionId, clientState } = notification || {};
+    const { subscriptionId, clientState, resourceData } = notification || {};
     if (!subscriptionId || !clientState || !SUBSCRIPTION_ID_PATTERN.test(subscriptionId)) continue;
     const doc = await graphSubscriptions.doc(subscriptionId).get();
     if (!doc.exists || doc.data().clientStateHash !== hash(String(clientState))) continue;
-    accounts.add(doc.data().emailAddress);
+    const emailAddress = doc.data().emailAddress;
+    if (!accounts.has(emailAddress)) accounts.set(emailAddress, new Set());
+    const messageId = resourceData && resourceData.id;
+    if (typeof messageId === 'string' && MESSAGE_ID_PATTERN.test(messageId)) accounts.get(emailAddress).add(messageId);
   }
-  for (const emailAddress of accounts) {
+  for (const [emailAddress, messageIds] of accounts) {
     const matches = await devices.where('emailAddresses', 'array-contains', emailAddress).get();
-    await Promise.all(matches.docs.map(wakeDevice));
+    await Promise.all(matches.docs.map(async (device) => {
+      const alerting = (device.data().alertAccounts || []).includes(emailAddress);
+      if (alerting) {
+        for (const messageId of [...messageIds].slice(0, 10)) await wakeDevice(device, { emailAddress, messageId });
+      }
+      // The quiet wake-up too, so Corres syncs in the background as before.
+      await wakeDevice(device);
+    }));
   }
   res.status(202).send();
 }

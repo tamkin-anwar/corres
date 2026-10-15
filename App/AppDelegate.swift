@@ -138,6 +138,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         await storeLoaded
         await store.migrateAttentionRulesIfNeeded()
         let accountEmails = auth.accounts.map(\.email)
+        PushNotificationService.publishPolicy(accounts: accountEmails, threads: store.threads)
 
         async let didSync = sync.syncAll(accounts: accountEmails)
         async let labelsRefreshed: Void = labelDirectory.refreshIfConnected(accounts: accountEmails)

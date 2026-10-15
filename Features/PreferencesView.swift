@@ -559,6 +559,11 @@ private struct AccountDetailView: View {
         .navigationTitle(AccountPreferences.nickname(for: account.email))
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: nickname) { AccountPreferences.changed() }
+        // Off stops the instant alerts at the relay too; back on starts them.
+        .onChange(of: notify) {
+            PushNotificationService.publishPolicy(accounts: auth.accounts.map(\.email), threads: store.threads)
+            Task { await pushService.renewWatch(accounts: [account.email]) }
+        }
         .onChange(of: showsInAllInboxes) { AccountPreferences.changed() }
         .confirmationDialog("Remove \(account.email)?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
             Button("Remove Account", role: .destructive) {

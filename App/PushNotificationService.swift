@@ -108,6 +108,20 @@ final class PushNotificationService {
     /// `AppDelegate.performLaunchWork`) and inside a capped-duration
     /// `BGAppRefreshTask`, so N accounts waiting on each other's network
     /// round trip in turn is real, avoidable time either way.
+    /// What the notification extension needs to judge an email the way
+    /// Settings says (`NotifyPolicy`): each account's choice, VIPs, blocked
+    /// senders. Written at launch and whenever Corres goes to the
+    /// background, so any change made in Settings is there for the next email.
+    static func publishPolicy(accounts: [String], threads: [Correspondence]) {
+        var policy = NotifyPolicy()
+        for account in accounts {
+            policy.levels[account.lowercased()] = AccountPreferences.level(for: account)?.rawValue ?? "off"
+        }
+        policy.vips = Array(CorresSettings.vips)
+        policy.blocked = Array(Set(threads.filter { $0.senderDecision == .blocked }.compactMap { $0.senderEmail?.lowercased() }))
+        policy.save()
+    }
+
     /// Outlook's subscriptions last under three days, so every push also
     /// renews any that is due (a local check; no request until one is).
     func renewOutlookSubscriptions(accounts: [String]) async {
@@ -130,8 +144,13 @@ final class PushNotificationService {
                     if MailAccounts.provider(for: account) == .microsoft {
                         guard let deviceTokenHex,
                               let subscription = try? await OutlookClient().subscribe(account: account, notificationURL: Self.graphNotificationURL) else { return }
+                        // "alerts": this build's notification extension shows
+                        // the email itself, the moment it arrives, unless the
+                        // account's notifications are off.
+                        let alerts = await MainActor.run { AccountPreferences.level(for: account) != nil }
                         try? await self.post(path: "register-graph", body: ["subscriptionId": subscription.id, "clientState": subscription.secret,
-                                                                            "emailAddress": account, "deviceToken": deviceTokenHex])
+                                                                            "emailAddress": account, "deviceToken": deviceTokenHex,
+                                                                            "alerts": alerts ? "1" : "0"])
                         return
                     }
                     // `watch` is `@discardableResult` on its own
@@ -286,6 +305,9 @@ final class PushNotificationService {
     }
 
     func notifyAboutNewMail(_ threads: [Correspondence]) {
+        // Already on screen from the notification extension, the instant
+        // it arrived: never twice.
+        let threads = threads.filter { !NotifyPolicy.wasShown($0.latestMessageID) }
         guard !threads.isEmpty else { return }
         let content = UNMutableNotificationContent()
         if threads.count == 1, let thread = threads.first {

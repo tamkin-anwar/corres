@@ -162,7 +162,11 @@ struct CorresShell: View {
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { Task { await threadActions.commitPendingRemoval() } }
             // Leaving Corres: the Share sheet gets who you've written to since.
-            if phase == .background { Task { await ShareBridge.update(auth: auth, people: people, threads: store.threads) } }
+            if phase == .background {
+                Task { await ShareBridge.update(auth: auth, people: people, threads: store.threads) }
+                // And the notification extension, the settings it judges mail by.
+                PushNotificationService.publishPolicy(accounts: auth.accounts.map(\.email), threads: store.threads)
+            }
             // Back in Corres: anything scheduled that's now due goes.
             if phase == .active {
                 Task {

@@ -39,6 +39,12 @@ struct MailClient: Sendable {
         isOutlook(account) ? try await outlook.fetchMetadata(ids: ids, account: account) : try await gmail.fetchMetadata(ids: ids, account: account)
     }
 
+    /// One or a few emails, light, for a notification.
+    func fetchSummary(ids: [String], account: String) async throws -> [Correspondence] {
+        isOutlook(account) ? try await outlook.fetchSummary(ids: ids, account: account)
+            : try await gmail.fetchMetadata(ids: ids, account: account).items
+    }
+
     func fetchFull(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
         isOutlook(account) ? try await outlook.fetchFull(ids: ids, account: account) : try await gmail.fetchFull(ids: ids, account: account)
     }

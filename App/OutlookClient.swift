@@ -120,6 +120,14 @@ struct OutlookClient: Sendable {
         try await fetchMessages(ids: ids, account: account)
     }
 
+    /// Just enough to notify about an email: who, what, its preview, and
+    /// the headers that tell bulk mail apart. One request, no body.
+    func fetchSummary(ids: [String], account: String) async throws -> [Correspondence] {
+        let fetched = try await batchGet(ids, fields: Self.listFields + ",internetMessageHeaders", account: account)
+        let folders = try await OutlookFolders.shared.ids(for: account, client: self)
+        return ids.compactMap { fetched.found[$0] }.map { map($0, account: account, folders: folders, full: false) }
+    }
+
     func fetchMessages(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
         let fetched = try await batchGet(ids, fields: Self.fullFields, account: account, expandAttachments: true)
         let folders = try await OutlookFolders.shared.ids(for: account, client: self)
@@ -463,6 +471,9 @@ struct OutlookClient: Sendable {
         request.httpMethod = "POST"
         request.setValue("Bearer \(try await token(account))", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // Notifications name each new message by the same lasting id
+        // Corres uses everywhere, for the notification to fetch it by.
+        request.setValue("IdType=\"ImmutableId\"", forHTTPHeaderField: "Prefer")
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "changeType": "created", "notificationUrl": notificationURL.absoluteString,
             "resource": "me/mailFolders('inbox')/messages", "expirationDateTime": Self.isoDate(expires),
