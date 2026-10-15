@@ -178,11 +178,15 @@ struct OutlookClient: Sendable {
         return data
     }
 
+    #if DEBUG
+    /// Settings → Developer: the newest Inbox mail, for the corpus. Never
+    /// in a release build.
     func exportCorpus(account: String, limit: Int) async throws -> (items: [Correspondence], missing: Int) {
         let page: GraphPage<GraphMessage> = try await getJSON("\(Self.base)/me/mailFolders/inbox/messages?$select=id&$top=\(min(limit, 500))&$orderby=receivedDateTime+desc", account: account)
         let fetched = try await fetchMessages(ids: page.value.map(\.id), account: account)
         return (fetched.items, fetched.failedIDs.count)
     }
+    #endif
 
     // MARK: Sending
 

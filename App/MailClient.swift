@@ -43,9 +43,11 @@ struct MailClient: Sendable {
         isOutlook(account) ? try await outlook.fetchFull(ids: ids, account: account) : try await gmail.fetchFull(ids: ids, account: account)
     }
 
+    #if DEBUG
     func exportCorpus(account: String, limit: Int) async throws -> (items: [Correspondence], missing: Int) {
         isOutlook(account) ? try await outlook.exportCorpus(account: account, limit: limit) : try await gmail.exportCorpus(account: account, limit: limit)
     }
+    #endif
 
     func fetchThreadMessages(threadId: String, account: String) async throws -> [Correspondence] {
         isOutlook(account) ? try await outlook.fetchThreadMessages(threadId: threadId, account: account)
