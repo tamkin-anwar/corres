@@ -108,6 +108,12 @@ final class PushNotificationService {
     /// `AppDelegate.performLaunchWork`) and inside a capped-duration
     /// `BGAppRefreshTask`, so N accounts waiting on each other's network
     /// round trip in turn is real, avoidable time either way.
+    /// Outlook's subscriptions last under three days, so every push also
+    /// renews any that is due (a local check; no request until one is).
+    func renewOutlookSubscriptions(accounts: [String]) async {
+        await renewWatch(accounts: accounts.filter { MailAccounts.provider(for: $0) == .microsoft })
+    }
+
     func renewWatch(accounts: [String]) async {
         guard isEnabled else { return }
         // Read once, on the main actor, before spawning concurrent child
@@ -240,8 +246,6 @@ final class PushNotificationService {
     static let markReadAction = "corres.markRead"
     static let replyAction = "corres.reply"
 
-    /// Registered every launch; iOS shows these under a long-press on any
-    /// single-conversation notification, without opening Corres.
     /// A device token only works on the APNs server for the build it came
     /// from: "development" for a build run from Xcode, "production" for
     /// TestFlight and the App Store, where Xcode signs the app for
@@ -264,6 +268,8 @@ final class PushNotificationService {
         #endif
     }()
 
+    /// Registered every launch; iOS shows these under a long-press on any
+    /// single-conversation notification, without opening Corres.
     static func registerNotificationActions() {
         let archive = UNNotificationAction(identifier: archiveAction, title: "Archive",
                                            options: [], icon: UNNotificationActionIcon(systemImageName: "archivebox"))

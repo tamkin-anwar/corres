@@ -293,23 +293,27 @@ struct OutlookClient: Sendable {
     func modifyThread(threadId: String, addLabelIds: [String] = [], removeLabelIds: [String] = [], account: String) async throws {
         let messages = try await conversation(threadId, account: account)
         let folders = try await OutlookFolders.shared.ids(for: account, client: self)
-        var requests: [GraphRequest] = []
-        func patch(_ id: String, _ body: [String: Any]) { requests.append(GraphRequest(method: "PATCH", url: "/me/messages/\(id)", body: body)) }
-        func move(_ id: String, to folder: String) { requests.append(GraphRequest(method: "POST", url: "/me/messages/\(id)/move", body: ["destinationId": folder])) }
+        // One PATCH per message with every change in it, then the moves:
+        // a $batch runs its requests in parallel, and two changes to the
+        // same message at once can fail with a conflict.
+        var patches: [GraphRequest] = []
+        var moves: [GraphRequest] = []
+        func move(_ id: String, to folder: String) { moves.append(GraphRequest(method: "POST", url: "/me/messages/\(id)/move", body: ["destinationId": folder])) }
         for message in messages {
-            if addLabelIds.contains("UNREAD") { patch(message.id, ["isRead": false]) }
-            if removeLabelIds.contains("UNREAD") { patch(message.id, ["isRead": true]) }
-            if addLabelIds.contains("STARRED") { patch(message.id, ["flag": ["flagStatus": "flagged"]]) }
-            if removeLabelIds.contains("STARRED") { patch(message.id, ["flag": ["flagStatus": "notFlagged"]]) }
+            var changes: [String: Any] = [:]
+            if addLabelIds.contains("UNREAD") { changes["isRead"] = false }
+            if removeLabelIds.contains("UNREAD") { changes["isRead"] = true }
+            if addLabelIds.contains("STARRED") { changes["flag"] = ["flagStatus": "flagged"] }
+            if removeLabelIds.contains("STARRED") { changes["flag"] = ["flagStatus": "notFlagged"] }
             if let category = addLabelIds.first(where: { $0.hasPrefix("CATEGORY_") }) {
-                patch(message.id, ["inferenceClassification": category == "CATEGORY_PERSONAL" ? "focused" : "other"])
+                changes["inferenceClassification"] = category == "CATEGORY_PERSONAL" ? "focused" : "other"
             }
             let addCats = addLabelIds.filter { $0.hasPrefix("cat:") }.map { String($0.dropFirst(4)) }
             let removeCats = Set(removeLabelIds.filter { $0.hasPrefix("cat:") }.map { String($0.dropFirst(4)) })
             if !addCats.isEmpty || !removeCats.isEmpty {
-                let next = Array(Set((message.categories ?? []) + addCats).subtracting(removeCats))
-                patch(message.id, ["categories": next])
+                changes["categories"] = Array(Set((message.categories ?? []) + addCats).subtracting(removeCats))
             }
+            if !changes.isEmpty { patches.append(GraphRequest(method: "PATCH", url: "/me/messages/\(message.id)", body: changes)) }
             let inInbox = message.parentFolderId == folders.inbox
             // Archive: out of the Inbox, into Archive. Back: into the Inbox.
             if removeLabelIds.contains("INBOX"), inInbox { move(message.id, to: "archive") }
@@ -317,7 +321,8 @@ struct OutlookClient: Sendable {
             if addLabelIds.contains("SPAM") { move(message.id, to: "junkemail") }
             if removeLabelIds.contains("SPAM"), message.parentFolderId == folders.junk { move(message.id, to: "inbox") }
         }
-        try await batch(requests, account: account)
+        try await batch(patches, account: account)
+        try await batch(moves, account: account)
     }
 
     func trashThread(threadId: String, account: String) async throws {
@@ -431,7 +436,10 @@ struct OutlookClient: Sendable {
     /// one is made again. Returns the subscription and its secret, for the
     /// relay to check each notification against.
     func subscribe(account: String, notificationURL: URL) async throws -> OutlookSubscription {
-        let lifetime: TimeInterval = 4 * 86_400
+        // Graph's longest for Outlook mail is 4,230 minutes (under 3 days);
+        // longer is refused outright. Kept a little under, and renewed once
+        // under two days are left, at launch, background refresh or any push.
+        let lifetime: TimeInterval = 4_200 * 60
         if var saved = OutlookSubscription.load(account) {
             if saved.expires > Date.now.addingTimeInterval(2 * 86_400) { return saved }
             let next = Date.now.addingTimeInterval(lifetime)

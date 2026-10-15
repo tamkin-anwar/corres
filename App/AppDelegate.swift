@@ -235,6 +235,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // whether a follow-up reminder is due or answered.
         await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
         await FollowUps.shared.check(store: store)
+        await pushService.renewOutlookSubscriptions(accounts: auth.accounts.map(\.email))
         func newlyUnreadThreads() -> [Correspondence] {
             store.threads.filter { thread in
                 thread.isUnread && previousUnread[thread.id] != true && !thread.isScreenedOut
