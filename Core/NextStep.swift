@@ -266,7 +266,10 @@ extension MailDigest {
 
         var facts: [Glance.Fact] = []
         if let amount = firstFact(in: body, labels: paidLabels) ?? firstFact(in: body, labels: dueLabels)
-            ?? firstFact(in: body, labels: totalLabels) ?? cardCharge(in: body) ?? proseAmount(in: body) {
+            ?? firstFact(in: body, labels: totalLabels) ?? cardCharge(in: body) ?? proseAmount(in: body)
+            // Last resort: a bare "Amount: Tk 1,250" (bKash, Nagad, bank
+            // alerts), then "paid Tk 1,250", when nothing names it better.
+            ?? firstFact(in: body, labels: "amount") ?? firstFact(in: body, labels: "paid") {
             facts.append(amount)
         }
         if let date = firstFact(in: body, labels: dateLabels, value: datePattern) { facts.append(date) }
@@ -322,11 +325,11 @@ extension MailDigest {
         .init(pattern: #"(?i)\b(has|have|was|been) (shipped|dispatched|picked up)\b|\bon (its|the) way\b"#, label: "On its way", isAlert: false),
         .init(pattern: #"(?i)\brefund(ed| (has been |was )?(issued|processed))\b"#, label: "Refunded", isAlert: false),
         .init(pattern: #"(?i)\b(payment (request|reminder|due)|amount due|bill is ready|statement is ready|rent (is )?due)\b"#, label: "Payment due", isAlert: false),
-        .init(pattern: #"(?i)\b(payment (received|confirmed|successful|processed)|successfully processed|thank you for your payment|receipt from)\b"#, label: "Paid", isAlert: false),
+        .init(pattern: #"(?i)\b(payment (received|confirmed|successful|processed)|successfully (processed|paid)|thank you for your payment|receipt from)\b"#, label: "Paid", isAlert: false),
         .init(pattern: #"(?i)\b(order (confirmed|received|placed)|we got your order|thanks? (you )?for your order)\b"#, label: "Order confirmed", isAlert: false),
     ]
 
-    private static let paidLabels = #"amount paid|amount charged|total charged|you paid|charged|initial charge"#
+    private static let paidLabels = #"amount paid|total paid|amount charged|total charged|you paid|charged|initial charge"#
     private static let dueLabels = #"amount due|total due|balance due|minimum (?:payment )?due|payment due|amount owed|balance"#
     private static let totalLabels = #"grand total|order total|trip total|total"#
     private static let dateLabels = #"due date|due on|due by|pay by|payment due(?: date)?|estimated delivery(?: date)?|expected delivery|delivery date|arriving(?: on| by)?|arrives(?: on| by)?|renews on|expires on"#

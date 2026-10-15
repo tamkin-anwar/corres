@@ -109,4 +109,43 @@ struct GlanceTests {
         #expect(glance?.facts.first == .init(label: "Total", value: "$0.00"))
         #expect(glance?.facts.contains(.init(label: "Invoice id", value: "F5238733787")) == true)
     }
+
+    // MARK: UK and Bangladesh (testers in Portsmouth and Dhaka; figures changed)
+
+    /// Deliveroo: pounds, a UK date, the total as "Total paid".
+    @Test func ukFoodOrder() {
+        let text = "Your order's in the kitchen\nThanks, Niloy. Pret A Manger is preparing your order.\nOrder #4471\nSubtotal £18.20\nDelivery fee £2.49\nService fee £0.99\nTotal paid £21.68\nPaid with Visa ending 4410"
+        let glance = MailDigest.glance(text: text, subject: "Your Deliveroo order receipt", kind: .receipt)
+        #expect(glance?.status == "Paid")
+        #expect(glance?.facts.first == .init(label: "Total paid", value: "£21.68"))
+    }
+
+    /// Royal Mail: a UK delivery date written day-first.
+    @Test func ukParcelOnItsWay() {
+        let text = "Your parcel is on its way\nTracking number: AB123456789GB\nExpected delivery: Saturday 18 October\nFrom: ASOS"
+        let glance = MailDigest.glance(text: text, subject: "Your Royal Mail parcel is on its way", kind: .shipping)
+        #expect(glance?.status == "On its way")
+        #expect(glance?.facts.contains(.init(label: "Expected delivery", value: "Saturday 18 October")) == true)
+    }
+
+    /// bKash: "Tk" before the amount, a transaction id, no symbol at all.
+    @Test func bKashPayment() {
+        let text = "Payment Successful\nYou have successfully paid Tk 1,250.00 to Daraz Bangladesh.\nAmount: Tk 1,250.00\nFee: Tk 0.00\nTrxID: BJK7M2Q9XA\nTime: 14/10/2026 21:05"
+        let glance = MailDigest.glance(text: text, subject: "bKash payment confirmation", kind: .receipt)
+        #expect(glance?.status == "Paid")
+        #expect(glance?.facts.first == .init(label: "Amount", value: "Tk 1,250.00"))
+    }
+
+    /// foodpanda Bangladesh: the taka sign with a space before the figure.
+    @Test func takaSignWithASpace() {
+        let text = "Thanks for your order, Tamkin!\nOrder #b7xq-21k9\nSubtotal ৳ 480\nDelivery fee ৳ 60\nTotal ৳ 540\nPaid by cash on delivery"
+        let glance = MailDigest.glance(text: text, subject: "Your foodpanda order receipt", kind: .receipt)
+        #expect(glance?.facts.first == .init(label: "Total", value: "৳ 540"))
+    }
+
+    /// A Bangla receipt: Bangla digits and labels, the taka sign after.
+    @Test func banglaReceipt() {
+        let text = "অর্ডার নিশ্চিত হয়েছে\nমোট: ১,২৯৯৳\nঅর্ডার নম্বর: ৪৪৭১"
+        #expect(MailDigest.unsupportedClaims(in: "You paid ৳1,299.", source: text).isEmpty)
+    }
 }
