@@ -77,17 +77,31 @@ enum AccountPreferences {
 
     static func toneKey(for account: String) -> String { key("tone", account) }
 
-    /// The account's tone; until one is picked, the next free one in the
-    /// order the accounts were added, so two accounts never start alike.
+    /// The account's tone; until one is picked, its service's own colour:
+    /// Gmail red and Outlook blue, the colours people already know them
+    /// by. A second account of the same service, or any other, takes the
+    /// next free tone, so two accounts never start alike.
     static func tone(for account: String, among accounts: [String]) -> Tone {
         if let saved = defaults.object(forKey: toneKey(for: account)) as? Int, let tone = tones.first(where: { $0.id == saved }) {
             return tone
         }
-        let taken = Set(accounts.compactMap { defaults.object(forKey: toneKey(for: $0)) as? Int })
-        let unpicked = accounts.filter { defaults.object(forKey: toneKey(for: $0)) == nil }
-        let free = tones.filter { !taken.contains($0.id) }
-        let position = unpicked.firstIndex(of: account) ?? 0
-        return free.isEmpty ? tones[position % tones.count] : free[position % free.count]
+        var taken = Set(accounts.compactMap { defaults.object(forKey: toneKey(for: $0)) as? Int })
+        for other in accounts where defaults.object(forKey: toneKey(for: other)) == nil {
+            let preferred = serviceTone(for: other).flatMap { taken.contains($0) ? nil : $0 }
+            let id = preferred ?? tones.first { !taken.contains($0.id) }?.id ?? tones[taken.count % tones.count].id
+            if other == account { return tones.first { $0.id == id } ?? tones[0] }
+            taken.insert(id)
+        }
+        return serviceTone(for: account).flatMap { id in tones.first { $0.id == id } } ?? tones[0]
+    }
+
+    /// Gmail's red, Outlook's blue; nil for anything else.
+    private static func serviceTone(for account: String) -> Int? {
+        switch MailAccounts.serviceName(for: account) {
+        case "Gmail": 7
+        case "Outlook": 0
+        default: MailAccounts.provider(for: account) == .microsoft ? 0 : MailAccounts.provider(for: account) == .google ? 7 : nil
+        }
     }
 
     /// The colour shown for the account's mail, or nil with colour coding
