@@ -25,7 +25,7 @@ it, and say plainly in the submission that no server stores or receives
 Gmail data.
 
 ## Progress
-- 2026-10-14: steps 1–3 done. Scopes trimmed to `gmail.modify` + `gmail.settings.basic`; Branding has the home, privacy and terms links and the authorized domain; `anwarcreativestudio.com` verified in Search Console (HTML file `google3cee5c276a72f1e6.html` at the site root; keep it there); home and terms pages live. Still open in step 1: the 120×120 logo, and the support/developer emails are the personal Gmail (the Cloud project is owned by it).
+- 2026-10-14: steps 1–3 done. Scopes trimmed to `gmail.modify` + `gmail.settings.basic`; Branding has the home, privacy and terms links and the authorized domain; `anwarcreativestudio.com` verified in Search Console (HTML file `google3cee5c276a72f1e6.html` at the site root; keep it there); home and terms pages live. Logo (the app icon at 120×120) uploaded too. Still open in step 1: the support/developer emails are the personal Gmail (the Cloud project is owned by it).
 
 ## Steps
 
