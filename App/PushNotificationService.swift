@@ -163,6 +163,7 @@ final class PushNotificationService {
         }
         policy.vips = Array(CorresSettings.vips)
         policy.blocked = Array(Set(threads.filter { $0.senderDecision == .blocked }.compactMap { $0.senderEmail?.lowercased() }))
+        policy.blockedDomains = CorresSettings.domainRules.filter { $0.value == .blocked }.map(\.key)
         policy.save()
     }
 

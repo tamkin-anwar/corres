@@ -118,6 +118,18 @@ enum CorresSettings {
         defaults.set(all.sorted(), forKey: vipsKey)
     }
 
+    static let domainRulesKey = "corres.screener.domainRules"
+    /// Screener company rules: lowercased domain → "approved" or "blocked".
+    static var domainRules: [String: SenderDecision] {
+        ((defaults.dictionary(forKey: domainRulesKey) as? [String: String]) ?? [:])
+            .compactMapValues(SenderDecision.init(rawValue:))
+    }
+    static func setDomainRule(_ domain: String, _ decision: SenderDecision?) {
+        var all = domainRules
+        all[domain.lowercased()] = decision
+        defaults.set(all.mapValues(\.rawValue), forKey: domainRulesKey)
+    }
+
     static let sensitivityKey = "corres.sensitivity"
     static var sensitivity: InboxClassifier.Sensitivity {
         defaults.string(forKey: sensitivityKey).flatMap(InboxClassifier.Sensitivity.init) ?? .balanced
@@ -140,6 +152,7 @@ enum CorresSettings {
     @MainActor static func applyToCore() {
         MailQuery.holdsNewSenders = screensNewSenders
         InboxClassifier.vipAddresses = vips
+        InboxClassifier.domainDecisions = domainRules
         InboxClassifier.sensitivity = sensitivity
         TimePhrase.morningHour = defaults.object(forKey: morningHourKey) as? Int ?? 8
         TimePhrase.laterTodayIsEvening = defaults.bool(forKey: laterTodayEveningKey)

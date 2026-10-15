@@ -310,7 +310,7 @@ public actor SampleMailRepository: MailRepository {
                 if let known = knownSenderDecisions[key] {
                     item.senderDecision = known
                 } else {
-                    item.senderDecision = isInitialSync ? .approved : .pending
+                    item.senderDecision = isInitialSync ? .approved : InboxClassifier.domainDecision(for: senderEmail) ?? .pending
                     knownSenderDecisions[key] = item.senderDecision
                 }
                 if knownImageTrust[key] == true { item.imagesTrusted = true }

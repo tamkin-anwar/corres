@@ -12,6 +12,9 @@ struct NotifyPolicy: Codable, Sendable {
     /// Lowercased addresses.
     var vips: [String] = []
     var blocked: [String] = []
+    /// Companies blocked by a Screener rule (lowercased domains). Optional
+    /// so a policy saved before it existed still loads.
+    var blockedDomains: [String]?
 
     private static let key = "corres.notifyPolicy"
     private static var defaults: UserDefaults { UserDefaults(suiteName: "group.studio.anwarcreative.corres") ?? .standard }

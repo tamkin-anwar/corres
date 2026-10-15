@@ -4,22 +4,55 @@ import SwiftUI
 /// per sender (not per message), matching HEY's own model. Approving lets
 /// everything from them through, now and any future mail too; blocking
 /// hides them silently, permanently, with no notification, ever again.
-/// Neither touches the real Gmail account (ADR 002/005): this is purely
+/// Neither touches the real email account (ADR 002/005): this is purely
 /// Corres's own local visibility decision.
+///
+/// People and companies are split, since they're decided differently: a
+/// person is read one at a time, while a pile of brands is usually cleared
+/// at once (Allow All, Block All) or by company ("everyone from
+/// amazon.com", which also decides their future senders). Every bulk
+/// decision can be undone.
 struct ScreenerView: View {
     let store: MailStore
     @Environment(\.dismiss) private var dismiss
+    @State private var tab: Tab = .people
+    @State private var confirming: SenderDecision?
+    @State private var undo: Undo?
+    @State private var rules = CorresSettings.domainRules
+
+    enum Tab: String, CaseIterable, Identifiable {
+        case people = "People", companies = "Companies"
+        var id: String { rawValue }
+    }
+
+    /// What the last bulk decision did, so it can be taken back.
+    private struct Undo: Equatable {
+        let message: String
+        let senders: [Sender]
+        let domain: String?
+        static func == (lhs: Undo, rhs: Undo) -> Bool { lhs.message == rhs.message && lhs.senders.map(\.id) == rhs.senders.map(\.id) }
+    }
+
+    private struct Sender: Identifiable {
+        let email: String
+        let account: String
+        var id: String { "\(account)|\(email)" }
+    }
 
     private struct SenderGroup: Identifiable {
         let senderEmail: String
         let account: String
         let sender: String
-        let organization: String
         let latestSubject: String
+        let latestDate: Date
         let messageCount: Int
+        let isCompany: Bool
         var id: String { "\(account)|\(senderEmail)" }
+        var domain: String? { InboxClassifier.companyDomain(of: senderEmail) }
     }
 
+    /// Newest first: the sender who just wrote is the one you're most
+    /// likely to be looking for.
     private var groups: [SenderGroup] {
         let byKey = Dictionary(grouping: store.pendingSenderThreads) { thread in
             "\(thread.id.account)|\(thread.senderEmail ?? "")"
@@ -27,15 +60,23 @@ struct ScreenerView: View {
         return byKey.values.compactMap { threads -> SenderGroup? in
             guard let first = threads.first, let senderEmail = first.senderEmail else { return nil }
             let latest = threads.max { $0.receivedAt < $1.receivedAt } ?? first
+            let isCompany = threads.contains {
+                InboxClassifier.bulkKind(labelIds: $0.labelIds, looksAutomated: $0.looksAutomated) != nil
+            }
             return SenderGroup(senderEmail: senderEmail, account: first.id.account, sender: first.sender,
-                                organization: first.organization, latestSubject: latest.subject, messageCount: threads.count)
-        }.sorted { $0.sender.localizedStandardCompare($1.sender) == .orderedAscending }
+                               latestSubject: latest.subject, latestDate: latest.receivedAt,
+                               messageCount: threads.count, isCompany: isCompany)
+        }.sorted { $0.latestDate > $1.latestDate }
     }
 
     var body: some View {
+        let all = groups
+        let people = all.filter { !$0.isCompany }
+        let companies = all.filter(\.isCompany)
+        let shown = tab == .people ? people : companies
         NavigationStack {
             Group {
-                if groups.isEmpty {
+                if all.isEmpty {
                     ContentUnavailableView {
                         Label("No new senders", systemImage: "checkmark.shield")
                     } description: {
@@ -44,20 +85,40 @@ struct ScreenerView: View {
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
+                            Picker("Senders", selection: $tab) {
+                                Text("People · \(people.count)").tag(Tab.people)
+                                Text("Companies · \(companies.count)").tag(Tab.companies)
+                            }
+                            .pickerStyle(.segmented)
+                            .padding(.bottom, 4)
+
                             Text(MailQuery.holdsNewSenders
                                  ? "Their mail reaches Corres only once you allow them. Blocking hides them quietly, for good. Neither changes your email account."
                                  : "Their mail already shows in Corres. Allow marks them as known; Block hides them quietly, for good. Neither changes your email account.")
                                 .font(.subheadline).foregroundStyle(CorresPalette.secondary)
-                                .padding(.horizontal, 4).padding(.bottom, 4)
-                            ForEach(groups) { group in card(for: group) }
+                                .padding(.horizontal, 4)
+
+                            if shown.count > 1 { bulkActions(for: shown) }
+
+                            if shown.isEmpty {
+                                Text(tab == .people ? "No new people." : "No new companies.")
+                                    .font(.subheadline).foregroundStyle(CorresPalette.tertiary)
+                                    .frame(maxWidth: .infinity).padding(.vertical, 32)
+                            }
+                            ForEach(shown) { group in card(for: group) }
+
+                            if !rules.isEmpty { rulesSection }
                         }
                         .padding(.horizontal, CorresSpace.page).padding(.vertical, 8)
+                        .padding(.bottom, undo == nil ? 0 : 72)
                         .readableWidth()
                         .frame(maxWidth: .infinity)
                     }
                 }
             }
             .background(CorresPalette.canvas)
+            .overlay(alignment: .bottom) { undoBar }
+            .animation(.easeOut(duration: 0.2), value: undo)
             .navigationTitle("New Senders")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -65,6 +126,42 @@ struct ScreenerView: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .onAppear {
+                // Open on whichever side has someone waiting.
+                if people.isEmpty, !companies.isEmpty { tab = .companies }
+            }
+            .confirmationDialog(confirmTitle(count: shown.count), isPresented: Binding(
+                get: { confirming != nil }, set: { if !$0 { confirming = nil } }
+            ), titleVisibility: .visible) {
+                if let decision = confirming {
+                    Button(decision == .approved ? "Allow \(shown.count)" : "Block \(shown.count)",
+                           role: decision == .blocked ? .destructive : nil) {
+                        decideAll(shown, decision)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(confirming == .blocked ? "Their mail will be hidden quietly. You can undo this right after."
+                                            : "Their mail will show in Corres. You can undo this right after.")
+            }
+        }
+    }
+
+    private func confirmTitle(count: Int) -> String {
+        let noun = tab == .people ? (count == 1 ? "person" : "people") : (count == 1 ? "company" : "companies")
+        return confirming == .blocked ? "Block all \(count) \(noun)?" : "Allow all \(count) \(noun)?"
+    }
+
+    private func bulkActions(for shown: [SenderGroup]) -> some View {
+        HStack(spacing: 10) {
+            Button { confirming = .approved } label: {
+                Text("Allow All").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(CorresMetalCapsuleStyle(minHeight: 40))
+            Button { confirming = .blocked } label: {
+                Text("Block All").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(CorresPillStyle(minHeight: 40))
         }
     }
 
@@ -73,7 +170,12 @@ struct ScreenerView: View {
             HStack(spacing: 12) {
                 CorrespondentAvatar(initials: initials(for: group.sender), email: group.senderEmail)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(group.sender).font(.body.weight(.semibold)).lineLimit(1)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(group.sender).font(.body.weight(.semibold)).lineLimit(1)
+                        Spacer(minLength: 8)
+                        Text(CorrespondenceRow.timestamp(group.latestDate))
+                            .font(.footnote).foregroundStyle(CorresPalette.tertiary)
+                    }
                     Text(group.senderEmail).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(1)
                 }
             }
@@ -95,10 +197,105 @@ struct ScreenerView: View {
                 }
                 .buttonStyle(CorresPillStyle(minHeight: 44))
                 .accessibilityLabel("Block \(group.sender)")
+                if group.isCompany, let domain = group.domain {
+                    Menu {
+                        Button("Allow Everyone from \(domain)", systemImage: "checkmark.circle") {
+                            decideDomain(domain, .approved)
+                        }
+                        Button("Block Everyone from \(domain)", systemImage: "nosign", role: .destructive) {
+                            decideDomain(domain, .blocked)
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(CorresPalette.ink)
+                            .frame(width: 44, height: 44)
+                            .background(CorresPalette.surfaceRaised, in: Circle())
+                            .overlay(Circle().strokeBorder(CorresPalette.line, lineWidth: 0.5))
+                    }
+                    .fixedSize()
+                    .accessibilityLabel("More for \(domain)")
+                }
             }
         }
         .padding(16)
         .corresSurface()
+    }
+
+    /// Company rules in force, each removable: new senders from there are
+    /// screened again; decisions already made stay.
+    private var rulesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Company Rules").font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.secondary)
+                .textCase(.uppercase).padding(.horizontal, 4).padding(.top, 16)
+            VStack(spacing: 0) {
+                ForEach(rules.keys.sorted(), id: \.self) { domain in
+                    HStack {
+                        Image(systemName: rules[domain] == .blocked ? "nosign" : "checkmark.circle")
+                            .foregroundStyle(CorresPalette.secondary)
+                        Text((rules[domain] == .blocked ? "Block " : "Allow ") + "everyone from \(domain)")
+                            .font(.subheadline)
+                        Spacer()
+                        Button("Remove") {
+                            Task {
+                                await store.setDomainRule(domain, nil)
+                                rules = CorresSettings.domainRules
+                            }
+                        }
+                        .font(.subheadline)
+                    }
+                    .padding(.vertical, 10).padding(.horizontal, 16)
+                }
+            }
+            .corresSurface()
+        }
+    }
+
+    @ViewBuilder private var undoBar: some View {
+        if let undo {
+            HStack {
+                Text(undo.message).font(.subheadline.weight(.medium)).lineLimit(2)
+                Spacer()
+                Button("Undo") { take(undo) }.font(.subheadline.weight(.semibold))
+            }
+            .padding(.horizontal, 18).padding(.vertical, 14)
+            .background(.regularMaterial, in: Capsule())
+            .padding(.horizontal, CorresSpace.page).padding(.bottom, 12)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .task(id: undo.message) {
+                try? await Task.sleep(for: .seconds(6))
+                if self.undo == undo { self.undo = nil }
+            }
+        }
+    }
+
+    private func decideAll(_ shown: [SenderGroup], _ decision: SenderDecision) {
+        let senders = shown.map { Sender(email: $0.senderEmail, account: $0.account) }
+        Task {
+            await store.setSenderDecision(decision, senders: senders.map { ($0.email, $0.account) })
+            undo = Undo(message: "\(decision == .approved ? "Allowed" : "Blocked") \(senders.count) senders",
+                        senders: senders, domain: nil)
+        }
+    }
+
+    private func decideDomain(_ domain: String, _ decision: SenderDecision) {
+        Task {
+            let decided = await store.setDomainRule(domain, decision)
+            rules = CorresSettings.domainRules
+            undo = Undo(message: "\(decision == .approved ? "Allowing" : "Blocking") everyone from \(domain)",
+                        senders: decided.map { Sender(email: $0.email, account: $0.account) }, domain: domain)
+        }
+    }
+
+    private func take(_ undo: Undo) {
+        self.undo = nil
+        Task {
+            if let domain = undo.domain {
+                await store.setDomainRule(domain, nil)
+                rules = CorresSettings.domainRules
+            }
+            await store.setSenderDecision(.pending, senders: undo.senders.map { ($0.email, $0.account) })
+        }
     }
 
     private func initials(for sender: String) -> String {

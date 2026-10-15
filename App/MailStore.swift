@@ -305,6 +305,38 @@ final class MailStore {
         await setSenderDecision(.blocked, senderEmail: senderEmail, account: account)
     }
 
+    /// Decides many senders at once (Allow All, Block All, Undo), then
+    /// reloads once.
+    func setSenderDecision(_ decision: SenderDecision, senders: [(email: String, account: String)]) async {
+        do {
+            for sender in senders {
+                try await repository.setSenderDecision(decision, forSenderEmail: sender.email, account: sender.account)
+            }
+            allThreads = try await repository.threads()
+        } catch {
+            errorMessage = "Could not update these senders. Please try again."
+        }
+    }
+
+    /// "Allow everyone from amazon.com": decides every waiting sender from
+    /// that company now, and new ones as they arrive. Nil removes the rule
+    /// (new senders from there are screened again; decisions already made
+    /// stay). Returns the senders it decided, for Undo.
+    @discardableResult
+    func setDomainRule(_ domain: String, _ decision: SenderDecision?) async -> [(email: String, account: String)] {
+        CorresSettings.setDomainRule(domain, decision)
+        CorresSettings.applyToCore()
+        guard let decision else { return [] }
+        var seen = Set<String>()
+        let senders = pendingSenderThreads.compactMap { thread -> (email: String, account: String)? in
+            guard let email = thread.senderEmail, InboxClassifier.companyDomain(of: email) == domain,
+                  seen.insert("\(thread.id.account)|\(email)").inserted else { return nil }
+            return (email, thread.id.account)
+        }
+        await setSenderDecision(decision, senders: senders)
+        return senders
+    }
+
     private func setSenderDecision(_ decision: SenderDecision, senderEmail: String, account: String) async {
         do {
             try await repository.setSenderDecision(decision, forSenderEmail: senderEmail, account: account)

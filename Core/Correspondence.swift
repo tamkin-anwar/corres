@@ -778,6 +778,43 @@ public enum InboxClassifier {
     /// set from Settings → Sorting.
     public nonisolated(unsafe) static var vipAddresses: Set<String> = []
 
+    /// The Screener's company rules: a new sender from a domain here gets
+    /// that decision on arrival instead of waiting in the Screener
+    /// ("Allow everyone from amazon.com"). Keyed by lowercased domain.
+    public nonisolated(unsafe) static var domainDecisions: [String: SenderDecision] = [:]
+
+    /// Free mail services, shared by unrelated people: never a company
+    /// rule's domain.
+    public static let personalDomains: Set<String> = [
+        "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com", "msn.com",
+        "icloud.com", "me.com", "mac.com", "yahoo.com", "ymail.com", "aol.com", "proton.me",
+        "protonmail.com", "pm.me", "zoho.com", "gmx.com", "gmx.net", "mail.com", "yandex.com",
+        "hotmail.co.uk", "yahoo.co.uk", "btinternet.com", "outlook.co.uk", "live.co.uk",
+    ]
+
+    /// The domain a company rule would cover for this address, or nil for
+    /// a free mail service. Subdomains count as the company's own
+    /// ("email.amazon.com" → "amazon.com"), keeping country endings whole
+    /// ("mail.tesco.co.uk" → "tesco.co.uk").
+    public static func companyDomain(of email: String?) -> String? {
+        guard let email, let at = email.lastIndex(of: "@") else { return nil }
+        let host = email[email.index(after: at)...].lowercased()
+        guard !personalDomains.contains(host) else { return nil }
+        let parts = host.split(separator: ".").map(String.init)
+        guard parts.count >= 2 else { return nil }
+        let secondLevel = ["co", "com", "org", "net", "ac", "gov", "edu"]
+        let keep = parts.count >= 3 && parts[parts.count - 1].count == 2 && secondLevel.contains(parts[parts.count - 2]) ? 3 : 2
+        let domain = parts.suffix(keep).joined(separator: ".")
+        return personalDomains.contains(domain) ? nil : domain
+    }
+
+    /// The company rule for a new sender, if one covers them.
+    public static func domainDecision(for email: String?, rules: [String: SenderDecision]? = nil) -> SenderDecision? {
+        let rules = rules ?? domainDecisions
+        guard !rules.isEmpty, let domain = companyDomain(of: email) else { return nil }
+        return rules[domain]
+    }
+
     /// How much of person-to-person mail reaches Needs You.
     public enum Sensitivity: String, CaseIterable, Sendable {
         /// Only mail that asks something, has a deadline, or is from a VIP

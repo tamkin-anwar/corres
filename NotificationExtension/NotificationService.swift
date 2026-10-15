@@ -84,7 +84,8 @@ final class NotificationService: UNNotificationServiceExtension, @unchecked Send
         InboxClassifier.vipAddresses = Set(policy.vips)
         guard let thread = try? await MailClient().fetchSummary(ids: [messageID], account: account).first else { return nil }
         let sender = thread.senderEmail?.lowercased() ?? ""
-        let quiet = policy.blocked.contains(sender) || !includes(thread, level: policy.level(for: account))
+        let blockedCompany = InboxClassifier.companyDomain(of: sender).map { (policy.blockedDomains ?? []).contains($0) } ?? false
+        let quiet = policy.blocked.contains(sender) || blockedCompany || !includes(thread, level: policy.level(for: account))
         NotifyPolicy.markShown(messageID)
         return Filled(title: thread.sender, subtitle: thread.subject, body: thread.excerpt,
                       account: account, threadID: thread.id.providerID, quiet: quiet)

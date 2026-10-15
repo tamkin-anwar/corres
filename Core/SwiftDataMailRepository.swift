@@ -427,7 +427,8 @@ public actor SwiftDataMailRepository: MailRepository {
                     // you reached out first, so there's nothing to screen.
                     let youWroteFirst = correspondents.contains(key) || item.isFromAccountOwner
                         || InboxClassifier.isVIP(item.senderEmail)
-                    item.senderDecision = isInitialSync || youWroteFirst ? .approved : .pending
+                    item.senderDecision = isInitialSync || youWroteFirst ? .approved
+                        : InboxClassifier.domainDecision(for: senderEmail) ?? .pending
                     knownSenderDecisions[key] = item.senderDecision
                 }
                 if knownImageTrust[key] == true { item.imagesTrusted = true }

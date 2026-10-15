@@ -66,10 +66,10 @@ struct PreferencesView: View {
                         corpusStatus = "Export a test corpus first."
                         return
                     }
-                    let report = await intelligence.auditSummaries(emails) { done, total in
+                    let file = folder.appending(path: "summaries.tsv")
+                    let report = await intelligence.auditSummaries(emails, to: file) { done, total in
                         corpusStatus = "Auditing \(done) of \(total)…"
                     }
-                    let file = folder.appending(path: "summaries.tsv")
                     try? report.write(to: file, atomically: true, encoding: .utf8)
                     corpusStatus = (report.split(separator: "\n").last.map(String.init) ?? "") + " → \(file.path())"
                     print("[Audit] \(file.path())")
@@ -961,6 +961,7 @@ private struct SortingSettingsView: View {
     @AppStorage(CorresSettings.morningHourKey) private var morningHour = 8
     @AppStorage(CorresSettings.laterTodayEveningKey) private var laterTodayEvening = false
     @AppStorage(CorresSettings.screenNewSendersKey) private var screenNewSenders = false
+    @State private var showingScreener = false
 
     var body: some View {
         Form {
@@ -970,6 +971,14 @@ private struct SortingSettingsView: View {
                         CorresSettings.applyToCore()
                         store.listsShouldRebuild()
                     }
+                // Also reached from the Brief; here so it's there without Pro.
+                let waiting = Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count
+                Button {
+                    showingScreener = true
+                } label: {
+                    LabeledContent("Review New Senders", value: waiting == 0 ? "None" : "\(waiting)")
+                }
+                .foregroundStyle(CorresPalette.ink)
             } header: {
                 Text("New Senders")
             } footer: {
@@ -1040,6 +1049,7 @@ private struct SortingSettingsView: View {
         }
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
+        .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
         .navigationTitle("Sorting")
         .onAppear { vipsStorage = CorresSettings.vips.sorted() }
         .navigationBarTitleDisplayMode(.inline)
