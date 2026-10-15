@@ -234,7 +234,7 @@ final class MailIntelligence {
     /// the grounding check flagged, the retry, and whether one was shown.
     /// For checking whether `MailDigest.unsupportedClaims` rejects good
     /// summaries on real mail, which only the in-app model can show.
-    func auditSummaries(_ threads: [Correspondence], progress: (Int, Int) -> Void) async -> String {
+    func auditSummaries(_ threads: [Correspondence], to file: URL, progress: (Int, Int) -> Void) async -> String {
         func field(_ text: String) -> String {
             text.replacingOccurrences(of: "\t", with: " ").replacingOccurrences(of: "\n", with: " ")
         }
@@ -259,6 +259,8 @@ final class MailIntelligence {
             rows.append([String(index), result, thread.sender, thread.subject, trace.first,
                          trace.firstUnsupported.joined(separator: " | "), trace.firstWrongVoice ? "yes" : "",
                          trace.final, trace.finalUnsupported.joined(separator: " | "), shown ?? ""].map(field).joined(separator: "\t"))
+            // Saved as it goes: a full run takes hours on the model.
+            try? (rows.joined(separator: "\n") + "\n").write(to: file, atomically: true, encoding: .utf8)
         }
         let summary = tally.sorted { $0.value > $1.value }.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
         print("[Audit] \(summary)")
@@ -359,6 +361,7 @@ final class MailIntelligence {
         }
         let faithful = wantsSummary && !summary.isEmpty && MailDigest.isFaithful(summary, source: source)
             && !MailDigest.speaksAsSender(summary)
+            && !(kind == .newsletter && MailDigest.claimsMoneyToReader(summary))
         #if DEBUG
         if wantsSummary && !faithful {
             print("[Summary] word-for-word fallback for \(thread.subject): \(summary) — \(MailDigest.unsupportedClaims(in: summary, source: source))")

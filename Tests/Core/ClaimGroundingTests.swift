@@ -97,3 +97,25 @@ struct WorldNumberTests {
         #expect(facts.contains { $0.contains("899") })
     }
 }
+
+struct NewsletterFramingTests {
+    /// Drafts the on-device model wrote for real newsletters (Oct 2026).
+    @Test func newsletterFiguresToldAsTheReadersAreCaught() {
+        #expect(MailDigest.claimsMoneyToReader("You got a charge of $81,801.71."))
+        #expect(MailDigest.claimsMoneyToReader("You got a $499 Alexa Tablet 12 Pro with a $549.99 version."))
+        #expect(MailDigest.claimsMoneyToReader("You got $100 for the TCL P80 Ultra's display."))
+        #expect(MailDigest.claimsMoneyToReader("You received £20 from the Brew."))
+    }
+
+    @Test func offersAndHeadlinesAreFine() {
+        #expect(!MailDigest.claimsMoneyToReader("You get $50 off and a free toy when spending $50+. Offer ends 10/12/26."))
+        #expect(!MailDigest.claimsMoneyToReader("TSMC reported revenue of $511.86 billion for September."))
+        #expect(!MailDigest.claimsMoneyToReader("You saved 30% on watches during the sale."))
+    }
+
+    @Test func possessiveNameIsSupported() {
+        let source = "TCL's P80 Ultra has a paperlike display."
+        #expect(MailDigest.unsupportedClaims(in: "It covers the P80 Ultra's display.", source: source).isEmpty)
+        #expect(!MailDigest.unsupportedClaims(in: "It covers the P80 Max's display.", source: source).isEmpty)
+    }
+}

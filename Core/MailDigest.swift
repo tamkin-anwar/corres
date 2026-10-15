@@ -37,7 +37,7 @@ public enum MailDigest {
             case .shipping: "Say what is shipping, its status and the expected delivery date, as news, not as a task."
             case .code: "Give the code exactly, what it is for, and when it expires if the email says so, as a statement (\"Your … code is …\")."
             case .invite: "Say what the event is, when and where, and whether a reply or RSVP is needed."
-            case .newsletter: "Give the one or two most important points or offers, with any dates or prices exactly as written."
+            case .newsletter: "Say what it covers, like headlines (\"TSMC's September sales; Amazon's 1,000th satellite\"), or its main offer and when it ends. It's written to many people: never say you got, paid, were charged or were sent anything."
             case .notification: "Say what happened, with any amount or date, and whether anything is needed from you, and by when."
             }
         }
@@ -311,7 +311,9 @@ public enum MailDigest {
             let tokens = sentence.split(separator: " ").map { $0.trimmingCharacters(in: .punctuationCharacters) }
             for token in tokens.dropFirst() where token.count >= 3 {
                 guard let first = token.first, first.isUppercase else { continue }
-                let lower = token.lowercased()
+                // "Ultra's" is supported by "Ultra".
+                var lower = token.lowercased()
+                for suffix in ["'s", "’s"] where lower.hasSuffix(suffix) { lower = String(lower.dropLast(2)) }
                 if commonCapitalized.contains(lower) || calendarStems[lower] != nil { continue }
                 if !lowerSource.contains(lower) { unsupported.append(token) }
             }
@@ -453,6 +455,18 @@ public enum MailDigest {
     public static func speaksAsSender(_ summary: String) -> Bool {
         summary.range(of: #"(^|[\s(“"])(I|I'd|I'll|I'm|I've|I’d|I’ll|I’m|I’ve)\b"#, options: .regularExpression) != nil
             || summary.range(of: #"(?i)\b(we|we'd|we'll|we're|we've|we’d|we’ll|we’re|we’ve|our|ours)\b"#, options: .regularExpression) != nil
+    }
+
+    /// A newsletter's figures told as if they happened to the reader: "You
+    /// got a charge of $81,801.71" (a market index in Morning Brew), "You
+    /// got a $499 Alexa Tablet" (a review in The Verge). The figures are in
+    /// the email, so `unsupportedClaims` can't catch it; the framing is the
+    /// mistake. Only for mail written to many people.
+    public static func claimsMoneyToReader(_ summary: String) -> Bool {
+        let money = #"(\$|£|€|৳|₹|\b(usd|gbp|eur|tk|rs)\b|\d[\d,.]*\s?(dollars|pounds|euros))"#
+        return summary.range(of: #"(?i)\byou(?:'ve| have)? (got|received|were charged|have been charged|paid|bought|won|earned|saved)\b[^.]{0,60}"# + money,
+                             options: .regularExpression) != nil
+            || summary.range(of: #"(?i)\b(a |the )?charge of\b"#, options: .regularExpression) != nil
     }
 
     /// A key point worth a line of its own: a phrase that stands alone
