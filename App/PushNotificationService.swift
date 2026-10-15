@@ -95,6 +95,12 @@ final class PushNotificationService {
         }
     }
 
+    /// Outlook's subscriptions last under three days, so every push also
+    /// renews any that is due (a local check; no request until one is).
+    func renewOutlookSubscriptions(accounts: [String]) async {
+        await renewWatch(accounts: accounts.filter { MailAccounts.provider(for: $0) == .microsoft })
+    }
+
     /// Gmail's watch subscription expires after about 7 days; this is the
     /// app's only renewal mechanism (called at every launch), so an account
     /// left unopened for a week silently stops getting push until the next
@@ -108,26 +114,6 @@ final class PushNotificationService {
     /// `AppDelegate.performLaunchWork`) and inside a capped-duration
     /// `BGAppRefreshTask`, so N accounts waiting on each other's network
     /// round trip in turn is real, avoidable time either way.
-    /// What the notification extension needs to judge an email the way
-    /// Settings says (`NotifyPolicy`): each account's choice, VIPs, blocked
-    /// senders. Written at launch and whenever Corres goes to the
-    /// background, so any change made in Settings is there for the next email.
-    static func publishPolicy(accounts: [String], threads: [Correspondence]) {
-        var policy = NotifyPolicy()
-        for account in accounts {
-            policy.levels[account.lowercased()] = AccountPreferences.level(for: account)?.rawValue ?? "off"
-        }
-        policy.vips = Array(CorresSettings.vips)
-        policy.blocked = Array(Set(threads.filter { $0.senderDecision == .blocked }.compactMap { $0.senderEmail?.lowercased() }))
-        policy.save()
-    }
-
-    /// Outlook's subscriptions last under three days, so every push also
-    /// renews any that is due (a local check; no request until one is).
-    func renewOutlookSubscriptions(accounts: [String]) async {
-        await renewWatch(accounts: accounts.filter { MailAccounts.provider(for: $0) == .microsoft })
-    }
-
     func renewWatch(accounts: [String]) async {
         guard isEnabled else { return }
         // Read once, on the main actor, before spawning concurrent child
@@ -164,6 +150,20 @@ final class PushNotificationService {
                 }
             }
         }
+    }
+
+    /// What the notification extension needs to judge an email the way
+    /// Settings says (`NotifyPolicy`): each account's choice, VIPs, blocked
+    /// senders. Written at launch and whenever Corres goes to the
+    /// background, so any change made in Settings is there for the next email.
+    static func publishPolicy(accounts: [String], threads: [Correspondence]) {
+        var policy = NotifyPolicy()
+        for account in accounts {
+            policy.levels[account.lowercased()] = AccountPreferences.level(for: account)?.rawValue ?? "off"
+        }
+        policy.vips = Array(CorresSettings.vips)
+        policy.blocked = Array(Set(threads.filter { $0.senderDecision == .blocked }.compactMap { $0.senderEmail?.lowercased() }))
+        policy.save()
     }
 
     /// The other half of "push" that was missing: until this, a silent

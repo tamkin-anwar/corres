@@ -426,7 +426,13 @@ struct OutlookClient: Sendable {
                 let name = String(label.dropFirst(4)).replacingOccurrences(of: "'", with: "''")
                 let filter = "categories/any(c:c eq '\(name)')".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
                 url = "\(Self.base)/me/messages?$select=\(Self.listFields)&$top=\(pageSize)&$filter=\(filter)"
-            default: url = "\(Self.base)/me/messages?\(top)"
+            default:
+                // All Mail, as Gmail means it: everything but Deleted Items and Junk.
+                let folders = try await OutlookFolders.shared.ids(for: account, client: self)
+                let excluded = [folders.trash, folders.junk].compactMap { $0 }.map { "parentFolderId ne '\($0)'" }
+                let filter = (["receivedDateTime ge 1900-01-01T00:00:00Z"] + excluded).joined(separator: " and ")
+                    .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                url = "\(Self.base)/me/messages?\(top)&$filter=\(filter)"
             }
         }
         let page: GraphPage<GraphMessage> = try await getJSON(url, account: account)
