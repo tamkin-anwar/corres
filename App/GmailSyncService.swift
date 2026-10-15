@@ -177,10 +177,16 @@ final class GmailSyncService {
             // next sync would start past messages never stored. Writing it
             // after only risks redundant work (a re-fetch upsert treats as
             // a no-op), never data loss.
-            if let historyId = plan.historyId {
+            //
+            // The same goes for a rate-limited pass that left more failed
+            // ids than the retry list holds: moving the cursor would drop
+            // the overflow for good, so the cursor stays put and the next
+            // sync plans the same window again.
+            let missedOverflow = stillMissing.count > Self.maxTrackedMissedIDs
+            if let historyId = plan.historyId, !missedOverflow {
                 setHistoryCursor(historyId, for: account)
             }
-            if isFullListing {
+            if isFullListing, !missedOverflow {
                 setOlderInboxPageToken(plan.olderInboxPageToken, for: account)
             }
             setMissedMessageIDs(stillMissing, for: account)
