@@ -375,7 +375,9 @@ public enum EventFinder {
             // In any language: a time alone comes back as today (or
             // tomorrow, once it's passed), so a date on any other day means
             // the phrase named one.
-            let dayOffset = calendar.dateComponents([.day], from: calendar.startOfDay(for: now),
+            // Against the real clock, not `now`: the detector reads a time
+            // alone as today by the clock, whatever `now` is.
+            let dayOffset = calendar.dateComponents([.day], from: calendar.startOfDay(for: Date()),
                                                     to: calendar.startOfDay(for: date)).day ?? 0
             let hasDay = dayOffset > 1 || dayOffset < 0
                 || phrase.range(of: #"\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\b\d{1,4}[/-]\d{1,2}\b|\b\d{1,2}\.\d{1,2}\.\d{2,4}\b|\b(today|tonight|tomorrow)\b"#,
