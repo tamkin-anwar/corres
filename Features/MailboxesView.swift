@@ -255,6 +255,19 @@ struct MailboxesView: View {
     }
 }
 
+/// Each mailbox as it was last seen this session, so opening it again shows
+/// it at once (as Mail and Gmail do) while it refreshes behind.
+@MainActor
+private enum MailboxPageCache {
+    struct Page {
+        var items: [Correspondence]
+        var nextPages: [String: String]
+        var exhausted: Set<String>
+    }
+    static var pages: [String: Page] = [:]
+    static func key(_ mailbox: Mailbox, _ accounts: [String]) -> String { "\(mailbox.id)|\(accounts.joined(separator: ","))" }
+}
+
 /// One mailbox's conversations, newest first, fetched from Gmail a page at
 /// a time as you scroll. Opening one reads it like any other; it's kept
 /// in memory only (`MailStore.keepBrowsed`), so Trash and Spam never leak
@@ -277,6 +290,21 @@ struct MailboxView: View {
     private var mailboxAccounts: [String] {
         if case let .label(_, _, account) = mailbox { return [account] }
         return accounts
+    }
+
+    private var cacheKey: String { MailboxPageCache.key(mailbox, mailboxAccounts) }
+
+    /// Synced mail that belongs here (Sent, Flagged, a label or folder, All
+    /// Mail), newest first: what can show before the service answers.
+    /// Never for Spam or Trash, which Corres doesn't keep.
+    private var localMatches: [Correspondence] {
+        guard mailbox != .spam, mailbox != .trash else { return [] }
+        let accounts = Set(mailboxAccounts)
+        let label = mailbox.labelId
+        return Array(store.threads
+            .filter { accounts.contains($0.id.account) && (label.map($0.labelIds.contains) ?? true) }
+            .sorted { $0.receivedAt > $1.receivedAt }
+            .prefix(40))
     }
 
     private var rows: [Correspondence] {
@@ -326,7 +354,20 @@ struct MailboxView: View {
             }
         }
         .refreshable { if !mailbox.isLocal { await reload() } }
-        .task { if !loadedOnce && !mailbox.isLocal { await loadMore() } }
+        .task {
+            guard !loadedOnce && !mailbox.isLocal else { return }
+            // Something on screen at once: this mailbox as last seen, or
+            // the mail already on this iPhone that belongs in it. Then the
+            // real list from the service replaces it.
+            if let cached = MailboxPageCache.pages[cacheKey] {
+                items = cached.items
+                loadedOnce = true
+                await reload()
+            } else {
+                items = localMatches
+                await loadMore(replacing: true)
+            }
+        }
     }
 
     @ViewBuilder
@@ -449,6 +490,8 @@ struct MailboxView: View {
         }
         loadFailed = failed && fetched.isEmpty
         store.keepBrowsed(fetched)
+        // A failed refresh keeps what's on screen rather than emptying it.
+        if replacing && failed && fetched.isEmpty { return }
         let base = replacing ? [] : items
         let known = Set(base.map(\.id))
         // A conversation split across two pages shows once.
@@ -457,6 +500,7 @@ struct MailboxView: View {
             if !merged.contains(where: { $0.id == item.id }) { merged.append(item) }
         }
         items = merged
+        MailboxPageCache.pages[cacheKey] = .init(items: merged, nextPages: nextPages, exhausted: exhausted)
     }
 }
 
