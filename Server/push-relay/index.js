@@ -224,10 +224,17 @@ async function handleUnregister(req, res) {
   if (emailAddress) {
     await devices.doc(deviceToken).set({
       emailAddresses: Firestore.FieldValue.arrayRemove(emailAddress),
+      alertAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
     }, { merge: true });
   } else {
     await devices.doc(deviceToken).delete();
   }
+  // And this device's Outlook subscription records (an id and a hashed
+  // secret), for that account or for every account when notifications go off.
+  let subscriptions = graphSubscriptions.where('deviceToken', '==', deviceToken);
+  if (emailAddress) subscriptions = subscriptions.where('emailAddress', '==', emailAddress);
+  const found = await subscriptions.get();
+  await Promise.all(found.docs.map((doc) => doc.ref.delete()));
   res.status(204).send();
 }
 
@@ -276,7 +283,7 @@ async function handleRegisterGraph(req, res) {
     return;
   }
   await graphSubscriptions.doc(subscriptionId).set({
-    emailAddress, clientStateHash: hash(clientState), updatedAt: Firestore.FieldValue.serverTimestamp(),
+    emailAddress, deviceToken, clientStateHash: hash(clientState), updatedAt: Firestore.FieldValue.serverTimestamp(),
   });
   // "alerts": "1" from builds whose notification extension shows each new
   // email itself; anything else (older builds, notifications off for the
