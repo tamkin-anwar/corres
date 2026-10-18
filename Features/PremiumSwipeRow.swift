@@ -66,17 +66,25 @@ struct PremiumSwipeRow<Content: View>: View {
     private var allowsNegative: Bool { trailingShort != nil || trailingLong != nil }
 
     var body: some View {
-        ZStack {
+        content
+            .offset(x: offset)
+            // Behind the email, not beside it in a stack: the colour is sized
+            // from the row's width, so as a stack member it fed back into
+            // that width, and a row mid-swipe re-measured itself without end
+            // until iOS closed Corres (the swipe-to-Trash freeze). Here only
+            // the email decides the row's size.
             // Decorative: the same actions are exposed to VoiceOver as named
             // accessibility actions by the list.
-            background.accessibilityHidden(true)
-            content
-                .offset(x: offset)
-        }
-        // Nothing paints past the row while it moves: in a rounded card
-        // (the Brief) the colour and the row stay inside, as they do at rest.
-        .clipped()
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { rowWidth = max($0, 1) }
+            .background { background.accessibilityHidden(true) }
+            // Nothing paints past the row while it moves: in a rounded card
+            // (the Brief) the colour and the row stay inside, as they do at rest.
+            .clipped()
+            // Measured at rest only, and only real changes: a row that's
+            // moving or leaving keeps the width its swipe started with.
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+                guard offset == 0, !isCommitting, abs(width - rowWidth) >= 0.5 else { return }
+                rowWidth = max(width, 1)
+            }
         .modifier(SwipeGesture(isEnabled: isEnabled && !isCommitting,
                                allowsPositive: allowsPositive, allowsNegative: allowsNegative,
                                changed: dragChanged, ended: dragEnded, cancelled: dragCancelled))

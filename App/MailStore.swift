@@ -6,7 +6,7 @@ final class MailStore {
     enum LoadState: Equatable { case idle, loading, loaded, failed }
     /// Everything in the store, including threads hidden while an Archive
     /// or Trash is waiting out its Undo window.
-    private var allThreads: [Correspondence] = [] { didSet { if !holdingRevision { revision &+= 1 } } }
+    private var allThreads: [Correspondence] = [] { didSet { if !holdingRevision { revision &+= 1; contentRevision &+= 1 } } }
     /// Removed from view the instant Archive/Trash is tapped, before Gmail
     /// is told, so Undo can bring them straight back.
     private(set) var hiddenIDs: Set<ThreadID> = [] { didSet { if !holdingRevision { revision &+= 1 } } }
@@ -18,7 +18,14 @@ final class MailStore {
         changes()
         holdingRevision = false
         revision &+= 1
+        contentRevision &+= 1
     }
+    /// Bumped when the mail itself changes, not when a row is only hidden
+    /// for Undo: a swipe then filters the rows a list already has instead
+    /// of sorting the whole mailbox again inside the row's animation.
+    private(set) var contentRevision = 0
+    /// Every conversation, hidden ones included (see `contentRevision`).
+    var threadsIncludingHidden: [Correspondence] { allThreads }
     /// Bumped whenever `threads` could read differently, so a list can keep
     /// its filtered, sorted rows until something actually changed instead
     /// of rebuilding them on every redraw (see `CorrespondenceList`).
@@ -78,7 +85,7 @@ final class MailStore {
     func hide(_ id: ThreadID) { hiddenIDs.insert(id) }
     /// For a setting that changes what the lists show without changing any
     /// mail (Screen new senders): every list rebuilds on its next redraw.
-    func listsShouldRebuild() { revision &+= 1 }
+    func listsShouldRebuild() { revision &+= 1; contentRevision &+= 1 }
     func unhide(_ id: ThreadID) { hiddenIDs.remove(id) }
     private(set) var state = LoadState.idle
     private(set) var pending: Set<ThreadID> = []
@@ -477,8 +484,11 @@ final class MailStore {
     /// meant hundreds of rebuilds while you kept working.
     func finishRemoval(removed: [ThreadID], kept: [ThreadID]) async {
         var gone = Set<ThreadID>()
+        let saved = Set(allThreads.map(\.id))
         for id in removed {
             browsed[id] = nil
+            // Opened from a mailbox and never saved: nothing to delete.
+            guard saved.contains(id) else { continue }
             do {
                 try await repository.remove(id)
                 gone.insert(id)

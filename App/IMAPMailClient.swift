@@ -395,7 +395,11 @@ struct IMAPMailClient: Sendable {
     /// Read, flagged, archive, spam and back to Inbox, on every message of
     /// the conversation Corres has seen.
     func modifyThread(threadId: String, addLabelIds: [String], removeLabelIds: [String], account: String) async throws {
-        let keys = try await Self.messageKeys(inConversation: threadId, account: account)
+        // Read and flag changes touch what's on screen, which is loaded:
+        // no need to search four folders each time an email is opened.
+        // Moves need every message, wherever it is.
+        let flagsOnly = (addLabelIds + removeLabelIds).allSatisfy { $0 == "UNREAD" || $0 == "STARRED" }
+        let keys = try await Self.messageKeys(inConversation: threadId, account: account, preferLoaded: flagsOnly)
         guard !keys.isEmpty else { return }
         try await IMAPSessions.shared.with(account) { session in
             let folders = session.cachedFolders
@@ -455,8 +459,9 @@ struct IMAPMailClient: Sendable {
     /// with what's been fetched this session. The cache alone missed older
     /// messages in the Archive, so opening showed part of a conversation
     /// and archiving left the rest behind.
-    static func messageKeys(inConversation conversation: String, account: String) async throws -> [Key] {
+    static func messageKeys(inConversation conversation: String, account: String, preferLoaded: Bool = false) async throws -> [Key] {
         let known = await IMAPCache.shared.keys(inConversation: conversation, account: account).compactMap(parse)
+        if preferLoaded, !known.isEmpty { return known }
         let searched = try await searchConversation(conversation, account: account)
         var seen = Set(searched.map(\.raw))
         return searched + known.filter { seen.insert($0.raw).inserted }

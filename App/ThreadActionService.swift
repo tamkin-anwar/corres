@@ -472,6 +472,14 @@ final class ThreadActionService {
                          gmailCall: () async throws -> Void, local: () async -> Void) async {
         guard store.beginPending(thread.id) else { return }
         defer { store.endPending(thread.id) }
+        #if DEBUG
+        // A stress-test run (`-stressThreads`) swipes freely without
+        // touching the real mailbox it was padded from.
+        if ProcessInfo.processInfo.arguments.contains("-stressThreads") {
+            await local()
+            return
+        }
+        #endif
         if thread.id.account != Self.sampleAccount {
             guard auth.isConnected(thread.id.account) else {
                 errorMessage = failureMessage

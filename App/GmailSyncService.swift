@@ -140,6 +140,9 @@ final class GmailSyncService {
             // No suspension between the last check above and this, so a
             // caller can't join a pass that has already finished.
             self.running[account] = nil
+            // Removed while this ran: whatever it saved goes, and the flag
+            // doesn't outlive it to trip up the account added back later.
+            if self.retired.remove(account) != nil { self.dropCursor(for: account) }
             if succeeded { self.lastCompletedSync = .now }
             return succeeded
         }

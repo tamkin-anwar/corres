@@ -212,9 +212,9 @@ enum CategoryContextCache {
     private(set) static var latest = InboxCategory.Context()
 
     static func context(_ store: MailStore) -> InboxCategory.Context {
-        if revision != store.revision {
-            latest = InboxCategory.context(for: store.threads)
-            revision = store.revision
+        if revision != store.contentRevision {
+            latest = InboxCategory.context(for: store.threadsIncludingHidden)
+            revision = store.contentRevision
         }
         return latest
     }
@@ -310,7 +310,7 @@ struct CorrespondenceList: View {
 
     private var scopedThreads: [Correspondence] {
         // All Inboxes leaves out accounts turned off for it in Settings.
-        AccountPreferences.scope(store.threads, account: accountFilter, all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
+        AccountPreferences.scope(store.threadsIncludingHidden, account: accountFilter, all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
     }
 
     /// The rows as last built, and what they were built from. A plain
@@ -335,6 +335,9 @@ struct CorrespondenceList: View {
         var unread = 0
         /// Each account's marker, for the merged view.
         var tags: [String: AccountTag] = [:]
+        /// Built with hidden rows still in; `rows` leaves out `hidden`.
+        var full: [Correspondence] = []
+        var hidden: Set<ThreadID> = []
     }
     @State private var rowsCache = RowsCache()
     @AppStorage(AccountPreferences.revisionKey) private var accountsRevision = 0
@@ -347,12 +350,18 @@ struct CorrespondenceList: View {
     private var rows: RowsCache {
         let cache = rowsCache
         if !isActive, cache.key != nil { return cache }
-        let key = RowsCache.Key(revision: store.revision, minute: Int(Date.now.timeIntervalSince1970 / 60),
+        let key = RowsCache.Key(revision: store.contentRevision, minute: Int(Date.now.timeIntervalSince1970 / 60),
                                 account: accountFilter, accounts: accountsRevision, destination: destination,
                                 search: appliedSearch, filter: mailFilter)
-        guard cache.key != key else { return cache }
-        let built = buildResults()
-        cache.key = key
+        let hidden = store.hiddenIDs
+        if cache.key == key, cache.hidden == hidden { return cache }
+        if cache.key != key {
+            cache.full = buildResults()
+            cache.key = key
+        }
+        // A swipe only hides a row: filter what's built, don't rebuild.
+        let built = hidden.isEmpty ? cache.full : cache.full.filter { !hidden.contains($0.id) }
+        cache.hidden = hidden
         cache.rows = built
         cache.ids = built.map(\.id)
         if destination == .needsYou {
