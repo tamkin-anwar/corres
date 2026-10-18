@@ -180,10 +180,12 @@ public enum MailDigest {
     /// Updates tab is where receipts, bills and account notices land.
     public static func kind(subject: String, text: String, senderEmail: String?, isBulk: Bool,
                             looksAutomated: Bool, hasEvent: Bool, labelIds: [String] = []) -> Kind {
-        let haystack = subject + "\n" + text.prefix(3_000)
         // A code email is short and says so up top; a newsletter with
-        // "code:" somewhere in a story is not one.
-        let words = text.split(whereSeparator: \.isWhitespace).count
+        // "code:" somewhere in a story is not one. Counted only to 301.
+        var words = 0, inWord = false
+        for ch in text where words <= 300 {
+            if ch.isWhitespace { inWord = false } else if !inWord { inWord = true; words += 1 }
+        }
         if words <= 300, verificationCode(in: subject + "\n" + text.prefix(400)) != nil { return .code }
         if labelIds.contains("CATEGORY_PROMOTIONS") { return .newsletter }
         // The subject says what an email is; its body only does near the

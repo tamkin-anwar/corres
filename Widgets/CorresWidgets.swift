@@ -141,7 +141,7 @@ struct ListWidgetView: View {
             Text(title.uppercased()).font(.caption2.weight(.semibold)).tracking(1.2).foregroundStyle(WidgetPalette.accent)
             Spacer(minLength: 0)
             Text("Corres Pro").font(.system(.headline, design: .serif)).foregroundStyle(WidgetPalette.ink)
-            Text("Open Corres to continue.").font(.caption).foregroundStyle(WidgetPalette.secondary)
+            Text("Open Corres to start your free trial.").font(.caption).foregroundStyle(WidgetPalette.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }

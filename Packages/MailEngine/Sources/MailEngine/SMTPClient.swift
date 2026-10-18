@@ -79,9 +79,14 @@ public actor SMTPClient {
         if security == .startTLS {
             guard extensions.contains("STARTTLS") else { throw SMTPError.noSecureConnection }
             try await expect(220, try await command("STARTTLS"))
-            let context = try NIOSSLContext(configuration: .makeClientConfiguration())
-            let handler = try NIOSSLClientHandler(context: context, serverHostname: host)
-            try await channel!.pipeline.addHandler(handler, position: .first).get()
+            // Made on the connection's own thread: the handler isn't Sendable.
+            guard let channel else { throw SMTPError.disconnected }
+            let host = self.host
+            try await channel.eventLoop.submit {
+                let context = try NIOSSLContext(configuration: .makeClientConfiguration())
+                let handler = try NIOSSLClientHandler(context: context, serverHostname: host)
+                try channel.pipeline.syncOperations.addHandler(handler, position: .first)
+            }.get()
             // Anything learned before encryption is discarded (RFC 3207).
             try await hello()
         }
