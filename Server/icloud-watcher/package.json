@@ -7,7 +7,7 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "start": "node watcher.js",
-    "deploy": "gcloud run deploy corres-icloud-watcher --source=. --region=us-central1 --no-allow-unauthenticated --min-instances=1 --max-instances=1 --no-cpu-throttling --memory=512Mi --set-secrets=APNS_AUTH_KEY=corres-apns-auth-key:latest --set-env-vars=APNS_KEY_ID=$APNS_KEY_ID,APNS_TEAM_ID=$APNS_TEAM_ID,APNS_BUNDLE_ID=$APNS_BUNDLE_ID,ICLOUD_KEY_VERSION=$ICLOUD_KEY_VERSION"
+    "deploy": "gcloud run deploy corres-icloud-watcher --source=. --region=us-central1 --no-allow-unauthenticated --min-instances=1 --max-instances=1 --no-cpu-throttling --service-account=icloud-watcher@corres-509320.iam.gserviceaccount.com --memory=512Mi --set-secrets=APNS_AUTH_KEY=corres-apns-auth-key:latest --set-env-vars=APNS_KEY_ID=$APNS_KEY_ID,APNS_TEAM_ID=$APNS_TEAM_ID,APNS_BUNDLE_ID=$APNS_BUNDLE_ID,ICLOUD_KEY_VERSION=$ICLOUD_KEY_VERSION"
   },
   "dependencies": {
     "@google-cloud/firestore": "^7.9.0",
