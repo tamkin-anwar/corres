@@ -215,7 +215,7 @@ struct ConversationView: View {
                             .ignoresSafeArea()
                     }
                 }
-                .modifier(TranslateSheet(isPresented: $showingTranslation, text: Self.plainText(of: thread)))
+                .modifier(TranslateSheet(isPresented: $showingTranslation, text: showingTranslation ? Self.plainText(of: thread) : ""))
                 .confirmationDialog("Unsubscribe from \(thread.sender)?", isPresented: $showingUnsubscribeConfirmation, titleVisibility: .visible) {
                     Button("Unsubscribe", role: .destructive) {
                         Task {
