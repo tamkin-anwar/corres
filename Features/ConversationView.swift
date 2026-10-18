@@ -1125,7 +1125,7 @@ struct ConversationView: View {
                 Section(labels.contains(where: \.isFolder) ? "Folders" : "Labels") {
                     ForEach(labels) { label in
                         Button {
-                            Task { await threadActions.moveToLabel(label.id, thread) }
+                            Task { await threadActions.moveToLabel(label.id, named: label.name.components(separatedBy: "/").last ?? label.name, thread) }
                         } label: {
                             Label(label.name, systemImage: label.isFolder ? "folder" : "tag")
                         }

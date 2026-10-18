@@ -149,9 +149,13 @@ struct GmailAPIClient {
         func record(_ ref: HistoryListResponse.HistoryRecord.MessageRef, removed: Bool) {
             guard let threadId = ref.threadId else { return }
             if latest[ref.id] == nil { order.append(ref.id) }
-            latest[ref.id] = RemoteMessageChange(threadID: ThreadID(account: account, providerID: threadId),
-                                                 messageID: ref.id, currentLabelIds: ref.labelIds, removed: removed)
             let labels = Set(ref.labelIds ?? [])
+            // Out of the Inbox earlier in this window stays out until a
+            // record shows it back: archived on the web and then starred,
+            // the star's record alone said "still here".
+            let wasRemoved = latest[ref.id]?.removed == true && !labels.contains("INBOX")
+            latest[ref.id] = RemoteMessageChange(threadID: ThreadID(account: account, providerID: threadId),
+                                                 messageID: ref.id, currentLabelIds: ref.labelIds, removed: removed || wasRemoved)
             restored[ref.id] = !removed && labels.contains("INBOX")
         }
         repeat {

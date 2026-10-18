@@ -19,7 +19,11 @@ enum GmailMessageComposer {
     /// `GmailAPIClient.findMessage` later look this exact send up by it, to
     /// tell "never sent" apart from "sent, but the response was lost"
     /// before a retry.
+    /// `rootReference` is the conversation's first message, when known,
+    /// so References names the whole chain: IMAP mail (and other people's
+    /// mail apps) group a conversation by it.
     static func compose(from: String, to: String, cc: String? = nil, bcc: String? = nil, subject: String, body: String, inReplyTo: String?,
+                        rootReference: String? = nil,
                         messageID: String, attachments: [PendingAttachment] = [], html: String? = nil,
                         calendar: String? = nil) -> String {
         var headers = [
@@ -43,7 +47,11 @@ enum GmailMessageComposer {
         if let inReplyTo {
             let reference = "<\(inReplyTo)>"
             headers.append("In-Reply-To: \(reference)")
-            headers.append("References: \(reference)")
+            if let rootReference, !rootReference.isEmpty, rootReference != inReplyTo {
+                headers.append("References: <\(rootReference)> \(reference)")
+            } else {
+                headers.append("References: \(reference)")
+            }
         }
         // The words: plain text, or, when formatted (bold, a list, a link),
         // plain and HTML together, so every mail app shows its best version.

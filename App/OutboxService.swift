@@ -94,7 +94,7 @@ final class OutboxService {
             guard let id = try? await client.saveDraft(attachments: draft.attachments, threadId: thread?.id.providerID,
                                                        existingID: existing, account: account, compose: { withAttachments in
                 GmailMessageComposer.compose(from: from, to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
-                                             body: draft.body, inReplyTo: thread?.messageIdHeader,
+                                             body: draft.body, inReplyTo: thread?.messageIdHeader, rootReference: Self.rootReference(of: thread),
                                              messageID: Self.rfc822MessageID(for: draft.id),
                                              attachments: withAttachments ? draft.attachments : [], html: draft.bodyHTML, calendar: draft.calendarReply)
             }) else {
@@ -321,6 +321,13 @@ final class OutboxService {
             sentCopy = messages.last { $0.isFromAccountOwner } ?? messages.last
         }
         await store.send(draft, realThreadID: realThreadID, sentCopy: sentCopy)
+        // Outlook hadn't filed it yet when asked: a stand-in row holds its
+        // place, swapped for the real conversation once it's there, or
+        // the next sync would add that as a second row.
+        if let realThreadID, realThreadID.providerID.hasPrefix("outlook-sent-") {
+            let messageID = Self.rfc822MessageID(for: id)
+            Task { await self.replacePlaceholder(realThreadID, messageID: messageID) }
+        }
         if let after = draft.followUpAfter, let threadID = realThreadID ?? thread?.id {
             let first = PeopleIndex.entries(in: draft.to).first.flatMap(PeopleIndex.parse)
             let recipient = first.map { $0.name.isEmpty ? $0.email : Person.readable($0.name) } ?? "them"
@@ -339,6 +346,28 @@ final class OutboxService {
                 try? await client.deleteDraft(id: draftID, account: account)
             }
         }
+    }
+
+    private func replacePlaceholder(_ placeholder: ThreadID, messageID: String) async {
+        for delay in [8, 30, 120] {
+            try? await Task.sleep(for: .seconds(delay))
+            guard let real = try? await client.findMessage(rfc822MessageID: messageID, account: placeholder.account),
+                  let messages = try? await client.fetchThreadMessages(threadId: real.providerID, account: real.account),
+                  let sent = messages.last(where: \.isFromAccountOwner) ?? messages.last else { continue }
+            _ = try? await repository.upsert([sent], isInitialSync: true)
+            await store.remove(placeholder)
+            await store.refresh()
+            return
+        }
+    }
+
+    /// An IMAP conversation is known by its first message's Message-ID,
+    /// which replies carry in References so they stay in it. Gmail and
+    /// Outlook thread by their own ids.
+    nonisolated private static func rootReference(of thread: Correspondence?) -> String? {
+        guard let thread, MailAccounts.provider(for: thread.id.account).usesIMAP,
+              !thread.id.providerID.hasPrefix("uid:") else { return nil }
+        return thread.id.providerID
     }
 
     /// Stable for the lifetime of one outbox entry — derived from its own
@@ -475,7 +504,7 @@ final class OutboxService {
         let from = fromHeader(draft, account: account)
         let threadId = try await client.send(attachments: draft.attachments, threadId: thread?.id.providerID, account: account) { withAttachments in
             GmailMessageComposer.compose(from: from, to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
-                                         body: draft.body, inReplyTo: thread?.messageIdHeader,
+                                         body: draft.body, inReplyTo: thread?.messageIdHeader, rootReference: Self.rootReference(of: thread),
                                          messageID: Self.rfc822MessageID(for: id),
                                          attachments: withAttachments ? draft.attachments : [], html: draft.bodyHTML, calendar: draft.calendarReply)
         }

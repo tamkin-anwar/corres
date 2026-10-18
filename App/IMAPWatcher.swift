@@ -11,7 +11,6 @@ final class IMAPWatcher {
     static let shared = IMAPWatcher()
 
     private var watches: [String: Task<Void, Never>] = [:]
-    private var connections: [String: IMAPConnection] = [:]
 
     /// Watches these accounts (the iCloud ones among them), calling
     /// `changed` with the account whenever its Inbox changes.
@@ -27,33 +26,42 @@ final class IMAPWatcher {
         for account in Array(watches.keys) { stop(account) }
     }
 
+    /// Cancelling ends the wait (see `ResponseQueue.take`), and the watch
+    /// logs out on its way out. Logging out from here as well ran a second
+    /// command into the same connection mid-IDLE.
     private func stop(_ account: String) {
         watches.removeValue(forKey: account)?.cancel()
-        if let connection = connections.removeValue(forKey: account) { Task { await connection.logout() } }
     }
 
     private func watch(_ account: String, changed: @escaping @MainActor (String) -> Void) async {
         var pause = Duration.seconds(5)
+        var reconnecting = false
         while !Task.isCancelled {
             guard let password = IMAPCredentials.password(for: account) else { return }
             let server = IMAPServer.for(account)
             let connection = IMAPConnection(host: server.imapHost, port: server.imapPort)
-            connections[account] = connection
+            let started = ContinuousClock.now
             do {
                 try await connection.connect()
                 try await connection.login(username: server.username ?? account, password: password)
                 try await connection.select("INBOX")
-                pause = .seconds(5)
+                // Mail that came while the connection was down.
+                if reconnecting, !Task.isCancelled { changed(account) }
+                reconnecting = true
                 while !Task.isCancelled {
                     // Under iCloud's 29-minute IDLE limit.
                     let changes = try await connection.waitForChanges(wait: .seconds(20 * 60))
                     if !changes.isEmpty, !Task.isCancelled { changed(account) }
                 }
+                await connection.logout()
             } catch IMAPConnection.ConnectionError.authenticationFailed {
                 await connection.logout()
                 return // the sync path asks for a new password
             } catch {
                 await connection.logout()
+                // Back to a short wait only after a connection that held:
+                // a server dropping IDLE straight away isn't asked every 5 s.
+                if ContinuousClock.now - started > .seconds(60) { pause = .seconds(5) }
                 try? await Task.sleep(for: pause)
                 pause = min(pause * 2, .seconds(300))
             }

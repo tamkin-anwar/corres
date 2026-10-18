@@ -23,6 +23,7 @@ struct OutlookClient: Sendable {
     private static let fullFields = listFields + ",body,internetMessageHeaders"
     /// Graph's limit for one $batch.
     private static let batchLimit = 20
+    private static let changeBatchLimit = 4
     private static let initialInboxDays = 60
     private static let initialSentDays = 60
 
@@ -155,7 +156,10 @@ struct OutlookClient: Sendable {
         let term = "\"\(query.replacingOccurrences(of: "\"", with: ""))\"".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let page: GraphPage<GraphMessage> = try await getJSON("\(Self.base)/me/messages?$select=\(Self.listFields)&$search=\(term)&$top=25", account: account)
         let folders = try await OutlookFolders.shared.ids(for: account, client: self)
+        // Graph searches Deleted Items and Junk too; results are saved with
+        // your mail, so those would come back into Mail. Gmail leaves them out.
         return page.value.map { map($0, account: account, folders: folders, full: false) }
+            .filter { !$0.labelIds.contains("TRASH") && !$0.labelIds.contains("SPAM") && !$0.labelIds.contains("DRAFT") }
     }
 
     func sentAddressing(account: String, limit: Int) async throws -> [GmailAPIClient.Addressing] {
@@ -217,12 +221,13 @@ struct OutlookClient: Sendable {
     }
 
     func saveDraft(raw: String, threadId: String?, existingID: String?, account: String) async throws -> String {
-        // A MIME draft can't be edited in place: the old one goes, the new
-        // one takes its place.
-        if let existingID { try? await deleteDraft(id: existingID, account: account) }
+        // A MIME draft can't be edited in place: the new one is saved, then
+        // the old one goes, so a failed save leaves the last one in place.
         let result = try await postMIME("\(Self.base)/me/messages", raw: raw, account: account)
         guard (200..<300).contains(result.status) else { throw ClientError.badResponse(statusCode: result.status) }
-        return try JSONDecoder().decode(GraphMessage.self, from: result.data).id
+        let id = try JSONDecoder().decode(GraphMessage.self, from: result.data).id
+        if let existingID, existingID != id { try? await deleteDraft(id: existingID, account: account) }
+        return id
     }
 
     /// Graph takes about 4 MB in one request. Bigger emails go the way
@@ -310,8 +315,14 @@ struct OutlookClient: Sendable {
         // a $batch runs its requests in parallel, and two changes to the
         // same message at once can fail with a conflict.
         var patches: [GraphRequest] = []
-        var moves: [GraphRequest] = []
-        func move(_ id: String, to folder: String) { moves.append(GraphRequest(method: "POST", url: "/me/messages/\(id)/move", body: ["destinationId": folder])) }
+        // One move per message, the last rule that applies: two moves of
+        // the same message in one parallel batch conflict (Not Spam asked
+        // for the Inbox twice; Move to asked for Archive and the folder).
+        var destinations: [(id: String, folder: String)] = []
+        func move(_ id: String, to folder: String) {
+            destinations.removeAll { $0.id == id }
+            destinations.append((id, folder))
+        }
         for message in messages {
             var changes: [String: Any] = [:]
             if addLabelIds.contains("UNREAD") { changes["isRead"] = false }
@@ -330,7 +341,8 @@ struct OutlookClient: Sendable {
             let inInbox = message.parentFolderId == folders.inbox
             // Archive: out of the Inbox, into Archive. Back: into the Inbox.
             if removeLabelIds.contains("INBOX"), inInbox { move(message.id, to: "archive") }
-            if addLabelIds.contains("INBOX"), !inInbox, message.parentFolderId != folders.sent { move(message.id, to: "inbox") }
+            if addLabelIds.contains("INBOX"), !inInbox, message.parentFolderId != folders.sent,
+               message.parentFolderId != folders.drafts, message.parentFolderId != folders.trash { move(message.id, to: "inbox") }
             // Move to one of the person's folders, and back out of it.
             if let folder = addLabelIds.first(where: { $0.hasPrefix("folder:") }).map({ String($0.dropFirst(7)) }),
                message.parentFolderId != folder, message.parentFolderId != folders.sent, message.parentFolderId != folders.drafts {
@@ -344,7 +356,8 @@ struct OutlookClient: Sendable {
             if removeLabelIds.contains("SPAM"), message.parentFolderId == folders.junk { move(message.id, to: "inbox") }
         }
         try await batch(patches, account: account)
-        try await batch(moves, account: account)
+        try await batch(destinations.map { GraphRequest(method: "POST", url: "/me/messages/\($0.id)/move", body: ["destinationId": $0.folder]) },
+                        account: account)
     }
 
     func trashThread(threadId: String, account: String) async throws {
@@ -685,25 +698,46 @@ struct OutlookClient: Sendable {
     }
 
     /// Up to 20 at a time, Graph's limit; a failure in one is reported.
+    /// Changes, four to a batch: Graph runs a batch's requests at once and
+    /// allows about four at a time per mailbox, so twenty at once came back
+    /// partly throttled. A throttled request waits and goes again.
     private func batch(_ requests: [GraphRequest], account: String) async throws {
         guard !requests.isEmpty else { return }
-        for chunk in requests.chunked(into: Self.batchLimit) {
-            let payload: [String: Any] = ["requests": chunk.enumerated().map { index, item -> [String: Any] in
-                var entry: [String: Any] = ["id": "\(index)", "method": item.method, "url": item.url,
-                                            "headers": ["Content-Type": "application/json", "Prefer": "IdType=\"ImmutableId\""]]
-                if let body = item.body { entry["body"] = body }
-                return entry
-            }]
-            var request = URLRequest(url: URL(string: "\(Self.base)/$batch")!)
-            request.httpMethod = "POST"
-            request.setValue("Bearer \(try await token(account))", forHTTPHeaderField: "Authorization")
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-            let (data, status) = try await perform(request, account: account)
-            try Self.check(status, data)
-            let responses = (try? JSONDecoder().decode(BatchResponse.self, from: data))?.responses ?? []
-            if let failed = responses.first(where: { !(200..<300).contains($0.status) }) {
-                throw ClientError.refused(statusCode: failed.status, reason: nil, message: "An Outlook change was refused.")
+        for chunk in requests.chunked(into: Self.changeBatchLimit) {
+            var remaining = chunk
+            for attempt in 0..<4 {
+                let payload: [String: Any] = ["requests": remaining.enumerated().map { index, item -> [String: Any] in
+                    var entry: [String: Any] = ["id": "\(index)", "method": item.method, "url": item.url,
+                                                "headers": ["Content-Type": "application/json", "Prefer": "IdType=\"ImmutableId\""]]
+                    if let body = item.body { entry["body"] = body }
+                    return entry
+                }]
+                var request = URLRequest(url: URL(string: "\(Self.base)/$batch")!)
+                request.httpMethod = "POST"
+                request.setValue("Bearer \(try await token(account))", forHTTPHeaderField: "Authorization")
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+                let (data, status) = try await perform(request, account: account)
+                try Self.check(status, data)
+                guard let responses = (try? JSONDecoder().decode(BatchResponse.self, from: data))?.responses else {
+                    throw ClientError.decodingFailed
+                }
+                var throttled: [GraphRequest] = []
+                var wait = 0.0
+                for response in responses where !(200..<300).contains(response.status) {
+                    guard let index = Int(response.id), remaining.indices.contains(index) else { continue }
+                    if response.status == 429 || response.status == 503 || response.status == 504 {
+                        throttled.append(remaining[index])
+                        wait = max(wait, Double(response.headers?["Retry-After"] ?? "") ?? Double(1 << attempt))
+                    } else {
+                        throw ClientError.refused(statusCode: response.status, reason: response.body?.error?.code,
+                                                  message: response.body?.error?.message ?? "Outlook refused a change.")
+                    }
+                }
+                if throttled.isEmpty { break }
+                if attempt == 3 { throw ClientError.refused(statusCode: 429, reason: "throttled", message: "Outlook is busy. Try again in a moment.") }
+                try await Task.sleep(for: .seconds(min(wait, 30)))
+                remaining = throttled
             }
         }
     }
@@ -725,11 +759,16 @@ struct OutlookClient: Sendable {
             let (data, status) = try await perform(request, account: account)
             try Self.check(status, data)
             let responses = (try? JSONDecoder().decode(BatchMessages.self, from: data))?.responses ?? []
+            var answered = Set<Int>()
             for response in responses {
                 guard let index = Int(response.id), chunk.indices.contains(index) else { continue }
+                answered.insert(index)
                 if let message = response.body, (200..<300).contains(response.status) { found[chunk[index]] = message }
                 else { failed.append(chunk[index]) }
             }
+            // No answer at all (a reply that didn't decode) counts as
+            // failed, so the next sync tries again instead of moving past.
+            failed += chunk.indices.filter { !answered.contains($0) }.map { chunk[$0] }
         }
         return (found, failed)
     }
@@ -868,7 +907,13 @@ private struct GraphErrorEnvelope: Decodable {
 }
 
 private struct BatchResponse: Decodable {
-    struct Item: Decodable { let id: String; let status: Int }
+    struct Item: Decodable {
+        struct Body: Decodable { let error: GraphErrorEnvelope.Inner? }
+        let id: String
+        let status: Int
+        let headers: [String: String]?
+        let body: Body?
+    }
     let responses: [Item]
 }
 

@@ -26,10 +26,12 @@ final class ThreadActionService {
         self.auth = auth
     }
 
-    enum RemovalKind {
+    enum RemovalKind: Equatable {
         case archive, trash, spam
+        /// Move to a label or folder, out of the Inbox.
+        case move(labelId: String, name: String)
         var systemImage: String {
-            switch self { case .archive: "archivebox"; case .trash: "trash"; case .spam: "xmark.bin" }
+            switch self { case .archive: "archivebox"; case .trash: "trash"; case .spam: "xmark.bin"; case .move: "folder" }
         }
     }
 
@@ -47,6 +49,7 @@ final class ThreadActionService {
             case .archive: return threads.count == 1 ? "Archived" : "Archived \(threads.count)"
             case .trash: return threads.count == 1 ? "Moved to Trash" : "Deleted \(threads.count)"
             case .spam: return threads.count == 1 ? "Reported as spam" : "Reported \(threads.count) as spam"
+            case .move(_, let name): return name.isEmpty ? "Moved" : "Moved to \(name)"
             }
         }
     }
@@ -276,7 +279,7 @@ final class ThreadActionService {
     /// its per-user rate limit when several rows were swiped in a row.
     private func enqueue(_ pending: PendingRemoval) {
         // Counted once Undo has passed: an undone archive says nothing.
-        if pending.kind != .spam { HabitWatcher.shared.removed(pending.threads) }
+        if pending.kind == .archive || pending.kind == .trash { HabitWatcher.shared.removed(pending.threads) }
         let previous = commitQueue
         commitQueue = Task { [weak self] in
             await previous?.value
@@ -317,22 +320,23 @@ final class ThreadActionService {
                 try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: ["SPAM"],
                                                    removeLabelIds: ["INBOX"], account: thread.id.account)
             }, local: { done = true })
+        case .move(let labelId, _):
+            await perform(thread, failureMessage: "Couldn't move this conversation. Try again.", gmailCall: {
+                try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: [labelId],
+                                                   removeLabelIds: ["INBOX"], account: thread.id.account)
+            }, local: { done = true })
         }
         return done
     }
 
     // MARK: Mailboxes
 
-    /// Gmail's Move to: the label on, out of the Inbox. Archived only once
-    /// the label is on, so a failure never leaves it in neither place.
-    func moveToLabel(_ labelId: String, _ thread: Correspondence) async {
-        do {
-            try await client.modifyThread(threadId: thread.id.providerID, addLabelIds: [labelId], account: thread.id.account)
-        } catch {
-            store.errorMessage = "Couldn't move this conversation. Try again."
-            return
-        }
-        await archive(thread, animated: false)
+    /// Move to: the label on and out of the Inbox in one change, sent once
+    /// the Undo window closes like Archive. It used to move straight away,
+    /// so Undo brought the row back here while the server had already
+    /// filed it (Outlook and iCloud), and the next sync took it away again.
+    func moveToLabel(_ labelId: String, named name: String = "", _ thread: Correspondence) async {
+        await queueRemoval([thread], kind: .move(labelId: labelId, name: name), animated: false)
     }
 
     /// Out of Trash or Spam, or back from the archive or a label: into the

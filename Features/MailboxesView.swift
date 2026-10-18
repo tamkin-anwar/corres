@@ -317,7 +317,9 @@ struct MailboxView: View {
             return store.threads.filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.attention == .handled }
                 .sorted { $0.receivedAt > $1.receivedAt }
         }
-        return items.filter { !removed.contains($0.id) }.map { store.thread($0.id) ?? $0 }
+        // Trashed here: out of sight while Undo is offered (the store hides
+        // it), back if you undo, gone once it's done (the store lets it go).
+        return items.filter { !removed.contains($0.id) && !store.hiddenIDs.contains($0.id) }.compactMap { store.thread($0.id) }
     }
 
     var body: some View {
@@ -433,7 +435,6 @@ struct MailboxView: View {
     private func trailingActions(for thread: Correspondence) -> some View {
         if mailbox != .trash {
             Button(role: .destructive) {
-                removed.insert(thread.id)
                 Task { await threadActions.trash(thread) }
             } label: {
                 Label("Trash", systemImage: "trash")
@@ -609,8 +610,18 @@ struct DraftsView: View {
     private func open(_ item: (draftID: String, message: Correspondence)) async {
         opening = item.draftID
         defer { opening = nil }
-        let message = item.message
+        var message = item.message
         let account = message.id.account
+        // Outlook and IMAP list drafts with a preview only (Gmail's come
+        // whole): fetch the full text, or saving would replace the draft
+        // with its first line.
+        if MailAccounts.provider(for: account) != .google, let messageID = message.latestMessageID {
+            guard let full = try? await client.fetchFull(ids: [messageID], account: account).items.first else {
+                openFailed = true
+                return
+            }
+            message = full
+        }
         // Without its conversation, a reply draft would go out as a new,
         // unthreaded email: say so rather than open it wrong.
         guard let conversation = try? await client.fetchThreadMessages(threadId: message.id.providerID, account: account) else {

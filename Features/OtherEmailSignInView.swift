@@ -40,9 +40,15 @@ struct OtherEmailSignInView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 10) {
                         Image(systemName: "envelope").font(.system(size: 28)).foregroundStyle(CorresPalette.accent)
-                        Text(service.map { "Connect \($0.name)" } ?? "Add an Email Account").font(.title3.weight(.semibold))
-                        Text("Enter your address and Corres finds your mail server for you.")
-                            .font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                        if reconnecting != nil {
+                            Text("Sign In Again").font(.title3.weight(.semibold))
+                            Text("Your mail server stopped accepting the password Corres has. Enter it again\(service?.appPassword == true ? ", or make a new app password" : "").")
+                                .font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                        } else {
+                            Text(service.map { "Connect \($0.name)" } ?? "Add an Email Account").font(.title3.weight(.semibold))
+                            Text("Enter your address and Corres finds your mail server for you.")
+                                .font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                        }
                     }
                     .padding(.vertical, 6)
                 }
@@ -218,8 +224,13 @@ struct OtherEmailSignInView: View {
         let candidates: [IMAPServer]
         if manual, !imapHost.isEmpty, !smtpHost.isEmpty {
             let outPort = Int(smtpPort) ?? 587
-            candidates = [IMAPServer(imapHost: imapHost.lowercased(), imapPort: Int(imapPort) ?? 993, smtpHost: smtpHost.lowercased(),
-                                     smtpPort: outPort, smtpSecurity: outPort == 465 ? .tls : .startTLS)]
+            let host = imapHost.trimmingCharacters(in: .whitespaces).lowercased()
+            // The sign-in name the server's settings gave, when it's the
+            // same server (some want just the part before the @).
+            let username = found.first { $0.imapHost == host }?.username
+            candidates = [IMAPServer(imapHost: host, imapPort: Int(imapPort) ?? 993,
+                                     smtpHost: smtpHost.trimmingCharacters(in: .whitespaces).lowercased(),
+                                     smtpPort: outPort, smtpSecurity: outPort == 465 ? .tls : .startTLS, username: username)]
         } else {
             candidates = found
         }

@@ -157,6 +157,11 @@ public actor IMAPConnection {
 
     /// UIDs in the selected folder whose Message-ID is `messageID`: how a
     /// message is found again after it moved (UIDs are per folder).
+    /// UIDs of the flagged messages in the selected folder.
+    public func searchFlagged() async throws -> [UInt32] {
+        try await run(.uidSearch(key: .flagged), folder: selectedFolder ?? "").searchResults
+    }
+
     /// UIDs in the selected folder where `name` (or an address) appears in
     /// From, To or Cc.
     public func search(person name: String) async throws -> [UInt32] {
@@ -386,6 +391,10 @@ final class ResponseQueue: @unchecked Sendable {
     private var buffered: [Response] = []
     private var finished: Error?? = nil
     private var waiter: CheckedContinuation<Response?, Error>?
+    /// Which `take` the waiter belongs to, so a late cancellation of one
+    /// never ends another's wait.
+    private var waiterID = 0
+    private var nextWaiterID = 0
 
     func push(_ response: Response) {
         lock.lock()
@@ -443,17 +452,33 @@ final class ResponseQueue: @unchecked Sendable {
         }
     }
 
+    /// Cancellable: a stopped task used to stay suspended here for good
+    /// (the IDLE watch, each time Corres left the screen), and a second
+    /// `take` replaced the first one's waiter without ever waking it.
     private func take() async throws -> Response? {
-        try await withCheckedThrowingContinuation { continuation in
-            lock.lock()
-            if !buffered.isEmpty { let r = buffered.removeFirst(); lock.unlock(); continuation.resume(returning: r); return }
-            if let done = finished {
+        let id = lock.withLock { nextWaiterID += 1; return nextWaiterID }
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                lock.lock()
+                if !buffered.isEmpty { let r = buffered.removeFirst(); lock.unlock(); continuation.resume(returning: r); return }
+                if let done = finished {
+                    lock.unlock()
+                    if let error = done { continuation.resume(throwing: error) } else { continuation.resume(returning: nil) }
+                    return
+                }
+                if Task.isCancelled { lock.unlock(); continuation.resume(throwing: CancellationError()); return }
+                let replaced = waiter
+                waiter = continuation
+                waiterID = id
                 lock.unlock()
-                if let error = done { continuation.resume(throwing: error) } else { continuation.resume(returning: nil) }
-                return
+                replaced?.resume(throwing: QuietSignal())
             }
-            waiter = continuation
+        } onCancel: {
+            lock.lock()
+            guard waiterID == id, let waiter else { lock.unlock(); return }
+            self.waiter = nil
             lock.unlock()
+            waiter.resume(throwing: CancellationError())
         }
     }
 }

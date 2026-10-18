@@ -362,13 +362,21 @@ struct IMAPMailClient: Sendable {
             .replacingOccurrences(of: "\n", with: "\r\n").utf8)
         return try await IMAPSessions.shared.with(account) { session in
             guard let drafts = session.cachedFolders.drafts else { throw ClientError.refused(statusCode: 0, reason: nil, message: "No Drafts folder.") }
-            if let existingID, let old = Self.parse(existingID) {
-                try await session.connection.select(old.path)
-                try await session.connection.setFlags(["\\Deleted"], uids: [old.uid], add: true)
-                try await session.connection.expungeIfPossible(uids: [old.uid])
-            }
-            let uid = try await session.connection.append(message, to: drafts, flags: ["\\Draft", "\\Seen"])
+            // The new copy first, then the old one goes: if saving fails,
+            // the last saved draft is still there.
+            var uid = try await session.connection.append(message, to: drafts, flags: ["\\Draft", "\\Seen"])
             let selected = try await session.connection.select(drafts)
+            // Servers without UIDPLUS don't say where it went: find it by
+            // its Message-ID, or the draft could never be replaced or
+            // cleared after sending.
+            if uid == nil, let messageID = Self.messageID(ofMessage: Self.mime(fromRaw: raw)) {
+                uid = try await session.connection.search(messageID: messageID).max()
+            }
+            if let existingID, let old = Self.parse(existingID), old.uid != uid || old.path != drafts {
+                try? await session.connection.select(old.path)
+                try? await session.connection.setFlags(["\\Deleted"], uids: [old.uid], add: true)
+                try? await session.connection.expungeIfPossible(uids: [old.uid])
+            }
             return uid.map { "\(selected.uidValidity):\($0):\(drafts)" } ?? ""
         }
     }
@@ -400,17 +408,24 @@ struct IMAPMailClient: Sendable {
                 if addLabelIds.contains("STARRED") { try await session.connection.setFlags(["\\Flagged"], uids: uids, add: true) }
                 if removeLabelIds.contains("STARRED") { try await session.connection.setFlags(["\\Flagged"], uids: uids, add: false) }
                 var destination: String?
-                if addLabelIds.contains("SPAM") { destination = folders.junk }
-                else if removeLabelIds.contains("INBOX"), path == folders.inbox { destination = folders.archive }
+                // Your own copies stay put, as in Outlook: marking a
+                // conversation spam or filing it doesn't empty Sent.
+                let isYours = path == folders.sent || path == folders.drafts
+                if isYours { destination = nil }
+                else if addLabelIds.contains("SPAM") { destination = folders.junk }
                 else if let folder = addLabelIds.first(where: { $0.hasPrefix("folder:") }) { destination = String(folder.dropFirst(7)) }
+                else if removeLabelIds.contains("INBOX"), path == folders.inbox { destination = folders.archive }
                 if let destination, destination != path {
                     try await session.connection.move(uids: uids, to: destination)
                     await IMAPCache.shared.forget(group.map(\.raw), account: account)
                 }
             }
             if addLabelIds.contains("INBOX") {
-                try await Self.bringBack(conversation: threadId, from: [folders.archive, folders.trash, folders.junk].compactMap { $0 },
-                                         to: folders.inbox, session: session, account: account)
+                // From wherever it went: the Archive, Trash, Junk, or one of
+                // your own folders.
+                let own = session.allFolders.filter { $0.isSelectable && $0.role == nil && $0.path != "Notes" }.map(\.path)
+                let sources = [folders.archive, folders.trash, folders.junk].compactMap { $0 } + own
+                try await Self.bringBack(conversation: threadId, from: sources, to: folders.inbox, session: session, account: account)
             }
         }
     }
@@ -436,13 +451,19 @@ struct IMAPMailClient: Sendable {
         }
     }
 
-    /// A conversation's messages: from what's been fetched this session, or,
-    /// after Corres restarts and that's gone, from iCloud itself, by the
-    /// Message-ID the conversation started with.
+    /// A conversation's messages, asked of the server each time and joined
+    /// with what's been fetched this session. The cache alone missed older
+    /// messages in the Archive, so opening showed part of a conversation
+    /// and archiving left the rest behind.
     static func messageKeys(inConversation conversation: String, account: String) async throws -> [Key] {
         let known = await IMAPCache.shared.keys(inConversation: conversation, account: account).compactMap(parse)
-        if !known.isEmpty { return known }
-        return try await IMAPSessions.shared.with(account) { session in
+        let searched = try await searchConversation(conversation, account: account)
+        var seen = Set(searched.map(\.raw))
+        return searched + known.filter { seen.insert($0.raw).inserted }
+    }
+
+    private static func searchConversation(_ conversation: String, account: String) async throws -> [Key] {
+        try await IMAPSessions.shared.with(account) { session in
             let folders = try await session.folders()
             var found: [Key] = []
             for path in [folders.inbox, folders.sent, folders.archive, folders.junk].compactMap({ $0 }) {
@@ -465,13 +486,19 @@ struct IMAPMailClient: Sendable {
         let messageIDs = await IMAPCache.shared.messageIDs(inConversation: conversation, account: account)
         for source in sources where source != inbox {
             try await session.connection.select(source)
-            var uids: [UInt32] = []
-            for id in messageIDs { uids += try await session.connection.search(messageID: id) }
-            guard !uids.isEmpty else { continue }
+            // By the conversation too: after a restart nothing is cached.
+            var matched = Set(try await session.connection.search(conversation: conversation))
+            for id in messageIDs { matched.formUnion(try await session.connection.search(messageID: id)) }
+            guard !matched.isEmpty else { continue }
+            let uids = Array(matched)
             // Out of Junk: tell iCloud's filter it was wrong, as Apple Mail does.
             if source == session.cachedFolders.junk { try? await session.connection.setFlags(["$NotJunk"], uids: uids, add: true) }
             try await session.connection.move(uids: uids, to: inbox)
         }
+        // Their old places are gone; the next action asks the server again.
+        let stale = await IMAPCache.shared.keys(inConversation: conversation, account: account)
+            .filter { parse($0)?.path != inbox }
+        await IMAPCache.shared.forget(stale, account: account)
     }
 
     // MARK: Settings and folders
@@ -519,8 +546,24 @@ struct IMAPMailClient: Sendable {
     func listMailbox(labelId: String?, account: String, pageToken: String?, pageSize: Int) async throws -> (items: [Correspondence], nextPageToken: String?) {
         let page: (keys: [String], next: String?) = try await IMAPSessions.shared.with(account) { session in
             let folders = session.cachedFolders
+            // Flagged is a flag, not a folder: the newest flagged mail in
+            // the Inbox and the Archive, where you'd have left it.
+            if labelId == "STARRED" {
+                var keys: [String] = []
+                for path in [folders.inbox, folders.archive].compactMap({ $0 }) {
+                    let selected = try await session.connection.select(path)
+                    let uids = try await session.connection.searchFlagged().sorted(by: >).prefix(pageSize)
+                    guard !uids.isEmpty else { continue }
+                    let messages = try await session.connection.fetchSummaries(uids: Array(uids))
+                    await IMAPCache.shared.keep(messages, uidValidity: selected.uidValidity, account: account)
+                    keys += messages.map { Self.key($0, uidValidity: selected.uidValidity) }
+                }
+                return (keys, nil)
+            }
             let path: String? = switch labelId {
-            case nil, "INBOX": folders.inbox
+            case "INBOX": folders.inbox
+            // All Mail: what you've archived (the Inbox is Mail itself).
+            case nil: folders.archive ?? folders.inbox
             case "SENT": folders.sent
             case "TRASH": folders.trash
             case "SPAM": folders.junk
@@ -537,7 +580,8 @@ struct IMAPMailClient: Sendable {
             let nextEnd = end - pageSize
             return (keys, nextEnd >= 1 ? String(nextEnd) : nil)
         }
-        return (try await fetchMetadata(ids: page.keys, account: account).items, page.next)
+        let items = try await fetchMetadata(ids: page.keys, account: account).items
+        return (items.sorted { $0.receivedAt > $1.receivedAt }, page.next)
     }
 
     func listDrafts(account: String, pageToken: String?, pageSize: Int) async throws -> (items: [(draftID: String, message: Correspondence)], nextPageToken: String?) {

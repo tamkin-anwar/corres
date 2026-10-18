@@ -226,10 +226,14 @@ enum MailServerDiscovery {
         guard let imap = parser.servers.first(where: { $0.kind == "incoming" && $0.type == "imap" && $0.socket == "SSL" }),
               let smtp = parser.servers.first(where: { $0.kind == "outgoing" && $0.type == "smtp" && $0.socket != "plain" }) else { return nil }
         let local = address.split(separator: "@").first.map(String.init) ?? address
-        let username = imap.username
-            .replacingOccurrences(of: "%EMAILADDRESS%", with: address)
-            .replacingOccurrences(of: "%EMAILLOCALPART%", with: local)
-        return IMAPServer(imapHost: imap.host, imapPort: imap.port ?? 993, smtpHost: smtp.host,
+        let domain = address.split(separator: "@").last.map(String.init) ?? ""
+        func fill(_ text: String) -> String {
+            text.replacingOccurrences(of: "%EMAILADDRESS%", with: address)
+                .replacingOccurrences(of: "%EMAILLOCALPART%", with: local)
+                .replacingOccurrences(of: "%EMAILDOMAIN%", with: domain)
+        }
+        let username = fill(imap.username)
+        return IMAPServer(imapHost: fill(imap.host), imapPort: imap.port ?? 993, smtpHost: fill(smtp.host),
                           smtpPort: smtp.port ?? (smtp.socket == "SSL" ? 465 : 587),
                           smtpSecurity: smtp.socket == "SSL" ? .tls : .startTLS,
                           username: username.isEmpty || username.lowercased() == address.lowercased() ? nil : username)

@@ -162,11 +162,13 @@ final class GmailSyncService {
         do {
             let (plan, isFullListing) = try await planSync(account: account)
             var stillMissing = Set<String>()
+            var listed: [Correspondence] = []
 
             for chunk in plan.messageIDs.chunked(into: GmailAPIClient.batchSize) {
                 let fetched = try await client.fetchMetadata(ids: chunk, account: account)
                 stillMissing.formUnion(fetched.failedIDs)
                 try await repository.upsert(fetched.items, isInitialSync: isFullListing)
+                if isFullListing { listed += fetched.items }
                 syncProgress += 1
             }
 
@@ -182,6 +184,9 @@ final class GmailSyncService {
             // After upsert, so a message that arrived and was then archived
             // elsewhere within the same window ends up removed, not re-added.
             try await repository.applyRemoteChanges(plan.remoteChanges)
+            // Every listed message accounted for, or a missing one would
+            // look deleted.
+            if isFullListing, stillMissing.isEmpty { try await reconcile(account: account, listed: listed) }
 
             // Ids a previous sync couldn't fetch, retried here independent
             // of the cursor/history window: by now the cursor has already
@@ -231,6 +236,30 @@ final class GmailSyncService {
                 .error("Sync failed: \(String(describing: error), privacy: .public)")
             errorMessage = "Couldn't sync your mail. Check your connection and try again."
             return false
+        }
+    }
+
+    /// A full listing (first sync, or history the server no longer keeps)
+    /// carries no list of changes, and upsert leaves mail it already has
+    /// alone. So mail read, archived or deleted elsewhere while the cursor
+    /// was too old stayed as it was. Brings what's stored in line with the
+    /// listing, but only between its oldest and newest Inbox mail: older
+    /// mail wasn't listed, and newer mail arrived after it.
+    private func reconcile(account: String, listed: [Correspondence]) async throws {
+        try await repository.applyRemoteChanges(listed.compactMap { item in
+            item.latestMessageID.map { RemoteMessageChange(threadID: item.id, messageID: $0, currentLabelIds: item.labelIds, removed: false) }
+        })
+        let inboxDates = listed.filter { $0.labelIds.contains("INBOX") }.map(\.receivedAt)
+        guard let oldest = inboxDates.min(), let newest = inboxDates.max() else { return }
+        let listedIDs = Set(listed.map(\.id))
+        let gone = try await repository.threads().filter { thread in
+            thread.id.account == account && thread.labelIds.contains("INBOX") && !listedIDs.contains(thread.id)
+                && thread.receivedAt >= oldest && thread.receivedAt <= newest
+        }
+        for thread in gone { try await repository.remove(thread.id) }
+        if !gone.isEmpty {
+            Logger(subsystem: "studio.anwarcreative.corres", category: "sync")
+                .info("Full listing removed \(gone.count) conversations gone elsewhere")
         }
     }
 
