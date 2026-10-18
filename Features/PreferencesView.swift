@@ -537,7 +537,9 @@ private struct AccountDetailView: View {
                 } header: {
                     Text("Notifications")
                 } footer: {
-                    Text(notifyFooter)
+                    Text(provider == .icloud
+                         ? notifyFooter + " iCloud tells only Apple Mail the moment mail arrives, so Corres checks whenever iOS lets it, usually within the hour, and instantly while it's open."
+                         : notifyFooter)
                 }
             }
             Section {

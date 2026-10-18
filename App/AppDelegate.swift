@@ -177,8 +177,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         let request = BGAppRefreshTaskRequest(identifier: Self.backgroundRefreshIdentifier)
         // Sooner when an email is scheduled to go: iOS treats this as the
         // earliest moment, so the send isn't held up by a 4-hour wait.
-        let fourHours = Date(timeIntervalSinceNow: 4 * 60 * 60)
-        request.earliestBeginDate = ScheduledSends.shared.nextSendAt.map { min(max($0, .now), fourHours) } ?? fourHours
+        // With iCloud connected, as often as iOS allows: it's how iCloud
+        // mail is noticed while Corres is closed. Gmail and Outlook push.
+        let hasICloud = (UserDefaults.standard.stringArray(forKey: "corres.connectedAccounts") ?? [])
+            .contains { MailAccounts.provider(for: $0) == .icloud }
+        let usual = Date(timeIntervalSinceNow: hasICloud ? 15 * 60 : 4 * 60 * 60)
+        request.earliestBeginDate = ScheduledSends.shared.nextSendAt.map { min(max($0, .now), usual) } ?? usual
         try? BGTaskScheduler.shared.submit(request)
     }
 
@@ -186,6 +190,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         Self.scheduleBackgroundRefresh()
         let work = Task {
             if store.state != .loaded { await store.load() }
+            // iCloud has no push for apps: this is when its new mail is
+            // found and notified while Corres is closed.
+            let icloud = auth.accounts.map(\.email).filter { MailAccounts.provider(for: $0) == .icloud }
+            if !icloud.isEmpty { _ = await syncAndNotify(accounts: icloud) }
             await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
             await FollowUps.shared.check(store: store)
             await pushService.renewWatch(accounts: auth.accounts.map(\.email))
@@ -229,8 +237,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // already unread before this sync (the person just hasn't gotten
         // to it yet) must not re-trigger a notification every time
         // something else in the account also changes.
+        guard await syncAndNotify(accounts: auth.accounts.map(\.email)) else { return .noData }
+        return .newData
+    }
+
+    /// Syncs `accounts` and notifies about what's newly arrived, by each
+    /// account's notification choice. A push for Gmail or Outlook runs it
+    /// for every account; background refresh runs it for iCloud, which has
+    /// no push for apps.
+    private func syncAndNotify(accounts: [String]) async -> Bool {
         let previousUnread = Dictionary(store.threads.map { ($0.id, $0.isUnread) }, uniquingKeysWith: { first, _ in first })
-        guard await sync.syncAll(accounts: auth.accounts.map(\.email)) else { return .noData }
+        guard await sync.syncAll(accounts: accounts) else { return false }
         await store.load()
         // A push is also a chance to send what's scheduled, and to see
         // whether a follow-up reminder is due or answered.
@@ -265,7 +282,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             .filter { thread in CorresFocusFilter.activeAccount.map { $0 == thread.id.account } ?? true }
         pushService.notifyAboutNewMail(toNotify)
         WidgetBridge.update(from: store.threads)
-        return .newData
+        return true
     }
 
     /// The `Bool` is whether this had to fall back to the in-memory
