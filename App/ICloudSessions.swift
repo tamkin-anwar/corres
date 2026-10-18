@@ -87,6 +87,18 @@ actor ICloudSessions {
             case .commandFailed(let message):
                 throw GmailAPIClient.ClientError.refused(statusCode: 0, reason: nil, message: message)
             }
+        } catch let error as GmailAPIClient.ClientError {
+            throw error
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            // Anything else from the network layer (a write on a closed
+            // connection): this session is spent, so the next call opens
+            // a fresh one instead of failing forever.
+            Self.log.error("iCloud connection error: \(String(describing: error), privacy: .public)")
+            sessions[account] = nil
+            await session.connection.logout()
+            throw GmailAPIClient.ClientError.badResponse(statusCode: 0)
         }
     }
 
