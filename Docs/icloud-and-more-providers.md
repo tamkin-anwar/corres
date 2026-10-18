@@ -238,3 +238,46 @@ Pieces, in build order:
   star, archive, junk, trash and folders. Still to do: a live test with a
   real app-specific password, including whether Sent ends up with two
   copies.
+
+## Making iCloud feel built in (research, 2026-10-17)
+
+What Apple Mail does that other apps don't, and how Corres matches it:
+
+1. Sign-in in about 30 seconds. Address first, then account.apple.com in
+   an in-app browser window (Face ID and saved passwords work there), and
+   a Paste button that skips iOS's paste prompt and connects as soon as
+   it sees a four-by-four app-specific password. Accept @icloud.com,
+   @me.com and @mac.com. Clear errors for the Apple Account password, an
+   alias instead of the main address, and two-factor authentication off.
+2. Reconnect without hunting. Changing the Apple Account password revokes
+   every app-specific password; Corres shows "iCloud needs a new password"
+   and opens the same sheet.
+3. Every alias, without setup. iCloud allows three @icloud.com aliases and
+   iCloud+ custom-domain addresses, all sent through smtp.mail.me.com while
+   signed in as the main address. IMAP doesn't list them, so Corres learns
+   them from the addresses mail arrives at and Sent's From lines, offers
+   them in From, and replies from whichever address was written to.
+4. Hide My Email handled. Mail to a Hide My Email address arrives from a
+   relay address; Corres shows the real sender and replies to the relay,
+   so the person never sees your real address. New mail from Hide My Email
+   isn't possible over SMTP; Corres doesn't offer it.
+5. Folders as Apple names them. Sent Messages, Deleted Messages, Junk,
+   Archive, Drafts; hide the legacy Notes folder. Not Junk = move to Inbox
+   (Apple's own instruction for other apps); junk mail is deleted by Apple
+   after 30 days, so Corres says so on the Junk screen.
+6. Sent mail filed exactly once. iCloud doesn't keep mail sent over SMTP,
+   so Corres appends one copy to Sent Messages (verified 2026-10-17).
+7. Instant notifications. Apple's own push (XAPPLEPUSHSERVICE) is private
+   to Apple Mail. Corres keeps IDLE open while in the foreground (new mail
+   in a second), background refresh otherwise, and the opt-in relay (step
+   4) for instant alerts when closed.
+8. Server rules respected. iCloud rules run before any app sees the mail;
+   when something seems missing, Corres can say "iCloud may have filed
+   this; check Junk, Archive and your rules at icloud.com".
+9. Contacts. Device Contacts already include iCloud contacts on the
+   person's iPhone, so suggestions and names need nothing extra.
+
+Sources: support.apple.com/102654 (app-specific passwords),
+support.apple.com/102525 (server settings), support.apple.com/ht202315
+(junk), sparkmailapp.com/add-icloud-ios, developer.apple.com/forums/thread/778671
+(XAPPLEPUSHSERVICE).
