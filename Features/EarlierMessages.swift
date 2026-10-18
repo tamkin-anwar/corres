@@ -112,7 +112,7 @@ struct EarlierMessages: View {
         var kept: [Substring] = []
         for line in body.split(separator: "\n", omittingEmptySubsequences: false) {
             if line.hasPrefix(">") { continue }
-            if line.range(of: #"^On .+ wrote:\s*$"#, options: .regularExpression) != nil { break }
+            if line.patternRange(#"^On .+ wrote:\s*$"#) != nil { break }
             kept.append(line)
         }
         return kept.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)

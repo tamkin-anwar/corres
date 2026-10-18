@@ -154,14 +154,14 @@ final class RichEditorController {
 
     static func listPrefix(of line: String, numbered: Bool) -> String? {
         if numbered {
-            return line.range(of: #"^\d{1,3}\. "#, options: .regularExpression).map { String(line[$0]) }
+            return line.patternRange(#"^\d{1,3}\. "#).map { String(line[$0]) }
         }
         return line.hasPrefix("• ") ? "• " : nil
     }
 
     static func stripListPrefix(_ line: String) -> String {
         if line.hasPrefix("• ") { return String(line.dropFirst(2)) }
-        if let match = line.range(of: #"^\d{1,3}\. "#, options: .regularExpression) { return String(line[match.upperBound...]) }
+        if let match = line.patternRange(#"^\d{1,3}\. "#) { return String(line[match.upperBound...]) }
         return line
     }
 }

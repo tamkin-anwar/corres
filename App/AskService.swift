@@ -193,8 +193,7 @@ final class AskService {
                 else if query.topic != .travel { return nil }
             }
             if query.topic == .travel, score == 0,
-               (head + " " + body).range(of: #"\b(flight|itinerary|boarding|reservation|confirmation|check-?in|departs?)\b"#,
-                                          options: .regularExpression) == nil { return nil }
+               (head + " " + body).patternRange(#"\b(flight|itinerary|boarding|reservation|confirmation|check-?in|departs?)\b"#) == nil { return nil }
             // Promotions rarely answer a question ("next flight" should find
             // the booking, not the airline's sale), so they rank last.
             if InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == .promotions {
@@ -249,8 +248,7 @@ final class AskService {
         }
         let travel = threads.contains { thread in
             now.timeIntervalSince(thread.receivedAt) < 120 * 86_400
-                && (thread.subject + " " + thread.excerpt).range(of: #"(?i)\b(flight|itinerary|boarding pass|e-?ticket)\b"#,
-                                                                options: .regularExpression) != nil
+                && (thread.subject + " " + thread.excerpt).patternRange(#"(?i)\b(flight|itinerary|boarding pass|e-?ticket)\b"#) != nil
         }
         if travel { result.insert("When is my next flight?", at: 0) }
         // Only offered when it would find something.
@@ -269,8 +267,7 @@ final class AskService {
     /// An address nobody reads (no-reply, notifications), so not a person.
     static func isNoReply(_ email: String?) -> Bool {
         guard let local = email?.lowercased().components(separatedBy: "@").first else { return false }
-        return local.range(of: #"^(no[-_.]?reply|do[-_.]?not[-_.]?reply|notifications?|notify|mailer(-daemon)?|bounces?|alerts?|updates?)\b"#,
-                           options: .regularExpression) != nil
+        return local.patternRange(#"^(no[-_.]?reply|do[-_.]?not[-_.]?reply|notifications?|notify|mailer(-daemon)?|bounces?|alerts?|updates?)\b"#) != nil
     }
 
     @available(iOS 26.0, *)

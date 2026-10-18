@@ -626,7 +626,7 @@ struct ConversationView: View {
         case .quiet:
             // The reason often ends by saying so itself ("Marketing
             // newsletter, no action needed"); say it once.
-            let reason = thread.reason.replacingOccurrences(of: #"(?i)[\s,;.—–-]*no action (is )?needed[.!]?"#, with: "", options: .regularExpression)
+            let reason = thread.reason.replacingPattern(#"(?i)[\s,;.—–-]*no action (is )?needed[.!]?"#, with: "")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             return reason.isEmpty ? "No action needed." : "No action needed: \(reason)"
         default: return thread.reason.isEmpty ? thread.attention.title : "\(thread.attention.title): \(thread.reason)"

@@ -751,7 +751,7 @@ struct GmailAPIClient {
            let seconds = Double(header.trimmingCharacters(in: .whitespaces)) {
             return max(0, seconds)
         }
-        guard let message, let range = message.range(of: #"Retry after (\S+)"#, options: .regularExpression) else { return nil }
+        guard let message, let range = message.patternRange(#"Retry after (\S+)"#) else { return nil }
         let stamp = message[range].dropFirst("Retry after ".count).trimmingCharacters(in: CharacterSet(charactersIn: ". "))
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]

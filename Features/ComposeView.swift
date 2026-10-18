@@ -367,7 +367,7 @@ struct ComposeView: View {
     /// The person's own words, without the quoted original below them:
     /// only this part is ever rewritten.
     private var ownText: (text: String, quote: String) {
-        guard let marker = draft.body.range(of: #"\n\nOn .+ wrote:\n"#, options: .regularExpression) else {
+        guard let marker = draft.body.patternRange(#"\n\nOn .+ wrote:\n"#) else {
             return (draft.body, "")
         }
         return (String(draft.body[..<marker.lowerBound]), String(draft.body[marker.lowerBound...]))
@@ -577,7 +577,7 @@ struct ComposeView: View {
     /// Mail places it.
     static func adding(signature: String, to body: String) -> String {
         guard !signature.isEmpty, !body.contains(signature) else { return body }
-        if let quote = body.range(of: #"\n\nOn .+ wrote:\n"#, options: .regularExpression) {
+        if let quote = body.patternRange(#"\n\nOn .+ wrote:\n"#) {
             var result = body
             result.insert(contentsOf: "\n\n" + signature, at: quote.lowerBound)
             return result
@@ -1122,7 +1122,7 @@ struct ComposeView: View {
             // rather than refused. Videos and files keep their size.
             if draft.attachmentsSizeBytes + file.data.count > sendingProvider.attachmentLimit,
                file.mimeType.hasPrefix("image/"), let smaller = AttachmentFiles.shrunk(file.data) {
-                file = (file.filename.replacingOccurrences(of: #"\.[A-Za-z0-9]+$"#, with: ".jpg", options: .regularExpression),
+                file = (file.filename.replacingPattern(#"\.[A-Za-z0-9]+$"#, with: ".jpg"),
                         "image/jpeg", smaller)
                 shrank += 1
             }

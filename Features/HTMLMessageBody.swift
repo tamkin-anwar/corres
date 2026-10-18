@@ -563,8 +563,8 @@ struct HTMLMessageBody: UIViewRepresentable {
             guard let tagRange = Range(match.range, in: html) else { return count }
             let tag = html[tagRange].lowercased()
             guard tag.contains("http") else { return count }
-            let tiny = tag.range(of: #"\b(width|height)\s*=\s*["']?[0-2](px)?["'\s>/]"#, options: .regularExpression) != nil
-                || tag.range(of: #"(width|height)\s*:\s*[0-2]px"#, options: .regularExpression) != nil
+            let tiny = tag.patternRange(#"\b(width|height)\s*=\s*["']?[0-2](px)?["'\s>/]"#) != nil
+                || tag.patternRange(#"(width|height)\s*:\s*[0-2]px"#) != nil
                 || tag.contains("display:none") || tag.contains("display: none")
             let knownHost = trackerHosts.contains { tag.contains($0) }
             return count + (tiny || knownHost ? 1 : 0)
@@ -597,7 +597,7 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// directly from ConversationView's body).
     private static let remoteImgSrcRegex = try? NSRegularExpression(
         pattern: #"(<img\b[^>]*\bsrc\s*=\s*)(["'])https?://[^"']*\2"#, options: [.caseInsensitive])
-    private static let transparentPixelDataURI = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+    private static let transparentPixelDataURI = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
 
     /// Real HTML mail bodies routinely carry their own
     /// `<meta name="viewport" ...>` (boilerplate from whatever template
@@ -651,16 +651,14 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// text, or a style sheet (marketing, receipts, notifications, and
     /// mail from Outlook). Plain mail from Gmail or Mail has none of these.
     static func isDesigned(_ html: String) -> Bool {
-        html.range(of: #"bgcolor\s*=|background(-color)?\s*:\s*(#|rgb|white)|<style[\s>]"#,
-                   options: [.regularExpression, .caseInsensitive]) != nil
+        html.patternRange(#"bgcolor\s*=|background(-color)?\s*:\s*(#|rgb|white)|<style[\s>]"#, caseInsensitive: true) != nil
     }
 
     /// Designed mail with its own Dark mode styles: a
     /// `prefers-color-scheme: dark` rule, or a `color-scheme` that
     /// includes dark.
     static func hasOwnDarkMode(_ html: String) -> Bool {
-        html.range(of: #"prefers-color-scheme\s*:\s*dark|color-schemes?["']?\s*(content\s*=\s*["']|:)[^"';>]*dark"#,
-                   options: [.regularExpression, .caseInsensitive]) != nil
+        html.patternRange(#"prefers-color-scheme\s*:\s*dark|color-schemes?["']?\s*(content\s*=\s*["']|:)[^"';>]*dark"#, caseInsensitive: true) != nil
     }
 
     enum BodyKind { case plain, designed, designedWithDarkMode }
@@ -697,10 +695,10 @@ struct HTMLMessageBody: UIViewRepresentable {
             for match in links.matches(in: result, range: NSRange(location: 0, length: ns.length)) {
                 let tag = ns.substring(with: match.range)
                 let lower = tag.lowercased()
-                let remote = lower.range(of: #"href\s*=\s*["']?\s*(https?:)?//"#, options: .regularExpression) != nil
-                let isSheet = lower.range(of: #"rel\s*=\s*["']?[^"'>]*stylesheet"#, options: .regularExpression) != nil
+                let remote = lower.patternRange(#"href\s*=\s*["']?\s*(https?:)?//"#) != nil
+                let isSheet = lower.patternRange(#"rel\s*=\s*["']?[^"'>]*stylesheet"#) != nil
                 // Hints that only open connections to the sender's servers.
-                let isHint = lower.range(of: #"rel\s*=\s*["']?[^"'>]*(preconnect|dns-prefetch|prefetch|preload|icon)"#, options: .regularExpression) != nil
+                let isHint = lower.patternRange(#"rel\s*=\s*["']?[^"'>]*(preconnect|dns-prefetch|prefetch|preload|icon)"#) != nil
                 guard remote, isSheet || isHint else { continue }
                 kept += ns.substring(with: NSRange(location: last, length: match.range.location - last))
                 last = match.range.location + match.range.length
@@ -716,7 +714,7 @@ struct HTMLMessageBody: UIViewRepresentable {
             }
             result = imports.stringByReplacingMatches(in: result, range: NSRange(location: 0, length: ns.length), withTemplate: "")
         }
-        result = result.replacingOccurrences(of: #"(?i)@font-face\s*\{"#, with: "@font-face{font-display:swap;", options: .regularExpression)
+        result = result.replacingPattern(#"(?i)@font-face\s*\{"#, with: "@font-face{font-display:swap;")
         return (result, urls.map { $0.hasPrefix("//") ? "https:" + $0 : $0 })
     }
 
@@ -725,7 +723,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         pattern: #"@import\s+(?:url\(\s*)?["']?((?:https?:)?//[^"')\s;]+)["']?\s*\)?[^;{}]*;"#, options: [.caseInsensitive])
 
     private static func attribute(_ name: String, in tag: String) -> String? {
-        guard let range = tag.range(of: name + #"\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)"#, options: [.regularExpression, .caseInsensitive]) else { return nil }
+        guard let range = tag.patternRange(name + #"\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)"#, caseInsensitive: true) else { return nil }
         let value = tag[range].split(separator: "=", maxSplits: 1).last.map(String.init) ?? ""
         return value.trimmingCharacters(in: CharacterSet(charactersIn: "\"' ")).replacingOccurrences(of: "&amp;", with: "&")
     }

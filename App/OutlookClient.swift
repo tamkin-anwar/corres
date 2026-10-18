@@ -469,7 +469,7 @@ struct OutlookClient: Sendable {
         // Every Outlook account starts with six colour categories nobody
         // named ("Blue category"); left as they came, they're clutter.
         let categories = ((try? await getJSON("\(Self.base)/me/outlook/masterCategories", account: account) as GraphPage<GraphCategory>)?.value ?? [])
-            .filter { $0.displayName.range(of: #"^(Blue|Green|Orange|Purple|Red|Yellow) category$"#, options: .regularExpression) == nil }
+            .filter { $0.displayName.patternRange(#"^(Blue|Green|Orange|Purple|Red|Yellow) category$"#) == nil }
         return folders.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             + categories.map { GmailUserLabel(id: "cat:\($0.displayName)", name: $0.displayName) }
     }
@@ -763,9 +763,9 @@ struct OutlookClient: Sendable {
         while base64.count % 4 != 0 { base64 += "=" }
         guard let data = Data(base64Encoded: String(base64.prefix(8_000 - 8_000 % 4))),
               let head = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1),
-              let range = head.range(of: #"(?im)^Message-ID:\s*<([^>]+)>"#, options: .regularExpression) else { return nil }
+              let range = head.patternRange(#"(?im)^Message-ID:\s*<([^>]+)>"#) else { return nil }
         let line = String(head[range])
-        return line.range(of: #"<([^>]+)>"#, options: .regularExpression).map { String(line[$0]).trimmingCharacters(in: CharacterSet(charactersIn: "<>")) }
+        return line.patternRange(#"<([^>]+)>"#).map { String(line[$0]).trimmingCharacters(in: CharacterSet(charactersIn: "<>")) }
     }
 }
 
