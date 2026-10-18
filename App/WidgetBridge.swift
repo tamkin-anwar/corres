@@ -18,7 +18,7 @@ enum WidgetBridge {
     /// sorts here landed in the middle of each swipe's animation.
     static func scheduleUpdate(from threads: [Correspondence]) {
         pendingUpdate?.cancel()
-        let badge = CorresSettings.badge
+        let badge = BadgeInputs.current(threads)
         pendingUpdate = Task {
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
@@ -32,7 +32,33 @@ enum WidgetBridge {
     /// (background refresh, a changed setting).
     static func update(from threads: [Correspondence]) {
         pendingUpdate?.cancel()
-        apply(build(from: threads, now: .now, badge: CorresSettings.badge))
+        apply(build(from: threads, now: .now, badge: BadgeInputs.current(threads)))
+    }
+
+    /// What the badge counts, gathered on the main actor (your lessons and
+    /// which accounts are in All Inboxes), so the count itself can run off it.
+    struct BadgeInputs: Sendable {
+        let kind: CorresSettings.Badge
+        /// Accounts left out of All Inboxes are left out of the badge too.
+        let hiddenAccounts: Set<String>
+        /// Where you've moved an email or sender, for Primary.
+        let categoryOverrides: [ThreadID: InboxCategory]
+        let since: Date?
+
+        @MainActor static func current(_ threads: [Correspondence]) -> BadgeInputs {
+            let kind = CorresSettings.badge
+            let accounts = UserDefaults.standard.stringArray(forKey: "corres.connectedAccounts") ?? []
+            let hidden = Set(accounts.filter { !AccountPreferences.showsInAllInboxes($0) })
+            var overrides: [ThreadID: InboxCategory] = [:]
+            if kind == .primary {
+                for thread in threads where thread.isUnread {
+                    if let category = SenderLessons.category(for: thread) { overrides[thread.id] = category }
+                }
+            }
+            let since = UserDefaults.standard.object(forKey: CorresSettings.lastLeftKey) as? Date
+            return BadgeInputs(kind: kind, hiddenAccounts: hidden.count < accounts.count ? hidden : [],
+                               categoryOverrides: overrides, since: since)
+        }
     }
 
     private struct Built: Sendable {
@@ -40,7 +66,7 @@ enum WidgetBridge {
         let badge: Int
     }
 
-    nonisolated private static func build(from threads: [Correspondence], now: Date, badge: CorresSettings.Badge) -> Built {
+    nonisolated private static func build(from threads: [Correspondence], now: Date, badge: BadgeInputs) -> Built {
         let needs = MailQuery.prioritized(threads, attention: .needsYou, now: now)
         let waiting = MailQuery.prioritized(threads, attention: .waiting, now: now)
         let unread = MailQuery.filter(threads, now: now).filter(\.isUnread).count
@@ -59,10 +85,21 @@ enum WidgetBridge {
         // Settings → Lists → App icon badge: what needs you (default, in
         // keeping with Corres), everything unread, or nothing. Sample mail
         // never badges the real app icon.
-        let count: Int = switch badge {
-        case .needsYou: needs.count
-        case .unread: unread
-        case .off: 0
+        let counted = badge.hiddenAccounts.isEmpty ? threads : threads.filter { !badge.hiddenAccounts.contains($0.id.account) }
+        let inbox = MailQuery.filter(counted, now: now).filter(\.isUnread)
+        let count: Int
+        switch badge.kind {
+        case .needsYou:
+            count = MailQuery.prioritized(counted, attention: .needsYou, now: now).count
+        case .primary:
+            let context = InboxCategory.context(for: counted)
+            count = inbox.filter { InboxCategory.of($0, override: badge.categoryOverrides[$0.id], context: context, now: now) == .primary }.count
+        case .unread:
+            count = inbox.count
+        case .new:
+            count = badge.since.map { since in inbox.filter { $0.receivedAt > since }.count } ?? 0
+        case .off:
+            count = 0
         }
         return Built(snapshot: snapshot, badge: isSample || threads.isEmpty ? 0 : count)
     }

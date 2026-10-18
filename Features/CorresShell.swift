@@ -176,8 +176,11 @@ struct CorresShell: View {
                     await FollowUps.shared.check(store: store)
                 }
                 watchICloud()
+                // New Since Last Opened: opening Corres clears it.
+                if CorresSettings.badge == .new { UserDefaults.standard.set(Date.now, forKey: CorresSettings.lastLeftKey); WidgetBridge.update(from: store.threads) }
             } else if phase == .background {
                 ICloudWatcher.shared.stopAll()
+                UserDefaults.standard.set(Date.now, forKey: CorresSettings.lastLeftKey)
             }
         }
         .task {

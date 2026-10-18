@@ -194,6 +194,7 @@ final class GmailSyncService {
             if !isFullListing { await backfillSentIfNeeded(account: account) }
             else { defaults.set(true, forKey: Self.sentBackfillKey(for: account)) }
             await repairSentPlaceholders(account: account)
+            errorMessage = nil
             return true
         } catch {
             Logger(subsystem: "studio.anwarcreative.corres", category: "sync")

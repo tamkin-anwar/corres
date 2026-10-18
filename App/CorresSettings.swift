@@ -94,16 +94,29 @@ enum CorresSettings {
 
     static let badgeKey = "corres.badge"
     enum Badge: String, CaseIterable, Identifiable {
-        case needsYou, unread, off
+        case needsYou, primary, unread, new, off
         var id: String { rawValue }
         var title: String {
             switch self {
             case .needsYou: "Needs You"
-            case .unread: "Unread"
+            case .primary: "Unread in Primary"
+            case .unread: "All Unread"
+            case .new: "New Since Last Opened"
             case .off: "Off"
             }
         }
+        var detail: String {
+            switch self {
+            case .needsYou: "Only what asks something of you, so the number means something."
+            case .primary: "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted."
+            case .unread: "Every unread email in your inbox, newsletters included."
+            case .new: "Mail that arrived since you last left Corres. Opening Corres clears it."
+            case .off: "No number on the icon."
+            }
+        }
     }
+    /// When Corres last went to the background, for the New badge.
+    static let lastLeftKey = "corres.lastLeft"
     static var badge: Badge { defaults.string(forKey: badgeKey).flatMap(Badge.init) ?? .needsYou }
 
     // MARK: Sorting

@@ -24,7 +24,7 @@ final class EntitlementStore {
         case none
         case monthly(renews: Date?, inTrial: Bool)
         case annual(renews: Date?, inTrial: Bool)
-        case lifetime(familyShared: Bool)
+        case lifetime(purchased: Date, familyShared: Bool)
 
         var title: String {
             switch self {
@@ -165,7 +165,7 @@ final class EntitlementStore {
             guard case .verified(let transaction) = result, transaction.revocationDate == nil else { continue }
             switch transaction.productID {
             case ProductID.lifetime:
-                best = .lifetime(familyShared: transaction.ownershipType == .familyShared)
+                best = .lifetime(purchased: transaction.originalPurchaseDate, familyShared: transaction.ownershipType == .familyShared)
             case ProductID.annual where !isLifetime(best):
                 best = .annual(renews: transaction.expirationDate, inTrial: Self.isTrial(transaction))
             case ProductID.monthly where best == .none:

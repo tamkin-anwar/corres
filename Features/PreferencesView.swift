@@ -147,7 +147,7 @@ struct PreferencesView: View {
                         settingLabel("Snippets", "text.badge.plus")
                     }
                     NavigationLink {
-                        NotificationSettingsView(auth: auth, pushService: pushService)
+                        NotificationSettingsView(auth: auth, pushService: pushService, store: store)
                     } label: {
                         LabeledContent {
                             Text(auth.accounts.isEmpty ? "Needs an Account" : (pushService.isEnabled ? "On" : "Off"))
@@ -212,12 +212,7 @@ struct PreferencesView: View {
             )) {
                 Button("OK", role: .cancel) { auth.errorMessage = nil }
             } message: { Text(auth.errorMessage ?? "Try again.") }
-            .alert("Couldn't Sync", isPresented: Binding(
-                get: { sync.errorMessage != nil },
-                set: { if !$0 { sync.errorMessage = nil } }
-            )) {
-                Button("OK", role: .cancel) { sync.errorMessage = nil }
-            } message: { Text(sync.errorMessage ?? "Try again.") }
+
         }
         // Self-sufficient: a distant .preferredColorScheme does not reliably
         // re-trait an already-presented sheet when the value changes.
@@ -281,8 +276,10 @@ struct PreferencesView: View {
         case .monthly(let renews, let inTrial), .annual(let renews, let inTrial):
             let date = renews.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "soon"
             return inTrial ? "Free trial · first charge \(date)" : "Renews \(date)"
-        case .lifetime(let familyShared):
-            return familyShared ? "One-time purchase · shared with you by family" : "One-time purchase · never renews"
+        case .lifetime(let purchased, let familyShared):
+            // What you have, as Apple's own purchase screens say it.
+            return familyShared ? "Shared by your family"
+                : "Yours for good · bought \(purchased.formatted(date: .abbreviated, time: .omitted))"
         }
     }
 
@@ -452,6 +449,9 @@ private struct AccountDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var confirmingRemoval = false
     @State private var syncing = false
+    /// Only a sync you asked for here reports failing: background syncs
+    /// retry on their own, and an old failure shouldn't greet you later.
+    @State private var syncFailed = false
     @State private var updatingICloudPassword = false
     @AppStorage private var nickname: String
     @AppStorage private var senderName: String
@@ -572,6 +572,7 @@ private struct AccountDetailView: View {
                     Task {
                         syncing = true
                         if await sync.syncIfConnected(account: account.email) { await store.refresh() }
+                        else if !sync.isSyncing { syncFailed = true }
                         syncing = false
                     }
                 } label: {
@@ -586,6 +587,13 @@ private struct AccountDetailView: View {
                     }
                 }
                 .disabled(syncing || sync.isSyncing)
+                .alert("Couldn't Sync", isPresented: $syncFailed) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text(provider == .icloud
+                         ? "\(provider.title) didn't answer. Check your connection, or update the app-specific password if it keeps happening."
+                         : "\(provider.title) didn't answer. Check your connection, or reconnect if it keeps happening.")
+                }
                 Button {
                     if provider == .icloud { updatingICloudPassword = true } else { Task { await auth.reconnect(account.email) } }
                 } label: {
@@ -1111,7 +1119,6 @@ private struct ListSettingsView: View {
     @AppStorage(CorresSettings.previewLinesKey) private var previewLines = 2
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
     @AppStorage(CorresSettings.summaryInListKey) private var summaryInList = false
-    @AppStorage(CorresSettings.badgeKey) private var badge = CorresSettings.Badge.needsYou.rawValue
 
     var body: some View {
         Form {
@@ -1127,19 +1134,11 @@ private struct ListSettingsView: View {
             } footer: {
                 Text("How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits. With summaries as preview, an email Corres has summarized shows its summary instead of its opening words. Part of Corres Pro.")
             }
-            Section {
-                Picker("App Icon Badge", selection: $badge) {
-                    ForEach(CorresSettings.Badge.allCases) { Text($0.title).tag($0.rawValue) }
-                }
-            } footer: {
-                Text("Needs You counts only what asks something of you, so the number means something. Badges need notifications to be allowed for Corres.")
-            }
         }
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
         .navigationTitle("Lists")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: badge) { WidgetBridge.update(from: store.threads) }
     }
 }
 
@@ -1423,6 +1422,8 @@ private struct NotificationSettingsView: View {
     @AppStorage(BriefNotifier.enabledKey) private var briefEnabled = false
     @AppStorage(BriefNotifier.hourKey) private var briefHour = 8
     @AppStorage(BriefNotifier.minuteKey) private var briefMinute = 0
+    @AppStorage(CorresSettings.badgeKey) private var badge = CorresSettings.Badge.needsYou.rawValue
+    var store: MailStore?
 
     private var briefTime: Binding<Date> {
         Binding(
@@ -1485,6 +1486,15 @@ private struct NotificationSettingsView: View {
                 }
                 }
             }
+            Section {
+                Picker("App Icon Badge", selection: $badge) {
+                    ForEach(CorresSettings.Badge.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+            } footer: {
+                Text((CorresSettings.Badge(rawValue: badge) ?? .needsYou).detail
+                     + " Accounts left out of All Inboxes aren't counted.")
+            }
+            .onChange(of: badge) { if let store { WidgetBridge.update(from: store.threads) } }
         }
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
