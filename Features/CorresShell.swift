@@ -272,7 +272,9 @@ struct CorresShell: View {
         foregroundSync?.cancel()
         foregroundSync = Task { [sync, store, auth] in
             while !Task.isCancelled {
-                let accounts = auth.accounts.map(\.email).filter { MailAccounts.provider(for: $0) != .icloud }
+                // iCloud too: its live connection watches only the Inbox,
+                // and a connection that quietly dropped would miss changes.
+                let accounts = auth.accounts.map(\.email)
                 if !accounts.isEmpty, await sync.syncAll(accounts: accounts) { await store.refresh() }
                 try? await Task.sleep(for: .seconds(60))
             }
