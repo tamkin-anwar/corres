@@ -569,6 +569,23 @@ struct SwiftDataMailRepositoryTests {
         #expect(moved.reason == InboxClassifier.promotedReason)
     }
 
+    /// A row promoted before promotions needed a reason goes back where its
+    /// rule put it, keeping that rule's reason.
+    @Test func reasonlessPromotionIsUndoneOnTheNextPass() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let id = ThreadID(account: "me@x.test", providerID: "old-promo")
+        let thread = Correspondence(id: id, sender: "Supabase", senderEmail: "ant@supabase.test", organization: "",
+                                    subject: "Your project is paused", excerpt: "", body: "", latestMessageID: "q1",
+                                    receivedAt: Date.now, dueAt: nil, reason: InboxClassifier.BulkKind.updates.reason,
+                                    attention: .quiet, isUnread: true, labelIds: ["INBOX", "UNREAD"])
+        try await repository.upsert([thread], isInitialSync: true)
+        try await repository.applySemanticTriage(id, from: .quiet, to: .needsYou, reason: nil, messageID: "q1")
+        try await repository.reclassifyLegacySyncDefaults()
+        let stored = try #require(try await repository.threads().first { $0.id == id })
+        #expect(stored.attention == .quiet)
+        #expect(stored.reason == InboxClassifier.BulkKind.updates.reason)
+    }
+
     /// A note from your iCloud account to your Gmail is you, not someone
     /// waiting on you: it stays in Mail and out of Needs You.
     @Test func mailFromYourOtherAccountStaysOutOfNeedsYou() async throws {

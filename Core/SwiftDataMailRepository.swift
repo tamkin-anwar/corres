@@ -166,9 +166,15 @@ public actor SwiftDataMailRepository: MailRepository {
         for model in models {
             // Promoted into Needs You before promotions always got a
             // matching reason: still saying it was kept out.
+            // Promoted into Needs You without a reason that held up (before
+            // that stopped): back where the rules put it, still marked as
+            // assessed so it isn't promoted the same way again.
             if model.attentionRaw == Attention.needsYou.rawValue, model.triagedMessageID != nil,
-               model.reason.hasSuffix("Kept out of Needs You.") {
-                model.reason = InboxClassifier.promotedReason
+               model.reason.hasSuffix("Kept out of Needs You.") || model.reason == InboxClassifier.promotedReason {
+                model.attentionRaw = Attention.quiet.rawValue
+                // "Kept out of Needs You." is still its own rule's reason.
+                if model.reason == InboxClassifier.promotedReason { model.reason = InboxClassifier.BulkKind.updates.reason }
+                model.dueAt = nil
                 changed += 1
             }
             let decoded = model.excerpt.decodingHTMLEntities

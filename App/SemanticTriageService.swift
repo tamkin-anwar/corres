@@ -183,8 +183,12 @@ final class SemanticTriageService {
         // rule's own reason stays.
         let source = [thread.sender, thread.senderEmail ?? "", thread.subject, thread.excerpt].joined(separator: "\n")
         let grounded = MailDigest.unsupportedClaims(in: assessment.reason, source: source).isEmpty
-        await store.applySemanticTriage(thread.id, from: from, to: to,
-                                        reason: agrees && grounded ? assessment.reason : nil, messageID: messageID)
+        // Into Needs You only with a reason that holds up: every email
+        // there says specifically why. Without one it stays where the
+        // rules put it, and is only marked as assessed.
+        let reason = agrees && grounded ? assessment.reason : nil
+        let target = (to == .needsYou && from != .needsYou && reason == nil) ? from : to
+        await store.applySemanticTriage(thread.id, from: from, to: target, reason: reason, messageID: messageID)
     }
 
     /// A plain, non-`@available` tuple, deliberately: `TriageAssessment`
