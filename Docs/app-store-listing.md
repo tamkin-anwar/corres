@@ -25,45 +25,45 @@ Gmail client."
 
 Updatable any time without a new build.
 
-> Your Gmail and Outlook in one calm inbox. Corres sorts what needs you, follows up on what's waiting, and keeps every email on your iPhone.
+> Gmail and Outlook in one inbox. Corres shows the emails that need a reply, tracks the ones waiting on someone else, and keeps your mail on your iPhone.
 
-(138 characters)
+(151 characters)
 
 ## Description (4,000)
 
-> Corres is email, considered: one inbox for your Gmail and Outlook accounts that shows what needs you first, keeps track of who you're waiting on, and quiets everything else.
+> Corres puts your Gmail and Outlook accounts in one inbox and sorts it for you. Emails that ask something of you go to Needs You. Emails you sent that haven't been answered go to Waiting. Newsletters, receipts and notifications stay out of the way until you want them.
 >
-> KNOW WHAT NEEDS YOU
-> • Needs You collects the emails that ask something of you: a question, a decision, a deadline. Each one says why it's there.
-> • Waiting keeps track of emails you sent that haven't been answered, and nudges you when it's time to follow up.
-> • The Brief opens your day with one sentence about what matters, then the few emails to start with.
+> NEEDS YOU AND WAITING
+> • Needs You holds the emails with a question, a decision or a deadline for you, and says why each one is there.
+> • Waiting lists the emails you sent that haven't had a reply, and reminds you when it's time to follow up.
+> • The Brief starts your day with a one-line summary and the few emails to read first.
 >
-> ONE INBOX, EVERY ACCOUNT
-> • Gmail, Google Workspace, Outlook.com and Microsoft 365 together in All Inboxes, newest first, or one account at a time.
-> • Each account keeps its own color, name, signature and notification settings.
-> • Primary, Promotions, Social and Updates, sorted by Corres and learning from every email you move.
+> ALL YOUR ACCOUNTS
+> • Gmail, Google Workspace, Outlook.com and Microsoft 365 in one inbox, or one account at a time.
+> • Each account has its own color, name, signatures and notification settings.
+> • Primary, Promotions, Social and Updates tabs that learn from the emails you move.
 >
-> A SCREENER FOR NEW SENDERS
-> • First emails from people and companies you haven't heard from wait for a yes or no.
-> • Allow or block everyone from a company at once, with Undo.
+> NEW SENDERS
+> • First emails from someone new can wait until you allow or block them.
+> • Allow or block a whole company at once, and undo it if you change your mind.
 >
-> WRITING THAT KEEPS UP
-> • Drafts, Send Later, Undo Send and reminders when nobody replies.
-> • Several signatures, send-as addresses, bold, lists and links.
-> • Suggested replies and rewrites in your own voice, which you always read before sending.
-> • Share to Corres from any app.
+> WRITING
+> • Drafts, Send Later, Undo Send, and a reminder if nobody replies.
+> • Several signatures, send-as addresses, and bold, lists and links.
+> • Suggested replies and rewrites. Nothing is sent until you send it.
+> • Write an email from the Share button in any app.
 >
-> SMART, ON YOUR IPHONE
-> • Summaries, sorting and Ask (search your mail in plain words) run on Apple Intelligence, on the device.
-> • Receipts, deliveries and bills show their key figures at a glance, with or without Apple Intelligence.
+> ON-DEVICE INTELLIGENCE
+> • Summaries, sorting and Ask (search your mail by asking a question) run on Apple Intelligence on your iPhone.
+> • Receipts, deliveries and bills show the amount, date and order number at the top, on any iPhone.
 >
-> PRIVATE BY DESIGN
-> • Your email goes straight from Google or Microsoft to your iPhone and stays there. Corres's servers never receive it.
-> • Remote images and tracking pixels are blocked until you choose otherwise.
-> • No ads, no data sold, no AI training on your mail.
+> PRIVACY
+> • Your email goes from Google or Microsoft straight to your iPhone and stays there. Our servers never receive it.
+> • Remote images and tracking pixels are blocked until you allow them.
+> • No ads. Your data is never sold or used to train AI.
 >
-> CORRES PRO
-> Mail is free: read, write, search and organize every account. Corres Pro adds the Brief, Needs You, Waiting, Ask, summaries and suggested replies, with a free trial. Pro is $20 a month or $200 a year, or $1,000 once for Lifetime, and renews automatically until you cancel in Settings at least 24 hours before the end of the period.
+> FREE AND PRO
+> Mail is free: read, write, search and organize every account. Corres Pro adds the Brief, Needs You, Waiting, Ask, summaries and suggested replies. Pro starts with a free trial, then costs $20 a month or $200 a year. Subscriptions renew automatically unless you cancel at least 24 hours before the end of the period, in your iPhone's Settings. Lifetime is a one-time purchase of $1,000.
 >
 > Terms: https://anwarcreativestudio.com/corres/terms/
 > Privacy: https://anwarcreativestudio.com/corres/privacy/

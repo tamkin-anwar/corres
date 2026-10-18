@@ -69,7 +69,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // shows for every other save failure) rather than inventing a
         // second, separate banner mechanism just for this one case.
         if usedInMemoryFallback {
-            mailStore.errorMessage = "Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app — please restart Corres. If this keeps happening, your device may be low on storage."
+            mailStore.errorMessage = "Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Please restart Corres. If this keeps happening, your device may be low on storage."
         }
         sync = GmailSyncService(repository: repository)
         auth = authService

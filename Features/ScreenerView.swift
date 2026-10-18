@@ -184,14 +184,14 @@ struct ScreenerView: View {
                 .font(.subheadline).foregroundStyle(CorresPalette.ink).lineLimit(2)
             HStack(spacing: 10) {
                 Button {
-                    Task { await store.approveSender(group.senderEmail, account: group.account) }
+                    decideOne(group, .approved)
                 } label: {
                     Text("Allow").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(CorresMetalCapsuleStyle(minHeight: 44))
                 .accessibilityLabel("Allow \(group.sender)")
                 Button {
-                    Task { await store.blockSender(group.senderEmail, account: group.account) }
+                    decideOne(group, .blocked)
                 } label: {
                     Text("Block").frame(maxWidth: .infinity)
                 }
@@ -220,6 +220,9 @@ struct ScreenerView: View {
         }
         .padding(16)
         .corresSurface()
+        .modifier(SwipeToDecide { decision in decideOne(group, decision) })
+        .accessibilityAction(named: "Allow") { decideOne(group, .approved) }
+        .accessibilityAction(named: "Block") { decideOne(group, .blocked) }
     }
 
     /// Company rules in force, each removable: new senders from there are
@@ -263,9 +266,17 @@ struct ScreenerView: View {
             .padding(.horizontal, CorresSpace.page).padding(.bottom, 12)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .task(id: undo.message) {
-                try? await Task.sleep(for: .seconds(6))
+                try? await Task.sleep(for: .seconds(8))
                 if self.undo == undo { self.undo = nil }
             }
+        }
+    }
+
+    private func decideOne(_ group: SenderGroup, _ decision: SenderDecision) {
+        let sender = Sender(email: group.senderEmail, account: group.account)
+        Task {
+            await store.setSenderDecision(decision, senders: [(sender.email, sender.account)])
+            undo = Undo(message: "\(decision == .approved ? "Allowed" : "Blocked") \(group.sender)", senders: [sender], domain: nil)
         }
     }
 
@@ -300,5 +311,56 @@ struct ScreenerView: View {
 
     private func initials(for sender: String) -> String {
         sender.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined()
+    }
+}
+
+/// A Screener card you can swipe: right to allow, left to block, the way
+/// Spark's Gatekeeper and Tinder-style triage work. The card follows the
+/// finger over a tinted backdrop that names the action, and lets go past a
+/// third of its width to decide; anything shorter springs back.
+private struct SwipeToDecide: ViewModifier {
+    let decide: (SenderDecision) -> Void
+    @State private var offset: CGFloat = 0
+    @State private var width: CGFloat = 340
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var threshold: CGFloat { width / 3 }
+
+    func body(content: Content) -> some View {
+        content
+            .offset(x: offset)
+            .rotationEffect(.degrees(reduceMotion ? 0 : Double(offset / 40)), anchor: .bottom)
+            .background(alignment: offset >= 0 ? .leading : .trailing) {
+                if offset != 0 {
+                    let allowing = offset > 0
+                    RoundedRectangle(cornerRadius: CorresSpace.radius, style: .continuous)
+                        .fill(allowing ? CorresPalette.swipeHandled : CorresPalette.swipeTrash)
+                        .overlay(alignment: allowing ? .leading : .trailing) {
+                            Label(allowing ? "Allow" : "Block", systemImage: allowing ? "checkmark" : "nosign")
+                                .font(.headline).foregroundStyle(.white)
+                                .padding(.horizontal, 24)
+                                .opacity(min(1, abs(offset) / threshold))
+                        }
+                }
+            }
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+            .sensoryFeedback(.selection, trigger: abs(offset) > threshold)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 20)
+                    .onChanged { value in
+                        // Horizontal only, so the list still scrolls.
+                        guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                        offset = value.translation.width
+                    }
+                    .onEnded { value in
+                        let distance = value.translation.width
+                        if abs(distance) > threshold {
+                            withAnimation(.easeOut(duration: 0.2)) { offset = distance > 0 ? width * 1.5 : -width * 1.5 }
+                            decide(distance > 0 ? .approved : .blocked)
+                        } else {
+                            withAnimation(.spring(duration: 0.3)) { offset = 0 }
+                        }
+                    }
+            )
     }
 }
