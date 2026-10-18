@@ -2,7 +2,7 @@ import Foundation
 import NIOCore
 import NIOIMAP
 import Testing
-@testable import MailEngine
+@testable import Postwright
 
 /// Feeds a recorded server transcript through the real parser into a
 /// collector, the same path live replies take.

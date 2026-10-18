@@ -1,5 +1,5 @@
 import Foundation
-import MailEngine
+import Postwright
 import os
 
 /// One signed-in IMAP connection per iCloud account, reused across calls

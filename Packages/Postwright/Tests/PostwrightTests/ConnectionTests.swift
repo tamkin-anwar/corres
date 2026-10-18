@@ -2,7 +2,7 @@ import Foundation
 import NIOCore
 import NIOPosix
 import Testing
-@testable import MailEngine
+@testable import Postwright
 
 /// A tiny scripted IMAP server on 127.0.0.1: it answers each command with
 /// lines recorded from real servers, so the whole client path (connect,

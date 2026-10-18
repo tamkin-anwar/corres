@@ -12,12 +12,12 @@
 		C3C0DE00000000000000A002 /* Features/OtherEmailSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F002 /* Features/OtherEmailSignInView.swift */; };
 		C3C0DE00000000000000A003 /* App/HangReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F003 /* App/HangReporter.swift */; };
 		A1C0DE0000000000000000B1 /* App/IMAPWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000F1 /* App/IMAPWatcher.swift */; };
-		0D110BEBD3F6F71AB17AE002 /* MailEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 8F5EAE114EF4F89A6546179D /* MailEngine */; };
+		0D110BEBD3F6F71AB17AE002 /* Postwright in Frameworks */ = {isa = PBXBuildFile; productRef = 8F5EAE114EF4F89A6546179D /* Postwright */; };
 		CBA59B0FDCE83F1A231C9E47 /* App/IMAPSessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C096C44615F2419D412B136 /* App/IMAPSessions.swift */; };
 		9AF4A7F648DCCB827297D21B /* App/IMAPMailClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCEB6F4F7D60C9D7914B9BA /* App/IMAPMailClient.swift */; };
 		64319F542506CFCA2407D4C5 /* App/IMAPSessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C096C44615F2419D412B136 /* App/IMAPSessions.swift */; };
 		6EB14A7BBE5F17952B95D9B6 /* App/IMAPMailClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCEB6F4F7D60C9D7914B9BA /* App/IMAPMailClient.swift */; };
-		95136FAE23611973D7748B98 /* MailEngine in Frameworks */ = {isa = PBXBuildFile; productRef = AC84F38CCABA21CF989FA109 /* MailEngine */; };
+		95136FAE23611973D7748B98 /* Postwright in Frameworks */ = {isa = PBXBuildFile; productRef = AC84F38CCABA21CF989FA109 /* Postwright */; };
 		BEB85AE4BC51A10E7362B49C /* App/IMAPSessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C096C44615F2419D412B136 /* App/IMAPSessions.swift */; };
 		6E8DFA0272971787F58213BF /* App/IMAPMailClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCEB6F4F7D60C9D7914B9BA /* App/IMAPMailClient.swift */; };
 		ECF8386A0FAF45AD818108B8 /* Core/AskQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5657FD79441A48ACB789585C /* Core/AskQuery.swift */; };
@@ -129,7 +129,7 @@
 		E79A8DBC3229495CA769B912 /* App/ThreadActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89705DCC26384892BF488BA2 /* App/ThreadActionService.swift */; };
 		E98FEC0BFF976467BBBDCC6E /* Features/Destination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E30C119A8AA5A9BF4A804F /* Features/Destination.swift */; };
 		EA144187FC763199BAADD12C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = C12665C738199993D8D54A23 /* GoogleSignInSwift */; };
-		A1C0DE0000000000000E0003 /* MailEngine in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0DE0000000000000E0002 /* MailEngine */; };
+		A1C0DE0000000000000E0003 /* Postwright in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0DE0000000000000E0002 /* Postwright */; };
 		7C11B26349AC4D098ADB6CC6 /* Core/AskQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5657FD79441A48ACB789585C /* Core/AskQuery.swift */; };
 		F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
 		F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */; };
@@ -382,7 +382,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				95136FAE23611973D7748B98 /* MailEngine in Frameworks */,
+				95136FAE23611973D7748B98 /* Postwright in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -399,7 +399,7 @@
 			files = (
 				036D19D2357FCAF354B35D8F /* GoogleSignIn in Frameworks */,
 				EA144187FC763199BAADD12C /* GoogleSignInSwift in Frameworks */,
-				A1C0DE0000000000000E0003 /* MailEngine in Frameworks */,
+				A1C0DE0000000000000E0003 /* Postwright in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,7 +407,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0D110BEBD3F6F71AB17AE002 /* MailEngine in Frameworks */,
+				0D110BEBD3F6F71AB17AE002 /* Postwright in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -593,7 +593,7 @@
 			);
 			name = CorresNotify;
 			packageProductDependencies = (
-				AC84F38CCABA21CF989FA109 /* MailEngine */,
+				AC84F38CCABA21CF989FA109 /* Postwright */,
 			);
 			productName = CorresNotify;
 			productReference = 51036E354994481EB7E9A6FD /* CorresNotify.appex */;
@@ -619,7 +619,7 @@
 			packageProductDependencies = (
 				5662C63EE436AAF5D5F1FD05 /* GoogleSignIn */,
 				C12665C738199993D8D54A23 /* GoogleSignInSwift */,
-				A1C0DE0000000000000E0002 /* MailEngine */,
+				A1C0DE0000000000000E0002 /* Postwright */,
 			);
 			productName = Corres;
 			productReference = A8792157CB4F27FB949C035F /* Corres.app */;
@@ -656,7 +656,7 @@
 			);
 			name = CorresShare;
 			packageProductDependencies = (
-				8F5EAE114EF4F89A6546179D /* MailEngine */,
+				8F5EAE114EF4F89A6546179D /* Postwright */,
 			);
 			productName = CorresShare;
 			productReference = 0CB72D373C9C4A0A956F4172 /* CorresShare.appex */;
@@ -681,7 +681,7 @@
 			mainGroup = 0D6E4079E36703EBD37C0072;
 			packageReferences = (
 				362DCEECAB286DF675BE4C19 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
-				A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/MailEngine" */,
+				A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/Postwright" */,
 			);
 			productRefGroup = 0A3E27B8CA818264D75C8D81 /* Products */;
 			projectDirPath = "";
@@ -1264,9 +1264,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/MailEngine" */ = {
+		A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/Postwright" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/MailEngine;
+			relativePath = Packages/Postwright;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -1292,20 +1292,20 @@
 			package = 362DCEECAB286DF675BE4C19 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
 		};
-		A1C0DE0000000000000E0002 /* MailEngine */ = {
+		A1C0DE0000000000000E0002 /* Postwright */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/MailEngine" */;
-			productName = MailEngine;
+			package = A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/Postwright" */;
+			productName = Postwright;
 		};
-		AC84F38CCABA21CF989FA109 /* MailEngine */ = {
+		AC84F38CCABA21CF989FA109 /* Postwright */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/MailEngine" */;
-			productName = MailEngine;
+			package = A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/Postwright" */;
+			productName = Postwright;
 		};
-		8F5EAE114EF4F89A6546179D /* MailEngine */ = {
+		8F5EAE114EF4F89A6546179D /* Postwright */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/MailEngine" */;
-			productName = MailEngine;
+			package = A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/Postwright" */;
+			productName = Postwright;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

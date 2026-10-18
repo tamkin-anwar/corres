@@ -2,7 +2,7 @@ import Foundation
 import NIOCore
 import NIOPosix
 import Testing
-@testable import MailEngine
+@testable import Postwright
 
 /// A scripted SMTP server on 127.0.0.1 that records what it was sent.
 final class FakeSMTPServer: @unchecked Sendable {

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import MailEngine
+@testable import Postwright
 
 struct MIMETests {
     func parse(_ text: String) -> ParsedMessage { MIMEParser.parse(Data(text.utf8)) }

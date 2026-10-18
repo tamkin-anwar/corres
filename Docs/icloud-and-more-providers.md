@@ -192,7 +192,7 @@ Pieces, in build order:
 
 ### Progress
 
-- 2026-10-17, step 1 done (`Packages/MailEngine`, 42 tests): connect and
+- 2026-10-17, step 1 done (`Packages/Postwright`, then called MailEngine, 42 tests): connect and
   log in over TLS, capabilities after login, folders with roles, SELECT
   with CONDSTORE, header and flag fetches, threading, sync planning, mark
   read/flagged, move (MOVE, or copy + delete + expunge), append to Sent,

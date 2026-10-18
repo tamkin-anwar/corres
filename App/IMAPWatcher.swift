@@ -1,5 +1,5 @@
 import Foundation
-import MailEngine
+import Postwright
 
 /// New iCloud mail within a second or two while Corres is open. Apple's own
 /// push for iCloud is private to Apple Mail, so each iCloud account keeps

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import MailEngine
+@testable import Postwright
 
 struct SyncPlannerTests {
     let plain = Capabilities(["IMAP4rev1", "IDLE"])

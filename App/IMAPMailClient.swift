@@ -1,8 +1,8 @@
 import Foundation
-import MailEngine
+import Postwright
 
 /// iCloud Mail behind the same calls as `GmailAPIClient` and `OutlookClient`,
-/// over IMAP and SMTP (`MailEngine`). Sign-in is the account's address and
+/// over IMAP and SMTP (`Postwright`). Sign-in is the account's address and
 /// an app-specific password from account.apple.com, kept in the Keychain;
 /// nothing goes through Corres's servers.
 ///
