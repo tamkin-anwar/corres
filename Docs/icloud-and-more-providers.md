@@ -1,7 +1,8 @@
 # iCloud Mail and the next providers
 
 Research for adding iCloud Mail (and what comes after it), 2026-10-15.
-Nothing here is built yet; it needs one decision from Tamkin (below).
+**Decided 2026-10-17: option 3, on-device by default with opt-in instant
+notifications.** The build plan is at the end.
 
 ## How iCloud Mail can be reached
 
@@ -103,3 +104,116 @@ OAuth → Fastmail JMAP.
 - [Apple Developer Forums: how accurate is BGTaskScheduler](https://developer.apple.com/forums/thread/738991)
 - [Apple Developer Forums: refreshing notification content](https://developer.apple.com/forums/thread/125912)
 - [MacRumors: Apple Mail push for Gmail](https://forums.macrumors.com/threads/apple-mail-push-notifications-for-gmail.2393699/)
+
+## Build plan (decided 2026-10-17)
+
+### What competitors do, in short
+
+| App | Default | Instant iCloud alerts | What its server keeps |
+|---|---|---|---|
+| Apple Mail | On device | Yes, Apple's private push (`XAPPLEPUSHSERVICE`) | Nothing extra |
+| Spark | Server | Yes, always on, can't be turned off | Encrypted password; encrypted subject and preview for 4 hours |
+| Canary | Fetch (on device) | Opt-in "Push" | Password, sender, subject, first line; deleted once delivered or when push is turned off |
+| Airmail | On device | Opt-in "Real-Time Mailbox Monitoring" | Password, only while it's on |
+| **Corres** | **On device** | **Opt-in per account** | **Encrypted password only; no subject, sender or preview, ever** |
+
+Corres's version is stricter than every competitor: the relay sends the
+same content-free wake-up Outlook gets, and the iPhone fetches and shows
+the notification itself (the notification extension already does this for
+Outlook). So the server never holds a single line of anyone's mail, only a
+password the person can revoke at account.apple.com.
+
+### What iCloud's server offers (checked 2026-10-17)
+
+- Before login it advertises only `XAPPLEPUSHSERVICE` (Apple's private
+  push), `AUTH=PLAIN` and `AUTH=XOAUTH2`. Apple gives third parties no
+  OAuth for iCloud Mail, so sign-in is email + app-specific password.
+- After login, reports conflict on IDLE, CONDSTORE and QRESYNC; MOVE is
+  reportedly missing. The engine therefore asks for capabilities after
+  login and uses what's there: IDLE if present, else short polling; COPY +
+  delete + expunge when MOVE is missing; UID + flags comparison when
+  CONDSTORE is missing.
+- For comparison, Fastmail offers CONDSTORE, QRESYNC, MOVE and IDLE, and
+  Yahoo offers MOVE, IDLE and OAuth. One engine has to handle both kinds.
+
+### The shared email engine
+
+Choice: **build on Apple's `swift-nio-imap`** (protocol parsing only;
+Apache 2), with Corres's own connection, sync and SMTP layers on top.
+- `SwiftMail` (BSD) is easier but requires iOS 18; Corres supports iOS 17,
+  and it lacks CONDSTORE, which fast sync on Fastmail and others needs.
+- `MailCore2` is unmaintained since 2020 and removed from some package
+  managers for that reason.
+- `swift-nio-imap`'s README still says "not production ready", so the
+  parser gets its own test suite against recorded sessions from iCloud,
+  Fastmail and Yahoo before shipping.
+
+Pieces, in build order:
+1. **`IMAPConnection`** (actor): TLS, login (PLAIN now, XOAUTH2 later for
+   Yahoo/AOL), capability check, one command at a time, reconnect with
+   backoff, IDLE while the app is open.
+2. **`IMAPClient`**, the third `MailClient` backend next to Gmail and
+   Outlook: list folders (SPECIAL-USE for Sent, Archive, Trash, Junk;
+   name matching as a fallback), fetch headers newest first in batches,
+   fetch bodies on demand, set flags, move, append to Sent when the server
+   doesn't.
+3. **Sync state** per folder: UIDVALIDITY, highest UID, and HIGHESTMODSEQ
+   when CONDSTORE exists. A changed UIDVALIDITY means a full resync of that
+   folder, the IMAP version of Gmail's expired history.
+4. **Threads**: grouped by Message-ID, In-Reply-To and References, since
+   IMAP has no thread ids.
+5. **`SMTPClient`**: TLS, AUTH PLAIN, send the same RFC 5322 message
+   `GmailMessageComposer` builds today.
+6. **Sign-in screen**: "Add iCloud Mail" with the steps to make an
+   app-specific password and a button that opens account.apple.com.
+   Also "Other email" (server, port, username, password) once iCloud
+   works, which covers custom domains, Fastmail, Zoho and most others.
+7. **Background**: `BGAppRefreshTask` catch-up for everyone; instant
+   alerts only for accounts that turn it on.
+
+### Opt-in instant notifications
+
+- **The switch**: Settings → the iCloud account → "Instant Notifications",
+  off by default, with one plain sentence: "Corres's server keeps your
+  app-specific password, encrypted, so it can tell this iPhone the moment
+  mail arrives. It never reads or stores your email. Turn this off to
+  delete it."
+- **Relay**: a small always-on worker (Cloud Run with CPU always
+  allocated; a 1 vCPU instance is roughly $6–20 a month and holds hundreds
+  of IDLE connections). It logs in, selects INBOX, IDLEs, and on a new
+  message sends the existing content-free push. It never FETCHes a message.
+- **Password storage**: encrypted with Cloud KMS, decrypted only in the
+  worker's memory; deleted the moment the switch goes off, the account is
+  removed, or the login fails three times (the person revoked it).
+- **Disclosure**: one paragraph in the privacy policy and on the support
+  page; App Privacy label unchanged (credentials aren't "collected data"
+  that's linked to identity beyond the email address already declared, but
+  re-check the wording before submitting).
+
+### Order and size
+
+| Step | Work |
+|---|---|
+| 1 | IMAP engine + recorded-session tests | about 1 week |
+| 2 | iCloud account: sign-in, sync, send, folders | about 1 week |
+| 3 | Background refresh + notification extension for IMAP | 2–3 days |
+| 4 | Opt-in relay worker + KMS + settings switch | 3–4 days |
+| 5 | "Other email" (any IMAP server) | 2–3 days |
+| 6 | Yahoo/AOL with OAuth (needs Yahoo's app approval) | later |
+
+### Sources (added 2026-10-17)
+
+- [Canary Mail privacy policy](https://canarymail.io/privacy-policy)
+- [Canary: privacy standards](https://canarymail.io/help/secure-and-compliant-navigating-canary-mails-privacy-standards)
+- [MacRumors: Canary Mail 3.0 thread](https://forums.macrumors.com/threads/canary-mail-3-0-has-been-released-no-subscription.2203446/)
+- [Spark Classic troubleshooting](https://support.readdle.com/spark/troubleshooting)
+- [Mozilla bug 1611624: IDLE with iCloud](https://bugzilla.mozilla.org/show_bug.cgi?id=1611624)
+- [Apple forums: iCloud IMAP with QRESYNC and CONDSTORE](https://developer.apple.com/forums/thread/694251)
+- [swift-nio-imap](https://swiftpackageregistry.com/apple/swift-nio-imap)
+- [Announcing SwiftNIO IMAP](https://swift.org/blog/swift-nio-imap/)
+- [SwiftMail](https://github.com/Cocoanetics/SwiftMail)
+- [Introducing SwiftMail](https://www.cocoanetics.com/2025/03/introducing-swiftmail/)
+- [MailCore2 on Swift Package Registry](https://swiftpackageregistry.com/MailCore/mailcore2)
+- [nixpkgs: MailCore2 removed](https://code.ornl.gov/nix/nixpkgs/-/commit/cc3c0c7a679c794f119676abcb07cdc0d730f117)
+- [Cloud Run pricing](https://goo.gle/3Inc1KA)
+- [Cloud Run always-on CPU](https://oneuptime.com/blog/post/2026-02-17-how-to-configure-cloud-run-cpu-allocation-to-always-on-for-background-processing-workloads/markdown)
