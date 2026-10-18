@@ -48,7 +48,10 @@ struct ICloudSignInView: View {
                 Section {
                     TextField("you@icloud.com", text: $email)
                         .keyboardType(.emailAddress)
-                        .textContentType(.username)
+                        // No .username: paired with the password field below,
+                        // it makes iOS offer to save a password Corres
+                        // already keeps in its own Keychain.
+                        .textContentType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .focused($focused, equals: .email)
