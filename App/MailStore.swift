@@ -174,9 +174,31 @@ final class MailStore {
     /// underneath it (a remote search merging results in), not the initial
     /// load. `load()`'s `state = .loading` transition would otherwise flash
     /// the whole list away to a spinner on every debounced search tick.
+    /// Reloads the lists from the store. Calls that arrive while one is
+    /// running (a sync saves a batch every moment) fold into one more
+    /// reload after it, instead of each reading the whole mailbox.
     func refresh() async {
-        allThreads = (try? await repository.threads()) ?? allThreads
+        if isRefreshing {
+            // Returns once a reload that started after this call is done,
+            // so the caller still sees what it just changed.
+            refreshAgain = true
+            await withCheckedContinuation { refreshWaiters.append($0) }
+            return
+        }
+        isRefreshing = true
+        repeat {
+            refreshAgain = false
+            let waiting = refreshWaiters
+            refreshWaiters = []
+            allThreads = (try? await repository.threads()) ?? allThreads
+            // Everyone who asked before this reload began now has it.
+            waiting.forEach { $0.resume() }
+        } while refreshAgain
+        isRefreshing = false
     }
+    @ObservationIgnored private var isRefreshing = false
+    @ObservationIgnored private var refreshAgain = false
+    @ObservationIgnored private var refreshWaiters: [CheckedContinuation<Void, Never>] = []
 
     /// Removes an account's mail from this iPhone after the account is
     /// removed from Corres. If no mail is left at all, `load()` brings the
