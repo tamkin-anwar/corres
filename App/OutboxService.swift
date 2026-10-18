@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import Observation
+import os
 
 /// Makes Send feel instant: ComposeView dismisses the moment the button is
 /// tapped, and the actual work (a real Gmail send whenever an account is
@@ -285,6 +286,9 @@ final class OutboxService {
                     realThreadID = try await sendViaGmailWithRetry(draft: draft, thread: thread, account: account, id: id)
                 }
             } catch {
+                // Why it failed, for Console: the banner only says it did.
+                Logger(subsystem: "studio.anwarcreative.corres", category: "outbox")
+                    .error("Send failed: \(String(describing: error), privacy: .public)")
                 failed = FailedSend(id: id, draft: draft)
                 try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .failed))
                 return

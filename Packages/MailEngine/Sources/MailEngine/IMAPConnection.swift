@@ -50,6 +50,9 @@ public actor IMAPConnection {
             .connectTimeout(.seconds(15))
             .channelInitializer { channel in
                 channel.eventLoop.makeCompletedFuture {
+                    if ProcessInfo.processInfo.environment["CORRES_IMAP_TRACE"] != nil {
+                        try channel.pipeline.syncOperations.addHandler(TraceHandler())
+                    }
                     try channel.pipeline.syncOperations.addHandlers([
                         IMAPClientHandler(),
                         ResponseForwarder(queue: queue),
@@ -93,7 +96,7 @@ public actor IMAPConnection {
     // MARK: Folders and messages
 
     public func listFolders() async throws -> [Folder] {
-        try await run(.list(nil, reference: MailboxName(ByteBuffer(string: "")), .pattern([ByteBuffer(string: "*")]))).folders
+        try await run(.list(nil, reference: MailboxName(ByteBuffer(string: "")), .mailbox(ByteBuffer(string: "*")))).folders
     }
 
     /// Opens a folder for reading and writing. With CONDSTORE it also asks
@@ -435,5 +438,32 @@ final class ResponseForwarder: ChannelInboundHandler, Sendable {
     func channelInactive(context: ChannelHandlerContext) {
         queue.finish(nil)
         context.fireChannelInactive()
+    }
+}
+
+/// Raw traffic to stderr when CORRES_IMAP_TRACE is set, for debugging a
+/// server. LOGIN lines are hidden so the password never appears.
+final class TraceHandler: ChannelDuplexHandler, Sendable {
+    typealias InboundIn = ByteBuffer
+    typealias InboundOut = ByteBuffer
+    typealias OutboundIn = ByteBuffer
+    typealias OutboundOut = ByteBuffer
+
+    func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+        Self.print("S:", unwrapInboundIn(data))
+        context.fireChannelRead(data)
+    }
+
+    func write(context: ChannelHandlerContext, data: NIOAny, promise: EventLoopPromise<Void>?) {
+        Self.print("C:", unwrapOutboundIn(data))
+        context.write(data, promise: promise)
+    }
+
+    private static func print(_ side: String, _ buffer: ByteBuffer) {
+        let text = String(decoding: buffer.readableBytesView, as: UTF8.self)
+        for line in text.split(separator: "\r\n", omittingEmptySubsequences: true) {
+            let shown = line.uppercased().contains(" LOGIN ") ? "[login hidden]" : String(line.prefix(300))
+            FileHandle.standardError.write(Data("IMAP \(side) \(shown)\n".utf8))
+        }
     }
 }

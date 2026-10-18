@@ -1,5 +1,6 @@
 import Foundation
 import MailEngine
+import os
 
 /// One signed-in IMAP connection per iCloud account, reused across calls
 /// and opened again if it drops. Commands run strictly one at a time per
@@ -40,6 +41,7 @@ actor ICloudSessions {
         }
     }
 
+    static let log = Logger(subsystem: "studio.anwarcreative.corres", category: "icloud")
     private var sessions: [String: Session] = [:]
     private var busy: Set<String> = []
     private var waiting: [String: [CheckedContinuation<Void, Never>]] = [:]
@@ -50,10 +52,17 @@ actor ICloudSessions {
     func with<T: Sendable>(_ account: String, _ body: @Sendable (Session) async throws -> T) async throws -> T {
         await acquire(account)
         defer { release(account) }
-        let session = try await session(for: account)
+        let session: Session
+        do {
+            session = try await self.session(for: account)
+        } catch {
+            Self.log.error("iCloud sign-in failed: \(String(describing: error), privacy: .public)")
+            throw error
+        }
         do {
             return try await body(session)
         } catch let error as IMAPConnection.ConnectionError {
+            Self.log.error("iCloud command failed: \(String(describing: error), privacy: .public)")
             switch error {
             case .disconnected, .timedOut, .notConnected:
                 sessions[account] = nil

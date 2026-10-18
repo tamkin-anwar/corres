@@ -252,6 +252,20 @@ struct ActionTests {
         return connection
     }
 
+    /// iCloud answers the LIST-EXTENDED form, LIST "" ("*"), with OK and no
+    /// folders at all, so Sent, Trash and Junk went missing. The plain form
+    /// is what every server takes.
+    @Test func listUsesThePlainPatternEveryServerUnderstands() async throws {
+        let s = server(capabilities: "IMAP4rev1", extra: [
+            "LIST": [#"* LIST (\HasNoChildren) "/" "INBOX""#, #"* LIST (\HasNoChildren) "/" "Sent Messages""#, "{TAG} OK LIST done"],
+        ])
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        let folders = try await c.listFolders()
+        #expect(s.sentLines().last?.hasSuffix(#"LIST "" "*""#) == true)
+        #expect(folders.folder(for: .sent)?.path == "Sent Messages")
+    }
+
     @Test func markReadUsesSilentStoreOnARangeOfUIDs() async throws {
         let s = server(capabilities: "IMAP4rev1")
         defer { Task { await s.stop() } }

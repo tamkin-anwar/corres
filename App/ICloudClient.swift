@@ -62,6 +62,10 @@ struct ICloudClient: Sendable {
             throw ClientError.historyExpired
         }
         return try await ICloudSessions.shared.with(account) { session in
+            // A folder synced from the start that this cursor never saw
+            // (Sent, when the folder list once came back empty): list again.
+            let folders = try await session.folders()
+            if let sent = folders.sent, start.folders[sent] == nil { throw ClientError.historyExpired }
             var cursor = start
             var newIDs: [String] = []
             var changes: [RemoteMessageChange] = []
@@ -228,7 +232,8 @@ struct ICloudClient: Sendable {
     @discardableResult
     func send(raw: String, threadId: String?, account: String) async throws -> String {
         guard let password = ICloudCredentials.password(for: account) else { throw ClientError.notSignedIn }
-        let (recipients, outgoing) = Self.envelope(of: raw)
+        let message = Self.mime(fromRaw: raw)
+        let (recipients, outgoing) = Self.envelope(of: message)
         guard !recipients.isEmpty else { throw ClientError.refused(statusCode: 0, reason: nil, message: "This email has no recipients.") }
         let smtp = SMTPClient(host: Self.smtpHost, port: 587, security: .startTLS)
         do {
@@ -242,21 +247,23 @@ struct ICloudClient: Sendable {
         }
         return try await ICloudSessions.shared.with(account) { session in
             guard let sent = session.cachedFolders.sent else { return "" }
-            let uid = try await session.connection.append(Data(raw.utf8), to: sent, flags: ["\\Seen"])
+            let uid = try await session.connection.append(Data(outgoing.utf8), to: sent, flags: ["\\Seen"])
             let selected = try await session.connection.select(sent)
             return uid.map { "\(selected.uidValidity):\($0):\(sent)" } ?? ""
         }
     }
 
     func saveDraft(raw: String, threadId: String?, existingID: String?, account: String) async throws -> String {
-        try await ICloudSessions.shared.with(account) { session in
+        let message = Data(Self.mime(fromRaw: raw).replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\n", with: "\r\n").utf8)
+        return try await ICloudSessions.shared.with(account) { session in
             guard let drafts = session.cachedFolders.drafts else { throw ClientError.refused(statusCode: 0, reason: nil, message: "No Drafts folder.") }
             if let existingID, let old = Self.parse(existingID) {
                 try await session.connection.select(old.path)
                 try await session.connection.setFlags(["\\Deleted"], uids: [old.uid], add: true)
                 try await session.connection.expungeIfPossible(uids: [old.uid])
             }
-            let uid = try await session.connection.append(Data(raw.utf8), to: drafts, flags: ["\\Draft", "\\Seen"])
+            let uid = try await session.connection.append(message, to: drafts, flags: ["\\Draft", "\\Seen"])
             let selected = try await session.connection.select(drafts)
             return uid.map { "\(selected.uidValidity):\($0):\(drafts)" } ?? ""
         }
@@ -490,6 +497,15 @@ struct ICloudClient: Sendable {
 
     /// Every recipient address (To, Cc, Bcc) and the message to send, with
     /// the Bcc line removed so recipients don't see it.
+    /// Corres builds every outgoing email as base64url, the form Gmail's
+    /// API takes; IMAP and SMTP want the message itself.
+    static func mime(fromRaw raw: String) -> String {
+        var base64 = raw.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        while base64.count % 4 != 0 { base64 += "=" }
+        guard let data = Data(base64Encoded: base64) else { return raw }
+        return String(decoding: data, as: UTF8.self)
+    }
+
     static func envelope(of raw: String) -> (recipients: [String], message: String) {
         let normalized = raw.replacingOccurrences(of: "\r\n", with: "\n")
         guard let split = normalized.range(of: "\n\n") else { return ([], raw) }

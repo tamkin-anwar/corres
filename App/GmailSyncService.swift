@@ -1,4 +1,5 @@
 import Foundation
+import os
 import Observation
 
 /// Orchestrates a Gmail sync pass: fetch via GmailAPIClient, merge via the
@@ -195,6 +196,8 @@ final class GmailSyncService {
             await repairSentPlaceholders(account: account)
             return true
         } catch {
+            Logger(subsystem: "studio.anwarcreative.corres", category: "sync")
+                .error("Sync failed: \(String(describing: error), privacy: .public)")
             errorMessage = "Could not sync your mail. Please check your connection and try again."
             return false
         }
