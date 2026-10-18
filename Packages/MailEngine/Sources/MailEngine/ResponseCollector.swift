@@ -185,6 +185,9 @@ public struct ResponseCollector: Sendable {
             size: fetch.size)
         summary.listUnsubscribe = headers?.value("List-Unsubscribe")
         summary.listUnsubscribePost = headers?.value("List-Unsubscribe-Post")
+        // Servers repeat the sender here when there's no Reply-To.
+        let sender = summary.from?.email.lowercased()
+        summary.replyTo = Self.addresses(envelope.reply).filter { $0.email.lowercased() != sender }
         return summary
     }
 

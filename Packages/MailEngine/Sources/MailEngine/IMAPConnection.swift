@@ -148,6 +148,13 @@ public actor IMAPConnection {
 
     /// UIDs in the selected folder whose Message-ID is `messageID`: how a
     /// message is found again after it moved (UIDs are per folder).
+    /// UIDs in the selected folder where `name` (or an address) appears in
+    /// From, To or Cc.
+    public func search(person name: String) async throws -> [UInt32] {
+        let term = ByteBuffer(string: name)
+        return try await run(.uidSearch(key: .or(.from(term), .or(.to(term), .cc(term)))), folder: selectedFolder ?? "").searchResults
+    }
+
     /// UIDs in the selected folder that belong to the conversation started
     /// by `messageID`: the message itself, and any that answer it or name
     /// it in References.

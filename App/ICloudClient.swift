@@ -205,22 +205,55 @@ struct ICloudClient: Sendable {
         return try await fetchMessages(ids: keys, account: account).items.sorted { $0.receivedAt < $1.receivedAt }
     }
 
+    /// The whole mailbox, as Gmail's and Outlook's search are: Inbox, Sent
+    /// and Archive, newest first.
     func searchMessages(query: String, account: String) async throws -> [Correspondence] {
         let keys: [String] = try await ICloudSessions.shared.with(account) { session in
-            guard let inbox = session.cachedFolders.inbox else { return [] }
-            let selected = try await session.connection.select(inbox)
-            let uids = try await session.connection.search(text: query).sorted(by: >).prefix(50)
-            return uids.map { "\(selected.uidValidity):\($0):\(inbox)" }
+            let folders = try await session.folders()
+            var found: [String] = []
+            for path in [folders.inbox, folders.sent, folders.archive].compactMap({ $0 }) {
+                let selected = try await session.connection.select(path)
+                let uids = try await session.connection.search(text: query).sorted(by: >).prefix(25)
+                found += uids.map { "\(selected.uidValidity):\($0):\(path)" }
+            }
+            return found
         }
-        return try await fetchMetadata(ids: keys, account: account).items
+        return try await fetchMetadata(ids: keys, account: account).items.sorted { $0.receivedAt > $1.receivedAt }
     }
 
     #if DEBUG
     func exportCorpus(account: String, limit: Int) async throws -> (items: [Correspondence], missing: Int) { ([], 0) }
     #endif
 
-    func sentAddressing(account: String, limit: Int) async throws -> [GmailAPIClient.Addressing] { [] }
-    func addressing(matching name: String, account: String) async throws -> [GmailAPIClient.Addressing] { [] }
+    /// Who you write to, from Sent Messages: what suggests people as you
+    /// address an email, as Gmail's and Outlook's Sent do.
+    func sentAddressing(account: String, limit: Int) async throws -> [GmailAPIClient.Addressing] {
+        try await ICloudSessions.shared.with(account) { session in
+            guard let sent = try await session.folders().sent else { return [] }
+            let selected = try await session.connection.select(sent)
+            return try await session.connection.fetchNewestSummaries(count: min(limit, 500), of: selected.exists).map(Self.addressing)
+        }
+    }
+
+    /// Mail to or from someone by name, in Inbox and Sent.
+    func addressing(matching name: String, account: String) async throws -> [GmailAPIClient.Addressing] {
+        try await ICloudSessions.shared.with(account) { session in
+            let folders = try await session.folders()
+            var found: [GmailAPIClient.Addressing] = []
+            for path in [folders.inbox, folders.sent].compactMap({ $0 }) {
+                try await session.connection.select(path)
+                let uids = Array(try await session.connection.search(person: name).sorted(by: >).prefix(25))
+                found += try await session.connection.fetchSummaries(uids: uids).map(Self.addressing)
+            }
+            return found
+        }
+    }
+
+    private static func addressing(_ m: MessageSummary) -> GmailAPIClient.Addressing {
+        func formatted(_ a: Address) -> String { a.name.map { "\($0) <\(a.email)>" } ?? a.email }
+        return GmailAPIClient.Addressing(from: m.from.map(formatted) ?? "", recipients: (m.to + m.cc).map(formatted),
+                                         subject: m.subject, date: m.date ?? .now)
+    }
 
     func findMessage(rfc822MessageID: String, account: String) async throws -> ThreadID? {
         let id = rfc822MessageID.trimmingCharacters(in: CharacterSet(charactersIn: "<> "))
@@ -530,7 +563,7 @@ struct ICloudClient: Sendable {
             }
         }
         let plain = body.map { $0.plainText ?? MailDigest.readableText(body: "", html: $0.html ?? "") } ?? ""
-        let excerpt = String(plain.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression).prefix(160))
+        let excerpt = String(plain.replacingPattern(#"\s+"#, with: " ").prefix(160))
         let attachments = (body?.attachments ?? []).enumerated().filter { !$0.element.isInline }.map {
             MailAttachment(id: String($0.offset), filename: $0.element.filename, mimeType: $0.element.mimeType, sizeBytes: $0.element.size)
         }
@@ -542,7 +575,7 @@ struct ICloudClient: Sendable {
             receivedAt: m.date ?? .now, isUnread: !m.isSeen,
             labelIds: Self.labels(flags: m.flags, folder: m.folder, folders: folders, hasUnsubscribe: mailto != nil || url != nil),
             attachments: attachments,
-            toRecipients: m.to.map(Self.formatted), ccRecipients: m.cc.map(Self.formatted), replyTo: [],
+            toRecipients: m.to.map(Self.formatted), ccRecipients: m.cc.map(Self.formatted), replyTo: m.replyTo.map(Self.formatted),
             listUnsubscribeMailto: mailto, listUnsubscribeURL: url,
             listUnsubscribeOneClick: url != nil && (m.listUnsubscribePost?.lowercased().contains("one-click") ?? false),
             bodyLoaded: body != nil)

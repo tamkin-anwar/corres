@@ -266,6 +266,28 @@ struct ActionTests {
         #expect(folders.folder(for: .sent)?.path == "Sent Messages")
     }
 
+    @Test func replyToIsKeptOnlyWhenItIsNotTheSender() async throws {
+        let s = server(capabilities: "IMAP4rev1", extra: ["UID FETCH": [
+            #"* 1 FETCH (UID 5 FLAGS () ENVELOPE ("Fri, 16 Oct 2026 09:07:48 -0400" "News" (("Shop" NIL "news" "shop.test")) NIL (("Help" NIL "help" "shop.test")) ((NIL NIL "me" "icloud.com")) NIL NIL NIL "<n1@shop.test>"))"#,
+            #"* 2 FETCH (UID 6 FLAGS () ENVELOPE ("Fri, 16 Oct 2026 10:07:48 -0400" "Hi" (("Ann" NIL "ann" "x.test")) NIL (("Ann" NIL "ann" "x.test")) ((NIL NIL "me" "icloud.com")) NIL NIL NIL "<a1@x.test>"))"#,
+            "{TAG} OK FETCH done",
+        ]])
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        let messages = try await c.fetchSummaries(uids: [5, 6]).sorted { $0.uid < $1.uid }
+        #expect(messages.first?.replyTo.map(\.email) == ["help@shop.test"])
+        #expect(messages.last?.replyTo.isEmpty == true)
+    }
+
+    @Test func personSearchLooksInFromToAndCc() async throws {
+        let s = server(capabilities: "IMAP4rev1", extra: ["UID SEARCH": ["* SEARCH 3", "{TAG} OK SEARCH done"]])
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        #expect(try await c.search(person: "Ridita") == [3])
+        let sent = s.sentLines().last ?? ""
+        #expect(sent.contains(#"OR FROM "Ridita" (OR TO "Ridita" CC "Ridita")"#))
+    }
+
     @Test func severalMessagesComeBackFromOneFetch() async throws {
         let s = server(capabilities: "IMAP4rev1", extra: ["UID FETCH": [
             "* 1 FETCH (UID 4 BODY[] {7}", "Hello A)",

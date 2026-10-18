@@ -20,6 +20,9 @@ public struct MessageSummary: Sendable, Equatable, Hashable {
     /// has them: newsletters and marketing.
     public var listUnsubscribe: String?
     public var listUnsubscribePost: String?
+    /// Where replies should go, when that isn't the sender (a newsletter's
+    /// reply address, a support desk).
+    public var replyTo: [Address] = []
 
     public init(uid: UInt32, folder: String, flags: Set<String>, subject: String, from: Address?, to: [Address],
                 cc: [Address] = [], date: Date?, messageID: String?, inReplyTo: String?, references: [String] = [],
