@@ -134,7 +134,13 @@ async function connect(emailAddress) {
         continue;
       }
       if (watch.data.failures) await watches.doc(watch.id).set({ failures: 0 }, { merge: true }).catch(() => {});
-      const mailbox = await client.mailboxOpen('INBOX', { readOnly: true });
+      let mailbox;
+      try {
+        mailbox = await client.mailboxOpen('INBOX', { readOnly: true });
+      } catch {
+        await client.logout().catch(() => {});
+        continue;
+      }
       entry.client = client;
       entry.attempt = 0;
       let count = mailbox.exists;
@@ -148,7 +154,7 @@ async function connect(emailAddress) {
           for await (const message of client.fetch(`${from}:*`, { uid: true })) uids.push(message.uid);
         } catch { /* wake quietly anyway */ }
         const validity = String(client.mailbox && client.mailbox.uidValidity);
-        await notify(emailAddress, uids.slice(-10).map((uid) => `${validity}:${uid}:INBOX`));
+        await notify(emailAddress, uids.slice(-10).map((uid) => `${validity}:${uid}:INBOX`)).catch((e) => log('notify failed', e.message));
       });
       client.on('close', () => { if (entry.client === client) { entry.client = null; schedule(emailAddress); } });
       client.on('error', () => {});
@@ -171,12 +177,14 @@ async function fail(watch, authentication) {
   if (authentication) await watches.doc(watch.id).set({ failures }, { merge: true }).catch(() => {});
 }
 
+function scheduleSafe(emailAddress) { connect(emailAddress).catch((e) => { log('connect failed', e.message); schedule(emailAddress); }); }
+
 function schedule(emailAddress) {
   const entry = accounts.get(emailAddress);
   if (!entry || entry.stopped || entry.watches.size === 0) return;
   entry.attempt = Math.min(entry.attempt + 1, 8);
   const delay = Math.min(5 * 2 ** entry.attempt, 600) * 1000;
-  setTimeout(() => connect(emailAddress), delay);
+  setTimeout(() => scheduleSafe(emailAddress), delay);
 }
 
 async function notify(emailAddress, messageIds) {
@@ -210,16 +218,19 @@ watches.onSnapshot((snapshot) => {
       const entry = accounts.get(emailAddress);
       if (!entry) continue;
       entry.watches.delete(change.doc.id);
-      if (entry.watches.size === 0) stop(emailAddress);
+      if (entry.watches.size === 0) stop(emailAddress).catch(() => {});
       continue;
     }
     const entry = account(emailAddress);
-    const before = entry.watches.get(change.doc.id);
     entry.watches.set(change.doc.id, { id: change.doc.id, data });
     // A new password (re-registered after a change) is tried right away.
-    if (!entry.client || (before && before.data.sealedPassword !== data.sealedPassword && !entry.client)) connect(emailAddress);
+    if (!entry.client) scheduleSafe(emailAddress);
   }
 }, (error) => { log('watch list error', error.message); process.exit(1); });
+
+// One account's trouble must never stop the others' watches.
+process.on('unhandledRejection', (error) => log('unhandled', error && error.message));
+process.on('uncaughtException', (error) => log('uncaught', error && error.message));
 
 // Cloud Run needs a port to call the service healthy.
 http.createServer((req, res) => {

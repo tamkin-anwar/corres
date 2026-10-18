@@ -246,7 +246,11 @@ struct CorresShell: View {
             set: { if $0 == nil { auth.icloudNeedsPassword = nil } }
         )) { item in
             ICloudSignInView(auth: auth, reconnecting: item.id, rejected: true) { _ in
-                Task { if await sync.syncIfConnected(account: item.id) { await store.load() } }
+                Task {
+                    // The watcher needs the new password too.
+                    if AccountPreferences.icloudInstant(for: item.id) { try? await pushService.setICloudInstant(true, account: item.id) }
+                    if await sync.syncIfConnected(account: item.id) { await store.load() }
+                }
             }
         }
         .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService, unsubscriber: unsubscribeService) }

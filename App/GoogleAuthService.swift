@@ -356,6 +356,8 @@ final class GoogleAuthService {
         if let data = try? JSONEncoder().encode(profiles) { defaults.set(data, forKey: Self.profilesKey) }
         if MailAccounts.provider(for: email) == .icloud {
             ICloudCredentials.remove(email)
+            // Re-adding it later starts with instant alerts off, as new.
+            UserDefaults.standard.removeObject(forKey: AccountPreferences.icloudInstantKey(for: email))
             await ICloudSessions.shared.forget(email)
             await ICloudCache.shared.forgetAccount(email)
         } else if MailAccounts.provider(for: email) == .microsoft {
