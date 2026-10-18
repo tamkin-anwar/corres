@@ -39,6 +39,14 @@ struct CorrespondenceRow: View {
         return intelligence?.insight(for: thread)?.summary
     }
 
+    /// "Tina K. Rotolo +2" → "TK": letters from the first two words of a
+    /// name, leaving off the count of others.
+    static func initials(of name: String) -> String {
+        name.split(separator: " ").filter { !$0.hasPrefix("+") }
+            .compactMap { $0.first(where: { $0.isLetter || $0.isNumber }) }
+            .prefix(2).map { String($0).uppercased() }.joined()
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Circle()
@@ -46,7 +54,14 @@ struct CorrespondenceRow: View {
                 .frame(width: 7, height: 7)
                 .padding(.top, 17)
                 .accessibilityHidden(true)
-            if showAvatars { CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail) }
+            if showAvatars {
+                // Your own email shows who it went to, as its name does.
+                if let recipient = sentTo ?? (thread.isFromAccountOwner ? thread.counterpartName() : nil) {
+                    CorrespondentAvatar(initials: Self.initials(of: recipient), email: thread.toRecipients.first)
+                } else {
+                    CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail)
+                }
+            }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     // Your own latest message: who it went to, never your
@@ -379,8 +394,7 @@ struct CorrespondenceList: View {
         if !thread.isFromAccountOwner { return thread.sender }
         guard let address = thread.toRecipients.first ?? thread.ccRecipients.first else { return thread.sender }
         let bare = address.components(separatedBy: "<").last?.trimmingCharacters(in: CharacterSet(charactersIn: "> ")).lowercased() ?? address
-        let name = store.threads.first { $0.senderEmail?.lowercased() == bare && !$0.isFromAccountOwner }?.sender
-            ?? thread.counterpartName()
+        let name = store.knownSenderNames[bare] ?? thread.counterpartName()
         let others = thread.toRecipients.count + thread.ccRecipients.count - 1
         return name + (others > 0 ? " +\(others)" : "")
     }

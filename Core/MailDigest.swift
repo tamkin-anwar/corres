@@ -54,8 +54,7 @@ public enum MailDigest {
         guard let html, !html.isEmpty else { return plain }
         // Some senders' plain part only says to read the HTML one ("your
         // email client might not support HTML", Epic Games).
-        let isPlaceholder = plain.range(of: #"(?i)(not support|unable to (display|view)|can'?t (display|see)|view (it|this( email)?) (online|in (a|your) browser)|html (formatted )?(e-?mail|version))"#,
-                                        options: .regularExpression) != nil && wordCount(plain) < 400
+        let isPlaceholder = plain.patternRange(#"(?i)(not support|unable to (display|view)|can'?t (display|see)|view (it|this( email)?) (online|in (a|your) browser)|html (formatted )?(e-?mail|version))"#) != nil && wordCount(plain) < 400
         if wordCount(plain) >= 60 && !isPlaceholder { return plain }
         let converted = text(fromHTML: html)
         if isPlaceholder, !converted.isEmpty { return converted }
@@ -74,14 +73,14 @@ public enum MailDigest {
             // …or hide it other ways: collapsed to nothing, or Outlook-only hiding.
             #"(?is)<(span|div)\b[^>]*(max-height\s*:\s*0(px)?\s*[;"']|mso-hide\s*:\s*all|visibility\s*:\s*hidden)[^>]*>.*?</\1>"#,
         ]
-        for pattern in removals { text = text.replacingOccurrences(of: pattern, with: " ", options: .regularExpression) }
-        text = text.replacingOccurrences(of: #"(?i)<br\s*/?>"#, with: "\n", options: .regularExpression)
-        text = text.replacingOccurrences(of: #"(?i)</(p|div|tr|li|h[1-6]|table|blockquote|section|article)>"#, with: "\n", options: .regularExpression)
-        text = text.replacingOccurrences(of: #"(?i)<li\b[^>]*>"#, with: "\n• ", options: .regularExpression)
-        text = text.replacingOccurrences(of: #"(?i)</t[dh]>"#, with: " ", options: .regularExpression)
+        for pattern in removals { text = text.replacingPattern(pattern, with: " ") }
+        text = text.replacingPattern(#"(?i)<br\s*/?>"#, with: "\n")
+        text = text.replacingPattern(#"(?i)</(p|div|tr|li|h[1-6]|table|blockquote|section|article)>"#, with: "\n")
+        text = text.replacingPattern(#"(?i)<li\b[^>]*>"#, with: "\n• ")
+        text = text.replacingPattern(#"(?i)</t[dh]>"#, with: " ")
         // A quoted attribute can hold a ">" (an image's alt text with "<br>"
         // in it); a plain <[^>]+> stopped there and left CSS in the text.
-        text = text.replacingOccurrences(of: #"<(?:[^>"']|"[^"]*"|'[^']*')*>"#, with: " ", options: .regularExpression)
+        text = text.replacingPattern(#"<(?:[^>"']|"[^"]*"|'[^']*')*>"#, with: " ")
         return tidy(text.decodingHTMLEntities)
     }
 
@@ -98,18 +97,18 @@ public enum MailDigest {
             if line.hasPrefix(">") { index += 1; continue }
             if startsQuotedHistory(lines, at: index) { break }
             if line == "--" || line == "-- " || line == "—" { break }
-            if line.range(of: cutFromPattern, options: .regularExpression) != nil
-                || line.range(of: MailSignals.legalNoticePattern, options: .regularExpression) != nil { break }
-            if line.range(of: MailSignals.protectiveMarkingLine, options: .regularExpression) != nil { index += 1; continue }
-            if line.range(of: dropLinePattern, options: .regularExpression) != nil { index += 1; continue }
+            if line.patternRange(cutFromPattern) != nil
+                || line.patternRange(MailSignals.legalNoticePattern) != nil { break }
+            if line.patternRange(MailSignals.protectiveMarkingLine) != nil { index += 1; continue }
+            if line.patternRange(dropLinePattern) != nil { index += 1; continue }
             kept.append(lines[index])
             index += 1
         }
         var result = kept.joined(separator: "\n")
         // Links carry no meaning for a summary; "(https://…)" and "<https://…>"
         // wrappers go with them.
-        result = result.replacingOccurrences(of: #"[(<\[]\s*https?://[^\s)>\]]+\s*[)>\]]"#, with: "", options: .regularExpression)
-        result = result.replacingOccurrences(of: #"https?://\S+"#, with: "", options: .regularExpression)
+        result = result.replacingPattern(#"[(<\[]\s*https?://[^\s)>\]]+\s*[)>\]]"#, with: "")
+        result = result.replacingPattern(#"https?://\S+"#, with: "")
         return tidy(result)
     }
 
@@ -119,16 +118,16 @@ public enum MailDigest {
     private static func startsQuotedHistory(_ lines: [String], at index: Int) -> Bool {
         let line = lines[index].trimmingCharacters(in: .whitespaces)
         if line.hasPrefix("-----Original Message") || line.hasPrefix("---------- Forwarded message")
-            || line.hasPrefix("Begin forwarded message") || line.range(of: #"^_{10,}$"#, options: .regularExpression) != nil {
+            || line.hasPrefix("Begin forwarded message") || line.patternRange(#"^_{10,}$"#) != nil {
             return true
         }
-        if line.range(of: #"^On .{4,}"#, options: .regularExpression) != nil {
+        if line.patternRange(#"^On .{4,}"#) != nil {
             let window = lines[index..<min(lines.count, index + 3)].joined(separator: " ")
-            if window.range(of: #"^\s*On .{4,}?\bwrote:"#, options: .regularExpression) != nil { return true }
+            if window.patternRange(#"^\s*On .{4,}?\bwrote:"#) != nil { return true }
         }
-        if line.range(of: #"^\*?From:\*?\s"#, options: .regularExpression) != nil {
+        if line.patternRange(#"^\*?From:\*?\s"#) != nil {
             let next = lines[(index + 1)..<min(lines.count, index + 4)].joined(separator: "\n")
-            if next.range(of: #"(?m)^\s*\*?(Sent|Date|To|Subject):"#, options: .regularExpression) != nil { return true }
+            if next.patternRange(#"(?m)^\s*\*?(Sent|Date|To|Subject):"#) != nil { return true }
         }
         return false
     }
@@ -146,7 +145,7 @@ public enum MailDigest {
         let scalars = text.unicodeScalars.filter { !invisible.contains($0) }
         var cleaned = String(String.UnicodeScalarView(scalars))
         cleaned = cleaned.replacingOccurrences(of: "\u{00A0}", with: " ")
-        cleaned = cleaned.replacingOccurrences(of: #"[ \t]+"#, with: " ", options: .regularExpression)
+        cleaned = cleaned.replacingPattern(#"[ \t]+"#, with: " ")
         let lines = cleaned.split(separator: "\n", omittingEmptySubsequences: false)
             .map { $0.trimmingCharacters(in: .whitespaces) }
         var result: [String] = []
@@ -191,9 +190,9 @@ public enum MailDigest {
         // top of a short one. A newsletter's article about deliveries or
         // "your order" isn't a receipt (Morning Brew, TLDR, LinkedIn were).
         let opening = subject + "\n" + (wordCount(text) <= 300 ? String(text.prefix(400)) : "")
-        if opening.range(of: shippingCue, options: .regularExpression) != nil { return .shipping }
-        if opening.range(of: receiptCue, options: .regularExpression) != nil { return .receipt }
-        if hasEvent || subject.range(of: #"(?i)^(invitation|updated invitation|accepted|declined):"#, options: .regularExpression) != nil {
+        if opening.patternRange(shippingCue) != nil { return .shipping }
+        if opening.patternRange(receiptCue) != nil { return .receipt }
+        if hasEvent || subject.patternRange(#"(?i)^(invitation|updated invitation|accepted|declined):"#) != nil {
             return .invite
         }
         if !isBulk && !looksAutomated { return .personal }
@@ -213,9 +212,9 @@ public enum MailDigest {
     /// to words that say it's a code.
     public static func verificationCode(in text: String) -> String? {
         let pattern = #"(?i)\b(verification|security|login|log-in|sign[- ]?in|one[- ]time|2fa|two-factor|access|authentication|otp)\s+(code|pin|passcode)\b|\byour (code|passcode|pin) is\b|\bcode:\s"#
-        guard let cue = text.range(of: pattern, options: .regularExpression) else { return nil }
+        guard let cue = text.patternRange(pattern) else { return nil }
         let window = text[cue.lowerBound..<(text.index(cue.upperBound, offsetBy: 120, limitedBy: text.endIndex) ?? text.endIndex)]
-        guard let match = window.range(of: #"\b(?=[A-Z0-9-]*\d)[A-Z0-9]{3,4}-?[A-Z0-9]{2,4}\b|\b\d{4,8}\b"#, options: .regularExpression) else { return nil }
+        guard let match = window.patternRange(#"\b(?=[A-Z0-9-]*\d)[A-Z0-9]{3,4}-?[A-Z0-9]{2,4}\b|\b\d{4,8}\b"#) else { return nil }
         return String(window[match])
     }
 
@@ -264,15 +263,14 @@ public enum MailDigest {
     /// email you're replying to often mentions its own attachments.
     public static func mentionsAttachment(_ body: String) -> Bool {
         var own = body
-        if let quote = own.range(of: #"\n\s*On .{4,200}wrote:\s*\n"#, options: .regularExpression) {
+        if let quote = own.patternRange(#"\n\s*On .{4,200}wrote:\s*\n"#) {
             own = String(own[..<quote.lowerBound])
         }
         own = own.split(separator: "\n", omittingEmptySubsequences: false)
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix(">") }
             .joined(separator: "\n")
-        return own.range(of: #"(?i)\b(attached|attaching|attachments?|enclosed|pfa|please find (the )?(attached|enclosed))\b"#,
-                         options: .regularExpression) != nil
-            && own.range(of: #"(?i)\b(no|without( an?)?|forgot (the|to)) attach"#, options: .regularExpression) == nil
+        return own.patternRange(#"(?i)\b(attached|attaching|attachments?|enclosed|pfa|please find (the )?(attached|enclosed))\b"#) != nil
+            && own.patternRange(#"(?i)\b(no|without( an?)?|forgot (the|to)) attach"#) == nil
     }
 
     /// An alert confirming something you just did ("You allowed Corres
@@ -281,8 +279,7 @@ public enum MailDigest {
     /// on-device model once promoted one as "unauthorized access claim
     /// requires verification".
     public static func isConfirmationAlert(_ text: String) -> Bool {
-        text.range(of: #"(?i)\b(if (you|this) (didn\S{0,5}t|did not|wasn\S{0,5}t|was not|don\S{0,5}t recogni[sz]e)|if this was you|wasn\S{0,5}t you\?)"#,
-                   options: .regularExpression) != nil
+        text.patternRange(#"(?i)\b(if (you|this) (didn\S{0,5}t|did not|wasn\S{0,5}t|was not|don\S{0,5}t recogni[sz]e)|if this was you|wasn\S{0,5}t you\?)"#) != nil
     }
 
     public static func unsupportedClaims(in summary: String, source: String) -> [String] {
@@ -430,9 +427,9 @@ public enum MailDigest {
         var repaired = summary
         for word in unsupported {
             let pattern = #"(?i)\s*\b(for |from |as of |until |by )?(\#(NSRegularExpression.escapedPattern(for: word)))\b"#
-            repaired = repaired.replacingOccurrences(of: pattern, with: "", options: .regularExpression)
+            repaired = repaired.replacingPattern(pattern, with: "")
         }
-        repaired = repaired.replacingOccurrences(of: #"\s+([.,;!?])"#, with: "$1", options: .regularExpression)
+        repaired = repaired.replacingPattern(#"\s+([.,;!?])"#, with: "$1")
             .trimmingCharacters(in: .whitespaces)
         return isFaithful(repaired, source: source) && wordCount(repaired) >= 4 ? repaired : nil
     }
@@ -445,7 +442,7 @@ public enum MailDigest {
         for name in names where name.count >= 3 {
             let escaped = NSRegularExpression.escapedPattern(for: name)
             result = result.replacingOccurrences(of: #"\b"# + escaped + #"(’s|'s)\b"#, with: "your", options: .regularExpression)
-            if result.range(of: #"\b"# + escaped + #"\b"#, options: [.regularExpression, .caseInsensitive]) != nil { return nil }
+            if result.patternRange(#"\b"# + escaped + #"\b"#, caseInsensitive: true) != nil { return nil }
         }
         return result
     }
@@ -453,8 +450,8 @@ public enum MailDigest {
     /// Whether a summary slipped into the sender's voice ("I'd meet at…",
     /// "we'll ship…"); a summary talks to the reader about the email.
     public static func speaksAsSender(_ summary: String) -> Bool {
-        summary.range(of: #"(^|[\s(“"])(I|I'd|I'll|I'm|I've|I’d|I’ll|I’m|I’ve)\b"#, options: .regularExpression) != nil
-            || summary.range(of: #"(?i)\b(we|we'd|we'll|we're|we've|we’d|we’ll|we’re|we’ve|our|ours)\b"#, options: .regularExpression) != nil
+        summary.patternRange(#"(^|[\s(“"])(I|I'd|I'll|I'm|I've|I’d|I’ll|I’m|I’ve)\b"#) != nil
+            || summary.patternRange(#"(?i)\b(we|we'd|we'll|we're|we've|we’d|we’ll|we’re|we’ve|our|ours)\b"#) != nil
     }
 
     /// A newsletter's figures told as if they happened to the reader: "You
@@ -466,7 +463,7 @@ public enum MailDigest {
         let money = #"(\$|£|€|৳|₹|\b(usd|gbp|eur|tk|rs)\b|\d[\d,.]*\s?(dollars|pounds|euros))"#
         return summary.range(of: #"(?i)\byou(?:'ve| have)? (got|received|were charged|have been charged|paid|bought|won|earned|saved)\b[^.]{0,60}"# + money,
                              options: .regularExpression) != nil
-            || summary.range(of: #"(?i)\b(a |the )?charge of\b"#, options: .regularExpression) != nil
+            || summary.patternRange(#"(?i)\b(a |the )?charge of\b"#) != nil
     }
 
     /// A key point worth a line of its own: a phrase that stands alone
@@ -485,9 +482,9 @@ public enum MailDigest {
         // A real word with a figure ("Tax $0.87 on Sep 27"), else three.
         guard letterWords >= (hasFigure ? 1 : 3) else { return false }
         // A cut-off fragment from the model's notes ("Window. The team…").
-        if point.range(of: #"^\p{L}+\.\s"#, options: .regularExpression) != nil { return false }
+        if point.patternRange(#"^\p{L}+\.\s"#) != nil { return false }
         // A bare link or domain says nothing on its own.
-        if point.range(of: #"^\S+\.[a-z]{2,}(/\S*)?$"#, options: [.regularExpression, .caseInsensitive]) != nil { return false }
+        if point.patternRange(#"^\S+\.[a-z]{2,}(/\S*)?$"#, caseInsensitive: true) != nil { return false }
         let summaryWords = Set(content(summary))
         let overlap = words.filter(summaryWords.contains).count
         return Double(overlap) / Double(words.count) < 0.75
@@ -538,7 +535,7 @@ public enum MailDigest {
     }
 
     private static func containsWord(_ word: String, in text: String) -> Bool {
-        text.range(of: #"\b"# + NSRegularExpression.escapedPattern(for: word) + #"\b"#, options: .regularExpression) != nil
+        text.patternRange(#"\b"# + NSRegularExpression.escapedPattern(for: word) + #"\b"#) != nil
     }
 
     private static let calendarStems: [String: String] = [
@@ -576,7 +573,7 @@ public enum MailDigest {
             MailSignals.asksSomething(sentence) && !isBoilerplate(sentence) && !isPromptQuestion(sentence)
                 && wordCount(sentence) >= 5
         }
-        let pressing = asks.first { $0.range(of: #"\p{Sc}\s?\d|\b\d{1,2}(:\d{2})?\s?(am|pm)\b|\b(due|by|before|deadline|until|tomorrow|today|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b"#, options: [.regularExpression, .caseInsensitive]) != nil }
+        let pressing = asks.first { $0.patternRange(#"\p{Sc}\s?\d|\b\d{1,2}(:\d{2})?\s?(am|pm)\b|\b(due|by|before|deadline|until|tomorrow|today|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b"#, caseInsensitive: true) != nil }
         guard let ask = pressing ?? asks.first, let range = text.range(of: ask) else { return nil }
         guard wordCount(String(text[..<range.lowerBound])) >= 40 else { return nil }
         return clipped(ask)
@@ -585,7 +582,7 @@ public enum MailDigest {
     /// The parts of an email that are about the email or the app, never
     /// what it says: footers, legal lines, app and download prompts.
     static func isBoilerplate(_ sentence: String) -> Bool {
-        sentence.range(of: boilerplatePattern, options: .regularExpression) != nil
+        sentence.patternRange(boilerplatePattern) != nil
     }
 
     private static let boilerplatePattern = #"(?i)\b(do not reply|don'?t reply|no-?reply|unsubscribe|you('re| are) receiving this|(this|the) (e-?mail|message) (was|is) (sent|intended)|sent to you because|all rights reserved|privacy (policy|notice|statement)|terms (of (use|service)|and conditions)|in (your|a) (web )?browser|having trouble (viewing|seeing)|address book|(email|notification|communication) preferences|download (the|our|your) (app|receipt|invoice|statement|pdf)|pdf format|get the app|app store|google play|follow us|registered (office|in)|company (no|number)|customer service is available)\b|©"#
@@ -593,8 +590,7 @@ public enum MailDigest {
     /// Questions an email asks to sell or help, not ones it needs answered:
     /// "Want to…?", "Need help?", "Questions?", "Not you?".
     static func isPromptQuestion(_ sentence: String) -> Bool {
-        sentence.range(of: #"(?i)^(want|wanna|need|needing|looking|ready|interested|curious|tired|enjoying|love|loving|did you know|why not|have (any )?questions|got (a )?questions|questions|not you|didn'?t (request|ask|make)|wasn'?t (this )?you|forgot|having (issues|problems|trouble)|can'?t find)\b[^?]{0,90}\?"#,
-                       options: .regularExpression) != nil
+        sentence.patternRange(#"(?i)^(want|wanna|need|needing|looking|ready|interested|curious|tired|enjoying|love|loving|did you know|why not|have (any )?questions|got (a )?questions|questions|not you|didn'?t (request|ask|make)|wasn'?t (this )?you|forgot|having (issues|problems|trouble)|can'?t find)\b[^?]{0,90}\?"#) != nil
     }
 
     /// Real sentences: greetings, pleasantries, sign-offs, bare link labels
@@ -616,7 +612,7 @@ public enum MailDigest {
         }
         return pieces.map { $0.trimmingCharacters(in: .whitespaces) }.filter { sentence in
             guard wordCount(sentence) >= 4 else { return false }
-            return sentence.range(of: skipSentencePattern, options: .regularExpression) == nil
+            return sentence.patternRange(skipSentencePattern) == nil
         }
     }
 

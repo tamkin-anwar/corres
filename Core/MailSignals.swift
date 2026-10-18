@@ -11,12 +11,12 @@ public enum MailSignals {
         for line in body.split(separator: "\n", omittingEmptySubsequences: false) {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.hasPrefix(">") { continue }
-            if trimmed.range(of: #"^On .+ wrote:$"#, options: .regularExpression) != nil { break }
+            if trimmed.patternRange(#"^On .+ wrote:$"#) != nil { break }
             if trimmed.hasPrefix("-----Original Message-----") || trimmed.hasPrefix("---------- Forwarded message") { break }
             // A legal notice ("If you have received this email in error,
             // please reply…") asks nothing of the reader.
-            if trimmed.range(of: legalNoticePattern, options: .regularExpression) != nil { break }
-            if trimmed.range(of: protectiveMarkingLine, options: .regularExpression) != nil { continue }
+            if trimmed.patternRange(legalNoticePattern) != nil { break }
+            if trimmed.patternRange(protectiveMarkingLine) != nil { continue }
             kept.append(line)
         }
         return withoutSurveys(kept.joined(separator: "\n"))
@@ -31,14 +31,14 @@ public enum MailSignals {
     /// The text without its survey and feedback requests: each sentence (or
     /// line) that carries one goes.
     static func withoutSurveys(_ text: String) -> String {
-        guard text.range(of: surveyPattern, options: .regularExpression) != nil else { return text }
+        guard text.patternRange(surveyPattern) != nil else { return text }
         let lines = text.split(separator: "\n", omittingEmptySubsequences: false).map { line -> String in
             let line = String(line)
-            guard line.range(of: surveyPattern, options: .regularExpression) != nil else { return line }
+            guard line.patternRange(surveyPattern) != nil else { return line }
             // Sentence by sentence, so a real request on the same line stays.
             var kept: [String] = []
             line.enumerateSubstrings(in: line.startIndex..., options: .bySentences) { sentence, _, _, _ in
-                guard let sentence, sentence.range(of: surveyPattern, options: .regularExpression) == nil else { return }
+                guard let sentence, sentence.patternRange(surveyPattern) == nil else { return }
                 kept.append(sentence)
             }
             return kept.joined()
@@ -62,9 +62,9 @@ public enum MailSignals {
     /// request. Links are removed first, since their query strings carry
     /// question marks.
     public static func asksSomething(_ text: String) -> Bool {
-        let own = ownText(text).replacingOccurrences(of: #"https?://\S+"#, with: "", options: .regularExpression)
-        if own.range(of: #"[\p{L}\p{N})"'’]\s?\?"#, options: .regularExpression) != nil { return true }
-        return own.range(of: requestPattern, options: .regularExpression) != nil
+        let own = ownText(text).replacingPattern(#"https?://\S+"#, with: "")
+        if own.patternRange(#"[\p{L}\p{N})"'’]\s?\?"#) != nil { return true }
+        return own.patternRange(requestPattern) != nil
     }
 
     /// Words that make a date a deadline when they come right before it:
@@ -86,7 +86,7 @@ public enum MailSignals {
                   date > now.addingTimeInterval(-3_600), date < now.addingTimeInterval(horizon) else { continue }
             let start = max(0, match.range.location - 32)
             let before = ns.substring(with: NSRange(location: start, length: match.range.location - start))
-            guard before.range(of: deadlineLeadIn, options: .regularExpression) != nil else { continue }
+            guard before.patternRange(deadlineLeadIn) != nil else { continue }
             if earliest.map({ date < $0 }) ?? true { earliest = date }
         }
         return earliest
@@ -126,10 +126,10 @@ public enum MailSignals {
         // Marketing urgency is a sale, not an obligation: "LAST CHANCE,
         // your rewards points expire tomorrow".
         let notice = #"\b(last chance|don.?t miss|limited time|(points|rewards?) (expire|are expiring)|ends (today|tonight|soon)|\d+% off|will be (charged|billed|renewed) (automatically|monthly|annually)|(automatically|auto-?) ?(charged|billed|renews?)|thank(s| you) for (your )?(payment|order|purchase)|payment (received|confirmed|successful)|receipt|welcome to)\b"#
-        guard lower.range(of: action, options: .regularExpression) != nil else { return false }
+        guard lower.patternRange(action) != nil else { return false }
         // An appointment or reservation reminder stays even if it thanks you.
-        let reminder = lower.range(of: #"\b(appointment|reservation|check-in|rsvp)\b"#, options: .regularExpression) != nil
-        return reminder || lower.range(of: notice, options: .regularExpression) == nil
+        let reminder = lower.patternRange(#"\b(appointment|reservation|check-in|rsvp)\b"#) != nil
+        return reminder || lower.patternRange(notice) == nil
     }
 
     /// About something that happens on a day (an appointment, a class, a
@@ -141,7 +141,7 @@ public enum MailSignals {
         let lower = text.lowercased()
         let event = #"\b(appointments?|reservations?|check-?in|meeting|class(es)?|session|visit|interview|webinar|flight|booking|lesson|tour|consultation|exam|screening|event|concert|show(time)?|game|ceremony)\b"#
         let task = #"\b(payment|pay (by|now|your)|bill|invoice|balance|amount due|past due|sign(ature)?|renew|expir|submit|application|form)\b"#
-        return lower.range(of: event, options: .regularExpression) != nil && lower.range(of: task, options: .regularExpression) == nil
+        return lower.patternRange(event) != nil && lower.patternRange(task) == nil
     }
 
     /// Something has gone wrong that only you can fix, date or not: a
@@ -149,8 +149,7 @@ public enum MailSignals {
     /// top, like any obligation.
     public static func isFailure(_ text: String) -> Bool {
         let lower = String(text.prefix(obligationOpening)).lowercased()
-        return lower.range(of: #"\b(payment (has |was )?(failed|declined|unsuccessful)|unable to process your (recent )?(\w+ )?payment|card (was |has been )?declined|(account|subscription|service) (is |has been )?(suspended|on hold|locked|past due))\b"#,
-                           options: .regularExpression) != nil
+        return lower.patternRange(#"\b(payment (has |was )?(failed|declined|unsuccessful)|unable to process your (recent )?(\w+ )?payment|card (was |has been )?declined|(account|subscription|service) (is |has been )?(suspended|on hold|locked|past due))\b"#) != nil
     }
 
     /// A payment asked of you, with its amount, date or not: "payment in
@@ -159,12 +158,10 @@ public enum MailSignals {
     /// thanks you if you've already paid.
     public static func isPaymentRequest(_ text: String) -> Bool {
         let lower = String(text.prefix(obligationOpening)).lowercased()
-        guard lower.range(of: #"\b(payment (request(ed)?|(in the amount of [^.]{1,40} )?(is )?required)|please (make|submit) (a |your )?payment|(amount|balance) (is )?(now )?due)\b"#,
-                          options: .regularExpression) != nil,
-              lower.range(of: MailDigest.amountPattern, options: .regularExpression) != nil
+        guard lower.patternRange(#"\b(payment (request(ed)?|(in the amount of [^.]{1,40} )?(is )?required)|please (make|submit) (a |your )?payment|(amount|balance) (is )?(now )?due)\b"#) != nil,
+              lower.patternRange(MailDigest.amountPattern) != nil
         else { return false }
-        return lower.range(of: #"\b(if you('ve| have) already paid|thank(s| you) for your payment|payment (received|confirmed|successful)|autopay|automatic payment)\b"#,
-                           options: .regularExpression) == nil
+        return lower.patternRange(#"\b(if you('ve| have) already paid|thank(s| you) for your payment|payment (received|confirmed|successful)|autopay|automatic payment)\b"#) == nil
     }
 
     /// How much of an email's start states its obligation, in characters:
@@ -177,7 +174,7 @@ public enum MailSignals {
         recipients.contains { address in
             let lower = address.lowercased()
             return lower != account.lowercased()
-                && lower.range(of: Correspondence.automatedLocalPart, options: .regularExpression) == nil
+                && lower.patternRange(Correspondence.automatedLocalPart) == nil
         }
     }
 }
@@ -357,7 +354,7 @@ public enum EventFinder {
     public static func fromWording(_ text: String, subject: String, receivedAt: Date, now: Date = .now) -> EventSuggestion? {
         let own = String(MailSignals.ownText(text).prefix(6_000))
         let all = subject + "\n" + own
-        guard all.range(of: "(?i)\\b(" + eventWords + ")\\b", options: .regularExpression) != nil,
+        guard all.patternRange("(?i)\\b(" + eventWords + ")\\b") != nil,
               let dates = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else { return nil }
         let arrivedToday = Calendar.current.isDate(receivedAt, inSameDayAs: now)
         let ns = own as NSString
@@ -369,7 +366,7 @@ public enum EventFinder {
         let found = dates.matches(in: own, range: NSRange(location: 0, length: ns.length)).compactMap { match -> Found? in
             guard let date = match.date else { return nil }
             let phrase = ns.substring(with: match.range).lowercased()
-            let hasTime = phrase.range(of: #"\d:\d\d|\d[.:]\d\d\s?(am|pm)\b|\d\s?(am|pm)\b|noon"#, options: .regularExpression) != nil
+            let hasTime = phrase.patternRange(#"\d:\d\d|\d[.:]\d\d\s?(am|pm)\b|\d\s?(am|pm)\b|noon"#) != nil
             // A day: a weekday or month name, a numeric date (not "7.15pm"),
             // or today/tomorrow.
             // In any language: a time alone comes back as today (or
@@ -380,10 +377,9 @@ public enum EventFinder {
             let dayOffset = calendar.dateComponents([.day], from: calendar.startOfDay(for: Date()),
                                                     to: calendar.startOfDay(for: date)).day ?? 0
             let hasDay = dayOffset > 1 || dayOffset < 0
-                || phrase.range(of: #"\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\b\d{1,4}[/-]\d{1,2}\b|\b\d{1,2}\.\d{1,2}\.\d{2,4}\b|\b(today|tonight|tomorrow)\b"#,
-                                options: .regularExpression) != nil
+                || phrase.patternRange(#"\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\b\d{1,4}[/-]\d{1,2}\b|\b\d{1,2}\.\d{1,2}\.\d{2,4}\b|\b(today|tonight|tomorrow)\b"#) != nil
             // "Tomorrow" in an email from days ago isn't tomorrow now.
-            let isRelative = phrase.range(of: #"\b(today|tonight|tomorrow)\b"#, options: .regularExpression) != nil
+            let isRelative = phrase.patternRange(#"\b(today|tonight|tomorrow)\b"#) != nil
             if isRelative, !arrivedToday { return nil }
             return Found(date: date, duration: match.duration, hasTime: hasTime, hasDay: hasDay)
         }
@@ -411,7 +407,7 @@ public enum EventFinder {
         if let addresses = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.address.rawValue),
            let match = addresses.firstMatch(in: own, range: NSRange(location: 0, length: ns.length)) {
             location = ns.substring(with: match.range)
-                .replacingOccurrences(of: #"\s*\n\s*"#, with: ", ", options: .regularExpression)
+                .replacingPattern(#"\s*\n\s*"#, with: ", ")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }
 

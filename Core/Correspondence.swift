@@ -230,8 +230,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         // "- Official - ITW…": a protective marking isn't the email.
         // Only a marking: set off by dashes or brackets ("- Official -",
         // "[OFFICIAL]") or in capitals; "Official results are in" stays.
-        self.excerpt = excerpt.range(of: #"^\s*(?:(?i:[\[\-–—]\s*(official(-sensitive)?|unclassified)\s*[\]\-–—])|(OFFICIAL(-SENSITIVE)?|UNCLASSIFIED)(?=\s))\s*"#,
-                                     options: .regularExpression).map { String(excerpt[$0.upperBound...]) } ?? excerpt
+        self.excerpt = excerpt.patternRange(#"^\s*(?:(?i:[\[\-–—]\s*(official(-sensitive)?|unclassified)\s*[\]\-–—])|(OFFICIAL(-SENSITIVE)?|UNCLASSIFIED)(?=\s))\s*"#).map { String(excerpt[$0.upperBound...]) } ?? excerpt
         self.body = body
         self.htmlBody = htmlBody
         self.messageIdHeader = messageIdHeader
@@ -286,9 +285,17 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// context alongside the message itself, not used to decide anything on
     /// its own.
     public var looksAutomated: Bool {
-        Self.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail,
-                         senderName: sender, body: isBodyLoaded ? body : nil, html: htmlBody)
+        // A message never changes once sent: its answer is kept, keyed by
+        // the message and whether its body has loaded yet.
+        let key = "\(id.account)|\(id.providerID)|\(latestMessageID ?? subject)|\(isBodyLoaded)|\(listUnsubscribeMailto != nil || listUnsubscribeURL != nil)"
+        return Self.automatedMemo.value(key) {
+            Self.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail,
+                             senderName: sender, body: isBodyLoaded ? body : nil, html: htmlBody)
+        }
     }
+    private static let automatedMemo = Memo<String, Bool>()
+
+    private static let automatedSenderMemo = Memo<String, Bool>()
 
     public static let automatedLocalPart =
         // A prefix too: "testflight_no_reply@" is as automated as "noreply@".
@@ -303,8 +310,10 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         guard let senderEmail else { return false }
         // "noreply@", but also "noreply-purchases@", "no_reply.alerts@",
         // "donotreply@" and system senders like "notifications@".
-        if senderEmail.lowercased().range(of: automatedLocalPart, options: .regularExpression) != nil { return true }
-        if let senderName, namesAnotherSite(senderName, senderEmail: senderEmail) { return true }
+        if automatedSenderMemo.value(senderEmail + "\u{1}" + (senderName ?? ""), {
+            senderEmail.lowercased().patternRange(automatedLocalPart) != nil
+                || senderName.map { namesAnotherSite($0, senderEmail: senderEmail) } == true
+        }) { return true }
         if let body, let html, isRemoteImageOnly(body: body, html: html) { return true }
         return false
     }
@@ -314,7 +323,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// email comes from booking.com (or mail.booking.com); a person's name
     /// is never a domain.
     static func namesAnotherSite(_ name: String, senderEmail: String) -> Bool {
-        guard let match = name.lowercased().range(of: #"\b[a-z0-9-]+\.(com|net|org|co|io|gov|us|info|biz)\b"#, options: .regularExpression)
+        guard let match = name.lowercased().patternRange(#"\b[a-z0-9-]+\.(com|net|org|co|io|gov|us|info|biz)\b"#)
         else { return false }
         let named = String(name.lowercased()[match])
         let domain = senderEmail.lowercased().components(separatedBy: "@").last ?? ""
@@ -325,11 +334,20 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// letter. A person's photo is embedded in the email (cid: or data:),
     /// never fetched, so it never counts.
     static func isRemoteImageOnly(body: String, html: String) -> Bool {
-        let words = body.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
-        guard words < 8 else { return false }
+        // Counted only up to 8: splitting a whole newsletter into words to
+        // learn it has more than seven was a real cost on every refresh.
+        var words = 0
+        var inWord = false
+        for ch in body {
+            if ch.isWhitespace || ch.isNewline { inWord = false } else if !inWord {
+                inWord = true
+                words += 1
+                if words >= 8 { return false }
+            }
+        }
         let lower = html.lowercased()
-        guard lower.range(of: #"<img[^>]+src\s*=\s*["']?https?:"#, options: .regularExpression) != nil else { return false }
-        return lower.range(of: #"<img[^>]+src\s*=\s*["']?(cid|data):"#, options: .regularExpression) == nil
+        guard lower.patternRange(#"<img[^>]+src\s*=\s*["']?https?:"#) != nil else { return false }
+        return lower.patternRange(#"<img[^>]+src\s*=\s*["']?(cid|data):"#) == nil
     }
 
     /// Whether `account` was addressed directly (`To`) rather than only

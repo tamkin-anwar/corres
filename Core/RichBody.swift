@@ -76,7 +76,7 @@ public enum RichBody {
     /// "• Milk": a bulleted item; "1. Milk": a numbered one.
     static func listItem(in line: String) -> (tag: String, prefixLength: Int)? {
         if line.hasPrefix("• ") { return ("ul", 2) }
-        if let match = line.range(of: #"^\d{1,3}\. "#, options: .regularExpression) {
+        if let match = line.patternRange(#"^\d{1,3}\. "#) {
             return ("ol", line.distance(from: line.startIndex, to: match.upperBound))
         }
         return nil

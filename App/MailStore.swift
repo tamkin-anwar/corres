@@ -25,9 +25,21 @@ final class MailStore {
 
     /// A conversation by id, wherever it came from: the Inbox, or a mailbox.
     func thread(_ id: ThreadID) -> Correspondence? {
-        if let found = threads.first(where: { $0.id == id }) { return found }
+        if !hiddenIDs.contains(id), let found = allThreads.first(where: { $0.id == id }) { return found }
         return hiddenIDs.contains(id) ? nil : browsed[id]
     }
+
+    /// Address → the name its owner writes under, worked out once per
+    /// change to the mail: rows ask it for every sent email on screen.
+    var knownSenderNames: [String: String] {
+        if knownNamesRevision != revision {
+            knownNamesCache = Correspondence.knownSenderNames(allThreads)
+            knownNamesRevision = revision
+        }
+        return knownNamesCache
+    }
+    @ObservationIgnored private var knownNamesCache: [String: String] = [:]
+    @ObservationIgnored private var knownNamesRevision = -1
 
     /// Keeps a mailbox's rows openable. Mail already in the Inbox stays as
     /// the Inbox has it.

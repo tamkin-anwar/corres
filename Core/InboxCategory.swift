@@ -124,8 +124,8 @@ public enum InboxCategory: String, Codable, CaseIterable, Sendable {
     static func isTimeSensitive(_ thread: Correspondence, now: Date) -> Bool {
         let age = now.timeIntervalSince(thread.receivedAt)
         let subject = thread.subject
-        if age < 3 * 86_400, subject.range(of: securityPattern, options: .regularExpression) != nil { return true }
-        if age < 3_600, subject.range(of: accessPattern, options: .regularExpression) != nil
+        if age < 3 * 86_400, subject.patternRange(securityPattern) != nil { return true }
+        if age < 3_600, subject.patternRange(accessPattern) != nil
             || MailDigest.verificationCode(in: subject + "\n" + thread.excerpt.prefix(300)) != nil { return true }
         if let due = thread.dueAt, due > now, due < now.addingTimeInterval(2 * 86_400),
            MailSignals.isEvent(subject + "\n" + thread.excerpt) { return true }
@@ -137,15 +137,18 @@ public enum InboxCategory: String, Codable, CaseIterable, Sendable {
     private static let transactionalPattern = #"(?i)\b(receipt|order (#|no\.?|number|confirm|confirmed|shipped|delivered|is on)|your order|has shipped|out for delivery|delivered|tracking|invoice|statement|payment (received|confirmed|due|failed)|bill(ing)? (is|for)|booking|reservation|itinerary|confirmation|confirmed|verification|password|security (alert|code|notice|update)|sign-?in|account (update|notice|alert)|appointment|ticket|refund|subscription (renewed|confirmed|canceled|cancelled))\b"#
 
     static func isTransactional(_ thread: Correspondence) -> Bool {
-        thread.subject.range(of: transactionalPattern, options: .regularExpression) != nil
-            || thread.subject.range(of: accessPattern, options: .regularExpression) != nil
+        transactionalMemo.value(thread.subject) {
+            thread.subject.patternRange(transactionalPattern) != nil || thread.subject.patternRange(accessPattern) != nil
+        }
     }
+    private static let transactionalMemo = Memo<String, Bool>()
+    private static let promotionalMemo = Memo<String, Bool>()
 
     /// Selling, said in the subject: what Gmail's Promotions catches, and
     /// what it misses when a shop's offer arrives as an "update".
     private static let promotionalPattern = #"(?i)(\b\d{1,3}\s?% off\b|\b(up to|extra|save|get) \$\d+|\b(up to|extra|save) \d{1,3}%|\$\d+ off\b|\bspend \$\d+|\b(flash|semi-annual|annual|holiday|black friday|cyber monday|clearance|end of season|warehouse|parking lot|summer|fall|winter|spring) sale\b|\bsale (ends|starts|is on|now)\b|\bon sale\b|\b(special|exclusive|limited|best|exclusive member|personal) (offers?|deals?)\b|\b(daily|weekly|digital|insider|holiday|today's) deals?\b|\bdeals? (end|ends|of the)\b|\bfree (shipping|delivery|gift)\b|\blast chance\b|\b(ends|ending) (tonight|today|tomorrow|soon|at midnight|sunday)\b|\blimited[- ]time\b|\bshop (now|the (sale|collection|look))\b|\b(promo|coupon|discount) code\b|\bcoupons?\b|\bbogo\b|\bbuy one,? get one\b|\bdoorbusters?\b|\bnew arrivals\b|\bjust dropped\b|\bgift guide\b|\b(picked|chosen|selected) (just )?for you\b|\byou may also like\b|\bdon'?t miss (out|this)\b|\b(points|rewards) (expire|are expiring)\b|\bprice drop\b|\bonly \$\d+)"#
 
     static func looksPromotional(_ subject: String) -> Bool {
-        subject.range(of: promotionalPattern, options: .regularExpression) != nil
+        promotionalMemo.value(subject) { subject.patternRange(promotionalPattern) != nil }
     }
 }

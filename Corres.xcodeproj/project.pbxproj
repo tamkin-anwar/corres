@@ -24,6 +24,7 @@
 		9E8CADC7F84E4151AE4F6CD7 /* Core/GmailAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68DA0977ACFA46A1C9952B4 /* Core/GmailAccount.swift */; };
 		9627A35F8D114C86AE56E36C /* Core/HTTPBatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */; };
 		0A08BCE865E440F69086717D /* Core/InboxCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B676FBAD72F4613B0B8D1E5 /* Core/InboxCategory.swift */; };
+		B2C0DE0000000000000000A1 /* Core/PatternCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C0DE0000000000000000F2 /* Core/PatternCache.swift */; };
 		C76BEAB4B2CB4B56B5801CB6 /* Core/Invitation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */; };
 		1B85E43E74F044538FB531E7 /* Core/MailDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */; };
 		7075CD35A92C48DF973FB3AB /* Core/MailRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63EB4BD12F7A4F4DE2BC78F7 /* Core/MailRepository.swift */; };
@@ -147,6 +148,7 @@
 		4865B921A9244517869EF251 /* Core/Invitation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */; };
 		41387F9C3E2A416A8BE80730 /* Features/CategoryMove.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13615D80EFCC4152B5A62CA7 /* Features/CategoryMove.swift */; };
 		ADEE2F4E079248CBAABDC92F /* Core/InboxCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B676FBAD72F4613B0B8D1E5 /* Core/InboxCategory.swift */; };
+		B2C0DE0000000000000000A2 /* Core/PatternCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C0DE0000000000000000F2 /* Core/PatternCache.swift */; };
 		38DF5311B2B14316A70F4362 /* Features/RichBodyEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7008E5B4442D4DCF8D989BCC /* Features/RichBodyEditor.swift */; };
 		7DAEC24B32C646ADB1214C4E /* Core/RichBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69625E99E49B4770B184FC5C /* Core/RichBody.swift */; };
 		3AF320BEE8594EA484BF95FB /* Features/ScheduledView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7EB64324064A458EA7E9B2 /* Features/ScheduledView.swift */; };
@@ -167,6 +169,7 @@
 		0B70FE10207E42098B73B6D3 /* Core/GmailAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68DA0977ACFA46A1C9952B4 /* Core/GmailAccount.swift */; };
 		09DCDF772B3A460AADD676CF /* Core/HTTPBatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */; };
 		A161991240E249D09332F2B3 /* Core/InboxCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B676FBAD72F4613B0B8D1E5 /* Core/InboxCategory.swift */; };
+		B2C0DE0000000000000000A3 /* Core/PatternCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C0DE0000000000000000F2 /* Core/PatternCache.swift */; };
 		6CB56B962BEB4153AA57EFAA /* Core/Invitation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */; };
 		75FF1DB11A2F4DF3A542B283 /* Core/MailDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */; };
 		2EA33B82A3A748E083D6B319 /* Core/MailRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63EB4BD12F7A4F4DE2BC78F7 /* Core/MailRepository.swift */; };
@@ -345,6 +348,7 @@
 		0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Invitation.swift; sourceTree = SOURCE_ROOT; };
 		13615D80EFCC4152B5A62CA7 /* Features/CategoryMove.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CategoryMove.swift; sourceTree = SOURCE_ROOT; };
 		5B676FBAD72F4613B0B8D1E5 /* Core/InboxCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/InboxCategory.swift; sourceTree = SOURCE_ROOT; };
+		B2C0DE0000000000000000F2 /* Core/PatternCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PatternCache.swift; sourceTree = SOURCE_ROOT; };
 		7008E5B4442D4DCF8D989BCC /* Features/RichBodyEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RichBodyEditor.swift; sourceTree = SOURCE_ROOT; };
 		69625E99E49B4770B184FC5C /* Core/RichBody.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/RichBody.swift; sourceTree = SOURCE_ROOT; };
 		AE7EB64324064A458EA7E9B2 /* Features/ScheduledView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ScheduledView.swift; sourceTree = SOURCE_ROOT; };
@@ -479,6 +483,7 @@
 				0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */,
 				13615D80EFCC4152B5A62CA7 /* Features/CategoryMove.swift */,
 				5B676FBAD72F4613B0B8D1E5 /* Core/InboxCategory.swift */,
+				B2C0DE0000000000000000F2 /* Core/PatternCache.swift */,
 				7008E5B4442D4DCF8D989BCC /* Features/RichBodyEditor.swift */,
 				69625E99E49B4770B184FC5C /* Core/RichBody.swift */,
 				AE7EB64324064A458EA7E9B2 /* Features/ScheduledView.swift */,
@@ -722,6 +727,7 @@
 				9E8CADC7F84E4151AE4F6CD7 /* Core/GmailAccount.swift in Sources */,
 				9627A35F8D114C86AE56E36C /* Core/HTTPBatch.swift in Sources */,
 				0A08BCE865E440F69086717D /* Core/InboxCategory.swift in Sources */,
+				B2C0DE0000000000000000A1 /* Core/PatternCache.swift in Sources */,
 				C76BEAB4B2CB4B56B5801CB6 /* Core/Invitation.swift in Sources */,
 				1B85E43E74F044538FB531E7 /* Core/MailDigest.swift in Sources */,
 				7075CD35A92C48DF973FB3AB /* Core/MailRepository.swift in Sources */,
@@ -804,6 +810,7 @@
 				4865B921A9244517869EF251 /* Core/Invitation.swift in Sources */,
 				41387F9C3E2A416A8BE80730 /* Features/CategoryMove.swift in Sources */,
 				ADEE2F4E079248CBAABDC92F /* Core/InboxCategory.swift in Sources */,
+				B2C0DE0000000000000000A2 /* Core/PatternCache.swift in Sources */,
 				38DF5311B2B14316A70F4362 /* Features/RichBodyEditor.swift in Sources */,
 				7DAEC24B32C646ADB1214C4E /* Core/RichBody.swift in Sources */,
 				3AF320BEE8594EA484BF95FB /* Features/ScheduledView.swift in Sources */,
@@ -885,6 +892,7 @@
 				0B70FE10207E42098B73B6D3 /* Core/GmailAccount.swift in Sources */,
 				09DCDF772B3A460AADD676CF /* Core/HTTPBatch.swift in Sources */,
 				A161991240E249D09332F2B3 /* Core/InboxCategory.swift in Sources */,
+				B2C0DE0000000000000000A3 /* Core/PatternCache.swift in Sources */,
 				6CB56B962BEB4153AA57EFAA /* Core/Invitation.swift in Sources */,
 				75FF1DB11A2F4DF3A542B283 /* Core/MailDigest.swift in Sources */,
 				2EA33B82A3A748E083D6B319 /* Core/MailRepository.swift in Sources */,

@@ -203,36 +203,35 @@ public struct PeopleIndex: Codable, Sendable, Equatable {
     }
 
     public static func isAddress(_ text: String) -> Bool {
-        text.range(of: #"^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]{2,}$"#, options: .regularExpression) != nil
+        text.patternRange(#"^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]{2,}$"#) != nil
     }
 
     /// Addresses that are never a person to write to.
     public static func isAutomated(_ email: String) -> Bool {
-        email.range(of: #"(?i)^([^@]*[-_.])?(no[-_.]?reply|do-?not-?reply)@|^(no-?reply|do-?not-?reply|donotreply|notifications?|alerts?|mailer-daemon|postmaster|bounces?|news(letter)?|marketing|info|support|hello|team|updates?|account|accounts|billing|receipts?|orders?|shipping|security)([-_.+].*)?@|@(.*\.)?(bounce|email|mail|e|em|news|notifications?|reply)\.[^.]+\.[^.]+$"#,
-                     options: .regularExpression) != nil
+        email.patternRange(#"(?i)^([^@]*[-_.])?(no[-_.]?reply|do-?not-?reply)@|^(no-?reply|do-?not-?reply|donotreply|notifications?|alerts?|mailer-daemon|postmaster|bounces?|news(letter)?|marketing|info|support|hello|team|updates?|account|accounts|billing|receipts?|orders?|shipping|security)([-_.+].*)?@|@(.*\.)?(bounce|email|mail|e|em|news|notifications?|reply)\.[^.]+\.[^.]+$"#) != nil
     }
 
     /// Mail you "sent" that went to a machine, not a person: an
     /// unsubscribe request (Corres sends these for you), a bounce or
     /// list address.
     public static func isOptOut(_ email: String, subject: String = "") -> Bool {
-        email.range(of: #"(?i)(unsub|bounce|opt-?out|list-manage|^leave-|^remove-|^reply\+)"#, options: .regularExpression) != nil
-            || subject.range(of: #"(?i)^\s*(unsubscribe|opt.?out)\b"#, options: .regularExpression) != nil
+        email.patternRange(#"(?i)(unsub|bounce|opt-?out|list-manage|^leave-|^remove-|^reply\+)"#) != nil
+            || subject.patternRange(#"(?i)^\s*(unsubscribe|opt.?out)\b"#) != nil
     }
 
     /// A desk rather than a person: support@, a Zendesk queue, hr@. Still
     /// suggested when you type it, just not ahead of people before you do.
     public static func isRole(_ person: Person) -> Bool {
         let local = person.email.split(separator: "@").first.map(String.init) ?? person.email
-        return local.range(of: #"(?i)^(support|help|helpdesk|service|services|customer.?service|customer.?care|cs|cx|care|info|contact|hello|team|admin|office|hr|careers|jobs|recruiting|talent|intern\w*|evaluations?|finance|billing|accounts?|sales|ops|operations|orders?|returns|reservations?|bookings?|enquiries|inquiries|feedback|press|media)([-_.+0-9].*)?$"#, options: .regularExpression) != nil
-            || person.email.range(of: #"(?i)@(.*\.)?(zendesk|freshdesk|helpscout|intercom-mail|kustomer|gorgias)\."#, options: .regularExpression) != nil
+        return local.patternRange(#"(?i)^(support|help|helpdesk|service|services|customer.?service|customer.?care|cs|cx|care|info|contact|hello|team|admin|office|hr|careers|jobs|recruiting|talent|intern\w*|evaluations?|finance|billing|accounts?|sales|ops|operations|orders?|returns|reservations?|bookings?|enquiries|inquiries|feedback|press|media)([-_.+0-9].*)?$"#) != nil
+            || person.email.patternRange(#"(?i)@(.*\.)?(zendesk|freshdesk|helpscout|intercom-mail|kustomer|gorgias)\."#) != nil
             || person.name.contains(where: \.isNumber)
             // "Intake Coordinator", "Evaluations AUTA", "BIMMER TECH".
             // "HighGainProject" is read as "High Gain Project".
-            || person.name.replacingOccurrences(of: #"([a-z])([A-Z])"#, with: "$1 $2", options: .regularExpression)
-                .range(of: #"(?i)\b(coordinator|team|support|services?|project|tech|evaluations?|department|dept|office|desk|admissions|registrar|bursar|finance|payroll|accounts|recruit\w*|careers|center|centre|group|store|shop|customer|help|info|admin|billing|notifications?|operations|inc|llc|ltd)\b"#, options: .regularExpression) != nil
+            || person.name.replacingPattern(#"([a-z])([A-Z])"#, with: "$1 $2")
+                .patternRange(#"(?i)\b(coordinator|team|support|services?|project|tech|evaluations?|department|dept|office|desk|admissions|registrar|bursar|finance|payroll|accounts|recruit\w*|careers|center|centre|group|store|shop|customer|help|info|admin|billing|notifications?|operations|inc|llc|ltd)\b"#) != nil
             // "TASTeam", "ITSupport": a desk word run on at the end.
-            || (!person.name.contains(" ") && person.name.range(of: #"(?i)(team|support|desk|services?|office|admin|helpdesk|notifications?)$"#, options: .regularExpression) != nil
+            || (!person.name.contains(" ") && person.name.patternRange(#"(?i)(team|support|desk|services?|office|admin|helpdesk|notifications?)$"#) != nil
                 && person.name.count > 5)
             || (person.name.count > 3 && person.name == person.name.uppercased() && person.name.contains(where: \.isLetter) && person.name.contains(" "))
     }

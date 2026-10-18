@@ -78,8 +78,7 @@ public enum PlainTextEmail {
     private static func attributionSpan(at index: Int, in lines: [String]) -> Int? {
         for span in 1...2 where index + span <= lines.count {
             let text = lines[index..<index + span].joined(separator: " ").trimmingCharacters(in: .whitespaces)
-            guard text.range(of: #"^(On|Le|Am|El|Il|Op) .+(wrote|a écrit|schrieb|escribió|ha scritto|schreef)\s*:$"#,
-                             options: .regularExpression) != nil else { continue }
+            guard text.patternRange(#"^(On|Le|Am|El|Il|Op) .+(wrote|a écrit|schrieb|escribió|ha scritto|schreef)\s*:$"#) != nil else { continue }
             var next = index + span
             while next < lines.count, lines[next].trimmingCharacters(in: .whitespaces).isEmpty { next += 1 }
             return next < lines.count && isQuoted(lines[next]) ? next - index : nil
@@ -106,13 +105,13 @@ public enum PlainTextEmail {
                 result.append(line)
             }
         }
-        return result.map { $0 == "-- " ? $0 : $0.replacingOccurrences(of: #" +$"#, with: "", options: .regularExpression) }
+        return result.map { $0 == "-- " ? $0 : $0.replacingPattern(#" +$"#, with: "") }
     }
 
     private static func joins(_ previous: String, _ line: String, flowedOnly: Bool) -> Bool {
         guard !isQuoted(previous), !isQuoted(line), previous != "-- ",
               let first = line.first, !first.isWhitespace else { return false }
-        if line.range(of: #"^([-*•+]\s|\d{1,2}[.)]\s|--\s?$)"#, options: .regularExpression) != nil { return false }
+        if line.patternRange(#"^([-*•+]\s|\d{1,2}[.)]\s|--\s?$)"#) != nil { return false }
         if previous.hasSuffix(" ") { return true }
         return !flowedOnly && previous.count >= 50 && !previous.hasSuffix(":")
     }

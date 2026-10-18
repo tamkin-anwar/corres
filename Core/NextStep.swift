@@ -15,9 +15,8 @@ public struct NextStep: Equatable, Codable, Sendable {
     /// "track.pstmrk.it"), which isn't where it ends up and reads as
     /// suspicious.
     public var host: String {
-        let host = (url.host ?? "").lowercased().replacingOccurrences(of: #"^www\."#, with: "", options: .regularExpression)
-        if host.range(of: #"^(click|clicks|track|tracking|links?|email|e|l|t|r|go|trk|mail|em|url\d*|ablink|ct)\.|^(track|click|trk|link)[a-z0-9]{0,4}\.|pstmrk|sendgrid|awstrack|sailthru|list-manage|mailchimp|hubspotlinks|mandrillapp|mcsv\.net|exacttarget|rs6\.net|cmail\d*\.com"#,
-                      options: .regularExpression) != nil { return "" }
+        let host = (url.host ?? "").lowercased().replacingPattern(#"^www\."#, with: "")
+        if host.patternRange(#"^(click|clicks|track|tracking|links?|email|e|l|t|r|go|trk|mail|em|url\d*|ablink|ct)\.|^(track|click|trk|link)[a-z0-9]{0,4}\.|pstmrk|sendgrid|awstrack|sailthru|list-manage|mailchimp|hubspotlinks|mandrillapp|mcsv\.net|exacttarget|rs6\.net|cmail\d*\.com"#) != nil { return "" }
         return host
     }
 
@@ -47,7 +46,7 @@ extension MailDigest {
         var best: (link: Link, score: Int, label: String)?
         for (index, link) in links.enumerated() {
             let anchor = link.anchor.trimmingCharacters(in: .whitespacesAndNewlines)
-            if isDesigned, anchor.range(of: salesButton, options: .regularExpression) != nil { continue }
+            if isDesigned, anchor.patternRange(salesButton) != nil { continue }
             var score = 0
             var label: String?
             if actionVerb(in: anchor) != nil, isReadableAnchor(anchor) {
@@ -93,11 +92,11 @@ extension MailDigest {
                 guard let hrefRange = Range(match.range(at: 1), in: html), let innerRange = Range(match.range(at: 2), in: html),
                       let url = URL(string: decodeEntities(String(html[hrefRange]))) else { continue }
                 let anchor = decodeEntities(String(html[innerRange])
-                    .replacingOccurrences(of: #"<[^>]+>"#, with: " ", options: .regularExpression))
-                    .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+                    .replacingPattern(#"<[^>]+>"#, with: " "))
+                    .replacingPattern(#"\s+"#, with: " ")
                 let start = html.index(hrefRange.lowerBound, offsetBy: -min(600, html.distance(from: html.startIndex, to: hrefRange.lowerBound)))
                 let before = decodeEntities(String(html[start..<hrefRange.lowerBound])
-                    .replacingOccurrences(of: #"<[^>]*>?"#, with: " ", options: .regularExpression))
+                    .replacingPattern(#"<[^>]*>?"#, with: " "))
                 guard seen.insert(url.absoluteString).inserted else { continue }
                 found.append(Link(url: url, anchor: anchor, context: lastSentence(of: before)))
             }
@@ -127,14 +126,14 @@ extension MailDigest {
                       "tiktok.com", "pinterest.com", "apps.apple.com", "itunes.apple.com", "play.google.com"]
         if social.contains(where: { host == $0 || host.hasSuffix("." + $0) }) { return false }
         // Images and tracking pixels.
-        if whole.range(of: #"\.(png|jpe?g|gif|svg|webp)(\?|$)"#, options: .regularExpression) != nil { return false }
+        if whole.patternRange(#"\.(png|jpe?g|gif|svg|webp)(\?|$)"#) != nil { return false }
         return true
     }
 
     /// The action a sentence or link names: "book", "pay", "track".
     static func actionVerb(in text: String) -> String? {
         let lower = text.lowercased()
-        for (pattern, verb) in actionPatterns where lower.range(of: pattern, options: .regularExpression) != nil {
+        for (pattern, verb) in actionPatterns where lower.patternRange(pattern) != nil {
             return verb
         }
         return nil
@@ -184,7 +183,7 @@ extension MailDigest {
     private static func isReadableAnchor(_ anchor: String) -> Bool {
         let words = anchor.split(separator: " ")
         guard (1...7).contains(words.count), anchor.count <= 48,
-              anchor.range(of: #"https?://|www\.|\.com\b"#, options: [.regularExpression, .caseInsensitive]) == nil else { return false }
+              anchor.patternRange(#"https?://|www\.|\.com\b"#, caseInsensitive: true) == nil else { return false }
         return !["here", "click here", "link", "this link", "tap here", "more"].contains(anchor.lowercased())
     }
 
@@ -196,7 +195,7 @@ extension MailDigest {
     }
 
     private static func lastSentence(of text: String) -> String {
-        let cleaned = text.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+        let cleaned = text.replacingPattern(#"\s+"#, with: " ")
         let parts = cleaned.components(separatedBy: CharacterSet(charactersIn: ".!?\n"))
             .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         return parts.suffix(2).joined(separator: ". ")
@@ -242,13 +241,13 @@ extension MailDigest {
     public static func glance(text: String, subject: String = "", kind: Kind) -> Glance? {
         guard [.receipt, .shipping, .notification].contains(kind) else { return nil }
         let lines = text.split(separator: "\n").map {
-            $0.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression).trimmingCharacters(in: .whitespaces)
+            String($0).replacingPattern(#"\s+"#, with: " ").trimmingCharacters(in: .whitespaces)
         }.filter { !$0.isEmpty }
         // A short label alone on its line, its amount on the next, joined.
         var merged: [String] = []
         for line in lines {
             if let last = merged.last, wordCount(last) <= 6, !last.contains(where: \.isNumber) || last.count < 40,
-               line.range(of: "^(" + amountPattern + #")(\s+[A-Z]{3})?$"#, options: .regularExpression) != nil {
+               line.patternRange("^(" + amountPattern + #")(\s+[A-Z]{3})?$"#) != nil {
                 merged[merged.count - 1] = last + " " + line
             } else {
                 merged.append(line)
@@ -258,9 +257,9 @@ extension MailDigest {
 
         // What happened, in the same few words whoever sent it.
         let top = subject + "\n" + merged.prefix(25).joined(separator: "\n")
-        var status = statusRules.first { top.range(of: $0.pattern, options: .regularExpression) != nil }
+        var status = statusRules.first { top.patternRange($0.pattern) != nil }
         // A receipt, by its own subject, is for something paid.
-        if status == nil, subject.range(of: #"(?i)\breceipt\b"#, options: .regularExpression) != nil {
+        if status == nil, subject.patternRange(#"(?i)\breceipt\b"#) != nil {
             status = StatusRule(pattern: "", label: "Paid", isAlert: false)
         }
 
@@ -297,16 +296,16 @@ extension MailDigest {
     /// Lyft's "Apple Pay (Discover) $21.83": what the card was charged.
     private static func cardCharge(in text: String) -> Glance.Fact? {
         let pattern = #"(?i)\b(apple pay|google pay|paypal|visa|mastercard|amex|american express|discover)\b[^\n]{0,30}?\s("# + amountPattern + ")"
-        guard let range = text.range(of: pattern, options: .regularExpression),
-              let amount = text[range].range(of: amountPattern, options: .regularExpression) else { return nil }
+        guard let range = text.patternRange(pattern),
+              let amount = text[range].patternRange(amountPattern) else { return nil }
         return Glance.Fact(label: "Charged", value: String(text[range][amount]))
     }
 
     /// "your recent payment of $9.99", "a charge of €40".
     private static func proseAmount(in text: String) -> Glance.Fact? {
         let pattern = #"(?i)\b(payment|charge|bill|balance|refund) of ("# + amountPattern + ")"
-        guard let range = text.range(of: pattern, options: .regularExpression),
-              let amount = text[range].range(of: amountPattern, options: .regularExpression) else { return nil }
+        guard let range = text.patternRange(pattern),
+              let amount = text[range].patternRange(amountPattern) else { return nil }
         let noun = text[range].split(separator: " ").first.map { $0.lowercased() } ?? "amount"
         return Glance.Fact(label: noun == "refund" ? "Refund" : "Amount", value: String(text[range][amount]))
     }

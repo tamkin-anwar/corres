@@ -64,8 +64,7 @@ public struct AskQuery: Equatable, Sendable {
             topic = .receipts
         } else if take(#" (packages?|parcels?|deliver(y|ies)|shipments?|shipping|tracking) "#) != nil {
             topic = .packages
-        } else if text.range(of: #" (flights?|trips?|travel|itinerar(y|ies)|boarding|hotel|reservations?|check-?in) "#,
-                             options: .regularExpression) != nil {
+        } else if text.patternRange(#" (flights?|trips?|travel|itinerar(y|ies)|boarding|hotel|reservations?|check-?in) "#) != nil {
             topic = .travel
         }
 

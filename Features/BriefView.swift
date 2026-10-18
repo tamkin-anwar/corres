@@ -190,7 +190,7 @@ struct BriefView: View {
                days >= WaitChip.followUpAfterDays {
                 plain("; ")
                 // Who you're waiting on, not the sender of your own message.
-                strong(overdue.counterpartName(knownNames: Correspondence.knownSenderNames(store.threads)))
+                strong(overdue.counterpartName(knownNames: store.knownSenderNames))
                 plain(" hasn't replied in \(Self.spelled(days)) days.")
             } else {
                 plain(".")

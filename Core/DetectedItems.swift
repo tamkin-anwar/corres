@@ -12,7 +12,7 @@ public enum DetectedItems {
     public static func isFlightNumber(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         // Two-character airline code with at least one letter, then 1–4 digits.
-        return trimmed.range(of: #"^(?=[A-Z0-9]{0,1}[A-Z])[A-Z0-9]{2}\s?\d{1,4}$"#, options: .regularExpression) != nil
+        return trimmed.patternRange(#"^(?=[A-Z0-9]{0,1}[A-Z])[A-Z0-9]{2}\s?\d{1,4}$"#) != nil
     }
 
     /// The carrier a tracking number's format belongs to, when it's
@@ -20,9 +20,9 @@ public enum DetectedItems {
     public static func carrier(forTracking text: String) -> Carrier? {
         let number = text.uppercased().filter { $0.isLetter || $0.isNumber }
         let digits = number.allSatisfy(\.isNumber)
-        if number.range(of: #"^1Z[0-9A-Z]{16}$"#, options: .regularExpression) != nil { return .ups }
-        if digits, [20, 22].contains(number.count), number.range(of: #"^9[2-5]"#, options: .regularExpression) != nil { return .usps }
-        if number.range(of: #"^[A-Z]{2}\d{9}US$"#, options: .regularExpression) != nil { return .usps }
+        if number.patternRange(#"^1Z[0-9A-Z]{16}$"#) != nil { return .ups }
+        if digits, [20, 22].contains(number.count), number.patternRange(#"^9[2-5]"#) != nil { return .usps }
+        if number.patternRange(#"^[A-Z]{2}\d{9}US$"#) != nil { return .usps }
         if digits, [12, 15].contains(number.count) { return .fedex }
         if digits, number.count == 10 { return .dhl }
         return nil
