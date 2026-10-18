@@ -452,6 +452,9 @@ private struct AccountDetailView: View {
     /// Only a sync you asked for here reports failing: background syncs
     /// retry on their own, and an old failure shouldn't greet you later.
     @State private var syncFailed = false
+    @AppStorage private var icloudInstant: Bool
+    @State private var changingInstant = false
+    @State private var instantError: String?
     @State private var updatingICloudPassword = false
     @AppStorage private var nickname: String
     @AppStorage private var senderName: String
@@ -471,6 +474,7 @@ private struct AccountDetailView: View {
         _senderName = AppStorage(wrappedValue: "", AccountPreferences.senderNameKey(for: email))
         _showsInAllInboxes = AppStorage(wrappedValue: true, AccountPreferences.allInboxesKey(for: email))
         _notify = AppStorage(wrappedValue: AccountPreferences.notify(for: email).rawValue, AccountPreferences.notifyKey(for: email))
+        _icloudInstant = AppStorage(wrappedValue: false, AccountPreferences.icloudInstantKey(for: email))
     }
 
     private var provider: MailProvider { MailAccounts.provider(for: account.email) }
@@ -541,9 +545,21 @@ private struct AccountDetailView: View {
                 } header: {
                     Text("Notifications")
                 } footer: {
-                    Text(provider == .icloud
-                         ? notifyFooter + " iCloud tells only Apple Mail the moment mail arrives, so Corres checks whenever iOS lets it, usually within the hour, and instantly while it's open."
-                         : notifyFooter)
+                    Text(notifyFooter)
+                }
+                if provider == .icloud {
+                    Section {
+                        Toggle("Instant Notifications", isOn: Binding(
+                            get: { icloudInstant },
+                            set: { on in setInstant(on) }
+                        ))
+                        .disabled(changingInstant)
+                    } footer: {
+                        Text(instantError ?? (icloudInstant
+                             ? "New mail notifies the moment it arrives. Corres's server keeps this account's app-specific password, sealed so only its mail watcher can open it, and never reads or stores your email. Turn this off to delete it."
+                             : "iCloud tells only Apple Mail the moment mail arrives. Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email."))
+                            .foregroundStyle(instantError == nil ? CorresPalette.secondary : CorresPalette.alert)
+                    }
                 }
             }
             Section {
@@ -602,7 +618,11 @@ private struct AccountDetailView: View {
                 }
                 .sheet(isPresented: $updatingICloudPassword) {
                     ICloudSignInView(auth: auth, reconnecting: account.email) { _ in
-                        Task { _ = await sync.syncIfConnected(account: account.email) }
+                        Task {
+                            _ = await sync.syncIfConnected(account: account.email)
+                            // The watcher gets the new password too.
+                            if icloudInstant { try? await pushService.setICloudInstant(true, account: account.email) }
+                        }
                     }
                 }
             } footer: {
@@ -643,6 +663,22 @@ private struct AccountDetailView: View {
             }
         } message: {
             Text("Its mail is removed from this \(Device.name). It stays in \(provider.title).")
+        }
+    }
+
+    private func setInstant(_ on: Bool) {
+        changingInstant = true
+        instantError = nil
+        Task {
+            do {
+                try await pushService.setICloudInstant(on, account: account.email)
+                icloudInstant = on
+            } catch PushNotificationService.ICloudInstantError.notificationsOff {
+                instantError = "Turn on notifications for Corres first, in Settings > Notifications."
+            } catch {
+                instantError = "Couldn't reach Corres's server. Try again in a moment."
+            }
+            changingInstant = false
         }
     }
 

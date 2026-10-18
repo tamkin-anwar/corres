@@ -169,6 +169,11 @@ enum AccountPreferences {
 
     static func notifyKey(for account: String) -> String { key("notify", account) }
 
+    /// iCloud only: alerts the moment mail arrives, through Corres's
+    /// watcher (off by default; see Server/icloud-watcher).
+    static func icloudInstantKey(for account: String) -> String { key("icloudInstant", account) }
+    static func icloudInstant(for account: String) -> Bool { defaults.bool(forKey: icloudInstantKey(for: account)) }
+
     static func notify(for account: String) -> Notify {
         if let raw = defaults.string(forKey: notifyKey(for: account)), let choice = Notify(rawValue: raw) { return choice }
         // The earlier on/off switch carries over.

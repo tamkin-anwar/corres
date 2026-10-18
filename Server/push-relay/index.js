@@ -8,6 +8,7 @@
 // does not do.
 const functions = require('@google-cloud/functions-framework');
 const { Firestore } = require('@google-cloud/firestore');
+const { KeyManagementServiceClient } = require('@google-cloud/kms');
 const crypto = require('crypto');
 const http2 = require('http2');
 
@@ -16,6 +17,16 @@ const devices = firestore.collection('devices');
 // Outlook (Microsoft Graph) subscriptions: subscription id → the account
 // it watches and a hash of its secret (clientState). Only the hash is kept.
 const graphSubscriptions = firestore.collection('graphSubscriptions');
+// iCloud accounts watched for instant alerts, one record per account and
+// device: the address, the device, and the app-specific password sealed
+// on the iPhone with the watcher's public key. This function can't open
+// it; only the icloud-watcher service can, through Cloud KMS.
+const icloudWatches = firestore.collection('icloudWatches');
+// The KMS key the passwords are sealed to (RSA_DECRYPT_OAEP_2048_SHA256):
+// projects/<p>/locations/<l>/keyRings/<r>/cryptoKeys/<k>/cryptoKeyVersions/<v>
+const ICLOUD_KEY_VERSION = process.env.ICLOUD_KEY_VERSION;
+let kms = null;
+let cachedPublicKey = null;
 
 // A device token belongs to one of Apple's two APNs servers: development
 // for a build run from Xcode, production for TestFlight and the App Store.
@@ -231,6 +242,8 @@ async function handleUnregister(req, res) {
   }
   // And this device's Outlook subscription records (an id and a hashed
   // secret), for that account or for every account when notifications go off.
+  // And its iCloud watches: the sealed passwords go with it.
+  await deleteICloudWatches(deviceToken, emailAddress);
   let subscriptions = graphSubscriptions.where('deviceToken', '==', deviceToken);
   if (emailAddress) subscriptions = subscriptions.where('emailAddress', '==', emailAddress);
   const found = await subscriptions.get();
@@ -339,6 +352,74 @@ async function handleGraph(req, res) {
   res.status(202).send();
 }
 
+function watchID(emailAddress, deviceToken) {
+  return hash(`${emailAddress.toLowerCase()}|${deviceToken.toLowerCase()}`);
+}
+
+// The public half of the watcher's key, for the iPhone to seal a password
+// with: PKCS#1 DER, base64, the form iOS's SecKeyCreateWithData takes.
+async function handleICloudKey(req, res) {
+  if (!ICLOUD_KEY_VERSION) {
+    res.status(503).send('Instant iCloud notifications are not set up');
+    return;
+  }
+  if (!cachedPublicKey) {
+    kms = kms || new KeyManagementServiceClient();
+    const [key] = await kms.getPublicKey({ name: ICLOUD_KEY_VERSION });
+    const der = crypto.createPublicKey(key.pem).export({ type: 'pkcs1', format: 'der' });
+    cachedPublicKey = { key: der.toString('base64'), version: ICLOUD_KEY_VERSION.split('/').pop() };
+  }
+  res.status(200).json(cachedPublicKey);
+}
+
+// Turns instant alerts on for one iCloud account on one device. The
+// password arrives sealed (RSA-OAEP, base64); a wrong or forged one just
+// fails to sign in at the watcher, which then deletes it.
+const SEALED_PATTERN = /^[A-Za-z0-9+/=]{300,700}$/;
+async function handleRegisterICloud(req, res) {
+  const { emailAddress, deviceToken, sealedPassword } = req.body || {};
+  if (!emailAddress || !deviceToken || !sealedPassword || !EMAIL_PATTERN.test(emailAddress)
+      || !DEVICE_TOKEN_PATTERN.test(deviceToken) || !SEALED_PATTERN.test(sealedPassword)) {
+    res.status(400).send('emailAddress, deviceToken and sealedPassword are required and must be well formed');
+    return;
+  }
+  const existing = await icloudWatches.where('deviceToken', '==', deviceToken).get();
+  const others = existing.docs.filter((doc) => doc.data().emailAddress !== emailAddress.toLowerCase());
+  if (others.length >= 10) {
+    res.status(429).send('Too many iCloud accounts for this device');
+    return;
+  }
+  await icloudWatches.doc(watchID(emailAddress, deviceToken)).set({
+    emailAddress: emailAddress.toLowerCase(),
+    deviceToken,
+    sealedPassword,
+    alerts: req.body.alerts !== '0',
+    failures: 0,
+    updatedAt: Firestore.FieldValue.serverTimestamp(),
+    ...environmentFrom(req.body),
+  });
+  res.status(204).send();
+}
+
+async function handleUnregisterICloud(req, res) {
+  const { emailAddress, deviceToken } = req.body || {};
+  if (!deviceToken || !DEVICE_TOKEN_PATTERN.test(deviceToken)) {
+    res.status(400).send('deviceToken is required');
+    return;
+  }
+  await deleteICloudWatches(deviceToken, emailAddress);
+  res.status(204).send();
+}
+
+async function deleteICloudWatches(deviceToken, emailAddress) {
+  if (emailAddress) {
+    await icloudWatches.doc(watchID(emailAddress, deviceToken)).delete();
+    return;
+  }
+  const found = await icloudWatches.where('deviceToken', '==', deviceToken).get();
+  await Promise.all(found.docs.map((doc) => doc.ref.delete()));
+}
+
 // Deliberately two separate Cloud Functions sharing this one source file,
 // not one function routing on `req.path` the way this used to. A single
 // Cloud Function/Cloud Run service has exactly one IAM invoker policy for
@@ -365,6 +446,9 @@ functions.http('corresPushRelay', async (req, res) => {
     case '/register': return handleRegister(req, res);
     case '/unregister': return handleUnregister(req, res);
     case '/register-graph': return handleRegisterGraph(req, res);
+    case '/icloud-key': return handleICloudKey(req, res);
+    case '/register-icloud': return handleRegisterICloud(req, res);
+    case '/unregister-icloud': return handleUnregisterICloud(req, res);
     default: res.status(404).send('Unknown route');
   }
 });

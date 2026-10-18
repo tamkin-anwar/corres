@@ -1,4 +1,5 @@
 import Foundation
+import Security
 import Observation
 import UIKit
 import UserNotifications
@@ -124,9 +125,14 @@ final class PushNotificationService {
         await withTaskGroup(of: Void.self) { group in
             for account in accounts {
                 group.addTask {
-                    // iCloud has no push of its own; it syncs when Corres opens
-                    // and in background refresh (instant alerts are opt-in, later).
-                    if MailAccounts.provider(for: account) == .icloud { return }
+                    // iCloud has no push for apps: with Instant Notifications
+                    // on, Corres's watcher holds its Inbox open instead.
+                    if MailAccounts.provider(for: account) == .icloud {
+                        if await MainActor.run(body: { AccountPreferences.icloudInstant(for: account) }), let deviceTokenHex {
+                            try? await self.registerICloud(account: account, deviceToken: deviceTokenHex)
+                        }
+                        return
+                    }
                     // Outlook: a Graph subscription, its secret handed to
                     // the relay, so only Microsoft's real notifications wake
                     // this device.
@@ -335,6 +341,53 @@ final class PushNotificationService {
         UNUserNotificationCenter.current().add(request)
     }
 
+    // MARK: Instant iCloud notifications
+
+    enum ICloudInstantError: Error { case notificationsOff, unavailable, noPassword }
+
+    /// Turns instant alerts on or off for one iCloud account. On: the
+    /// app-specific password is sealed here, on this device, to the
+    /// watcher's public key, so only the watcher can open it. Off: the
+    /// relay deletes it.
+    func setICloudInstant(_ on: Bool, account: String) async throws {
+        guard let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) else {
+            if on { throw ICloudInstantError.notificationsOff }
+            return
+        }
+        if on {
+            try await registerICloud(account: account, deviceToken: deviceTokenHex)
+        } else {
+            try await post(path: "unregister-icloud", body: ["deviceToken": deviceTokenHex, "emailAddress": account])
+        }
+    }
+
+    private func registerICloud(account: String, deviceToken: String) async throws {
+        guard let password = ICloudCredentials.password(for: account) else { throw ICloudInstantError.noPassword }
+        let sealed = try await Self.seal(password)
+        let alerts = await MainActor.run { AccountPreferences.level(for: account) != nil }
+        try await post(path: "register-icloud", body: ["emailAddress": account, "deviceToken": deviceToken,
+                                                       "sealedPassword": sealed, "alerts": alerts ? "1" : "0"])
+    }
+
+    /// RSA-OAEP (SHA-256) to the watcher's KMS key, fetched from the relay.
+    private static func seal(_ password: String) async throws -> String {
+        var request = URLRequest(url: relayBaseURL.appendingPathComponent("icloud-key"))
+        request.httpMethod = "POST"
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200,
+              let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let keyBase64 = json["key"] as? String, let keyData = Data(base64Encoded: keyBase64) else {
+            throw ICloudInstantError.unavailable
+        }
+        let attributes: [String: Any] = [kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+                                         kSecAttrKeyClass as String: kSecAttrKeyClassPublic]
+        guard let key = SecKeyCreateWithData(keyData as CFData, attributes as CFDictionary, nil),
+              let sealed = SecKeyCreateEncryptedData(key, .rsaEncryptionOAEPSHA256, Data(password.utf8) as CFData, nil) as Data? else {
+            throw ICloudInstantError.unavailable
+        }
+        return sealed.base64EncodedString()
+    }
+
     private func post(path: String, body: [String: String]) async throws {
         var request = URLRequest(url: Self.relayBaseURL.appendingPathComponent(path))
         request.httpMethod = "POST"
@@ -344,6 +397,9 @@ final class PushNotificationService {
         // so the relay wakes it through the right one.
         if path.hasPrefix("register") { body["apnsEnvironment"] = Self.apnsEnvironment }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        _ = try await URLSession.shared.data(for: request)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if path.hasSuffix("icloud"), let status = (response as? HTTPURLResponse)?.statusCode, !(200..<300).contains(status) {
+            throw ICloudInstantError.unavailable
+        }
     }
 }
