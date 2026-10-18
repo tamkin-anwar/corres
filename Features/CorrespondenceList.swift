@@ -269,6 +269,9 @@ struct CorrespondenceList: View {
     /// all stay alive), and catches up the moment it's shown again.
     var isActive = true
     @State private var search = ""
+    /// What the rows are filtered by: `search` once typing pauses. Every
+    /// keystroke filtered the whole mailbox on the main thread.
+    @State private var appliedSearch = ""
     @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
     /// Remembered: Mail opens where you left it, Primary at first.
     @AppStorage("corres.mailFilter") private var mailFilter = MailFilter.primary
@@ -330,6 +333,8 @@ struct CorrespondenceList: View {
         var ids: [ThreadID] = []
         var dueSoon: Set<ThreadID> = []
         var unread = 0
+        /// Each account's marker, for the merged view.
+        var tags: [String: AccountTag] = [:]
     }
     @State private var rowsCache = RowsCache()
     @AppStorage(AccountPreferences.revisionKey) private var accountsRevision = 0
@@ -344,7 +349,7 @@ struct CorrespondenceList: View {
         if !isActive, cache.key != nil { return cache }
         let key = RowsCache.Key(revision: store.revision, minute: Int(Date.now.timeIntervalSince1970 / 60),
                                 account: accountFilter, accounts: accountsRevision, destination: destination,
-                                search: search, filter: mailFilter)
+                                search: appliedSearch, filter: mailFilter)
         guard cache.key != key else { return cache }
         let built = buildResults()
         cache.key = key
@@ -357,6 +362,8 @@ struct CorrespondenceList: View {
             cache.dueSoon = []
         }
         cache.unread = built.reduce(0) { $0 + ($1.isUnread ? 1 : 0) }
+        let accounts = auth?.accounts.map(\.email) ?? []
+        cache.tags = showsAccountTags ? Dictionary(uniqueKeysWithValues: accounts.map { ($0, AccountTag.make(for: $0, among: accounts)) }) : [:]
         return cache
     }
 
@@ -364,6 +371,7 @@ struct CorrespondenceList: View {
 
     private func buildResults() -> [Correspondence] {
         let all: [Correspondence]
+        let search = appliedSearch
         if let attention = destination.attention, search.trimmingCharacters(in: .whitespaces).isEmpty {
             all = MailQuery.prioritized(scopedThreads, attention: attention)
         } else {
@@ -402,7 +410,7 @@ struct CorrespondenceList: View {
 
     private func accountTag(for thread: Correspondence) -> AccountTag? {
         guard showsAccountTags else { return nil }
-        return AccountTag.make(for: thread.id.account, among: auth?.accounts.map(\.email) ?? [])
+        return rows.tags[thread.id.account] ?? AccountTag.make(for: thread.id.account, among: auth?.accounts.map(\.email) ?? [])
     }
 
     @Environment(AppRouter.self) private var router
@@ -434,7 +442,9 @@ struct CorrespondenceList: View {
     }
 
     private func restorePosition(_ proxy: ScrollViewProxy) {
-        guard let anchor = router.returnAnchor, results.contains(where: { $0.id == anchor }) else { return }
+        // Only the list on screen: a tab behind it could take the anchor
+        // first, and the list you came back to started at the top.
+        guard isActive, let anchor = router.returnAnchor, rows.ids.contains(anchor) else { return }
         router.returnAnchor = nil
         // Instantly, with no animation: this runs while the list is still
         // under the conversation, so there's nothing to watch move.
@@ -515,9 +525,15 @@ struct CorrespondenceList: View {
             // person keeps typing before that. Reaches past what's already
             // synced locally; see GmailSyncService.search's doc comment.
             .task(id: search) {
+                // Cleared: the full list straight back. Typing: once it pauses.
+                if search.isEmpty { appliedSearch = "" } else {
+                    try? await Task.sleep(for: .milliseconds(150))
+                    guard !Task.isCancelled else { return }
+                    appliedSearch = search
+                }
                 let accounts = accountFilter.map { [$0] } ?? AccountPreferences.allInboxesAccounts(auth?.accounts.map(\.email) ?? [])
                 guard !accounts.isEmpty else { return }
-                try? await Task.sleep(for: .milliseconds(450))
+                try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else { return }
                 if await sync?.search(search, accounts: accounts) == true {
                     await store.refresh()

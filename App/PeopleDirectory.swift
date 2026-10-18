@@ -22,12 +22,12 @@ import UIKit
 @MainActor @Observable
 final class PeopleDirectory {
     /// Sent history and Gmail lookups; saved. Synced mail is added fresh.
-    private var history = PeopleIndex()
-    private var fromSynced = PeopleIndex()
+    private var history = PeopleIndex() { didSet { merged = nil } }
+    private var fromSynced = PeopleIndex() { didSet { merged = nil } }
     private var backfilled: Set<String> = []
     /// People you've said not to suggest.
     private var hidden: Set<String> = []
-    private var contacts = PeopleIndex()
+    private var contacts = PeopleIndex() { didSet { merged = nil } }
     /// Contacts photos by address, decoded once.
     private var photos: [String: UIImage] = [:]
 
@@ -64,10 +64,15 @@ final class PeopleDirectory {
         Task { await loadContacts() }
     }
 
+    /// The three merged once per change: search asked for this on every
+    /// keystroke and every redraw of the list.
+    @ObservationIgnored private var merged: PeopleIndex?
     private var index: PeopleIndex {
+        if let merged { return merged }
         var combined = history
         combined.merge(fromSynced)
         combined.merge(contacts)
+        merged = combined
         return combined
     }
 

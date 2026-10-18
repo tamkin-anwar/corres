@@ -925,8 +925,33 @@ struct HTMLMessageBody: UIViewRepresentable {
         /// finished, as this used to, froze the height before slow images
         /// arrived, and since the email doesn't scroll on its own (it
         /// scrolls with the conversation), everything below was cut off.
+        /// Runaway guard: an email sized to the viewport through a
+        /// stylesheet (`min-height: 100vh` in a class) grows by the same
+        /// amount each time the view grows to fit it, without end. Eight
+        /// equal steps in quick succession means it's chasing itself
+        /// (images loading one by one don't land that close), so it stops.
+        private var growthLoad = -1
+        private var lastGrowth: CGFloat = 0
+        private var equalGrowths = 0
+        private var growthStopped = false
+        private var lastGrowthAt = Date.distantPast
+        private static let tallest: CGFloat = 80_000
+
         func receiveSize(load: Int, height: CGFloat, webView: WKWebView?) {
             guard load == loadGeneration, height > 0 else { return }
+            if growthLoad != load {
+                growthLoad = load; lastGrowth = 0; equalGrowths = 0; growthStopped = false
+            }
+            let growth = height - baseHeight
+            if hasSize, growth > 1 {
+                let quick = Date.now.timeIntervalSince(lastGrowthAt) < 0.5
+                equalGrowths = quick && abs(growth - lastGrowth) < 2 ? equalGrowths + 1 : 0
+                lastGrowth = growth
+                lastGrowthAt = .now
+                if equalGrowths >= 8 { growthStopped = true }
+            }
+            if growthStopped, growth > 0 { return }
+            let height = min(height, Self.tallest)
             if !hasSize {
                 hasSize = true
                 if let webView, webView.alpha < 1 { UIView.animate(withDuration: 0.12) { webView.alpha = 1 } }
