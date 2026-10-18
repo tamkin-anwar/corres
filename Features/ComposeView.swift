@@ -1093,13 +1093,13 @@ struct ComposeView: View {
         .animation(.snappy(duration: 0.2), value: draft.attachments.count)
     }
 
-    /// Gmail's own 25 MB cap (`Draft.maxAttachmentsBytes`) is enforced here,
+    /// The sending service's cap (`MailProvider.attachmentLimit`) is enforced here,
     /// before a queued send ever reaches the network, rather than only
     /// discovered as a send failure after the person already waited through
     /// the undo window.
     private func addAttachment(filename: String, mimeType: String, data: Data) {
-        guard draft.attachmentsSizeBytes + data.count <= Draft.maxAttachmentsBytes else {
-            attachmentError = "\(filename) would put this message over the 25 MB limit."
+        guard draft.attachmentsSizeBytes + data.count <= sendingProvider.attachmentLimit else {
+            attachmentError = "\(filename) would put this email over \(sendingProvider.title)\u{2019}s \(sendingProvider.attachmentLimitText) limit."
             return
         }
         draft.attachments.append(PendingAttachment(filename: filename, mimeType: mimeType, data: data))
@@ -1120,7 +1120,7 @@ struct ComposeView: View {
             guard var file = await AttachmentFiles.fromPhotosItem(item, number: photoNumber) else { failed += 1; continue }
             // Too big to fit with the rest: made smaller, as Mail does,
             // rather than refused. Videos and files keep their size.
-            if draft.attachmentsSizeBytes + file.data.count > Draft.maxAttachmentsBytes,
+            if draft.attachmentsSizeBytes + file.data.count > sendingProvider.attachmentLimit,
                file.mimeType.hasPrefix("image/"), let smaller = AttachmentFiles.shrunk(file.data) {
                 file = (file.filename.replacingOccurrences(of: #"\.[A-Za-z0-9]+$"#, with: ".jpg", options: .regularExpression),
                         "image/jpeg", smaller)
@@ -1129,8 +1129,9 @@ struct ComposeView: View {
             addAttachment(filename: file.filename, mimeType: file.mimeType, data: file.data)
         }
         if shrank > 0, failed == 0, attachmentError == nil {
-            attachmentNote = shrank == 1 ? "A photo was made smaller to fit the 25 MB limit."
-                                         : "\(shrank) photos were made smaller to fit the 25 MB limit."
+            let limit = "\(sendingProvider.title)\u{2019}s \(sendingProvider.attachmentLimitText) limit"
+            attachmentNote = shrank == 1 ? "A photo was made smaller to fit \(limit)."
+                                         : "\(shrank) photos were made smaller to fit \(limit)."
         }
         if failed > 0 { attachmentError = failed == 1 ? "One item couldn't be loaded." : "\(failed) items couldn't be loaded." }
     }
@@ -1161,6 +1162,11 @@ struct ComposeView: View {
         return accounts.filter { $0 != "sample" }.flatMap { account in
             SendAsDirectory.shared.addresses(for: account).map { (account, $0) }
         }
+    }
+
+    /// The service this email goes out through, for its attachment limit.
+    private var sendingProvider: MailProvider {
+        MailAccounts.provider(for: draft.fromAccount ?? draft.threadID?.account ?? auth?.primaryAccount?.email ?? "")
     }
 
     private var fromSelection: String {

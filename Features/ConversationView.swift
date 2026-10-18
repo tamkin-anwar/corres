@@ -819,7 +819,7 @@ struct ConversationView: View {
         var missing: [String] = []
         var total = 0
         for attachment in thread.attachments {
-            guard total + attachment.sizeBytes <= Draft.maxAttachmentsBytes,
+            guard total + attachment.sizeBytes <= MailAccounts.provider(for: thread.id.account).attachmentLimit,
                   let data = try? await client.fetchAttachmentData(messageId: messageID, attachmentId: attachment.id,
                                                                    account: thread.id.account) else {
                 missing.append(attachment.filename)

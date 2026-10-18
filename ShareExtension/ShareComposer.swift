@@ -144,7 +144,9 @@ final class ShareComposer {
         totals[photoSize] ?? content.files.reduce(0) { $0 + $1.data.count }
     }
 
-    var isTooLarge: Bool { totalBytes > Draft.maxAttachmentsBytes }
+    var isTooLarge: Bool { totalBytes > provider.attachmentLimit }
+    /// The service the picked account sends through.
+    var provider: MailProvider { MailAccounts.provider(for: account ?? "") }
 
     func load(_ items: [NSExtensionItem]) async {
         content = await SharedContent.load(from: items)
@@ -177,8 +179,8 @@ final class ShareComposer {
             return totals
         }.value
         totals = measured
-        if (measured[.actual] ?? 0) > Draft.maxAttachmentsBytes {
-            photoSize = [PhotoSize.large, .medium, .small].first { (measured[$0] ?? .max) <= Draft.maxAttachmentsBytes } ?? .small
+        if (measured[.actual] ?? 0) > provider.attachmentLimit {
+            photoSize = [PhotoSize.large, .medium, .small].first { (measured[$0] ?? .max) <= provider.attachmentLimit } ?? .small
         }
     }
 
@@ -266,7 +268,7 @@ final class ShareComposer {
         } catch GmailAPIClient.ClientError.notSignedIn {
             phase = .failed("Open Corres once, then share again. Corres finishes setting up sharing the first time it opens after updating.")
         } catch {
-            phase = .failed("Gmail didn\u{2019}t accept it. Try again in a moment.")
+            phase = .failed("\(provider.title) didn\u{2019}t accept it. Try again in a moment.")
         }
     }
 

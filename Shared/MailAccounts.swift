@@ -14,6 +14,19 @@ enum MailProvider: String, Codable, Sendable {
         case .icloud: "iCloud"
         }
     }
+
+    /// The most attachments one email from this service can carry, before
+    /// encoding. iCloud takes 20 MB per email in all, and attachments grow
+    /// by about a third on the way, so 15 MB of files.
+    var attachmentLimit: Int {
+        switch self {
+        case .google, .microsoft: 25_000_000
+        case .icloud: 15_000_000
+        }
+    }
+
+    /// `attachmentLimit` as people read it: "25 MB".
+    var attachmentLimitText: String { "\(attachmentLimit / 1_000_000) MB" }
 }
 
 /// Each connected account's provider, kept in the App Group so the Share
