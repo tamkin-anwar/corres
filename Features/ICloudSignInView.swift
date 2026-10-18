@@ -1,23 +1,30 @@
+import SafariServices
 import SwiftUI
 
-/// Adds an iCloud Mail account. Apple doesn't let other apps sign in to
-/// iCloud Mail with your Apple Account; it asks for an app-specific
-/// password instead, made once at account.apple.com. This screen says how,
-/// links there, and checks the password with iCloud before saving it.
+/// Adds an iCloud Mail account, or gives one a new password. Apple doesn't
+/// let other apps sign in to iCloud Mail with your Apple Account password;
+/// it asks for an app-specific password, made once at account.apple.com.
+///
+/// Built to take about thirty seconds: your address first, Apple's page
+/// opened inside Corres (Face ID and saved passwords work there), then one
+/// tap on Paste. A pasted app-specific password connects by itself.
 struct ICloudSignInView: View {
     let auth: GoogleAuthService
+    /// Set when the account exists and needs a new password: its address
+    /// is filled in and fixed.
+    var reconnecting: String?
     /// Called after the account is added, with the account count before it.
     let onConnected: (Int) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
     @State private var email = ""
     @State private var password = ""
     @State private var error: String?
+    @State private var showingApple = false
     @FocusState private var focused: Field?
 
     private enum Field { case email, password }
-    private static let passwordsPage = URL(string: "https://account.apple.com/account/manage/section/security")!
+    static let passwordsPage = URL(string: "https://account.apple.com/account/manage/section/security")!
 
     var body: some View {
         NavigationStack {
@@ -25,46 +32,66 @@ struct ICloudSignInView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 10) {
                         Image(systemName: "icloud").font(.system(size: 30)).foregroundStyle(CorresPalette.accent)
-                        Text("Connect iCloud Mail").font(.title3.weight(.semibold))
-                        Text("Apple asks other mail apps to use an app-specific password, not your Apple Account password. You make one once, and can turn it off at any time.")
+                        Text(reconnecting == nil ? "Connect iCloud Mail" : "iCloud needs a new password")
+                            .font(.title3.weight(.semibold))
+                        Text(reconnecting == nil
+                             ? "Apple asks other mail apps for an app-specific password instead of your Apple Account password. It takes about a minute, once."
+                             : "Changing your Apple Account password turns off app-specific passwords. Make a new one and Corres picks up where it left off.")
                             .font(.subheadline).foregroundStyle(CorresPalette.secondary)
                     }
                     .padding(.vertical, 6)
                 }
 
                 Section {
-                    step(1, "Open account.apple.com and sign in.")
+                    TextField("you@icloud.com", text: $email)
+                        .keyboardType(.emailAddress)
+                        // Not .username: paired with the password below, it
+                        // makes iOS offer to save a password Corres already
+                        // keeps in its own Keychain.
+                        .textContentType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .focused($focused, equals: .email)
+                        .submitLabel(.next)
+                        .onSubmit { focused = nil }
+                        .disabled(reconnecting != nil)
+                } header: {
+                    Text("Your iCloud address")
+                }
+
+                Section {
+                    step(1, "Open Apple Account below and sign in.")
                     step(2, "Choose Sign-In and Security, then App-Specific Passwords.")
-                    step(3, "Make one called Corres, and copy it.")
+                    step(3, "Make one called Corres, then tap Copy and Done.")
                     Button {
-                        openURL(Self.passwordsPage)
+                        focused = nil
+                        showingApple = true
                     } label: {
-                        Label("Open account.apple.com", systemImage: "arrow.up.right.square")
+                        Label("Open Apple Account", systemImage: "person.badge.key")
                     }
                 } header: {
                     Text("Make an app-specific password")
                 }
 
                 Section {
-                    TextField("you@icloud.com", text: $email)
-                        .keyboardType(.emailAddress)
-                        // No .username: paired with the password field below,
-                        // it makes iOS offer to save a password Corres
-                        // already keeps in its own Keychain.
-                        .textContentType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .focused($focused, equals: .email)
-                        .submitLabel(.next)
-                        .onSubmit { focused = .password }
-                    SecureField("xxxx-xxxx-xxxx-xxxx", text: $password)
+                    PasteButton(payloadType: String.self) { strings in
+                        guard let pasted = strings.first else { return }
+                        Task { @MainActor in
+                            password = pasted
+                            if ICloudSignIn.looksLikeAppPassword(pasted), ICloudSignIn.address(from: email) != nil { connect() }
+                        }
+                    }
+                    .labelStyle(.titleAndIcon)
+                    .buttonBorderShape(.capsule)
+                    .tint(CorresPalette.accent)
+                    SecureField("Or type it: xxxx-xxxx-xxxx-xxxx", text: $password)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .focused($focused, equals: .password)
                         .submitLabel(.go)
                         .onSubmit(connect)
                 } header: {
-                    Text("Your iCloud address and the password")
+                    Text("The password")
                 } footer: {
                     if let error {
                         Text(error).foregroundStyle(CorresPalette.alert)
@@ -87,7 +114,12 @@ struct ICloudSignInView: View {
                     }
                 }
             }
-            .onAppear { focused = .email }
+            .sheet(isPresented: $showingApple) {
+                SafariView(url: Self.passwordsPage).ignoresSafeArea()
+            }
+            .onAppear {
+                if let reconnecting { email = reconnecting } else if email.isEmpty { focused = .email }
+            }
         }
     }
 
@@ -112,4 +144,44 @@ struct ICloudSignInView: View {
             }
         }
     }
+}
+
+/// What an iCloud sign-in accepts, kept apart from the view so it can be
+/// tested.
+enum ICloudSignIn {
+    /// Apple's app-specific passwords: four groups of four lowercase
+    /// letters, with or without the dashes.
+    static func looksLikeAppPassword(_ text: String) -> Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .wholeMatch(of: /[a-z]{4}-?[a-z]{4}-?[a-z]{4}-?[a-z]{4}/) != nil
+    }
+
+    /// The address to sign in with: trimmed and lowercased, with
+    /// "@icloud.com" added to a bare name. Nil when it can't be an address.
+    static func address(from raw: String) -> String? {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !text.isEmpty, !text.contains(" ") else { return nil }
+        if !text.contains("@") { return text + "@icloud.com" }
+        let parts = text.split(separator: "@", omittingEmptySubsequences: false)
+        guard parts.count == 2, !parts[0].isEmpty, parts[1].contains(".") else { return nil }
+        return text
+    }
+
+    /// Apple's own domains. Anything else is a custom domain on iCloud+.
+    static func isAppleDomain(_ address: String) -> Bool {
+        ["icloud.com", "me.com", "mac.com"].contains(address.split(separator: "@").last.map(String.init) ?? "")
+    }
+}
+
+/// Apple's sign-in page inside Corres, so you never leave the app; Safari's
+/// saved passwords and Face ID work in it.
+private struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let controller = SFSafariViewController(url: url)
+        controller.dismissButtonStyle = .done
+        controller.preferredControlTintColor = UIColor(CorresPalette.accent)
+        return controller
+    }
+    func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
 }

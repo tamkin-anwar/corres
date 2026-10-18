@@ -342,14 +342,43 @@ struct ICloudClient: Sendable {
             try await session.connection.select(source)
             var uids: [UInt32] = []
             for id in messageIDs { uids += try await session.connection.search(messageID: id) }
-            if !uids.isEmpty { try await session.connection.move(uids: uids, to: inbox) }
+            guard !uids.isEmpty else { continue }
+            // Out of Junk: tell iCloud's filter it was wrong, as Apple Mail does.
+            if source == session.cachedFolders.junk { try? await session.connection.setFlags(["$NotJunk"], uids: uids, add: true) }
+            try await session.connection.move(uids: uids, to: inbox)
         }
     }
 
     // MARK: Settings and folders
 
+    /// The account's addresses: the main one, plus every alias and custom-
+    /// domain address it has sent from. iCloud gives apps no list of
+    /// aliases, but Sent Messages shows each one in use, with its name.
     func sendAs(account: String) async throws -> [GmailAPIClient.SendAs] {
-        [GmailAPIClient.SendAs(email: account, name: "", isDefault: true, isPrimary: true)]
+        let fromSent: [Address] = try await ICloudSessions.shared.with(account) { session in
+            guard let sent = try await session.folders().sent else { return [] }
+            let selected = try await session.connection.select(sent)
+            return try await session.connection.fetchNewestSummaries(count: 300, of: selected.exists).compactMap(\.from)
+        }
+        return Self.addresses(primary: account, sentFrom: fromSent)
+    }
+
+    static func addresses(primary: String, sentFrom: [Address]) -> [GmailAPIClient.SendAs] {
+        var names: [String: String] = [:]
+        var order: [String] = []
+        for address in sentFrom {
+            let email = address.email.lowercased()
+            if names[email] == nil { order.append(email) }
+            if let name = address.name, !name.isEmpty, (names[email] ?? "").isEmpty { names[email] = name }
+            else if names[email] == nil { names[email] = "" }
+        }
+        let main = primary.lowercased()
+        var result = [GmailAPIClient.SendAs(email: main, name: names[main] ?? names.values.first { !$0.isEmpty } ?? "",
+                                            isDefault: true, isPrimary: true)]
+        for email in order where email != main {
+            result.append(GmailAPIClient.SendAs(email: email, name: names[email] ?? "", isDefault: false, isPrimary: false))
+        }
+        return result
     }
 
     func vacation(account: String) async throws -> GmailAPIClient.Vacation {
@@ -399,7 +428,9 @@ struct ICloudClient: Sendable {
         try await ICloudSessions.shared.with(account) { session in
             try await session.refreshFolders()
             return session.allFolders
-                .filter { $0.role == nil && $0.isSelectable }
+                // "Notes" is where iCloud kept notes before the Notes app
+                // moved them; Apple Mail hides it too.
+                .filter { $0.role == nil && $0.isSelectable && $0.path != "Notes" }
                 .map { GmailUserLabel(id: "folder:\($0.path)", name: $0.path.replacingOccurrences(of: String($0.delimiter ?? "/"), with: " / ")) }
         }
     }

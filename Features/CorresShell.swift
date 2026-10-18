@@ -159,7 +159,8 @@ struct CorresShell: View {
         // A Focus filter (Settings → Focus) limits Corres to one account
         // while it's on; turning the Focus off brings every account back.
         .onReceive(NotificationCenter.default.publisher(for: CorresFocusFilter.didChange)) { _ in applyFocusFilter() }
-        .onAppear { applyFocusFilter() }
+        .onAppear { applyFocusFilter(); watchICloud() }
+        .onChange(of: auth.accounts) { watchICloud() }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { Task { await threadActions.commitPendingRemoval() } }
             // Leaving Corres: the Share sheet gets who you've written to since.
@@ -174,6 +175,9 @@ struct CorresShell: View {
                     await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
                     await FollowUps.shared.check(store: store)
                 }
+                watchICloud()
+            } else if phase == .background {
+                ICloudWatcher.shared.stopAll()
             }
         }
         .task {
@@ -231,6 +235,14 @@ struct CorresShell: View {
                 settingsAfterAccounts = true
             }
         }
+        .sheet(item: Binding(
+            get: { showingSettings ? nil : auth.icloudNeedsPassword.map(ICloudReconnect.init) },
+            set: { if $0 == nil { auth.icloudNeedsPassword = nil } }
+        )) { item in
+            ICloudSignInView(auth: auth, reconnecting: item.id) { _ in
+                Task { if await sync.syncIfConnected(account: item.id) { await store.load() } }
+            }
+        }
         .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService, unsubscriber: unsubscribeService) }
         .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
         .sheet(isPresented: $showingPaywall) { PaywallView() }
@@ -242,6 +254,18 @@ struct CorresShell: View {
                 hasExplored = true
                 showingWelcome = false
             }
+        }
+    }
+
+    /// iCloud has no push for other apps: catch up on coming back, then
+    /// hold IDLE so new mail lands while Corres is open.
+    private func watchICloud() {
+        let accounts = auth.accounts.map(\.email)
+        for account in accounts where MailAccounts.provider(for: account) == .icloud {
+            Task { if await sync.syncIfConnected(account: account) { await store.load() } }
+        }
+        ICloudWatcher.shared.start(accounts: accounts) { [sync, store] account in
+            Task { if await sync.syncIfConnected(account: account) { await store.load() } }
         }
     }
 
@@ -752,3 +776,6 @@ private struct MailboxDestinations: ViewModifier {
             }
     }
 }
+
+/// The iCloud account asking for a new password, as a sheet item.
+private struct ICloudReconnect: Identifiable { let id: String }

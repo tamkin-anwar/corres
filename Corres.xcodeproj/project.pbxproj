@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		E96FEBD52D875852941AFA63 /* Features/ICloudSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45F64AFF79F0949FCACF37CE /* Features/ICloudSignInView.swift */; };
+		A1C0DE0000000000000000B1 /* App/ICloudWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000F1 /* App/ICloudWatcher.swift */; };
 		0D110BEBD3F6F71AB17AE002 /* MailEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 8F5EAE114EF4F89A6546179D /* MailEngine */; };
 		CBA59B0FDCE83F1A231C9E47 /* App/ICloudSessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C096C44615F2419D412B136 /* App/ICloudSessions.swift */; };
 		9AF4A7F648DCCB827297D21B /* App/ICloudClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCEB6F4F7D60C9D7914B9BA /* App/ICloudClient.swift */; };
@@ -244,6 +245,7 @@
 
 /* Begin PBXFileReference section */
 		45F64AFF79F0949FCACF37CE /* Features/ICloudSignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ICloudSignInView.swift; sourceTree = SOURCE_ROOT; };
+		A1C0DE0000000000000000F1 /* App/ICloudWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ICloudWatcher.swift; sourceTree = SOURCE_ROOT; };
 		2C096C44615F2419D412B136 /* App/ICloudSessions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ICloudSessions.swift; sourceTree = SOURCE_ROOT; };
 		8CCEB6F4F7D60C9D7914B9BA /* App/ICloudClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ICloudClient.swift; sourceTree = SOURCE_ROOT; };
 		875E824B7FD64028A5D2B830 /* NotificationExtension/NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationExtension/NotificationService.swift; sourceTree = SOURCE_ROOT; };
@@ -471,6 +473,7 @@
 				783548898D6B4BFC87B56174 /* Features/ComposeFields.swift */,
 				11D41A2038764132BB1178C6 /* Features/OutOfOfficeView.swift */,
 				45F64AFF79F0949FCACF37CE /* Features/ICloudSignInView.swift */,
+				A1C0DE0000000000000000F1 /* App/ICloudWatcher.swift */,
 				5714C136B1C144BA9986F7BD /* App/FollowUps.swift */,
 				C2C84FA9213442ABAFDA59F7 /* Features/InvitationCard.swift */,
 				0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */,
@@ -795,6 +798,7 @@
 				0A348A8A0E8240AF977995B1 /* Features/ComposeFields.swift in Sources */,
 				B82696FAC3244A5898E6A8B6 /* Features/OutOfOfficeView.swift in Sources */,
 				E96FEBD52D875852941AFA63 /* Features/ICloudSignInView.swift in Sources */,
+				A1C0DE0000000000000000B1 /* App/ICloudWatcher.swift in Sources */,
 				0FC1AEC8A0924D76B68B12C6 /* App/FollowUps.swift in Sources */,
 				2D1AEA72759A4140970CC4B7 /* Features/InvitationCard.swift in Sources */,
 				4865B921A9244517869EF251 /* Core/Invitation.swift in Sources */,

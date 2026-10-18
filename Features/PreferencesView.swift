@@ -587,7 +587,7 @@ private struct AccountDetailView: View {
                           : provider == .icloud ? "Update App-Specific Password" : "Reconnect with Google", systemImage: "key")
                 }
                 .sheet(isPresented: $updatingICloudPassword) {
-                    ICloudSignInView(auth: auth) { _ in
+                    ICloudSignInView(auth: auth, reconnecting: account.email) { _ in
                         Task { _ = await sync.syncIfConnected(account: account.email) }
                     }
                 }

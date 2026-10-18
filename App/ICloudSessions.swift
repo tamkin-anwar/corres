@@ -41,6 +41,14 @@ actor ICloudSessions {
         }
     }
 
+    /// Posted, with the address as its object, when iCloud turns a saved
+    /// password away.
+    static let passwordRejected = Notification.Name("corres.icloud.passwordRejected")
+
+    private static func announceRejected(_ account: String) {
+        Task { @MainActor in NotificationCenter.default.post(name: passwordRejected, object: account) }
+    }
+
     static let log = Logger(subsystem: "studio.anwarcreative.corres", category: "icloud")
     private var sessions: [String: Session] = [:]
     private var busy: Set<String> = []
@@ -57,6 +65,10 @@ actor ICloudSessions {
             session = try await self.session(for: account)
         } catch {
             Self.log.error("iCloud sign-in failed: \(String(describing: error), privacy: .public)")
+            if case IMAPConnection.ConnectionError.authenticationFailed = error {
+                Self.announceRejected(account)
+                throw GmailAPIClient.ClientError.notSignedIn
+            }
             throw error
         }
         do {
@@ -70,6 +82,7 @@ actor ICloudSessions {
                 throw GmailAPIClient.ClientError.badResponse(statusCode: 0)
             case .authenticationFailed:
                 sessions[account] = nil
+                Self.announceRejected(account)
                 throw GmailAPIClient.ClientError.notSignedIn
             case .commandFailed(let message):
                 throw GmailAPIClient.ClientError.refused(statusCode: 0, reason: nil, message: message)

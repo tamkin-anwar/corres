@@ -59,6 +59,7 @@ final class GoogleAuthService {
     /// after updating, since their refresh token only ever lived in
     /// GoogleSignIn's own store, never in Corres's own Keychain entry.
     func restoreConnectedAccounts() async {
+        watchICloudPasswords()
         let storedEmails = defaults.stringArray(forKey: Self.connectedAccountsKey) ?? []
         var restored: [GmailAccount] = []
         for email in storedEmails {
@@ -289,19 +290,25 @@ final class GoogleAuthService {
     /// before anything is saved. Returns a message to show when it didn't
     /// work, or nil when it did.
     func signInICloud(email rawEmail: String, password rawPassword: String) async -> String? {
-        let email = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard let email = ICloudSignIn.address(from: rawEmail) else { return "Enter your iCloud address, like name@icloud.com." }
         let password = rawPassword.replacingOccurrences(of: " ", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard email.contains("@") else { return "Enter your iCloud email address." }
-        guard !password.isEmpty else { return "Enter the app-specific password." }
+        guard !password.isEmpty else { return "Paste or type the app-specific password." }
         isSigningIn = true
         defer { isSigningIn = false }
         do {
             try await ICloudSessions.verify(email: email, password: password)
         } catch GmailAPIClient.ClientError.notSignedIn {
-            return "That password didn't work. Use an app-specific password from account.apple.com, not your Apple Account password."
+            if !ICloudSignIn.looksLikeAppPassword(password) {
+                return "That looks like your Apple Account password. iCloud only accepts an app-specific password here: make one with Open Apple Account above."
+            }
+            if !ICloudSignIn.isAppleDomain(email) {
+                return "iCloud didn't accept that. Sign in with your main iCloud address (it ends in @icloud.com, @me.com or @mac.com), even if you send from your own domain."
+            }
+            return "iCloud didn't accept that password. Check the address is your main iCloud address, or make a new app-specific password and paste it."
         } catch {
             return "Couldn't reach iCloud Mail. Check your connection and try again."
         }
+        if icloudNeedsPassword == email { icloudNeedsPassword = nil }
         ICloudCredentials.save(password, for: email)
         MailAccounts.setProvider(.icloud, for: email)
         await ICloudSessions.shared.forget(email)
@@ -312,9 +319,32 @@ final class GoogleAuthService {
         return nil
     }
 
-    /// Signs an account in again, with its own service.
+    /// Signs an account in again, with its own service. iCloud has no
+    /// sign-in page to send you to: it asks for a new app-specific password.
     func reconnect(_ email: String) async {
-        if MailAccounts.provider(for: email) == .microsoft { await signInOutlook(hint: email) } else { await signIn(hint: email) }
+        switch MailAccounts.provider(for: email) {
+        case .microsoft: await signInOutlook(hint: email)
+        case .icloud: icloudNeedsPassword = email
+        case .google: await signIn(hint: email)
+        }
+    }
+
+    /// An iCloud account whose password iCloud stopped accepting (usually
+    /// after an Apple Account password change, which revokes app-specific
+    /// passwords). The shell asks for a new one.
+    var icloudNeedsPassword: String?
+    @ObservationIgnored private var icloudRejection: NSObjectProtocol?
+
+    /// Listens for iCloud turning a password away mid-session.
+    func watchICloudPasswords() {
+        guard icloudRejection == nil else { return }
+        icloudRejection = NotificationCenter.default.addObserver(forName: ICloudSessions.passwordRejected, object: nil, queue: .main) { [weak self] note in
+            guard let email = note.object as? String else { return }
+            MainActor.assumeIsolated {
+                guard let self, self.isConnected(email) else { return }
+                self.icloudNeedsPassword = email
+            }
+        }
     }
 
     /// Disconnects exactly one account, leaving any others connected: the
