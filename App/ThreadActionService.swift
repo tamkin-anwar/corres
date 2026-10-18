@@ -353,7 +353,7 @@ final class ThreadActionService {
     /// trivial, harmless correction, nothing like re-inserting a removed
     /// row into a screen the person has already navigated away from.
     func setUnread(_ isUnread: Bool, for thread: Correspondence) async {
-        let failureMessage = "Couldn't mark this conversation as \(isUnread ? "unread" : "read"). Please try again."
+        let failureMessage = "Couldn't mark this conversation as \(isUnread ? "unread" : "read"). Try again."
         await performOptimistic(thread, failureMessage: failureMessage, gmailCall: {
             if isUnread {
                 try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: ["UNREAD"], account: thread.id.account)

@@ -20,6 +20,9 @@ actor ICloudSessions {
 
     final class Session: @unchecked Sendable {
         let connection: IMAPConnection
+        /// When this connection last did something. iCloud closes ones left
+        /// quiet for long, and the next command would fail once.
+        var lastUsed = Date.now
         var allFolders: [Folder] = []
         var cachedFolders = FolderPaths()
         init(connection: IMAPConnection) { self.connection = connection }
@@ -125,7 +128,13 @@ actor ICloudSessions {
     }
 
     private func session(for account: String) async throws -> Session {
-        if let existing = sessions[account] { return existing }
+        if let existing = sessions[account] {
+            // Quiet for over ten minutes: start fresh rather than find out
+            // the hard way, mid-archive, that iCloud closed it.
+            if Date.now.timeIntervalSince(existing.lastUsed) < 600 { existing.lastUsed = .now; return existing }
+            sessions[account] = nil
+            await existing.connection.logout()
+        }
         guard let password = ICloudCredentials.password(for: account) else { throw GmailAPIClient.ClientError.notSignedIn }
         let connection = IMAPConnection(host: ICloudClient.imapHost)
         try await connection.connect()
@@ -163,6 +172,9 @@ actor ICloudCache {
     private var bodies: [String: [String: ParsedMessage]] = [:]
 
     func keep(_ messages: [MessageSummary], uidValidity: UInt32, account: String) {
+        // Bounded, so a long session paging through years of mail doesn't
+        // grow without end; anything dropped is looked up on iCloud again.
+        if (summaries[account]?.count ?? 0) > 5_000 { summaries[account] = [:] }
         for m in messages { summaries[account, default: [:]][ICloudClient.key(m, uidValidity: uidValidity)] = m }
     }
 
