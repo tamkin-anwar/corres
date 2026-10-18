@@ -221,7 +221,20 @@ struct ICloudClient: Sendable {
         if let conversation = await ICloudCache.shared.conversation(forMessageID: id, account: account) {
             return ThreadID(account: account, providerID: conversation)
         }
-        return nil
+        // Not fetched this session (Corres restarted mid-send): ask iCloud.
+        // Sent is where a send that went through lands.
+        return try await ICloudSessions.shared.with(account) { session in
+            let folders = try await session.folders()
+            for path in [folders.sent, folders.inbox].compactMap({ $0 }) {
+                let selected = try await session.connection.select(path)
+                let uids = try await session.connection.search(messageID: id)
+                guard !uids.isEmpty else { continue }
+                let found = try await session.connection.fetchSummaries(uids: uids)
+                await ICloudCache.shared.keep(found, uidValidity: selected.uidValidity, account: account)
+                if let summary = found.first { return ThreadID(account: account, providerID: Self.conversation(for: summary)) }
+            }
+            return nil
+        }
     }
 
     // MARK: Sending
@@ -245,12 +258,43 @@ struct ICloudClient: Sendable {
         } catch SMTPClient.SMTPError.rejected(let code, let why) {
             throw ClientError.refused(statusCode: code, reason: nil, message: why)
         }
-        return try await ICloudSessions.shared.with(account) { session in
-            guard let sent = session.cachedFolders.sent else { return "" }
-            let uid = try await session.connection.append(Data(outgoing.utf8), to: sent, flags: ["\\Seen"])
-            let selected = try await session.connection.select(sent)
-            return uid.map { "\(selected.uidValidity):\($0):\(sent)" } ?? ""
+        // Sent now; what follows is filing, and must never turn a delivered
+        // email into a "Couldn't send".
+        do {
+            try await ICloudSessions.shared.with(account) { session in
+                guard let sent = try await session.folders().sent else { return }
+                _ = try await session.connection.append(Data(outgoing.utf8), to: sent, flags: ["\\Seen"])
+            }
+        } catch {
+            ICloudSessions.log.error("Sent, but not filed in Sent: \(String(describing: error), privacy: .public)")
         }
+        // The conversation it belongs to, the same id sync gives it.
+        return threadId ?? Self.conversation(ofMessage: outgoing) ?? ""
+    }
+
+    /// A raw message's conversation, by the rule `conversation(for:)` uses
+    /// on synced mail: the first References id, else In-Reply-To, else its
+    /// own Message-ID.
+    static func conversation(ofMessage message: String) -> String? {
+        let normalized = message.replacingOccurrences(of: "\r\n", with: "\n")
+        let headerText = normalized.components(separatedBy: "\n\n").first ?? normalized
+        var headers: [String: String] = [:]
+        var current: String?
+        for line in headerText.components(separatedBy: "\n") {
+            if let first = line.first, first == " " || first == "\t", let name = current {
+                headers[name, default: ""] += " " + line.trimmingCharacters(in: .whitespaces)
+            } else if let colon = line.firstIndex(of: ":") {
+                let name = line[..<colon].lowercased()
+                current = name
+                if headers[name] == nil { headers[name] = String(line[line.index(after: colon)...]) }
+            }
+        }
+        func firstID(_ value: String?) -> String? {
+            guard let value, let open = value.firstIndex(of: "<"), let close = value[open...].firstIndex(of: ">") else { return nil }
+            let id = String(value[value.index(after: open)..<close])
+            return id.isEmpty ? nil : id
+        }
+        return firstID(headers["references"]) ?? firstID(headers["in-reply-to"]) ?? firstID(headers["message-id"])
     }
 
     func saveDraft(raw: String, threadId: String?, existingID: String?, account: String) async throws -> String {
