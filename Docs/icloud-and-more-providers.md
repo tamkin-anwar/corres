@@ -230,3 +230,11 @@ Pieces, in build order:
 - [nixpkgs: MailCore2 removed](https://code.ornl.gov/nix/nixpkgs/-/commit/cc3c0c7a679c794f119676abcb07cdc0d730f117)
 - [Cloud Run pricing](https://goo.gle/3Inc1KA)
 - [Cloud Run always-on CPU](https://oneuptime.com/blog/post/2026-02-17-how-to-configure-cloud-run-cpu-allocation-to-always-on-for-background-processing-workloads/markdown)
+- 2026-10-17, step 2 built (e47e306): Settings > Add Account > iCloud Mail
+  opens a sheet that explains app-specific passwords, links to
+  account.apple.com, and checks the password with iCloud before saving it
+  to the Keychain. `ICloudClient` covers sync, older mail, opening,
+  search, sending (SMTP, then a copy appended to Sent), drafts, read,
+  star, archive, junk, trash and folders. Still to do: a live test with a
+  real app-specific password, including whether Sent ends up with two
+  copies.
