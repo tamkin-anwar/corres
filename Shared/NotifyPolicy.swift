@@ -17,7 +17,7 @@ struct NotifyPolicy: Codable, Sendable {
     var blockedDomains: [String]?
 
     private static let key = "corres.notifyPolicy"
-    private static var defaults: UserDefaults { UserDefaults(suiteName: "group.studio.anwarcreative.corres") ?? .standard }
+    private static var defaults: UserDefaults { MailAccounts.groupDefaults }
 
     static func load() -> NotifyPolicy {
         defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(NotifyPolicy.self, from: $0) } ?? NotifyPolicy()

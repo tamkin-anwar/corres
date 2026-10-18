@@ -266,6 +266,17 @@ struct ActionTests {
         #expect(folders.folder(for: .sent)?.path == "Sent Messages")
     }
 
+    @Test func conversationSearchMatchesTheMessageAndItsReplies() async throws {
+        let s = server(capabilities: "IMAP4rev1", extra: ["UID SEARCH": ["* SEARCH 4 9", "{TAG} OK SEARCH done"]])
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        #expect(try await c.search(conversation: "abc@x.com") == [4, 9])
+        let sent = s.sentLines().last ?? ""
+        #expect(sent.contains(#"OR HEADER "Message-ID" "<abc@x.com>""#))
+        #expect(sent.contains(#"HEADER "References" "<abc@x.com>""#))
+        #expect(sent.contains(#"HEADER "In-Reply-To" "<abc@x.com>""#))
+    }
+
     @Test func markReadUsesSilentStoreOnARangeOfUIDs() async throws {
         let s = server(capabilities: "IMAP4rev1")
         defer { Task { await s.stop() } }

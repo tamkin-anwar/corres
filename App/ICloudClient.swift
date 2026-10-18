@@ -147,8 +147,8 @@ struct ICloudClient: Sendable {
                 for (path, keys) in Dictionary(grouping: missing.compactMap(Self.parse), by: \.path) {
                     let selected = try await session.connection.select(path)
                     let uids = keys.filter { $0.uidValidity == selected.uidValidity }.map(\.uid)
-                    guard let low = uids.min(), let high = uids.max() else { continue }
-                    let messages = try await session.connection.fetchSummaries(uids: low...high).filter { uids.contains($0.uid) }
+                    guard !uids.isEmpty else { continue }
+                    let messages = try await session.connection.fetchSummaries(uids: uids)
                     await ICloudCache.shared.keep(messages, uidValidity: selected.uidValidity, account: account)
                     for m in messages { found[Self.key(m, uidValidity: selected.uidValidity)] = m }
                 }
@@ -194,7 +194,7 @@ struct ICloudClient: Sendable {
     }
 
     func fetchThreadMessages(threadId: String, account: String) async throws -> [Correspondence] {
-        let keys = await ICloudCache.shared.keys(inConversation: threadId, account: account)
+        let keys = try await Self.messageKeys(inConversation: threadId, account: account).map(\.raw)
         guard !keys.isEmpty else { return [] }
         return try await fetchMessages(ids: keys, account: account).items.sorted { $0.receivedAt < $1.receivedAt }
     }
@@ -283,7 +283,7 @@ struct ICloudClient: Sendable {
     /// Read, flagged, archive, spam and back to Inbox, on every message of
     /// the conversation Corres has seen.
     func modifyThread(threadId: String, addLabelIds: [String], removeLabelIds: [String], account: String) async throws {
-        let keys = await ICloudCache.shared.keys(inConversation: threadId, account: account).compactMap(Self.parse)
+        let keys = try await Self.messageKeys(inConversation: threadId, account: account)
         guard !keys.isEmpty else { return }
         try await ICloudSessions.shared.with(account) { session in
             let folders = session.cachedFolders
@@ -312,7 +312,7 @@ struct ICloudClient: Sendable {
     }
 
     func trashThread(threadId: String, account: String) async throws {
-        let keys = await ICloudCache.shared.keys(inConversation: threadId, account: account).compactMap(Self.parse)
+        let keys = try await Self.messageKeys(inConversation: threadId, account: account)
         try await ICloudSessions.shared.with(account) { session in
             guard let trash = session.cachedFolders.trash else { return }
             for (path, group) in Dictionary(grouping: keys, by: \.path) where path != trash {
@@ -329,6 +329,27 @@ struct ICloudClient: Sendable {
             let folders = session.cachedFolders
             try await Self.bringBack(conversation: threadId, from: [folders.trash].compactMap { $0 }, to: folders.inbox,
                                      session: session, account: account)
+        }
+    }
+
+    /// A conversation's messages: from what's been fetched this session, or,
+    /// after Corres restarts and that's gone, from iCloud itself, by the
+    /// Message-ID the conversation started with.
+    static func messageKeys(inConversation conversation: String, account: String) async throws -> [Key] {
+        let known = await ICloudCache.shared.keys(inConversation: conversation, account: account).compactMap(parse)
+        if !known.isEmpty { return known }
+        return try await ICloudSessions.shared.with(account) { session in
+            let folders = try await session.folders()
+            var found: [Key] = []
+            for path in [folders.inbox, folders.sent, folders.archive, folders.junk].compactMap({ $0 }) {
+                let selected = try await session.connection.select(path)
+                let uids = try await session.connection.search(conversation: conversation)
+                guard !uids.isEmpty else { continue }
+                let summaries = try await session.connection.fetchSummaries(uids: uids)
+                await ICloudCache.shared.keep(summaries, uidValidity: selected.uidValidity, account: account)
+                found += summaries.compactMap { parse(key($0, uidValidity: selected.uidValidity)) }
+            }
+            return found
         }
     }
 

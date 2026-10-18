@@ -112,6 +112,12 @@ public actor IMAPConnection {
 
     /// Headers for list rows and threading, for the UIDs in `range` of the
     /// selected folder. Bodies are fetched separately, on open.
+    public func fetchSummaries(uids: [UInt32]) async throws -> [MessageSummary] {
+        guard !uids.isEmpty else { return [] }
+        guard let folder = selectedFolder else { throw ConnectionError.notConnected }
+        return try await run(.uidFetch(Self.uidSet(uids), Self.summaryAttributes, []), folder: folder).messages
+    }
+
     public func fetchSummaries(uids range: ClosedRange<UInt32>) async throws -> [MessageSummary] {
         guard let folder = selectedFolder else { throw ConnectionError.notConnected }
         return try await run(.uidFetch(Self.uidSet(range), Self.summaryAttributes, []), folder: folder).messages
@@ -142,6 +148,15 @@ public actor IMAPConnection {
 
     /// UIDs in the selected folder whose Message-ID is `messageID`: how a
     /// message is found again after it moved (UIDs are per folder).
+    /// UIDs in the selected folder that belong to the conversation started
+    /// by `messageID`: the message itself, and any that answer it or name
+    /// it in References.
+    public func search(conversation messageID: String) async throws -> [UInt32] {
+        let id = ByteBuffer(string: "<\(messageID)>")
+        let key: SearchKey = .or(.header("Message-ID", id), .or(.header("References", id), .header("In-Reply-To", id)))
+        return try await run(.uidSearch(key: key), folder: selectedFolder ?? "").searchResults
+    }
+
     public func search(messageID: String) async throws -> [UInt32] {
         try await run(.uidSearch(key: .header("Message-ID", ByteBuffer(string: "<\(messageID)>"))), folder: selectedFolder ?? "").searchResults
     }

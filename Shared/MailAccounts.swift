@@ -34,17 +34,33 @@ enum MailProvider: String, Codable, Sendable {
 /// Outlook existed have no entry and are Gmail.
 enum MailAccounts {
     private static let key = "corres.accountProviders"
-    private static var defaults: UserDefaults { UserDefaults(suiteName: "group.studio.anwarcreative.corres") ?? .standard }
+    /// One App Group store for the process. A new UserDefaults per read
+    /// meant a trip to the preferences daemon each time, and this is read
+    /// for every mail call and every row's account tag.
+    nonisolated(unsafe) static let groupDefaults = UserDefaults(suiteName: "group.studio.anwarcreative.corres") ?? .standard
+
+    /// The map, read from the App Group once and then kept; only Corres
+    /// itself changes it (`setProvider`), which updates this copy too.
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var cachedMap: [String: String]?
+
+    private static var map: [String: String] {
+        lock.lock(); defer { lock.unlock() }
+        if let cachedMap { return cachedMap }
+        let loaded = groupDefaults.dictionary(forKey: key) as? [String: String] ?? [:]
+        cachedMap = loaded
+        return loaded
+    }
 
     static func provider(for account: String) -> MailProvider {
-        let map = defaults.dictionary(forKey: key) as? [String: String] ?? [:]
-        return map[account.lowercased()].flatMap(MailProvider.init(rawValue:)) ?? .google
+        map[account.lowercased()].flatMap(MailProvider.init(rawValue:)) ?? .google
     }
 
     static func setProvider(_ provider: MailProvider, for account: String) {
-        var map = defaults.dictionary(forKey: key) as? [String: String] ?? [:]
-        map[account.lowercased()] = provider.rawValue
-        defaults.set(map, forKey: key)
+        var updated = groupDefaults.dictionary(forKey: key) as? [String: String] ?? [:]
+        updated[account.lowercased()] = provider.rawValue
+        groupDefaults.set(updated, forKey: key)
+        lock.lock(); cachedMap = updated; lock.unlock()
     }
 
     /// A short tag telling an account apart from the others in a shared
@@ -77,8 +93,9 @@ enum MailAccounts {
     }
 
     static func forget(_ account: String) {
-        var map = defaults.dictionary(forKey: key) as? [String: String] ?? [:]
-        map[account.lowercased()] = nil
-        defaults.set(map, forKey: key)
+        var updated = groupDefaults.dictionary(forKey: key) as? [String: String] ?? [:]
+        updated[account.lowercased()] = nil
+        groupDefaults.set(updated, forKey: key)
+        lock.lock(); cachedMap = updated; lock.unlock()
     }
 }
