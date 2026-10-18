@@ -176,12 +176,18 @@ struct ICloudClient: Sendable {
             var failed: [String] = []
             for (path, keys) in Dictionary(grouping: ids.compactMap(Self.parse), by: \.path) {
                 let selected = try await session.connection.select(path)
-                for key in keys {
-                    guard key.uidValidity == selected.uidValidity, let summary = summaries[key.raw],
-                          let raw = try await session.connection.fetchMessage(uid: key.uid) else { failed.append(key.raw); continue }
-                    let parsed = MIMEParser.parse(raw)
-                    await ICloudCache.shared.keepBody(parsed, for: key.raw, account: account)
-                    items.append(map(summary, key: key.raw, account: account, folders: session.cachedFolders, body: parsed))
+                let current = keys.filter { $0.uidValidity == selected.uidValidity }
+                failed += keys.filter { $0.uidValidity != selected.uidValidity }.map(\.raw)
+                // Twenty to a command: one round trip a batch, and short
+                // enough that an archive or an open waits a moment at most.
+                for batch in current.chunked(into: 20) {
+                    let raws = try await session.connection.fetchMessages(uids: batch.map(\.uid))
+                    for key in batch {
+                        guard let summary = summaries[key.raw], let raw = raws[key.uid] else { failed.append(key.raw); continue }
+                        let parsed = MIMEParser.parse(raw)
+                        await ICloudCache.shared.keepBody(parsed, for: key.raw, account: account)
+                        items.append(map(summary, key: key.raw, account: account, folders: session.cachedFolders, body: parsed))
+                    }
                 }
             }
             return (items, failed)

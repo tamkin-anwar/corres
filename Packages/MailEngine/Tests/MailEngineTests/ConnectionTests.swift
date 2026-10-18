@@ -266,6 +266,19 @@ struct ActionTests {
         #expect(folders.folder(for: .sent)?.path == "Sent Messages")
     }
 
+    @Test func severalMessagesComeBackFromOneFetch() async throws {
+        let s = server(capabilities: "IMAP4rev1", extra: ["UID FETCH": [
+            "* 1 FETCH (UID 4 BODY[] {7}", "Hello A)",
+            "* 2 FETCH (UID 9 BODY[] {7}", "Hello B)",
+            "{TAG} OK FETCH done",
+        ]])
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        let bodies = try await c.fetchMessages(uids: [9, 4])
+        #expect(bodies.mapValues { String(decoding: $0, as: UTF8.self) } == [4: "Hello A", 9: "Hello B"])
+        #expect(s.sentLines().last?.contains("UID FETCH 4,9") == true)
+    }
+
     @Test func conversationSearchMatchesTheMessageAndItsReplies() async throws {
         let s = server(capabilities: "IMAP4rev1", extra: ["UID SEARCH": ["* SEARCH 4 9", "{TAG} OK SEARCH done"]])
         defer { Task { await s.stop() } }

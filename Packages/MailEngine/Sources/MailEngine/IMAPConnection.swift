@@ -170,6 +170,14 @@ public actor IMAPConnection {
     }
 
     /// The whole raw message (RFC 822), without marking it read.
+    /// Several whole messages in one command, by UID: one round trip for
+    /// a batch instead of one each.
+    public func fetchMessages(uids: [UInt32]) async throws -> [UInt32: Data] {
+        guard !uids.isEmpty else { return [:] }
+        guard let folder = selectedFolder else { throw ConnectionError.notConnected }
+        return try await run(.uidFetch(Self.uidSet(uids), [.uid, .bodySection(peek: true, SectionSpecifier(), nil)], []), folder: folder).bodies
+    }
+
     public func fetchMessage(uid: UInt32) async throws -> Data? {
         guard let folder = selectedFolder else { throw ConnectionError.notConnected }
         let result = try await run(.uidFetch(Self.uidSet(uid...uid), [.uid, .bodySection(peek: true, SectionSpecifier(), nil)], []), folder: folder)
