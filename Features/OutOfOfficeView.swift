@@ -29,7 +29,11 @@ struct OutOfOfficeView: View {
                     ForEach(auth.accounts) { Text($0.email).tag($0.email) }
                 }
             }
-            if MailAccounts.provider(for: account) == .icloud {
+            if MailAccounts.provider(for: account) == .imap {
+                Section {} footer: {
+                    Text("Other mail apps can't change this service's automatic reply. Set it on your email provider's website, usually under Settings, then Vacation or Auto Reply.")
+                }
+            } else if MailAccounts.provider(for: account) == .icloud {
                 Section {
                     Link("Open iCloud Mail Settings", destination: URL(string: "https://www.icloud.com/mail/")!)
                 } footer: {

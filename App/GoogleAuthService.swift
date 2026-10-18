@@ -65,7 +65,7 @@ final class GoogleAuthService {
         for email in storedEmails {
             let signedIn = switch MailAccounts.provider(for: email) {
             case .microsoft: await OutlookTokenProvider.shared.hasRefreshToken(for: email)
-            case .icloud: ICloudCredentials.password(for: email) != nil
+            case .icloud, .imap: IMAPCredentials.password(for: email) != nil
             case .google: await GoogleTokenProvider.shared.hasRefreshToken(for: email)
             }
             if signedIn { restored.append(GmailAccount(email: email)) }
@@ -183,7 +183,7 @@ final class GoogleAuthService {
     func canManageSettings(_ email: String) async -> Bool {
         // Outlook's sign-in includes mailbox settings; iCloud has none over IMAP.
         if MailAccounts.provider(for: email) == .microsoft { return true }
-        if MailAccounts.provider(for: email) == .icloud { return false }
+        if MailAccounts.provider(for: email).usesIMAP { return false }
         if await GoogleTokenProvider.shared.grantedScopes(for: email) == nil {
             // Scopes come with a fresh token; a cached one doesn't say.
             await GoogleTokenProvider.shared.invalidateAccessToken(for: email)
@@ -296,7 +296,7 @@ final class GoogleAuthService {
         isSigningIn = true
         defer { isSigningIn = false }
         do {
-            try await ICloudSessions.verify(email: email, password: password)
+            try await IMAPSessions.verify(email: email, password: password)
         } catch GmailAPIClient.ClientError.notSignedIn {
             if !ICloudSignIn.looksLikeAppPassword(password) {
                 return "That looks like your Apple Account password. iCloud only accepts an app-specific password here: make one with Open Apple Account above."
@@ -309,9 +309,54 @@ final class GoogleAuthService {
             return "Couldn't reach iCloud Mail. Check your connection and try again."
         }
         if icloudNeedsPassword == email { icloudNeedsPassword = nil }
-        ICloudCredentials.save(password, for: email)
+        IMAPCredentials.save(password, for: email)
         MailAccounts.setProvider(.icloud, for: email)
-        await ICloudSessions.shared.forget(email)
+        await IMAPSessions.shared.forget(email)
+        if !accounts.contains(where: { $0.email == email }) {
+            accounts.append(GmailAccount(email: email))
+            persistAccountList()
+        }
+        return nil
+    }
+
+    /// Adds any other email account: tries each server found for it
+    /// (`MailServerDiscovery`) by signing in, and keeps the first that
+    /// works. Returns what went wrong, or nil.
+    func signInIMAP(email rawEmail: String, password rawPassword: String, candidates: [IMAPServer],
+                    appPassword: Bool) async -> String? {
+        let email = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let password = rawPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard email.contains("@") else { return "Enter your email address." }
+        guard !password.isEmpty else { return "Enter your password." }
+        isSigningIn = true
+        defer { isSigningIn = false }
+        var rejected = false
+        var working: IMAPServer?
+        for server in candidates {
+            do {
+                try await IMAPSessions.verify(email: email, password: password, server: server)
+                working = server
+                break
+            } catch GmailAPIClient.ClientError.notSignedIn {
+                rejected = true
+                break
+            } catch {
+                continue
+            }
+        }
+        guard let server = working else {
+            if rejected {
+                return appPassword
+                    ? "That password didn't work. This service needs an app password, made from the link above, not your usual password."
+                    : "That password didn't work. If your email service offers app passwords, make one for Corres and use that."
+            }
+            return "Corres couldn't find your mail server. Check your connection, or enter the server settings yourself."
+        }
+        IMAPCredentials.save(password, for: email)
+        IMAPServer.save(server, for: email)
+        MailAccounts.setProvider(.imap, for: email)
+        await IMAPSessions.shared.forget(email)
+        if icloudNeedsPassword == email { icloudNeedsPassword = nil }
         if !accounts.contains(where: { $0.email == email }) {
             accounts.append(GmailAccount(email: email))
             persistAccountList()
@@ -324,7 +369,7 @@ final class GoogleAuthService {
     func reconnect(_ email: String) async {
         switch MailAccounts.provider(for: email) {
         case .microsoft: await signInOutlook(hint: email)
-        case .icloud: icloudNeedsPassword = email
+        case .icloud, .imap: icloudNeedsPassword = email
         case .google: await signIn(hint: email)
         }
     }
@@ -338,7 +383,7 @@ final class GoogleAuthService {
     /// Listens for iCloud turning a password away mid-session.
     func watchICloudPasswords() {
         guard icloudRejection == nil else { return }
-        icloudRejection = NotificationCenter.default.addObserver(forName: ICloudSessions.passwordRejected, object: nil, queue: .main) { [weak self] note in
+        icloudRejection = NotificationCenter.default.addObserver(forName: IMAPSessions.passwordRejected, object: nil, queue: .main) { [weak self] note in
             guard let email = note.object as? String else { return }
             MainActor.assumeIsolated {
                 guard let self, self.isConnected(email) else { return }
@@ -354,12 +399,12 @@ final class GoogleAuthService {
         persistAccountList()
         profiles[email] = nil
         if let data = try? JSONEncoder().encode(profiles) { defaults.set(data, forKey: Self.profilesKey) }
-        if MailAccounts.provider(for: email) == .icloud {
-            ICloudCredentials.remove(email)
+        if MailAccounts.provider(for: email).usesIMAP {
+            IMAPCredentials.remove(email)
             // Re-adding it later starts with instant alerts off, as new.
             UserDefaults.standard.removeObject(forKey: AccountPreferences.icloudInstantKey(for: email))
-            await ICloudSessions.shared.forget(email)
-            await ICloudCache.shared.forgetAccount(email)
+            await IMAPSessions.shared.forget(email)
+            await IMAPCache.shared.forgetAccount(email)
         } else if MailAccounts.provider(for: email) == .microsoft {
             await OutlookTokenProvider.shared.remove(email)
             await OutlookFolders.shared.forget(email)

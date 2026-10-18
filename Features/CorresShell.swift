@@ -181,7 +181,7 @@ struct CorresShell: View {
                 // New Since Last Opened: opening Corres clears it.
                 if CorresSettings.badge == .new { UserDefaults.standard.set(Date.now, forKey: CorresSettings.lastLeftKey); WidgetBridge.update(from: store.threads) }
             } else if phase == .background {
-                ICloudWatcher.shared.stopAll()
+                IMAPWatcher.shared.stopAll()
                 foregroundSync?.cancel()
                 UserDefaults.standard.set(Date.now, forKey: CorresSettings.lastLeftKey)
             }
@@ -245,12 +245,18 @@ struct CorresShell: View {
             get: { showingSettings ? nil : auth.icloudNeedsPassword.map(ICloudReconnect.init) },
             set: { if $0 == nil { auth.icloudNeedsPassword = nil } }
         )) { item in
+            if MailAccounts.provider(for: item.id) == .imap {
+                OtherEmailSignInView(auth: auth, reconnecting: item.id) { _ in
+                    Task { if await sync.syncIfConnected(account: item.id) { await store.load() } }
+                } onUseSignIn: { _ in }
+            } else {
             ICloudSignInView(auth: auth, reconnecting: item.id, rejected: true) { _ in
                 Task {
                     // The watcher needs the new password too.
                     if AccountPreferences.icloudInstant(for: item.id) { try? await pushService.setICloudInstant(true, account: item.id) }
                     if await sync.syncIfConnected(account: item.id) { await store.load() }
                 }
+            }
             }
         }
         .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService, unsubscriber: unsubscribeService) }
@@ -289,10 +295,10 @@ struct CorresShell: View {
     /// hold IDLE so new mail lands while Corres is open.
     private func watchICloud() {
         let accounts = auth.accounts.map(\.email)
-        for account in accounts where MailAccounts.provider(for: account) == .icloud {
+        for account in accounts where MailAccounts.provider(for: account).usesIMAP {
             Task { if await sync.syncIfConnected(account: account) { await store.load() } }
         }
-        ICloudWatcher.shared.start(accounts: accounts) { [sync, store] account in
+        IMAPWatcher.shared.start(accounts: accounts) { [sync, store] account in
             Task {
                 // A sync already running may have started just before this
                 // mail arrived: wait for it and go again, rather than drop it.

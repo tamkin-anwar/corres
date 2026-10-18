@@ -115,6 +115,7 @@ enum AccountPreferences {
         case .google: return 7
         case .microsoft: return 0
         case .icloud: return 5
+        case .imap: return nil
         }
     }
 

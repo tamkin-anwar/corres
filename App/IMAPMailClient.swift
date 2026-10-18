@@ -16,11 +16,9 @@ import MailEngine
 /// - A conversation is the Message-ID it started with (the first in
 ///   References, else In-Reply-To, else its own), so a reply in Sent joins
 ///   the email it answers.
-struct ICloudClient: Sendable {
+struct IMAPMailClient: Sendable {
     typealias ClientError = GmailAPIClient.ClientError
 
-    static let imapHost = "imap.mail.me.com"
-    static let smtpHost = "smtp.mail.me.com"
     static let firstInboxCount = 200
     static let firstSentCount = 100
 
@@ -35,7 +33,7 @@ struct ICloudClient: Sendable {
     }
 
     func planFullListing(account: String) async throws -> GmailAPIClient.SyncPlan {
-        try await ICloudSessions.shared.with(account) { session in
+        try await IMAPSessions.shared.with(account) { session in
             let folders = try await session.folders()
             var cursor = Cursor(folders: [:], known: [:])
             var all: [MessageSummary] = []
@@ -48,7 +46,7 @@ struct ICloudClient: Sendable {
                                                        highestModSeq: selected.highestModSeq,
                                                        oldestFetchedUID: messages.map(\.uid).min())
                 cursor.known[path] = Self.known(messages, keeping: [:])
-                await ICloudCache.shared.keep(messages, uidValidity: selected.uidValidity, account: account)
+                await IMAPCache.shared.keep(messages, uidValidity: selected.uidValidity, account: account)
             }
             all.sort { ($0.date ?? .distantPast) > ($1.date ?? .distantPast) }
             let ids = all.map { Self.key($0, uidValidity: cursor.folders[$0.folder]?.uidValidity ?? 0) }
@@ -61,7 +59,7 @@ struct ICloudClient: Sendable {
         guard let data = cursorString.data(using: .utf8), let start = try? JSONDecoder().decode(Cursor.self, from: data) else {
             throw ClientError.historyExpired
         }
-        return try await ICloudSessions.shared.with(account) { session in
+        return try await IMAPSessions.shared.with(account) { session in
             // A folder synced from the start that this cursor never saw
             // (Sent, when the folder list once came back empty): list again.
             let folders = try await session.folders()
@@ -83,7 +81,7 @@ struct ICloudClient: Sendable {
                     if let newFrom, newFrom <= selected.uidNext {
                         let fresh = try await session.connection.fetchSummaries(uids: newFrom...UInt32.max)
                             .filter { $0.uid >= newFrom }
-                        await ICloudCache.shared.keep(fresh, uidValidity: selected.uidValidity, account: account)
+                        await IMAPCache.shared.keep(fresh, uidValidity: selected.uidValidity, account: account)
                         newIDs += fresh.map { Self.key($0, uidValidity: selected.uidValidity) }
                         known = Self.known(fresh, keeping: known)
                     }
@@ -123,12 +121,12 @@ struct ICloudClient: Sendable {
         guard let pageToken, let bar = pageToken.lastIndex(of: "|"), let below = UInt32(pageToken[pageToken.index(after: bar)...]),
               below > 0 else { return ([], nil) }
         let path = String(pageToken[..<bar])
-        return try await ICloudSessions.shared.with(account) { session in
+        return try await IMAPSessions.shared.with(account) { session in
             let selected = try await session.connection.select(path)
             let low = below > 300 ? below - 300 : 1
             let messages = try await session.connection.fetchSummaries(uids: low...below)
                 .sorted { $0.uid > $1.uid }.prefix(GmailAPIClient.olderPageSize)
-            await ICloudCache.shared.keep(Array(messages), uidValidity: selected.uidValidity, account: account)
+            await IMAPCache.shared.keep(Array(messages), uidValidity: selected.uidValidity, account: account)
             let ids = messages.map { (Self.key($0, uidValidity: selected.uidValidity), Optional(Self.conversation(for: $0))) }
             let next = (messages.map(\.uid).min() ?? low) > 1 ? "\(path)|\((messages.map(\.uid).min() ?? low) - 1)" : nil
             return (ids, messages.isEmpty && low == 1 ? nil : next)
@@ -138,25 +136,25 @@ struct ICloudClient: Sendable {
     // MARK: Messages
 
     func fetchMetadata(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
-        let cached = await ICloudCache.shared.summaries(for: ids, account: account)
+        let cached = await IMAPCache.shared.summaries(for: ids, account: account)
         var found = cached
         let missing = ids.filter { cached[$0] == nil }
         if !missing.isEmpty {
-            let fetched: [String: MessageSummary] = try await ICloudSessions.shared.with(account) { session in
+            let fetched: [String: MessageSummary] = try await IMAPSessions.shared.with(account) { session in
                 var found: [String: MessageSummary] = [:]
                 for (path, keys) in Dictionary(grouping: missing.compactMap(Self.parse), by: \.path) {
                     let selected = try await session.connection.select(path)
                     let uids = keys.filter { $0.uidValidity == selected.uidValidity }.map(\.uid)
                     guard !uids.isEmpty else { continue }
                     let messages = try await session.connection.fetchSummaries(uids: uids)
-                    await ICloudCache.shared.keep(messages, uidValidity: selected.uidValidity, account: account)
+                    await IMAPCache.shared.keep(messages, uidValidity: selected.uidValidity, account: account)
                     for m in messages { found[Self.key(m, uidValidity: selected.uidValidity)] = m }
                 }
                 return found
             }
             found.merge(fetched) { a, _ in a }
         }
-        let folders = await ICloudSessions.shared.folders(for: account)
+        let folders = await IMAPSessions.shared.folders(for: account)
         let items = ids.compactMap { id in found[id].map { map($0, key: id, account: account, folders: folders, body: nil) } }
         return (items, ids.filter { found[$0] == nil })
     }
@@ -171,7 +169,7 @@ struct ICloudClient: Sendable {
 
     func fetchMessages(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
         let summaries = try await fetchMetadataSummaries(ids: ids, account: account)
-        return try await ICloudSessions.shared.with(account) { session in
+        return try await IMAPSessions.shared.with(account) { session in
             var items: [Correspondence] = []
             var failed: [String] = []
             for (path, keys) in Dictionary(grouping: ids.compactMap(Self.parse), by: \.path) {
@@ -185,7 +183,7 @@ struct ICloudClient: Sendable {
                     for key in batch {
                         guard let summary = summaries[key.raw], let raw = raws[key.uid] else { failed.append(key.raw); continue }
                         let parsed = MIMEParser.parse(raw)
-                        await ICloudCache.shared.keepBody(parsed, for: key.raw, account: account)
+                        await IMAPCache.shared.keepBody(parsed, for: key.raw, account: account)
                         items.append(map(summary, key: key.raw, account: account, folders: session.cachedFolders, body: parsed))
                     }
                 }
@@ -196,7 +194,7 @@ struct ICloudClient: Sendable {
 
     private func fetchMetadataSummaries(ids: [String], account: String) async throws -> [String: MessageSummary] {
         _ = try await fetchMetadata(ids: ids, account: account)
-        return await ICloudCache.shared.summaries(for: ids, account: account)
+        return await IMAPCache.shared.summaries(for: ids, account: account)
     }
 
     func fetchThreadMessages(threadId: String, account: String) async throws -> [Correspondence] {
@@ -208,7 +206,7 @@ struct ICloudClient: Sendable {
     /// The whole mailbox, as Gmail's and Outlook's search are: Inbox, Sent
     /// and Archive, newest first.
     func searchMessages(query: String, account: String) async throws -> [Correspondence] {
-        let keys: [String] = try await ICloudSessions.shared.with(account) { session in
+        let keys: [String] = try await IMAPSessions.shared.with(account) { session in
             let folders = try await session.folders()
             var found: [String] = []
             for path in [folders.inbox, folders.sent, folders.archive].compactMap({ $0 }) {
@@ -228,7 +226,7 @@ struct ICloudClient: Sendable {
     /// Who you write to, from Sent Messages: what suggests people as you
     /// address an email, as Gmail's and Outlook's Sent do.
     func sentAddressing(account: String, limit: Int) async throws -> [GmailAPIClient.Addressing] {
-        try await ICloudSessions.shared.with(account) { session in
+        try await IMAPSessions.shared.with(account) { session in
             guard let sent = try await session.folders().sent else { return [] }
             let selected = try await session.connection.select(sent)
             return try await session.connection.fetchNewestSummaries(count: min(limit, 500), of: selected.exists).map(Self.addressing)
@@ -237,7 +235,7 @@ struct ICloudClient: Sendable {
 
     /// Mail to or from someone by name, in Inbox and Sent.
     func addressing(matching name: String, account: String) async throws -> [GmailAPIClient.Addressing] {
-        try await ICloudSessions.shared.with(account) { session in
+        try await IMAPSessions.shared.with(account) { session in
             let folders = try await session.folders()
             var found: [GmailAPIClient.Addressing] = []
             for path in [folders.inbox, folders.sent].compactMap({ $0 }) {
@@ -257,19 +255,19 @@ struct ICloudClient: Sendable {
 
     func findMessage(rfc822MessageID: String, account: String) async throws -> ThreadID? {
         let id = rfc822MessageID.trimmingCharacters(in: CharacterSet(charactersIn: "<> "))
-        if let conversation = await ICloudCache.shared.conversation(forMessageID: id, account: account) {
+        if let conversation = await IMAPCache.shared.conversation(forMessageID: id, account: account) {
             return ThreadID(account: account, providerID: conversation)
         }
         // Not fetched this session (Corres restarted mid-send): ask iCloud.
         // Sent is where a send that went through lands.
-        return try await ICloudSessions.shared.with(account) { session in
+        return try await IMAPSessions.shared.with(account) { session in
             let folders = try await session.folders()
             for path in [folders.sent, folders.inbox].compactMap({ $0 }) {
                 let selected = try await session.connection.select(path)
                 let uids = try await session.connection.search(messageID: id)
                 guard !uids.isEmpty else { continue }
                 let found = try await session.connection.fetchSummaries(uids: uids)
-                await ICloudCache.shared.keep(found, uidValidity: selected.uidValidity, account: account)
+                await IMAPCache.shared.keep(found, uidValidity: selected.uidValidity, account: account)
                 if let summary = found.first { return ThreadID(account: account, providerID: Self.conversation(for: summary)) }
             }
             return nil
@@ -283,13 +281,14 @@ struct ICloudClient: Sendable {
     /// message and removed before it goes out.
     @discardableResult
     func send(raw: String, threadId: String?, account: String) async throws -> String {
-        guard let password = ICloudCredentials.password(for: account) else { throw ClientError.notSignedIn }
+        guard let password = IMAPCredentials.password(for: account) else { throw ClientError.notSignedIn }
         let message = Self.mime(fromRaw: raw)
         let (recipients, outgoing) = Self.envelope(of: message)
         guard !recipients.isEmpty else { throw ClientError.refused(statusCode: 0, reason: nil, message: "This email has no recipients.") }
-        let smtp = SMTPClient(host: Self.smtpHost, port: 587, security: .startTLS)
+        let server = IMAPServer.for(account)
+        let smtp = SMTPClient(host: server.smtpHost, port: server.smtpPort, security: server.smtpSecurity == .tls ? .tls : .startTLS)
         do {
-            try await smtp.send(Data(outgoing.utf8), from: account, to: recipients, username: account, password: password)
+            try await smtp.send(Data(outgoing.utf8), from: account, to: recipients, username: server.username ?? account, password: password)
         } catch SMTPClient.SMTPError.authenticationFailed {
             throw ClientError.notSignedIn
         } catch SMTPClient.SMTPError.recipientRejected(let address, let why) {
@@ -300,12 +299,12 @@ struct ICloudClient: Sendable {
         // Sent now; what follows is filing, and must never turn a delivered
         // email into a "Couldn't send".
         do {
-            try await ICloudSessions.shared.with(account) { session in
+            try await IMAPSessions.shared.with(account) { session in
                 guard let sent = try await session.folders().sent else { return }
                 _ = try await session.connection.append(Data(outgoing.utf8), to: sent, flags: ["\\Seen"])
             }
         } catch {
-            ICloudSessions.log.error("Sent, but not filed in Sent: \(String(describing: error), privacy: .public)")
+            IMAPSessions.log.error("Sent, but not filed in Sent: \(String(describing: error), privacy: .public)")
         }
         // The conversation it belongs to, the same id sync gives it.
         return threadId ?? Self.conversation(ofMessage: outgoing) ?? ""
@@ -339,7 +338,7 @@ struct ICloudClient: Sendable {
     func saveDraft(raw: String, threadId: String?, existingID: String?, account: String) async throws -> String {
         let message = Data(Self.mime(fromRaw: raw).replacingOccurrences(of: "\r\n", with: "\n")
             .replacingOccurrences(of: "\n", with: "\r\n").utf8)
-        return try await ICloudSessions.shared.with(account) { session in
+        return try await IMAPSessions.shared.with(account) { session in
             guard let drafts = session.cachedFolders.drafts else { throw ClientError.refused(statusCode: 0, reason: nil, message: "No Drafts folder.") }
             if let existingID, let old = Self.parse(existingID) {
                 try await session.connection.select(old.path)
@@ -354,7 +353,7 @@ struct ICloudClient: Sendable {
 
     func deleteDraft(id: String, account: String) async throws {
         guard let key = Self.parse(id) else { return }
-        try await ICloudSessions.shared.with(account) { session in
+        try await IMAPSessions.shared.with(account) { session in
             try await session.connection.select(key.path)
             try await session.connection.setFlags(["\\Deleted"], uids: [key.uid], add: true)
             try await session.connection.expungeIfPossible(uids: [key.uid])
@@ -368,7 +367,7 @@ struct ICloudClient: Sendable {
     func modifyThread(threadId: String, addLabelIds: [String], removeLabelIds: [String], account: String) async throws {
         let keys = try await Self.messageKeys(inConversation: threadId, account: account)
         guard !keys.isEmpty else { return }
-        try await ICloudSessions.shared.with(account) { session in
+        try await IMAPSessions.shared.with(account) { session in
             let folders = session.cachedFolders
             for (path, group) in Dictionary(grouping: keys, by: \.path) {
                 let selected = try await session.connection.select(path)
@@ -384,7 +383,7 @@ struct ICloudClient: Sendable {
                 else if let folder = addLabelIds.first(where: { $0.hasPrefix("folder:") }) { destination = String(folder.dropFirst(7)) }
                 if let destination, destination != path {
                     try await session.connection.move(uids: uids, to: destination)
-                    await ICloudCache.shared.forget(group.map(\.raw), account: account)
+                    await IMAPCache.shared.forget(group.map(\.raw), account: account)
                 }
             }
             if addLabelIds.contains("INBOX") {
@@ -396,19 +395,19 @@ struct ICloudClient: Sendable {
 
     func trashThread(threadId: String, account: String) async throws {
         let keys = try await Self.messageKeys(inConversation: threadId, account: account)
-        try await ICloudSessions.shared.with(account) { session in
+        try await IMAPSessions.shared.with(account) { session in
             guard let trash = session.cachedFolders.trash else { return }
             for (path, group) in Dictionary(grouping: keys, by: \.path) where path != trash {
                 let selected = try await session.connection.select(path)
                 let uids = group.filter { $0.uidValidity == selected.uidValidity }.map(\.uid)
                 if !uids.isEmpty { try await session.connection.move(uids: uids, to: trash) }
-                await ICloudCache.shared.forget(group.map(\.raw), account: account)
+                await IMAPCache.shared.forget(group.map(\.raw), account: account)
             }
         }
     }
 
     func untrashThread(threadId: String, account: String) async throws {
-        try await ICloudSessions.shared.with(account) { session in
+        try await IMAPSessions.shared.with(account) { session in
             let folders = session.cachedFolders
             try await Self.bringBack(conversation: threadId, from: [folders.trash].compactMap { $0 }, to: folders.inbox,
                                      session: session, account: account)
@@ -419,9 +418,9 @@ struct ICloudClient: Sendable {
     /// after Corres restarts and that's gone, from iCloud itself, by the
     /// Message-ID the conversation started with.
     static func messageKeys(inConversation conversation: String, account: String) async throws -> [Key] {
-        let known = await ICloudCache.shared.keys(inConversation: conversation, account: account).compactMap(parse)
+        let known = await IMAPCache.shared.keys(inConversation: conversation, account: account).compactMap(parse)
         if !known.isEmpty { return known }
-        return try await ICloudSessions.shared.with(account) { session in
+        return try await IMAPSessions.shared.with(account) { session in
             let folders = try await session.folders()
             var found: [Key] = []
             for path in [folders.inbox, folders.sent, folders.archive, folders.junk].compactMap({ $0 }) {
@@ -429,7 +428,7 @@ struct ICloudClient: Sendable {
                 let uids = try await session.connection.search(conversation: conversation)
                 guard !uids.isEmpty else { continue }
                 let summaries = try await session.connection.fetchSummaries(uids: uids)
-                await ICloudCache.shared.keep(summaries, uidValidity: selected.uidValidity, account: account)
+                await IMAPCache.shared.keep(summaries, uidValidity: selected.uidValidity, account: account)
                 found += summaries.compactMap { parse(key($0, uidValidity: selected.uidValidity)) }
             }
             return found
@@ -439,9 +438,9 @@ struct ICloudClient: Sendable {
     /// Finds a conversation's messages in other folders by Message-ID (their
     /// UIDs changed when they moved) and moves them to the Inbox.
     private static func bringBack(conversation: String, from sources: [String], to inbox: String?,
-                                  session: ICloudSessions.Session, account: String) async throws {
+                                  session: IMAPSessions.Session, account: String) async throws {
         guard let inbox else { return }
-        let messageIDs = await ICloudCache.shared.messageIDs(inConversation: conversation, account: account)
+        let messageIDs = await IMAPCache.shared.messageIDs(inConversation: conversation, account: account)
         for source in sources where source != inbox {
             try await session.connection.select(source)
             var uids: [UInt32] = []
@@ -459,7 +458,7 @@ struct ICloudClient: Sendable {
     /// domain address it has sent from. iCloud gives apps no list of
     /// aliases, but Sent Messages shows each one in use, with its name.
     func sendAs(account: String) async throws -> [GmailAPIClient.SendAs] {
-        let fromSent: [Address] = try await ICloudSessions.shared.with(account) { session in
+        let fromSent: [Address] = try await IMAPSessions.shared.with(account) { session in
             guard let sent = try await session.folders().sent else { return [] }
             let selected = try await session.connection.select(sent)
             return try await session.connection.fetchNewestSummaries(count: 300, of: selected.exists).compactMap(\.from)
@@ -496,7 +495,7 @@ struct ICloudClient: Sendable {
     /// A folder's mail, newest first, a page at a time. The page token is
     /// the newest position still to load.
     func listMailbox(labelId: String?, account: String, pageToken: String?, pageSize: Int) async throws -> (items: [Correspondence], nextPageToken: String?) {
-        let page: (keys: [String], next: String?) = try await ICloudSessions.shared.with(account) { session in
+        let page: (keys: [String], next: String?) = try await IMAPSessions.shared.with(account) { session in
             let folders = session.cachedFolders
             let path: String? = switch labelId {
             case nil, "INBOX": folders.inbox
@@ -511,7 +510,7 @@ struct ICloudClient: Sendable {
             let selected = try await session.connection.select(path)
             let end = pageToken.flatMap(Int.init) ?? selected.exists
             let messages = try await session.connection.fetchNewestSummaries(count: pageSize, of: selected.exists, endingAt: end)
-            await ICloudCache.shared.keep(messages, uidValidity: selected.uidValidity, account: account)
+            await IMAPCache.shared.keep(messages, uidValidity: selected.uidValidity, account: account)
             let keys = messages.sorted { $0.uid > $1.uid }.map { Self.key($0, uidValidity: selected.uidValidity) }
             let nextEnd = end - pageSize
             return (keys, nextEnd >= 1 ? String(nextEnd) : nil)
@@ -529,7 +528,7 @@ struct ICloudClient: Sendable {
 
     /// The person's own folders, for Mailboxes and "Move to".
     func fetchUserLabels(account: String) async throws -> [GmailUserLabel] {
-        try await ICloudSessions.shared.with(account) { session in
+        try await IMAPSessions.shared.with(account) { session in
             try await session.refreshFolders()
             return session.allFolders
                 // "Notes" is where iCloud kept notes before the Notes app
@@ -540,19 +539,19 @@ struct ICloudClient: Sendable {
     }
 
     func fetchAttachmentData(messageId: String, attachmentId: String, account: String) async throws -> Data {
-        if let parsed = await ICloudCache.shared.body(for: messageId, account: account),
+        if let parsed = await IMAPCache.shared.body(for: messageId, account: account),
            let index = Int(attachmentId), parsed.attachments.indices.contains(index) {
             return parsed.attachments[index].data
         }
         _ = try await fetchMessages(ids: [messageId], account: account)
-        guard let parsed = await ICloudCache.shared.body(for: messageId, account: account),
+        guard let parsed = await IMAPCache.shared.body(for: messageId, account: account),
               let index = Int(attachmentId), parsed.attachments.indices.contains(index) else { throw ClientError.decodingFailed }
         return parsed.attachments[index].data
     }
 
     // MARK: Mapping
 
-    private func map(_ m: MessageSummary, key: String, account: String, folders: ICloudSessions.FolderPaths, body: ParsedMessage?) -> Correspondence {
+    private func map(_ m: MessageSummary, key: String, account: String, folders: IMAPSessions.FolderPaths, body: ParsedMessage?) -> Correspondence {
         let senderEmail = m.from?.email ?? ""
         let sender = m.from?.name ?? senderEmail
         let (mailto, url) = GmailAPIClient.parseListUnsubscribe(m.listUnsubscribe ?? "")
@@ -581,7 +580,7 @@ struct ICloudClient: Sendable {
             bodyLoaded: body != nil)
     }
 
-    static func labels(flags: Set<String>, folder: String, folders: ICloudSessions.FolderPaths, hasUnsubscribe: Bool = false) -> [String] {
+    static func labels(flags: Set<String>, folder: String, folders: IMAPSessions.FolderPaths, hasUnsubscribe: Bool = false) -> [String] {
         var labels: [String] = []
         switch folder {
         case folders.inbox: labels.append("INBOX")

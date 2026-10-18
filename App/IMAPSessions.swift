@@ -6,8 +6,8 @@ import os
 /// and opened again if it drops. Commands run strictly one at a time per
 /// account: an IMAP connection has one selected folder, and two callers
 /// interleaving SELECTs would read the wrong one.
-actor ICloudSessions {
-    static let shared = ICloudSessions()
+actor IMAPSessions {
+    static let shared = IMAPSessions()
 
     struct FolderPaths: Sendable {
         var inbox: String? = "INBOX"
@@ -112,12 +112,12 @@ actor ICloudSessions {
 
     /// Checks an address and app-specific password by signing in, without
     /// keeping the connection. Throws `notSignedIn` for a wrong password.
-    static func verify(email: String, password: String) async throws {
-        let connection = IMAPConnection(host: ICloudClient.imapHost, timeout: .seconds(20))
+    static func verify(email: String, password: String, server: IMAPServer = .icloud) async throws {
+        let connection = IMAPConnection(host: server.imapHost, port: server.imapPort, timeout: .seconds(20))
         defer { Task { await connection.logout() } }
         try await connection.connect()
         do {
-            try await connection.login(username: email, password: password)
+            try await connection.login(username: server.username ?? email, password: password)
         } catch IMAPConnection.ConnectionError.authenticationFailed {
             throw GmailAPIClient.ClientError.notSignedIn
         }
@@ -135,10 +135,11 @@ actor ICloudSessions {
             sessions[account] = nil
             await existing.connection.logout()
         }
-        guard let password = ICloudCredentials.password(for: account) else { throw GmailAPIClient.ClientError.notSignedIn }
-        let connection = IMAPConnection(host: ICloudClient.imapHost)
+        guard let password = IMAPCredentials.password(for: account) else { throw GmailAPIClient.ClientError.notSignedIn }
+        let server = IMAPServer.for(account)
+        let connection = IMAPConnection(host: server.imapHost, port: server.imapPort)
         try await connection.connect()
-        try await connection.login(username: account, password: password)
+        try await connection.login(username: server.username ?? account, password: password)
         let session = Session(connection: connection)
         try await session.refreshFolders()
         sessions[account] = session
@@ -165,8 +166,8 @@ actor ICloudSessions {
 /// listing and fetch don't ask twice), opened bodies (for attachments),
 /// and which conversation each message belongs to (for actions on a whole
 /// conversation). In memory; rebuilt from the server as needed.
-actor ICloudCache {
-    static let shared = ICloudCache()
+actor IMAPCache {
+    static let shared = IMAPCache()
 
     private var summaries: [String: [String: MessageSummary]] = [:]
     private var bodies: [String: [String: ParsedMessage]] = [:]
@@ -175,7 +176,7 @@ actor ICloudCache {
         // Bounded, so a long session paging through years of mail doesn't
         // grow without end; anything dropped is looked up on iCloud again.
         if (summaries[account]?.count ?? 0) > 5_000 { summaries[account] = [:] }
-        for m in messages { summaries[account, default: [:]][ICloudClient.key(m, uidValidity: uidValidity)] = m }
+        for m in messages { summaries[account, default: [:]][IMAPMailClient.key(m, uidValidity: uidValidity)] = m }
     }
 
     func summaries(for keys: [String], account: String) -> [String: MessageSummary] {
@@ -193,16 +194,16 @@ actor ICloudCache {
     func body(for key: String, account: String) -> ParsedMessage? { bodies[account]?[key] }
 
     func keys(inConversation conversation: String, account: String) -> [String] {
-        (summaries[account] ?? [:]).filter { ICloudClient.conversation(for: $0.value) == conversation }.map(\.key)
+        (summaries[account] ?? [:]).filter { IMAPMailClient.conversation(for: $0.value) == conversation }.map(\.key)
     }
 
     func messageIDs(inConversation conversation: String, account: String) -> [String] {
-        (summaries[account] ?? [:]).values.filter { ICloudClient.conversation(for: $0) == conversation }.compactMap(\.messageID)
+        (summaries[account] ?? [:]).values.filter { IMAPMailClient.conversation(for: $0) == conversation }.compactMap(\.messageID)
             + [conversation]
     }
 
     func conversation(forMessageID id: String, account: String) -> String? {
-        (summaries[account] ?? [:]).values.first { $0.messageID == id }.map(ICloudClient.conversation(for:))
+        (summaries[account] ?? [:]).values.first { $0.messageID == id }.map(IMAPMailClient.conversation(for:))
     }
 
     func forget(_ keys: [String], account: String) {
@@ -217,7 +218,7 @@ actor ICloudCache {
 
 /// An iCloud account's app-specific password, in the Keychain shared with
 /// Corres's extensions. Never leaves the device.
-enum ICloudCredentials {
+enum IMAPCredentials {
     private static func key(_ account: String) -> String { "corres.icloud.password.\(account.lowercased())" }
     static func password(for account: String) -> String? { Keychain.get(key: key(account)) }
     static func save(_ password: String, for account: String) { Keychain.set(password, key: key(account)) }

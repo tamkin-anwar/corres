@@ -180,7 +180,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // With iCloud connected, as often as iOS allows: it's how iCloud
         // mail is noticed while Corres is closed. Gmail and Outlook push.
         let hasICloud = (UserDefaults.standard.stringArray(forKey: "corres.connectedAccounts") ?? [])
-            .contains { MailAccounts.provider(for: $0) == .icloud }
+            .contains { MailAccounts.provider(for: $0).usesIMAP }
         let usual = Date(timeIntervalSinceNow: hasICloud ? 15 * 60 : 4 * 60 * 60)
         request.earliestBeginDate = ScheduledSends.shared.nextSendAt.map { min(max($0, .now), usual) } ?? usual
         try? BGTaskScheduler.shared.submit(request)
@@ -192,7 +192,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             if store.state != .loaded { await store.load() }
             // iCloud has no push for apps: this is when its new mail is
             // found and notified while Corres is closed.
-            let icloud = auth.accounts.map(\.email).filter { MailAccounts.provider(for: $0) == .icloud }
+            let icloud = auth.accounts.map(\.email).filter { MailAccounts.provider(for: $0).usesIMAP }
             if !icloud.isEmpty { _ = await syncAndNotify(accounts: icloud) }
             await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
             await FollowUps.shared.check(store: store)

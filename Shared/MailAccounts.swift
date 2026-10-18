@@ -4,23 +4,29 @@ import Foundation
 /// both: everything above the client (sorting, Needs You, Primary, Send
 /// Later, drafts, the Share sheet) is the same whichever this is.
 enum MailProvider: String, Codable, Sendable {
-    case google, microsoft, icloud
+    /// `imap`: any other email account (Yahoo, Fastmail, a work server),
+    /// on the same IMAP and SMTP engine as iCloud.
+    case google, microsoft, icloud, imap
 
-    /// "Gmail", "Outlook", "iCloud": what people call the service.
+    /// "Gmail", "Outlook", "iCloud", "Email": what people call the service.
     var title: String {
         switch self {
         case .google: "Gmail"
         case .microsoft: "Outlook"
         case .icloud: "iCloud"
+        case .imap: "Email"
         }
     }
+
+    /// Reached over IMAP and SMTP with a password, not an API.
+    var usesIMAP: Bool { self == .icloud || self == .imap }
 
     /// The most attachments one email from this service can carry, before
     /// encoding. iCloud takes 20 MB per email in all, and attachments grow
     /// by about a third on the way, so 15 MB of files.
     var attachmentLimit: Int {
         switch self {
-        case .google, .microsoft: 25_000_000
+        case .google, .microsoft, .imap: 25_000_000
         case .icloud: 15_000_000
         }
     }
@@ -84,6 +90,9 @@ enum MailAccounts {
         "gmail.com": "Gmail", "googlemail.com": "Gmail",
         "outlook.com": "Outlook", "hotmail.com": "Outlook", "live.com": "Outlook", "msn.com": "Outlook",
         "icloud.com": "iCloud", "me.com": "iCloud", "mac.com": "iCloud", "yahoo.com": "Yahoo",
+        "ymail.com": "Yahoo", "rocketmail.com": "Yahoo", "aol.com": "AOL", "fastmail.com": "Fastmail",
+        "zoho.com": "Zoho", "zohomail.com": "Zoho", "gmx.com": "GMX", "gmx.net": "GMX", "mail.com": "Mail.com",
+        "proton.me": "Proton", "protonmail.com": "Proton", "yandex.com": "Yandex",
     ]
 
     /// "Gmail", "Outlook", or a work address's domain ("anwarlogistics.com").
@@ -97,5 +106,39 @@ enum MailAccounts {
         updated[account.lowercased()] = nil
         groupDefaults.set(updated, forKey: key)
         lock.lock(); cachedMap = updated; lock.unlock()
+    }
+}
+
+
+/// Where an IMAP account's mail lives: its servers, and the name it signs
+/// in with. iCloud's are fixed; any other account's were found when it was
+/// added (`MailServerDiscovery`). Kept in the App Group, so the Share and
+/// notification extensions reach the same servers.
+struct IMAPServer: Codable, Sendable, Equatable {
+    enum SMTPSecurity: String, Codable, Sendable { case tls, startTLS }
+    var imapHost: String
+    var imapPort: Int = 993
+    var smtpHost: String
+    var smtpPort: Int = 587
+    var smtpSecurity: SMTPSecurity = .startTLS
+    /// Usually the address itself; some servers want only the name.
+    var username: String?
+
+    static let icloud = IMAPServer(imapHost: "imap.mail.me.com", smtpHost: "smtp.mail.me.com")
+
+    private static let key = "corres.imapServers"
+
+    static func `for`(_ account: String) -> IMAPServer {
+        if MailAccounts.provider(for: account) == .icloud { return .icloud }
+        let all = MailAccounts.groupDefaults.data(forKey: key)
+            .flatMap { try? JSONDecoder().decode([String: IMAPServer].self, from: $0) } ?? [:]
+        return all[account.lowercased()] ?? .icloud
+    }
+
+    static func save(_ server: IMAPServer, for account: String) {
+        var all = MailAccounts.groupDefaults.data(forKey: key)
+            .flatMap { try? JSONDecoder().decode([String: IMAPServer].self, from: $0) } ?? [:]
+        all[account.lowercased()] = server
+        MailAccounts.groupDefaults.set(try? JSONEncoder().encode(all), forKey: key)
     }
 }

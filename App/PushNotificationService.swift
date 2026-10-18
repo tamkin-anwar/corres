@@ -362,7 +362,7 @@ final class PushNotificationService {
     }
 
     private func registerICloud(account: String, deviceToken: String) async throws {
-        guard let password = ICloudCredentials.password(for: account) else { throw ICloudInstantError.noPassword }
+        guard let password = IMAPCredentials.password(for: account) else { throw ICloudInstantError.noPassword }
         let sealed = try await Self.seal(password)
         let alerts = await MainActor.run { AccountPreferences.level(for: account) != nil }
         try await post(path: "register-icloud", body: ["emailAddress": account, "deviceToken": deviceToken,

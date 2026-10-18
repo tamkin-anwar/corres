@@ -180,7 +180,7 @@ enum ICloudSignIn {
 
 /// Apple's sign-in page inside Corres, so you never leave the app; Safari's
 /// saved passwords and Face ID work in it.
-private struct SafariView: UIViewControllerRepresentable {
+struct SafariView: UIViewControllerRepresentable {
     let url: URL
     func makeUIViewController(context: Context) -> SFSafariViewController {
         let controller = SFSafariViewController(url: url)

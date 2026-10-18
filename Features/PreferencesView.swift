@@ -22,6 +22,7 @@ struct PreferencesView: View {
     @State private var showingPaywall = false
     @State private var managingSubscription = false
     @State private var addingICloud = false
+    @State private var addingOther = false
 
     #if DEBUG
     @State private var corpusStatus: String?
@@ -194,6 +195,14 @@ struct PreferencesView: View {
             // modifiers on a Section apply to every row in it, and five
             // copies of one sheet cancelled each other, closing Settings.
             .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .sheet(isPresented: $addingOther) {
+                OtherEmailSignInView(auth: auth) { previousCount in
+                    Task { await finishConnecting(after: previousCount) }
+                } onUseSignIn: { provider in
+                    // After this sheet has gone, so the two don't collide.
+                    Task { try? await Task.sleep(for: .milliseconds(500)); connect(provider) }
+                }
+            }
             .sheet(isPresented: $addingICloud) {
                 ICloudSignInView(auth: auth) { previousCount in
                     Task { await finishConnecting(after: previousCount) }
@@ -312,7 +321,11 @@ struct PreferencesView: View {
                     }
                     .buttonStyle(CorresButtonStyle())
                     .disabled(auth.isSigningIn || sync.isSyncing)
-                    Text("Gmail, Outlook.com, Hotmail, work or school Microsoft 365, and iCloud Mail. Your mail is sorted and read on this \(Device.name).")
+                    Button("Other Email Account") { connect(.imap) }
+                        .font(.subheadline.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .disabled(auth.isSigningIn || sync.isSyncing)
+                    Text("Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this \(Device.name).")
                         .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 }
                 .padding(.vertical, 8)
@@ -331,6 +344,7 @@ struct PreferencesView: View {
                     Button("Gmail") { connect(.google) }
                     Button("Outlook") { connect(.microsoft) }
                     Button("iCloud Mail") { connect(.icloud) }
+                    Button("Other Email") { connect(.imap) }
                 } label: {
                     if auth.isSigningIn || sync.isSyncing {
                         ProgressView()
@@ -375,6 +389,7 @@ struct PreferencesView: View {
 
     private func connect(_ provider: MailProvider) {
         if provider == .icloud { addingICloud = true; return }
+        if provider == .imap { addingOther = true; return }
         Task {
             let previousCount = auth.accounts.count
             if provider == .microsoft { await auth.signInOutlook() } else { await auth.signIn() }
@@ -456,6 +471,7 @@ private struct AccountDetailView: View {
     @State private var changingInstant = false
     @State private var instantError: String?
     @State private var updatingICloudPassword = false
+    @State private var updatingOtherPassword = false
     @AppStorage private var nickname: String
     @AppStorage private var senderName: String
     @AppStorage private var showsInAllInboxes: Bool
@@ -611,10 +627,18 @@ private struct AccountDetailView: View {
                          : "\(provider.title) didn't answer. Check your connection, or reconnect if it keeps happening.")
                 }
                 Button {
-                    if provider == .icloud { updatingICloudPassword = true } else { Task { await auth.reconnect(account.email) } }
+                    if provider == .icloud { updatingICloudPassword = true }
+                    else if provider == .imap { updatingOtherPassword = true }
+                    else { Task { await auth.reconnect(account.email) } }
                 } label: {
                     Label(provider == .microsoft ? "Reconnect with Microsoft"
-                          : provider == .icloud ? "Update App-Specific Password" : "Reconnect with Google", systemImage: "key")
+                          : provider == .icloud ? "Update App-Specific Password"
+                          : provider == .imap ? "Update Password" : "Reconnect with Google", systemImage: "key")
+                }
+                .sheet(isPresented: $updatingOtherPassword) {
+                    OtherEmailSignInView(auth: auth, reconnecting: account.email) { _ in
+                        Task { _ = await sync.syncIfConnected(account: account.email) }
+                    } onUseSignIn: { _ in }
                 }
                 .sheet(isPresented: $updatingICloudPassword) {
                     ICloudSignInView(auth: auth, reconnecting: account.email) { _ in
@@ -628,6 +652,8 @@ private struct AccountDetailView: View {
             } footer: {
                 Text(provider == .icloud
                      ? "If iCloud stops syncing, make a new app-specific password at account.apple.com and update it here."
+                     : provider == .imap
+                     ? "If this account stops syncing, its password may have changed. Update it here."
                      : "If marking as read, archiving or flagging stops working, reconnect and keep every permission checked.")
             }
             Section {

@@ -14,10 +14,11 @@ struct MailClient: Sendable {
 
     private let gmail = GmailAPIClient()
     private let outlook = OutlookClient()
-    private let icloud = ICloudClient()
+    private let icloud = IMAPMailClient()
 
     private func isOutlook(_ account: String) -> Bool { MailAccounts.provider(for: account) == .microsoft }
-    private func isICloud(_ account: String) -> Bool { MailAccounts.provider(for: account) == .icloud }
+    /// iCloud and any other IMAP account share one client.
+    private func isICloud(_ account: String) -> Bool { MailAccounts.provider(for: account).usesIMAP }
 
     func planFullListing(account: String) async throws -> SyncPlan {
         isICloud(account) ? try await icloud.planFullListing(account: account) : isOutlook(account) ? try await outlook.planFullListing(account: account) : try await gmail.planFullListing(account: account)
