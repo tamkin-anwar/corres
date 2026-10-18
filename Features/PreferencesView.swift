@@ -605,8 +605,7 @@ private struct AccountDetailView: View {
                 Button {
                     Task {
                         syncing = true
-                        if await sync.syncIfConnected(account: account.email) { await store.refresh() }
-                        else if !sync.isSyncing { syncFailed = true }
+                        if await sync.syncNow(account: account.email) { await store.refresh() } else { syncFailed = true }
                         syncing = false
                     }
                 } label: {

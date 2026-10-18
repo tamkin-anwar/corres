@@ -107,6 +107,22 @@ final class GmailSyncService {
     }
 
     @discardableResult
+    /// For a sync someone asked for (Sync Now): waits out one already
+    /// running instead of reporting it as a failure, and gives a failed
+    /// attempt one more try before saying so.
+    func syncNow(account: String) async -> Bool {
+        for attempt in 0..<2 {
+            var waited = 0
+            while isSyncing && waited < 120 {
+                try? await Task.sleep(for: .milliseconds(250))
+                waited += 1
+            }
+            if await syncIfConnected(account: account) { return true }
+            if attempt == 0 { try? await Task.sleep(for: .seconds(1)) }
+        }
+        return false
+    }
+
     func syncIfConnected(account: String?) async -> Bool {
         guard let account, !account.isEmpty, !isSyncing else { return false }
         isSyncing = true

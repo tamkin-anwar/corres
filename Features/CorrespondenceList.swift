@@ -304,7 +304,6 @@ struct CorrespondenceList: View {
     /// this problem: the list is already the visible, live view when that
     /// happens, so its own row-removal animation naturally keeps everything
     /// else in place.
-    @State private var scrollPosition: ThreadID?
 
     private var scopedThreads: [Correspondence] {
         // All Inboxes leaves out accounts turned off for it in Settings.
@@ -469,29 +468,19 @@ struct CorrespondenceList: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .background(CorresPalette.canvas)
-            .scrollPosition(id: $scrollPosition)
-            .onChange(of: rows.ids) { oldValue, newValue in
-                selected.formIntersection(newValue)
-                guard let anchor = scrollPosition, !newValue.contains(anchor),
-                      let oldIndex = oldValue.firstIndex(of: anchor) else { return }
-                // Whatever the disappeared thread's own former neighbor is
-                // now sits at (or near) the same index; re-anchor to it so
-                // the list holds its position instead of resetting, the
-                // same "next email is right where I left it" continuity a
-                // premium mail client is expected to have.
-                if newValue.indices.contains(oldIndex) {
-                    scrollPosition = newValue[oldIndex]
-                } else {
-                    scrollPosition = newValue.last
-                }
-            }
+            // No scrollPosition here: a List keeps its place by itself as a row
+            // leaves. Re-anchoring it by id inside the removal's animation
+            // made it measure every row above the anchor on every frame;
+            // with a few hundred conversations that froze the app on a
+            // swipe to Trash until iOS ended it (build 13).
+            .onChange(of: rows.ids) { _, newValue in selected.formIntersection(newValue) }
             // Room below the last rows while the Undo pill shows, so any row
             // can be scrolled clear of it; while selecting, the action bar.
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 if isSelecting {
                     selectionBar
-                } else {
-                    Color.clear.frame(height: threadActions?.pendingRemoval == nil && threadActions?.lastChange == nil ? 0 : 56)
+                } else if let threadActions {
+                    BannerRoom(threadActions: threadActions)
                 }
             }
             .modifier(TwoFingerSelect(isSelecting: isSelecting, onChange: handleTwoFingerSelect))
@@ -1095,5 +1084,15 @@ private struct TwoFingerSelect: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+
+/// Room under the list for the Undo pill. Its own view, so the pill coming
+/// and going redraws this spacer and not the whole list on every tab.
+private struct BannerRoom: View {
+    let threadActions: ThreadActionService
+    var body: some View {
+        Color.clear.frame(height: threadActions.pendingRemoval == nil && threadActions.lastChange == nil ? 0 : 56)
     }
 }
