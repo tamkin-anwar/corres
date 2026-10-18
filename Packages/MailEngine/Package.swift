@@ -13,6 +13,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-nio-imap", .upToNextMinor(from: "0.4.0")),
         .package(url: "https://github.com/apple/swift-nio", from: "2.64.0"),
         .package(url: "https://github.com/apple/swift-nio-transport-services", from: "1.20.0"),
+        .package(url: "https://github.com/apple/swift-nio-ssl", from: "2.27.0"),
     ],
     targets: [
         .target(
@@ -21,6 +22,8 @@ let package = Package(
                 .product(name: "NIOIMAP", package: "swift-nio-imap"),
                 .product(name: "NIOCore", package: "swift-nio"),
                 .product(name: "NIOTransportServices", package: "swift-nio-transport-services"),
+                .product(name: "NIOPosix", package: "swift-nio"),
+                .product(name: "NIOSSL", package: "swift-nio-ssl"),
             ]
         ),
         .testTarget(

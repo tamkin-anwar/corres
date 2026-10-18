@@ -35,11 +35,18 @@ final class FakeIMAPServer: @unchecked Sendable {
     func stop() async { try? await channel?.close(); try? await group.shutdownGracefully() }
 
     func commands() -> [String] { lock.lock(); defer { lock.unlock() }; return received }
+    private var appendedMessages: [String] = []
+    func appended(_ message: String) { lock.lock(); appendedMessages.append(message); lock.unlock() }
+    func appendedSoFar() -> [String] { lock.lock(); defer { lock.unlock() }; return appendedMessages }
+    /// Every full command line, for checking what was sent.
+    private var lines: [String] = []
+    func sentLines() -> [String] { lock.lock(); defer { lock.unlock() }; return lines }
 
     func reply(to line: String) -> [String] {
         let parts = line.split(separator: " ", maxSplits: 2).map(String.init)
         guard parts.count >= 2 else { return [] }
         let tag = parts[0]
+        lock.lock(); lines.append(line); lock.unlock()
         var name = parts[1].uppercased()
         if name == "UID", parts.count > 2 { name += " " + (parts[2].split(separator: " ").first.map(String.init)?.uppercased() ?? "") }
         lock.lock(); received.append(name); lock.unlock()
@@ -58,11 +65,51 @@ final class FakeIMAPServer: @unchecked Sendable {
             send(server.greeting + "\r\n", context)
         }
 
+        var literalLeft = 0
+        var literalLine = ""
+        var idleTag: String?
+
         func channelRead(context: ChannelHandlerContext, data: NIOAny) {
             pending += String(buffer: unwrapInboundIn(data))
-            while let end = pending.range(of: "\r\n") {
+            while true {
+                if literalLeft > 0 {
+                    // APPEND's message bytes, then the line's end.
+                    let utf8 = Array(pending.utf8)
+                    guard utf8.count >= literalLeft + 2 else { return }
+                    server.appended(String(decoding: utf8[..<literalLeft], as: UTF8.self))
+                    pending = String(decoding: utf8[(literalLeft + 2)...], as: UTF8.self)
+                    literalLeft = 0
+                    send(server.reply(to: literalLine).map { $0 + "\r\n" }.joined(), context)
+                    continue
+                }
+                guard let end = pending.range(of: "\r\n") else { return }
                 let line = String(pending[..<end.lowerBound])
                 pending.removeSubrange(..<end.upperBound)
+                if line == "DONE", let tag = idleTag {
+                    idleTag = nil
+                    send("\(tag) OK IDLE terminated\r\n", context)
+                    continue
+                }
+                if let open = line.lastIndex(of: "{"), line.hasSuffix("}"),
+                   let n = Int(line[line.index(after: open)..<line.index(before: line.endIndex)].replacingOccurrences(of: "+", with: "")) {
+                    literalLeft = n
+                    literalLine = line
+                    if !line.hasSuffix("+}") { send("+ Ready for literal data\r\n", context) }
+                    continue
+                }
+                if line.uppercased().hasSuffix(" IDLE") {
+                    idleTag = String(line.split(separator: " ")[0])
+                    _ = server.reply(to: line)
+                    send("+ idling\r\n", context)
+                    if let event = server.script["IDLE-EVENT"] {
+                        let loop = context.eventLoop
+                        let ctx = NIOLoopBound(context, eventLoop: loop)
+                        loop.scheduleTask(in: .milliseconds(100)) {
+                            self.send(event.map { $0 + "\r\n" }.joined(), ctx.value)
+                        }
+                    }
+                    continue
+                }
                 let reply = server.reply(to: line)
                 send(reply.map { $0 + "\r\n" }.joined(), context)
                 if line.uppercased().hasSuffix("LOGOUT") { context.close(promise: nil) }
@@ -174,5 +221,96 @@ struct LiveServerTests {
         let caps = try await connection.connect()
         #expect(caps.authPlain || caps.xoauth2)
         await connection.logout()
+    }
+}
+
+
+struct ActionTests {
+    func server(capabilities: String, extra: [String: [String]] = [:]) -> FakeIMAPServer {
+        var script: [String: [String]] = [
+            "LOGIN": ["{TAG} OK logged in"],
+            "CAPABILITY": ["* CAPABILITY \(capabilities)", "{TAG} OK"],
+            "SELECT": ["* 3 EXISTS", "* OK [UIDVALIDITY 1] v", "* OK [UIDNEXT 20] n", "{TAG} OK [READ-WRITE] done"],
+            "UID STORE": ["{TAG} OK STORE done"],
+            "UID MOVE": ["{TAG} OK MOVE done"],
+            "UID COPY": ["{TAG} OK COPY done"],
+            "UID EXPUNGE": ["{TAG} OK EXPUNGE done"],
+            "EXPUNGE": ["{TAG} OK EXPUNGE done"],
+            "APPEND": ["{TAG} OK [APPENDUID 1 57] APPEND done"],
+            "LOGOUT": ["* BYE", "{TAG} OK"],
+        ]
+        script.merge(extra) { $1 }
+        return FakeIMAPServer(greeting: "* OK ready", script: script)
+    }
+
+    func session(_ server: FakeIMAPServer) async throws -> IMAPConnection {
+        let port = try await server.start()
+        let connection = IMAPConnection(host: "127.0.0.1", port: port, useTLS: false, timeout: .seconds(5))
+        try await connection.connect()
+        try await connection.login(username: "me@icloud.com", password: "x")
+        try await connection.select("INBOX")
+        return connection
+    }
+
+    @Test func markReadUsesSilentStoreOnARangeOfUIDs() async throws {
+        let s = server(capabilities: "IMAP4rev1")
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        try await c.setFlags(["\\Seen"], uids: [5, 3, 4, 9], add: true)
+        #expect(s.sentLines().last?.hasSuffix("UID STORE 3:5,9 +FLAGS.SILENT (\\Seen)") == true)
+    }
+
+    @Test func moveUsesMOVEWhenTheServerHasIt() async throws {
+        let s = server(capabilities: "IMAP4rev1 MOVE UIDPLUS")
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        try await c.move(uids: [7], to: "Archive")
+        #expect(Array(s.commands().suffix(1)) == ["UID MOVE"])
+    }
+
+    @Test func moveWithoutMOVECopiesDeletesAndExpungesOnlyThoseUIDs() async throws {
+        let s = server(capabilities: "IMAP4rev1 UIDPLUS")
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        try await c.move(uids: [7, 8], to: "Deleted Messages")
+        #expect(Array(s.commands().suffix(3)) == ["UID COPY", "UID STORE", "UID EXPUNGE"])
+        #expect(s.sentLines().last?.hasSuffix("UID EXPUNGE 7:8") == true)
+    }
+
+    @Test func moveWithoutUIDPLUSFallsBackToExpunge() async throws {
+        let s = server(capabilities: "IMAP4rev1")
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        try await c.move(uids: [7], to: "Archive")
+        #expect(Array(s.commands().suffix(3)) == ["UID COPY", "UID STORE", "EXPUNGE"])
+    }
+
+    @Test func appendSavesTheMessageAndReturnsItsUID() async throws {
+        let s = server(capabilities: "IMAP4rev1 UIDPLUS")
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        let message = "From: me@icloud.com\r\nSubject: Hi\r\n\r\nHello\r\n"
+        let uid = try await c.append(Data(message.utf8), to: "Sent Messages")
+        #expect(uid == 57)
+        #expect(s.appendedSoFar() == [message])
+    }
+
+    @Test func idleReportsNewMail() async throws {
+        let s = server(capabilities: "IMAP4rev1 IDLE", extra: ["IDLE-EVENT": ["* 4 EXISTS"]])
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        let changes = try await c.waitForChanges(wait: .seconds(3))
+        #expect(changes == [.exists(4)])
+        // The connection is still usable afterwards.
+        try await c.setFlags(["\\Seen"], uids: [3], add: true)
+    }
+
+    @Test func idleWithNothingNewEndsQuietly() async throws {
+        let s = server(capabilities: "IMAP4rev1 IDLE")
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        let changes = try await c.waitForChanges(wait: .milliseconds(300))
+        #expect(changes.isEmpty)
+        try await c.setFlags(["\\Seen"], uids: [3], add: true)
     }
 }

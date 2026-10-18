@@ -26,6 +26,8 @@ public struct ResponseCollector: Sendable {
     public private(set) var highestModSeq: UInt64?
     /// A message body or header fetched with BODY.PEEK[...], by UID.
     public private(set) var bodies: [UInt32: Data] = [:]
+    /// The UID a server gave an appended message (UIDPLUS APPENDUID).
+    public private(set) var appendedUID: UInt32?
     /// The server said BYE: the connection is going away.
     public private(set) var sawBye = false
 
@@ -115,6 +117,7 @@ public struct ResponseCollector: Sendable {
         case .uidValidity(let v): uidValidity = UInt32(v)
         case .uidNext(let n): uidNext = n.rawValue
         case .highestModificationSequence(let m): highestModSeq = UInt64(m)
+        case .uidAppend(let append): appendedUID = append.uids.max().rawValue
         default: break
         }
     }
@@ -201,9 +204,10 @@ struct HeaderFields {
         var out: [(String, String)] = []
         for line in text.components(separatedBy: "\r\n").flatMap({ $0.components(separatedBy: "\n") }) {
             if let first = line.first, first == " " || first == "\t", !out.isEmpty {
-                out[out.count - 1].1 += " " + line.trimmingCharacters(in: .whitespaces)
+                out[out.count - 1].1 += " " + line.trimmingCharacters(in: .whitespacesAndNewlines)
             } else if let colon = line.firstIndex(of: ":") {
-                out.append((String(line[..<colon]), String(line[line.index(after: colon)...]).trimmingCharacters(in: .whitespaces)))
+                out.append((String(line[..<colon]).trimmingCharacters(in: .whitespaces),
+                            String(line[line.index(after: colon)...]).trimmingCharacters(in: .whitespacesAndNewlines)))
             }
         }
         fields = out

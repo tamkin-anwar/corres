@@ -190,6 +190,19 @@ Pieces, in build order:
   that's linked to identity beyond the email address already declared, but
   re-check the wording before submitting).
 
+### Progress
+
+- 2026-10-17, step 1 done (`Packages/MailEngine`, 42 tests): connect and
+  log in over TLS, capabilities after login, folders with roles, SELECT
+  with CONDSTORE, header and flag fetches, threading, sync planning, mark
+  read/flagged, move (MOVE, or copy + delete + expunge), append to Sent,
+  IDLE, SMTP with STARTTLS (iCloud only accepts port 587; 465 is closed),
+  and MIME parsing (plain, HTML, attachments, inline images, quoted-
+  printable, RFC 2231 filenames). Live checks against iCloud, Fastmail and
+  Yahoo greetings and iCloud's STARTTLS pass (`CORRES_LIVE=1`). Not yet
+  tried with a real login: that happens in step 2 with the person's own
+  app-specific password.
+
 ### Order and size
 
 | Step | Work |
