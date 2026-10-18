@@ -554,6 +554,21 @@ struct SwiftDataMailRepositoryTests {
     /// show up here: read state mirrors in place without moving the thread
     /// out of Needs You, an archive elsewhere removes it, and a change to
     /// an older message or an unknown thread is ignored.
+    /// Promoted with no reason the model could stand behind: the row says
+    /// why it's there, never the rule's "Kept out of Needs You."
+    @Test func promotionWithoutAReasonNeverSaysKeptOut() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let id = ThreadID(account: "me@x.test", providerID: "promo")
+        let thread = Correspondence(id: id, sender: "Supabase", senderEmail: "ant@supabase.test", organization: "",
+                                    subject: "Your project is paused", excerpt: "", body: "", latestMessageID: "p1",
+                                    receivedAt: Date.now, dueAt: nil, reason: InboxClassifier.BulkKind.updates.reason,
+                                    attention: .quiet, isUnread: true, labelIds: ["INBOX", "UNREAD"])
+        try await repository.upsert([thread], isInitialSync: true)
+        let moved = try await repository.applySemanticTriage(id, from: .quiet, to: .needsYou, reason: nil, messageID: "p1")
+        #expect(moved.attention == .needsYou)
+        #expect(moved.reason == InboxClassifier.promotedReason)
+    }
+
     /// A note from your iCloud account to your Gmail is you, not someone
     /// waiting on you: it stays in Mail and out of Needs You.
     @Test func mailFromYourOtherAccountStaysOutOfNeedsYou() async throws {

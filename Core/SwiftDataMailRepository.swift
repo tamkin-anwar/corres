@@ -76,7 +76,13 @@ public actor SwiftDataMailRepository: MailRepository {
         try mutate(id) { model in
             if model.attentionRaw == expected.rawValue {
                 model.attentionRaw = result.rawValue
-                if let reason { model.reason = reason }
+                if let reason {
+                    model.reason = reason
+                } else if result != expected {
+                    // Moved without a reason of its own: never keep one
+                    // that says the opposite ("Kept out of Needs You.").
+                    model.reason = result == .needsYou ? InboxClassifier.promotedReason : InboxClassifier.demotedReason
+                }
             }
             model.triagedMessageID = messageID
         }
@@ -158,6 +164,13 @@ public actor SwiftDataMailRepository: MailRepository {
         let correspondents = Self.correspondents(in: models, plus: [])
         var changed = 0
         for model in models {
+            // Promoted into Needs You before promotions always got a
+            // matching reason: still saying it was kept out.
+            if model.attentionRaw == Attention.needsYou.rawValue, model.triagedMessageID != nil,
+               model.reason.hasSuffix("Kept out of Needs You.") {
+                model.reason = InboxClassifier.promotedReason
+                changed += 1
+            }
             let decoded = model.excerpt.decodingHTMLEntities
             if decoded != model.excerpt { model.excerpt = decoded }
             if model.lastSentAt == nil, model.senderEmail?.lowercased() == model.account.lowercased() {

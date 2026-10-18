@@ -783,6 +783,9 @@ public enum InboxClassifier {
     /// A payment asked of you, with its amount.
     public static let paymentReason = "Asks you to pay."
     /// "You allowed Corres access…": nothing to do unless it wasn't you.
+    /// Moved by the on-device check when it gave no reason we could show.
+    public static let promotedReason = "Reads like it needs something from you."
+    public static let demotedReason = "Reads like nothing is asked of you."
     public static let fromYouReason = "From your other account. Kept out of Needs You."
     public static let confirmationReason = "Confirms something you did. Nothing to do unless it wasn't you."
 
