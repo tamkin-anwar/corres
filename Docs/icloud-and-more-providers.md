@@ -281,3 +281,17 @@ Sources: support.apple.com/102654 (app-specific passwords),
 support.apple.com/102525 (server settings), support.apple.com/ht202315
 (junk), sparkmailapp.com/add-icloud-ios, developer.apple.com/forums/thread/778671
 (XAPPLEPUSHSERVICE).
+
+### Progress on "built in" (2026-10-18)
+
+Done (1b7e100): 30-second sign-in (in-app Apple Account page, Paste that
+connects by itself, clear errors), reconnect when iCloud rejects a saved
+password, aliases learned from Sent Messages, live Inbox while Corres is
+open (IDLE, separate connection), $NotJunk on Not Junk, Notes hidden.
+Fixed on the way: the LIST form iCloud ignores (no folders at all), and
+base64url mail sent to SMTP as-is (9ef0da1).
+
+Still to verify with real mail: receiving (Corres 1 never reached the
+Inbox; likely Apple's filter), a Hide My Email reply, an alias reply.
+Not built: a Junk-screen note about 30-day deletion (Gmail and Outlook
+differ, so it needs per-provider wording).
