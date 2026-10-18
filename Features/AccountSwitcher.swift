@@ -35,8 +35,8 @@ struct AccountSwitcher: View {
                     .corresCardFill(in: RoundedRectangle(cornerRadius: CorresSpace.radius, style: .continuous))
 
                     Button {
-                        dismiss()
                         openSettings()
+                        dismiss()
                     } label: {
                         Label("Manage Accounts and Settings", systemImage: "gearshape")
                             .frame(maxWidth: .infinity)

@@ -31,6 +31,7 @@ struct CorresShell: View {
         Binding(get: { selection }, set: { show($0) })
     }
     @State private var showingSettings = false
+    @State private var settingsAfterAccounts = false
     @State private var showingAccounts = false
     @State private var showingScreener = false
     @State private var showingWelcome = false
@@ -218,13 +219,16 @@ struct CorresShell: View {
                 self.accountFilter = nil
             }
         }
-        .sheet(isPresented: $showingAccounts) {
+        .sheet(isPresented: $showingAccounts, onDismiss: {
+            // Only once the switcher has fully gone: presenting Settings
+            // while it's still closing is silently dropped.
+            if settingsAfterAccounts {
+                settingsAfterAccounts = false
+                showingSettings = true
+            }
+        }) {
             AccountSwitcher(store: store, auth: auth, selection: $accountFilter) {
-                // After the switcher has gone, so the two sheets don't collide.
-                Task {
-                    try? await Task.sleep(for: .milliseconds(400))
-                    showingSettings = true
-                }
+                settingsAfterAccounts = true
             }
         }
         .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService, unsubscriber: unsubscribeService) }
