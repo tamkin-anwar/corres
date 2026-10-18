@@ -32,6 +32,7 @@ struct CorresShell: View {
     }
     @State private var showingSettings = false
     @State private var settingsAfterAccounts = false
+    @State private var foregroundSync: Task<Void, Never>?
     @State private var showingAccounts = false
     @State private var showingScreener = false
     @State private var showingWelcome = false
@@ -176,10 +177,12 @@ struct CorresShell: View {
                     await FollowUps.shared.check(store: store)
                 }
                 watchICloud()
+                keepCurrent()
                 // New Since Last Opened: opening Corres clears it.
                 if CorresSettings.badge == .new { UserDefaults.standard.set(Date.now, forKey: CorresSettings.lastLeftKey); WidgetBridge.update(from: store.threads) }
             } else if phase == .background {
                 ICloudWatcher.shared.stopAll()
+                foregroundSync?.cancel()
                 UserDefaults.standard.set(Date.now, forKey: CorresSettings.lastLeftKey)
             }
         }
@@ -256,6 +259,22 @@ struct CorresShell: View {
             WelcomeView {
                 hasExplored = true
                 showingWelcome = false
+            }
+        }
+    }
+
+    /// Back in Corres, and every minute while it stays open: ask every
+    /// account what changed. Pushes are a hint iOS may delay or drop; mail
+    /// read or deleted on gmail.com, Outlook.com or another phone has to
+    /// show here without a pull to refresh. Each check asks only for
+    /// changes, so it's a few small requests.
+    private func keepCurrent() {
+        foregroundSync?.cancel()
+        foregroundSync = Task { [sync, store, auth] in
+            while !Task.isCancelled {
+                let accounts = auth.accounts.map(\.email).filter { MailAccounts.provider(for: $0) != .icloud }
+                if !accounts.isEmpty, await sync.syncAll(accounts: accounts) { await store.refresh() }
+                try? await Task.sleep(for: .seconds(60))
             }
         }
     }
