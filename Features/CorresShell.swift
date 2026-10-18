@@ -239,7 +239,7 @@ struct CorresShell: View {
             get: { showingSettings ? nil : auth.icloudNeedsPassword.map(ICloudReconnect.init) },
             set: { if $0 == nil { auth.icloudNeedsPassword = nil } }
         )) { item in
-            ICloudSignInView(auth: auth, reconnecting: item.id) { _ in
+            ICloudSignInView(auth: auth, reconnecting: item.id, rejected: true) { _ in
                 Task { if await sync.syncIfConnected(account: item.id) { await store.load() } }
             }
         }

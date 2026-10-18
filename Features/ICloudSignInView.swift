@@ -13,6 +13,9 @@ struct ICloudSignInView: View {
     /// Set when the account exists and needs a new password: its address
     /// is filled in and fixed.
     var reconnecting: String?
+    /// iCloud turned the saved password away (as opposed to you choosing
+    /// to update it).
+    var rejected = false
     /// Called after the account is added, with the account count before it.
     let onConnected: (Int) -> Void
 
@@ -32,11 +35,13 @@ struct ICloudSignInView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 10) {
                         Image(systemName: "icloud").font(.system(size: 30)).foregroundStyle(CorresPalette.accent)
-                        Text(reconnecting == nil ? "Connect iCloud Mail" : "iCloud needs a new password")
+                        Text(reconnecting == nil ? "Connect iCloud Mail" : rejected ? "iCloud needs a new password" : "Update App-Specific Password")
                             .font(.title3.weight(.semibold))
                         Text(reconnecting == nil
                              ? "Apple asks other mail apps for an app-specific password instead of your Apple Account password. It takes about a minute, once."
-                             : "Changing your Apple Account password turns off app-specific passwords. Make a new one and Corres picks up where it left off.")
+                             : rejected
+                             ? "iCloud stopped accepting the password Corres had, usually because your Apple Account password changed. Make a new one and Corres picks up where it left off."
+                             : "Make a new app-specific password and paste it here. Corres keeps your mail and settings as they are.")
                             .font(.subheadline).foregroundStyle(CorresPalette.secondary)
                     }
                     .padding(.vertical, 6)
