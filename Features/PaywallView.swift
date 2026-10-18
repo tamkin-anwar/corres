@@ -68,7 +68,7 @@ struct PaywallView: View {
     private var benefits: some View {
         VStack(alignment: .leading, spacing: 14) {
             benefit("text.alignleft", "Brief, Needs You and Waiting", "What needs you first, with the reason for each.")
-            benefit("sparkle", "Apple Intelligence, on this iPhone", "Summaries, replies in your voice, rewrites and Ask your mail.")
+            benefit("sparkle", "Apple Intelligence, on this \(Device.name)", "Summaries, replies in your voice, rewrites and Ask your mail.")
             benefit("rectangle.stack", "Widgets, Siri and iPad", "Needs You on your Home Screen and Lock Screen.")
             benefit("lock", "Private by design", "Your mail is never sent to our servers or an AI company.")
         }
@@ -306,7 +306,7 @@ struct ProLockView: View {
         case .brief: "A one-sentence brief of your day, and what needs you first."
         case .needsYou: "The conversations that ask something of you, with the reason for each."
         case .waiting: "Everyone who owes you a reply, and for how long."
-        case .ask: "Ask a question, get the answer from your own email, on this iPhone."
+        case .ask: "Ask a question, get the answer from your own email, on this \(Device.name)."
         case .mail: ""
         }
     }

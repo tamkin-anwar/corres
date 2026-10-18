@@ -158,7 +158,7 @@ struct PreferencesView: View {
                 }
                 Section {
                     LabeledContent {
-                        Text(intelligence.isAvailable ? "On this iPhone" : "Not available")
+                        Text(intelligence.isAvailable ? "On this \(Device.name)" : "Not available")
                     } label: {
                         settingLabel("Apple Intelligence", "sparkle")
                     }
@@ -174,7 +174,7 @@ struct PreferencesView: View {
                         PrivacyView()
                     } label: {
                         LabeledContent {
-                            Text("Read on this iPhone")
+                            Text("Read on this \(Device.name)")
                         } label: {
                             settingLabel("Private by Design", "lock.shield")
                         }
@@ -304,7 +304,7 @@ struct PreferencesView: View {
                     }
                     .buttonStyle(CorresButtonStyle())
                     .disabled(auth.isSigningIn || sync.isSyncing)
-                    Text("Gmail, Outlook.com, Hotmail and work or school Microsoft 365. Corres never sees your password, and your mail is sorted and read on this iPhone.")
+                    Text("Gmail, Outlook.com, Hotmail and work or school Microsoft 365. Corres never sees your password, and your mail is sorted and read on this \(Device.name).")
                         .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 }
                 .padding(.vertical, 8)
@@ -572,7 +572,7 @@ private struct AccountDetailView: View {
             Section {
                 Button("Remove Account", role: .destructive) { confirmingRemoval = true }
             } footer: {
-                Text("Removes this account and its mail from Corres on this iPhone. Nothing is deleted from \(provider.title).")
+                Text("Removes this account and its mail from Corres on this \(Device.name). Nothing is deleted from \(provider.title).")
             }
         }
         .scrollContentBackground(.hidden)
@@ -601,7 +601,7 @@ private struct AccountDetailView: View {
                 dismiss()
             }
         } message: {
-            Text("Its mail is removed from this iPhone. It stays in \(provider.title).")
+            Text("Its mail is removed from this \(Device.name). It stays in \(provider.title).")
         }
     }
 
@@ -801,7 +801,7 @@ private struct ComposingSettingsView: View {
             } header: {
                 Text("Addressing")
             } footer: {
-                Text("As you type a name in To, Cc or search, Corres suggests people you email, the ones you write to most first, and people in your Contacts once you allow it. All on this iPhone. Press and hold a suggestion to stop seeing it.")
+                Text("As you type a name in To, Cc or search, Corres suggests people you email, the ones you write to most first, and people in your Contacts once you allow it. All on this \(Device.name). Press and hold a suggestion to stop seeing it.")
             }
             Section {
                 NavigationLink {
@@ -865,7 +865,7 @@ private struct ReadingSettingsView: View {
             } footer: {
                 Text("Key Details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. "
                      + (intelligence.isAvailable
-                        ? "Summaries are written on this iPhone and checked against the email: every name, number and date has to be in it. Summaries are part of Corres Pro."
+                        ? "Summaries are written on this \(Device.name) and checked against the email: every name, number and date has to be in it. Summaries are part of Corres Pro."
                         : "Summaries need Apple Intelligence, and are part of Corres Pro."))
             }
             Section {
@@ -911,7 +911,7 @@ private struct LessonsView: View {
             Section {
                 Toggle("Learn from My Changes", isOn: $isEnabled)
             } footer: {
-                Text("When you say an email Apple Intelligence flagged needs no action, Corres stops flagging that kind of email from that sender; their other mail is untouched. When you move a sender's automated email into Needs You, it keeps that kind there. Corres also notices habits, like lists you never open or people you always read at once, and suggests a change, at most once a day. Everything stays on this iPhone.")
+                Text("When you say an email Apple Intelligence flagged needs no action, Corres stops flagging that kind of email from that sender; their other mail is untouched. When you move a sender's automated email into Needs You, it keeps that kind there. Corres also notices habits, like lists you never open or people you always read at once, and suggests a change, at most once a day. Everything stays on this \(Device.name).")
             }
             Section {
                 if lessons.isEmpty {
@@ -1016,7 +1016,7 @@ private struct SortingSettingsView: View {
                     Label("What Corres Has Learned", systemImage: "brain")
                 }
             } footer: {
-                Text("Corres learns from your corrections, on this iPhone. Every lesson is listed here, and you can make it forget any of them.")
+                Text("Corres learns from your corrections, on this \(Device.name). Every lesson is listed here, and you can make it forget any of them.")
             }
             Section {
                 Picker("Needs You", selection: $sensitivity) {
@@ -1327,7 +1327,7 @@ private struct SnippetSettingsView: View {
                     Label("New snippet", systemImage: "plus")
                 }
             } footer: {
-                Text("Insert a snippet from the bar above the keyboard in any message. Write \(SnippetStore.firstNameToken) and Corres fills in the recipient's first name. Snippets stay on this iPhone.")
+                Text("Insert a snippet from the bar above the keyboard in any message. Write \(SnippetStore.firstNameToken) and Corres fills in the recipient's first name. Snippets stay on this \(Device.name).")
             }
         }
         .scrollContentBackground(.hidden)
@@ -1476,8 +1476,8 @@ private struct PrivacyView: View {
         Form {
             Section {
                 row("Corres never sees your Google password", "key",
-                    "You sign in with Google directly. Corres receives a permission you can revoke anytime, kept in this iPhone's Keychain.")
-                row("Your mail is read on this iPhone", "iphone",
+                    "You sign in with Google directly. Corres receives a permission you can revoke anytime, kept in this \(Device.name)'s Keychain.")
+                row("Your mail is read on this \(Device.name)", Device.name == "iPad" ? "ipad" : "iphone",
                     "Sorting, summaries, suggested replies and rewrites run on Apple's on-device model. Your mail isn't sent to a server Corres runs, or to any AI company, to do it.")
                 row("Trackers blocked", "shield.lefthalf.filled",
                     "Remote images, and the tracking pixels hidden in them, stay off until you choose to show them.")

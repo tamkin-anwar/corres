@@ -185,9 +185,9 @@ struct SendersView: View {
     private var footer: String {
         switch filter {
         case .subscriptions: "Newsletters, stores and services: anyone who sends with an unsubscribe link. Swipe right to unsubscribe."
-        case .blocked: "Blocked senders' mail stays out of every list on this iPhone, and they're never told. Swipe to allow one again."
+        case .blocked: "Blocked senders' mail stays out of every list on this \(Device.name), and they're never told. Swipe to allow one again."
         case .new: "First emails from people you haven't allowed or blocked yet."
-        default: "Everyone who has emailed you, from mail on this iPhone. Swipe left to block or allow, right to unsubscribe, or press and hold for more."
+        default: "Everyone who has emailed you, from mail on this \(Device.name). Swipe left to block or allow, right to unsubscribe, or press and hold for more."
         }
     }
 

@@ -102,7 +102,7 @@ struct BriefView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Text(Date.now, format: .dateTime.weekday(.wide).month(.wide).day()).eyebrow()
-                if !isConnected {
+                if !isConnected && !EntitlementStore.isScreenshotMode {
                     Text("Sample").eyebrow(CorresPalette.accent)
                         .padding(.horizontal, 7).padding(.vertical, 2)
                         .overlay(Capsule().strokeBorder(CorresPalette.accent.opacity(0.5), lineWidth: 1))
@@ -131,7 +131,7 @@ struct BriefView: View {
                     .labelStyle(TightLabelStyle())
                     .eyebrow(CorresPalette.accent)
                 Spacer(minLength: 8)
-                Text(isConnected ? "On this iPhone" : "Sample mail")
+                Text(isConnected || EntitlementStore.isScreenshotMode ? "On this \(Device.name)" : "Sample mail")
                     .font(.caption).foregroundStyle(CorresPalette.tertiary)
             }
             Text(briefSentence)
@@ -355,7 +355,7 @@ struct BriefView: View {
     }
 
     private var privacyNote: some View {
-        Label(isConnected ? "Sorted on this iPhone. Corres doesn't send your mail to its own servers or to an AI service."
+        Label(isConnected ? "Sorted on this \(Device.name). Corres doesn't send your mail to its own servers or to an AI service."
                           : "Fictional mail. Connect Gmail or Outlook in Settings when you're ready.",
               systemImage: "lock")
             .labelStyle(TightLabelStyle())

@@ -716,7 +716,7 @@ struct CorrespondenceList: View {
     private var summaryLine: String {
         let count = results.count
         let noun = count == 1 ? "conversation" : "conversations"
-        let sample = (auth?.accounts.isEmpty ?? true) ? " · Sample mail" : ""
+        let sample = (auth?.accounts.isEmpty ?? true) && !EntitlementStore.isScreenshotMode ? " · Sample mail" : ""
         switch destination {
         case .needsYou:
             let due = dueSoonIDs.count
@@ -771,7 +771,7 @@ struct CorrespondenceList: View {
     @ViewBuilder
     private var listFooter: some View {
         if destination == .needsYou && !results.isEmpty {
-            Text("Email that asks something of you, sorted on this iPhone. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes \u{2192} Handled. Wrong call? Press and hold to move it.")
+            Text("Email that asks something of you, sorted on this \(Device.name). Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes \u{2192} Handled. Wrong call? Press and hold to move it.")
                 .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 18)
         } else if destination == .waiting && !results.isEmpty {

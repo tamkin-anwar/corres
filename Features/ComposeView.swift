@@ -251,7 +251,7 @@ struct ComposeView: View {
                         .datePickerStyle(.graphical)
                         .tint(CorresPalette.accent)
                         .padding(.horizontal, CorresSpace.page)
-                    Text("Corres sends it from this iPhone at that time, or the moment it can if your iPhone is off or offline.")
+                    Text("Corres sends it from this \(Device.name) at that time, or the moment it can if your \(Device.name) is off or offline.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
                         .padding(.horizontal, CorresSpace.page)
                     Spacer()
@@ -864,7 +864,7 @@ struct ComposeView: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            .accessibilityHint("Shows people from your Contacts, with their photos. Stays on this iPhone.")
+                            .accessibilityHint("Shows people from your Contacts, with their photos. Stays on this \(Device.name).")
                         }
                     }
                     .padding(.horizontal, CorresSpace.page)

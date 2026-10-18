@@ -69,6 +69,12 @@ extension Color {
     }
 }
 
+/// "iPhone" or "iPad", for wording that names the device Corres runs on
+/// ("Read on this iPad"), the way Apple's own apps do.
+enum Device {
+    @MainActor static let name = UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
+}
+
 enum CorresSpace {
     static let small: CGFloat = 8
     static let medium: CGFloat = 16

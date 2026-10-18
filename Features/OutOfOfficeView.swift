@@ -48,7 +48,7 @@ struct OutOfOfficeView: View {
                 Section {
                     Toggle("Out of Office", isOn: $vacation.enableAutoReply)
                 } footer: {
-                    Text("While it's on, \(service) answers new email with your message and sends it even with this iPhone off.")
+                    Text("While it's on, \(service) answers new email with your message and sends it even with this \(Device.name) off.")
                 }
                 if vacation.enableAutoReply {
                     Section("When") {

@@ -178,7 +178,7 @@ final class MailStore {
                 await load()
             }
         } catch {
-            errorMessage = "Could not remove this account's mail from your iPhone. Please try again."
+            errorMessage = "Could not remove this account's mail from your \(Device.name). Please try again."
         }
     }
 

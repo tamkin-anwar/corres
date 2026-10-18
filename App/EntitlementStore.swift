@@ -45,7 +45,16 @@ final class EntitlementStore {
     private(set) var isPurchasing = false
     var errorMessage: String?
 
-    var isPro: Bool { plan != .none || (hasBetaAccess && !previewAsFree) }
+    var isPro: Bool { plan != .none || (hasBetaAccess && !previewAsFree) || Self.isScreenshotMode }
+
+    /// Debug builds launched with `-CorresScreenshots` (App Store screenshots
+    /// from sample mail): Pro screens unlocked without a purchase. Never
+    /// compiled into TestFlight or App Store builds, which are Release.
+    #if DEBUG
+    static let isScreenshotMode = ProcessInfo.processInfo.arguments.contains("-CorresScreenshots")
+    #else
+    static let isScreenshotMode = false
+    #endif
 
     /// What the last check found, kept so launch shows the right screens at
     /// once instead of the unlocked ones flashing before a lock (or a lock

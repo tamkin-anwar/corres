@@ -111,7 +111,7 @@ struct AskView: View {
             Text("Ask about a person (“from Sam”), files (“attachments”), receipts or packages, and a time (“this month”, “last week”).")
                 .font(.footnote).foregroundStyle(CorresPalette.secondary)
                 .padding(.top, 4)
-            Label(ask.canAnswer ? "Answered on this iPhone from your own mail. Nothing is sent to a server."
+            Label(ask.canAnswer ? "Answered on this \(Device.name) from your own mail. Nothing is sent to a server."
                                 : "Turn on Apple Intelligence for written answers. Until then, Ask finds the right emails.",
                   systemImage: "lock")
                 .labelStyle(TightLabelStyle())

@@ -44,7 +44,7 @@ struct WelcomeView: View {
                 point("tray", "Everything else, in one place",
                       "Every account in one inbox, newest first. New senders wait for your OK first.")
                 point("lock", "Private by design",
-                      "Sorting, summaries and drafts run on this iPhone. Corres doesn't send your mail to its own servers or to an AI service.")
+                      "Sorting, summaries and drafts run on this \(Device.name). Corres doesn't send your mail to its own servers or to an AI service.")
             }
             .padding(.top, 44)
             Spacer(minLength: 40)

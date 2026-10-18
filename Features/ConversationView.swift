@@ -919,7 +919,7 @@ struct ConversationView: View {
                             }
                             .buttonStyle(.plain)
                             .disabled(draftingIntent != nil)
-                            .accessibilityHint("Drafts this reply on your iPhone for you to review")
+                            .accessibilityHint("Drafts this reply on your \(Device.name) for you to review")
                         }
                     }
                     .padding(.horizontal, CorresSpace.medium)

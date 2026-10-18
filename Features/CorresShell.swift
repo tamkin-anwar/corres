@@ -396,7 +396,7 @@ struct CorresShell: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(shelved.draft.subject.isEmpty ? "Draft" : shelved.draft.subject)
                         .font(.subheadline.weight(.medium)).lineLimit(1)
-                    Text(shelved.isSavedToGmail ? "Saved to Drafts" : shelved.couldNotSave ? "Kept on this iPhone" : "Saving to Drafts\u{2026}")
+                    Text(shelved.isSavedToGmail ? "Saved to Drafts" : shelved.couldNotSave ? "Kept on this \(Device.name)" : "Saving to Drafts\u{2026}")
                         .font(.caption).foregroundStyle(CorresPalette.secondary)
                 }
                 .frame(maxWidth: 200, alignment: .leading)
