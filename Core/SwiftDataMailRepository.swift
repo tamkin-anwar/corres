@@ -177,6 +177,18 @@ public actor SwiftDataMailRepository: MailRepository {
     @discardableResult
     static func applyRules(to model: PersistedCorrespondence, correspondents: Set<String>, now: Date) -> Bool {
         let movable: Set<String> = [Attention.needsYou.rawValue, Attention.quiet.rawValue, Attention.waiting.rawValue]
+        // From another of your own accounts: never Needs You, even if the
+        // on-device check thought so. Not if you put it there yourself
+        // (that carries no rule reason).
+        if model.attentionRaw == Attention.needsYou.rawValue, model.account != "sample",
+           InboxClassifier.ruleReasons.contains(model.reason),
+           let sender = model.senderEmail?.lowercased(), sender != model.account.lowercased(),
+           InboxClassifier.ownAddresses.contains(sender) {
+            model.attentionRaw = Attention.quiet.rawValue
+            model.reason = InboxClassifier.fromYouReason
+            model.dueAt = nil
+            return true
+        }
         guard movable.contains(model.attentionRaw),
               InboxClassifier.ruleReasons.contains(model.reason),
               model.triagedMessageID == nil,
@@ -221,6 +233,10 @@ public actor SwiftDataMailRepository: MailRepository {
                    isStale: InboxClassifier.isStale(receivedAt: model.receivedAt, now: now),
                    isCopiedOnly: copied, currentReason: reason) {
                 (attention, reason) = override
+            }
+            if attention == .needsYou, let senderEmail = model.senderEmail?.lowercased(),
+               senderEmail != model.account.lowercased(), InboxClassifier.ownAddresses.contains(senderEmail) {
+                (attention, reason) = (.quiet, InboxClassifier.fromYouReason)
             }
         }
         model.attentionRaw = attention.rawValue

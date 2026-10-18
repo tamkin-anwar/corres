@@ -363,7 +363,14 @@ final class OutboxService {
         let address = draft.fromAddress ?? account
         // Settings → the account → Your Name, for the account's own address.
         let ownName = address.lowercased() == account.lowercased() ? AccountPreferences.senderName(for: account) : nil
-        let name = draft.fromName ?? ownName ?? directory.addresses(for: account).first { $0.email == address.lowercased() }?.name ?? ""
+        var name = draft.fromName ?? ownName ?? directory.addresses(for: account).first { $0.email == address.lowercased() }?.name ?? ""
+        // An account with no name of its own (iCloud gives apps none) goes
+        // out under the name you use on your others, not a bare address.
+        if name.isEmpty {
+            name = auth.profile(for: account)?.name
+                ?? auth.accounts.lazy.compactMap { AccountPreferences.senderName(for: $0.email) ?? self.auth.profile(for: $0.email)?.name }.first
+                ?? ""
+        }
         guard !name.isEmpty else { return address }
         return "\(name) <\(address)>"
     }

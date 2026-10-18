@@ -920,6 +920,9 @@ struct GmailAPIClient {
             (attention, reason) = InboxClassifier.afterYouWrote(
                 asksSomething: asks, toPeople: MailSignals.hasPersonRecipient(toRecipients + ccRecipients, account: account),
                 sentAt: receivedAt)
+        } else if attention == .needsYou, InboxClassifier.ownAddresses.contains(senderEmail.lowercased()) {
+            // From another of your own accounts: a note to yourself.
+            (attention, reason) = (.quiet, InboxClassifier.fromYouReason)
         }
         return Correspondence(
             id: ThreadID(account: account, providerID: threadID),

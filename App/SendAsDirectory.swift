@@ -32,6 +32,13 @@ final class SendAsDirectory {
         }
         byAccount = byAccount.filter { accounts.contains($0.key) }
         UserDefaults.standard.set(try? JSONEncoder().encode(byAccount), forKey: Self.key)
+        Self.publishOwnAddresses(accounts: accounts, aliases: allAddresses)
+    }
+
+    /// Tells the classifier every address that is you, so mail between
+    /// your own accounts never lands in Needs You.
+    static func publishOwnAddresses(accounts: [String], aliases: Set<String>) {
+        InboxClassifier.ownAddresses = Set(accounts.map { $0.lowercased() }).union(aliases.map { $0.lowercased() })
     }
 
     /// The account's addresses, its own first, then the rest by address.

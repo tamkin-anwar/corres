@@ -554,6 +554,29 @@ struct SwiftDataMailRepositoryTests {
     /// show up here: read state mirrors in place without moving the thread
     /// out of Needs You, an archive elsewhere removes it, and a change to
     /// an older message or an unknown thread is ignored.
+    /// A note from your iCloud account to your Gmail is you, not someone
+    /// waiting on you: it stays in Mail and out of Needs You.
+    @Test func mailFromYourOtherAccountStaysOutOfNeedsYou() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let before = InboxClassifier.ownAddresses
+        InboxClassifier.ownAddresses = ["me@gmail.test", "me@icloud.test"]
+        defer { InboxClassifier.ownAddresses = before }
+        func thread(_ n: Int, from: String) -> Correspondence {
+            Correspondence(id: ThreadID(account: "me@gmail.test", providerID: "own\(n)"), sender: "Me", senderEmail: from,
+                           organization: "", subject: "Can you look at this?", excerpt: "Can you look at this?", body: "",
+                           latestMessageID: "own-m\(n)", receivedAt: Date.now, dueAt: nil, reason: InboxClassifier.questionReason,
+                           attention: .needsYou, isUnread: true, labelIds: ["INBOX", "UNREAD"])
+        }
+        try await repository.upsert([thread(1, from: "me@icloud.test"), thread(2, from: "friend@x.test")], isInitialSync: false)
+        // Mail already stored before Corres knew both addresses were yours
+        // moves on the next pass over the rules.
+        try await repository.reclassifyLegacySyncDefaults()
+        let stored = Dictionary(uniqueKeysWithValues: try await repository.threads().map { ($0.id.providerID, $0) })
+        #expect(stored["own1"]?.attention == .quiet)
+        #expect(stored["own1"]?.reason == InboxClassifier.fromYouReason)
+        #expect(stored["own2"]?.attention == .needsYou)
+    }
+
     @Test func remoteChangesMirrorReadArchiveAndIgnoreStaleMessages() async throws {
         let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
         let account = "me@example.com"

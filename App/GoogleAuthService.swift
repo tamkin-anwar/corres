@@ -379,6 +379,7 @@ final class GoogleAuthService {
 
     private func persistAccountList() {
         defaults.set(accounts.map(\.email), forKey: Self.connectedAccountsKey)
+        SendAsDirectory.publishOwnAddresses(accounts: accounts.map(\.email), aliases: SendAsDirectory.shared.allAddresses)
     }
 
     private static func rootViewController() -> UIViewController? {

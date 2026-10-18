@@ -113,7 +113,9 @@ final class SemanticTriageService {
                   thread.id.account != Self.sampleAccount,
                   !thread.isScreenedOut,
                   thread.latestMessageID != nil,
-                  thread.triagedMessageID != thread.latestMessageID else { return false }
+                  thread.triagedMessageID != thread.latestMessageID,
+                  // A note from your own other account is never assessed.
+                  !InboxClassifier.ownAddresses.contains(thread.senderEmail?.lowercased() ?? "") else { return false }
             if thread.attention == .needsYou { return true }
             // You've said this sender's mail needs nothing; don't ask again.
             return Self.isPromotionCandidate(thread) && now.timeIntervalSince(thread.receivedAt) < Self.promotionWindow

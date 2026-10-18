@@ -783,6 +783,7 @@ public enum InboxClassifier {
     /// A payment asked of you, with its amount.
     public static let paymentReason = "Asks you to pay."
     /// "You allowed Corres access…": nothing to do unless it wasn't you.
+    public static let fromYouReason = "From your other account. Kept out of Needs You."
     public static let confirmationReason = "Confirms something you did. Nothing to do unless it wasn't you."
 
     /// Every reason these rules can produce for unread mail: a thread
@@ -791,13 +792,17 @@ public enum InboxClassifier {
     public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason, staleReason,
                                                   readReason, legacyReadReason, questionReason, deadlineReason, obligationReason, copiedReason,
                                                   askedReason, repliedReason, startedReason, vipReason, fyiReason,
-                                                  lessonReason, confirmationReason, failureReason, paymentReason,
+                                                  lessonReason, confirmationReason, fromYouReason, failureReason, paymentReason,
                                                   BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,
                                                   BulkKind.updates.reason, BulkKind.automated.reason]
 
     /// People whose mail always lands in Needs You (lowercased addresses),
     /// set from Settings → Sorting.
     public nonisolated(unsafe) static var vipAddresses: Set<String> = []
+    /// Every address that is you: your connected accounts and the aliases
+    /// they send as (lowercased). Mail from one of them to another is a
+    /// note to yourself, not someone needing you.
+    public nonisolated(unsafe) static var ownAddresses: Set<String> = []
 
     /// The Screener's company rules: a new sender from a domain here gets
     /// that decision on arrival instead of waiting in the Screener
