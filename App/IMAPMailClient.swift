@@ -688,7 +688,9 @@ struct IMAPMailClient: Sendable {
         var all = old
         for m in messages { all[String(m.uid)] = conversation(for: m) }
         let newest = all.keys.compactMap(UInt32.init).sorted(by: >).prefix(500).map(String.init)
-        return Dictionary(uniqueKeysWithValues: newest.map { ($0, all[$0]!) })
+        // Never trusts the keys to round-trip: a stored "07" next to "7"
+        // would be a duplicate key, and a crash.
+        return Dictionary(newest.compactMap { key in all[key].map { (key, $0) } }, uniquingKeysWith: { first, _ in first })
     }
 
     static func formatted(_ a: Address) -> String {
