@@ -1,0 +1,11 @@
+* 1201 FETCH (UID 48210 FLAGS (\Seen) RFC822.SIZE 5321 ENVELOPE ("Fri, 16 Oct 2026 09:07:48 -0400" "Lunch on Thursday?" (("Maya Chen" NIL "maya" "studio.example")) (("Maya Chen" NIL "maya" "studio.example")) (("Maya Chen" NIL "maya" "studio.example")) ((NIL NIL "tamkin" "icloud.com")) NIL NIL NIL "<a1@studio.example>") BODY[HEADER.FIELDS (REFERENCES)] {2}
+
+)
+* 1202 FETCH (UID 48211 FLAGS () RFC822.SIZE 2210 ENVELOPE ("Fri, 16 Oct 2026 10:15:02 -0700 (PDT)" "Re: Lunch on Thursday?" (("Tamkin Anwar" NIL "tamkin" "icloud.com")) (("Tamkin Anwar" NIL "tamkin" "icloud.com")) (("Tamkin Anwar" NIL "tamkin" "icloud.com")) (("Maya Chen" NIL "maya" "studio.example")) NIL NIL "<a1@studio.example>" "<b2@icloud.com>") BODY[HEADER.FIELDS (REFERENCES)] {35}
+References: <a1@studio.example>
+
+)
+* 1203 FETCH (UID 48212 FLAGS (\Flagged) RFC822.SIZE 9001 ENVELOPE ("17 Oct 2026 08:00:00 +0000" "=?UTF-8?B?8J+TpiBZb3VyIG9yZGVyIGhhcyBzaGlwcGVk?=" (("=?UTF-8?Q?Caf=C3=A9_Lumi=C3=A8re?=" NIL "orders" "cafe.example")) NIL NIL ((NIL NIL "tamkin" "icloud.com")) NIL NIL NIL "<c3@cafe.example>") BODY[HEADER.FIELDS (REFERENCES)] {2}
+
+)
+A4 OK FETCH completed

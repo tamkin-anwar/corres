@@ -1,0 +1,9 @@
+* LIST (\HasNoChildren) "/" "INBOX"
+* LIST (\HasNoChildren) "/" "Sent Messages"
+* LIST (\HasNoChildren) "/" "Deleted Messages"
+* LIST (\HasNoChildren) "/" "Drafts"
+* LIST (\HasNoChildren) "/" "Junk"
+* LIST (\HasChildren) "/" "Archive"
+* LIST (\HasNoChildren) "/" "Archive/Receipts"
+* LIST (\Noselect \HasChildren) "/" "Projects"
+A2 OK LIST completed

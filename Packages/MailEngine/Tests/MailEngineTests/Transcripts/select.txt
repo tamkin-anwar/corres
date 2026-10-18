@@ -1,0 +1,8 @@
+* 1203 EXISTS
+* 0 RECENT
+* FLAGS (\Answered \Flagged \Draft \Deleted \Seen $NotJunk NotJunk)
+* OK [PERMANENTFLAGS (\Answered \Flagged \Draft \Deleted \Seen \*)] Flags permitted.
+* OK [UIDVALIDITY 1544578391] UIDs valid.
+* OK [UIDNEXT 48213] Predicted next UID.
+* OK [HIGHESTMODSEQ 905172] Highest
+A3 OK [READ-WRITE] SELECT completed

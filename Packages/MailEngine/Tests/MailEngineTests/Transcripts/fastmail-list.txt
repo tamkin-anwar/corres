@@ -1,0 +1,7 @@
+* LIST (\HasNoChildren) "." INBOX
+* LIST (\HasNoChildren \Sent) "." Sent
+* LIST (\HasNoChildren \Trash) "." Trash
+* LIST (\HasNoChildren \Junk) "." Spam
+* LIST (\HasNoChildren \Archive) "." Archive
+* LIST (\HasNoChildren \Drafts) "." Drafts
+A2 OK Completed (0.001 secs 7 calls)
