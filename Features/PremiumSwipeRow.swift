@@ -79,7 +79,7 @@ struct PremiumSwipeRow<Content: View>: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { rowWidth = max($0, 1) }
         .modifier(SwipeGesture(isEnabled: isEnabled && !isCommitting,
                                allowsPositive: allowsPositive, allowsNegative: allowsNegative,
-                               changed: dragChanged, ended: dragEnded))
+                               changed: dragChanged, ended: dragEnded, cancelled: dragCancelled))
         .sensoryFeedback(trigger: zone) { old, new in
             new.rawValue > old.rawValue ? .impact(weight: new == .long ? .medium : .light, intensity: 0.9)
                                         : .impact(weight: .light, intensity: 0.5)
@@ -99,7 +99,16 @@ struct PremiumSwipeRow<Content: View>: View {
         }
     }
 
+    /// The touch was taken away (Notification Center, a call, the row
+    /// moving under the finger): nothing was chosen, so nothing happens.
+    private func dragCancelled() {
+        guard !isCommitting else { return }
+        settle()
+    }
+
     private func dragEnded(_ translation: CGFloat, _ velocity: CGFloat) {
+        // Already leaving: a late second end must not run the action twice.
+        guard !isCommitting else { return }
         var committed = zone(for: offset)
         // A decisive flick arms the short action even before its distance.
         let flicked = abs(velocity) > 450 && abs(offset) > 16 && (velocity > 0) == (offset > 0)
@@ -224,11 +233,13 @@ private struct SwipeGesture: ViewModifier {
     let allowsNegative: Bool
     let changed: (CGFloat) -> Void
     let ended: (CGFloat, CGFloat) -> Void
+    let cancelled: () -> Void
 
     func body(content: Content) -> some View {
         if #available(iOS 18.0, *) {
             content.gesture(HorizontalPanGesture(isEnabled: isEnabled, allowsPositive: allowsPositive,
-                                                 allowsNegative: allowsNegative, changed: changed, ended: ended))
+                                                 allowsNegative: allowsNegative, changed: changed, ended: ended,
+                                                 cancelled: cancelled))
         } else {
             content.simultaneousGesture(LegacyDrag(isEnabled: isEnabled, changed: changed, ended: ended).gesture)
         }
@@ -242,6 +253,7 @@ private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
     let allowsNegative: Bool
     let changed: (CGFloat) -> Void
     let ended: (CGFloat, CGFloat) -> Void
+    let cancelled: () -> Void
 
     func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator(allowsPositive: allowsPositive, allowsNegative: allowsNegative) }
 
@@ -271,7 +283,7 @@ private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
         case .ended:
             ended(translation, recognizer.velocity(in: recognizer.view).x)
         case .cancelled, .failed:
-            ended(0, 0)
+            cancelled()
         default:
             break
         }
@@ -288,7 +300,11 @@ private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
         }
 
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-            touchDownX = touch.location(in: gestureRecognizer.view).x
+            // The first finger only: a second one landing mid-swipe used to
+            // move the starting point and make the row jump.
+            if gestureRecognizer.state == .possible {
+                touchDownX = touch.location(in: gestureRecognizer.view).x
+            }
             return true
         }
 

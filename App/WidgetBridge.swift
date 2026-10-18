@@ -16,12 +16,16 @@ enum WidgetBridge {
     /// For changes made while the app is in use: waits for a pause, then
     /// sorts in the background. Run inline on every change, the four full
     /// sorts here landed in the middle of each swipe's animation.
-    static func scheduleUpdate(from threads: [Correspondence]) {
+    /// `threads` is read only once the wait is over: called on every
+    /// change to the mail, reading it straight away put a pass over the
+    /// whole mailbox inside each swipe's animation.
+    static func scheduleUpdate(from currentThreads: @escaping @MainActor () -> [Correspondence]) {
         pendingUpdate?.cancel()
-        let badge = BadgeInputs.current(threads)
         pendingUpdate = Task {
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
+            let threads = currentThreads()
+            let badge = BadgeInputs.current(threads)
             let built = await Task.detached(priority: .utility) { build(from: threads, now: .now, badge: badge) }.value
             guard !Task.isCancelled else { return }
             apply(built)

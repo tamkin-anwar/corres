@@ -145,30 +145,34 @@ struct CorresShell: View {
         // The banner animates on its own; attached to the whole app, these
         // used to animate every list underneath each time it came and went.
         // Reduce Motion keeps the fade and drops the slide.
-        .overlay(alignment: .bottom) {
-            ZStack { outboxBanner }
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.pending?.id)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.failed?.id)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: threadActions.pendingRemoval?.id)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: threadActions.lastChange?.id)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: HabitWatcher.shared.offer)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: outbox.shelved?.id)
-        }
-        // Premium apps confirm what just happened in the hand, not only on screen.
-        .sensoryFeedback(.success, trigger: outbox.pending?.id) { _, new in new != nil }
-        .sensoryFeedback(.impact(weight: .medium), trigger: threadActions.pendingRemoval?.id) { _, new in new != nil }
+        // Its own view, so only the pill redraws when it changes. Read here,
+        // the Undo pill and the send countdown redrew the whole app (every
+        // tab, every toolbar) on each swipe, inside the row's animation,
+        // and every second while a send waited.
+        .overlay(alignment: .bottom) { FeedbackPills(shell: self) }
         // A Focus filter (Settings → Focus) limits Corres to one account
         // while it's on; turning the Focus off brings every account back.
         .onReceive(NotificationCenter.default.publisher(for: CorresFocusFilter.didChange)) { _ in applyFocusFilter() }
         .onAppear { applyFocusFilter(); watchICloud() }
         .onChange(of: auth.accounts) { watchICloud() }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active { Task { await threadActions.commitPendingRemoval() } }
-            // Leaving Corres: the Share sheet gets who you've written to since.
+            // Leaving Corres. Not on a glance at Notification Center or
+            // Control Center (`.inactive`), which used to end Undo early.
             if phase == .background {
-                Task { await ShareBridge.update(auth: auth, people: people, threads: store.threads) }
-                // And the notification extension, the settings it judges mail by.
-                PushNotificationService.publishPolicy(accounts: auth.accounts.map(\.email), threads: store.threads)
+                // iOS gives a few seconds to finish: a swipe to Trash still
+                // reaches the server rather than coming back next launch.
+                let work = BackgroundWork.begin("Leaving Corres")
+                Task {
+                    await threadActions.commitPendingRemoval()
+                    // After the snapshot iOS takes on the way out, so it
+                    // isn't kept waiting on this.
+                    try? await Task.sleep(for: .milliseconds(400))
+                    // The Share sheet gets who you've written to since.
+                    await ShareBridge.update(auth: auth, people: people, threads: store.threads)
+                    // And the notification extension, the settings it judges mail by.
+                    PushNotificationService.publishPolicy(accounts: auth.accounts.map(\.email), threads: store.threads)
+                    work.end()
+                }
             }
             // Back in Corres: anything scheduled that's now due goes.
             if phase == .active {
@@ -300,13 +304,9 @@ struct CorresShell: View {
         }
         IMAPWatcher.shared.start(accounts: accounts) { [sync, store] account in
             Task {
-                // A sync already running may have started just before this
-                // mail arrived: wait for it and go again, rather than drop it.
-                for _ in 0..<5 {
-                    if await sync.syncIfConnected(account: account) { await store.load(); return }
-                    guard sync.isSyncing else { return }
-                    try? await Task.sleep(for: .seconds(2))
-                }
+                // A sync already running joins with one more pass after it,
+                // so mail that arrived mid-pass isn't dropped.
+                if await sync.syncIfConnected(account: account) { await store.load() }
             }
         }
     }
@@ -356,7 +356,7 @@ struct CorresShell: View {
     @State private var bannerDrag: CGFloat = 0
 
     @ViewBuilder
-    private var outboxBanner: some View {
+    fileprivate var outboxBanner: some View {
         if outbox.pending == nil, outbox.failed == nil, let removal = threadActions.pendingRemoval {
             // A small pill, not a full-width bar: working through a stack of
             // email, the rows beside it stay swipeable, the list makes room
@@ -522,7 +522,11 @@ struct CorresShell: View {
     }
 
     @ViewBuilder
-    private func destinationContent(for destination: Destination) -> some View {
+    /// `pushedOnto`: shown on top of that tab rather than as a tab itself.
+    /// It's on screen whenever that tab is; it used to count as never on
+    /// screen, so its rows never updated (a swiped row sprang back).
+    private func destinationContent(for destination: Destination, pushedOnto host: Destination? = nil) -> some View {
+        let isActive = selection == (host ?? destination)
         switch store.state {
         case .idle, .loading:
             // The launch screen's own mark, at the same size and centered
@@ -553,11 +557,11 @@ struct CorresShell: View {
                 AskView(ask: ask)
             } else if destination == .brief {
                 BriefView(store: store, sync: sync, auth: auth, threadActions: threadActions, selection: selectionBinding, showingScreener: $showingScreener,
-                          accountFilter: accountFilter, isActive: selection == destination)
+                          accountFilter: accountFilter, isActive: isActive)
             } else {
                 CorrespondenceList(store: store, sync: sync, auth: auth, threadActions: threadActions,
                                    destination: destination, accountFilter: accountFilter,
-                                   isActive: selection == destination)
+                                   isActive: isActive)
             }
         }
     }
@@ -593,7 +597,7 @@ struct CorresShell: View {
                         .modifier(MailboxDestinations(shell: self))
                         // A screen that isn't a tab, opened from a link.
                         .navigationDestination(for: Destination.self) { pushed in
-                            destinationContent(for: pushed)
+                            destinationContent(for: pushed, pushedOnto: destination)
                                 .background(CorresPalette.canvas)
                                 .navigationTitle(title(for: pushed))
                                 .navigationBarTitleDisplayMode(pushed == .brief ? .inline : .large)
@@ -821,3 +825,24 @@ private struct MailboxDestinations: ViewModifier {
 
 /// The iCloud account asking for a new password, as a sheet item.
 private struct ICloudReconnect: Identifiable { let id: String }
+
+/// The Undo, sending and draft pills along the bottom (see `withFeedback`).
+private struct FeedbackPills: View {
+    let shell: CorresShell
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let outbox = shell.outbox, threadActions = shell.threadActions
+        let animation: Animation? = reduceMotion ? nil : .easeOut(duration: 0.22)
+        ZStack { shell.outboxBanner }
+            .animation(animation, value: outbox.pending?.id)
+            .animation(animation, value: outbox.failed?.id)
+            .animation(animation, value: threadActions.pendingRemoval?.id)
+            .animation(animation, value: threadActions.lastChange?.id)
+            .animation(animation, value: HabitWatcher.shared.offer)
+            .animation(animation, value: outbox.shelved?.id)
+            // Premium apps confirm what just happened in the hand, not only on screen.
+            .sensoryFeedback(.success, trigger: outbox.pending?.id) { _, new in new != nil }
+            .sensoryFeedback(.impact(weight: .medium), trigger: threadActions.pendingRemoval?.id) { _, new in new != nil }
+    }
+}

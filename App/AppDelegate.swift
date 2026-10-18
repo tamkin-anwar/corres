@@ -90,6 +90,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        HangReporter.shared.start()
         // Registration must happen before this method returns, for every
         // launch, background or foreground alike: registering even one
         // async tick late is a documented source of silent failures where
@@ -246,6 +247,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     /// for every account; background refresh runs it for iCloud, which has
     /// no push for apps.
     private func syncAndNotify(accounts: [String]) async -> Bool {
+        // The snapshot needs the saved mail: taken from an empty store on a
+        // cold launch, every unread email looked new.
+        if store.state != .loaded { await store.load() }
         let previousUnread = Dictionary(store.threads.map { ($0.id, $0.isUnread) }, uniquingKeysWith: { first, _ in first })
         guard await sync.syncAll(accounts: accounts) else { return false }
         await store.load()

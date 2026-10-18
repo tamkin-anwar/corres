@@ -57,10 +57,11 @@ struct OutlookClient: Sendable {
         // Left the Inbox (archived, moved, deleted elsewhere): leaves Corres
         // the way it would after archiving here. Changes to what's still
         // here (read, flagged) come as its current labels.
-        var remote: [RemoteMessageChange] = inbox.messages.filter { $0.removed != nil }.compactMap { message in
-            guard let conversation = message.conversationId else { return nil }
-            return RemoteMessageChange(threadID: ThreadID(account: account, providerID: conversation), messageID: message.id,
-                                       currentLabelIds: nil, removed: true)
+        // Graph names a removed message by its id alone, without its
+        // conversation, so the store finds it by message.
+        var remote: [RemoteMessageChange] = inbox.messages.filter { $0.removed != nil }.map { message in
+            RemoteMessageChange(threadID: ThreadID(account: account, providerID: message.conversationId ?? ""), messageID: message.id,
+                                currentLabelIds: nil, removed: true)
         }
         remote += current.compactMap { message in
             guard let conversation = message.conversationId else { return nil }

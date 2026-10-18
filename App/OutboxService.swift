@@ -158,6 +158,12 @@ final class OutboxService {
     private static let maxSendAttempts = 3
     private static let baseBackoffMilliseconds = 2000
 
+    /// Sends going out right now, so the same entry never goes twice: a
+    /// resume at launch and a live Undo timer used to both send it.
+    private var committing: Set<UUID> = []
+    /// Only entries saved before this launch are leftovers to resume.
+    private let launchedAt = Date.now
+
     init(store: MailStore, auth: GoogleAuthService, repository: any MailRepository) {
         self.store = store
         self.auth = auth
@@ -174,6 +180,9 @@ final class OutboxService {
     func resumeAfterRelaunch() async {
         guard let entries = try? await repository.outboxEntries(), !entries.isEmpty else { return }
         for entry in entries.sorted(by: { $0.createdAt < $1.createdAt }) {
+            // Saved during this launch: a send still in its Undo window, or
+            // one already on its way. Its own task finishes it.
+            guard entry.createdAt < launchedAt, entry.id != pending?.id, !committing.contains(entry.id) else { continue }
             switch entry.status {
             case .pending:
                 // A `.pending` record surviving to the next launch means the
@@ -210,7 +219,10 @@ final class OutboxService {
         await commit(draft, thread: thread, id: id, checkForExistingSendFirst: asEarlierAttempt)
     }
 
-    func queueSend(_ draft: Draft, replyingTo thread: Correspondence?) {
+    /// `reusing`: a retry keeps the failed entry's id, and so its
+    /// Message-ID, so a first attempt that did reach the server is found
+    /// rather than sent again.
+    func queueSend(_ draft: Draft, replyingTo thread: Correspondence?, reusing earlierID: UUID? = nil) {
         // Compose is modal, so only one send is ever mid-undo-window at a
         // time; if a second arrives anyway, the first has already had its
         // chance to be undone and commits for real right now.
@@ -219,12 +231,13 @@ final class OutboxService {
             let previousThread = queuedThread
             Task { await self.commit(previousDraft, thread: previousThread, id: previousID) }
         }
-        let id = UUID()
+        let id = earlierID ?? UUID()
+        let checkFirst = earlierID != nil
         // Undo Send off: straight out, still through the durable outbox.
         guard Self.undoWindowSeconds > 0 else {
             Task {
                 try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .pending))
-                await self.commit(draft, thread: thread, id: id)
+                await self.commit(draft, thread: thread, id: id, checkForExistingSendFirst: checkFirst)
             }
             return
         }
@@ -240,7 +253,7 @@ final class OutboxService {
                 try? await Task.sleep(for: .seconds(1))
             }
             if Task.isCancelled { return }
-            await self.commit(draft, thread: thread, id: id)
+            await self.commit(draft, thread: thread, id: id, checkForExistingSendFirst: checkFirst)
         }
     }
 
@@ -260,7 +273,7 @@ final class OutboxService {
     func retryFailed() {
         guard let failed else { return }
         self.failed = nil
-        queueSend(failed.draft, replyingTo: resolveThread(for: failed.draft))
+        queueSend(failed.draft, replyingTo: resolveThread(for: failed.draft), reusing: failed.id)
     }
 
     func discardFailed() {
@@ -271,6 +284,8 @@ final class OutboxService {
     }
 
     private func commit(_ draft: Draft, thread: Correspondence?, id: UUID, checkForExistingSendFirst: Bool = false) async {
+        guard committing.insert(id).inserted else { return }
+        defer { committing.remove(id) }
         if pending?.id == id {
             pending = nil
             queuedDraft = nil
@@ -293,6 +308,9 @@ final class OutboxService {
                 try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .failed))
                 return
             }
+            // Gone out: the entry goes now, before the follow-up work
+            // below, so the app ending here can't lead to a second send.
+            try? await repository.removeOutboxEntry(id: id)
         }
         // A new conversation is recorded as Gmail's own copy of what was
         // sent: the real sender, recipients and message id (see

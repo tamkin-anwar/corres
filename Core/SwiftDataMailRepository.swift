@@ -96,9 +96,18 @@ public actor SwiftDataMailRepository: MailRepository {
         guard !changes.isEmpty else { return 0 }
         var changed = 0
         for change in changes {
-            let compositeID = PersistedCorrespondence.compositeID(account: change.threadID.account,
-                                                                 providerID: change.threadID.providerID)
-            var descriptor = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.compositeID == compositeID })
+            var descriptor: FetchDescriptor<PersistedCorrespondence>
+            if change.threadID.providerID.isEmpty {
+                // Known only by the message: Outlook reports a removal
+                // with nothing but the message's id.
+                let account = change.threadID.account
+                let messageID: String? = change.messageID
+                descriptor = FetchDescriptor(predicate: #Predicate { $0.account == account && $0.latestMessageID == messageID })
+            } else {
+                let compositeID = PersistedCorrespondence.compositeID(account: change.threadID.account,
+                                                                     providerID: change.threadID.providerID)
+                descriptor = FetchDescriptor(predicate: #Predicate { $0.compositeID == compositeID })
+            }
             descriptor.fetchLimit = 1
             guard let model = try modelContext.fetch(descriptor).first,
                   model.latestMessageID == change.messageID else { continue }

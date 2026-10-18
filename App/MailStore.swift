@@ -6,10 +6,19 @@ final class MailStore {
     enum LoadState: Equatable { case idle, loading, loaded, failed }
     /// Everything in the store, including threads hidden while an Archive
     /// or Trash is waiting out its Undo window.
-    private var allThreads: [Correspondence] = [] { didSet { revision &+= 1 } }
+    private var allThreads: [Correspondence] = [] { didSet { if !holdingRevision { revision &+= 1 } } }
     /// Removed from view the instant Archive/Trash is tapped, before Gmail
     /// is told, so Undo can bring them straight back.
-    private(set) var hiddenIDs: Set<ThreadID> = [] { didSet { revision &+= 1 } }
+    private(set) var hiddenIDs: Set<ThreadID> = [] { didSet { if !holdingRevision { revision &+= 1 } } }
+    @ObservationIgnored private var holdingRevision = false
+
+    /// Several changes the lists see as one, so they rebuild once.
+    private func asOneChange(_ changes: () -> Void) {
+        holdingRevision = true
+        changes()
+        holdingRevision = false
+        revision &+= 1
+    }
     /// Bumped whenever `threads` could read differently, so a list can keep
     /// its filtered, sorted rows until something actually changed instead
     /// of rebuilding them on every redraw (see `CorrespondenceList`).
@@ -93,7 +102,22 @@ final class MailStore {
             await refresh()
             return
         }
-        guard state != .loading else { return }
+        // A second caller during the first load waits for it: a
+        // notification's Archive on a cold launch used to find no threads
+        // and do nothing.
+        if let firstLoad {
+            await firstLoad.value
+            return
+        }
+        let task = Task { await loadFirst() }
+        firstLoad = task
+        await task.value
+        firstLoad = nil
+    }
+
+    private var firstLoad: Task<Void, Never>?
+
+    private func loadFirst() async {
         state = .loading
         do {
             if seedsSampleMail() { try await repository.seedIfNeeded(now: .now) }
@@ -446,6 +470,29 @@ final class MailStore {
     /// comment); guarding `pending` here, after the fact, would leave the
     /// row fully swipeable for the entire round trip, letting a second
     /// swipe fire a second, conflicting Gmail call on the same thread.
+    /// Archive and Trash end here once the server has them, a group at a
+    /// time: `removed` leave for good, `kept` (the server refused) come
+    /// back into view, in one change. One `remove` plus one `unhide` per
+    /// conversation rebuilt every list twice each, which on a Select All
+    /// meant hundreds of rebuilds while you kept working.
+    func finishRemoval(removed: [ThreadID], kept: [ThreadID]) async {
+        var gone = Set<ThreadID>()
+        for id in removed {
+            browsed[id] = nil
+            do {
+                try await repository.remove(id)
+                gone.insert(id)
+            } catch {
+                errorMessage = "Couldn't update this conversation. Try again."
+            }
+        }
+        asOneChange {
+            if !gone.isEmpty { allThreads.removeAll { gone.contains($0.id) } }
+            hiddenIDs.subtract(removed)
+            hiddenIDs.subtract(kept)
+        }
+    }
+
     func remove(_ id: ThreadID) async {
         if browsed[id] != nil, !allThreads.contains(where: { $0.id == id }) {
             browsed[id] = nil

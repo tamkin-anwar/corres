@@ -38,6 +38,8 @@ struct BriefView: View {
         var priorities: [Correspondence] = []
         var waiting: [Correspondence] = []
         var unread = 0
+        var pendingSenders = 0
+        var hasRealMail = false
     }
     @State private var digestCache = Digest()
 
@@ -55,19 +57,21 @@ struct BriefView: View {
         cache.priorities = MailQuery.prioritized(scoped, attention: .needsYou)
         cache.waiting = MailQuery.prioritized(scoped, attention: .waiting)
         cache.unread = MailQuery.filter(scoped).reduce(0) { $0 + ($1.isUnread ? 1 : 0) }
+        let pending = AccountPreferences.scope(store.pendingSenderThreads, account: accountFilter, all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
+        cache.pendingSenders = Set(pending.compactMap(\.senderEmail)).count
+        cache.hasRealMail = store.threads.contains { $0.id.account != "sample" }
         return cache
     }
     private var snapshot: BriefSnapshot { digest.snapshot }
     private var priorities: [Correspondence] { digest.priorities }
     private var waiting: [Correspondence] { digest.waiting }
-    private var pendingSenderCount: Int {
-        let pending = AccountPreferences.scope(store.pendingSenderThreads, account: accountFilter, all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
-        return Set(pending.compactMap(\.senderEmail)).count
-    }
+    // In the digest: read on every redraw, these went over the whole
+    // mailbox on each swipe in Mail, with the Brief out of sight.
+    private var pendingSenderCount: Int { digest.pendingSenders }
     /// Real mail on screen counts too: accounts are restored a moment after
     /// launch, and the Brief shouldn't flash "Sample" over your own mail.
     private var isConnected: Bool {
-        !(auth?.accounts.isEmpty ?? true) || store.threads.contains { $0.id.account != "sample" }
+        !(auth?.accounts.isEmpty ?? true) || digest.hasRealMail
     }
 
     var body: some View {

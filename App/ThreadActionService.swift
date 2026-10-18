@@ -218,6 +218,7 @@ final class ThreadActionService {
     /// Undo puts the conversation back exactly where it was.
     func undoRemoval() {
         guard let pending = pendingRemoval else { return }
+        HangReporter.note("undo \(pending.kind)")
         removalTask?.cancel()
         pendingRemoval = nil
         withAnimation(.snappy(duration: 0.3)) { for thread in pending.threads { store.unhide(thread.id) } }
@@ -236,6 +237,7 @@ final class ThreadActionService {
 
     private func queueRemoval(_ threads: [Correspondence], kind: RemovalKind, animated: Bool = true) async {
         guard !threads.isEmpty else { return }
+        HangReporter.note("\(kind) \(threads.count) thread(s), animated: \(animated)")
         // The previous removal goes to Gmail in the background rather than
         // being awaited: waiting on its round trip is what left a second
         // swiped row stuck off screen for a beat before it collapsed.
@@ -285,30 +287,38 @@ final class ThreadActionService {
     private func commit(_ pending: PendingRemoval) async {
         if pendingRemoval?.id == pending.id { pendingRemoval = nil }
         // One at a time, even from Select: a burst of changes is what Gmail
-        // rate-limits, and nobody is waiting on these.
-        for thread in pending.threads {
-            await commitOne(thread, kind: pending.kind)
+        // rate-limits, and nobody is waiting on these. The store hears
+        // about them in groups, so the lists rebuild once per group.
+        var removed: [ThreadID] = [], kept: [ThreadID] = []
+        for (index, thread) in pending.threads.enumerated() {
+            if await commitOne(thread, kind: pending.kind) { removed.append(thread.id) } else { kept.append(thread.id) }
+            if removed.count + kept.count >= 25 || index == pending.threads.count - 1 {
+                await store.finishRemoval(removed: removed, kept: kept)
+                removed = []
+                kept = []
+            }
         }
     }
 
-    private func commitOne(_ thread: Correspondence, kind: RemovalKind) async {
+    /// Whether the server took it (or there was no server to tell).
+    private func commitOne(_ thread: Correspondence, kind: RemovalKind) async -> Bool {
+        var done = false
         switch kind {
         case .archive:
             await perform(thread, failureMessage: "Couldn't archive this conversation. Try again.", gmailCall: {
                 try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: ["INBOX"], account: thread.id.account)
-            }, local: { await self.store.remove(thread.id) })
+            }, local: { done = true })
         case .trash:
             await perform(thread, failureMessage: "Couldn't move this conversation to Trash. Try again.", gmailCall: {
                 try await self.client.trashThread(threadId: thread.id.providerID, account: thread.id.account)
-            }, local: { await self.store.remove(thread.id) })
+            }, local: { done = true })
         case .spam:
             await perform(thread, failureMessage: "Couldn't report this conversation as spam. Try again.", gmailCall: {
                 try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: ["SPAM"],
                                                    removeLabelIds: ["INBOX"], account: thread.id.account)
-            }, local: { await self.store.remove(thread.id) })
+            }, local: { done = true })
         }
-        // Removed for good on success; back in view if Gmail refused.
-        store.unhide(thread.id)
+        return done
     }
 
     // MARK: Mailboxes

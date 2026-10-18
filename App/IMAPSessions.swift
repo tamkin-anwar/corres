@@ -109,6 +109,11 @@ actor IMAPSessions {
         } catch let error as GmailAPIClient.ClientError {
             throw error
         } catch is CancellationError {
+            // Stopped partway through a command, its reply may still be
+            // arriving, and the next command would read it as its own
+            // (wrong flags, mail treated as gone). This session is done.
+            sessions[account] = nil
+            await session.connection.logout()
             throw CancellationError()
         } catch {
             // Anything else from the network layer (a write on a closed

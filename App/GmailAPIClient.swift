@@ -75,14 +75,16 @@ struct GmailAPIClient {
     /// look at lands before older Sent-only threads.
     func planFullListing(account: String) async throws -> SyncPlan {
         let token = try await accessToken(for: account)
+        // Best-effort: if the profile call fails, the sync itself still
+        // succeeded, just without a cursor for next time. The following
+        // sync falls back to another full listing rather than failing.
+        // Read before listing: mail arriving during the listing then comes
+        // in on the next sync instead of falling between the two.
+        let historyId = try? await fetchProfile(token: token).historyId
         let inbox = try await listMessageIDs(token: token, label: "INBOX", limit: Self.initialInboxLimit)
         let sent = try await listMessageIDs(token: token, label: "SENT", limit: Self.initialSentLimit)
         var seen = Set<String>()
         let ids = (inbox.ids + sent.ids).map(\.id).filter { seen.insert($0).inserted }
-        // Best-effort: if the profile call fails, the sync itself still
-        // succeeded, just without a cursor for next time. The following
-        // sync falls back to another full listing rather than failing.
-        let historyId = try? await fetchProfile(token: token).historyId
         return SyncPlan(messageIDs: ids, historyId: historyId, olderInboxPageToken: inbox.nextPageToken)
     }
 
@@ -96,14 +98,18 @@ struct GmailAPIClient {
         let token = try await accessToken(for: account)
         var ids: [String] = []
         var seen = Set<String>()
+        // The cursor moves only to where the first query stood. Each later
+        // query reports a newer point, and mail added between the two (in
+        // the Inbox after the Inbox query ran) would sit below the newest
+        // one, skipped for good. Going over a few changes twice is harmless.
         var historyId: String?
         for label in Self.syncedLabels {
             let page = try await listHistoryMessageIDs(since: cursor, token: token, label: label)
             ids += page.ids.filter { seen.insert($0).inserted }
-            historyId = Self.newerHistoryId(historyId, page.historyId)
+            if historyId == nil { historyId = page.historyId }
         }
         let changes = try await listHistoryChanges(since: cursor, token: token, account: account)
-        historyId = Self.newerHistoryId(historyId, changes.historyId)
+        if historyId == nil { historyId = changes.historyId }
         return SyncPlan(messageIDs: ids.reversed(), restoredMessageIDs: changes.restored.filter { !seen.contains($0) },
                         historyId: historyId ?? cursor, remoteChanges: changes.changes)
     }
@@ -190,18 +196,6 @@ struct GmailAPIClient {
             pageToken = page.nextPageToken
         } while pageToken != nil
         return (order.compactMap { latest[$0] }, order.filter { restored[$0] == true }, latestHistoryId)
-    }
-
-    /// Gmail's own `historyId` is a single, whole-mailbox-wide counter (the
-    /// per-label query only filters which history *records* come back, not
-    /// which counter is used), so the two label queries should normally
-    /// agree; comparing numerically (not lexicographically: "100" < "99" as
-    /// strings) picks the more advanced one if they ever don't.
-    private static func newerHistoryId(_ a: String?, _ b: String?) -> String? {
-        guard let a else { return b }
-        guard let b else { return a }
-        guard let ai = UInt64(a), let bi = UInt64(b) else { return a }
-        return bi > ai ? b : a
     }
 
     /// Only the headers Corres actually reads: sender, recipients (Reply

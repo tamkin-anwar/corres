@@ -101,7 +101,7 @@ struct CorresApp: App {
                 // the whole mailbox on every redraw of the root was itself
                 // work on each swipe.
                 .onChange(of: appDelegate.store.revision) {
-                    WidgetBridge.scheduleUpdate(from: appDelegate.store.threads)
+                    WidgetBridge.scheduleUpdate { [store = appDelegate.store] in store.threads }
                 }
                 // Removing the last account forgets who you correspond with.
                 .onChange(of: appDelegate.auth.accounts.isEmpty) { _, isEmpty in

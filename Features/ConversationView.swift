@@ -331,7 +331,9 @@ struct ConversationView: View {
             // Like Mail and Superhuman, the next conversation takes its
             // place, so triage flows one message to the next.
             guard !stillExists else { return }
-            let live = Set(orderedIDs.filter { store.thread($0) != nil })
+            // One pass over the mailbox, not one lookup per row: on a long
+            // inbox that was seconds of work on the main thread.
+            let live = Set(store.threads.map(\.id)).union(store.browsed.keys.filter { !store.hiddenIDs.contains($0) })
             let index = orderedIDs.firstIndex(of: currentID) ?? 0
             let neighbour = orderedIDs[min(index + 1, orderedIDs.count)...].first(where: live.contains)
                 ?? orderedIDs[..<index].last(where: live.contains)

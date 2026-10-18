@@ -639,6 +639,26 @@ struct SwiftDataMailRepositoryTests {
         #expect(byID["t3"] != nil)
     }
 
+    /// Outlook names a removed message only by its id.
+    @Test func remoteRemovalFoundByMessageAlone() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let account = "me@outlook.test"
+        func thread(_ n: Int) -> Correspondence {
+            Correspondence(id: ThreadID(account: account, providerID: "conv\(n)"), sender: "S", senderEmail: "s@x.test",
+                           organization: "", subject: "s", excerpt: "", body: "", latestMessageID: "m\(n)",
+                           receivedAt: now, dueAt: nil, reason: InboxClassifier.personalUnreadReason,
+                           attention: .needsYou, isUnread: true, labelIds: ["INBOX", "UNREAD"])
+        }
+        try await repository.upsert([thread(1), thread(2)], isInitialSync: true)
+        let changed = try await repository.applyRemoteChanges([
+            RemoteMessageChange(threadID: ThreadID(account: account, providerID: ""), messageID: "m1", currentLabelIds: nil, removed: true),
+            RemoteMessageChange(threadID: ThreadID(account: "other@outlook.test", providerID: ""), messageID: "m2", currentLabelIds: nil, removed: true),
+        ])
+        let ids = Set(try await repository.threads().map(\.id.providerID))
+        #expect(changed == 1)
+        #expect(ids == ["conv2"])
+    }
+
     /// Metadata-first sync stores the snippet as the body until the full
     /// message loads; loading fills it in, unless a newer message arrived
     /// in the meantime.

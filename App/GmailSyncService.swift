@@ -15,7 +15,6 @@ final class GmailSyncService {
     private let repository: any MailRepository
     private let client = MailClient()
     private let defaults = UserDefaults.standard
-    private(set) var isSyncing = false
     private(set) var isSearchingRemote = false
     /// Bumped whenever a sync pass pulls in data, from any entry point.
     /// `CorresApp` observes it to run on-device triage after *every* sync
@@ -82,59 +81,74 @@ final class GmailSyncService {
     /// concurrency pool), so waiting on them in turn meant someone with
     /// three connected accounts waited three times as long as someone with
     /// one for a pull-to-refresh or a launch sync to finish, for no real
-    /// reason. `isSyncing` still guards the whole pass as a single unit
-    /// (never overlapping a second `syncAll`/`syncIfConnected` call while
-    /// one is already running), matching the old single-account behavior;
-    /// only what happens *inside* one pass changed. `repository` is a
+    /// reason. Each account still runs one pass at a time (see
+    /// `sync(account:)`). `repository` is a
     /// `@ModelActor`: concurrent `upsert` calls from different accounts
     /// queue on it safely rather than racing. Returns whether any account
     /// actually pulled in new data.
     @discardableResult
     func syncAll(accounts: [String]) async -> Bool {
-        guard !accounts.isEmpty, !isSyncing else { return false }
-        isSyncing = true
-        defer { isSyncing = false }
+        guard !accounts.isEmpty else { return false }
         let anySucceeded = await withTaskGroup(of: Bool.self) { group in
             for account in accounts {
-                group.addTask { await self.syncOneLocked(account: account) }
+                group.addTask { await self.sync(account: account) }
             }
             var anySucceeded = false
             for await succeeded in group where succeeded { anySucceeded = true }
             return anySucceeded
         }
-        if anySucceeded { lastCompletedSync = .now }
         return anySucceeded
     }
 
+    /// For a sync someone asked for (Sync Now): a failed attempt gets one
+    /// more try before saying so.
     @discardableResult
-    /// For a sync someone asked for (Sync Now): waits out one already
-    /// running instead of reporting it as a failure, and gives a failed
-    /// attempt one more try before saying so.
     func syncNow(account: String) async -> Bool {
-        for attempt in 0..<2 {
-            var waited = 0
-            while isSyncing && waited < 120 {
-                try? await Task.sleep(for: .milliseconds(250))
-                waited += 1
-            }
-            if await syncIfConnected(account: account) { return true }
-            if attempt == 0 { try? await Task.sleep(for: .seconds(1)) }
-        }
-        return false
+        if await sync(account: account) { return true }
+        try? await Task.sleep(for: .seconds(1))
+        return await sync(account: account)
     }
 
     func syncIfConnected(account: String?) async -> Bool {
-        guard let account, !account.isEmpty, !isSyncing else { return false }
-        isSyncing = true
-        defer { isSyncing = false }
-        let succeeded = await syncOneLocked(account: account)
-        if succeeded { lastCompletedSync = .now }
-        return succeeded
+        guard let account, !account.isEmpty else { return false }
+        return await sync(account: account)
     }
 
-    /// Shared body for both entry points above; assumes `isSyncing` is
-    /// already set by the caller (both callers above are the only ones
-    /// allowed to set it, so this never double-guards or double-clears it).
+    /// True while any account is syncing.
+    var isSyncing: Bool { !running.isEmpty }
+
+    /// One sync per account at a time. A caller arriving while one runs
+    /// joins it, and one more pass follows, since the running pass may
+    /// have read its cursor before whatever brought the caller here (a
+    /// push for new mail, Sync Now). It used to return false instead,
+    /// which dropped the push and made Sync Now say the server didn't
+    /// answer. Unstructured, so leaving the app mid-command doesn't cancel
+    /// a sync halfway through a server exchange.
+    private var running: [String: Task<Bool, Never>] = [:]
+    private var wantsAnotherPass: Set<String> = []
+
+    private func sync(account: String) async -> Bool {
+        if let current = running[account] {
+            wantsAnotherPass.insert(account)
+            return await current.value
+        }
+        let task = Task { @MainActor () -> Bool in
+            var succeeded = await self.syncOneLocked(account: account)
+            while self.wantsAnotherPass.remove(account) != nil {
+                succeeded = await self.syncOneLocked(account: account) || succeeded
+            }
+            // No suspension between the last check above and this, so a
+            // caller can't join a pass that has already finished.
+            self.running[account] = nil
+            if succeeded { self.lastCompletedSync = .now }
+            return succeeded
+        }
+        running[account] = task
+        return await task.value
+    }
+
+    /// One pass for one account; `sync(account:)` makes sure only one runs
+    /// per account at a time.
     ///
     /// Metadata first, newest first, in batches of `GmailAPIClient.batchSize`,
     /// each saved the moment it lands (`syncProgress` tells the UI to
