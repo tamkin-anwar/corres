@@ -271,13 +271,13 @@ struct CorresShell: View {
 
     private func withAlerts(_ content: some View) -> some View {
         content
-        .alert("Could not save", isPresented: Binding(
+        .alert("Couldn't Save", isPresented: Binding(
             get: { store.errorMessage != nil },
             set: { if !$0 { store.errorMessage = nil } }
         )) {
             Button("OK", role: .cancel) { store.errorMessage = nil }
-        } message: { Text(store.errorMessage ?? "Please try again.") }
-        .alert("Could not complete this action", isPresented: Binding(
+        } message: { Text(store.errorMessage ?? "Try again.") }
+        .alert("Couldn't Finish That", isPresented: Binding(
             get: { threadActions.errorMessage != nil },
             set: { if !$0 { threadActions.errorMessage = nil } }
         )) {
@@ -294,7 +294,7 @@ struct CorresShell: View {
             } else {
                 Button("OK", role: .cancel) { threadActions.errorMessage = nil }
             }
-        } message: { Text(threadActions.errorMessage ?? "Please try again.") }
+        } message: { Text(threadActions.errorMessage ?? "Try again.") }
         // Reconnect can start from the action-failure alert above, outside
         // Preferences, so its outcome has to be visible here too.
         .alert("Account Connection", isPresented: Binding(
@@ -302,13 +302,13 @@ struct CorresShell: View {
             set: { if !$0 { auth.errorMessage = nil } }
         )) {
             Button("OK", role: .cancel) { auth.errorMessage = nil }
-        } message: { Text(auth.errorMessage ?? "Please try again.") }
-        .alert("Could not turn on notifications", isPresented: Binding(
+        } message: { Text(auth.errorMessage ?? "Try again.") }
+        .alert("Couldn't Turn On Notifications", isPresented: Binding(
             get: { pushService.errorMessage != nil },
             set: { if !$0 { pushService.errorMessage = nil } }
         )) {
             Button("OK", role: .cancel) { pushService.errorMessage = nil }
-        } message: { Text(pushService.errorMessage ?? "Please try again.") }
+        } message: { Text(pushService.errorMessage ?? "Try again.") }
     }
 
     @State private var bannerDrag: CGFloat = 0
@@ -496,9 +496,9 @@ struct CorresShell: View {
                 .accessibilityLabel("Preparing your space")
         case .failed:
             ContentUnavailableView {
-                Label("A moment, please", systemImage: "arrow.clockwise")
+                Label("One moment", systemImage: "arrow.clockwise")
             } description: {
-                Text("Your sample conversations could not be opened.")
+                Text("Your sample conversations couldn't be opened.")
             } actions: {
                 Button("Try Again") { Task { await store.load() } }
             }

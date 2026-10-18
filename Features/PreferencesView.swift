@@ -167,7 +167,7 @@ struct PreferencesView: View {
                     Text("Intelligence")
                 } footer: {
                     Text(intelligence.isAvailable
-                         ? "Sorting, summaries, suggested replies and rewrites run on Apple's on-device model, not on a server."
+                         ? "Sorting, summaries, suggested replies and rewrites happen on this \(Device.name) with Apple Intelligence. Nothing goes to a server."
                          : "Turn on Apple Intelligence in the Settings app for summaries, suggested replies and rewrites. Needs You still sorts your mail without it.")
                 }
                 Section {
@@ -206,18 +206,18 @@ struct PreferencesView: View {
             )) {
                 Button("OK", role: .cancel) { entitlements.errorMessage = nil }
             } message: { Text(entitlements.errorMessage ?? "") }
-            .alert("Could not connect", isPresented: Binding(
+            .alert("Couldn't Connect", isPresented: Binding(
                 get: { auth.errorMessage != nil },
                 set: { if !$0 { auth.errorMessage = nil } }
             )) {
                 Button("OK", role: .cancel) { auth.errorMessage = nil }
-            } message: { Text(auth.errorMessage ?? "Please try again.") }
-            .alert("Could not sync", isPresented: Binding(
+            } message: { Text(auth.errorMessage ?? "Try again.") }
+            .alert("Couldn't Sync", isPresented: Binding(
                 get: { sync.errorMessage != nil },
                 set: { if !$0 { sync.errorMessage = nil } }
             )) {
                 Button("OK", role: .cancel) { sync.errorMessage = nil }
-            } message: { Text(sync.errorMessage ?? "Please try again.") }
+            } message: { Text(sync.errorMessage ?? "Try again.") }
         }
         // Self-sufficient: a distant .preferredColorScheme does not reliably
         // re-trait an already-presented sheet when the value changes.
@@ -1485,12 +1485,12 @@ private struct NotificationSettingsView: View {
         .onChange(of: briefHour) { BriefNotifier.reschedule() }
         .onChange(of: briefMinute) { BriefNotifier.reschedule() }
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Could not turn on notifications", isPresented: Binding(
+        .alert("Couldn't Turn On Notifications", isPresented: Binding(
             get: { pushService.errorMessage != nil },
             set: { if !$0 { pushService.errorMessage = nil } }
         )) {
             Button("OK", role: .cancel) { pushService.errorMessage = nil }
-        } message: { Text(pushService.errorMessage ?? "Please try again.") }
+        } message: { Text(pushService.errorMessage ?? "Try again.") }
     }
 }
 
@@ -1500,10 +1500,10 @@ private struct PrivacyView: View {
     var body: some View {
         Form {
             Section {
-                row("Corres never sees your Google password", "key",
-                    "You sign in with Google directly. Corres receives a permission you can revoke anytime, kept in this \(Device.name)'s Keychain.")
+                row("Corres never sees your account password", "key",
+                    "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this \(Device.name)'s Keychain.")
                 row("Your mail is read on this \(Device.name)", Device.name == "iPad" ? "ipad" : "iphone",
-                    "Sorting, summaries, suggested replies and rewrites run on Apple's on-device model. Your mail isn't sent to a server Corres runs, or to any AI company, to do it.")
+                    "Sorting, summaries, suggested replies and rewrites happen on this \(Device.name) with Apple Intelligence. Your mail never goes to Corres's servers or to an AI company.")
                 row("Trackers blocked", "shield.lefthalf.filled",
                     "Remote images, and the tracking pixels hidden in them, stay off until you choose to show them.")
                 row("No read receipts, ever", "eye.slash",

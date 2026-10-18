@@ -340,12 +340,12 @@ struct ComposeView: View {
             .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
                 if case .success(let urls) = result { addFiles(urls) }
             }
-            .alert("Could not attach this file", isPresented: Binding(
+            .alert("Couldn't Attach File", isPresented: Binding(
                 get: { attachmentError != nil },
                 set: { if !$0 { attachmentError = nil } }
             )) {
                 Button("OK", role: .cancel) { attachmentError = nil }
-            } message: { Text(attachmentError ?? "Please try again.") }
+            } message: { Text(attachmentError ?? "Try again.") }
         }
         // Self-contained, like PreferencesView: a distant .preferredColorScheme
         // does not reliably re-trait an already-presented sheet if Appearance
@@ -1142,7 +1142,7 @@ struct ComposeView: View {
     private func addFiles(_ urls: [URL]) {
         for url in urls {
             guard let data = AttachmentFiles.read(url) else {
-                attachmentError = "Could not open \(url.lastPathComponent)."
+                attachmentError = "Couldn't open \(url.lastPathComponent)."
                 continue
             }
             let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"

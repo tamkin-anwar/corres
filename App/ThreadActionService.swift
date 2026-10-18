@@ -294,15 +294,15 @@ final class ThreadActionService {
     private func commitOne(_ thread: Correspondence, kind: RemovalKind) async {
         switch kind {
         case .archive:
-            await perform(thread, failureMessage: "Could not archive this conversation. Please try again.", gmailCall: {
+            await perform(thread, failureMessage: "Couldn't archive this conversation. Try again.", gmailCall: {
                 try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: ["INBOX"], account: thread.id.account)
             }, local: { await self.store.remove(thread.id) })
         case .trash:
-            await perform(thread, failureMessage: "Could not move this conversation to Trash. Please try again.", gmailCall: {
+            await perform(thread, failureMessage: "Couldn't move this conversation to Trash. Try again.", gmailCall: {
                 try await self.client.trashThread(threadId: thread.id.providerID, account: thread.id.account)
             }, local: { await self.store.remove(thread.id) })
         case .spam:
-            await perform(thread, failureMessage: "Could not report this conversation as spam. Please try again.", gmailCall: {
+            await perform(thread, failureMessage: "Couldn't report this conversation as spam. Try again.", gmailCall: {
                 try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: ["SPAM"],
                                                    removeLabelIds: ["INBOX"], account: thread.id.account)
             }, local: { await self.store.remove(thread.id) })
@@ -319,7 +319,7 @@ final class ThreadActionService {
         do {
             try await client.modifyThread(threadId: thread.id.providerID, addLabelIds: [labelId], account: thread.id.account)
         } catch {
-            store.errorMessage = "Could not move this conversation. Please try again."
+            store.errorMessage = "Couldn't move this conversation. Try again."
             return
         }
         await archive(thread, animated: false)
@@ -341,7 +341,7 @@ final class ThreadActionService {
             }
             await store.adoptIntoInbox(thread)
         } catch {
-            store.errorMessage = "Could not move this conversation to the Inbox. Please try again."
+            store.errorMessage = "Couldn't move this conversation to the Inbox. Try again."
         }
     }
 
@@ -353,7 +353,7 @@ final class ThreadActionService {
     /// trivial, harmless correction, nothing like re-inserting a removed
     /// row into a screen the person has already navigated away from.
     func setUnread(_ isUnread: Bool, for thread: Correspondence) async {
-        let failureMessage = "Could not mark this conversation as \(isUnread ? "unread" : "read"). Please try again."
+        let failureMessage = "Couldn't mark this conversation as \(isUnread ? "unread" : "read"). Please try again."
         await performOptimistic(thread, failureMessage: failureMessage, gmailCall: {
             if isUnread {
                 try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: ["UNREAD"], account: thread.id.account)
@@ -416,7 +416,7 @@ final class ThreadActionService {
     /// locally; called once for the optimistic apply and, if needed, again
     /// with the opposite `isOn` to compute the revert.
     func toggleLabel(_ labelId: String, isOn: Bool, for thread: Correspondence) async {
-        let failureMessage = "Could not update this label. Please try again."
+        let failureMessage = "Couldn't update this label. Try again."
         func labelIds(isOn: Bool) -> [String] {
             var labelIds = self.store.thread(thread.id)?.labelIds ?? thread.labelIds
             if isOn {

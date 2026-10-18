@@ -760,7 +760,10 @@ public enum InboxClassifier {
     public static let personalUnreadReason = "Unread, from a person."
     public static let correspondentReason = "Unread, from someone you've written to."
     public static let staleReason = "Unread for over a month. Kept out of Needs You."
-    public static let readReason = "Already read in Gmail."
+    public static let readReason = "Already read."
+    /// What `readReason` said before it was provider-neutral; still
+    /// recognized on mail stored with it.
+    public static let legacyReadReason = "Already read in Gmail."
     public static let questionReason = "Asks you something."
     public static let deadlineReason = "Mentions a deadline."
     public static let obligationReason = "Time-sensitive."
@@ -786,7 +789,7 @@ public enum InboxClassifier {
     /// carrying one of these (and never triaged) still reflects a pure rule
     /// decision nobody has overridden, so re-running the rules is safe.
     public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason, staleReason,
-                                                  readReason, questionReason, deadlineReason, obligationReason, copiedReason,
+                                                  readReason, legacyReadReason, questionReason, deadlineReason, obligationReason, copiedReason,
                                                   askedReason, repliedReason, startedReason, vipReason, fyiReason,
                                                   lessonReason, confirmationReason, failureReason, paymentReason,
                                                   BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,

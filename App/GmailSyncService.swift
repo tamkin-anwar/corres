@@ -198,7 +198,7 @@ final class GmailSyncService {
         } catch {
             Logger(subsystem: "studio.anwarcreative.corres", category: "sync")
                 .error("Sync failed: \(String(describing: error), privacy: .public)")
-            errorMessage = "Could not sync your mail. Please check your connection and try again."
+            errorMessage = "Couldn't sync your mail. Check your connection and try again."
             return false
         }
     }

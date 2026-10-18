@@ -160,7 +160,7 @@ struct MailboxesView: View {
             section(arranged(builtIns), header: nil)
             if accounts.isEmpty {
                 Section {} footer: {
-                    Text("Connect Gmail or Outlook to see Drafts, Sent, All Mail, Spam, Trash and your labels.")
+                    Text("Connect an account to see Drafts, Sent, All Mail, Spam, Trash and your labels.")
                 }
             }
             ForEach(accounts, id: \.self) { account in
@@ -575,7 +575,7 @@ struct DraftsView: View {
         }
         .refreshable { await load() }
         .task { if !loadedOnce { await load() } }
-        .alert("Couldn't open this draft", isPresented: $openFailed) {
+        .alert("Couldn't Open Draft", isPresented: $openFailed) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Check your connection and try again.")

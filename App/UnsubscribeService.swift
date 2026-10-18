@@ -60,7 +60,7 @@ final class UnsubscribeService {
             // confirmation).
             return .opened
         }
-        errorMessage = "Could not unsubscribe. Please try again."
+        errorMessage = "Couldn't unsubscribe. Try again."
         return .failed
     }
 

@@ -69,7 +69,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // shows for every other save failure) rather than inventing a
         // second, separate banner mechanism just for this one case.
         if usedInMemoryFallback {
-            mailStore.errorMessage = "Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Please restart Corres. If this keeps happening, your device may be low on storage."
+            mailStore.errorMessage = "Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage."
         }
         sync = GmailSyncService(repository: repository)
         auth = authService
@@ -290,7 +290,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             // opens, at the cost of that device's local history this session.
             let fallbackConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
             guard let fallback = try? ModelContainer(for: schema, configurations: [fallbackConfiguration]) else {
-                fatalError("Could not create any Corres local store, including an in-memory fallback: \(error)")
+                fatalError("Couldn't create any Corres local store, including an in-memory fallback: \(error)")
             }
             return (fallback, true)
         }

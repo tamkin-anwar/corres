@@ -212,7 +212,7 @@ final class MailStore {
                 await load()
             }
         } catch {
-            errorMessage = "Could not remove this account's mail from your \(Device.name). Please try again."
+            errorMessage = "Couldn't remove this account's mail from your \(Device.name). Try again."
         }
     }
 
@@ -227,7 +227,7 @@ final class MailStore {
             try await repository.deleteSampleData()
             allThreads = try await repository.threads()
         } catch {
-            errorMessage = "Could not remove sample data. Please try again."
+            errorMessage = "Couldn't remove sample data. Try again."
         }
     }
 
@@ -348,7 +348,7 @@ final class MailStore {
             }
             allThreads = try await repository.threads()
         } catch {
-            errorMessage = "Could not update these senders. Please try again."
+            errorMessage = "Couldn't update these senders. Try again."
         }
     }
 
@@ -376,7 +376,7 @@ final class MailStore {
             try await repository.setSenderDecision(decision, forSenderEmail: senderEmail, account: account)
             allThreads = try await repository.threads()
         } catch {
-            errorMessage = "Could not update this sender. Please try again."
+            errorMessage = "Couldn't update this sender. Try again."
         }
     }
 
@@ -392,7 +392,7 @@ final class MailStore {
             try await repository.trustSenderImages(forSenderEmail: senderEmail, account: account)
             allThreads = try await repository.threads()
         } catch {
-            errorMessage = "Could not remember this sender. Please try again."
+            errorMessage = "Couldn't remember this sender. Try again."
         }
     }
 
@@ -406,7 +406,7 @@ final class MailStore {
             try await repository.markSenderUnsubscribed(forSenderEmail: senderEmail, account: account)
             allThreads = try await repository.threads()
         } catch {
-            errorMessage = "Could not remember this unsubscribe. Please try again."
+            errorMessage = "Couldn't remember this unsubscribe. Try again."
         }
     }
 
@@ -427,7 +427,7 @@ final class MailStore {
             }
             return true
         } catch {
-            errorMessage = "Your message could not be sent. Nothing was sent. Please try again."
+            errorMessage = "Your message couldn't be sent. Nothing was sent. Try again."
             return false
         }
     }
@@ -456,7 +456,7 @@ final class MailStore {
             try await repository.remove(id)
             allThreads.removeAll { $0.id == id }
         } catch {
-            errorMessage = "Could not update this conversation. Please try again."
+            errorMessage = "Couldn't update this conversation. Try again."
         }
     }
 
@@ -505,7 +505,7 @@ final class MailStore {
                 allThreads[index] = updated
             }
         } catch {
-            errorMessage = "The change could not be saved. Your conversation is unchanged. Please try again."
+            errorMessage = "The change couldn't be saved. Your conversation is unchanged. Try again."
         }
     }
 }

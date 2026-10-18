@@ -200,7 +200,7 @@ final class EntitlementStore {
                 break
             }
         } catch {
-            errorMessage = "The purchase didn't go through. Please try again."
+            errorMessage = "The purchase didn't go through. Try again."
         }
     }
 
@@ -227,7 +227,7 @@ final class EntitlementStore {
             await refresh()
             if !isPro { errorMessage = "No Corres Pro purchase was found for this Apple Account." }
         } catch {
-            errorMessage = "Couldn't reach the App Store to restore purchases. Please try again."
+            errorMessage = "Couldn't reach the App Store to restore purchases. Try again."
         }
     }
 

@@ -159,7 +159,7 @@ struct OutOfOfficeView: View {
                 ? "On. \(service) will reply from \(start.formatted(date: .abbreviated, time: .shortened))\(hasEnd ? " until \(end.formatted(date: .abbreviated, time: .shortened))" : "")."
                 : "Off. No automatic replies."
         } catch {
-            message = "Couldn't save. Please try again."
+            message = "Couldn't save. Try again."
         }
     }
 }

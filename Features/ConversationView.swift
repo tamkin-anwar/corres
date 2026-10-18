@@ -229,12 +229,12 @@ struct ConversationView: View {
                 } message: {
                     Text("You won't receive future mail from this sender. This can't be undone from Corres.")
                 }
-                .alert("Could not unsubscribe", isPresented: Binding(
+                .alert("Couldn't Unsubscribe", isPresented: Binding(
                     get: { unsubscribeService.errorMessage != nil },
                     set: { if !$0 { unsubscribeService.errorMessage = nil } }
                 )) {
                     Button("OK", role: .cancel) { unsubscribeService.errorMessage = nil }
-                } message: { Text(unsubscribeService.errorMessage ?? "Please try again.") }
+                } message: { Text(unsubscribeService.errorMessage ?? "Try again.") }
             } else {
                 ContentUnavailableView("Conversation unavailable", systemImage: "text.bubble")
             }
@@ -1321,9 +1321,9 @@ private struct AttachmentRow: View {
         .accessibilityLabel("\(kind.label(filename: attachment.filename)), \(attachment.filename), \(formattedSize)")
         .accessibilityHint("Opens the attachment")
         .quickLookPreview($previewURL)
-        .alert("Could not download this attachment", isPresented: $downloadFailed) {
+        .alert("Couldn't Download Attachment", isPresented: $downloadFailed) {
             Button("OK", role: .cancel) {}
-        } message: { Text("Please try again.") }
+        } message: { Text("Try again.") }
         .task(id: attachment.id) { await loadThumbnail() }
         // Each download writes to a fresh, uniquely-named directory (see
         // `download()`); it goes when this row does, rather than piling up

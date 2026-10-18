@@ -214,7 +214,7 @@ final class GoogleAuthService {
     /// stored below is the one that actually carries them.
     func signIn(hint: String? = nil) async {
         guard let presenter = Self.rootViewController() else {
-            errorMessage = "Could not find a window to present sign-in from."
+            errorMessage = "Couldn't find a window to present sign-in from."
             return
         }
         isSigningIn = true
@@ -223,7 +223,7 @@ final class GoogleAuthService {
             let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presenter, hint: hint,
                                                                    additionalScopes: Self.gmailScopes)
             guard let email = result.user.profile?.email, !email.isEmpty else {
-                errorMessage = "Could not connect Gmail. Please try again."
+                errorMessage = "Couldn't connect Gmail. Try again."
                 return
             }
             // Only the first account's name is kept, for the Brief's
@@ -251,7 +251,7 @@ final class GoogleAuthService {
             // Cancellation is not an error worth surfacing: the user changed
             // their mind, and that is a normal outcome, not a failure.
             if nsError.domain != "com.google.GIDSignIn" || nsError.code != GIDSignInError.canceled.rawValue {
-                errorMessage = "Could not connect Gmail. Please try again."
+                errorMessage = "Couldn't connect Gmail. Try again."
             }
         }
     }
@@ -281,7 +281,7 @@ final class GoogleAuthService {
         } catch MicrosoftSignIn.SignInError.notConfigured {
             errorMessage = "Outlook sign-in isn't set up in this build yet."
         } catch {
-            errorMessage = "Could not connect Outlook. Please try again."
+            errorMessage = "Couldn't connect Outlook. Try again."
         }
     }
 

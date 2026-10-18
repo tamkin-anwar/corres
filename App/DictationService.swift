@@ -56,7 +56,7 @@ final class DictationService {
             })
         } catch {
             finish()
-            errorMessage = "Dictation couldn't start. Please try again."
+            errorMessage = "Dictation couldn't start. Try again."
         }
     }
 
