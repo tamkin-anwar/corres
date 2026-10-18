@@ -375,6 +375,7 @@ async function handleICloudKey(req, res) {
 // Turns instant alerts on for one iCloud account on one device. The
 // password arrives sealed (RSA-OAEP, base64); a wrong or forged one just
 // fails to sign in at the watcher, which then deletes it.
+const HOST_PATTERN = /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 const SEALED_PATTERN = /^[A-Za-z0-9+/=]{300,700}$/;
 async function handleRegisterICloud(req, res) {
   const { emailAddress, deviceToken, sealedPassword } = req.body || {};
@@ -389,8 +390,22 @@ async function handleRegisterICloud(req, res) {
     res.status(429).send('Too many iCloud accounts for this device');
     return;
   }
+  // Another IMAP account names its own server; iCloud's is the default.
+  // Only a public host name on the IMAP-over-TLS port: never an address or
+  // a local name, so the watcher can't be pointed inside a network.
+  const imapHost = String(req.body.imapHost || 'imap.mail.me.com').toLowerCase();
+  const imapPort = Number(req.body.imapPort || 993);
+  const username = String(req.body.username || emailAddress);
+  if (!HOST_PATTERN.test(imapHost) || /^[\d.]+$/.test(imapHost) || imapHost.endsWith('.local')
+      || imapHost.endsWith('.internal') || !(imapPort === 993) || username.length > 254) {
+    res.status(400).send('imapHost must be a public host name on port 993');
+    return;
+  }
   await icloudWatches.doc(watchID(emailAddress, deviceToken)).set({
     emailAddress: emailAddress.toLowerCase(),
+    imapHost,
+    imapPort,
+    username,
     deviceToken,
     sealedPassword,
     alerts: req.body.alerts !== '0',

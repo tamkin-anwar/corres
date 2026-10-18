@@ -127,7 +127,7 @@ final class PushNotificationService {
                 group.addTask {
                     // iCloud has no push for apps: with Instant Notifications
                     // on, Corres's watcher holds its Inbox open instead.
-                    if MailAccounts.provider(for: account) == .icloud {
+                    if MailAccounts.provider(for: account).usesIMAP {
                         if await MainActor.run(body: { AccountPreferences.icloudInstant(for: account) }), let deviceTokenHex {
                             try? await self.registerICloud(account: account, deviceToken: deviceTokenHex)
                         }
@@ -365,8 +365,11 @@ final class PushNotificationService {
         guard let password = IMAPCredentials.password(for: account) else { throw ICloudInstantError.noPassword }
         let sealed = try await Self.seal(password)
         let alerts = await MainActor.run { AccountPreferences.level(for: account) != nil }
+        let server = IMAPServer.for(account)
         try await post(path: "register-icloud", body: ["emailAddress": account, "deviceToken": deviceToken,
-                                                       "sealedPassword": sealed, "alerts": alerts ? "1" : "0"])
+                                                       "sealedPassword": sealed, "alerts": alerts ? "1" : "0",
+                                                       "imapHost": server.imapHost, "imapPort": String(server.imapPort),
+                                                       "username": server.username ?? account])
     }
 
     /// RSA-OAEP (SHA-256) to the watcher's KMS key, fetched from the relay.

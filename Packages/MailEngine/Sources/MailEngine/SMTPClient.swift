@@ -114,6 +114,17 @@ public actor SMTPClient {
         await close()
     }
 
+    /// Connects, secures and signs in, then leaves: proves an outgoing
+    /// server and password without sending anything.
+    public func verify(username: String, password: String) async throws {
+        if channel == nil { try await open() }
+        let credentials = Data("\0\(username)\0\(password)".utf8).base64EncodedString()
+        let auth = try await command("AUTH PLAIN \(credentials)")
+        _ = try? await command("QUIT")
+        await close()
+        guard auth.code == 235 else { throw SMTPError.authenticationFailed(auth.text) }
+    }
+
     public func close() async {
         try? await channel?.close()
         channel = nil

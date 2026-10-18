@@ -296,7 +296,7 @@ struct ShareComposeView: View {
                         Text("Photo Size").font(.subheadline).foregroundStyle(CorresPalette.ink)
                     }
                     Text(composer.isTooLarge
-                         ? "\(bytes(composer.totalBytes)) is over \(composer.provider.title)\u{2019}s \(composer.provider.attachmentLimitText) limit. Remove something\(composer.photos.isEmpty ? "" : " or pick a smaller size")."
+                         ? "\(bytes(composer.totalBytes)) is over \(MailAccounts.serviceTitle(for: composer.account ?? ""))\u{2019}s \(composer.provider.attachmentLimitText) limit. Remove something\(composer.photos.isEmpty ? "" : " or pick a smaller size")."
                          : "\(composer.content.files.count == 1 ? "1 attachment" : "\(composer.content.files.count) attachments"), \(bytes(composer.totalBytes))")
                         .font(.footnote)
                         .foregroundStyle(composer.isTooLarge ? CorresPalette.alert : CorresPalette.secondary)

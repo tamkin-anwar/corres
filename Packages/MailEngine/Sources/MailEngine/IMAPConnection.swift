@@ -99,6 +99,15 @@ public actor IMAPConnection {
         try await run(.list(nil, reference: MailboxName(ByteBuffer(string: "")), .mailbox(ByteBuffer(string: "*")))).folders
     }
 
+    /// Makes a folder. A folder that already exists isn't an error.
+    public func createFolder(_ path: String) async throws {
+        do {
+            try await run(.create(MailboxName(ByteBuffer(string: path)), []))
+        } catch ConnectionError.commandFailed(let text) where text.uppercased().contains("EXIST") {
+            return
+        }
+    }
+
     /// Opens a folder for reading and writing. With CONDSTORE it also asks
     /// for the folder's change counter.
     @discardableResult

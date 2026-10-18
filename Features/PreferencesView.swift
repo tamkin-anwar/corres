@@ -563,7 +563,7 @@ private struct AccountDetailView: View {
                 } footer: {
                     Text(notifyFooter)
                 }
-                if provider == .icloud {
+                if provider.usesIMAP {
                     Section {
                         Toggle("Instant Notifications", isOn: Binding(
                             get: { icloudInstant },
@@ -573,7 +573,9 @@ private struct AccountDetailView: View {
                     } footer: {
                         Text(instantError ?? (icloudInstant
                              ? "New mail notifies the moment it arrives. Corres's server keeps this account's app-specific password, sealed so only its mail watcher can open it, and never reads or stores your email. Turn this off to delete it."
-                             : "iCloud tells only Apple Mail the moment mail arrives. Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email."))
+                             : provider == .icloud
+                             ? "iCloud tells only Apple Mail the moment mail arrives. Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email."
+                             : "Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email."))
                             .foregroundStyle(instantError == nil ? CorresPalette.secondary : CorresPalette.alert)
                     }
                 }
@@ -596,7 +598,7 @@ private struct AccountDetailView: View {
                 } header: {
                     Text("Also Sends As")
                 } footer: {
-                    Text("Choose one from From when you write. Add or remove them in \(provider.title)'s settings.")
+                    Text("Choose one from From when you write. Add or remove them in \(MailAccounts.serviceTitle(for: account.email))'s settings.")
                 }
             }
             Section {
@@ -623,8 +625,8 @@ private struct AccountDetailView: View {
                     Button("OK", role: .cancel) {}
                 } message: {
                     Text(provider == .icloud
-                         ? "\(provider.title) didn't answer. Check your connection, or update the app-specific password if it keeps happening."
-                         : "\(provider.title) didn't answer. Check your connection, or reconnect if it keeps happening.")
+                         ? "\(MailAccounts.serviceTitle(for: account.email)) didn't answer. Check your connection, or update the app-specific password if it keeps happening."
+                         : "\(MailAccounts.serviceTitle(for: account.email)) didn't answer. Check your connection, or reconnect if it keeps happening.")
                 }
                 Button {
                     if provider == .icloud { updatingICloudPassword = true }
@@ -659,7 +661,7 @@ private struct AccountDetailView: View {
             Section {
                 Button("Remove Account", role: .destructive) { confirmingRemoval = true }
             } footer: {
-                Text("Removes this account and its mail from Corres on this \(Device.name). Nothing is deleted from \(provider.title).")
+                Text("Removes this account and its mail from Corres on this \(Device.name). Nothing is deleted from \(MailAccounts.serviceTitle(for: account.email)).")
             }
         }
         .scrollContentBackground(.hidden)
@@ -688,7 +690,7 @@ private struct AccountDetailView: View {
                 dismiss()
             }
         } message: {
-            Text("Its mail is removed from this \(Device.name). It stays in \(provider.title).")
+            Text("Its mail is removed from this \(Device.name). It stays in \(MailAccounts.serviceTitle(for: account.email)).")
         }
     }
 

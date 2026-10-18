@@ -279,6 +279,14 @@ struct ActionTests {
         #expect(messages.last?.replyTo.isEmpty == true)
     }
 
+    @Test func creatingAFolderThatExistsIsFine() async throws {
+        let s = server(capabilities: "IMAP4rev1", extra: ["CREATE": ["{TAG} NO [ALREADYEXISTS] Mailbox already exists"]])
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        try await c.createFolder("Archive")
+        #expect(s.sentLines().last?.hasSuffix(#"CREATE "Archive""#) == true)
+    }
+
     @Test func personSearchLooksInFromToAndCc() async throws {
         let s = server(capabilities: "IMAP4rev1", extra: ["UID SEARCH": ["* SEARCH 3", "{TAG} OK SEARCH done"]])
         defer { Task { await s.stop() } }

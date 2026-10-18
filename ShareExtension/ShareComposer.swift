@@ -268,7 +268,7 @@ final class ShareComposer {
         } catch GmailAPIClient.ClientError.notSignedIn {
             phase = .failed("Open Corres once, then share again. Corres finishes setting up sharing the first time it opens after updating.")
         } catch {
-            phase = .failed("\(provider.title) didn\u{2019}t accept it. Try again in a moment.")
+            phase = .failed("\(MailAccounts.serviceTitle(for: account)) didn\u{2019}t accept it. Try again in a moment.")
         }
     }
 

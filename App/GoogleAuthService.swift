@@ -338,8 +338,10 @@ final class GoogleAuthService {
                 working = server
                 break
             } catch GmailAPIClient.ClientError.notSignedIn {
+                // This server knows the account but not the password, or it
+                // isn't this account's server at all: try the rest first.
                 rejected = true
-                break
+                continue
             } catch {
                 continue
             }

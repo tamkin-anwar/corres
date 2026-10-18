@@ -122,8 +122,8 @@ async function connect(emailAddress) {
       let password;
       try { password = await unseal(watch.data.sealedPassword); } catch { await fail(watch, true); continue; }
       const client = new ImapFlow({
-        host: 'imap.mail.me.com', port: 993, secure: true,
-        auth: { user: emailAddress, pass: password },
+        host: watch.data.imapHost || 'imap.mail.me.com', port: watch.data.imapPort || 993, secure: true,
+        auth: { user: watch.data.username || emailAddress, pass: password },
         logger: false, maxIdleTime: 20 * 60 * 1000, emitLogs: false,
       });
       password = null;

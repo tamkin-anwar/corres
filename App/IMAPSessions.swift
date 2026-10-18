@@ -41,6 +41,22 @@ actor IMAPSessions {
                 trash: allFolders.folder(for: .trash)?.path,
                 junk: allFolders.folder(for: .junk)?.path,
                 archive: allFolders.folder(for: .archive)?.path)
+            // Archive has to go somewhere. Servers without an Archive folder
+            // get one, beside Sent ("INBOX.Archive" where folders live
+            // under INBOX), as Apple Mail does.
+            if cachedFolders.archive == nil {
+                let sent = allFolders.folder(for: .sent)
+                let path: String
+                if let sent, let delimiter = sent.delimiter, sent.path.contains(delimiter) {
+                    path = sent.path.split(separator: delimiter).dropLast().joined(separator: String(delimiter)) + String(delimiter) + "Archive"
+                } else {
+                    path = "Archive"
+                }
+                if (try? await connection.createFolder(path)) != nil {
+                    cachedFolders.archive = path
+                    allFolders = (try? await connection.listFolders()) ?? allFolders
+                }
+            }
         }
     }
 
@@ -119,6 +135,14 @@ actor IMAPSessions {
         do {
             try await connection.login(username: server.username ?? email, password: password)
         } catch IMAPConnection.ConnectionError.authenticationFailed {
+            throw GmailAPIClient.ClientError.notSignedIn
+        }
+        // And the outgoing server, so a wrong one shows now, not on the
+        // first send.
+        let smtp = SMTPClient(host: server.smtpHost, port: server.smtpPort, security: server.smtpSecurity == .tls ? .tls : .startTLS)
+        do {
+            try await smtp.verify(username: server.username ?? email, password: password)
+        } catch SMTPClient.SMTPError.authenticationFailed {
             throw GmailAPIClient.ClientError.notSignedIn
         }
     }

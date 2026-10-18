@@ -103,6 +103,19 @@ struct SMTPTests {
         #expect(server.received().first?.contains("\r\n..leading dot\r\n") == true)
     }
 
+    @Test func verifySignsInWithoutSending() async throws {
+        let server = FakeSMTPServer()
+        let port = try await server.start()
+        defer { Task { await server.stop() } }
+        try await SMTPClient(host: "127.0.0.1", port: port, security: .none, timeout: .seconds(5))
+            .verify(username: "me@icloud.com", password: "app-pass")
+        #expect(!server.log().contains { $0.hasPrefix("MAIL FROM") })
+        await #expect(throws: SMTPClient.SMTPError.authenticationFailed("Authentication credentials invalid")) {
+            try await SMTPClient(host: "127.0.0.1", port: port, security: .none, timeout: .seconds(5))
+                .verify(username: "me@icloud.com", password: "nope")
+        }
+    }
+
     @Test func wrongPassword() async throws {
         let server = FakeSMTPServer()
         let port = try await server.start()

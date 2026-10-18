@@ -101,6 +101,13 @@ enum MailAccounts {
         return personalServices[domain] ?? domain
     }
 
+    /// The service's name for sentences: "Gmail", "iCloud", or for any
+    /// other account its own ("Yahoo", "Fastmail", "anwarlogistics.com").
+    static func serviceTitle(for account: String) -> String {
+        let provider = provider(for: account)
+        return provider == .imap ? serviceName(for: account) : provider.title
+    }
+
     static func forget(_ account: String) {
         var updated = groupDefaults.dictionary(forKey: key) as? [String: String] ?? [:]
         updated[account.lowercased()] = nil

@@ -298,13 +298,26 @@ struct IMAPMailClient: Sendable {
         }
         // Sent now; what follows is filing, and must never turn a delivered
         // email into a "Couldn't send".
-        do {
-            try await IMAPSessions.shared.with(account) { session in
-                guard let sent = try await session.folders().sent else { return }
-                _ = try await session.connection.append(Data(outgoing.utf8), to: sent, flags: ["\\Seen"])
+        // Some services (Yahoo, AOL) file mail sent through them themselves;
+        // iCloud and most others don't. A copy goes in only if the server
+        // hasn't put one there, so Sent never shows it twice. Off the send's
+        // path: the email is already on its way.
+        let messageID = Self.messageID(ofMessage: outgoing)
+        let copy = Data(outgoing.utf8)
+        Task.detached {
+            if let messageID { try? await Task.sleep(for: .seconds(2)) }
+            do {
+                try await IMAPSessions.shared.with(account) { session in
+                    guard let sent = try await session.folders().sent else { return }
+                    if let messageID {
+                        try await session.connection.select(sent)
+                        if try await !session.connection.search(messageID: messageID).isEmpty { return }
+                    }
+                    _ = try await session.connection.append(copy, to: sent, flags: ["\\Seen"])
+                }
+            } catch {
+                IMAPSessions.log.error("Sent, but not filed in Sent: \(String(describing: error), privacy: .public)")
             }
-        } catch {
-            IMAPSessions.log.error("Sent, but not filed in Sent: \(String(describing: error), privacy: .public)")
         }
         // The conversation it belongs to, the same id sync gives it.
         return threadId ?? Self.conversation(ofMessage: outgoing) ?? ""
@@ -313,6 +326,15 @@ struct IMAPMailClient: Sendable {
     /// A raw message's conversation, by the rule `conversation(for:)` uses
     /// on synced mail: the first References id, else In-Reply-To, else its
     /// own Message-ID.
+    /// A raw message's own Message-ID, without angle brackets.
+    static func messageID(ofMessage message: String) -> String? {
+        let header = message.replacingOccurrences(of: "\r\n", with: "\n").components(separatedBy: "\n\n").first ?? ""
+        guard let line = header.components(separatedBy: "\n").first(where: { $0.lowercased().hasPrefix("message-id:") }),
+              let open = line.firstIndex(of: "<"), let close = line[open...].firstIndex(of: ">") else { return nil }
+        let id = String(line[line.index(after: open)..<close])
+        return id.isEmpty ? nil : id
+    }
+
     static func conversation(ofMessage message: String) -> String? {
         let normalized = message.replacingOccurrences(of: "\r\n", with: "\n")
         let headerText = normalized.components(separatedBy: "\n\n").first ?? normalized

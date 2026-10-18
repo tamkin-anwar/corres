@@ -1099,7 +1099,7 @@ struct ComposeView: View {
     /// the undo window.
     private func addAttachment(filename: String, mimeType: String, data: Data) {
         guard draft.attachmentsSizeBytes + data.count <= sendingProvider.attachmentLimit else {
-            attachmentError = "\(filename) would put this email over \(sendingProvider.title)\u{2019}s \(sendingProvider.attachmentLimitText) limit."
+            attachmentError = "\(filename) would put this email over \(MailAccounts.serviceTitle(for: sendingAccount))\u{2019}s \(sendingProvider.attachmentLimitText) limit."
             return
         }
         draft.attachments.append(PendingAttachment(filename: filename, mimeType: mimeType, data: data))
@@ -1129,7 +1129,7 @@ struct ComposeView: View {
             addAttachment(filename: file.filename, mimeType: file.mimeType, data: file.data)
         }
         if shrank > 0, failed == 0, attachmentError == nil {
-            let limit = "\(sendingProvider.title)\u{2019}s \(sendingProvider.attachmentLimitText) limit"
+            let limit = "\(MailAccounts.serviceTitle(for: sendingAccount))\u{2019}s \(sendingProvider.attachmentLimitText) limit"
             attachmentNote = shrank == 1 ? "A photo was made smaller to fit \(limit)."
                                          : "\(shrank) photos were made smaller to fit \(limit)."
         }
@@ -1165,9 +1165,8 @@ struct ComposeView: View {
     }
 
     /// The service this email goes out through, for its attachment limit.
-    private var sendingProvider: MailProvider {
-        MailAccounts.provider(for: draft.fromAccount ?? draft.threadID?.account ?? auth?.primaryAccount?.email ?? "")
-    }
+    private var sendingAccount: String { draft.fromAccount ?? draft.threadID?.account ?? auth?.primaryAccount?.email ?? "" }
+    private var sendingProvider: MailProvider { MailAccounts.provider(for: sendingAccount) }
 
     private var fromSelection: String {
         let account = draft.fromAccount ?? draft.threadID?.account ?? auth?.primaryAccount?.email ?? ""
