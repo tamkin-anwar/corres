@@ -218,6 +218,10 @@ final class GmailSyncService {
             // ids than the retry list holds: moving the cursor would drop
             // the overflow for good, so the cursor stays put and the next
             // sync plans the same window again.
+            if retired.remove(account) != nil {
+                dropCursor(for: account)
+                return false
+            }
             let missedOverflow = stillMissing.count > Self.maxTrackedMissedIDs
             if let historyId = plan.historyId, !missedOverflow {
                 setHistoryCursor(historyId, for: account)
@@ -234,6 +238,13 @@ final class GmailSyncService {
         } catch {
             Logger(subsystem: "studio.anwarcreative.corres", category: "sync")
                 .error("Sync failed: \(String(describing: error), privacy: .public)")
+            // Google turned down a token it had issued (revoked, or expired
+            // early): forget it, so the next pass gets a fresh one instead
+            // of failing the same way until the cached one runs out.
+            if case GmailAPIClient.ClientError.badResponse(statusCode: 401) = error,
+               MailAccounts.provider(for: account) == .google {
+                await GoogleTokenProvider.shared.invalidateAccessToken(for: account)
+            }
             errorMessage = "Couldn't sync your mail. Check your connection and try again."
             return false
         }
@@ -338,6 +349,15 @@ final class GmailSyncService {
     /// full sync rather than resuming a previous account's history.
     func clearCursor(for account: String?) {
         guard let account else { return }
+        // Removed mid-sync: that pass mustn't save its cursor afterwards,
+        // or adding the account back would start past mail it no longer has.
+        if running[account] != nil { retired.insert(account) }
+        dropCursor(for: account)
+    }
+
+    private var retired: Set<String> = []
+
+    private func dropCursor(for account: String) {
         defaults.removeObject(forKey: Self.cursorKey(for: account))
         defaults.removeObject(forKey: Self.missedIDsKey(for: account))
         defaults.removeObject(forKey: Self.olderTokenKey(for: account))
