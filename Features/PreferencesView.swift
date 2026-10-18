@@ -502,7 +502,11 @@ private struct AccountDetailView: View {
                         .submitLabel(.done)
                 }
                 LabeledContent("Your Name") {
-                    TextField(profile?.name ?? "Name", text: $senderName)
+                    // What it sends under when left blank: its own name, or
+                    // the one you use on your other accounts.
+                    TextField(profile?.name
+                              ?? auth.accounts.lazy.compactMap { AccountPreferences.senderName(for: $0.email) ?? auth.profile(for: $0.email)?.name }.first
+                              ?? "Name", text: $senderName)
                         .multilineTextAlignment(.trailing)
                         .textContentType(.name)
                         .submitLabel(.done)
@@ -594,7 +598,9 @@ private struct AccountDetailView: View {
                     }
                 }
             } footer: {
-                Text("If marking as read, archiving or flagging stops working, reconnect and keep every permission checked.")
+                Text(provider == .icloud
+                     ? "If iCloud stops syncing, make a new app-specific password at account.apple.com and update it here."
+                     : "If marking as read, archiving or flagging stops working, reconnect and keep every permission checked.")
             }
             Section {
                 Button("Remove Account", role: .destructive) { confirmingRemoval = true }
