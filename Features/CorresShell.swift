@@ -265,7 +265,15 @@ struct CorresShell: View {
             Task { if await sync.syncIfConnected(account: account) { await store.load() } }
         }
         ICloudWatcher.shared.start(accounts: accounts) { [sync, store] account in
-            Task { if await sync.syncIfConnected(account: account) { await store.load() } }
+            Task {
+                // A sync already running may have started just before this
+                // mail arrived: wait for it and go again, rather than drop it.
+                for _ in 0..<5 {
+                    if await sync.syncIfConnected(account: account) { await store.load(); return }
+                    guard sync.isSyncing else { return }
+                    try? await Task.sleep(for: .seconds(2))
+                }
+            }
         }
     }
 
