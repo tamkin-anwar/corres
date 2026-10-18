@@ -29,6 +29,13 @@ struct OutOfOfficeView: View {
                     ForEach(auth.accounts) { Text($0.email).tag($0.email) }
                 }
             }
+            if MailAccounts.provider(for: account) == .icloud {
+                Section {
+                    Link("Open iCloud Mail Settings", destination: URL(string: "https://www.icloud.com/mail/")!)
+                } footer: {
+                    Text("Apple doesn't let other mail apps change iCloud's automatic reply. Set it at icloud.com/mail, under Settings, then Vacation.")
+                }
+            } else {
             switch state {
             case .loading:
                 ProgressView().frame(maxWidth: .infinity)
@@ -84,6 +91,7 @@ struct OutOfOfficeView: View {
                     if isMissingMessage { Text("Write the message \(service) should send.") }
                     else if let message { Text(message) }
                 }
+            }
             }
         }
         .scrollContentBackground(.hidden)

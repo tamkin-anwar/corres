@@ -114,6 +114,7 @@ enum AccountPreferences {
         switch MailAccounts.provider(for: account) {
         case .google: return 7
         case .microsoft: return 0
+        case .icloud: return 5
         }
     }
 

@@ -21,6 +21,7 @@ struct PreferencesView: View {
     @Environment(EntitlementStore.self) private var entitlements
     @State private var showingPaywall = false
     @State private var managingSubscription = false
+    @State private var addingICloud = false
 
     #if DEBUG
     @State private var corpusStatus: String?
@@ -193,6 +194,11 @@ struct PreferencesView: View {
             // modifiers on a Section apply to every row in it, and five
             // copies of one sheet cancelled each other, closing Settings.
             .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .sheet(isPresented: $addingICloud) {
+                ICloudSignInView(auth: auth) { previousCount in
+                    Task { await finishConnecting(after: previousCount) }
+                }
+            }
             .manageSubscriptionsSheet(isPresented: $managingSubscription)
             .alert("Corres Pro", isPresented: Binding(
                 get: { entitlements.errorMessage != nil && !showingPaywall },
@@ -304,7 +310,12 @@ struct PreferencesView: View {
                     }
                     .buttonStyle(CorresButtonStyle())
                     .disabled(auth.isSigningIn || sync.isSyncing)
-                    Text("Gmail, Outlook.com, Hotmail and work or school Microsoft 365. Corres never sees your password, and your mail is sorted and read on this \(Device.name).")
+                    Button { connect(.icloud) } label: {
+                        Text("Continue with iCloud Mail")
+                    }
+                    .buttonStyle(CorresButtonStyle())
+                    .disabled(auth.isSigningIn || sync.isSyncing)
+                    Text("Gmail, Outlook.com, Hotmail, work or school Microsoft 365, and iCloud Mail. Your mail is sorted and read on this \(Device.name).")
                         .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 }
                 .padding(.vertical, 8)
@@ -318,10 +329,11 @@ struct PreferencesView: View {
                         accountRow(account)
                     }
                 }
-                // Which service, as Mail asks: Gmail or Outlook.
+                // Which service, as Mail asks.
                 Menu {
                     Button("Gmail") { connect(.google) }
                     Button("Outlook") { connect(.microsoft) }
+                    Button("iCloud Mail") { connect(.icloud) }
                 } label: {
                     if auth.isSigningIn || sync.isSyncing {
                         ProgressView()
@@ -365,9 +377,16 @@ struct PreferencesView: View {
     }
 
     private func connect(_ provider: MailProvider) {
+        if provider == .icloud { addingICloud = true; return }
         Task {
             let previousCount = auth.accounts.count
             if provider == .microsoft { await auth.signInOutlook() } else { await auth.signIn() }
+            await finishConnecting(after: previousCount)
+        }
+    }
+
+    /// The new account's first sync, in place of the sample mail.
+    private func finishConnecting(after previousCount: Int) async {
             // Only the newly added account needs a fresh sync; the others,
             // if any, are already current.
             // Cancelled sign-in: keep the sample mail, there's nothing to
@@ -379,7 +398,6 @@ struct PreferencesView: View {
             if await sync.syncIfConnected(account: newAccount.email) {
                 await store.load()
             }
-        }
     }
 
     // MARK: - About
@@ -434,6 +452,7 @@ private struct AccountDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var confirmingRemoval = false
     @State private var syncing = false
+    @State private var updatingICloudPassword = false
     @AppStorage private var nickname: String
     @AppStorage private var senderName: String
     @AppStorage private var showsInAllInboxes: Bool
@@ -562,9 +581,15 @@ private struct AccountDetailView: View {
                 }
                 .disabled(syncing || sync.isSyncing)
                 Button {
-                    Task { await auth.reconnect(account.email) }
+                    if provider == .icloud { updatingICloudPassword = true } else { Task { await auth.reconnect(account.email) } }
                 } label: {
-                    Label(provider == .microsoft ? "Reconnect with Microsoft" : "Reconnect with Google", systemImage: "key")
+                    Label(provider == .microsoft ? "Reconnect with Microsoft"
+                          : provider == .icloud ? "Update App-Specific Password" : "Reconnect with Google", systemImage: "key")
+                }
+                .sheet(isPresented: $updatingICloudPassword) {
+                    ICloudSignInView(auth: auth) { _ in
+                        Task { _ = await sync.syncIfConnected(account: account.email) }
+                    }
                 }
             } footer: {
                 Text("If marking as read, archiving or flagging stops working, reconnect and keep every permission checked.")

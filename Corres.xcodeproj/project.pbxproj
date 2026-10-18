@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E96FEBD52D875852941AFA63 /* Features/ICloudSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45F64AFF79F0949FCACF37CE /* Features/ICloudSignInView.swift */; };
+		0D110BEBD3F6F71AB17AE002 /* MailEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 8F5EAE114EF4F89A6546179D /* MailEngine */; };
+		CBA59B0FDCE83F1A231C9E47 /* App/ICloudSessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C096C44615F2419D412B136 /* App/ICloudSessions.swift */; };
+		9AF4A7F648DCCB827297D21B /* App/ICloudClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCEB6F4F7D60C9D7914B9BA /* App/ICloudClient.swift */; };
+		64319F542506CFCA2407D4C5 /* App/ICloudSessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C096C44615F2419D412B136 /* App/ICloudSessions.swift */; };
+		6EB14A7BBE5F17952B95D9B6 /* App/ICloudClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCEB6F4F7D60C9D7914B9BA /* App/ICloudClient.swift */; };
+		95136FAE23611973D7748B98 /* MailEngine in Frameworks */ = {isa = PBXBuildFile; productRef = AC84F38CCABA21CF989FA109 /* MailEngine */; };
+		BEB85AE4BC51A10E7362B49C /* App/ICloudSessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C096C44615F2419D412B136 /* App/ICloudSessions.swift */; };
+		6E8DFA0272971787F58213BF /* App/ICloudClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCEB6F4F7D60C9D7914B9BA /* App/ICloudClient.swift */; };
 		ECF8386A0FAF45AD818108B8 /* Core/AskQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5657FD79441A48ACB789585C /* Core/AskQuery.swift */; };
 		342C883427BB4DD99344BAD0 /* Core/CorresSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3188DDEA4B4112FCE079024F /* Core/CorresSchema.swift */; };
 		681C16018F5B4A39BF0D919E /* Core/Correspondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E055D7FFC136234D685E062 /* Core/Correspondence.swift */; };
@@ -115,6 +124,7 @@
 		E79A8DBC3229495CA769B912 /* App/ThreadActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89705DCC26384892BF488BA2 /* App/ThreadActionService.swift */; };
 		E98FEC0BFF976467BBBDCC6E /* Features/Destination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E30C119A8AA5A9BF4A804F /* Features/Destination.swift */; };
 		EA144187FC763199BAADD12C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = C12665C738199993D8D54A23 /* GoogleSignInSwift */; };
+		A1C0DE0000000000000E0003 /* MailEngine in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0DE0000000000000E0002 /* MailEngine */; };
 		7C11B26349AC4D098ADB6CC6 /* Core/AskQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5657FD79441A48ACB789585C /* Core/AskQuery.swift */; };
 		F3EA1EAF0BBC446DACE33503 /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
 		F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */; };
@@ -233,6 +243,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		45F64AFF79F0949FCACF37CE /* Features/ICloudSignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ICloudSignInView.swift; sourceTree = SOURCE_ROOT; };
+		2C096C44615F2419D412B136 /* App/ICloudSessions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ICloudSessions.swift; sourceTree = SOURCE_ROOT; };
+		8CCEB6F4F7D60C9D7914B9BA /* App/ICloudClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ICloudClient.swift; sourceTree = SOURCE_ROOT; };
 		875E824B7FD64028A5D2B830 /* NotificationExtension/NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationExtension/NotificationService.swift; sourceTree = SOURCE_ROOT; };
 		A7415D516CFA4978B94B5DF3 /* NotificationExtension/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = NotificationExtension/Info.plist; sourceTree = SOURCE_ROOT; };
 		ABAD903BB20C46C887A9F074 /* NotificationExtension/CorresNotify.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NotificationExtension/CorresNotify.entitlements; sourceTree = SOURCE_ROOT; };
@@ -357,6 +370,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				95136FAE23611973D7748B98 /* MailEngine in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -373,6 +387,7 @@
 			files = (
 				036D19D2357FCAF354B35D8F /* GoogleSignIn in Frameworks */,
 				EA144187FC763199BAADD12C /* GoogleSignInSwift in Frameworks */,
+				A1C0DE0000000000000E0003 /* MailEngine in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -380,6 +395,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D110BEBD3F6F71AB17AE002 /* MailEngine in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -445,6 +461,8 @@
 				1F46E38B747C48DEBF9C7B07 /* Shared/NotifyPolicy.swift */,
 				B4EE9AD8F80B43F692ADA7B7 /* App/MailClient.swift */,
 				087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */,
+				2C096C44615F2419D412B136 /* App/ICloudSessions.swift */,
+				8CCEB6F4F7D60C9D7914B9BA /* App/ICloudClient.swift */,
 				DC8BE109A8184BD9AF037CDA /* App/OutlookClient.swift */,
 				D69CF92E53CD42029DAD53AC /* App/MicrosoftSignIn.swift */,
 				3C16B27D69CB4F8FA44B529D /* Core/AttachmentKind.swift */,
@@ -452,6 +470,7 @@
 				1B82102449D24E8E9476036E /* App/ShareBridge.swift */,
 				783548898D6B4BFC87B56174 /* Features/ComposeFields.swift */,
 				11D41A2038764132BB1178C6 /* Features/OutOfOfficeView.swift */,
+				45F64AFF79F0949FCACF37CE /* Features/ICloudSignInView.swift */,
 				5714C136B1C144BA9986F7BD /* App/FollowUps.swift */,
 				C2C84FA9213442ABAFDA59F7 /* Features/InvitationCard.swift */,
 				0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */,
@@ -556,6 +575,9 @@
 			dependencies = (
 			);
 			name = CorresNotify;
+			packageProductDependencies = (
+				AC84F38CCABA21CF989FA109 /* MailEngine */,
+			);
 			productName = CorresNotify;
 			productReference = 51036E354994481EB7E9A6FD /* CorresNotify.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -580,6 +602,7 @@
 			packageProductDependencies = (
 				5662C63EE436AAF5D5F1FD05 /* GoogleSignIn */,
 				C12665C738199993D8D54A23 /* GoogleSignInSwift */,
+				A1C0DE0000000000000E0002 /* MailEngine */,
 			);
 			productName = Corres;
 			productReference = A8792157CB4F27FB949C035F /* Corres.app */;
@@ -615,6 +638,9 @@
 			dependencies = (
 			);
 			name = CorresShare;
+			packageProductDependencies = (
+				8F5EAE114EF4F89A6546179D /* MailEngine */,
+			);
 			productName = CorresShare;
 			productReference = 0CB72D373C9C4A0A956F4172 /* CorresShare.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -638,6 +664,7 @@
 			mainGroup = 0D6E4079E36703EBD37C0072;
 			packageReferences = (
 				362DCEECAB286DF675BE4C19 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/MailEngine" */,
 			);
 			productRefGroup = 0A3E27B8CA818264D75C8D81 /* Products */;
 			projectDirPath = "";
@@ -683,6 +710,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6E8DFA0272971787F58213BF /* App/ICloudClient.swift in Sources */,
+				BEB85AE4BC51A10E7362B49C /* App/ICloudSessions.swift in Sources */,
 				ECF8386A0FAF45AD818108B8 /* Core/AskQuery.swift in Sources */,
 				342C883427BB4DD99344BAD0 /* Core/CorresSchema.swift in Sources */,
 				681C16018F5B4A39BF0D919E /* Core/Correspondence.swift in Sources */,
@@ -724,6 +753,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6EB14A7BBE5F17952B95D9B6 /* App/ICloudClient.swift in Sources */,
+				64319F542506CFCA2407D4C5 /* App/ICloudSessions.swift in Sources */,
 				C755D6504E96497EAFB036B1 /* Shared/NotifyPolicy.swift in Sources */,
 				8088289DE26E42F346EED9A3 /* App/CorresApp.swift in Sources */,
 				D8779F4C9329B419FF7FD755 /* App/GmailAPIClient.swift in Sources */,
@@ -763,6 +794,7 @@
 				E49D258957D640C299F58256 /* App/ShareBridge.swift in Sources */,
 				0A348A8A0E8240AF977995B1 /* Features/ComposeFields.swift in Sources */,
 				B82696FAC3244A5898E6A8B6 /* Features/OutOfOfficeView.swift in Sources */,
+				E96FEBD52D875852941AFA63 /* Features/ICloudSignInView.swift in Sources */,
 				0FC1AEC8A0924D76B68B12C6 /* App/FollowUps.swift in Sources */,
 				2D1AEA72759A4140970CC4B7 /* Features/InvitationCard.swift in Sources */,
 				4865B921A9244517869EF251 /* Core/Invitation.swift in Sources */,
@@ -840,6 +872,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9AF4A7F648DCCB827297D21B /* App/ICloudClient.swift in Sources */,
+				CBA59B0FDCE83F1A231C9E47 /* App/ICloudSessions.swift in Sources */,
 				5025F4CBFD734B7DAB659261 /* Core/AskQuery.swift in Sources */,
 				7C4FCFEE79A74E73B92F4996 /* Core/CorresSchema.swift in Sources */,
 				C951A66F628243348D7C2341 /* Core/Correspondence.swift in Sources */,
@@ -1205,6 +1239,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/MailEngine" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/MailEngine;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		362DCEECAB286DF675BE4C19 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1226,6 +1267,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 362DCEECAB286DF675BE4C19 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
+		};
+		A1C0DE0000000000000E0002 /* MailEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/MailEngine" */;
+			productName = MailEngine;
+		};
+		AC84F38CCABA21CF989FA109 /* MailEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/MailEngine" */;
+			productName = MailEngine;
+		};
+		8F5EAE114EF4F89A6546179D /* MailEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/MailEngine" */;
+			productName = MailEngine;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

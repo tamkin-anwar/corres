@@ -111,11 +111,36 @@ public actor IMAPConnection {
     /// selected folder. Bodies are fetched separately, on open.
     public func fetchSummaries(uids range: ClosedRange<UInt32>) async throws -> [MessageSummary] {
         guard let folder = selectedFolder else { throw ConnectionError.notConnected }
-        let attributes: [FetchAttribute] = [
-            .uid, .flags, .rfc822Size, .envelope,
-            .bodySection(peek: true, SectionSpecifier(kind: .headerFields(["REFERENCES"])), nil),
-        ]
-        return try await run(.uidFetch(Self.uidSet(range), attributes, []), folder: folder).messages
+        return try await run(.uidFetch(Self.uidSet(range), Self.summaryAttributes, []), folder: folder).messages
+    }
+
+    static let summaryAttributes: [FetchAttribute] = [
+        .uid, .flags, .rfc822Size, .envelope,
+        .bodySection(peek: true, SectionSpecifier(kind: .headerFields(["REFERENCES", "LIST-UNSUBSCRIBE", "LIST-UNSUBSCRIBE-POST"])), nil),
+    ]
+
+    /// The newest `count` messages of the selected folder (a first sync, or
+    /// a mailbox page): by position, since UIDs can have gaps. `endingAt`
+    /// is the newest position to include (defaults to the last).
+    public func fetchNewestSummaries(count: Int, of exists: Int, endingAt end: Int? = nil) async throws -> [MessageSummary] {
+        guard let folder = selectedFolder else { throw ConnectionError.notConnected }
+        let last = min(end ?? exists, exists)
+        guard last >= 1, count > 0 else { return [] }
+        let first = max(1, last - count + 1)
+        let range = MessageIdentifierRange<SequenceNumber>(SequenceNumber(rawValue: UInt32(first))...SequenceNumber(rawValue: UInt32(last)))
+        let set: LastCommandSet<SequenceNumber> = .set(MessageIdentifierSetNonEmpty(range: range))
+        return try await run(.fetch(set, Self.summaryAttributes, []), folder: folder).messages
+    }
+
+    /// UIDs in the selected folder matching words anywhere in the message.
+    public func search(text: String) async throws -> [UInt32] {
+        try await run(.uidSearch(key: .text(ByteBuffer(string: text))), folder: selectedFolder ?? "").searchResults
+    }
+
+    /// UIDs in the selected folder whose Message-ID is `messageID`: how a
+    /// message is found again after it moved (UIDs are per folder).
+    public func search(messageID: String) async throws -> [UInt32] {
+        try await run(.uidSearch(key: .header("Message-ID", ByteBuffer(string: "<\(messageID)>"))), folder: selectedFolder ?? "").searchResults
     }
 
     /// Only flags, to notice mail read, flagged or deleted elsewhere on
@@ -191,6 +216,17 @@ public actor IMAPConnection {
         if case .no(let text) = collector.outcome { throw ConnectionError.commandFailed(text) }
         if case .bad(let text) = collector.outcome { throw ConnectionError.commandFailed(text) }
         return collector.appendedUID
+    }
+
+    /// Removes messages marked deleted: only these with UIDPLUS, otherwise
+    /// every one marked in the folder.
+    public func expungeIfPossible(uids: [UInt32]) async throws {
+        guard !uids.isEmpty else { return }
+        if capabilities.uidplus {
+            try await run(.uidExpunge(Self.uidSet(uids)), folder: selectedFolder ?? "")
+        } else {
+            try await run(.expunge, folder: selectedFolder ?? "")
+        }
     }
 
     // MARK: Waiting for new mail

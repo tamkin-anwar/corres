@@ -17,6 +17,8 @@ public struct ResponseCollector: Sendable {
     public private(set) var capabilities: [String] = []
     public private(set) var folders: [Folder] = []
     public private(set) var messages: [MessageSummary] = []
+    /// UIDs a SEARCH matched.
+    public private(set) var searchResults: [UInt32] = []
     /// UIDs a QRESYNC server says were deleted (VANISHED).
     public private(set) var vanished: [UInt32] = []
     /// From SELECT.
@@ -97,6 +99,8 @@ public struct ResponseCollector: Sendable {
                 folders.append(Folder(path: path, delimiter: info.path.pathSeparator, attributes: attrs))
             case .exists(let n):
                 exists = n
+            case .search(let ids, _):
+                searchResults += ids.map { $0.rawValue }
             default:
                 break
             }
@@ -166,7 +170,7 @@ public struct ResponseCollector: Sendable {
                                   date: nil, messageID: nil, inReplyTo: nil, size: fetch.size)
         }
         let headers = fetch.headerFields.map { HeaderFields(data: $0) }
-        return MessageSummary(
+        var summary = MessageSummary(
             uid: uid,
             folder: folder,
             flags: fetch.flags,
@@ -179,6 +183,9 @@ public struct ResponseCollector: Sendable {
             inReplyTo: envelope.inReplyTo.flatMap { messageIDs(in: String($0)).first ?? cleanMessageID(String($0)) },
             references: headers?.value("References").map(messageIDs(in:)) ?? [],
             size: fetch.size)
+        summary.listUnsubscribe = headers?.value("List-Unsubscribe")
+        summary.listUnsubscribePost = headers?.value("List-Unsubscribe-Post")
+        return summary
     }
 
     static func addresses(_ list: [EmailAddressListElement]) -> [Address] {

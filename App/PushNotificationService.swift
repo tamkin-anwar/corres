@@ -124,6 +124,9 @@ final class PushNotificationService {
         await withTaskGroup(of: Void.self) { group in
             for account in accounts {
                 group.addTask {
+                    // iCloud has no push of its own; it syncs when Corres opens
+                    // and in background refresh (instant alerts are opt-in, later).
+                    if MailAccounts.provider(for: account) == .icloud { return }
                     // Outlook: a Graph subscription, its secret handed to
                     // the relay, so only Microsoft's real notifications wake
                     // this device.

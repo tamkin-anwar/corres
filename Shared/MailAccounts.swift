@@ -4,13 +4,14 @@ import Foundation
 /// both: everything above the client (sorting, Needs You, Primary, Send
 /// Later, drafts, the Share sheet) is the same whichever this is.
 enum MailProvider: String, Codable, Sendable {
-    case google, microsoft
+    case google, microsoft, icloud
 
-    /// "Gmail", "Outlook": what people call the service.
+    /// "Gmail", "Outlook", "iCloud": what people call the service.
     var title: String {
         switch self {
         case .google: "Gmail"
         case .microsoft: "Outlook"
+        case .icloud: "iCloud"
         }
     }
 }

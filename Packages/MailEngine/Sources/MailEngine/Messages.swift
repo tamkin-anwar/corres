@@ -16,6 +16,10 @@ public struct MessageSummary: Sendable, Equatable, Hashable {
     public let inReplyTo: String?
     public let references: [String]
     public let size: Int?
+    /// List-Unsubscribe and List-Unsubscribe-Post, raw, when the message
+    /// has them: newsletters and marketing.
+    public var listUnsubscribe: String?
+    public var listUnsubscribePost: String?
 
     public init(uid: UInt32, folder: String, flags: Set<String>, subject: String, from: Address?, to: [Address],
                 cc: [Address] = [], date: Date?, messageID: String?, inReplyTo: String?, references: [String] = [],

@@ -62,9 +62,11 @@ final class GoogleAuthService {
         let storedEmails = defaults.stringArray(forKey: Self.connectedAccountsKey) ?? []
         var restored: [GmailAccount] = []
         for email in storedEmails {
-            let signedIn = MailAccounts.provider(for: email) == .microsoft
-                ? await OutlookTokenProvider.shared.hasRefreshToken(for: email)
-                : await GoogleTokenProvider.shared.hasRefreshToken(for: email)
+            let signedIn = switch MailAccounts.provider(for: email) {
+            case .microsoft: await OutlookTokenProvider.shared.hasRefreshToken(for: email)
+            case .icloud: ICloudCredentials.password(for: email) != nil
+            case .google: await GoogleTokenProvider.shared.hasRefreshToken(for: email)
+            }
             if signedIn { restored.append(GmailAccount(email: email)) }
         }
         if restored.isEmpty {
@@ -178,8 +180,9 @@ final class GoogleAuthService {
 
     /// Whether this account's login allows settings like Out of Office.
     func canManageSettings(_ email: String) async -> Bool {
-        // Outlook's sign-in includes mailbox settings.
+        // Outlook's sign-in includes mailbox settings; iCloud has none over IMAP.
         if MailAccounts.provider(for: email) == .microsoft { return true }
+        if MailAccounts.provider(for: email) == .icloud { return false }
         if await GoogleTokenProvider.shared.grantedScopes(for: email) == nil {
             // Scopes come with a fresh token; a cached one doesn't say.
             await GoogleTokenProvider.shared.invalidateAccessToken(for: email)
@@ -281,6 +284,34 @@ final class GoogleAuthService {
         }
     }
 
+    /// Connects an iCloud Mail account with its address and an
+    /// app-specific password, checked by signing in to iCloud's mail server
+    /// before anything is saved. Returns a message to show when it didn't
+    /// work, or nil when it did.
+    func signInICloud(email rawEmail: String, password rawPassword: String) async -> String? {
+        let email = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let password = rawPassword.replacingOccurrences(of: " ", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard email.contains("@") else { return "Enter your iCloud email address." }
+        guard !password.isEmpty else { return "Enter the app-specific password." }
+        isSigningIn = true
+        defer { isSigningIn = false }
+        do {
+            try await ICloudSessions.verify(email: email, password: password)
+        } catch GmailAPIClient.ClientError.notSignedIn {
+            return "That password didn't work. Use an app-specific password from account.apple.com, not your Apple Account password."
+        } catch {
+            return "Couldn't reach iCloud Mail. Check your connection and try again."
+        }
+        ICloudCredentials.save(password, for: email)
+        MailAccounts.setProvider(.icloud, for: email)
+        await ICloudSessions.shared.forget(email)
+        if !accounts.contains(where: { $0.email == email }) {
+            accounts.append(GmailAccount(email: email))
+            persistAccountList()
+        }
+        return nil
+    }
+
     /// Signs an account in again, with its own service.
     func reconnect(_ email: String) async {
         if MailAccounts.provider(for: email) == .microsoft { await signInOutlook(hint: email) } else { await signIn(hint: email) }
@@ -293,7 +324,11 @@ final class GoogleAuthService {
         persistAccountList()
         profiles[email] = nil
         if let data = try? JSONEncoder().encode(profiles) { defaults.set(data, forKey: Self.profilesKey) }
-        if MailAccounts.provider(for: email) == .microsoft {
+        if MailAccounts.provider(for: email) == .icloud {
+            ICloudCredentials.remove(email)
+            await ICloudSessions.shared.forget(email)
+            await ICloudCache.shared.forgetAccount(email)
+        } else if MailAccounts.provider(for: email) == .microsoft {
             await OutlookTokenProvider.shared.remove(email)
             await OutlookFolders.shared.forget(email)
         } else {
