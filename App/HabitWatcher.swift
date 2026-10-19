@@ -1,17 +1,14 @@
 import Foundation
 import Observation
 
-/// Notices habits (`SenderHabits`) as you work and offers the change they
-/// suggest, once, at the moment it's relevant: right after you archive
-/// unread mail from a list you never open, or reply to someone you always
-/// answer. Shown by `CorresShell` once any Undo has cleared; accepted,
-/// declined for a month, or declined for good. Counted on this iPhone.
+/// Notices habits (`SenderHabits`) as you work: unread mail from a list
+/// you never open, someone you always answer. What they suggest waits in
+/// Settings → Senders, to accept, decline for a month, or decline for
+/// good. Counted on this iPhone.
 @MainActor @Observable
 final class HabitWatcher {
     static let shared = HabitWatcher()
 
-    /// The suggestion on screen, if any.
-    private(set) var offer: SenderHabits.Suggestion?
     private var habits: SenderHabits
     private static let key = "corres.habits"
 
@@ -32,7 +29,6 @@ final class HabitWatcher {
             habits.recordRemovedUnread(email)
         }
         save()
-        if let thread = threads.last { consider(thread) }
     }
 
     func opened(_ thread: Correspondence) {
@@ -45,67 +41,66 @@ final class HabitWatcher {
         guard isEnabled, !thread.isFromAccountOwner, let email = thread.senderEmail else { return }
         habits.recordReply(to: email)
         save()
-        consider(thread)
     }
 
-    // MARK: Offering
+    // MARK: Suggestions
 
-    private func consider(_ thread: Correspondence) {
-        guard offer == nil, let email = thread.senderEmail else { return }
-        let isList = thread.listUnsubscribeMailto != nil || thread.listUnsubscribeURL != nil
-        guard let suggestion = habits.suggestion(for: email, name: thread.sender, isList: isList,
-                                                 isPerson: !thread.looksAutomated && !isList,
-                                                 isVIP: InboxClassifier.isVIP(email)) else { return }
-        habits.markOffered()
-        save()
-        offer = suggestion
-    }
-
-    var title: String {
-        switch offer {
-        case .unsubscribe(_, let name, let unopened)?:
-            "You haven't opened the last \(unopened) from \(name). Unsubscribe?"
-        case .vip(_, let name, .readsQuickly(let minutes))?:
-            "You read \(name)'s email within \(minutes == 1 ? "a minute" : "\(minutes) minutes"). Make them a VIP?"
-        case .vip(_, let name, .repliesOften(let count))?:
-            "You've replied to \(name) \(count) times lately. Make them a VIP?"
-        case nil: ""
+    /// What your habits suggest, for Settings → Senders. Never shown over
+    /// your mail: an offer that popped up after a swipe interrupted the
+    /// very thing it was about.
+    func suggestions(in threads: [Correspondence]) -> [SenderHabits.Suggestion] {
+        guard isEnabled else { return [] }
+        var latest: [String: Correspondence] = [:]
+        for thread in threads where !thread.isFromAccountOwner {
+            guard let email = thread.senderEmail?.lowercased() else { continue }
+            if (latest[email]?.receivedAt ?? .distantPast) < thread.receivedAt { latest[email] = thread }
+        }
+        return latest.values.sorted { $0.receivedAt > $1.receivedAt }.compactMap { thread in
+            let isList = thread.listUnsubscribeMailto != nil || thread.listUnsubscribeURL != nil
+            return habits.suggestion(for: thread.senderEmail ?? "", name: thread.sender, isList: isList,
+                                     isPerson: !thread.looksAutomated && !isList,
+                                     isVIP: InboxClassifier.isVIP(thread.senderEmail ?? ""), paced: false)
         }
     }
 
-    var actionTitle: String {
-        switch offer {
-        case .unsubscribe?: "Unsubscribe"
-        case .vip?: "Make VIP"
-        case nil: ""
+    static func title(for suggestion: SenderHabits.Suggestion) -> String {
+        switch suggestion {
+        case .unsubscribe(_, let name, let unopened):
+            "You haven't opened the last \(unopened) from \(name)."
+        case .vip(_, let name, .readsQuickly(let minutes)):
+            "You read \(name)'s email within \(minutes == 1 ? "a minute" : "\(minutes) minutes")."
+        case .vip(_, let name, .repliesOften(let count)):
+            "You've replied to \(name) \(count) times lately."
         }
     }
 
-    func accept(store: MailStore, unsubscriber: UnsubscribeService) async {
-        guard let offer else { return }
-        self.offer = nil
-        habits.resolve(offer)
+    static func actionTitle(for suggestion: SenderHabits.Suggestion) -> String {
+        switch suggestion {
+        case .unsubscribe: "Unsubscribe"
+        case .vip: "Make VIP"
+        }
+    }
+
+    func accept(_ suggestion: SenderHabits.Suggestion, store: MailStore, unsubscriber: UnsubscribeService?) async {
+        habits.resolve(suggestion)
         save()
-        let latest = store.threads.filter { $0.senderEmail?.lowercased() == offer.email }.max { $0.receivedAt < $1.receivedAt }
-        switch offer {
+        let latest = store.threads.filter { $0.senderEmail?.lowercased() == suggestion.email }.max { $0.receivedAt < $1.receivedAt }
+        switch suggestion {
         case .unsubscribe:
-            if let latest { await unsubscriber.unsubscribe(from: latest, store: store) }
+            if let latest, let unsubscriber { await unsubscriber.unsubscribe(from: latest, store: store) }
         case .vip:
-            await store.setVIP(offer.email, account: latest?.id.account ?? "", isVIP: true)
+            await store.setVIP(suggestion.email, account: latest?.id.account ?? "", isVIP: true)
         }
     }
 
     /// "Not now" (a month) or "Never" (for good).
-    func decline(forever: Bool) {
-        guard let offer else { return }
-        habits.decline(offer, forever: forever)
+    func decline(_ suggestion: SenderHabits.Suggestion, forever: Bool) {
+        habits.decline(suggestion, forever: forever)
         save()
-        self.offer = nil
     }
 
     func forgetAll() {
         habits.forgetAll()
-        offer = nil
         save()
     }
 

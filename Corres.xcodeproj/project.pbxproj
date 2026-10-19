@@ -59,7 +59,6 @@
 		209EEAAE3C8A4444A903CCFF /* CorresNotify.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 51036E354994481EB7E9A6FD /* CorresNotify.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		036D19D2357FCAF354B35D8F /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 5662C63EE436AAF5D5F1FD05 /* GoogleSignIn */; };
 		0815B5A5F1484E9BA0484CE3 /* App/EntitlementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */; };
-		0DC12458B7C243E3A408FD10 /* App/SnippetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 865AF253964B45F6A4D8875F /* App/SnippetStore.swift */; };
 		105E14E4D7714D74A177FC8D /* Core/MailDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */; };
 		1210C83E3ABF3705EAA0C0D1 /* App/MailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B2D40AA7032720196B86FE /* App/MailStore.swift */; };
 		1729D2B584AB0024ED1C9BB4 /* Core/CorresSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3188DDEA4B4112FCE079024F /* Core/CorresSchema.swift */; };
@@ -296,7 +295,6 @@
 		75B2D40AA7032720196B86FE /* App/MailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MailStore.swift; sourceTree = SOURCE_ROOT; };
 		78B06183ECCF424E8A22B6B4 /* Widgets/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Widgets/Info.plist; sourceTree = SOURCE_ROOT; };
 		7A582894B2EE49E0BA022D01 /* Features/PremiumSwipeRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PremiumSwipeRow.swift; sourceTree = SOURCE_ROOT; };
-		865AF253964B45F6A4D8875F /* App/SnippetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SnippetStore.swift; sourceTree = SOURCE_ROOT; };
 		89705DCC26384892BF488BA2 /* App/ThreadActionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ThreadActionService.swift; sourceTree = SOURCE_ROOT; };
 		8A6D2AECED4C48E4222ADE95 /* Features/CorresShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CorresShell.swift; sourceTree = SOURCE_ROOT; };
 		8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/TimePhrase.swift; sourceTree = SOURCE_ROOT; };
@@ -523,7 +521,6 @@
 				9C33E49C348642688FD36A86 /* App/WidgetBridge.swift */,
 				1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */,
 				26F0F29A3B9945FDB1D3A7CC /* App/DictationService.swift */,
-				865AF253964B45F6A4D8875F /* App/SnippetStore.swift */,
 				179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */,
 				FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */,
 				B8A1BCC0306E4172BBFF5CBF /* Features/AccountAvatar.swift */,
@@ -852,7 +849,6 @@
 				B38567BB8F8242BAAFBFF5E0 /* App/WidgetBridge.swift in Sources */,
 				9B3A020AEDAA4F449B17B527 /* Shared/WidgetSnapshot.swift in Sources */,
 				D5195C9FE186477BA44C6D4C /* App/DictationService.swift in Sources */,
-				0DC12458B7C243E3A408FD10 /* App/SnippetStore.swift in Sources */,
 				66B455C3F7FE4E5A80CB7790 /* Features/EarlierMessages.swift in Sources */,
 				77485366CDAE444C800848E3 /* App/GmailQuotaGate.swift in Sources */,
 				537C62D39E8646D090F06DA5 /* Features/AccountAvatar.swift in Sources */,

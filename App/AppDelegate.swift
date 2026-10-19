@@ -25,7 +25,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     let unsubscribeService: UnsubscribeService
     let semanticTriageService: SemanticTriageService
     let mailIntelligence: MailIntelligence
-    let snippetStore: SnippetStore
     let router: AppRouter
     let askService: AskService
     let entitlements: EntitlementStore
@@ -80,7 +79,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         unsubscribeService = UnsubscribeService()
         semanticTriageService = SemanticTriageService()
         mailIntelligence = MailIntelligence()
-        snippetStore = SnippetStore()
         router = AppRouter.shared
         askService = AskService(store: mailStore, sync: sync, auth: authService)
         entitlements = EntitlementStore()
@@ -332,7 +330,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             return
         }
         if info["destination"] as? String == "brief" {
-            await MainActor.run { AppRouter.shared.pending = .destination(.brief) }
+            await MainActor.run { AppRouter.shared.pending = .destination(.needsYou) }
             return
         }
         guard let account = info["account"] as? String, let providerID = info["thread"] as? String else {

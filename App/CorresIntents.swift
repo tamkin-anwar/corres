@@ -5,15 +5,15 @@ import Foundation
 /// the same on-device summary the widgets use; nothing is sent anywhere.
 
 enum CorresList: String, AppEnum {
-    case brief, needsYou, waiting, mail
+    case needsYou, waiting, mail
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "List"
     static let caseDisplayRepresentations: [CorresList: DisplayRepresentation] = [
-        .brief: "Brief", .needsYou: "Needs You", .waiting: "Waiting", .mail: "Mail",
+        .needsYou: "Needs You", .waiting: "Waiting", .mail: "Mail",
     ]
 
     var destination: Destination {
-        switch self { case .brief: .brief; case .needsYou: .needsYou; case .waiting: .waiting; case .mail: .mail }
+        switch self { case .needsYou: .needsYou; case .waiting: .waiting; case .mail: .mail }
     }
 }
 
@@ -53,7 +53,7 @@ struct WhatNeedsMeIntent: AppIntent {
 
 struct OpenListIntent: AppIntent {
     static let title: LocalizedStringResource = "Open List"
-    static let description = IntentDescription("Open Brief, Needs You, Waiting or Mail in Corres.")
+    static let description = IntentDescription("Open Needs You, Waiting or Mail in Corres.")
     static let openAppWhenRun = true
 
     @Parameter(title: "List", default: .needsYou)

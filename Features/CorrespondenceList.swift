@@ -27,17 +27,6 @@ struct CorrespondenceRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @AppStorage(CorresSettings.previewLinesKey) private var previewLines = 2
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
-    @AppStorage(CorresSettings.summaryInListKey) private var summaryInList = false
-    @AppStorage(CorresSettings.summariesKey) private var summariesOn = true
-    @Environment(\.proUnlocked) private var proUnlocked
-    @Environment(MailIntelligence.self) private var intelligence: MailIntelligence?
-
-    /// Settings → Lists → Summaries as preview: the summary once there is
-    /// one, the email's opening words until then.
-    private var summaryPreview: String? {
-        guard summaryInList, summariesOn, proUnlocked else { return nil }
-        return intelligence?.insight(for: thread)?.summary
-    }
 
     /// "Tina K. Rotolo +2" → "TK": letters from the first two words of a
     /// name, leaving off the count of others.
@@ -91,9 +80,10 @@ struct CorrespondenceRow: View {
                             .accessibilityLabel("Has attachments")
                     }
                     Spacer(minLength: 6)
-                    // A sender you haven't allowed or blocked yet, shown
-                    // in the lists while new senders aren't held back.
-                    if thread.senderDecision == .pending {
+                    // A sender you haven't allowed or blocked yet, while the
+                    // mail is new. Every unreviewed sender used to carry
+                    // it, which on a busy inbox was half the rows.
+                    if thread.senderDecision == .pending, thread.receivedAt > .now.addingTimeInterval(-3 * 86_400) {
                         Text("NEW")
                             .font(.caption2.weight(.semibold)).tracking(0.4)
                             .foregroundStyle(CorresPalette.accent)
@@ -102,19 +92,17 @@ struct CorrespondenceRow: View {
                             .accessibilityLabel("New sender")
                     }
                     if let accountTag {
-                        // The colour is a dot and a tinted outline, not the
-                        // text: gold or teal text would fail contrast on white.
-                        HStack(spacing: 4) {
+                        // Which account, at a glance and quietly: its colour
+                        // as a dot beside the time, as Mail and Spark mark
+                        // accounts; its name only when colours are off.
+                        Group {
                             if let color = accountTag.color {
-                                Circle().fill(color).frame(width: 6, height: 6)
+                                Circle().fill(color).frame(width: 7, height: 7)
+                            } else {
+                                Text(accountTag.text).font(.caption2.weight(.semibold)).tracking(0.4)
+                                    .foregroundStyle(CorresPalette.tertiary)
                             }
-                            Text(accountTag.text)
                         }
-                        .font(.caption2.weight(.semibold)).tracking(0.4)
-                        .foregroundStyle(CorresPalette.tertiary)
-                        .padding(.horizontal, 5).padding(.vertical, 1)
-                        .overlay(RoundedRectangle(cornerRadius: 5)
-                            .strokeBorder(accountTag.color.map { $0.opacity(0.5) } ?? CorresPalette.line, lineWidth: 1))
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel("\(accountTag.text) account")
                     }
@@ -137,20 +125,13 @@ struct CorrespondenceRow: View {
                     .lineLimit(1)
                 // Settings → Lists → Preview; the curated lists keep it to a
                 // line so the reason has room.
+                // The email's own words: summaries stay inside the email,
+                // where they're checked against it, never in place of it.
                 if previewLines > 0 {
-                    if let summaryPreview {
-                        (Text(Image(systemName: "sparkle")).font(.caption2).foregroundStyle(CorresPalette.accent)
-                            + Text(" ") + Text(summaryPreview))
-                            .font(.subheadline)
-                            .foregroundStyle(CorresPalette.secondary)
-                            .lineLimit(showsReason ? 1 : previewLines)
-                            .accessibilityLabel("Summary: \(summaryPreview)")
-                    } else {
-                        Text(thread.excerpt)
-                            .font(.subheadline)
-                            .foregroundStyle(CorresPalette.secondary)
-                            .lineLimit(showsReason ? 1 : previewLines)
-                    }
+                    Text(thread.excerpt)
+                        .font(.subheadline)
+                        .foregroundStyle(CorresPalette.secondary)
+                        .lineLimit(showsReason ? 1 : previewLines)
                 }
                 if showsReason, !thread.reason.isEmpty {
                     // Side by side normally; stacked at the largest text

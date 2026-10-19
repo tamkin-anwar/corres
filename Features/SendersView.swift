@@ -1,10 +1,12 @@
 import SwiftUI
 
-/// Settings → Senders: everyone who has emailed you, in one place, where an
-/// allow, a block or a subscription can be changed any time. HEY's
-/// Screener History shows only who you screened out, Gmail's blocked list
-/// is web-only, and iOS keeps blocked contacts under Privacy & Security;
-/// here it's every sender, searchable, with what you decided about each.
+/// Settings → Senders: everything about who emails you, in one place.
+/// Suggestions from your habits, new senders, VIPs and what Corres has
+/// learned on top; then everyone who has emailed you, where an allow, a
+/// block or a subscription can be changed any time. HEY's Screener History
+/// shows only who you screened out, Gmail's blocked list is web-only, and
+/// iOS keeps blocked contacts under Privacy & Security; here it's every
+/// sender, searchable, with what you decided about each.
 struct SendersView: View {
     let store: MailStore
     var unsubscriber: UnsubscribeService?
@@ -13,6 +15,10 @@ struct SendersView: View {
     @State private var search = ""
     @State private var confirmingUnsubscribe: SenderSummary?
     @State private var note: String?
+    @AppStorage(CorresSettings.screenNewSendersKey) private var screenNewSenders = false
+    @State private var vips: [String] = CorresSettings.vips.sorted()
+    @State private var showingScreener = false
+    @State private var suggestions: [SenderHabits.Suggestion] = []
 
     private var all: [SenderSummary] { SenderDirectory.summaries(store.threads) }
 
@@ -20,6 +26,20 @@ struct SendersView: View {
         let senders = all
         let shown = SenderDirectory.filtered(senders, filter, search: search, order: order)
         List {
+            if search.isEmpty {
+                suggestionSection
+                newSendersSection
+                vipSection
+                Section {
+                    NavigationLink {
+                        LessonsView()
+                    } label: {
+                        Label("What Corres Has Learned", systemImage: "brain")
+                    }
+                } footer: {
+                    Text("Corres learns from your corrections, on this \(Device.name). Every lesson is listed there, and you can make it forget any of them.")
+                }
+            }
             Section {
                 Picker("Show", selection: $filter) {
                     ForEach(SenderDirectory.Filter.allCases, id: \.self) { item in
@@ -64,6 +84,8 @@ struct SendersView: View {
         .searchable(text: $search, prompt: "Name or address")
         .navigationTitle("Senders")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
+        .onAppear { suggestions = HabitWatcher.shared.suggestions(in: store.threads) }
         .overlay(alignment: .bottom) {
             if let note {
                 Text(note).font(.subheadline.weight(.medium))
@@ -84,6 +106,104 @@ struct SendersView: View {
         } message: {
             Text("Corres asks them to stop, the way their own unsubscribe link does. Block also hides anything they still send.")
         }
+    }
+
+    // MARK: Suggestions, new senders, VIPs
+
+    /// What your habits suggest, waiting here instead of interrupting you.
+    @ViewBuilder
+    private var suggestionSection: some View {
+        if !suggestions.isEmpty {
+            Section {
+                ForEach(suggestions, id: \.email) { suggestion in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(HabitWatcher.title(for: suggestion)).font(.subheadline)
+                        HStack(spacing: 18) {
+                            Button(HabitWatcher.actionTitle(for: suggestion)) {
+                                suggestions.removeAll { $0 == suggestion }
+                                Task { await HabitWatcher.shared.accept(suggestion, store: store, unsubscriber: unsubscriber) }
+                            }
+                            .font(.subheadline.weight(.semibold))
+                            Button("Not Now") {
+                                suggestions.removeAll { $0 == suggestion }
+                                HabitWatcher.shared.decline(suggestion, forever: false)
+                            }
+                            .font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                            Spacer(minLength: 0)
+                            Menu {
+                                Button("Never for This Sender") {
+                                    suggestions.removeAll { $0 == suggestion }
+                                    HabitWatcher.shared.decline(suggestion, forever: true)
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis").font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                                    .frame(minWidth: 32, minHeight: 32)
+                            }
+                            .accessibilityLabel("More")
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    .padding(.vertical, 4)
+                }
+            } header: {
+                Text("Suggestions")
+            } footer: {
+                Text("From how you treat each sender's mail, counted on this \(Device.name).")
+            }
+        }
+    }
+
+    private var newSendersSection: some View {
+        Section {
+            Toggle("Screen New Senders", isOn: $screenNewSenders)
+                .onChange(of: screenNewSenders) {
+                    CorresSettings.applyToCore()
+                    store.listsShouldRebuild()
+                }
+            let waiting = Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count
+            Button {
+                showingScreener = true
+            } label: {
+                LabeledContent("Review New Senders", value: waiting == 0 ? "None" : "\(waiting)")
+            }
+            .foregroundStyle(CorresPalette.ink)
+        } header: {
+            Text("New Senders")
+        } footer: {
+            Text(screenNewSenders
+                 ? "Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden."
+                 : "Someone's first email shows like anyone else's, marked New, and you can allow or block them right from the email. Blocked senders stay hidden.")
+        }
+    }
+
+    private var vipSection: some View {
+        Section {
+            if vips.isEmpty {
+                Text("No VIPs yet").foregroundStyle(CorresPalette.secondary)
+            } else {
+                ForEach(vips, id: \.self) { email in
+                    Label(vipName(for: email), systemImage: "star.fill")
+                }
+                .onDelete { offsets in
+                    let removed = offsets.map { vips[$0] }
+                    vips.remove(atOffsets: offsets)
+                    Task {
+                        for email in removed {
+                            let account = store.threads.first { $0.senderEmail?.lowercased() == email }?.id.account ?? ""
+                            await store.setVIP(email, account: account, isVIP: false)
+                        }
+                    }
+                }
+            }
+        } header: {
+            Text("VIPs")
+        } footer: {
+            Text("A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove.")
+        }
+    }
+
+    private func vipName(for email: String) -> String {
+        store.threads.first { $0.senderEmail?.lowercased() == email }.map(\.sender) ?? email
     }
 
     private func row(_ sender: SenderSummary) -> some View {

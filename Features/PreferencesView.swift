@@ -98,24 +98,24 @@ struct PreferencesView: View {
                         settingLabel("Appearance", "circle.lefthalf.filled")
                     }
                     NavigationLink {
-                        SortingSettingsView(store: store)
+                        NotificationSettingsView(auth: auth, pushService: pushService, store: store)
                     } label: {
-                        settingLabel("Sorting", "line.3.horizontal.decrease")
+                        LabeledContent {
+                            Text(auth.accounts.isEmpty ? "Needs an Account" : (pushService.isEnabled ? "On" : "Off"))
+                        } label: {
+                            settingLabel("Notifications", "bell.badge")
+                        }
                     }
-                    NavigationLink {
-                        OutOfOfficeView(auth: auth)
-                    } label: {
-                        settingLabel("Out of Office", "airplane")
-                    }
+                    .disabled(auth.accounts.isEmpty)
                     NavigationLink {
                         SendersView(store: store, unsubscriber: unsubscriber)
                     } label: {
                         settingLabel("Senders", "person.2")
                     }
                     NavigationLink {
-                        ListSettingsView(store: store)
+                        SortingSettingsView(store: store)
                     } label: {
-                        settingLabel("Lists", "list.bullet")
+                        settingLabel("Sorting", "line.3.horizontal.decrease")
                     }
                     NavigationLink {
                         ReadingSettingsView()
@@ -128,30 +128,15 @@ struct PreferencesView: View {
                         settingLabel("Composing", "square.and.pencil")
                     }
                     NavigationLink {
-                        SwipeSettingsView()
+                        CustomizeSettingsView(store: store)
                     } label: {
-                        settingLabel("Swipes", "hand.draw")
+                        settingLabel("Customize", "slider.horizontal.3")
                     }
                     NavigationLink {
-                        ReadingBarSettingsView()
+                        OutOfOfficeView(auth: auth)
                     } label: {
-                        settingLabel("Email Toolbar", "ellipsis.rectangle")
+                        settingLabel("Out of Office", "airplane")
                     }
-                    NavigationLink {
-                        SnippetSettingsView()
-                    } label: {
-                        settingLabel("Snippets", "text.badge.plus")
-                    }
-                    NavigationLink {
-                        NotificationSettingsView(auth: auth, pushService: pushService, store: store)
-                    } label: {
-                        LabeledContent {
-                            Text(auth.accounts.isEmpty ? "Needs an Account" : (pushService.isEnabled ? "On" : "Off"))
-                        } label: {
-                            settingLabel("Notifications", "bell.badge")
-                        }
-                    }
-                    .disabled(auth.accounts.isEmpty)
                 }
                 Section {
                     LabeledContent {
@@ -262,7 +247,7 @@ struct PreferencesView: View {
             if entitlements.isPro && entitlements.plan == .none {
                 Text("Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro.")
             } else if !entitlements.isPro {
-                Text("Without Pro, Mail keeps working: read, reply, archive and search. Brief, Needs You, Waiting, Ask and the on-device intelligence need Pro.")
+                Text("Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro.")
             }
         }
     }
@@ -543,7 +528,7 @@ private struct AccountDetailView: View {
                 } footer: {
                     Text(showsInAllInboxes
                          ? "Its mail is marked with this color in All Inboxes, so you can tell your accounts apart at a glance."
-                         : "Kept out of All Inboxes, Needs You, Waiting and the Brief. It still syncs; switch to it by tapping your photo.")
+                         : "Kept out of All Inboxes, Needs You and Waiting. It still syncs; switch to it by tapping your photo.")
                 }
             }
             if pushService.isEnabled {
@@ -1001,7 +986,7 @@ private struct ReadingSettingsView: View {
 
 /// Every lesson Corres has learned from your corrections, with a way to
 /// forget each one: learning you can see and undo, not a black box.
-private struct LessonsView: View {
+struct LessonsView: View {
     @State private var lessons = SenderLessons.all.sorted { $0.learnedAt > $1.learnedAt }
     @AppStorage(SenderLessons.enabledKey) private var isEnabled = true
 
@@ -1054,69 +1039,13 @@ private struct LessonsView: View {
 
 private struct SortingSettingsView: View {
     let store: MailStore
-    @State private var vipsStorage: [String] = CorresSettings.vips.sorted()
     @AppStorage(CorresSettings.sensitivityKey) private var sensitivity = InboxClassifier.Sensitivity.balanced.rawValue
     @AppStorage(CorresSettings.followUpDaysKey) private var followUpDays = 3
     @AppStorage(CorresSettings.morningHourKey) private var morningHour = 8
     @AppStorage(CorresSettings.laterTodayEveningKey) private var laterTodayEvening = false
-    @AppStorage(CorresSettings.screenNewSendersKey) private var screenNewSenders = false
-    @State private var showingScreener = false
 
     var body: some View {
         Form {
-            Section {
-                Toggle("Screen New Senders", isOn: $screenNewSenders)
-                    .onChange(of: screenNewSenders) {
-                        CorresSettings.applyToCore()
-                        store.listsShouldRebuild()
-                    }
-                // Also reached from the Brief; here so it's there without Pro.
-                let waiting = Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count
-                Button {
-                    showingScreener = true
-                } label: {
-                    LabeledContent("Review New Senders", value: waiting == 0 ? "None" : "\(waiting)")
-                }
-                .foregroundStyle(CorresPalette.ink)
-            } header: {
-                Text("New Senders")
-            } footer: {
-                Text(screenNewSenders
-                     ? "Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden."
-                     : "Someone's first email shows like anyone else's, marked New, and you can allow or block them right from the email. Blocked senders stay hidden.")
-            }
-            Section {
-                if vipsStorage.isEmpty {
-                    Text("No VIPs yet").foregroundStyle(CorresPalette.secondary)
-                } else {
-                    ForEach(vipsStorage, id: \.self) { email in
-                        Label(name(for: email), systemImage: "star.fill")
-                    }
-                    .onDelete { offsets in
-                        let removed = offsets.map { vipsStorage[$0] }
-                        vipsStorage.remove(atOffsets: offsets)
-                        Task {
-                            for email in removed {
-                                let account = store.threads.first { $0.senderEmail?.lowercased() == email }?.id.account ?? ""
-                                await store.setVIP(email, account: account, isVIP: false)
-                            }
-                        }
-                    }
-                }
-            } header: {
-                Text("VIPs")
-            } footer: {
-                Text("A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove.")
-            }
-            Section {
-                NavigationLink {
-                    LessonsView()
-                } label: {
-                    Label("What Corres Has Learned", systemImage: "brain")
-                }
-            } footer: {
-                Text("Corres learns from your corrections, on this \(Device.name). Every lesson is listed here, and you can make it forget any of them.")
-            }
             Section {
                 Picker("Needs You", selection: $sensitivity) {
                     Text("Focused").tag(InboxClassifier.Sensitivity.focused.rawValue)
@@ -1148,9 +1077,7 @@ private struct SortingSettingsView: View {
         }
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
-        .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
         .navigationTitle("Sorting")
-        .onAppear { vipsStorage = CorresSettings.vips.sorted() }
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: sensitivity) { CorresSettings.applyToCore(); Task { await store.reapplyRules() } }
         .onChange(of: morningHour) { CorresSettings.applyToCore() }
@@ -1164,9 +1091,29 @@ private struct SortingSettingsView: View {
         case .inclusive: "Everything from people: every email from a person, including ones you're copied on."
         }
     }
+}
 
-    private func name(for email: String) -> String {
-        store.threads.first { $0.senderEmail?.lowercased() == email }.map { "\($0.sender) · \(email)" } ?? email
+// MARK: - Customize
+
+/// Lists, swipes and the email toolbar: how Corres looks and moves, in one
+/// place instead of three rows.
+private struct CustomizeSettingsView: View {
+    let store: MailStore
+
+    var body: some View {
+        Form {
+            Section {
+                NavigationLink { ListSettingsView(store: store) } label: { Label("Lists", systemImage: "list.bullet") }
+                NavigationLink { SwipeSettingsView() } label: { Label("Swipes", systemImage: "hand.draw") }
+                NavigationLink { ReadingBarSettingsView() } label: { Label("Email Toolbar", systemImage: "ellipsis.rectangle") }
+            } footer: {
+                Text("How your lists look, what each swipe does, and the actions under an email.")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(CorresPalette.canvas)
+        .navigationTitle("Customize")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -1176,7 +1123,6 @@ private struct ListSettingsView: View {
     let store: MailStore
     @AppStorage(CorresSettings.previewLinesKey) private var previewLines = 2
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
-    @AppStorage(CorresSettings.summaryInListKey) private var summaryInList = false
 
     var body: some View {
         Form {
@@ -1188,9 +1134,8 @@ private struct ListSettingsView: View {
                     Text("3 Lines").tag(3)
                 }
                 Toggle("Show Pictures", isOn: $showAvatars)
-                Toggle("Summaries as Preview", isOn: $summaryInList)
             } footer: {
-                Text("How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits. With summaries as preview, an email Corres has summarized shows its summary instead of its opening words. Part of Corres Pro.")
+                Text("How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits.")
             }
         }
         .scrollContentBackground(.hidden)
@@ -1318,79 +1263,6 @@ private struct SwipeSettingsView: View {
     }
 }
 
-// MARK: - Snippets
-
-private struct SnippetSettingsView: View {
-    @Environment(SnippetStore.self) private var store
-    @State private var editing: SnippetStore.Snippet?
-
-    var body: some View {
-        Form {
-            Section {
-                ForEach(store.snippets) { snippet in
-                    Button { editing = snippet } label: {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(snippet.title).foregroundStyle(CorresPalette.ink)
-                            Text(snippet.body).font(.footnote).foregroundStyle(CorresPalette.secondary).lineLimit(2)
-                        }
-                    }
-                }
-                .onDelete { store.delete(at: $0) }
-                .onMove { store.move(from: $0, to: $1) }
-                Button {
-                    editing = SnippetStore.Snippet(title: "", body: "")
-                } label: {
-                    Label("New snippet", systemImage: "plus")
-                }
-            } footer: {
-                Text("Insert a snippet from the bar above the keyboard in any message. Write \(SnippetStore.firstNameToken) and Corres fills in the recipient's first name. Snippets stay on this \(Device.name).")
-            }
-        }
-        .scrollContentBackground(.hidden)
-        .background(CorresPalette.canvas)
-        .navigationTitle("Snippets")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { EditButton() }
-        .sheet(item: $editing) { snippet in
-            SnippetEditor(snippet: snippet) { store.save($0) }
-        }
-    }
-}
-
-private struct SnippetEditor: View {
-    @State var snippet: SnippetStore.Snippet
-    let onSave: (SnippetStore.Snippet) -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                TextField("Title", text: $snippet.title)
-                Section {
-                    TextEditor(text: $snippet.body).frame(minHeight: 160)
-                } footer: {
-                    Button("Insert \(SnippetStore.firstNameToken)") { snippet.body += SnippetStore.firstNameToken }
-                        .font(.footnote.weight(.semibold))
-                }
-            }
-            .navigationTitle(snippet.title.isEmpty ? "New Snippet" : "Edit Snippet")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        onSave(snippet)
-                        dismiss()
-                    }
-                    .disabled(snippet.title.trimmingCharacters(in: .whitespaces).isEmpty
-                              || snippet.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-    }
-}
-
 // MARK: - Notifications
 
 private struct NotificationSettingsView: View {
@@ -1456,7 +1328,7 @@ private struct NotificationSettingsView: View {
                         DatePicker("Time", selection: briefTime, displayedComponents: .hourAndMinute)
                     }
                 } footer: {
-                    Text("One quiet notification a day with what needs you and who you're waiting on. Tap it to open Brief.")
+                    Text("One quiet notification a day with what needs you and who you're waiting on. Tap it to open Needs You.")
                 }
                 if screenNewSenders {
                 Section {

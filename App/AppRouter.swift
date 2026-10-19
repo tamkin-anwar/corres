@@ -46,7 +46,7 @@ final class AppRouter {
         case "mail": pending = .destination(.mail)
         case "compose": pending = .compose
         case "ask": pending = .destination(.ask)
-        default: pending = .destination(.brief)
+        default: pending = .destination(.needsYou)
         }
         return true
     }

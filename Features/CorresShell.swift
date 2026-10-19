@@ -420,8 +420,6 @@ struct CorresShell: View {
             .corresGlass(in: Capsule())
             .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-        } else if threadActions.lastChange == nil, HabitWatcher.shared.offer != nil {
-            habitCard
         } else if let change = threadActions.lastChange {
             // Handled, read, flag, pin, Move to: the same pill as Archive,
             // so a mis-swipe is one tap from undone. A flick puts it away.
@@ -483,39 +481,6 @@ struct CorresShell: View {
             .padding(.bottom, 92)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         }
-    }
-
-    /// A habit Corres noticed, offered once (`HabitWatcher`): the change,
-    /// Not Now (a month), or Never for this sender.
-    private var habitCard: some View {
-        let watcher = HabitWatcher.shared
-        return VStack(alignment: .leading, spacing: 10) {
-            Label(watcher.title, systemImage: "sparkles")
-                .labelStyle(TightLabelStyle())
-                .font(.subheadline)
-                .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 18) {
-                Button(watcher.actionTitle) {
-                    Task { await watcher.accept(store: store, unsubscriber: unsubscribeService) }
-                }
-                .font(.subheadline.weight(.semibold))
-                Button("Not Now") { watcher.decline(forever: false) }
-                    .font(.subheadline).foregroundStyle(CorresPalette.secondary)
-                Spacer(minLength: 0)
-                Menu {
-                    Button("Never for This Sender") { watcher.decline(forever: true) }
-                } label: {
-                    Image(systemName: "ellipsis").font(.subheadline).foregroundStyle(CorresPalette.secondary)
-                        .frame(minWidth: 32, minHeight: 32)
-                }
-                .accessibilityLabel("More")
-            }
-        }
-        .padding(.horizontal, 18).padding(.vertical, 14)
-        .frame(maxWidth: 460, alignment: .leading)
-        .corresGlass(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .padding(.horizontal, CorresSpace.page).padding(.bottom, 92)
-        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
     }
 
     @ViewBuilder
@@ -827,7 +792,6 @@ private struct FeedbackPills: View {
             .animation(animation, value: outbox.failed?.id)
             .animation(animation, value: threadActions.pendingRemoval?.id)
             .animation(animation, value: threadActions.lastChange?.id)
-            .animation(animation, value: HabitWatcher.shared.offer)
             .animation(animation, value: outbox.shelved?.id)
             // Premium apps confirm what just happened in the hand, not only on screen.
             .sensoryFeedback(.success, trigger: outbox.pending?.id) { _, new in new != nil }

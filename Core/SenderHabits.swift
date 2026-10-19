@@ -85,11 +85,13 @@ public struct SenderHabits: Codable, Sendable, Equatable {
     /// What this sender's habit suggests now, if anything. `isList`: their
     /// mail can be unsubscribed from; `isPerson`: a person, not a system;
     /// `isVIP`: already one.
+    /// `paced`: at most one a day, for an offer that interrupts. A list you
+    /// open yourself (Settings → Senders) shows them all.
     public func suggestion(for email: String, name: String, isList: Bool, isPerson: Bool, isVIP: Bool,
-                           now: Date = .now) -> Suggestion? {
+                           paced: Bool = true, now: Date = .now) -> Suggestion? {
         let key = email.lowercased()
         guard let habit = habits[key] else { return nil }
-        if let last = lastOffered, now.timeIntervalSince(last) < 20 * 3_600 { return nil }
+        if paced, let last = lastOffered, now.timeIntervalSince(last) < 20 * 3_600 { return nil }
         let cutoff = now.addingTimeInterval(-Self.window)
         let removed = habit.removedUnread.filter { $0 > cutoff }
         let opens = habit.opens.filter { $0.at > cutoff }

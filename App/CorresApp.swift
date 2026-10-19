@@ -24,7 +24,6 @@ struct CorresApp: App {
                        labelDirectory: appDelegate.labelDirectory, pushService: appDelegate.pushService,
                        unsubscribeService: appDelegate.unsubscribeService)
                 .environment(appDelegate.mailIntelligence)
-                .environment(appDelegate.snippetStore)
                 .environment(appDelegate.router)
                 .environment(appDelegate.askService)
                 .environment(appDelegate.entitlements)
@@ -81,8 +80,7 @@ struct CorresApp: App {
                         await appDelegate.sync.backfillContent()
                         await appDelegate.store.refresh()
                         if appDelegate.entitlements.isPro && CorresSettings.summaries {
-                            await appDelegate.mailIntelligence.prewarm(appDelegate.store.threads,
-                                                                       includeRead: CorresSettings.summaryInList)
+                            await appDelegate.mailIntelligence.prewarm(appDelegate.store.threads, includeRead: false)
                         }
                     }
                 }

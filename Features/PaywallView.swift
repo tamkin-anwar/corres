@@ -67,8 +67,8 @@ struct PaywallView: View {
 
     private var benefits: some View {
         VStack(alignment: .leading, spacing: 14) {
-            benefit("text.alignleft", "Brief, Needs You and Waiting", "What needs you first, with the reason for each.")
-            benefit("sparkle", "Apple Intelligence, on this \(Device.name)", "Summaries, replies in your voice, rewrites and Ask your mail.")
+            benefit("exclamationmark.circle", "Needs You and Waiting", "What needs you first, with the reason for each, and the replies you're owed.")
+            benefit("sparkle", "Apple Intelligence, on this \(Device.name)", "Summaries, replies in your voice, rewrites, and answers from your mail in Search.")
             benefit("rectangle.stack", "Widgets, Siri and iPad", "Needs You on your Home Screen and Lock Screen.")
             benefit("lock", "Private by design", "Your mail is never sent to our servers or an AI company.")
         }

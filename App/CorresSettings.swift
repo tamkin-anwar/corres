@@ -84,11 +84,6 @@ enum CorresSettings {
     static let previewLinesKey = "corres.previewLines"
     static var previewLines: Int { defaults.object(forKey: previewLinesKey) as? Int ?? 2 }
 
-    /// Settings → Lists → Summaries as preview: a row shows its email's
-    /// summary, once there is one, in place of its opening words.
-    static let summaryInListKey = "corres.summaryInList"
-    static var summaryInList: Bool { defaults.object(forKey: summaryInListKey) as? Bool ?? false }
-
     static let showAvatarsKey = "corres.showAvatars"
     static var showAvatars: Bool { defaults.object(forKey: showAvatarsKey) as? Bool ?? true }
 

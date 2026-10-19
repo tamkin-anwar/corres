@@ -46,7 +46,6 @@ struct ComposeView: View {
     @State private var rewriting: MailIntelligence.Tone?
     @State private var beforeRewrite: String?
     @Environment(MailIntelligence.self) private var intelligence
-    @Environment(SnippetStore.self) private var snippets
     @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
     @Environment(\.proUnlocked) private var proUnlocked
     @State private var dictation = DictationService()
@@ -414,19 +413,6 @@ struct ComposeView: View {
                         .buttonStyle(CorresPillStyle())
                         .accessibilityLabel(dictation.isListening ? "Stop dictating" : "Dictate")
                     }
-                    Menu {
-                        ForEach(snippets.snippets) { snippet in
-                            Button(snippet.title) { insert(SnippetStore.expand(snippet.body, recipientName: recipientName)) }
-                        }
-                        if snippets.snippets.isEmpty { Text("Add snippets in Settings") }
-                    } label: {
-                        Label("Snippets", systemImage: "text.badge.plus").labelStyle(TightLabelStyle())
-                            .font(.subheadline.weight(.medium))
-                            .padding(.horizontal, 15).frame(minHeight: 36)
-                            .background(CorresPalette.surfaceRaised, in: Capsule())
-                            .overlay(Capsule().strokeBorder(CorresPalette.line, lineWidth: 0.5))
-                    }
-                    .foregroundStyle(CorresPalette.ink)
                     signatureMenu
                     if intelligence.isAvailable && proUnlocked {
                     if let beforeRewrite {
@@ -508,12 +494,6 @@ struct ComposeView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(label)
         .accessibilityAddTraits(on ? .isSelected : [])
-    }
-
-    /// The recipient's display name, for `{first name}` in snippets.
-    private var recipientName: String? {
-        if let sourceThread, draft.kind != .forward { return sourceThread.sender }
-        return nil
     }
 
     /// Adds text at the end of the person's own words, above any quote.
