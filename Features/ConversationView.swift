@@ -79,8 +79,14 @@ struct ConversationView: View {
                                 .padding(.horizontal, CorresSpace.page)
                                 .transition(.opacity)
                         }
-                        messageHeader(for: thread)
-                            .padding(.horizontal, CorresSpace.page)
+                        // Who, then one quiet line for images, trackers and
+                        // unsubscribing, then the email: what used to be two
+                        // more bars between you and the message.
+                        VStack(alignment: .leading, spacing: 8) {
+                            messageHeader(for: thread)
+                            utilityLine(for: thread)
+                        }
+                        .padding(.horizontal, CorresSpace.page)
                         // An invitation: answer it here, as Gmail's Yes /
                         // Maybe / No; the organizer's calendar shows it.
                         if let invitation, !thread.isFromAccountOwner {
@@ -95,24 +101,6 @@ struct ConversationView: View {
                         }
                         mailboxNotice(for: thread)
                             .padding(.horizontal, CorresSpace.page)
-                        privacyLine(for: thread)
-                            .padding(.horizontal, CorresSpace.page)
-                        if unsubscribeService.canUnsubscribe(thread) && !thread.senderUnsubscribed {
-                            VStack(alignment: .leading, spacing: 6) {
-                                unsubscribeBanner(for: thread)
-                                // No real signal this actually finished (no
-                                // one-click POST or mailto send happened,
-                                // just a handoff to a webpage), so this
-                                // stays a one-time note rather than the
-                                // banner disappearing the way it does when
-                                // Corres itself could confirm success.
-                                if unsubscribeOpened {
-                                    Text("Opened in Safari. Finish unsubscribing there.")
-                                        .font(.caption).foregroundStyle(CorresPalette.secondary)
-                                }
-                            }
-                            .padding(.horizontal, CorresSpace.page)
-                        }
                         let knownLabels = thread.labelIds.compactMap { id in
                             labelDirectory.labels(for: thread.id.account).first { $0.id == id }
                         }
@@ -462,33 +450,59 @@ struct ConversationView: View {
         }
     }
 
-    /// One quiet line that says what Corres did to protect this read:
-    /// remote images (and the tracking pixels among them) are off until
-    /// the person chooses otherwise.
+    /// One quiet line under the sender: what Corres blocked to protect this
+    /// read (remote images and the trackers among them) with the way to
+    /// show them, and Unsubscribe for a mailing list.
     @ViewBuilder
-    private func privacyLine(for thread: Correspondence) -> some View {
-        if let html = thread.htmlBody, !(showRemoteImages || thread.imagesTrusted || loadsImages) {
+    private func utilityLine(for thread: Correspondence) -> some View {
+        let blocked: (images: Int, trackers: Int)? = {
+            guard let html = thread.htmlBody, !(showRemoteImages || thread.imagesTrusted || loadsImages) else { return nil }
             let analysis = HTMLMessageBody.analysis(of: html)
-            let blocked = analysis.remoteImages
-            if blocked > 0 {
-                let trackers = analysis.trackers
+            return analysis.remoteImages > 0 ? (analysis.remoteImages, analysis.trackers) : nil
+        }()
+        let canUnsubscribe = unsubscribeService.canUnsubscribe(thread) && !thread.senderUnsubscribed
+        if blocked != nil || canUnsubscribe {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 7) {
-                    Image(systemName: "shield.lefthalf.filled").font(.caption)
-                    Text(trackers > 0
-                         ? "\(trackers) \(trackers == 1 ? "tracker" : "trackers") blocked · Remote images off"
-                         : "Remote images off · \(blocked) blocked")
+                    if let blocked {
+                        Image(systemName: "shield.lefthalf.filled").font(.caption)
+                        Text(blocked.trackers > 0
+                             ? "\(blocked.trackers) \(blocked.trackers == 1 ? "tracker" : "trackers") blocked"
+                             : "Images off")
+                            .lineLimit(1)
+                        Button("Show Images") {
+                            showRemoteImages = true
+                            if let senderEmail = thread.senderEmail {
+                                Task { await store.trustSenderImages(senderEmail, account: thread.id.account) }
+                            }
+                        }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(CorresPalette.accent)
+                        .fixedSize()
+                    } else {
+                        Image(systemName: "envelope.badge.shield.half.filled").font(.caption)
+                        Text("Mailing list").lineLimit(1)
+                    }
                     Spacer(minLength: 8)
-                    Button("Show Images") {
-                        showRemoteImages = true
-                        if let senderEmail = thread.senderEmail {
-                            Task { await store.trustSenderImages(senderEmail, account: thread.id.account) }
+                    if canUnsubscribe {
+                        if isUnsubscribing {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Button("Unsubscribe") { showingUnsubscribeConfirmation = true }
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(CorresPalette.accent)
+                                .fixedSize()
                         }
                     }
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(CorresPalette.accent)
                 }
                 .font(.footnote)
                 .foregroundStyle(CorresPalette.tertiary)
+                // No signal this finished (a handoff to a webpage, not a
+                // one-click request), so a one-time note.
+                if unsubscribeOpened {
+                    Text("Opened in Safari. Finish unsubscribing there.")
+                        .font(.caption).foregroundStyle(CorresPalette.secondary)
+                }
             }
         }
     }
@@ -553,6 +567,9 @@ struct ConversationView: View {
         let showsSummaries = proUnlocked && summariesOn
         let insight = showsSummaries ? intelligence.insight(for: thread) : nil
         let isPreparing = showsSummaries && insight?.summary == nil && intelligence.isPreparing(thread)
+        // Only the status to say ("No action needed: …")? Then a line, not a card.
+        let hasMore = insight?.summary != nil || isPreparing || (keyDetailsOn && (glance != nil || buriedAsk != nil))
+            || (nextStep != nil && !thread.isFromAccountOwner)
         return VStack(alignment: .leading, spacing: 10) {
             if let insight, let summary = insight.summary {
                 summaryBlock(insight, summary: summary)
@@ -611,9 +628,9 @@ struct ConversationView: View {
                 .accessibilityLabel("Change where this conversation is sorted")
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
+        .padding(.horizontal, hasMore ? 16 : 0).padding(.vertical, hasMore ? 12 : 0)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .corresSurface(radius: 18)
+        .background { if hasMore { Color.clear.corresSurface(radius: 18) } }
         .animation(.easeOut(duration: 0.25), value: insight)
     }
 
@@ -628,7 +645,9 @@ struct ConversationView: View {
         case .quiet:
             // The reason often ends by saying so itself ("Marketing
             // newsletter, no action needed"); say it once.
+            // "Kept out of Needs You" says the same again; once is enough.
             let reason = thread.reason.replacingPattern(#"(?i)[\s,;.—–-]*no action (is )?needed[.!]?"#, with: "")
+                .replacingPattern(#"(?i)\s*kept out of needs you\.?"#, with: "")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             return reason.isEmpty ? "No action needed." : "No action needed: \(reason)"
         default: return thread.reason.isEmpty ? thread.attention.title : "\(thread.attention.title): \(thread.reason)"
@@ -754,24 +773,6 @@ struct ConversationView: View {
     /// Shown whenever a message offers a real way to stop hearing from its
     /// sender (`List-Unsubscribe`/`List-Unsubscribe-Post`, RFC 2369/8058).
     /// Disappears for this sender's future mail once acted on.
-    private func unsubscribeBanner(for thread: Correspondence) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "envelope.badge.shield.half.filled").foregroundStyle(CorresPalette.secondary)
-                .accessibilityHidden(true)
-            Text("Mailing list").font(.footnote).foregroundStyle(CorresPalette.secondary)
-            Spacer()
-            if isUnsubscribing {
-                ProgressView().controlSize(.small)
-            } else {
-                Button("Unsubscribe") { showingUnsubscribeConfirmation = true }
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(CorresPalette.accent)
-            }
-        }
-        .padding(.horizontal, 16).padding(.vertical, 8)
-        .corresSurface(radius: 14)
-    }
-
     /// A reply or forward quotes the original, so it needs the real body,
     /// not the snippet a metadata-first sync stored. Opening the thread
     /// already started loading it; this only waits in the rare case the
@@ -938,37 +939,33 @@ struct ConversationView: View {
 
     /// Opened from a "New sender" notification: decide right here instead
     /// of hunting for them in New senders.
+    /// A first email from someone: one line with the choice, not a card in
+    /// front of the message. The address is right below, by the sender.
     private func newSenderCard(thread: Correspondence, email: String) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label {
-                Text("First email from \(email). Allow them to see their mail in Corres from now on.")
-                    .fixedSize(horizontal: false, vertical: true)
-            } icon: {
-                Image(systemName: "checkmark.shield").foregroundStyle(CorresPalette.accent)
-            }
-            .font(.subheadline)
-            // Same pair, same order and styles as the New senders screen.
-            HStack(spacing: 10) {
-                Button {
-                    Task { await store.approveSender(email, account: thread.id.account) }
-                } label: {
-                    Text("Allow").frame(maxWidth: .infinity)
+        HStack(spacing: 10) {
+            Label("First email from them", systemImage: "checkmark.shield")
+                .labelStyle(TightLabelStyle())
+                .font(.subheadline)
+                .foregroundStyle(CorresPalette.secondary)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            // Same pair and styles as the New Senders screen, smaller.
+            Button("Block") {
+                Task {
+                    await store.blockSender(email, account: thread.id.account)
+                    dismiss()
                 }
-                .buttonStyle(CorresMetalCapsuleStyle(minHeight: 44))
-                Button {
-                    Task {
-                        await store.blockSender(email, account: thread.id.account)
-                        dismiss()
-                    }
-                } label: {
-                    Text("Block").frame(maxWidth: .infinity)
-                }
-                .buttonStyle(CorresPillStyle(minHeight: 44))
             }
+            .buttonStyle(CorresPillStyle(minHeight: 34))
+            .fixedSize()
+            Button("Allow") {
+                Task { await store.approveSender(email, account: thread.id.account) }
+            }
+            .buttonStyle(CorresMetalCapsuleStyle(minHeight: 34))
+            .fixedSize()
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .corresSurface()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("First email from \(email)")
     }
 
     private func actionBar(for thread: Correspondence) -> some View {
