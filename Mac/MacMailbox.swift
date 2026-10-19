@@ -133,7 +133,7 @@ final class MacMailboxModel {
         let threads = store.threads
         // Searching looks through everything, in every list, as Mail does.
         if !query.isEmpty {
-            return MailQuery.filter(threads, search: query).map(MacRow.thread)
+            return MailQuery.filter(store.searchableThreads, search: query).map(MacRow.thread)
         }
         switch mailbox {
         case .needsYou:

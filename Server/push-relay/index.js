@@ -335,8 +335,11 @@ async function handleGraph(req, res) {
     if (!doc.exists || doc.data().clientStateHash !== hash(String(clientState))) continue;
     const emailAddress = doc.data().emailAddress;
     if (!accounts.has(emailAddress)) accounts.set(emailAddress, new Set());
+    // Only new mail alerts. Read, flagged, moved or deleted elsewhere
+    // ("updated", "deleted") only wakes Corres quietly to catch up.
     const messageId = resourceData && resourceData.id;
-    if (typeof messageId === 'string' && MESSAGE_ID_PATTERN.test(messageId)) accounts.get(emailAddress).add(messageId);
+    const isNew = (notification.changeType || 'created') === 'created';
+    if (isNew && typeof messageId === 'string' && MESSAGE_ID_PATTERN.test(messageId)) accounts.get(emailAddress).add(messageId);
   }
   for (const [emailAddress, messageIds] of accounts) {
     const matches = await devices.where('emailAddresses', 'array-contains', emailAddress).get();

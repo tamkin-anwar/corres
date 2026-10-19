@@ -181,7 +181,7 @@ final class AskService {
             await store.refresh()
         }
         let words = query.keywords
-        let scored: [(Correspondence, Int)] = store.threads.compactMap { thread in
+        let scored: [(Correspondence, Int)] = store.searchableThreads.compactMap { thread in
             guard !thread.isScreenedOut, query.matches(thread) else { return nil }
             // "What did Sam ask me" is mail from Sam, never mail you sent.
             if query.person != nil, thread.isFromAccountOwner { return nil }

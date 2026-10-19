@@ -70,6 +70,15 @@ struct MacMainView: View {
                 break
             }
         }
+        // Typing pauses: ask each account's server too, for mail older
+        // than what's on this Mac.
+        .task(id: model.search) {
+            let query = model.search.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard query.count >= 3 else { return }
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !Task.isCancelled else { return }
+            if await services.sync.search(query, accounts: accounts) { await store.refresh() }
+        }
         .task(id: model.mailbox) {
             guard let kind = model.mailbox.remoteKind else { return }
             await services.remote.refresh(kind, accounts: accounts, store: store)
@@ -112,6 +121,7 @@ struct MacMainView: View {
 
     private func subtitle(_ rows: [MacRow]) -> String {
         let count = rows.compactMap(\.thread).count
+        if !model.search.isEmpty && services.sync.isSearchingRemote { return "Searching your accounts…" }
         if services.sync.isSyncing { return "Checking for mail…" }
         if count == 0 { return "" }
         let unread = rows.compactMap(\.thread).filter(\.isUnread).count
@@ -387,10 +397,6 @@ struct MacMainView: View {
         let query = model.search.trimmingCharacters(in: .whitespacesAndNewlines)
         services.ask.reset()
         guard !query.isEmpty else { return }
-        // Older mail the Mac hasn't synced: ask each account's server too.
-        Task {
-            if await services.sync.search(query, accounts: accounts) { await store.refresh() }
-        }
         // A question gets an answer from your own mail, above the results.
         if query.hasSuffix("?") || ["when", "what", "where", "who", "how", "did", "do", "is", "does"]
             .contains(query.lowercased().split(separator: " ").first.map(String.init) ?? "") {

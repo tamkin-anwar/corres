@@ -337,7 +337,7 @@ struct GmailAPIClient {
     /// substring match) covers the whole real mailbox instead. Capped, not
     /// exhaustive: a search result list is for finding the one thing you're
     /// after, not a second full sync of the account.
-    private let searchPageSize = 25
+    private let searchPageSize = 50
 
     func searchMessages(query: String, account: String) async throws -> [Correspondence] {
         let token = try await accessToken(for: account)
@@ -663,6 +663,10 @@ struct GmailAPIClient {
         var seen = Set<String>()
         let ids = (list.messages ?? []).filter { seen.insert($0.threadId ?? $0.id).inserted }.map(\.id)
         let fetched = try await fetchMetadata(ids: ids, account: account).items
+        // Listed but none of it came: Gmail held back (rate limit). Said
+        // as a failure, so the caller asks for this page again, rather than
+        // taking it as an empty mailbox.
+        if !ids.isEmpty && fetched.isEmpty { throw ClientError.badResponse(statusCode: 429) }
         let order = Dictionary(ids.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
         return (fetched.sorted { (order[$0.latestMessageID ?? ""] ?? 0) < (order[$1.latestMessageID ?? ""] ?? 0) },
                 list.nextPageToken)

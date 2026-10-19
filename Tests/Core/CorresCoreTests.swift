@@ -528,4 +528,37 @@ struct CorresCoreTests {
         #expect(MailQuery.SearchTerms("is:unread").unread)
         #expect(MailQuery.SearchTerms("plain words").words == "plain words")
     }
+
+    /// Each word anywhere, the body included; a quoted phrase together.
+    @Test func searchMatchesEachWordAnywhere() {
+        var item = Correspondence(
+            id: ThreadID(account: "me@example.com", providerID: "s1"), sender: "Acme Billing", organization: "Acme",
+            subject: "Your statement", excerpt: "Here it is", body: "The invoice for March is attached.",
+            receivedAt: .now, dueAt: nil, reason: "", attention: .quiet)
+        #expect(MailQuery.SearchTerms("invoice march").matches(item))
+        #expect(MailQuery.SearchTerms("acme march").matches(item))
+        #expect(!MailQuery.SearchTerms("invoice april").matches(item))
+        #expect(MailQuery.SearchTerms("\"for March\"").matches(item))
+        #expect(!MailQuery.SearchTerms("\"March invoice\"").matches(item))
+        item.labelIds = ["INBOX"]
+        #expect(!item.isArchivedCopy)
+    }
+
+    /// Archived mail kept for Search never shows in the lists; the Inbox,
+    /// your sent mail and older rows saved without labels do.
+    @Test func archivedCopiesStayOutOfTheLists() {
+        func item(_ labels: [String]) -> Correspondence {
+            var made = Correspondence(id: ThreadID(account: "me@example.com", providerID: UUID().uuidString), sender: "A",
+                                      organization: "", subject: "", excerpt: "", body: "", receivedAt: .now, dueAt: nil,
+                                      reason: "", attention: .quiet)
+            made.labelIds = labels
+            return made
+        }
+        #expect(!item(["INBOX", "UNREAD"]).isArchivedCopy)
+        #expect(!item(["SENT"]).isArchivedCopy)
+        #expect(!item([]).isArchivedCopy)
+        #expect(item(["UNREAD"]).isArchivedCopy)
+        #expect(item(["folder:Archive"]).isArchivedCopy)
+        #expect(item(["CATEGORY_PROMOTIONS"]).isArchivedCopy)
+    }
 }

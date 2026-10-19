@@ -30,7 +30,9 @@ final class MacServices {
 
     private var checkLoop: Task<Void, Never>?
     private var launched = false
-    private static let checkInterval: Duration = .seconds(60)
+    /// While Corres runs: what you do in Gmail, Outlook or Mail shows here
+    /// within this, and new mail on services without push for us sooner.
+    private static let checkInterval: Duration = .seconds(20)
 
     init() {
         let (container, inMemory) = Self.makeModelContainer()
@@ -121,6 +123,9 @@ final class MacServices {
         }
         Task {
             await sync.backfillContent()
+            await store.refresh()
+            if await sync.indexOlderMail(accounts: auth.accounts.map(\.email)) { await store.refresh() }
+            await sync.verifyInboxes(accounts: auth.accounts.map(\.email))
             await store.refresh()
             if entitlements.isPro && CorresSettings.summaries {
                 await intelligence.prewarm(store.threads, includeRead: false)

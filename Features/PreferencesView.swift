@@ -602,7 +602,7 @@ private struct AccountDetailView: View {
                     LabeledContent {
                         if syncing || sync.isSyncing {
                             ProgressView()
-                        } else if let last = sync.lastCompletedSync {
+                        } else if let last = sync.health[account.email]?.lastSuccess ?? sync.lastCompletedSync {
                             Text(last, format: .relative(presentation: .named))
                         }
                     } label: {
@@ -616,6 +616,10 @@ private struct AccountDetailView: View {
                     Text(provider == .icloud
                          ? "\(MailAccounts.serviceTitle(for: account.email)) didn't answer. Check your connection, or update the app-specific password if it keeps happening."
                          : "\(MailAccounts.serviceTitle(for: account.email)) didn't answer. Check your connection, or reconnect if it keeps happening.")
+                }
+                if let problem = sync.health[account.email]?.problem {
+                    Label(problem, systemImage: "exclamationmark.triangle")
+                        .font(.footnote).foregroundStyle(CorresPalette.alert)
                 }
                 Button {
                     if provider == .icloud { updatingICloudPassword = true }

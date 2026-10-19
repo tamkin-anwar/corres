@@ -6,7 +6,16 @@ final class MailStore {
     enum LoadState: Equatable { case idle, loading, loaded, failed }
     /// Everything in the store, including threads hidden while an Archive
     /// or Trash is waiting out its Undo window.
-    private var allThreads: [Correspondence] = [] { didSet { if !holdingRevision { revision &+= 1; contentRevision &+= 1 } } }
+    private var allThreads: [Correspondence] = [] {
+        didSet {
+            listedThreads = allThreads.filter { !$0.isArchivedCopy }
+            if !holdingRevision { revision &+= 1; contentRevision &+= 1 }
+        }
+    }
+    /// What the lists show: the Inbox and conversations you started.
+    /// Archived mail kept for search (`Correspondence.isArchivedCopy`) is
+    /// left out of every list, count, badge and notification.
+    private(set) var listedThreads: [Correspondence] = []
     /// Removed from view the instant Archive/Trash is tapped, before Gmail
     /// is told, so Undo can bring them straight back.
     private(set) var hiddenIDs: Set<ThreadID> = [] { didSet { if !holdingRevision { revision &+= 1 } } }
@@ -24,14 +33,21 @@ final class MailStore {
     /// for Undo: a swipe then filters the rows a list already has instead
     /// of sorting the whole mailbox again inside the row's animation.
     private(set) var contentRevision = 0
-    /// Every conversation, hidden ones included (see `contentRevision`).
+    /// Every conversation, hidden ones and archived copies included (see
+    /// `contentRevision`).
     var threadsIncludingHidden: [Correspondence] { allThreads }
+    /// The lists' conversations, hidden ones included.
+    var listedIncludingHidden: [Correspondence] { listedThreads }
+    /// Everything Search can find: the lists plus archived mail.
+    var searchableThreads: [Correspondence] {
+        hiddenIDs.isEmpty ? allThreads : allThreads.filter { !hiddenIDs.contains($0.id) }
+    }
     /// Bumped whenever `threads` could read differently, so a list can keep
     /// its filtered, sorted rows until something actually changed instead
     /// of rebuilding them on every redraw (see `CorrespondenceList`).
     private(set) var revision = 0
     var threads: [Correspondence] {
-        hiddenIDs.isEmpty ? allThreads : allThreads.filter { !hiddenIDs.contains($0.id) }
+        hiddenIDs.isEmpty ? listedThreads : listedThreads.filter { !hiddenIDs.contains($0.id) }
     }
 
     /// Mail opened from a mailbox (Trash, Spam, a label, All Mail) that
@@ -72,7 +88,7 @@ final class MailStore {
     func forgetBrowsed(_ id: ThreadID) { browsed[id] = nil }
 
     /// Saved in Corres's own lists (the Inbox), not only opened from a mailbox.
-    func isInLists(_ id: ThreadID) -> Bool { allThreads.contains { $0.id == id } }
+    func isInLists(_ id: ThreadID) -> Bool { listedThreads.contains { $0.id == id } }
 
     /// A mailbox's conversation, moved back to the Inbox: it joins the
     /// lists now instead of waiting for the next sync to bring it.

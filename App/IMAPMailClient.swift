@@ -1,4 +1,5 @@
 import Foundation
+import os
 import Postwright
 
 /// iCloud Mail behind the same calls as `GmailAPIClient` and `OutlookClient`,
@@ -211,7 +212,7 @@ struct IMAPMailClient: Sendable {
             var found: [String] = []
             for path in [folders.inbox, folders.sent, folders.archive].compactMap({ $0 }) {
                 let selected = try await session.connection.select(path)
-                let uids = try await session.connection.search(text: query).sorted(by: >).prefix(25)
+                let uids = try await session.connection.search(text: query).sorted(by: >).prefix(50)
                 found += uids.map { "\(selected.uidValidity):\($0):\(path)" }
             }
             return found
@@ -550,7 +551,9 @@ struct IMAPMailClient: Sendable {
     /// the newest position still to load.
     func listMailbox(labelId: String?, account: String, pageToken: String?, pageSize: Int) async throws -> (items: [Correspondence], nextPageToken: String?) {
         let page: (keys: [String], next: String?) = try await IMAPSessions.shared.with(account) { session in
-            let folders = session.cachedFolders
+            // Asked for, not just read from the cache: on a fresh connection
+            // the cache is still empty, and every mailbox came back empty.
+            let folders = try await session.folders()
             // Flagged is a flag, not a folder: the newest flagged mail in
             // the Inbox and the Archive, where you'd have left it.
             if labelId == "STARRED" {
@@ -585,8 +588,12 @@ struct IMAPMailClient: Sendable {
             let nextEnd = end - pageSize
             return (keys, nextEnd >= 1 ? String(nextEnd) : nil)
         }
-        let items = try await fetchMetadata(ids: page.keys, account: account).items
-        return (items.sorted { $0.receivedAt > $1.receivedAt }, page.next)
+        let fetched = try await fetchMetadata(ids: page.keys, account: account)
+        if fetched.items.count < page.keys.count {
+            Logger(subsystem: "studio.anwarcreative.corres", category: "imap")
+                .error("Mailbox page: \(page.keys.count) listed, \(fetched.items.count) read")
+        }
+        return (fetched.items.sorted { $0.receivedAt > $1.receivedAt }, page.next)
     }
 
     func listDrafts(account: String, pageToken: String?, pageSize: Int) async throws -> (items: [(draftID: String, message: Correspondence)], nextPageToken: String?) {

@@ -154,7 +154,7 @@ struct OutlookClient: Sendable {
 
     func searchMessages(query: String, account: String) async throws -> [Correspondence] {
         let term = "\"\(query.replacingOccurrences(of: "\"", with: ""))\"".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let page: GraphPage<GraphMessage> = try await getJSON("\(Self.base)/me/messages?$select=\(Self.listFields)&$search=\(term)&$top=25", account: account)
+        let page: GraphPage<GraphMessage> = try await getJSON("\(Self.base)/me/messages?$select=\(Self.listFields)&$search=\(term)&$top=50", account: account)
         let folders = try await OutlookFolders.shared.ids(for: account, client: self)
         // Graph searches Deleted Items and Junk too; results are saved with
         // your mail, so those would come back into Mail. Gmail leaves them out.
@@ -498,8 +498,9 @@ struct OutlookClient: Sendable {
         OutlookSubscription.clear(account)
     }
 
-    /// New mail in the Inbox, told to the relay as it arrives (Microsoft
-    /// Graph change notifications). Renewed well before it lapses; a lost
+    /// The Inbox, told to the relay as it changes (Microsoft Graph change
+    /// notifications): new mail alerts; mail read, moved or deleted in
+    /// Outlook or on the web wakes Corres quietly to catch up. Renewed well before it lapses; a lost
     /// one is made again. Returns the subscription and its secret, for the
     /// relay to check each notification against.
     func subscribe(account: String, notificationURL: URL) async throws -> OutlookSubscription {
@@ -507,6 +508,11 @@ struct OutlookClient: Sendable {
         // longer is refused outright. Kept a little under, and renewed once
         // under two days are left, at launch, background refresh or any push.
         let lifetime: TimeInterval = 4_200 * 60
+        // Made before changes were watched (new mail only): made again, once.
+        if let saved = OutlookSubscription.load(account), saved.watchesChanges != true {
+            try? await change("DELETE", "\(Self.base)/subscriptions/\(saved.id)", body: nil, account: account)
+            OutlookSubscription.clear(account)
+        }
         if var saved = OutlookSubscription.load(account) {
             if saved.expires > Date.now.addingTimeInterval(2 * 86_400) { return saved }
             let next = Date.now.addingTimeInterval(lifetime)
@@ -530,7 +536,7 @@ struct OutlookClient: Sendable {
         // Corres uses everywhere, for the notification to fetch it by.
         request.setValue("IdType=\"ImmutableId\"", forHTTPHeaderField: "Prefer")
         request.httpBody = try JSONSerialization.data(withJSONObject: [
-            "changeType": "created", "notificationUrl": notificationURL.absoluteString,
+            "changeType": "created,updated,deleted", "notificationUrl": notificationURL.absoluteString,
             "resource": "me/mailFolders('inbox')/messages", "expirationDateTime": Self.isoDate(expires),
             "clientState": secret,
         ])
@@ -538,7 +544,7 @@ struct OutlookClient: Sendable {
         try Self.check(status, data)
         struct Created: Decodable { let id: String }
         let created = try JSONDecoder().decode(Created.self, from: data)
-        let subscription = OutlookSubscription(id: created.id, secret: secret, expires: expires)
+        let subscription = OutlookSubscription(id: created.id, secret: secret, expires: expires, watchesChanges: true)
         subscription.save(account)
         return subscription
     }
@@ -814,6 +820,9 @@ struct OutlookSubscription: Codable, Sendable {
     let id: String
     let secret: String
     var expires: Date
+    /// Watches reads, moves and deletes as well as new mail. Nil on one
+    /// saved by a build that watched new mail only.
+    var watchesChanges: Bool?
 
     private static func key(_ account: String) -> String { "corres.outlookSubscription.\(account.lowercased())" }
     static func load(_ account: String) -> OutlookSubscription? {

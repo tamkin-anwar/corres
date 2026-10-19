@@ -210,6 +210,14 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// own "keep at top" and never leaves the device.
     public var isFlagged: Bool { labelIds.contains("STARRED") }
 
+    /// Mail kept only so it can be found: archived, or in another folder,
+    /// found by a search or by the background index of older mail. It
+    /// never shows in Needs You, Waiting or Mail, as it doesn't in the
+    /// Inbox of the service it lives in; Search finds it.
+    public var isArchivedCopy: Bool {
+        !labelIds.isEmpty && !labelIds.contains("INBOX") && !labelIds.contains("SENT") && !labelIds.contains("DRAFT")
+    }
+
     public init(id: ThreadID, sender: String, senderEmail: String? = nil, organization: String, subject: String,
                 excerpt: String, body: String, htmlBody: String? = nil, messageIdHeader: String? = nil,
                 latestMessageID: String? = nil, receivedAt: Date, dueAt: Date?, reason: String, attention: Attention,
@@ -1091,9 +1099,29 @@ public enum MailQuery {
             }
             guard !words.isEmpty else { return true }
             // Addresses too, and who it went to: mail you sent someone is
-            // found by their name or address like mail they sent you.
-            return ([item.sender, item.organization, item.subject, item.excerpt, item.senderEmail ?? ""]
-                + item.toRecipients + item.ccRecipients).contains { $0.localizedStandardContains(words) }
+            // found by their name or address like mail they sent you. Each
+            // word can be anywhere, the body included ("invoice march"
+            // finds March's invoice), as Gmail's search does; a quoted
+            // phrase stays together.
+            let fields = [item.sender, item.organization, item.subject, item.excerpt, item.senderEmail ?? "", item.body]
+                + item.toRecipients + item.ccRecipients
+            return Self.searchWords(words).allSatisfy { word in fields.contains { $0.localizedStandardContains(word) } }
+        }
+
+        /// Words to look for: each on its own, a "quoted phrase" together.
+        static func searchWords(_ text: String) -> [String] {
+            var result: [String] = []
+            var phrase = false
+            for part in text.split(separator: "\"", omittingEmptySubsequences: false) {
+                if phrase {
+                    let trimmed = part.trimmingCharacters(in: .whitespaces)
+                    if !trimmed.isEmpty { result.append(trimmed) }
+                } else {
+                    result += part.split(whereSeparator: \.isWhitespace).map(String.init)
+                }
+                phrase.toggle()
+            }
+            return result.isEmpty ? [text] : result
         }
     }
 

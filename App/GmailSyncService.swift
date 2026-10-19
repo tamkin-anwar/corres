@@ -24,6 +24,15 @@ final class GmailSyncService {
     private(set) var lastCompletedSync: Date?
     var errorMessage: String?
 
+    /// Each account's last good sync, and what's wrong when it isn't
+    /// syncing, said plainly in Settings: a sign-in that lapsed or a
+    /// service refusing shouldn't fail quietly while mail stops arriving.
+    struct AccountHealth: Equatable {
+        var lastSuccess: Date?
+        var problem: String?
+    }
+    private(set) var health: [String: AccountHealth] = [:]
+
     init(repository: any MailRepository) {
         self.repository = repository
     }
@@ -247,10 +256,11 @@ final class GmailSyncService {
             else { defaults.set(true, forKey: Self.sentBackfillKey(for: account)) }
             await repairSentPlaceholders(account: account)
             errorMessage = nil
+            health[account] = AccountHealth(lastSuccess: .now, problem: nil)
             return true
         } catch {
             Logger(subsystem: "studio.anwarcreative.corres", category: "sync")
-                .error("Sync failed: \(String(describing: error), privacy: .public)")
+                .error("Sync failed (\(MailAccounts.provider(for: account).title, privacy: .public)): \(String(describing: error), privacy: .public)")
             // Google turned down a token it had issued (revoked, or expired
             // early): forget it, so the next pass gets a fresh one instead
             // of failing the same way until the cached one runs out.
@@ -259,7 +269,28 @@ final class GmailSyncService {
                 await GoogleTokenProvider.shared.invalidateAccessToken(for: account)
             }
             errorMessage = "Couldn't sync your mail. Check your connection and try again."
+            health[account, default: AccountHealth()].problem = Self.describe(error, account: account)
             return false
+        }
+    }
+
+    /// What went wrong, in words, with what to do about it.
+    static func describe(_ error: Error, account: String) -> String {
+        let service = MailAccounts.serviceTitle(for: account)
+        if (error as NSError).domain == NSURLErrorDomain {
+            return "Can't reach \(service) right now. Corres keeps trying."
+        }
+        switch error {
+        case GmailAPIClient.ClientError.notSignedIn:
+            return "Signed out of \(service). Sign in again to keep getting mail."
+        case GmailAPIClient.ClientError.badResponse(let status) where status == 401 || status == 403:
+            return "\(service) turned down Corres's access. Reconnect below."
+        case GmailAPIClient.ClientError.badResponse(let status) where status == 429 || status >= 500:
+            return "\(service) is busy. Corres tries again in a moment."
+        case GmailAPIClient.ClientError.refused(_, _, let message?):
+            return "\(service) said: \(message)"
+        default:
+            return "\(service) didn't answer the last check. Corres keeps trying."
         }
     }
 
@@ -319,6 +350,91 @@ final class GmailSyncService {
 
     private static let backfillLimit = 200
     private var isBackfilling = false
+
+    /// Every few hours, each account's Inbox as the server has it now (the
+    /// newest 500 conversations) is compared with what's here: read state
+    /// brought in line, and anything archived or deleted elsewhere that a
+    /// change feed didn't report (older mail, Outlook's 60-day window, an
+    /// IMAP server's newest-500 window) removed. A check, not a re-sync:
+    /// metadata only, and only between the newest and oldest it listed.
+    func verifyInboxes(accounts: [String]) async {
+        for account in accounts where account != "sample" {
+            let key = "corres.inboxVerified.\(account.lowercased())"
+            let last = defaults.object(forKey: key) as? Date ?? .distantPast
+            guard Date.now.timeIntervalSince(last) > Self.verifyInterval, running[account] == nil else { continue }
+            var listed: [Correspondence] = []
+            var token: String?
+            var complete = true
+            for _ in 0..<Self.verifyPages {
+                guard let page = try? await client.listMailbox(labelId: "INBOX", account: account, pageToken: token, pageSize: 50) else {
+                    complete = false
+                    break
+                }
+                listed += page.items
+                token = page.nextPageToken
+                if token == nil { break }
+            }
+            // Only what was read in one go: a page missing in the middle
+            // would make the mail on it look gone.
+            guard complete, !listed.isEmpty else { continue }
+            do {
+                try await confirmAgainstInbox(account: account, listed: listed)
+                defaults.set(Date.now, forKey: key)
+                syncProgress += 1
+            } catch {
+                continue
+            }
+        }
+    }
+
+    /// Read state from the listing, then each conversation that looks gone
+    /// asked about by its newest message before anything changes: moved
+    /// out of the Inbox elsewhere, it stays as archived mail Search finds;
+    /// in Trash or Spam, it goes; no clear answer, it stays as it is. A
+    /// listing can come back short (a message the server failed to send),
+    /// and that mustn't remove mail you still have.
+    private func confirmAgainstInbox(account: String, listed: [Correspondence]) async throws {
+        try await repository.applyRemoteChanges(listed.compactMap { item in
+            item.latestMessageID.map { RemoteMessageChange(threadID: item.id, messageID: $0, currentLabelIds: item.labelIds, removed: false) }
+        })
+        let inboxDates = listed.filter { $0.labelIds.contains("INBOX") }.map(\.receivedAt)
+        guard let oldest = inboxDates.min(), let newest = inboxDates.max() else { return }
+        let listedIDs = Set(listed.map(\.id))
+        let suspects = try await repository.threads().filter { thread in
+            thread.id.account == account && thread.labelIds.contains("INBOX") && !listedIDs.contains(thread.id)
+                && thread.receivedAt >= oldest && thread.receivedAt <= newest && thread.latestMessageID != nil
+        }
+        guard !suspects.isEmpty else { return }
+        var changes: [RemoteMessageChange] = []
+        for chunk in suspects.compactMap(\.latestMessageID).chunked(into: GmailAPIClient.batchSize) {
+            guard let fetched = try? await client.fetchMetadata(ids: chunk, account: account) else { continue }
+            for item in fetched.items {
+                guard let messageID = item.latestMessageID, !item.labelIds.contains("INBOX"),
+                      let thread = suspects.first(where: { $0.latestMessageID == messageID }) else { continue }
+                let discarded = item.labelIds.contains("TRASH") || item.labelIds.contains("SPAM")
+                changes.append(RemoteMessageChange(threadID: thread.id, messageID: messageID,
+                                                   currentLabelIds: discarded ? nil : item.labelIds, removed: discarded))
+            }
+        }
+        try await repository.applyRemoteChanges(changes)
+        if !changes.isEmpty {
+            Logger(subsystem: "studio.anwarcreative.corres", category: "sync")
+                .info("Inbox check: \(changes.count) conversations moved or deleted elsewhere, confirmed")
+        }
+    }
+
+    private static let verifyInterval: TimeInterval = 6 * 3_600
+    private static let verifyPages = 10
+
+    /// The rest of each mailbox, a page at a time in the background (see
+    /// `MailIndexer`), so Search covers your mail without asking the
+    /// server. Returns whether anything new was saved.
+    @discardableResult
+    func indexOlderMail(accounts: [String]) async -> Bool {
+        let saved = await MailIndexer.shared.run(accounts: accounts, repository: repository)
+        if saved { syncProgress += 1 }
+        return saved
+    }
 
     /// The Mail tab's scroll-to-load: pages older Inbox mail in from where
     /// the first sync stopped. Skips threads already stored before spending

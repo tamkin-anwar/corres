@@ -249,7 +249,9 @@ struct CorrespondenceList: View {
 
     private var scopedThreads: [Correspondence] {
         // All Inboxes leaves out accounts turned off for it in Settings.
-        AccountPreferences.scope(store.threadsIncludingHidden, account: accountFilter, all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
+        // Searching reaches archived mail too; the lists never show it.
+        let source = appliedSearch.trimmingCharacters(in: .whitespaces).isEmpty ? store.listedIncludingHidden : store.threadsIncludingHidden
+        return AccountPreferences.scope(source, account: accountFilter, all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
     }
 
     /// The rows as last built, and what they were built from. A plain

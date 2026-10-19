@@ -102,6 +102,16 @@ final class PushNotificationService {
 
     /// Outlook's subscriptions last under three days, so every push also
     /// renews any that is due (a local check; no request until one is).
+    /// `renewWatch`, at most twice a day: on coming back to Corres, so push
+    /// never lapses for someone who keeps it open for days.
+    func renewWatchIfDue(accounts: [String]) async {
+        let key = "corres.push.lastRenewed"
+        let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
+        guard !accounts.isEmpty, Date.now.timeIntervalSince(last) > 12 * 3_600 else { return }
+        UserDefaults.standard.set(Date.now, forKey: key)
+        await renewWatch(accounts: accounts)
+    }
+
     func renewOutlookSubscriptions(accounts: [String]) async {
         await renewWatch(accounts: accounts.filter { MailAccounts.provider(for: $0) == .microsoft })
     }

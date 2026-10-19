@@ -314,6 +314,9 @@
 		49D1C843FE04D5B5967FCC0F /* App/SnoozeOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECC0D99FFA56C833E8D8F70 /* App/SnoozeOption.swift */; };
 		C52FD075B77C883914802B59 /* App/SnoozeOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECC0D99FFA56C833E8D8F70 /* App/SnoozeOption.swift */; };
 		DA9DD6AA54B133871C10E54A /* Mac/MacSnoozeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9030E41155ED91612456927B /* Mac/MacSnoozeSheet.swift */; };
+		22D946E8816A80747A7529D1 /* Mac/MacRichEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C37CCAC51699FE217D1E434 /* Mac/MacRichEditor.swift */; };
+		AFFF6307D6BC9F99A67A9475 /* App/MailIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC29ECFC5579458575BB8D76 /* App/MailIndexer.swift */; };
+		F5549536FB40605E471C863D /* App/MailIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC29ECFC5579458575BB8D76 /* App/MailIndexer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -505,6 +508,8 @@
 		2CF4683FDA03433426904DBE /* Mac/MacAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacAppDelegate.swift; sourceTree = SOURCE_ROOT; };
 		BECC0D99FFA56C833E8D8F70 /* App/SnoozeOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SnoozeOption.swift; sourceTree = SOURCE_ROOT; };
 		9030E41155ED91612456927B /* Mac/MacSnoozeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacSnoozeSheet.swift; sourceTree = SOURCE_ROOT; };
+		5C37CCAC51699FE217D1E434 /* Mac/MacRichEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacRichEditor.swift; sourceTree = SOURCE_ROOT; };
+		CC29ECFC5579458575BB8D76 /* App/MailIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MailIndexer.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -713,6 +718,8 @@
 				2CF4683FDA03433426904DBE /* Mac/MacAppDelegate.swift */,
 				BECC0D99FFA56C833E8D8F70 /* App/SnoozeOption.swift */,
 				9030E41155ED91612456927B /* Mac/MacSnoozeSheet.swift */,
+				5C37CCAC51699FE217D1E434 /* Mac/MacRichEditor.swift */,
+				CC29ECFC5579458575BB8D76 /* App/MailIndexer.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1078,6 +1085,7 @@
 				62FB236FB23A54150F51DB2B /* App/AccountSync.swift in Sources */,
 				D487C3BC67C3064FB4C8A5F9 /* DesignSystem/AttachmentStyle.swift in Sources */,
 				49D1C843FE04D5B5967FCC0F /* App/SnoozeOption.swift in Sources */,
+				AFFF6307D6BC9F99A67A9475 /* App/MailIndexer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1240,6 +1248,8 @@
 				96B9BDE8F704F65898FE6E07 /* Mac/MacAppDelegate.swift in Sources */,
 				C52FD075B77C883914802B59 /* App/SnoozeOption.swift in Sources */,
 				DA9DD6AA54B133871C10E54A /* Mac/MacSnoozeSheet.swift in Sources */,
+				22D946E8816A80747A7529D1 /* Mac/MacRichEditor.swift in Sources */,
+				F5549536FB40605E471C863D /* App/MailIndexer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -39,7 +39,14 @@ private struct MacAccountsSettings: View {
                             .frame(width: 10, height: 10)
                         VStack(alignment: .leading) {
                             Text(email)
-                            Text(MailAccounts.serviceName(for: email)).font(.caption).foregroundStyle(.secondary)
+                            if let problem = services.sync.health[email]?.problem {
+                                Text(problem).font(.caption).foregroundStyle(.red)
+                            } else if let last = services.sync.health[email]?.lastSuccess {
+                                Text("\(MailAccounts.serviceName(for: email)) · up to date \(last.formatted(.relative(presentation: .named)))")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            } else {
+                                Text(MailAccounts.serviceName(for: email)).font(.caption).foregroundStyle(.secondary)
+                            }
                         }
                         Spacer()
                         Button("Remove…") { removing = email }

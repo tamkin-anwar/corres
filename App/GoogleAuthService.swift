@@ -400,6 +400,7 @@ final class GoogleAuthService {
     func signOut(_ email: String) async {
         accounts.removeAll { $0.email == email }
         persistAccountList()
+        MailIndexer.shared.forget(email)
         profiles[email] = nil
         if let data = try? JSONEncoder().encode(profiles) { defaults.set(data, forKey: Self.profilesKey) }
         if MailAccounts.provider(for: email).usesIMAP {

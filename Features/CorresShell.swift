@@ -176,6 +176,9 @@ struct CorresShell: View {
             // Back in Corres: anything scheduled that's now due goes.
             if phase == .active {
                 Task {
+                    // Push for Gmail lapses after 7 days unless renewed; an
+                    // app kept open in memory all week never relaunched.
+                    await pushService.renewWatchIfDue(accounts: auth.accounts.map(\.email))
                     await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
                     await FollowUps.shared.check(store: store)
                 }
@@ -281,7 +284,7 @@ struct CorresShell: View {
         }
     }
 
-    /// Back in Corres, and every minute while it stays open: ask every
+    /// Back in Corres, and every 20 seconds while it stays open: ask every
     /// account what changed. Pushes are a hint iOS may delay or drop; mail
     /// read or deleted on gmail.com, Outlook.com or another phone has to
     /// show here without a pull to refresh. Each check asks only for
@@ -294,7 +297,10 @@ struct CorresShell: View {
                 // and a connection that quietly dropped would miss changes.
                 let accounts = auth.accounts.map(\.email)
                 if !accounts.isEmpty, await sync.syncAll(accounts: accounts) { await store.refresh() }
-                try? await Task.sleep(for: .seconds(60))
+                // Each check asks only what changed (a few small requests),
+                // so reading, archiving or deleting in Gmail, Outlook or
+                // Mail shows here within seconds, not a minute.
+                try? await Task.sleep(for: .seconds(20))
             }
         }
     }

@@ -82,6 +82,11 @@ struct CorresApp: App {
                     Task {
                         await appDelegate.sync.backfillContent()
                         await appDelegate.store.refresh()
+                        // Then the rest of the mailbox, for Search.
+                        let accounts = appDelegate.auth.accounts.map(\.email)
+                        if await appDelegate.sync.indexOlderMail(accounts: accounts) { await appDelegate.store.refresh() }
+                        await appDelegate.sync.verifyInboxes(accounts: accounts)
+                        await appDelegate.store.refresh()
                         if appDelegate.entitlements.isPro && CorresSettings.summaries {
                             await appDelegate.mailIntelligence.prewarm(appDelegate.store.threads, includeRead: false)
                         }

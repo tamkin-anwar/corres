@@ -91,6 +91,11 @@ actor IMAPSessions {
             throw error
         }
         do {
+            // Every command reads which folder is the Inbox, Sent and the
+            // rest. On a new connection that list wasn't loaded yet, and
+            // Inbox mail fetched then was labelled as some other folder.
+            // Once per connection; cached after.
+            _ = try await session.folders()
             return try await body(session)
         } catch let error as IMAPConnection.ConnectionError {
             Self.log.error("iCloud command failed: \(String(describing: error), privacy: .public)")
