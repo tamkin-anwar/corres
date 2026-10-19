@@ -58,8 +58,18 @@ final class GmailSyncService {
         // actor rather than racing).
         return await withTaskGroup(of: Bool.self) { group in
             for account in accounts {
+                // Gmail reads its own filters (from:, has:attachment); the
+                // others are searched for the words, and the filters apply
+                // to what comes back.
+                let terms = MailQuery.SearchTerms(trimmed)
+                // Filters alone ("is:unread") narrow what's here; asking the
+                // server would pull in every unread email you ever archived.
+                guard !terms.words.isEmpty || !terms.from.isEmpty || !terms.to.isEmpty else { continue }
+                let query = MailAccounts.provider(for: account) == .google ? trimmed
+                    : ([terms.words] + terms.from + terms.to).filter { !$0.isEmpty }.joined(separator: " ")
+                guard !query.isEmpty else { continue }
                 group.addTask {
-                    guard let matches = try? await self.client.searchMessages(query: trimmed, account: account), !matches.isEmpty else { return false }
+                    guard let matches = try? await self.client.searchMessages(query: query, account: account), !matches.isEmpty else { return false }
                     // Approved, not screened: these are older messages you
                     // went looking for, not someone writing to you for the
                     // first time.

@@ -553,10 +553,13 @@ final class MailIntelligence {
 
     Summary: one or two plain sentences, under 35 words. If the email asks \
     the reader to do, answer or decide something, lead with that and when \
-    it's due. Otherwise say what happened or what the email offers (a \
-    charge, a shipment, a code, a change, the main news), in plain words, \
-    and never start with "You need to". Mention that nothing is needed \
-    only when the email says so.
+    it's due. Otherwise say what happened (a charge, a shipment, a code, a \
+    change, the main news), in plain words, and never start with "You \
+    need to". An ad, a sale or a job listing is the sender's, not \
+    something the reader was given: say who is selling or listing what \
+    ("Indeed lists a Project Coordinator role at $70,000 a year", "Petco \
+    has 20% off sitewide until Oct 12"), never "You're offered" or "You \
+    got". Mention that nothing is needed only when the email says so.
 
     Key points: up to three more specific facts the summary leaves out, \
     each an ask, decision, date, amount, place or next step from the \

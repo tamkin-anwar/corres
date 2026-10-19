@@ -541,11 +541,18 @@ struct CorrespondenceList: View {
             .categoryMoveDialog($categoryChoice, threadActions: threadActions)
             .searchable(text: $search, prompt: "Search, or ask a question")
             .searchSuggestions {
-                // Questions asked before, one tap to ask again.
-                if search.isEmpty, let ask, !ask.recent.isEmpty {
-                    ForEach(ask.recent, id: \.self) { question in
-                        Label(question, systemImage: "clock.arrow.circlepath").searchCompletion(question)
+                if search.isEmpty {
+                    // Questions asked before, one tap to ask again.
+                    if let ask {
+                        ForEach(ask.recent, id: \.self) { question in
+                            Label(question, systemImage: "clock.arrow.circlepath").searchCompletion(question)
+                        }
                     }
+                    // Gmail's filters work in every account.
+                    Label("From someone", systemImage: "person").searchCompletion("from:")
+                    Label("Has attachments", systemImage: "paperclip").searchCompletion("has:attachment ")
+                    Label("Unread", systemImage: "envelope.badge").searchCompletion("is:unread ")
+                    Label("Flagged", systemImage: "flag").searchCompletion("is:flagged ")
                 }
             }
             .onSubmit(of: .search) { askQuestion(search.trimmingCharacters(in: .whitespaces)) }

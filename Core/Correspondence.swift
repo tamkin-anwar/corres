@@ -1043,16 +1043,58 @@ public enum MailQuery {
         // findable if the person explicitly searches for it, never truly
         // hidden or deleted.
         let hideUnscreened = query.isEmpty
+        let terms = SearchTerms(query)
         let kept = threads.filter { item in
             (!hideSnoozed || !item.isSnoozed(at: now)) &&
             (!hideUnscreened || !item.isScreenedOut) &&
             (attention == nil || item.attention(at: now) == attention) &&
-            // Addresses too, and who it went to: mail you sent someone is
-            // found by their name or address like mail they sent you.
-            (query.isEmpty || ([item.sender, item.organization, item.subject, item.excerpt, item.senderEmail ?? ""]
-                + item.toRecipients + item.ccRecipients).contains { $0.localizedStandardContains(query) })
+            (query.isEmpty || terms.matches(item))
         }
         return sortedNewestFirst(kept)
+    }
+
+    /// A search, read for Gmail's filters as well as words: `from:sam`,
+    /// `to:alex`, `has:attachment`, `is:unread`, `is:flagged`, together or
+    /// with ordinary words ("from:sam invoice"). Words match the sender,
+    /// company, subject, preview, addresses and who it went to.
+    public struct SearchTerms: Equatable, Sendable {
+        public var words: String = ""
+        public var from: [String] = []
+        public var to: [String] = []
+        public var hasAttachment = false
+        public var unread = false
+        public var flagged = false
+
+        public init(_ query: String) {
+            var words: [String] = []
+            for token in query.split(whereSeparator: \.isWhitespace).map(String.init) {
+                let lower = token.lowercased()
+                if lower.hasPrefix("from:"), lower.count > 5 { from.append(String(token.dropFirst(5))) }
+                else if lower.hasPrefix("to:"), lower.count > 3 { to.append(String(token.dropFirst(3))) }
+                else if lower == "has:attachment" || lower == "has:attachments" { hasAttachment = true }
+                else if lower == "is:unread" { unread = true }
+                else if lower == "is:flagged" || lower == "is:starred" { flagged = true }
+                else { words.append(token) }
+            }
+            self.words = words.joined(separator: " ")
+        }
+
+        public func matches(_ item: Correspondence) -> Bool {
+            if hasAttachment && item.attachments.isEmpty { return false }
+            if unread && !item.isUnread { return false }
+            if flagged && !item.isFlagged { return false }
+            for name in from where ![item.sender, item.senderEmail ?? "", item.organization].contains(where: { $0.localizedStandardContains(name) }) {
+                return false
+            }
+            for name in to where !(item.toRecipients + item.ccRecipients).contains(where: { $0.localizedStandardContains(name) }) {
+                return false
+            }
+            guard !words.isEmpty else { return true }
+            // Addresses too, and who it went to: mail you sent someone is
+            // found by their name or address like mail they sent you.
+            return ([item.sender, item.organization, item.subject, item.excerpt, item.senderEmail ?? ""]
+                + item.toRecipients + item.ccRecipients).contains { $0.localizedStandardContains(words) }
+        }
     }
 
     /// Pinned first, then newest. Sorts positions and small keys rather

@@ -519,4 +519,13 @@ struct CorresCoreTests {
         #expect(BriefSnapshot(threads: threads, now: now).needsYou == 1)
         #expect(MailQuery.filter(threads, attention: .needsYou, now: now).map(\.sender) == ["approved"])
     }
+
+    @Test func searchUnderstandsFilters() {
+        let terms = MailQuery.SearchTerms("from:sam has:attachment invoice")
+        #expect(terms.from == ["sam"])
+        #expect(terms.hasAttachment)
+        #expect(terms.words == "invoice")
+        #expect(MailQuery.SearchTerms("is:unread").unread)
+        #expect(MailQuery.SearchTerms("plain words").words == "plain words")
+    }
 }
