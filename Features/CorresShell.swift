@@ -202,6 +202,11 @@ struct CorresShell: View {
             await ShareBridge.update(auth: auth, people: people, threads: store.threads)
         }
         .onChange(of: router.pending) { _, target in handle(target) }
+        // Without Pro, Corres opens on Primary: Needs You stays one tap
+        // along to look at, never a lock in your face each time you open it.
+        .onChange(of: requiresPro, initial: true) { _, locked in
+            if locked, mailFilter == .needsYou { mailFilter = .primary }
+        }
         .environment(\.proUnlocked, !requiresPro)
         // Right after someone connects their first Gmail account, offer the
         // trial once; after that it's only ever one tap away.
