@@ -48,7 +48,7 @@ private struct MacAccountsSettings: View {
             } header: {
                 Text("Accounts")
             } footer: {
-                Text("Corres reads your mail straight from your provider on this Mac. Our servers never receive it.")
+                Text("Accounts you add on your iPhone or iPad appear here on their own, through iCloud Keychain. Corres reads your mail straight from your provider on this Mac; our servers never receive it.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Add an Account") {
@@ -74,7 +74,7 @@ private struct MacAccountsSettings: View {
                 }
             }
         } message: {
-            Text("Its mail is removed from this Mac. Nothing is deleted from your account.")
+            Text("It's removed from Corres on all your devices. Nothing is deleted from the account itself.")
         }
     }
 }

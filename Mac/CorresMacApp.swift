@@ -29,7 +29,11 @@ struct CorresMacApp: App {
                 }
         }
         .defaultSize(width: 1280, height: 820)
-        .commands { MacCommands() }
+        .commands {
+            MacCommands()
+            // Format › Font: Bold, Italic, Underline, Bigger, Smaller.
+            TextFormattingCommands()
+        }
 
         // A conversation in a window of its own.
         WindowGroup("Conversation", for: ThreadID.self) { $id in
@@ -52,6 +56,9 @@ struct CorresMacApp: App {
             }
         }
         .defaultSize(width: 680, height: 560)
+        // What you wrote is kept in Drafts; an empty window shouldn't
+        // come back on the next launch.
+        .restorationBehavior(.disabled)
 
         Settings {
             MacSettingsView(services: services)

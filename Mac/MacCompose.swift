@@ -29,6 +29,8 @@ struct MacComposeView: View {
     @State private var showsCc = false
     @State private var confirmEmptySubject = false
     @State private var loaded = false
+    /// What the body starts with (a reply's quote and signature).
+    @State private var initialBody = ""
     @State private var attachmentError: String?
     @FocusState private var focus: Field?
     @Environment(\.dismiss) private var dismiss
@@ -39,12 +41,12 @@ struct MacComposeView: View {
         VStack(spacing: 0) {
             fields
             Divider()
-            TextEditor(text: $draft.body)
-                .font(.system(size: 14))
-                .scrollContentBackground(.hidden)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .focused($focus, equals: .body)
+            if loaded {
+                MacRichEditor(plain: $draft.body, html: $draft.bodyHTML, initialText: initialBody,
+                              focusOnAppear: !draft.to.isEmpty)
+            } else {
+                Spacer()
+            }
             if !draft.attachments.isEmpty { attachmentStrip }
         }
         .background(CorresPalette.canvas)
@@ -162,6 +164,7 @@ struct MacComposeView: View {
             draft.body = Draft.adding(signature: CorresSettings.signature(for: account, reply: request.kind != .new), to: draft.body)
         }
         showsCc = !(draft.cc ?? "").isEmpty
+        initialBody = draft.body
         focus = draft.to.isEmpty ? .to : .body
         loaded = true
     }

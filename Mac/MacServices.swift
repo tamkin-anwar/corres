@@ -68,6 +68,12 @@ final class MacServices {
         async let loaded: Void = store.load()
         await auth.restoreConnectedAccounts()
         await loaded
+        HangReporter.finish("launch")
+        // Web views ready before the first email is opened, as on iPhone.
+        Task {
+            try? await Task.sleep(for: .seconds(1))
+            await WKWebViewPool.shared.prewarm()
+        }
         await store.migrateAttentionRulesIfNeeded()
         let accounts = auth.accounts.map(\.email)
         if await sync.syncAll(accounts: accounts) {

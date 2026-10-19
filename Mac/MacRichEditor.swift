@@ -1,0 +1,74 @@
+import AppKit
+import SwiftUI
+
+/// The compose body: a real Mac text view, with the Format menu's Bold,
+/// Italic and Underline (⌘B, ⌘I, ⌘U), links, spelling and grammar,
+/// dictation and Writing Tools, all as in Mail. What you write goes as
+/// plain text, plus HTML when anything is formatted (`RichBody`), the same
+/// as from the iPhone.
+struct MacRichEditor: NSViewRepresentable {
+    @Binding var plain: String
+    @Binding var html: String?
+    var initialText: String
+    var focusOnAppear = false
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scroll = NSTextView.scrollableTextView()
+        guard let text = scroll.documentView as? NSTextView else { return scroll }
+        text.delegate = context.coordinator
+        text.isRichText = true
+        text.allowsUndo = true
+        text.importsGraphics = false
+        text.isAutomaticSpellingCorrectionEnabled = false
+        text.isContinuousSpellCheckingEnabled = true
+        text.isAutomaticLinkDetectionEnabled = true
+        text.isAutomaticQuoteSubstitutionEnabled = true
+        text.usesFindBar = true
+        text.drawsBackground = false
+        text.textContainerInset = NSSize(width: 12, height: 12)
+        let font = NSFont.systemFont(ofSize: 14)
+        text.font = font
+        text.typingAttributes = [.font: font, .foregroundColor: NSColor.labelColor]
+        text.string = initialText
+        text.textStorage?.addAttributes([.font: font, .foregroundColor: NSColor.labelColor],
+                                        range: NSRange(location: 0, length: (initialText as NSString).length))
+        scroll.drawsBackground = false
+        context.coordinator.textView = text
+        if focusOnAppear {
+            DispatchQueue.main.async {
+                text.window?.makeFirstResponder(text)
+                text.setSelectedRange(NSRange(location: 0, length: 0))
+            }
+        }
+        return scroll
+    }
+
+    func updateNSView(_ scroll: NSScrollView, context: Context) {
+        context.coordinator.parent = self
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    @MainActor
+    final class Coordinator: NSObject, NSTextViewDelegate {
+        var parent: MacRichEditor
+        weak var textView: NSTextView?
+
+        init(_ parent: MacRichEditor) { self.parent = parent }
+
+        func textDidChange(_ notification: Notification) {
+            guard let text = textView, let storage = text.textStorage else { return }
+            parent.plain = text.string
+            var runs: [RichRun] = []
+            storage.enumerateAttributes(in: NSRange(location: 0, length: storage.length)) { attributes, range, _ in
+                let traits = (attributes[.font] as? NSFont)?.fontDescriptor.symbolicTraits ?? []
+                runs.append(RichRun((storage.string as NSString).substring(with: range),
+                                    bold: traits.contains(.bold), italic: traits.contains(.italic),
+                                    underline: (attributes[.underlineStyle] as? Int ?? 0) != 0,
+                                    strikethrough: (attributes[.strikethroughStyle] as? Int ?? 0) != 0,
+                                    link: attributes[.link] as? URL ?? (attributes[.link] as? String).flatMap(URL.init(string:))))
+            }
+            parent.html = RichBody.html(runs)
+        }
+    }
+}

@@ -315,6 +315,7 @@ final class ThreadCellView: NSTableCellView {
         subject.stringValue = thread.subject.isEmpty ? "(No subject)" : thread.subject
         time.stringValue = MacDates.short(thread.receivedAt)
         symbols = []
+        if thread.isSnoozed(at: .now) { symbols.append(("moon.zzz.fill", .secondaryLabelColor)) }
         if thread.isPinned { symbols.append(("pin.fill", NSColor(CorresPalette.pin))) }
         if thread.isFlagged { symbols.append(("flag.fill", NSColor(CorresPalette.flag))) }
         if !thread.attachments.isEmpty { symbols.append(("paperclip", .secondaryLabelColor)) }
