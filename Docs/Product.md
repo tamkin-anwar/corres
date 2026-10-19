@@ -2,6 +2,14 @@
 
 Status: foundation preview, September 17, 2026.
 
+Current state (2026-10-19, Build 16): one home. Mail opens on Needs You,
+with Waiting and new senders as rows above it and Primary, Everything,
+Unread, Promotions, Social and Updates beside it. There is no tab bar and
+no Brief screen (the Morning Brief notification stays); Ask lives in
+Search. Gmail, Outlook, iCloud and other IMAP accounts are all supported.
+The README lists what ships today; the sections below are the original
+spec and its history.
+
 ## Positioning
 
 Corres. Email, considered. Know what needs you.
@@ -20,10 +28,9 @@ AI is explicitly part of this, not opposed to it. The boundary ADR 004 already a
 
 ## Information hierarchy
 
-1. Brief provides a grounded account of what needs attention.
-2. Needs You collects explicit decisions, replies, confirmations, and commitments.
-3. Waiting tracks an outstanding response from another person.
-4. Mail remains a complete, predictable path to correspondence.
+1. Needs You, where Corres opens, collects explicit decisions, replies, confirmations, and commitments, each with its reason. (Until Build 16 a Brief screen came first; its summary now arrives as the Morning Brief notification.)
+2. Waiting tracks an outstanding response from another person.
+3. Mail remains a complete, predictable path to correspondence, one swipe along.
 
 Read/unread and attention are separate concepts. Reading a message never means a commitment is complete. A conversation can always be reclassified. Future inferred states must expose evidence and allow correction. A generated summary must link to the source conversation and show freshness. Uncertainty must remain visible; no inference may hide ordinary mail.
 

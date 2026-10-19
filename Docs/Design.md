@@ -29,7 +29,7 @@ Flag is #C2410C in both themes (5.18:1 on white). Swipe tints follow iOS Mail's 
 
 ## Type
 
-New York (system serif) for display: large titles (set natively via `UINavigationBar` large-title attributes), the Brief greeting and sentence, conversation subjects, the wordmark. SF Pro for everything you read in lists or act on. Section eyebrows are small tracked uppercase (`eyebrow()`). All sizes are Dynamic Type text styles.
+New York (system serif) for display: large titles (set natively via `UINavigationBar` large-title attributes), conversation subjects, the wordmark. SF Pro for everything you read in lists or act on. Section eyebrows are small tracked uppercase (`eyebrow()`). All sizes are Dynamic Type text styles.
 
 ## Components
 

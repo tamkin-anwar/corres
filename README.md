@@ -6,74 +6,71 @@
 
 <p align="center"><em>Email, considered.</em></p>
 
-<p align="center">A premium, Apple-first email app for iPhone and iPad, built in SwiftUI.<br>
-Private by design: sorting, summaries, drafts and answers run on your device with Apple Intelligence.</p>
+<p align="center">An email app for iPhone and iPad, built in SwiftUI.<br>
+Gmail, Outlook, iCloud and almost any other account in one inbox, read and sorted on your device.</p>
 
 ---
 
-Most mail apps answer "what did I receive?" Corres answers "what needs me?" Brief, Needs You and Waiting come first; every message is still in one chronological Mail list, and nothing is sorted out of reach.
+Most mail apps answer "what did I receive?" Corres answers "what needs me?" It opens on Needs You, with the replies you're owed one row above, and every message is still one swipe along in Mail. Nothing is sorted out of reach.
 
-Built by [Anwar Creative Studio](https://anwarcreativestudio.com), alongside Artha. Status: in development, tested daily on a real iPhone.
+Built by [Anwar Creative Studio](https://anwarcreativestudio.com), alongside Artha. Status: in beta on TestFlight. Website: [corres.app](https://corres.app).
 
 ## What it does
 
-**Attention first**
-- **Brief:** a one-sentence summary built from the same counts and reasons the lists show, then the top Needs You conversations, who you're waiting on, and new senders to approve.
-- **Needs You:** conversations that ask something of you, each with a one-line reason. It's grouped into Due soon and When you can. Press and hold any conversation to move it if Corres got it wrong.
-- **Waiting:** conversations you replied to or moved there, with how long you've been waiting, counted from your reply.
-- **Mail:** every account in one inbox, newest first, with Everything / Unread / People / Flagged / Updates views. Scrolling pages in older mail.
-- **Screener:** mail from a new sender waits for Allow or Block before it reaches the other lists.
+**One home, opening on what needs you**
+- **Needs You:** conversations that ask something of you, each with a one-line reason, grouped into Due soon and When you can. Press and hold any conversation to move it if Corres got it wrong, and it learns.
+- **Waiting:** conversations you replied to or moved there, with how long you've been waiting and a nudge when it's time to follow up.
+- **Mail:** Primary, Everything, Unread, Promotions, Social and Updates, sorted by Corres's own rules on top of each provider's, across every account or one at a time.
+- **New senders:** a first email from someone new waits for Allow or Block. Allow or block a whole company at once.
+- **Search that answers:** search every account with `from:`, `to:`, `has:attachment`, `is:unread` and `is:flagged`, or type a question ("When is my next flight?") and get the answer from your own mail above the results.
+
+**Every account**
+- Gmail and Google Workspace, Outlook.com and Microsoft 365, iCloud Mail, and Yahoo, AOL, Fastmail, Zoho or a work server with just an address and password.
+- Postwright, our own IMAP and SMTP engine (`Packages/Postwright`), for iCloud and other accounts.
+- New Outlook and iCloud mail notifies in seconds, even with Corres closed.
 
 **A complete mail app**
-- Multiple accounts, merged or one at a time (Gmail today, with more providers to come). A three-column layout on iPad, keyboard shortcuts on any hardware keyboard.
 - Whole conversations: earlier messages appear as compact rows above the latest one, open in place, and long threads fold in the middle.
-- Read, reply, reply all, forward and compose, with attachments and a short undo-send window.
-- Undo after Archive or Trash: the conversation leaves instantly, and Gmail is told only after the 5-second window.
-- Archive and Mark as Read right from a notification; notifications are grouped per conversation.
-- Apple Mail's keyboard shortcuts on iPad and hardware keyboards (⌘R, ⌘⇧R, ⌘⇧F, ⌃⌘A, ⌘⌫, ⌘⇧L, ⌘⇧U, ⌃⌘S, ⌃⌘↑/↓), plus haptics that confirm sends, removals, snoozes and flags.
-- Archive, trash, mark read or unread, flag (Gmail star) and labels, all applied in Gmail. Changes made in Gmail or iOS Mail flow back.
-- Fast metadata-first sync in batches, push notifications through a content-free relay (`Server/push-relay`), and Gmail search beyond what's synced.
-- Needs You and Waiting widgets for the Home Screen and Lock Screen, opening straight into a conversation; Siri, Shortcuts and Spotlight actions ("What needs me in Corres", open a list, new message).
-- Saved snippets with `{first name}`, and dictation in Compose, transcribed on the iPhone.
-- Snooze by typing a time ("in 3 days at 9am", "next friday") or picking a preset; custom short and long swipes in both directions, velocity-aware, with haptics.
+- Read, reply, reply all, forward and compose, with attachments, Send Later, Undo Send, follow-up reminders, signatures, send-as addresses, and bold, lists and links.
+- Undo after Archive or Trash; Archive and Mark as Read from a notification; a reply straight from a notification.
+- Works offline: archive, delete, move, read and flag wait on the device and reach the server in order once it can.
+- Your choices (Needs You, Waiting and Handled, snoozes, pins, allowed and blocked senders, VIPs and settings) sync between your devices through iCloud. Mail itself never does.
+- Apple Mail's keyboard shortcuts on iPad and hardware keyboards, and a three-column layout on iPad.
+- Needs You and Waiting widgets, Siri and Shortcuts ("What needs me in Corres"), and a Morning Brief notification.
+- Snooze by typing a time ("in 3 days at 9am") or picking a preset; Pin; four custom swipes.
 
 **Shaped around you**
-- Settings → Tab Bar: which screens are tabs, and in what order.
-- Settings → Email Toolbar: up to five actions under an email, from 18 (Move to, Labels, Report Spam, Block, Unsubscribe, VIP, Add to Calendar, Share, Print, Translate and more); the rest wait in ⋯.
-- Four swipes (short and long, each direction), each set to its own action.
+- Settings → Customize: lists, swipes, and up to five actions under an email from 18; the rest wait in ⋯.
 - Mailboxes → Edit: show, hide and reorder mailboxes and labels.
 
 **Reading**
-- Designed mail fits the screen with measured margins and a Dark mode mapped like Mail's; mail with its own dark styles uses them.
-- Quoted history folds behind •••; plain-text mail gets the same rendering, with its paragraphs rejoined.
-- Follows the iPhone's text size, pinch to zoom, and tappable links, addresses, phone numbers, flights and tracking numbers.
-- Mailboxes: Drafts, Snoozed, Flagged, Sent, All Mail, Spam, Trash and every Gmail label.
+- Designed mail fits the screen with a Dark mode mapped like Mail's; images, trackers and Unsubscribe share one line under the sender.
+- Quoted history folds behind •••; plain-text mail gets the same rendering.
+- Receipts, deliveries and bills show the amount, date and order number at the top, on any iPhone.
 
-**Intelligence, on this iPhone only**
-- Rules sort first; Apple Intelligence (Foundation Models) refines Needs You on-device.
-- A short summary of long emails. For very long ones it covers the opening and ending, and says so.
-- Suggested reply directions that draft a full reply in your voice, for you to edit and send.
-- Shorter / Warmer / More formal / Proofread rewrites of your own writing, with Undo.
-- **Ask your mail:** a question in plain language ("When is my next flight?") answered from your own email by the on-device model, which searches your mail (including Gmail's search for older messages) and cites the emails it used. Without Apple Intelligence, Ask still finds the right emails.
-- There's no cloud fallback. On iPhones without Apple Intelligence these features don't appear.
+**Intelligence, on the device only**
+- Rules sort first and work on every iPhone; with Apple Intelligence (Foundation Models), Corres refines Needs You and adds summaries, suggested replies and rewrites.
+- Every summary and reason is checked against the email itself before you see it.
+- There's no cloud fallback.
 
 **Private by design**
-- Sign-in is with Google directly. Corres stores only a revocable token, in the Keychain.
+- Sign-in is with your provider directly. Corres stores only revocable tokens or an app-specific password, in the Keychain.
 - Remote images and tracking pixels are blocked until you choose to show them. Read receipts are never sent.
 - No advertising or analytics code. Removing an account removes its mail from the device.
+- Settings → Send Diagnostics shares freeze and crash reports, never mail.
 
-## Scopes
+## Gmail scopes
 
 `gmail.readonly`, `gmail.send`, `gmail.modify`. `gmail.send` is a Google "sensitive" scope; `gmail.readonly` and `gmail.modify` are "restricted", so a public release needs Google's OAuth verification plus an annual CASA security assessment. See ADR 005 in [Docs/Architecture.md](Docs/Architecture.md).
 
 ## Tech stack
 - SwiftUI, iOS 17 minimum (Liquid Glass and Foundation Models features on iOS 26), Swift 6 strict concurrency.
 - `CorresCore`: a Swift package holding the provider-independent domain and persistence layer (SwiftData), tested on macOS.
-- One dependency: [GoogleSignIn-iOS](https://github.com/google/GoogleSignIn-iOS), for OAuth.
+- One dependency: [GoogleSignIn-iOS](https://github.com/google/GoogleSignIn-iOS), for Google sign-in. Microsoft sign-in uses the system web sheet, and IMAP and SMTP are our own (Postwright).
 - Swift Testing for the domain suite.
 
 ## Running locally
-Open `Corres.xcodeproj` in Xcode, select the **Corres** scheme and a simulator or your iPhone, then Run. For a device, set your team in Signing & Capabilities. Without a Gmail account, Corres opens with fictional sample mail.
+Open `Corres.xcodeproj` in Xcode, select the **Corres** scheme and a simulator or your iPhone, then Run. For a device, set your team in Signing & Capabilities. Without an account, Corres opens with fictional sample mail.
 
 ```bash
 xcodebuild -scheme Corres -destination 'generic/platform=iOS Simulator' build
@@ -87,7 +84,6 @@ swift test --build-path /tmp/corres-swift-build
 ```
 The separate build path avoids a code-signing quirk when the repository lives in a synced folder.
 
-## Docs
 ## Releasing
 
 - **TestFlight beta:** `Scripts/testflight.sh`. Beta builds include Pro for testers (`-D CORRES_BETA`, and only when installed from TestFlight or Xcode, never from the App Store).

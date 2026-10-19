@@ -50,7 +50,7 @@ struct WelcomeView: View {
             Spacer(minLength: 40)
             VStack(spacing: 14) {
                 Button("Explore Corres", action: onExplore).buttonStyle(CorresButtonStyle())
-                Text("Start with sample mail. Connect Gmail, Outlook or iCloud anytime from Settings.")
+                Text("Start with sample mail. Connect Gmail, Outlook, iCloud or another email account anytime from Settings.")
                     .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                     .multilineTextAlignment(.center)
             }
