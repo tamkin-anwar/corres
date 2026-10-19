@@ -16,13 +16,21 @@ import Security
 /// in the app's own group and are moved over by `share(key:)`.
 enum Keychain {
     static let sharedGroup = "group.studio.anwarcreative.corres"
+    /// Where the iCloud Keychain copy lives: the app's own identifier,
+    /// which the iPhone, iPad and Mac apps share (one App ID).
+    static let syncGroup = "7GGTC43CG8.studio.anwarcreative.corres"
+
+    /// The Mac's modern keychain, the same kind iOS has, so nothing ever
+    /// asks for the login keychain's password. Ignored on iOS.
+    private static var modern: [String: Any] { [kSecUseDataProtectionKeychain as String: true] }
 
     static func set(_ value: String, key: String) {
         let data = Data(value.utf8)
+        setSynced(data, key: key)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key,
-        ]
+        ].merging(modern) { $1 }
         SecItemDelete(query as CFDictionary)
         var attributes = query
         attributes[kSecValueData as String] = data
@@ -81,18 +89,71 @@ enum Keychain {
             kSecAttrAccount as String: key,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
+        ].merging(modern) { $1 }
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess, let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+        if status == errSecSuccess, let data = result as? Data {
+            syncOnce(data, key: key)
+            return String(data: data, encoding: .utf8)
+        }
+        // Signed in on another of your devices: its iCloud Keychain copy.
+        return getSynced(key: key).flatMap { String(data: $0, encoding: .utf8) }
     }
 
+    /// Removes the sign-in here and from your other devices: an account
+    /// removed in Corres is removed everywhere, as in Mail.
     static func delete(key: String) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key,
-        ]
+        ].merging(modern) { $1 }
         SecItemDelete(query as CFDictionary)
+        SecItemDelete(syncedQuery(key: key) as CFDictionary)
+    }
+
+    // MARK: iCloud Keychain
+
+    nonisolated(unsafe) private static var checkedSync: Set<String> = []
+    private static let checkLock = NSLock()
+
+    /// Sign-ins saved before syncing existed get their iCloud copy the
+    /// first time they're read, once per key per launch.
+    private static func syncOnce(_ data: Data, key: String) {
+        checkLock.lock()
+        let first = checkedSync.insert(key).inserted
+        checkLock.unlock()
+        guard first, getSynced(key: key) == nil else { return }
+        setSynced(data, key: key)
+    }
+
+    /// A copy in iCloud Keychain, end-to-end encrypted by Apple, so your
+    /// accounts are signed in on your other devices too. Corres's servers
+    /// never see it. With iCloud Keychain off, it simply stays here.
+    static func setSynced(_ data: Data, key: String) {
+        let query = syncedQuery(key: key)
+        SecItemDelete(query as CFDictionary)
+        var attributes = query
+        attributes[kSecValueData as String] = data
+        attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        SecItemAdd(attributes as CFDictionary, nil)
+    }
+
+    static func getSynced(key: String) -> Data? {
+        var query = syncedQuery(key: key)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess else { return nil }
+        return result as? Data
+    }
+
+    private static func syncedQuery(key: String) -> [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecAttrService as String: "corres.synced",
+            kSecAttrAccessGroup as String: syncGroup,
+            kSecAttrSynchronizable as String: true,
+        ].merging(modern) { $1 }
     }
 }

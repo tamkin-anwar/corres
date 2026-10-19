@@ -9,6 +9,10 @@ struct ComposeRequest: Codable, Hashable {
     var to: String = ""
     var subject: String = ""
     var body: String = ""
+    /// The account to send from, when it's known (a draft's own).
+    var account: String?
+    /// Continuing a draft saved on the server: replaced once sent.
+    var serverDraftID: String?
     var id = UUID()
 }
 
@@ -148,11 +152,15 @@ struct MacComposeView: View {
             draft = thread.draft(kind: request.kind)
         } else {
             draft = Draft(kind: .new, to: request.to, subject: request.subject, body: request.body)
+            draft.fromAccount = request.account
+            draft.gmailDraftID = request.serverDraftID
         }
         let account = draft.fromAccount ?? replyingTo?.id.account ?? accounts.first ?? ""
         fromAccount = account
         draft.fromAccount = account.isEmpty ? nil : account
-        draft.body = Draft.adding(signature: CorresSettings.signature(for: account, reply: request.kind != .new), to: draft.body)
+        if request.serverDraftID == nil {
+            draft.body = Draft.adding(signature: CorresSettings.signature(for: account, reply: request.kind != .new), to: draft.body)
+        }
         showsCc = !(draft.cc ?? "").isEmpty
         focus = draft.to.isEmpty ? .to : .body
         loaded = true

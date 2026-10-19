@@ -36,9 +36,14 @@ struct MacSidebar: View {
                 }
             }
             Section("Mailboxes") {
+                row(.server(MacRemoteMailboxes.Kind.drafts.rawValue))
+                row(.server(MacRemoteMailboxes.Kind.sent.rawValue))
+                row(.server(MacRemoteMailboxes.Kind.archive.rawValue))
                 row(.flagged)
                 row(.snoozed)
                 row(.handled)
+                row(.server(MacRemoteMailboxes.Kind.spam.rawValue))
+                row(.server(MacRemoteMailboxes.Kind.trash.rawValue))
             }
         }
         .listStyle(.sidebar)
@@ -50,6 +55,9 @@ struct MacSidebar: View {
             .badge(count.map { $0 > 0 ? Text("\($0)") : nil } ?? nil)
             .fontWeight(prominent ? .semibold : nil)
             .tag(mailbox)
+            // The sidebar keeps a row as it was until the row itself
+            // changes; the count is part of what it is.
+            .id("\(mailbox.title)-\(count ?? -1)")
     }
 
     private var needsYouCount: Int { MailQuery.prioritized(store.threads, attention: .needsYou).count }

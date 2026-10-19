@@ -4,7 +4,7 @@ import SwiftUI
 /// right-click.
 enum MacAction: Equatable {
     case compose, reply, replyAll, forward
-    case archive, trash, move(Attention), toggleFlag, toggleUnread
+    case archive, trash, move(Attention), toggleFlag, toggleUnread, snooze(Date?), askSnooze
     case getMail, show(MacMailbox), next, previous, openInWindow, undo
 }
 
@@ -57,6 +57,13 @@ struct MacCommands: Commands {
             Button("Mark as Handled") { actions?.perform(.move(.handled)) }
                 .keyboardShortcut("3", modifiers: [.command, .control])
             Divider()
+            Menu("Snooze") {
+                ForEach(SnoozeOption.allCases, id: \.self) { option in
+                    Button(option.title) { actions?.perform(.snooze(option.date())) }
+                }
+                Divider()
+                Button("Choose a Time…") { actions?.perform(.askSnooze) }
+            }
             Button("Flag") { actions?.perform(.toggleFlag) }.keyboardShortcut("l", modifiers: [.command, .shift])
             Button("Mark as Read or Unread") { actions?.perform(.toggleUnread) }.keyboardShortcut("u", modifiers: [.command, .shift])
             Divider()

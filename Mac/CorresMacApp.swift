@@ -7,6 +7,7 @@ import SwiftUI
 /// iPhone.
 @main
 struct CorresMacApp: App {
+    @NSApplicationDelegateAdaptor(MacAppDelegate.self) private var appDelegate
     @State private var services = MacServices()
     @State private var model = MacMailboxModel()
     @AppStorage("corres.appearance") private var appearance = "system"

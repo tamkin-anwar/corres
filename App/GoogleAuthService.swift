@@ -59,7 +59,9 @@ final class GoogleAuthService {
     /// GoogleSignIn's own store, never in Corres's own Keychain entry.
     func restoreConnectedAccounts() async {
         watchICloudPasswords()
-        let storedEmails = defaults.stringArray(forKey: Self.connectedAccountsKey) ?? []
+        var storedEmails = defaults.stringArray(forKey: Self.connectedAccountsKey) ?? []
+        // Added on your other devices (iCloud Keychain): signed in here too.
+        storedEmails += AccountSync.adopt(into: storedEmails)
         var restored: [GmailAccount] = []
         for email in storedEmails {
             let signedIn = switch MailAccounts.provider(for: email) {
@@ -427,6 +429,7 @@ final class GoogleAuthService {
 
     private func persistAccountList() {
         defaults.set(accounts.map(\.email), forKey: Self.connectedAccountsKey)
+        AccountSync.publish(accounts.map(\.email))
         SendAsDirectory.publishOwnAddresses(accounts: accounts.map(\.email), aliases: SendAsDirectory.shared.allAddresses)
     }
 

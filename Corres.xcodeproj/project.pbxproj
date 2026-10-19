@@ -305,6 +305,15 @@
 		DA66B3843620789C89B9FD42 /* Mac/MacSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 389BD12A388A9E8529CE4440 /* Mac/MacSidebar.swift */; };
 		3AB364011D19E749493FAE90 /* Mac/MessageList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E46B8D894BCDA57E5E072FF7 /* Mac/MessageList.swift */; };
 		A13B184FB8061F4B4B9B0892 /* Mac/ReadingPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC40DAFA3F6E39336F0BFE6B /* Mac/ReadingPane.swift */; };
+		62FB236FB23A54150F51DB2B /* App/AccountSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3421660771F579168FE0A4 /* App/AccountSync.swift */; };
+		206B1350EDF4E9B93E437DF7 /* App/AccountSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3421660771F579168FE0A4 /* App/AccountSync.swift */; };
+		4C8B7F2BEF53EEE9837139B4 /* Mac/MacRemoteMailbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDA2A628E2A7301B8C055605 /* Mac/MacRemoteMailbox.swift */; };
+		D487C3BC67C3064FB4C8A5F9 /* DesignSystem/AttachmentStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6722D3ACE40C1D125E0ACD /* DesignSystem/AttachmentStyle.swift */; };
+		21A6A2B875D71A6C7A680587 /* DesignSystem/AttachmentStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6722D3ACE40C1D125E0ACD /* DesignSystem/AttachmentStyle.swift */; };
+		96B9BDE8F704F65898FE6E07 /* Mac/MacAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CF4683FDA03433426904DBE /* Mac/MacAppDelegate.swift */; };
+		49D1C843FE04D5B5967FCC0F /* App/SnoozeOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECC0D99FFA56C833E8D8F70 /* App/SnoozeOption.swift */; };
+		C52FD075B77C883914802B59 /* App/SnoozeOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECC0D99FFA56C833E8D8F70 /* App/SnoozeOption.swift */; };
+		DA9DD6AA54B133871C10E54A /* Mac/MacSnoozeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9030E41155ED91612456927B /* Mac/MacSnoozeSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -490,6 +499,12 @@
 		389BD12A388A9E8529CE4440 /* Mac/MacSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacSidebar.swift; sourceTree = SOURCE_ROOT; };
 		E46B8D894BCDA57E5E072FF7 /* Mac/MessageList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MessageList.swift; sourceTree = SOURCE_ROOT; };
 		FC40DAFA3F6E39336F0BFE6B /* Mac/ReadingPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/ReadingPane.swift; sourceTree = SOURCE_ROOT; };
+		6E3421660771F579168FE0A4 /* App/AccountSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AccountSync.swift; sourceTree = SOURCE_ROOT; };
+		DDA2A628E2A7301B8C055605 /* Mac/MacRemoteMailbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacRemoteMailbox.swift; sourceTree = SOURCE_ROOT; };
+		7B6722D3ACE40C1D125E0ACD /* DesignSystem/AttachmentStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/AttachmentStyle.swift; sourceTree = SOURCE_ROOT; };
+		2CF4683FDA03433426904DBE /* Mac/MacAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacAppDelegate.swift; sourceTree = SOURCE_ROOT; };
+		BECC0D99FFA56C833E8D8F70 /* App/SnoozeOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SnoozeOption.swift; sourceTree = SOURCE_ROOT; };
+		9030E41155ED91612456927B /* Mac/MacSnoozeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacSnoozeSheet.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -692,6 +707,12 @@
 				389BD12A388A9E8529CE4440 /* Mac/MacSidebar.swift */,
 				E46B8D894BCDA57E5E072FF7 /* Mac/MessageList.swift */,
 				FC40DAFA3F6E39336F0BFE6B /* Mac/ReadingPane.swift */,
+				6E3421660771F579168FE0A4 /* App/AccountSync.swift */,
+				DDA2A628E2A7301B8C055605 /* Mac/MacRemoteMailbox.swift */,
+				7B6722D3ACE40C1D125E0ACD /* DesignSystem/AttachmentStyle.swift */,
+				2CF4683FDA03433426904DBE /* Mac/MacAppDelegate.swift */,
+				BECC0D99FFA56C833E8D8F70 /* App/SnoozeOption.swift */,
+				9030E41155ED91612456927B /* Mac/MacSnoozeSheet.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1054,6 +1075,9 @@
 				6200A18DF8C1E26A2BBC350A /* App/ICloudSignIn.swift in Sources */,
 				2AC1DA697CD644CC0CBBDE50 /* App/MailFilter.swift in Sources */,
 				9ED6E00D56A3376BBFC2DA4C /* App/DraftBuilding.swift in Sources */,
+				62FB236FB23A54150F51DB2B /* App/AccountSync.swift in Sources */,
+				D487C3BC67C3064FB4C8A5F9 /* DesignSystem/AttachmentStyle.swift in Sources */,
+				49D1C843FE04D5B5967FCC0F /* App/SnoozeOption.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1210,6 +1234,12 @@
 				DA66B3843620789C89B9FD42 /* Mac/MacSidebar.swift in Sources */,
 				3AB364011D19E749493FAE90 /* Mac/MessageList.swift in Sources */,
 				A13B184FB8061F4B4B9B0892 /* Mac/ReadingPane.swift in Sources */,
+				206B1350EDF4E9B93E437DF7 /* App/AccountSync.swift in Sources */,
+				4C8B7F2BEF53EEE9837139B4 /* Mac/MacRemoteMailbox.swift in Sources */,
+				21A6A2B875D71A6C7A680587 /* DesignSystem/AttachmentStyle.swift in Sources */,
+				96B9BDE8F704F65898FE6E07 /* Mac/MacAppDelegate.swift in Sources */,
+				C52FD075B77C883914802B59 /* App/SnoozeOption.swift in Sources */,
+				DA9DD6AA54B133871C10E54A /* Mac/MacSnoozeSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

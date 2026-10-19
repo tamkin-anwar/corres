@@ -26,6 +26,7 @@ final class MacServices {
     let ask: AskService
     let entitlements: EntitlementStore
     let people: PeopleDirectory
+    let remote = MacRemoteMailboxes()
 
     private var checkLoop: Task<Void, Never>?
     private var launched = false

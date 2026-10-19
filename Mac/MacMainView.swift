@@ -7,19 +7,24 @@ struct MacMainView: View {
     @Bindable var model: MacMailboxModel
     @Environment(\.openWindow) private var openWindow
     @State private var columns = NavigationSplitViewVisibility.all
+    @State private var snoozing: [Correspondence] = []
 
     private var store: MailStore { services.store }
+    private var dockCount: Int {
+        guard services.entitlements.isPro || accounts.isEmpty else { return 0 }
+        return MailQuery.prioritized(store.threads, attention: .needsYou).count
+    }
     private var actions: ThreadActionService { services.threadActions }
     private var accounts: [String] { services.auth.accounts.map(\.email) }
 
     var body: some View {
-        let rows = model.rows(store: store, accounts: accounts)
+        let rows = model.rows(store: store, accounts: accounts, remote: services.remote)
         NavigationSplitView(columnVisibility: $columns) {
             MacSidebar(services: services, model: model)
                 .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 300)
         } content: {
             listColumn(rows)
-                .navigationSplitViewColumnWidth(min: 300, ideal: 380, max: 560)
+                .navigationSplitViewColumnWidth(min: 320, ideal: 400, max: 560)
         } detail: {
             detail
         }
@@ -27,9 +32,48 @@ struct MacMainView: View {
         .onSubmit(of: .search) { submitSearch() }
         .toolbar { toolbar }
         .overlay(alignment: .bottom) { undoBar }
-        .focusedSceneValue(\.macActions, MacActions(perform: perform))
+        .sheet(isPresented: Binding(get: { !snoozing.isEmpty }, set: { if !$0 { snoozing = [] } })) {
+            MacSnoozeSheet { date in
+                let threads = snoozing
+                snoozing = []
+                perform(.snooze(date), on: threads)
+            }
+        }
+        .focusedSceneValue(\.macActions, MacActions(perform: { perform($0) }))
+        // What needs you, on the Dock icon.
+        .onChange(of: dockCount, initial: true) { _, count in
+            NSApplication.shared.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
+        }
         .onChange(of: services.sync.lastCompletedSync) { services.afterSync() }
         .onChange(of: services.sync.syncProgress) { Task { await store.refresh() } }
+        // A notification, a widget or a corres:// link asking for a place.
+        .onChange(of: services.router.pending, initial: true) { _, target in
+            guard let target else { return }
+            services.router.pending = nil
+            switch target {
+            case .thread(let id):
+                model.search = ""
+                if services.store.thread(id)?.attention == .needsYou { model.mailbox = .needsYou }
+                else if model.mailbox.remoteKind != nil || model.mailbox == .newSenders { model.mailbox = .filter(MailFilter.everything.rawValue) }
+                model.selection = [id]
+            case .destination(let destination):
+                switch destination {
+                case .waiting: model.mailbox = .waiting
+                case .mail: model.mailbox = .primary
+                default: model.mailbox = .needsYou
+                }
+            case .compose:
+                perform(.compose)
+            case .composeTo(let to, let subject, let body):
+                openWindow(value: ComposeRequest(kind: .new, to: to, subject: subject, body: body))
+            default:
+                break
+            }
+        }
+        .task(id: model.mailbox) {
+            guard let kind = model.mailbox.remoteKind else { return }
+            await services.remote.refresh(kind, accounts: accounts, store: store)
+        }
         .alert("Couldn't Save", isPresented: Binding(get: { store.errorMessage != nil },
                                                      set: { if !$0 { store.errorMessage = nil } })) {
             Button("OK", role: .cancel) { store.errorMessage = nil }
@@ -52,8 +96,13 @@ struct MacMainView: View {
             } else {
                 MessageList(rows: rows, showsReasons: model.mailbox.showsReasons && model.search.isEmpty,
                             accountColors: accountColors, selection: $model.selection,
-                            onOpen: { thread in openWindow(value: thread.id) },
-                            onKey: handleKey, menu: contextMenu)
+                            onOpen: { thread in open(thread) },
+                            onKey: handleKey, menu: contextMenu,
+                            onSwipe: { thread, action in perform(action, on: [thread]) },
+                            onReachEnd: {
+                                guard let kind = model.mailbox.remoteKind else { return }
+                                Task { await services.remote.loadMore(kind, accounts: accounts, store: store) }
+                            })
             }
         }
         .navigationTitle(model.search.isEmpty ? model.mailbox.title : "Search")
@@ -77,7 +126,12 @@ struct MacMainView: View {
 
     @ViewBuilder
     private var emptyState: some View {
-        if !model.search.isEmpty {
+        if let kind = model.mailbox.remoteKind, model.search.isEmpty, !services.remote.hasLoaded(kind) || services.remote.loading.contains(kind) {
+            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let kind = model.mailbox.remoteKind, model.search.isEmpty, services.remote.failed(kind) {
+            ContentUnavailableView("Couldn't load \(kind.title)", systemImage: "wifi.exclamationmark",
+                                   description: Text("Check your connection, then choose it again."))
+        } else if !model.search.isEmpty {
             ContentUnavailableView.search(text: model.search)
         } else if model.mailbox == .needsYou {
             ContentUnavailableView("Nothing needs you",
@@ -151,6 +205,14 @@ struct MacMainView: View {
                 .help("Reply All (⇧⌘R, or A)").disabled(model.selection.count != 1)
             Button { perform(.forward) } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
                 .help("Forward (⇧⌘F, or F)").disabled(model.selection.count != 1)
+            Menu {
+                ForEach(SnoozeOption.allCases, id: \.self) { option in
+                    Button(option.title) { perform(.snooze(option.date())) }
+                }
+                Divider()
+                Button("Choose a Time…") { perform(.askSnooze) }
+            } label: { Label("Snooze", systemImage: "moon.zzz") }
+                .help("Snooze (B)").disabled(model.selection.isEmpty)
             Button { perform(.toggleFlag) } label: { Label("Flag", systemImage: "flag") }
                 .help("Flag (⇧⌘L, or S)").disabled(model.selection.isEmpty)
         }
@@ -184,8 +246,10 @@ struct MacMainView: View {
 
     // MARK: Actions
 
-    func perform(_ action: MacAction) {
-        let selected = model.selectedThreads
+    /// Runs an action on the selection, or on `threads` when given (a
+    /// swiped row that isn't selected).
+    func perform(_ action: MacAction, on threads: [Correspondence]? = nil) {
+        let selected = threads ?? model.selectedThreads
         switch action {
         case .compose:
             openWindow(value: ComposeRequest(kind: .new))
@@ -194,8 +258,12 @@ struct MacMainView: View {
             compose(action == .reply ? .reply : action == .replyAll ? .replyAll : .forward, thread)
         case .archive, .trash:
             guard !selected.isEmpty else { return }
-            let next = model.neighbor(after: model.selection)
-            model.selection = next.map { [$0] } ?? []
+            let ids = Set(selected.map(\.id))
+            if !model.selection.isDisjoint(with: ids) {
+                let next = model.neighbor(after: ids)
+                model.selection = next.map { [$0] } ?? []
+            }
+            services.remote.remove(ids)
             Task { action == .archive ? await actions.archive(selected) : await actions.trash(selected) }
         case .move(let attention):
             guard !selected.isEmpty else { return }
@@ -208,12 +276,21 @@ struct MacMainView: View {
             guard !selected.isEmpty else { return }
             let unread = !selected.allSatisfy(\.isUnread)
             Task { await actions.toggleUnread(unread, for: selected) }
+        case .snooze(let date):
+            guard !selected.isEmpty else { return }
+            if date != nil {
+                let ids = Set(selected.map(\.id))
+                if !model.selection.isDisjoint(with: ids) { model.selection = model.neighbor(after: ids).map { [$0] } ?? [] }
+            }
+            Task { for thread in selected { await store.snooze(thread.id, until: date) } }
+        case .askSnooze:
+            snoozing = selected
         case .getMail:
             Task { await services.checkForMail() }
         case .show(let mailbox):
             model.mailbox = mailbox
         case .next, .previous:
-            let threads = model.rows(store: store, accounts: accounts).compactMap(\.thread)
+            let threads = model.rows(store: store, accounts: accounts, remote: services.remote).compactMap(\.thread)
             guard !threads.isEmpty else { return }
             let current = threads.firstIndex { model.selection.contains($0.id) }
             let index = switch (action, current) {
@@ -225,9 +302,22 @@ struct MacMainView: View {
             model.selection = [threads[index].id]
         case .openInWindow:
             guard let thread = selected.first else { return }
-            openWindow(value: thread.id)
+            open(thread)
         case .undo:
             if actions.pendingRemoval != nil { actions.undoRemoval() } else { actions.undoLastChange() }
+        }
+    }
+
+    /// Double-click or Return: a draft continues in Compose, anything else
+    /// opens in its own window.
+    private func open(_ thread: Correspondence) {
+        if model.mailbox.remoteKind == .drafts {
+            openWindow(value: ComposeRequest(kind: .new, to: thread.toRecipients.joined(separator: ", "),
+                                             subject: thread.subject, body: thread.body,
+                                             account: thread.id.account,
+                                             serverDraftID: services.remote.draftID(for: thread.id)))
+        } else {
+            openWindow(value: thread.id)
         }
     }
 
@@ -256,6 +346,7 @@ struct MacMainView: View {
         case "k": perform(.previous)
         case "h": perform(.move(.handled))
         case "z": perform(.undo)
+        case "b": perform(.askSnooze)
         default: return false
         }
         return true
@@ -282,6 +373,11 @@ struct MacMainView: View {
         menu.addItem(.separator())
         item(thread.isUnread ? "Mark as Read" : "Mark as Unread", "envelope.badge", .toggleUnread)
         item(thread.isFlagged ? "Unflag" : "Flag", "flag", .toggleFlag)
+        if thread.isSnoozed(at: .now) {
+            item("Unsnooze", "moon.zzz", .snooze(nil))
+        } else {
+            item("Snooze…", "moon.zzz", .askSnooze)
+        }
         menu.addItem(.separator())
         item("Open in New Window", "macwindow", .openInWindow)
         return menu

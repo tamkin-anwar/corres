@@ -13,6 +13,10 @@ struct MessageList: NSViewRepresentable {
     var onOpen: (Correspondence) -> Void
     var onKey: (MessageListKey) -> Bool
     var menu: (Correspondence) -> NSMenu?
+    /// A two-finger swipe on a row: the action, on that row alone.
+    var onSwipe: (Correspondence, MacAction) -> Void = { _, _ in }
+    /// Scrolled near the end: time to fetch more, where there's more.
+    var onReachEnd: () -> Void = {}
 
     func makeNSView(context: Context) -> NSScrollView {
         let table = MessageTableView()
@@ -115,6 +119,7 @@ struct MessageList: NSViewRepresentable {
         }
 
         func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+            if row >= rows.count - 8 { parent.onReachEnd() }
             switch rows[row] {
             case .group(let title):
                 let view = tableView.makeView(withIdentifier: GroupCellView.identifier, owner: nil) as? GroupCellView ?? GroupCellView()
@@ -136,6 +141,33 @@ struct MessageList: NSViewRepresentable {
         @objc func doubleClicked() {
             guard let table, table.clickedRow >= 0, let thread = rows[table.clickedRow].thread else { return }
             parent.onOpen(thread)
+        }
+
+        /// Swipe left to archive or delete, right for Handled or read, as
+        /// Mail does on a trackpad.
+        func tableView(_ tableView: NSTableView, rowActionsForRow row: Int,
+                       edge: NSTableView.RowActionEdge) -> [NSTableViewRowAction] {
+            guard let thread = rows[row].thread else { return [] }
+            func action(_ title: String, _ symbol: String, _ color: Color, _ macAction: MacAction,
+                        style: NSTableViewRowAction.Style = .regular) -> NSTableViewRowAction {
+                let made = NSTableViewRowAction(style: style, title: title) { [weak self] _, _ in
+                    self?.parent.onSwipe(thread, macAction)
+                    tableView.rowActionsVisible = false
+                }
+                made.image = NSImage(systemSymbolName: symbol, accessibilityDescription: title)
+                made.backgroundColor = NSColor(color)
+                return made
+            }
+            switch edge {
+            case .trailing:
+                return [action("Archive", "archivebox.fill", CorresPalette.swipeArchive, .archive),
+                        action("Delete", "trash.fill", CorresPalette.swipeTrash, .trash, style: .destructive)]
+            case .leading:
+                return [action("Handled", "checkmark.circle.fill", CorresPalette.swipeHandled, .move(.handled)),
+                        action(thread.isUnread ? "Read" : "Unread", "envelope.badge.fill", CorresPalette.swipeUnread, .toggleUnread)]
+            @unknown default:
+                return []
+            }
         }
 
         func menu(forRow row: Int) -> NSMenu? {
@@ -211,6 +243,8 @@ final class ThreadCellView: NSTableCellView {
     private let detail = NSTextField(wrappingLabelWithString: "")
     private var isUnread = false
     private var showsReason = false
+    /// Pinned, flagged, has attachments: small symbols before the time.
+    private var symbols: [(name: String, color: NSColor)] = []
 
     init() {
         super.init(frame: .zero)
@@ -280,19 +314,17 @@ final class ThreadCellView: NSTableCellView {
             ? "To: " + thread.counterpartName() : thread.sender
         subject.stringValue = thread.subject.isEmpty ? "(No subject)" : thread.subject
         time.stringValue = MacDates.short(thread.receivedAt)
-        var markText = ""
-        if thread.isPinned { markText += "📌" }
-        if thread.isFlagged { markText += "⚑" }
-        if !thread.attachments.isEmpty { markText += "📎" }
-        marks.stringValue = markText
+        symbols = []
+        if thread.isPinned { symbols.append(("pin.fill", NSColor(CorresPalette.pin))) }
+        if thread.isFlagged { symbols.append(("flag.fill", NSColor(CorresPalette.flag))) }
+        if !thread.attachments.isEmpty { symbols.append(("paperclip", .secondaryLabelColor)) }
         accountDot.isHidden = accountColor == nil
         accountDot.layer?.backgroundColor = accountColor?.cgColor
         if showsReason, !thread.reason.isEmpty {
-            detail.stringValue = "↪ " + thread.reason
-            detail.maximumNumberOfLines = 1
-            // The preview, shortened, after the reason.
-            let preview = thread.excerpt.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !preview.isEmpty { detail.maximumNumberOfLines = 2; detail.stringValue = "↪ " + thread.reason + "\n" + preview }
+            // The reason, then the preview: one line each.
+            let preview = thread.excerpt.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\n", with: " ")
+            detail.stringValue = "↪ " + thread.reason + (preview.isEmpty ? "" : "\n" + preview)
+            detail.maximumNumberOfLines = 2
         } else {
             detail.stringValue = thread.excerpt.trimmingCharacters(in: .whitespacesAndNewlines)
             detail.maximumNumberOfLines = 2
@@ -315,13 +347,26 @@ final class ThreadCellView: NSTableCellView {
         sender.textColor = selected ? .white : .labelColor
         subject.textColor = selected ? .white : .labelColor
         time.textColor = selected ? NSColor.white.withAlphaComponent(0.85) : .secondaryLabelColor
-        marks.textColor = selected ? .white : NSColor(named: "corresAccent") ?? .secondaryLabelColor
+        let markText = NSMutableAttributedString()
+        for symbol in symbols {
+            let configuration = NSImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
+                .applying(.init(paletteColors: [selected ? .white : symbol.color]))
+            guard let image = NSImage(systemSymbolName: symbol.name, accessibilityDescription: nil)?
+                .withSymbolConfiguration(configuration) else { continue }
+            let attachment = NSTextAttachment()
+            attachment.image = image
+            markText.append(NSAttributedString(attachment: attachment))
+            markText.append(NSAttributedString(string: " "))
+        }
+        marks.attributedStringValue = markText
         if showsReason, let text = Optional(detail.stringValue), text.hasPrefix("↪ ") {
             let lines = text.split(separator: "\n", maxSplits: 1).map(String.init)
-            let styled = NSMutableAttributedString(string: lines[0], attributes: [
+            let oneLine = NSMutableParagraphStyle()
+            oneLine.lineBreakMode = .byTruncatingTail
+            let styled = NSMutableAttributedString(string: lines[0], attributes: [.paragraphStyle: oneLine,
                 .foregroundColor: selected ? NSColor.white : accent, .font: NSFont.systemFont(ofSize: 12, weight: .medium)])
             if lines.count > 1 {
-                styled.append(NSAttributedString(string: "\n" + lines[1], attributes: [
+                styled.append(NSAttributedString(string: "\n" + lines[1], attributes: [.paragraphStyle: oneLine,
                     .foregroundColor: selected ? NSColor.white.withAlphaComponent(0.8) : NSColor.secondaryLabelColor,
                     .font: NSFont.systemFont(ofSize: 12)]))
             }

@@ -6,6 +6,7 @@ enum MacMailbox: Hashable, Codable {
     case filter(String)   // a MailFilter's raw value: Primary, Everything, Unread…
     case account(String)  // one account's inbox
     case flagged, snoozed, handled
+    case server(String)   // a MacRemoteMailboxes.Kind: Sent, Drafts, Archive, Spam, Trash
 
     static let primary = MacMailbox.filter(MailFilter.primary.rawValue)
 
@@ -19,7 +20,12 @@ enum MacMailbox: Hashable, Codable {
         case .flagged: "Flagged"
         case .snoozed: "Snoozed"
         case .handled: "Handled"
+        case .server(let raw): MacRemoteMailboxes.Kind(rawValue: raw)?.title ?? raw
         }
+    }
+
+    var remoteKind: MacRemoteMailboxes.Kind? {
+        if case .server(let raw) = self { MacRemoteMailboxes.Kind(rawValue: raw) } else { nil }
     }
 
     var systemImage: String {
@@ -41,6 +47,7 @@ enum MacMailbox: Hashable, Codable {
         case .flagged: "flag"
         case .snoozed: "moon.zzz"
         case .handled: "checkmark.circle"
+        case .server(let raw): MacRemoteMailboxes.Kind(rawValue: raw)?.systemImage ?? "tray"
         }
     }
 
@@ -92,8 +99,15 @@ final class MacMailboxModel {
         }
     }
 
-    func rows(store: MailStore, accounts: [String]) -> [MacRow] {
+    func rows(store: MailStore, accounts: [String], remote: MacRemoteMailboxes) -> [MacRow] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Mail on the server: as fetched, less anything just moved away.
+        if query.isEmpty, let kind = mailbox.remoteKind {
+            let hidden = store.hiddenIDs
+            cachedRows = remote.items(kind).filter { !hidden.contains($0.id) }.map(MacRow.thread)
+            cacheKey = nil
+            return cachedRows
+        }
         let key = CacheKey(revision: store.contentRevision, hidden: store.hiddenIDs, mailbox: mailbox, search: query,
                            minute: Int(Date.now.timeIntervalSince1970 / 60), accounts: accounts)
         if key == cacheKey { return cachedRows }
@@ -150,6 +164,8 @@ final class MacMailboxModel {
                 .sorted { ($0.snoozedUntil ?? .distantFuture) < ($1.snoozedUntil ?? .distantFuture) }.map(MacRow.thread)
         case .handled:
             return MailQuery.filter(threads).filter { $0.attention == .handled }.map(MacRow.thread)
+        case .server:
+            return []
         }
     }
 }

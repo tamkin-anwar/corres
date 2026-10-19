@@ -82,8 +82,10 @@ struct ReadingPane: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(thread.receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()))
                         .font(.subheadline).foregroundStyle(CorresPalette.secondary)
-                    Text(AccountPreferences.nickname(for: thread.id.account))
-                        .font(.caption).foregroundStyle(CorresPalette.tertiary)
+                    if services.auth.accounts.count > 1 {
+                        Text(AccountPreferences.nickname(for: thread.id.account))
+                            .font(.caption).foregroundStyle(CorresPalette.tertiary)
+                    }
                 }
             }
         }
@@ -234,17 +236,7 @@ struct ReadingPane: View {
                 .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.secondary)
             FlowRow(spacing: 8) {
                 ForEach(thread.attachments) { file in
-                    Label {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(file.filename).lineLimit(1)
-                            Text(ByteCountFormatter.string(fromByteCount: Int64(file.sizeBytes), countStyle: .file))
-                                .font(.caption).foregroundStyle(CorresPalette.secondary)
-                        }
-                    } icon: {
-                        Image(systemName: "doc")
-                    }
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 8))
+                    MacAttachmentChip(file: file, thread: thread)
                 }
             }
         }
@@ -302,6 +294,89 @@ struct FlowRow: Layout {
             view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
             x += size.width + spacing
             rowHeight = max(rowHeight, size.height)
+        }
+    }
+}
+
+/// One attachment: click to open it in its app (Preview, Pages…), or
+/// save it anywhere. Downloaded once, then kept in Corres's own cache.
+struct MacAttachmentChip: View {
+    let file: MailAttachment
+    let thread: Correspondence
+    @State private var working = false
+    @State private var failed = false
+
+    var body: some View {
+        let kind = AttachmentKind(filename: file.filename, mimeType: file.mimeType)
+        Button { Task { await open() } } label: {
+            HStack(spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous).fill(kind.color)
+                    Image(systemName: kind.symbol).font(.caption.weight(.semibold)).foregroundStyle(.white)
+                }
+                .frame(width: 26, height: 26)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(file.filename).lineLimit(1).truncationMode(.middle)
+                    Text(failed ? "Couldn't download" : ByteCountFormatter.string(fromByteCount: Int64(file.sizeBytes), countStyle: .file))
+                        .font(.caption).foregroundStyle(failed ? CorresPalette.alert : CorresPalette.secondary)
+                }
+                if working { ProgressView().controlSize(.small) }
+            }
+            .frame(maxWidth: 260, alignment: .leading)
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(CorresPalette.line))
+        }
+        .buttonStyle(.plain)
+        .help("Open \(file.filename)")
+        .contextMenu {
+            Button("Open") { Task { await open() } }
+            Button("Save to Downloads") { Task { await save(toDownloads: true) } }
+            Button("Save As…") { Task { await save(toDownloads: false) } }
+        }
+    }
+
+    private func download() async -> URL? {
+        let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Attachments", isDirectory: true)
+            .appendingPathComponent(thread.latestMessageID ?? thread.id.providerID, isDirectory: true)
+        let safeName = file.filename.replacingOccurrences(of: "/", with: "-")
+        let url = folder.appendingPathComponent(safeName.isEmpty ? "attachment" : safeName)
+        if FileManager.default.fileExists(atPath: url.path) { return url }
+        guard let messageID = thread.latestMessageID else { return nil }
+        working = true
+        defer { working = false }
+        guard let data = try? await MailClient().fetchAttachmentData(messageId: messageID, attachmentId: file.id,
+                                                                    account: thread.id.account) else {
+            failed = true
+            return nil
+        }
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        guard (try? data.write(to: url, options: .atomic)) != nil else { failed = true; return nil }
+        failed = false
+        return url
+    }
+
+    private func open() async {
+        guard let url = await download() else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func save(toDownloads: Bool) async {
+        guard let url = await download() else { return }
+        let destination: URL?
+        if toDownloads {
+            destination = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first?
+                .appendingPathComponent(url.lastPathComponent)
+        } else {
+            let panel = NSSavePanel()
+            panel.nameFieldStringValue = url.lastPathComponent
+            destination = panel.runModal() == .OK ? panel.url : nil
+        }
+        guard let destination else { return }
+        try? FileManager.default.removeItem(at: destination)
+        if (try? FileManager.default.copyItem(at: url, to: destination)) != nil, toDownloads {
+            NSWorkspace.shared.activateFileViewerSelecting([destination])
         }
     }
 }
