@@ -1551,7 +1551,7 @@ private struct TranslateSheet: ViewModifier {
 /// iOS 26's hard scroll edge: the content goes under a frosted band.
 private struct HardTopEdge: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             content.scrollEdgeEffectStyle(.hard, for: .top)
         } else {
             content

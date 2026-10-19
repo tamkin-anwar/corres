@@ -1,5 +1,9 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 import WebKit
 
 /// Renders a message's real HTML body. JavaScript is always disabled: mail
@@ -12,7 +16,7 @@ import WebKit
 /// message was opened); `cid:`-referenced images are inlined as `data:` URIs
 /// by GmailAPIClient before this view ever sees the HTML, so they are real
 /// message content, not a remote fetch, and are unaffected by this.
-struct HTMLMessageBody: UIViewRepresentable {
+struct HTMLMessageBody: PlatformViewRepresentable {
     let html: String
     @Binding var height: CGFloat
     var blockRemoteImages = true
@@ -21,6 +25,7 @@ struct HTMLMessageBody: UIViewRepresentable {
     /// Read so a change of text size in Settings redraws the email.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
+    #if canImport(UIKit)
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebViewPool.shared.dequeue()
         context.coordinator.watchZoom(of: webView)
@@ -37,7 +42,27 @@ struct HTMLMessageBody: UIViewRepresentable {
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
-        context.coordinator.parent = self
+        load(into: webView, coordinator: context.coordinator)
+    }
+    #else
+    func makeNSView(context: Context) -> WKWebView {
+        let webView = WKWebViewPool.shared.dequeue()
+        webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
+        return webView
+    }
+
+    static func dismantleNSView(_ webView: WKWebView, coordinator: Coordinator) {
+        WKWebViewPool.shared.enqueue(webView)
+    }
+
+    func updateNSView(_ webView: WKWebView, context: Context) {
+        load(into: webView, coordinator: context.coordinator)
+    }
+    #endif
+
+    private func load(into webView: WKWebView, coordinator: Coordinator) {
+        coordinator.parent = self
         // Set unconditionally, even when the guard below skips a reload:
         // WKWebView has no knowledge of the app's own light/dark mode on
         // its own, and CSS system colors like `-apple-system-label`
@@ -64,12 +89,18 @@ struct HTMLMessageBody: UIViewRepresentable {
         // that flip left a dark-mode email on white, since the reload back
         // ran while the web view was suspended in the background. Back in
         // front, the real appearance is checked again.
-        let dark = scenePhase == .active || context.coordinator.lastDark == nil
-            ? colorScheme == .dark : (context.coordinator.lastDark ?? (colorScheme == .dark))
+        let dark = scenePhase == .active || coordinator.lastDark == nil
+            ? colorScheme == .dark : (coordinator.lastDark ?? (colorScheme == .dark))
         // The person's text size (Settings → Display & Brightness → Text
         // Size), which Mail follows too. 17pt is the default.
+        #if canImport(UIKit)
         let textSize = UIFont.preferredFont(forTextStyle: .body, compatibleWith: webView.traitCollection).pointSize
         webView.overrideUserInterfaceStyle = designed && !analysis.hasOwnDarkMode ? .light : (dark ? .dark : .light)
+        #else
+        // A touch larger than the Mac's 13pt body: mail is read, not scanned.
+        let textSize = NSFont.preferredFont(forTextStyle: .body).pointSize + 2
+        webView.appearance = NSAppearance(named: designed && !analysis.hasOwnDarkMode ? .aqua : (dark ? .darkAqua : .aqua))
+        #endif
         // Checked against the raw inputs, not the processed/wrapped output:
         // SwiftUI re-invokes updateUIView on any state change anywhere this
         // view observes (e.g. an unrelated background sync mutating
@@ -77,19 +108,21 @@ struct HTMLMessageBody: UIViewRepresentable {
         // changed. Guarding here first, before ever touching
         // blockingRemoteImages's regex work, means an unrelated re-render
         // costs nothing instead of re-running a full-body regex scan.
-        guard context.coordinator.lastHTML != html || context.coordinator.lastBlockRemoteImages != blockRemoteImages
-              || context.coordinator.lastDark != dark || context.coordinator.lastTextSize != textSize else { return }
-        context.coordinator.lastHTML = html
-        context.coordinator.lastBlockRemoteImages = blockRemoteImages
-        context.coordinator.lastDark = dark
-        context.coordinator.lastTextSize = textSize
+        guard coordinator.lastHTML != html || coordinator.lastBlockRemoteImages != blockRemoteImages
+              || coordinator.lastDark != dark || coordinator.lastTextSize != textSize else { return }
+        coordinator.lastHTML = html
+        coordinator.lastBlockRemoteImages = blockRemoteImages
+        coordinator.lastDark = dark
+        coordinator.lastTextSize = textSize
         // Invalidates any re-measurement still scheduled from a previous
         // load on this same (possibly pooled/reused) webview instance; see
         // Coordinator.loadGeneration.
-        context.coordinator.loadGeneration = Coordinator.nextLoad()
-        context.coordinator.hasSize = false
-        context.coordinator.resetZoom(webView)
-        WKWebViewPool.shared.sizeRouter(for: webView).target = context.coordinator
+        coordinator.loadGeneration = Coordinator.nextLoad()
+        coordinator.hasSize = false
+        #if canImport(UIKit)
+        coordinator.resetZoom(webView)
+        #endif
+        WKWebViewPool.shared.sizeRouter(for: webView).target = coordinator
         var processed = blockRemoteImages ? Self.blockingRemoteImages(in: html) : html
         processed = Self.strippingEmbeddedViewportMeta(processed)
         // Remote stylesheets and fonts held the whole email back: WebKit
@@ -102,7 +135,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         // Hidden until didFinish: a pooled instance still shows whatever it
         // was last displaying until the new load actually finishes, and
         // revealing immediately would flash that stale content for a frame.
-        webView.alpha = 0
+        webView.setShown(false)
         // baseURL: nil is a well-documented real-device bug (fine in
         // Simulator): without an origin, WKWebView does not establish a
         // proper security/cookie context, and absolute https:// image
@@ -112,7 +145,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         // a real https origin.
         let kind: BodyKind = !designed ? .plain : analysis.hasOwnDarkMode ? .designedWithDarkMode : .designed
         webView.loadHTMLString(Self.wrap(processed, kind: kind, dark: dark, textSize: textSize,
-                                         load: context.coordinator.loadGeneration, lateStyles: lateStyles),
+                                         load: coordinator.loadGeneration, lateStyles: lateStyles),
                                baseURL: Self.placeholderBaseURL)
     }
 
@@ -621,6 +654,8 @@ struct HTMLMessageBody: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
+
+
     /// Wraps the raw body fragment with a stylesheet approximating Corres's
     /// own reading typography, since the sender's HTML doesn't know it.
     ///
@@ -850,6 +885,7 @@ struct HTMLMessageBody: UIViewRepresentable {
         private var contentSizeObservation: NSKeyValueObservation?
         private var settleZoom: Task<Void, Never>?
 
+        #if canImport(UIKit)
         // MARK: Pinch to zoom
         //
         // WebKit zooms the email natively (pinch, or double-tap). While the
@@ -918,6 +954,8 @@ struct HTMLMessageBody: UIViewRepresentable {
             return nil
         }
 
+        #endif
+
         /// The sizing script (`HTMLMessageBody.sizingScript`) reports the
         /// email's height whenever it changes: on layout, as each image
         /// loads (however late), when web fonts arrive, and when the width
@@ -955,10 +993,14 @@ struct HTMLMessageBody: UIViewRepresentable {
             if !hasSize {
                 hasSize = true
                 HangReporter.finish("open")
-                if let webView, webView.alpha < 1 { UIView.animate(withDuration: 0.12) { webView.alpha = 1 } }
+                webView?.setShown(true, animated: true)
             }
             baseHeight = height
+            #if canImport(UIKit)
             let zoomed = height * (webView?.scrollView.zoomScale ?? 1)
+            #else
+            let zoomed = height
+            #endif
             if abs(parent.height - zoomed) >= 1 { parent.height = zoomed }
 
         }
@@ -974,18 +1016,18 @@ struct HTMLMessageBody: UIViewRepresentable {
                                                           in: nil, contentWorld: .defaultClient)
                 try? await Task.sleep(for: .milliseconds(300))
                 guard generation == self.loadGeneration else { return }
-                if webView.alpha < 1 { UIView.animate(withDuration: 0.12) { webView.alpha = 1 } }
+                webView.setShown(true, animated: true)
             }
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             print("HTMLMessageBody: navigation failed: \(error)")
-            webView.alpha = 1 // must not stay hidden forever on a failed load
+            webView.setShown(true) // must not stay hidden forever on a failed load
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             print("HTMLMessageBody: provisional navigation failed: \(error)")
-            webView.alpha = 1
+            webView.setShown(true)
         }
 
         /// Only the email itself ever loads in the reading view. Every
@@ -1042,6 +1084,7 @@ struct HTMLMessageBody: UIViewRepresentable {
               const target = name === 'top' ? document.body : (document.getElementById(name) || document.getElementsByName(name)[0]);
               return target ? target.getBoundingClientRect().top + window.scrollY : null; })()
             """
+            #if canImport(UIKit)
             guard let top = try? await webView.evaluateJavaScript(script, in: nil, contentWorld: .defaultClient) as? Double,
                   let outer = Self.enclosingScrollView(of: webView) else { return }
             let point = webView.convert(CGPoint(x: 0, y: top * webView.scrollView.zoomScale), to: outer)
@@ -1049,6 +1092,12 @@ struct HTMLMessageBody: UIViewRepresentable {
             let highest = max(-inset.top, outer.contentSize.height - outer.bounds.height + inset.bottom)
             let y = min(max(point.y - inset.top - 12, -inset.top), highest)
             outer.setContentOffset(CGPoint(x: outer.contentOffset.x, y: y), animated: true)
+            #else
+            guard let top = try? await webView.evaluateJavaScript(script, in: nil, contentWorld: .defaultClient) as? Double,
+                  let outer = webView.enclosingScrollView, let document = outer.documentView else { return }
+            let point = webView.convert(CGPoint(x: 0, y: top), to: document)
+            outer.contentView.animator().setBoundsOrigin(CGPoint(x: 0, y: max(0, point.y - 12)))
+            #endif
         }
 
         private func openDetected(_ url: URL, in webView: WKWebView) async {
@@ -1102,5 +1151,27 @@ struct HTMLMessageBody: UIViewRepresentable {
             if let url = navigationAction.request.url { LinkOpener.open(url) }
             return nil
         }
+    }
+}
+
+
+extension WKWebView {
+    /// Hidden while a new email loads into a reused view, so the last one
+    /// never flashes; shown once it has a size.
+    func setShown(_ shown: Bool, animated: Bool = false) {
+        #if canImport(UIKit)
+        guard (alpha == 1) != shown else { return }
+        if animated { UIView.animate(withDuration: 0.12) { self.alpha = shown ? 1 : 0 } } else { alpha = shown ? 1 : 0 }
+        #else
+        guard (alphaValue == 1) != shown else { return }
+        if animated {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.12
+                animator().alphaValue = shown ? 1 : 0
+            }
+        } else {
+            alphaValue = shown ? 1 : 0
+        }
+        #endif
     }
 }

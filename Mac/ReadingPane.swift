@@ -1,0 +1,307 @@
+import SwiftUI
+
+/// The open conversation: subject in New York, who it's from and to, why
+/// it's where it is (with one click to change that), the summary when
+/// Apple Intelligence is on this Mac, and the email itself, edge to edge,
+/// scrolling as one page.
+struct ReadingPane: View {
+    let thread: Correspondence
+    let services: MacServices
+    var onReply: (Draft.Kind) -> Void
+
+    @State private var bodyHeight: CGFloat = 1
+    @State private var showImages = false
+    @State private var showEarlier = false
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var intelligence: MailIntelligence { services.intelligence }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                    .padding(.horizontal, 28)
+                    .padding(.top, 22)
+                    .padding(.bottom, 14)
+                statusCard
+                    .padding(.horizontal, 28)
+                    .padding(.bottom, 14)
+                if let earlier = earlierMessages, !earlier.isEmpty {
+                    earlierSection(earlier)
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 10)
+                }
+                if blockedImages > 0 && !imagesAllowed {
+                    imagesNotice
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 10)
+                }
+                Divider().padding(.horizontal, 28)
+                HTMLMessageBody(html: html, height: $bodyHeight, blockRemoteImages: !imagesAllowed)
+                    .frame(height: bodyHeight)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                if !thread.attachments.isEmpty {
+                    attachments
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 24)
+                }
+            }
+            .frame(maxWidth: 900, alignment: .leading)
+            .frame(maxWidth: .infinity)
+        }
+        .background(CorresPalette.canvas)
+        .id(thread.id)
+        .task(id: thread.id) { await opened() }
+    }
+
+    // MARK: Header
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(thread.subject.isEmpty ? "(No subject)" : thread.subject)
+                .font(.system(size: 24, weight: .regular, design: .serif))
+                .foregroundStyle(CorresPalette.ink)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .top, spacing: 12) {
+                CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail, size: CGSize(width: 38, height: 38))
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(thread.sender).font(.headline).foregroundStyle(CorresPalette.ink)
+                        if let email = thread.senderEmail, email.lowercased() != thread.sender.lowercased() {
+                            Text(email).font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                                .textSelection(.enabled)
+                        }
+                    }
+                    if !recipients.isEmpty {
+                        Text(recipients).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(2)
+                    }
+                }
+                Spacer(minLength: 12)
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(thread.receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()))
+                        .font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                    Text(AccountPreferences.nickname(for: thread.id.account))
+                        .font(.caption).foregroundStyle(CorresPalette.tertiary)
+                }
+            }
+        }
+    }
+
+    private var recipients: String {
+        var parts: [String] = []
+        let to = thread.recipientNames
+        if !to.isEmpty { parts.append("To " + to.joined(separator: ", ")) }
+        if !thread.ccRecipients.isEmpty { parts.append("Cc \(thread.ccRecipients.count)") }
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: Why it's here, and the summary
+
+    private var statusCard: some View {
+        let insight = summariesOn ? intelligence.insight(for: thread) : nil
+        let preparing = summariesOn && insight?.summary == nil && intelligence.isPreparing(thread)
+        return VStack(alignment: .leading, spacing: 10) {
+            if let insight, let summary = insight.summary {
+                Label("In short", systemImage: "sparkle")
+                    .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                Text(summary).font(.body).foregroundStyle(CorresPalette.ink)
+                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                ForEach(insight.details, id: \.self) { detail in
+                    Text("• " + detail).font(.callout).foregroundStyle(CorresPalette.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Divider()
+            } else if preparing {
+                HStack(spacing: 8) {
+                    Label("In short", systemImage: "sparkle")
+                        .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                    ProgressView().controlSize(.mini)
+                }
+                Divider()
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(statusLine).font(.callout).foregroundStyle(CorresPalette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                Menu {
+                    ForEach(Attention.choices, id: \.self) { attention in
+                        Button {
+                            Task { await services.threadActions.setAttention(attention, for: thread) }
+                        } label: {
+                            if attention == thread.attention { Label(attention.title, systemImage: "checkmark") } else { Text(attention.title) }
+                        }
+                    }
+                } label: {
+                    Text("Move")
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                if thread.attention(at: .now) == .needsYou {
+                    Button("Handled") {
+                        Task { await services.threadActions.setAttention(.handled, for: thread) }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+            }
+        }
+        .padding(14)
+        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(CorresPalette.line))
+    }
+
+    private var statusLine: String {
+        let attention = thread.attention(at: .now)
+        let reason = thread.reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch attention {
+        case .needsYou: return reason.isEmpty ? "In Needs You" : "In Needs You: " + reason
+        case .waiting: return reason.isEmpty ? "Waiting on a reply" : "Waiting: " + reason
+        case .handled: return "Handled. It stays in Mail."
+        case .quiet: return reason.isEmpty ? "No action needed" : "No action needed: " + reason
+        }
+    }
+
+    private var summariesOn: Bool { services.entitlements.isPro && CorresSettings.summaries && intelligence.isAvailable }
+
+    // MARK: Earlier messages
+
+    private var earlierMessages: [Correspondence]? {
+        guard let all = services.threadActions.messages(in: thread), all.count > 1 else { return nil }
+        return Array(all.dropLast())
+    }
+
+    private func earlierSection(_ earlier: [Correspondence]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                withAnimation(.snappy) { showEarlier.toggle() }
+            } label: {
+                Label(earlier.count == 1 ? "1 earlier message" : "\(earlier.count) earlier messages",
+                      systemImage: showEarlier ? "chevron.down" : "chevron.right")
+                    .font(.callout)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(CorresPalette.accent)
+            if showEarlier {
+                ForEach(earlier) { message in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(message.sender).font(.callout.weight(.semibold))
+                            Spacer()
+                            Text(MacDates.short(message.receivedAt)).font(.caption).foregroundStyle(CorresPalette.secondary)
+                        }
+                        Text(MailDigest.preview(body: message.body, html: message.htmlBody) ?? message.excerpt)
+                            .font(.callout).foregroundStyle(CorresPalette.secondary)
+                            .lineLimit(4).textSelection(.enabled)
+                    }
+                    .padding(10)
+                    .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 8))
+                }
+            }
+        }
+    }
+
+    // MARK: Images and attachments
+
+    private var blockedImages: Int { thread.htmlBody.map(HTMLMessageBody.remoteImageCount(in:)) ?? 0 }
+    private var imagesAllowed: Bool { showImages || thread.imagesTrusted || CorresSettings.remoteImages == .always }
+
+    private var imagesNotice: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "photo").foregroundStyle(CorresPalette.secondary)
+            let trackers = thread.htmlBody.map(HTMLMessageBody.trackerCount(in:)) ?? 0
+            Text(trackers > 0 ? "Images hidden, and \(trackers) \(trackers == 1 ? "tracker" : "trackers") blocked"
+                              : "Images hidden to protect your privacy")
+                .font(.callout).foregroundStyle(CorresPalette.secondary)
+            Spacer()
+            Button("Show Images") { showImages = true }.controlSize(.small)
+            if let sender = thread.senderEmail {
+                Button("Always from \(thread.sender)") {
+                    showImages = true
+                    Task { await services.store.trustSenderImages(sender, account: thread.id.account) }
+                }
+                .controlSize(.small)
+            }
+        }
+        .padding(10)
+        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var attachments: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("\(thread.attachments.count) \(thread.attachments.count == 1 ? "attachment" : "attachments")")
+                .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.secondary)
+            FlowRow(spacing: 8) {
+                ForEach(thread.attachments) { file in
+                    Label {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(file.filename).lineLimit(1)
+                            Text(ByteCountFormatter.string(fromByteCount: Int64(file.sizeBytes), countStyle: .file))
+                                .font(.caption).foregroundStyle(CorresPalette.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "doc")
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 8))
+                }
+            }
+        }
+    }
+
+    // MARK: Loading
+
+    private var html: String {
+        thread.htmlBody ?? HTMLMessageBody.page(forPlainText: thread.body)
+    }
+
+    private func opened() async {
+        HangReporter.start("open")
+        showImages = false
+        showEarlier = false
+        bodyHeight = 1
+        if thread.isUnread && CorresSettings.markReadOnOpen {
+            // A beat later, so arrowing quickly through the list doesn't
+            // mark everything read on the way past, as in Mail.
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled else { return }
+            await services.threadActions.setUnread(false, for: thread)
+        }
+        async let content: Void = services.threadActions.loadContent(for: thread)
+        async let history: Void = services.threadActions.loadHistory(for: thread)
+        _ = await (content, history)
+        if summariesOn {
+            await intelligence.prepareInsight(for: thread, conversation: services.threadActions.messages(in: thread))
+        }
+    }
+}
+
+/// Lays children out in rows, wrapping as needed.
+struct FlowRow: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, widest: CGFloat = 0
+        for view in subviews {
+            let size = view.sizeThatFits(.unspecified)
+            if x > 0 && x + size.width > width { x = 0; y += rowHeight + spacing; rowHeight = 0 }
+            x += size.width + spacing
+            widest = max(widest, x - spacing)
+            rowHeight = max(rowHeight, size.height)
+        }
+        return CGSize(width: widest, height: y + rowHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0
+        for view in subviews {
+            let size = view.sizeThatFits(.unspecified)
+            if x > bounds.minX && x + size.width > bounds.maxX { x = bounds.minX; y += rowHeight + spacing; rowHeight = 0 }
+            view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+    }
+}

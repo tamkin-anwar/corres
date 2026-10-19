@@ -1,6 +1,5 @@
 import Foundation
 import Observation
-import UIKit
 
 /// Performs the actual unsubscribe once a message offers one, via
 /// `Correspondence.listUnsubscribeMailto`/`listUnsubscribeURL`/
@@ -52,7 +51,7 @@ final class UnsubscribeService {
             }
         }
         if let urlString = thread.listUnsubscribeURL, let url = URL(string: urlString) {
-            _ = await UIApplication.shared.open(url)
+            _ = await Platform.open(url)
             // Not marked done here: the person still has to complete
             // whatever that page asks for, and Corres has no way to confirm
             // they actually finished (unlike the two paths above, where a

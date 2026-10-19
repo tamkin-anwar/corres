@@ -1,7 +1,6 @@
 import AuthenticationServices
 import CryptoKit
 import Foundation
-import UIKit
 
 /// Signing in an Outlook account (Outlook.com, Hotmail, Live, and work or
 /// school Microsoft 365): Microsoft's own sign-in page in Apple's secure
@@ -86,8 +85,7 @@ final class MicrosoftSignIn: NSObject, ASWebAuthenticationPresentationContextPro
     }
 
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows).first(where: \.isKeyWindow) ?? ASPresentationAnchor()
+        MainActor.assumeIsolated { Platform.keyWindow } ?? ASPresentationAnchor()
     }
 
     private static func randomString(_ length: Int) -> String {

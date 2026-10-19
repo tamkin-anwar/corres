@@ -10,13 +10,13 @@ struct AccountAvatar: View {
     let name: String?
     let photoURL: URL?
     var size: CGFloat = 32
-    @State private var image: UIImage?
+    @State private var image: PlatformImage?
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
         ZStack {
             if let image {
-                Image(uiImage: image)
+                Image(platformImage: image)
                     .resizable()
                     .interpolation(.high)
                     .scaledToFill()
@@ -54,27 +54,27 @@ struct AccountAvatar: View {
 /// instantly on every launch and offline, and only fetched once per URL.
 actor ProfilePhotoCache {
     static let shared = ProfilePhotoCache()
-    private var memory: [URL: UIImage] = [:]
+    private var memory: [URL: PlatformImage] = [:]
 
-    func image(for url: URL?) async -> UIImage? {
+    func image(for url: URL?) async -> PlatformImage? {
         guard let url else { return nil }
         if let cached = memory[url] { return cached }
         // A photo kept on this iPhone (Outlook's, see `saveLocal`).
         // Found by name: an app update can move the app's folder.
         if url.isFileURL {
             let file = Self.localFolder?.appendingPathComponent(url.lastPathComponent) ?? url
-            let image = (try? Data(contentsOf: file)).flatMap(UIImage.init(data:))
+            let image = (try? Data(contentsOf: file)).flatMap(PlatformImage.init(data:))
             memory[url] = image
             return image
         }
         let file = Self.fileURL(for: url)
-        if let data = try? Data(contentsOf: file), let image = UIImage(data: data) {
+        if let data = try? Data(contentsOf: file), let image = PlatformImage(data: data) {
             memory[url] = image
             return image
         }
         guard let (data, response) = try? await URLSession.shared.data(from: url),
               (response as? HTTPURLResponse)?.statusCode == 200,
-              let image = UIImage(data: data) else { return nil }
+              let image = PlatformImage(data: data) else { return nil }
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? data.write(to: file, options: .atomic)
         memory[url] = image

@@ -1,7 +1,6 @@
 import Contacts
 import Foundation
 import Observation
-import UIKit
 
 /// Who Corres offers as you type a name: in To and Cc, and in search
 /// ("Sara Wiltshire" as you type "sara"). A tester expected it, as Mail
@@ -29,11 +28,11 @@ final class PeopleDirectory {
     private var hidden: Set<String> = []
     private var contacts = PeopleIndex() { didSet { merged = nil } }
     /// Contacts photos by address, decoded once.
-    private var photos: [String: UIImage] = [:]
+    private var photos: [String: PlatformImage] = [:]
 
     /// The person's Contacts photo, if you've allowed Contacts and they
     /// have one.
-    func photo(for email: String) -> UIImage? { photos[email.lowercased()] }
+    func photo(for email: String) -> PlatformImage? { photos[email.lowercased()] }
     private var looked: Set<String> = []
     private(set) var isLookingUp = false
     private let client = MailClient()
@@ -115,24 +114,26 @@ final class PeopleDirectory {
     private func loadContacts() async {
         let status = CNContactStore.authorizationStatus(for: .contacts)
         var allowed = status == .authorized
+        #if os(iOS)
         if #available(iOS 18.0, *), status == .limited { allowed = true }
+        #endif
         guard allowed, CorresSettings.suggestContacts else {
             contacts = PeopleIndex()
             photos = [:]
             return
         }
-        let found: [(String, String, UIImage?)] = await Task.detached(priority: .utility) {
+        let found: [(String, String, PlatformImage?)] = await Task.detached(priority: .utility) {
             let keys = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactOrganizationNameKey, CNContactEmailAddressesKey,
                         CNContactImageDataAvailableKey, CNContactThumbnailImageDataKey] as [CNKeyDescriptor]
-            var found: [(String, String, UIImage?)] = []
+            var found: [(String, String, PlatformImage?)] = []
             // Decoded here, off the main thread: hundreds of photos at
             // launch would otherwise stutter the first screen.
-            var decoded: [Data: UIImage] = [:]
+            var decoded: [Data: PlatformImage] = [:]
             try? CNContactStore().enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
                 let name = [contact.givenName, contact.familyName].filter { !$0.isEmpty }.joined(separator: " ")
-                var photo: UIImage?
+                var photo: PlatformImage?
                 if contact.imageDataAvailable, let data = contact.thumbnailImageData {
-                    photo = decoded[data] ?? UIImage(data: data)?.preparingForDisplay()
+                    photo = decoded[data] ?? PlatformImage(data: data)?.preparedForDisplay()
                     decoded[data] = photo
                 }
                 for address in contact.emailAddresses {
@@ -142,7 +143,7 @@ final class PeopleDirectory {
             return found
         }.value
         var index = PeopleIndex()
-        var images: [String: UIImage] = [:]
+        var images: [String: PlatformImage] = [:]
         for (name, email, photo) in found {
             index.recordContact(name: name, email: email)
             if let photo { images[email.lowercased()] = photo }

@@ -47,7 +47,7 @@ final class AskService {
     }
 
     var canAnswer: Bool {
-        if #available(iOS 26.0, *) { return SystemLanguageModel.default.availability == .available }
+        if #available(iOS 26.0, macOS 26.0, *) { return SystemLanguageModel.default.availability == .available }
         return false
     }
 
@@ -92,7 +92,7 @@ final class AskService {
             phase = .done
             return
         }
-        guard canAnswer, #available(iOS 26.0, *) else {
+        guard canAnswer, #available(iOS 26.0, macOS 26.0, *) else {
             sources = await search(query, limit: 6).map(Source.init)
             phase = .done
             return
@@ -270,7 +270,7 @@ final class AskService {
         return local.patternRange(#"^(no[-_.]?reply|do[-_.]?not[-_.]?reply|notifications?|notify|mailer(-daemon)?|bounces?|alerts?|updates?)\b"#) != nil
     }
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private static let answerInstructions = """
     You answer a question about the user's own email, using only the \
     numbered emails given. Quote dates, times, amounts and names exactly as \
@@ -283,7 +283,7 @@ final class AskService {
     briefly what you couldn't find.
     """
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private static let instructions = """
     You answer questions about the user's own email. Always call searchMail \
     first, with a few short keywords (names, places, companies, topics; not \
@@ -327,7 +327,7 @@ actor SourceRecorder {
     }
 }
 
-@available(iOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, *)
 @Generable
 struct AskAnswer {
     @Guide(description: "True only if the emails actually contain the answer.")
@@ -338,7 +338,7 @@ struct AskAnswer {
     let sourceNumbers: [Int]
 }
 
-@available(iOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, *)
 struct SearchMailTool: Tool {
     let name = "searchMail"
     let description = "Searches the user's email by keywords and returns the best matching messages with sender, date, subject and text."

@@ -1,7 +1,11 @@
 import Foundation
 import Observation
 import StoreKit
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// Corres Pro, through StoreKit 2 only: no server of ours decides who has
 /// Pro. Apple's signed transactions on the device are the record, so a
@@ -209,11 +213,16 @@ final class EntitlementStore {
     /// paywall or Settings, iOS laid it out with its close button over
     /// the header.
     func presentRedeemSheet() async {
-        guard let scene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first(where: { $0.activationState == .foregroundActive }) else { return }
         do {
+            #if canImport(UIKit)
+            guard let scene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive }) else { return }
             try await AppStore.presentOfferCodeRedeemSheet(in: scene)
+            #else
+            guard let controller = Platform.keyWindow?.contentViewController else { return }
+            try await AppStore.presentOfferCodeRedeemSheet(from: controller)
+            #endif
             await refresh()
         } catch {
             errorMessage = "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account."

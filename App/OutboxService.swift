@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 import Observation
 import os
 
@@ -81,9 +80,9 @@ final class OutboxService {
     func autosave(_ draft: Draft, replyingTo thread: Correspondence?) {
         let previous = saving[draft.id]
         // iOS allows a few seconds more in the background to finish it.
-        let background = UIApplication.shared.beginBackgroundTask(withName: "Save draft")
+        let background = BackgroundWork.begin("Save draft")
         saving[draft.id] = Task {
-            defer { if background != .invalid { UIApplication.shared.endBackgroundTask(background) } }
+            defer { background.end() }
             await previous?.value
             guard let account = resolveSendingAccount(draft: draft, thread: thread), auth.isConnected(account) else {
                 if shelved?.id == draft.id { shelved?.couldNotSave = true }

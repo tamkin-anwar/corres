@@ -58,10 +58,12 @@ final class WKWebViewPool {
         routers[ObjectIdentifier(webView)]?.target = nil
         webView.stopLoading()
         webView.loadHTMLString("", baseURL: nil)
+        #if canImport(UIKit)
         webView.scrollView.setContentOffset(.zero, animated: false)
         webView.scrollView.setZoomScale(1, animated: false)
         webView.scrollView.isScrollEnabled = false
-        webView.alpha = 1
+        #endif
+        webView.setShown(true)
         // Extras beyond poolSize are simply let go rather than grown into
         // an unbounded pool: per the research above, each live instance is
         // a real, non-trivial OS resource, not something to hoard freely.
@@ -79,11 +81,14 @@ final class WKWebViewPool {
         // Addresses, phone numbers, dates, flights, tracking numbers and
         // bare web addresses in the text become tappable, found on this
         // iPhone the way Mail finds them.
+        #if canImport(UIKit)
         configuration.dataDetectorTypes = [.address, .phoneNumber, .calendarEvent, .link, .flightNumber, .trackingNumber]
+        #endif
         // Off: on, nothing painted until every image had loaded, so an
         // image-heavy email sat blank for seconds. A reused webview's old
         // content is still never shown (HTMLMessageBody keeps it hidden
         // until the new email's first size report).
+        #if canImport(UIKit)
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.isOpaque = false
         webView.backgroundColor = .clear
@@ -93,6 +98,13 @@ final class WKWebViewPool {
         // always scrolls the conversation (see HTMLMessageBody.Coordinator).
         webView.scrollView.alwaysBounceVertical = false
         webView.scrollView.isDirectionalLockEnabled = true
+        #else
+        // Sized to the whole email and scrolled with the conversation, so
+        // the wheel goes to the conversation, not the email.
+        let webView = PassthroughScrollWebView(frame: .zero, configuration: configuration)
+        webView.underPageBackgroundColor = .clear
+        webView.setValue(false, forKey: "drawsBackground")
+        #endif
         install(on: webView)
         return webView
     }
@@ -124,3 +136,14 @@ final class SizeMessageRouter: NSObject, WKScriptMessageHandler {
         target?.receiveSize(load: load, height: CGFloat(height), webView: webView)
     }
 }
+
+#if os(macOS)
+/// On the Mac a web view keeps every scroll for itself, even sized to fit
+/// its page. The email is part of the conversation, so scrolling over it
+/// scrolls the conversation.
+final class PassthroughScrollWebView: WKWebView {
+    override func scrollWheel(with event: NSEvent) {
+        nextResponder?.scrollWheel(with: event)
+    }
+}
+#endif

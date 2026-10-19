@@ -11,7 +11,7 @@ struct CorresGlass<S: Shape>: ViewModifier {
     @Environment(\.displayScale) private var displayScale
 
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *), !reduceTransparency {
+        if #available(iOS 26.0, macOS 26.0, *), !reduceTransparency {
             content.glassEffect(interactive ? .regular.interactive() : .regular, in: shape)
         } else {
             content
@@ -53,7 +53,7 @@ struct CorrespondentAvatar: View {
             .background(CorresPalette.avatarFill, in: Circle())
             .overlay {
                 if let email, let photo = people?.photo(for: email) {
-                    Image(uiImage: photo).resizable().scaledToFill()
+                    Image(platformImage: photo).resizable().scaledToFill()
                         .frame(width: side, height: side).clipShape(Circle())
                 }
             }
@@ -155,7 +155,7 @@ extension View {
     /// toolbar would clip.
     @ViewBuilder
     func prominentToolbarButton() -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             self.buttonStyle(.glassProminent).tint(CorresPalette.accent)
         } else {
             self.buttonStyle(.borderedProminent).tint(CorresPalette.accent)

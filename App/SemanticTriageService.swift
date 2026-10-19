@@ -43,7 +43,7 @@ final class SemanticTriageService {
     /// turns Apple Intelligence on, while the app is already running, and a
     /// launch-time snapshot would leave triage off until the next cold start.
     private var isAvailable: Bool {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             return SystemLanguageModel.default.availability == .available
         }
         return false
@@ -192,13 +192,13 @@ final class SemanticTriageService {
     }
 
     /// A plain, non-`@available` tuple, deliberately: `TriageAssessment`
-    /// (and its `Confidence` enum) is `@available(iOS 26.0, *)`, and
+    /// (and its `Confidence` enum) is `@available(iOS 26.0, macOS 26.0, *)`, and
     /// putting that type directly in this method's own signature would
     /// force the whole method to carry that availability annotation too,
     /// leaking the same requirement out to `triage(_:store:)`'s call site.
     /// `confidence` is 0 (low), 1 (medium), or 2 (high) for the same reason.
     private func assess(_ thread: Correspondence) async -> (needsReply: Bool, reason: String, confidence: Int)? {
-        guard #available(iOS 26.0, *) else { return nil }
+        guard #available(iOS 26.0, macOS 26.0, *) else { return nil }
         do {
             let session = LanguageModelSession(instructions: Self.instructions)
             let response = try await session.respond(to: Self.prompt(for: thread), generating: TriageAssessment.self)
@@ -215,7 +215,7 @@ final class SemanticTriageService {
         }
     }
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private static let instructions = """
     You triage a person's email inbox. For one message at a time, decide only \
     whether it genuinely needs a personal reply, decision, or action from the \
@@ -261,7 +261,7 @@ final class SemanticTriageService {
     }
 }
 
-@available(iOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, *)
 @Generable
 struct TriageAssessment {
     /// Three discrete levels, not a continuous score: a forced numeric

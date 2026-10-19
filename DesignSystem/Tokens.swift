@@ -47,7 +47,11 @@ enum CorresPalette {
     static let swipeTrash = Color(hex: 0xD2342A) // red, 4.92:1
     /// Something gone wrong in an email itself ("Payment failed"); the
     /// system red, which keeps its contrast in light and dark.
+    #if os(macOS)
+    static let alert = Color(nsColor: .systemRed)
+    #else
     static let alert = Color(uiColor: .systemRed)
+    #endif
     static let swipeUnread = Color(hex: 0x0B68D9) // blue, 5.25:1
     static let swipePin = Color(hex: 0x0E7C86) // teal, 4.95:1
     /// A pinned row's mark: the same teal as the swipe that pinned it, as a
@@ -72,7 +76,11 @@ extension Color {
 /// "iPhone" or "iPad", for wording that names the device Corres runs on
 /// ("Read on this iPad"), the way Apple's own apps do.
 enum Device {
+    #if os(macOS)
+    static let name = "Mac"
+    #else
     @MainActor static let name = UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
+    #endif
 }
 
 enum CorresSpace {

@@ -738,7 +738,7 @@ struct CorresShell: View {
         if selection == .mail {
             ToolbarItem(placement: .topBarLeading) { mailboxesLink }
             // Its own button, not merged into one capsule with Select.
-            if #available(iOS 26.0, *) {
+            if #available(iOS 26.0, macOS 26.0, *) {
                 ToolbarSpacer(.fixed, placement: .topBarLeading)
             }
         }
@@ -751,7 +751,7 @@ struct CorresShell: View {
         }
         // Its own circle, outside the glass group the system gives other
         // toolbar items on iOS 26, the way Apple's apps show an account.
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             ToolbarItem(placement: .topBarTrailing) { accountButton }
                 .sharedBackgroundVisibility(.hidden)
         } else {

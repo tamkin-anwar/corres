@@ -1,6 +1,10 @@
 import Foundation
 import MetricKit
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 import os
 
 /// Keeps every hang and crash report iOS hands Corres, so a freeze on a
@@ -153,7 +157,7 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         let info = Bundle.main.infoDictionary
         let summary: [String: Any] = [
             "app": "Corres \(info?["CFBundleShortVersionString"] as? String ?? "") (\(info?["CFBundleVersion"] as? String ?? ""))",
-            "system": "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)",
+            "system": MainActor.assumeIsolated { Platform.systemDescription },
             "model": Self.modelIdentifier,
             "created": Date().formatted(.iso8601),
             "reports": reports,
@@ -195,20 +199,34 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
     }
 }
 
-/// A stretch of work iOS lets finish after Corres leaves the screen.
+/// A stretch of work iOS lets finish after Corres leaves the screen. On
+/// the Mac, an activity that keeps App Nap from pausing it halfway.
 @MainActor
 final class BackgroundWork {
+    #if canImport(UIKit)
     private var id: UIBackgroundTaskIdentifier = .invalid
+    #else
+    private var activity: NSObjectProtocol?
+    #endif
 
     static func begin(_ name: String) -> BackgroundWork {
         let work = BackgroundWork()
+        #if canImport(UIKit)
         work.id = UIApplication.shared.beginBackgroundTask(withName: name) { [weak work] in MainActor.assumeIsolated { work?.end() } }
+        #else
+        work.activity = ProcessInfo.processInfo.beginActivity(options: .userInitiatedAllowingIdleSystemSleep, reason: name)
+        #endif
         return work
     }
 
     func end() {
+        #if canImport(UIKit)
         guard id != .invalid else { return }
         UIApplication.shared.endBackgroundTask(id)
         id = .invalid
+        #else
+        if let activity { ProcessInfo.processInfo.endActivity(activity) }
+        activity = nil
+        #endif
     }
 }

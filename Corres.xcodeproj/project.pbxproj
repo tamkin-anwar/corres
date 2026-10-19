@@ -207,6 +207,104 @@
 		0F6031E618B242D5A00A5999 /* App/OutlookTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */; };
 		A1DA771E4AB7471196DFE162 /* Shared/MailAccounts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09185C5DABE3431684F5BB68 /* Shared/MailAccounts.swift */; };
 		7218669C3F294DDA919034B5 /* Core/AttachmentKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C16B27D69CB4F8FA44B529D /* Core/AttachmentKind.swift */; };
+		CCF94C2B28BB523966BFA0DA /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 3C4322D2370AE7774488DEF2 /* GoogleSignIn */; };
+		089DC7F418FBEF6C588899BB /* Postwright in Frameworks */ = {isa = PBXBuildFile; productRef = 69E19AB86C9A6402EEBB624A /* Postwright */; };
+		9551AFC87703F9E148A92177 /* App/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B16B6325BA8F1CFBCC279108 /* App/Assets.xcassets */; };
+		10ACFDD56134B1F5C5ABB25B /* App/PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F048BFA7B57836F484F1B9C1 /* App/PrivacyInfo.xcprivacy */; };
+		0482DF41EF8315E04376FC3A /* Core/AskQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5657FD79441A48ACB789585C /* Core/AskQuery.swift */; };
+		A246C2AFAD01BB224CF149B8 /* Core/AttachmentKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C16B27D69CB4F8FA44B529D /* Core/AttachmentKind.swift */; };
+		E44C5D47119C94AADFA3DE85 /* Core/CorresSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3188DDEA4B4112FCE079024F /* Core/CorresSchema.swift */; };
+		9ED1B51882C423354FA9F577 /* Core/Correspondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E055D7FFC136234D685E062 /* Core/Correspondence.swift */; };
+		2A9EB2F2C0354F2E83C7855C /* Core/DetectedItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F6E3D3ED4A43908B1C100E /* Core/DetectedItems.swift */; };
+		44D6D1D4FFEDCDE6D611BF3E /* Core/GmailAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68DA0977ACFA46A1C9952B4 /* Core/GmailAccount.swift */; };
+		9F8CAF6885F7DA253965C8C6 /* Core/HTTPBatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B31ED80A4444E8EA4E8A6C6 /* Core/HTTPBatch.swift */; };
+		1FCE0A8655156923B9F4A45E /* Core/InboxCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B676FBAD72F4613B0B8D1E5 /* Core/InboxCategory.swift */; };
+		75258C1FB6843A9B33AEC551 /* Core/Invitation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */; };
+		019291CC76CB68B1BE69B71B /* Core/MailDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */; };
+		2478A99925201F8495F69BBE /* Core/MailRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63EB4BD12F7A4F4DE2BC78F7 /* Core/MailRepository.swift */; };
+		CF63D50500C54B4FA7FF6195 /* Core/MailSignals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */; };
+		67816CB6279A14F32F0E9E64 /* Core/NextStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */; };
+		04A1EA8E244E7F1868226C60 /* Core/PatternCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C0DE0000000000000000F2 /* Core/PatternCache.swift */; };
+		8274F6B40AD59691521A988F /* Core/PeopleIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = D323E07BF00243989B4E0A2A /* Core/PeopleIndex.swift */; };
+		0E6A56AB44A64315E661EBF7 /* Core/PersistedCorrespondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */; };
+		4D88957707D8482C5E5F5C87 /* Core/PersistedOutboxEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */; };
+		45BB6D2F3AC4F2D5C2AF4A8E /* Core/PlainTextEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89260D4AEC984B719FB734D4 /* Core/PlainTextEmail.swift */; };
+		A8C0FFB11FBFA606F4096211 /* Core/RichBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69625E99E49B4770B184FC5C /* Core/RichBody.swift */; };
+		A3D9C442D0DE55E35A0A97C4 /* Core/SampleCorrespondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF963A48F35EECBABCEAC67 /* Core/SampleCorrespondence.swift */; };
+		FF572D1C19FF97BEC7A56363 /* Core/SenderDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8779CEB27F41BCB50AEF84 /* Core/SenderDirectory.swift */; };
+		6E5D0F6D2B318EB08299482F /* Core/SenderHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0420D138F474423E84B6A00A /* Core/SenderHabits.swift */; };
+		5F5C0DAB10350183FC969F0F /* Core/SwiftDataMailRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F9C55B0E3533C78CF4C4F6 /* Core/SwiftDataMailRepository.swift */; };
+		B7709F2CFCDE6CF8780E2FEE /* Core/TimePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */; };
+		7B3CDF7634A978AB0BF9207E /* DesignSystem/CorrespondenceMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */; };
+		0DBACC8A698AB0193057897A /* DesignSystem/Materials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AEABBF5B1C933392981114 /* DesignSystem/Materials.swift */; };
+		A0183F3A85AFEC26E75EB5C0 /* DesignSystem/Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FDAA185499F66241648B25 /* DesignSystem/Tokens.swift */; };
+		D54912356E7DBC0FE25C621C /* Mac/CorresMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B5AB95D42257CED39A42AB3 /* Mac/CorresMacApp.swift */; };
+		B45D0DF2C41C511A3E177CFF /* Shared/MailAccounts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09185C5DABE3431684F5BB68 /* Shared/MailAccounts.swift */; };
+		3B946BFB58FA08E1EC58603A /* Shared/NotifyPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F46E38B747C48DEBF9C7B07 /* Shared/NotifyPolicy.swift */; };
+		D238E0AFDF68EC7D332D3B74 /* Shared/ShareSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79EF12712C774AD993901777 /* Shared/ShareSnapshot.swift */; };
+		376D38C3A34F9B57B7E6216B /* Shared/WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */; };
+		0B67034501799AE5D3E19B16 /* App/AccountPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91707F3623234ACCBFFCDC95 /* App/AccountPreferences.swift */; };
+		E65B825515C028823DA740A8 /* App/ActionQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F004 /* App/ActionQueue.swift */; };
+		EAE0FBF65E8297467DC407A8 /* App/AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */; };
+		A91255EF9E5B49D40BD5579F /* App/AskService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A52B6D67E5444081ECC866 /* App/AskService.swift */; };
+		690C4858ACF1B2E22D9D8663 /* App/BriefNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F763700EF74BE78B3980EF /* App/BriefNotifier.swift */; };
+		0685CA37AE2AF2BFA27106DA /* App/CloudSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F005 /* App/CloudSync.swift */; };
+		E9CAFE0C1DE447434A1A60DA /* App/CorresIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */; };
+		3F25CA27E3D641CBBBB9B7D8 /* App/CorresSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8BEA5EECE643858167C548 /* App/CorresSettings.swift */; };
+		03B6B456FFABA8ACDA7B40B1 /* App/EntitlementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270AD7D44F9842CEA2E266F0 /* App/EntitlementStore.swift */; };
+		EF76231463F74E01A097327E /* App/FollowUps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5714C136B1C144BA9986F7BD /* App/FollowUps.swift */; };
+		F1E20A20C456BCC6E45C7686 /* App/GmailAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682EC77E42F944FED8F83C02 /* App/GmailAPIClient.swift */; };
+		13833113045924F950AB71C7 /* App/GmailMessageComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44B8B11C43712F4DF6C6A4B0 /* App/GmailMessageComposer.swift */; };
+		9A07247B210437283B3E995C /* App/GmailQuotaGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */; };
+		20728A2B684BEFC26B4DE772 /* App/GmailSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2107F2DE31F9ED9AE7F9E54C /* App/GmailSyncService.swift */; };
+		0856D6360B86916AC90B169D /* App/GoogleAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F87B8DB17F1F3706C1461F47 /* App/GoogleAuthService.swift */; };
+		32D597CDEA146D03FCB587B0 /* App/GoogleTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */; };
+		66C5B5D03458EA6654B26F62 /* App/HabitWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8203EAEE0A43CAABFDC66E /* App/HabitWatcher.swift */; };
+		9563A30A673BF79890C56E20 /* App/HangReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F003 /* App/HangReporter.swift */; };
+		754B74CF3F9E1949ECE1982C /* App/IMAPMailClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCEB6F4F7D60C9D7914B9BA /* App/IMAPMailClient.swift */; };
+		2E0CF3F28B9FB5D6728C60BC /* App/IMAPSessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C096C44615F2419D412B136 /* App/IMAPSessions.swift */; };
+		33EBFE9D1681873F5CEEC281 /* App/IMAPWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000F1 /* App/IMAPWatcher.swift */; };
+		BDA26D0E8A378CD1B7893891 /* App/Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B03773975FDB401CA02B5F15 /* App/Keychain.swift */; };
+		704A90D56582CE18A1228850 /* App/LabelDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4D571AAED54527AAC57F47 /* App/LabelDirectory.swift */; };
+		3D4E2864EAD15B3D0061E2C4 /* App/LinkOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D370982C074FF8839A73E6 /* App/LinkOpener.swift */; };
+		3A7AE669F243C38109B7A20B /* App/MailClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4EE9AD8F80B43F692ADA7B7 /* App/MailClient.swift */; };
+		3C1E929E4CB7A067C4490C03 /* App/MailIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCE33A1D946429F9220EDC4 /* App/MailIntelligence.swift */; };
+		34D5598D60A585844E50FFE9 /* App/MailServerDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F001 /* App/MailServerDiscovery.swift */; };
+		70B4770E8FA7F99CED3FF518 /* App/MailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B2D40AA7032720196B86FE /* App/MailStore.swift */; };
+		B09EBF0588FEEED4078B3547 /* App/MicrosoftSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = D69CF92E53CD42029DAD53AC /* App/MicrosoftSignIn.swift */; };
+		1B6F3C1F82F3C5B21D32C8BA /* App/OutboxService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0B80EE1611396DB315C571 /* App/OutboxService.swift */; };
+		9B2CEF3BA90A0E0527C27A8E /* App/OutlookClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC8BE109A8184BD9AF037CDA /* App/OutlookClient.swift */; };
+		8FF87169249D3F9520C44ECE /* App/OutlookTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */; };
+		F690AF91B2D34966F2378403 /* App/PeopleDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977F121DCAF14706A5639E69 /* App/PeopleDirectory.swift */; };
+		ECCC084E9A8F5049F24835EB /* App/PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916D22A5A98347EDBD6063F8 /* App/PushNotificationService.swift */; };
+		25E90FED8F73B2219895966B /* App/ScheduledSends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 777D2F0FB79048C49C92A93F /* App/ScheduledSends.swift */; };
+		56DC3F795C5C37BC79243C0B /* App/SemanticTriageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E62FF2CAB366437C92797761 /* App/SemanticTriageService.swift */; };
+		6721D4E22078568E20051CDB /* App/SendAsDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A37F181693E458183898A1A /* App/SendAsDirectory.swift */; };
+		01C3DD7D018C3BE40810D134 /* App/SenderLessons.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED71C59F2E034AE0B103EE98 /* App/SenderLessons.swift */; };
+		0F84E6B9D2C725C891B0EEFE /* App/ShareBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B82102449D24E8E9476036E /* App/ShareBridge.swift */; };
+		8545FC3E29B14389D51A7B9B /* App/ThreadActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89705DCC26384892BF488BA2 /* App/ThreadActionService.swift */; };
+		D42DF494B31D35B0F1AFF276 /* App/UnsubscribeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A4AE45C4BB42BBAE8BE735 /* App/UnsubscribeService.swift */; };
+		00E3D1D9316058511010F062 /* App/WidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C33E49C348642688FD36A86 /* App/WidgetBridge.swift */; };
+		731812AA2B6E556FFA4822AF /* App/Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A66B25AE34C8D2D121F23AE /* App/Platform.swift */; };
+		1C3FA364DCAE22A3560A3274 /* App/Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A66B25AE34C8D2D121F23AE /* App/Platform.swift */; };
+		6200A18DF8C1E26A2BBC350A /* App/ICloudSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7F38BF13EFB132AE0D4DAD /* App/ICloudSignIn.swift */; };
+		18FE6D74BF95E5BB95278633 /* App/ICloudSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7F38BF13EFB132AE0D4DAD /* App/ICloudSignIn.swift */; };
+		B8708BCD6F5E5D14BCAAB259 /* Features/AccountAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A1BCC0306E4172BBFF5CBF /* Features/AccountAvatar.swift */; };
+		2AC1DA697CD644CC0CBBDE50 /* App/MailFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A35D5AF67DC962DCB81470C /* App/MailFilter.swift */; };
+		95073F9B3F9E1AD5EBDC4CDD /* App/MailFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A35D5AF67DC962DCB81470C /* App/MailFilter.swift */; };
+		7DD97E14AA61600A65E236A3 /* Features/HTMLMessageBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FCDDD1329818B12922D64E /* Features/HTMLMessageBody.swift */; };
+		023980A204F802E297170763 /* Features/WKWebViewPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E03C9ECA4EFCE45294D7EB28 /* Features/WKWebViewPool.swift */; };
+		9ED6E00D56A3376BBFC2DA4C /* App/DraftBuilding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A11B6D1E63608A715043AD8 /* App/DraftBuilding.swift */; };
+		6BEDC5628EDE31BC049DC695 /* App/DraftBuilding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A11B6D1E63608A715043AD8 /* App/DraftBuilding.swift */; };
+		53E42605B6B26B655D98C331 /* Mac/MacCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F85ED2497CB7E128BD8B4B1 /* Mac/MacCommands.swift */; };
+		F4C18104D0A1EFC6116E1DFD /* Mac/MacCompose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2934A396581F31D9333E8F53 /* Mac/MacCompose.swift */; };
+		9854EA49F797A58B81D09012 /* Mac/MacMailbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7082B995009BE1EA1D75F7B2 /* Mac/MacMailbox.swift */; };
+		C8F505ACBB8E52A3FB081443 /* Mac/MacMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80AE7A41EF1A9E854A482C44 /* Mac/MacMainView.swift */; };
+		C167741249DD781FD22B4C19 /* Mac/MacServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A282FD1D57C93CB1ADB871 /* Mac/MacServices.swift */; };
+		A35DDAC906319C738C89DA9F /* Mac/MacSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FA00A1C567D1E74B61E5DBE /* Mac/MacSettings.swift */; };
+		DA66B3843620789C89B9FD42 /* Mac/MacSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 389BD12A388A9E8529CE4440 /* Mac/MacSidebar.swift */; };
+		3AB364011D19E749493FAE90 /* Mac/MessageList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E46B8D894BCDA57E5E072FF7 /* Mac/MessageList.swift */; };
+		A13B184FB8061F4B4B9B0892 /* Mac/ReadingPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC40DAFA3F6E39336F0BFE6B /* Mac/ReadingPane.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -375,6 +473,23 @@
 		E4E8BC7DF77D4F9290306C20 /* ShareExtension/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = ShareExtension/Info.plist; sourceTree = SOURCE_ROOT; };
 		7984516A791C43B887176786 /* ShareExtension/CorresShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension/CorresShare.entitlements; sourceTree = SOURCE_ROOT; };
 		0CB72D373C9C4A0A956F4172 /* CorresShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CorresShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		095C3F5B70B931C3C26330A8 /* Corres.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Corres.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C54CFF13B47BD83484F0B681 /* Mac/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Mac/Info.plist; sourceTree = SOURCE_ROOT; };
+		F51B8D675D233C5037674AD4 /* Mac/CorresMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Mac/CorresMac.entitlements; sourceTree = SOURCE_ROOT; };
+		9B5AB95D42257CED39A42AB3 /* Mac/CorresMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/CorresMacApp.swift; sourceTree = SOURCE_ROOT; };
+		4A66B25AE34C8D2D121F23AE /* App/Platform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/Platform.swift; sourceTree = SOURCE_ROOT; };
+		FF7F38BF13EFB132AE0D4DAD /* App/ICloudSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ICloudSignIn.swift; sourceTree = SOURCE_ROOT; };
+		1A35D5AF67DC962DCB81470C /* App/MailFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MailFilter.swift; sourceTree = SOURCE_ROOT; };
+		8A11B6D1E63608A715043AD8 /* App/DraftBuilding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/DraftBuilding.swift; sourceTree = SOURCE_ROOT; };
+		0F85ED2497CB7E128BD8B4B1 /* Mac/MacCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacCommands.swift; sourceTree = SOURCE_ROOT; };
+		2934A396581F31D9333E8F53 /* Mac/MacCompose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacCompose.swift; sourceTree = SOURCE_ROOT; };
+		7082B995009BE1EA1D75F7B2 /* Mac/MacMailbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacMailbox.swift; sourceTree = SOURCE_ROOT; };
+		80AE7A41EF1A9E854A482C44 /* Mac/MacMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacMainView.swift; sourceTree = SOURCE_ROOT; };
+		07A282FD1D57C93CB1ADB871 /* Mac/MacServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacServices.swift; sourceTree = SOURCE_ROOT; };
+		2FA00A1C567D1E74B61E5DBE /* Mac/MacSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacSettings.swift; sourceTree = SOURCE_ROOT; };
+		389BD12A388A9E8529CE4440 /* Mac/MacSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacSidebar.swift; sourceTree = SOURCE_ROOT; };
+		E46B8D894BCDA57E5E072FF7 /* Mac/MessageList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MessageList.swift; sourceTree = SOURCE_ROOT; };
+		FC40DAFA3F6E39336F0BFE6B /* Mac/ReadingPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/ReadingPane.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -411,6 +526,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A5A12F482C54A4DD7700C89F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CCF94C2B28BB523966BFA0DA /* GoogleSignIn in Frameworks */,
+				089DC7F418FBEF6C588899BB /* Postwright in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -431,6 +555,7 @@
 				D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */,
 				0CB72D373C9C4A0A956F4172 /* CorresShare.appex */,
 				51036E354994481EB7E9A6FD /* CorresNotify.appex */,
+				095C3F5B70B931C3C26330A8 /* Corres.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -551,6 +676,22 @@
 				F048BFA7B57836F484F1B9C1 /* App/PrivacyInfo.xcprivacy */,
 				B16B6325BA8F1CFBCC279108 /* App/Assets.xcassets */,
 				0A3E27B8CA818264D75C8D81 /* Products */,
+				C54CFF13B47BD83484F0B681 /* Mac/Info.plist */,
+				F51B8D675D233C5037674AD4 /* Mac/CorresMac.entitlements */,
+				9B5AB95D42257CED39A42AB3 /* Mac/CorresMacApp.swift */,
+				4A66B25AE34C8D2D121F23AE /* App/Platform.swift */,
+				FF7F38BF13EFB132AE0D4DAD /* App/ICloudSignIn.swift */,
+				1A35D5AF67DC962DCB81470C /* App/MailFilter.swift */,
+				8A11B6D1E63608A715043AD8 /* App/DraftBuilding.swift */,
+				0F85ED2497CB7E128BD8B4B1 /* Mac/MacCommands.swift */,
+				2934A396581F31D9333E8F53 /* Mac/MacCompose.swift */,
+				7082B995009BE1EA1D75F7B2 /* Mac/MacMailbox.swift */,
+				80AE7A41EF1A9E854A482C44 /* Mac/MacMainView.swift */,
+				07A282FD1D57C93CB1ADB871 /* Mac/MacServices.swift */,
+				2FA00A1C567D1E74B61E5DBE /* Mac/MacSettings.swift */,
+				389BD12A388A9E8529CE4440 /* Mac/MacSidebar.swift */,
+				E46B8D894BCDA57E5E072FF7 /* Mac/MessageList.swift */,
+				FC40DAFA3F6E39336F0BFE6B /* Mac/ReadingPane.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -662,6 +803,27 @@
 			productReference = 0CB72D373C9C4A0A956F4172 /* CorresShare.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		FD378C42220E184091A4CF8F /* CorresMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 81EE5EF4DDF1AD4D02E615E9 /* Build configuration list for PBXNativeTarget "CorresMac" */;
+			buildPhases = (
+				375C1973659C3086330557E5 /* Sources */,
+				A5A12F482C54A4DD7700C89F /* Frameworks */,
+				4A604C582FACE597C51C3475 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CorresMac;
+			packageProductDependencies = (
+				3C4322D2370AE7774488DEF2 /* GoogleSignIn */,
+				69E19AB86C9A6402EEBB624A /* Postwright */,
+			);
+			productName = Corres;
+			productReference = 095C3F5B70B931C3C26330A8 /* Corres.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -691,6 +853,7 @@
 				C69DF3B7A0A94507982CAA18 /* CorresWidgets */,
 				C0D6A807ACDA44B5BE049D1B /* CorresShare */,
 				1D8B72C297E64DAA9CC754BC /* CorresNotify */,
+				FD378C42220E184091A4CF8F /* CorresMac */,
 			);
 		};
 /* End PBXProject section */
@@ -717,6 +880,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				A689ADA4CCA148ACA56539DE /* App/Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4A604C582FACE597C51C3475 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9551AFC87703F9E148A92177 /* App/Assets.xcassets in Resources */,
+				10ACFDD56134B1F5C5ABB25B /* App/PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -878,6 +1050,10 @@
 				3A16A2272C5E0513B52F8189 /* Features/ScreenerView.swift in Sources */,
 				DA1D1527A8E832C86F278428 /* Features/WKWebViewPool.swift in Sources */,
 				B66A15A79057947ECBB08EFC /* Features/WelcomeView.swift in Sources */,
+				731812AA2B6E556FFA4822AF /* App/Platform.swift in Sources */,
+				6200A18DF8C1E26A2BBC350A /* App/ICloudSignIn.swift in Sources */,
+				2AC1DA697CD644CC0CBBDE50 /* App/MailFilter.swift in Sources */,
+				9ED6E00D56A3376BBFC2DA4C /* App/DraftBuilding.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -937,6 +1113,103 @@
 				0F6031E618B242D5A00A5999 /* App/OutlookTokenProvider.swift in Sources */,
 				A1DA771E4AB7471196DFE162 /* Shared/MailAccounts.swift in Sources */,
 				7218669C3F294DDA919034B5 /* Core/AttachmentKind.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		375C1973659C3086330557E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0482DF41EF8315E04376FC3A /* Core/AskQuery.swift in Sources */,
+				A246C2AFAD01BB224CF149B8 /* Core/AttachmentKind.swift in Sources */,
+				E44C5D47119C94AADFA3DE85 /* Core/CorresSchema.swift in Sources */,
+				9ED1B51882C423354FA9F577 /* Core/Correspondence.swift in Sources */,
+				2A9EB2F2C0354F2E83C7855C /* Core/DetectedItems.swift in Sources */,
+				44D6D1D4FFEDCDE6D611BF3E /* Core/GmailAccount.swift in Sources */,
+				9F8CAF6885F7DA253965C8C6 /* Core/HTTPBatch.swift in Sources */,
+				1FCE0A8655156923B9F4A45E /* Core/InboxCategory.swift in Sources */,
+				75258C1FB6843A9B33AEC551 /* Core/Invitation.swift in Sources */,
+				019291CC76CB68B1BE69B71B /* Core/MailDigest.swift in Sources */,
+				2478A99925201F8495F69BBE /* Core/MailRepository.swift in Sources */,
+				CF63D50500C54B4FA7FF6195 /* Core/MailSignals.swift in Sources */,
+				67816CB6279A14F32F0E9E64 /* Core/NextStep.swift in Sources */,
+				04A1EA8E244E7F1868226C60 /* Core/PatternCache.swift in Sources */,
+				8274F6B40AD59691521A988F /* Core/PeopleIndex.swift in Sources */,
+				0E6A56AB44A64315E661EBF7 /* Core/PersistedCorrespondence.swift in Sources */,
+				4D88957707D8482C5E5F5C87 /* Core/PersistedOutboxEntry.swift in Sources */,
+				45BB6D2F3AC4F2D5C2AF4A8E /* Core/PlainTextEmail.swift in Sources */,
+				A8C0FFB11FBFA606F4096211 /* Core/RichBody.swift in Sources */,
+				A3D9C442D0DE55E35A0A97C4 /* Core/SampleCorrespondence.swift in Sources */,
+				FF572D1C19FF97BEC7A56363 /* Core/SenderDirectory.swift in Sources */,
+				6E5D0F6D2B318EB08299482F /* Core/SenderHabits.swift in Sources */,
+				5F5C0DAB10350183FC969F0F /* Core/SwiftDataMailRepository.swift in Sources */,
+				B7709F2CFCDE6CF8780E2FEE /* Core/TimePhrase.swift in Sources */,
+				7B3CDF7634A978AB0BF9207E /* DesignSystem/CorrespondenceMark.swift in Sources */,
+				0DBACC8A698AB0193057897A /* DesignSystem/Materials.swift in Sources */,
+				A0183F3A85AFEC26E75EB5C0 /* DesignSystem/Tokens.swift in Sources */,
+				D54912356E7DBC0FE25C621C /* Mac/CorresMacApp.swift in Sources */,
+				B45D0DF2C41C511A3E177CFF /* Shared/MailAccounts.swift in Sources */,
+				3B946BFB58FA08E1EC58603A /* Shared/NotifyPolicy.swift in Sources */,
+				D238E0AFDF68EC7D332D3B74 /* Shared/ShareSnapshot.swift in Sources */,
+				376D38C3A34F9B57B7E6216B /* Shared/WidgetSnapshot.swift in Sources */,
+				0B67034501799AE5D3E19B16 /* App/AccountPreferences.swift in Sources */,
+				E65B825515C028823DA740A8 /* App/ActionQueue.swift in Sources */,
+				EAE0FBF65E8297467DC407A8 /* App/AppRouter.swift in Sources */,
+				A91255EF9E5B49D40BD5579F /* App/AskService.swift in Sources */,
+				690C4858ACF1B2E22D9D8663 /* App/BriefNotifier.swift in Sources */,
+				0685CA37AE2AF2BFA27106DA /* App/CloudSync.swift in Sources */,
+				E9CAFE0C1DE447434A1A60DA /* App/CorresIntents.swift in Sources */,
+				3F25CA27E3D641CBBBB9B7D8 /* App/CorresSettings.swift in Sources */,
+				03B6B456FFABA8ACDA7B40B1 /* App/EntitlementStore.swift in Sources */,
+				EF76231463F74E01A097327E /* App/FollowUps.swift in Sources */,
+				F1E20A20C456BCC6E45C7686 /* App/GmailAPIClient.swift in Sources */,
+				13833113045924F950AB71C7 /* App/GmailMessageComposer.swift in Sources */,
+				9A07247B210437283B3E995C /* App/GmailQuotaGate.swift in Sources */,
+				20728A2B684BEFC26B4DE772 /* App/GmailSyncService.swift in Sources */,
+				0856D6360B86916AC90B169D /* App/GoogleAuthService.swift in Sources */,
+				32D597CDEA146D03FCB587B0 /* App/GoogleTokenProvider.swift in Sources */,
+				66C5B5D03458EA6654B26F62 /* App/HabitWatcher.swift in Sources */,
+				9563A30A673BF79890C56E20 /* App/HangReporter.swift in Sources */,
+				754B74CF3F9E1949ECE1982C /* App/IMAPMailClient.swift in Sources */,
+				2E0CF3F28B9FB5D6728C60BC /* App/IMAPSessions.swift in Sources */,
+				33EBFE9D1681873F5CEEC281 /* App/IMAPWatcher.swift in Sources */,
+				BDA26D0E8A378CD1B7893891 /* App/Keychain.swift in Sources */,
+				704A90D56582CE18A1228850 /* App/LabelDirectory.swift in Sources */,
+				3D4E2864EAD15B3D0061E2C4 /* App/LinkOpener.swift in Sources */,
+				3A7AE669F243C38109B7A20B /* App/MailClient.swift in Sources */,
+				3C1E929E4CB7A067C4490C03 /* App/MailIntelligence.swift in Sources */,
+				34D5598D60A585844E50FFE9 /* App/MailServerDiscovery.swift in Sources */,
+				70B4770E8FA7F99CED3FF518 /* App/MailStore.swift in Sources */,
+				B09EBF0588FEEED4078B3547 /* App/MicrosoftSignIn.swift in Sources */,
+				1B6F3C1F82F3C5B21D32C8BA /* App/OutboxService.swift in Sources */,
+				9B2CEF3BA90A0E0527C27A8E /* App/OutlookClient.swift in Sources */,
+				8FF87169249D3F9520C44ECE /* App/OutlookTokenProvider.swift in Sources */,
+				F690AF91B2D34966F2378403 /* App/PeopleDirectory.swift in Sources */,
+				ECCC084E9A8F5049F24835EB /* App/PushNotificationService.swift in Sources */,
+				25E90FED8F73B2219895966B /* App/ScheduledSends.swift in Sources */,
+				56DC3F795C5C37BC79243C0B /* App/SemanticTriageService.swift in Sources */,
+				6721D4E22078568E20051CDB /* App/SendAsDirectory.swift in Sources */,
+				01C3DD7D018C3BE40810D134 /* App/SenderLessons.swift in Sources */,
+				0F84E6B9D2C725C891B0EEFE /* App/ShareBridge.swift in Sources */,
+				8545FC3E29B14389D51A7B9B /* App/ThreadActionService.swift in Sources */,
+				D42DF494B31D35B0F1AFF276 /* App/UnsubscribeService.swift in Sources */,
+				00E3D1D9316058511010F062 /* App/WidgetBridge.swift in Sources */,
+				1C3FA364DCAE22A3560A3274 /* App/Platform.swift in Sources */,
+				18FE6D74BF95E5BB95278633 /* App/ICloudSignIn.swift in Sources */,
+				B8708BCD6F5E5D14BCAAB259 /* Features/AccountAvatar.swift in Sources */,
+				95073F9B3F9E1AD5EBDC4CDD /* App/MailFilter.swift in Sources */,
+				7DD97E14AA61600A65E236A3 /* Features/HTMLMessageBody.swift in Sources */,
+				023980A204F802E297170763 /* Features/WKWebViewPool.swift in Sources */,
+				6BEDC5628EDE31BC049DC695 /* App/DraftBuilding.swift in Sources */,
+				53E42605B6B26B655D98C331 /* Mac/MacCommands.swift in Sources */,
+				F4C18104D0A1EFC6116E1DFD /* Mac/MacCompose.swift in Sources */,
+				9854EA49F797A58B81D09012 /* Mac/MacMailbox.swift in Sources */,
+				C8F505ACBB8E52A3FB081443 /* Mac/MacMainView.swift in Sources */,
+				C167741249DD781FD22B4C19 /* Mac/MacServices.swift in Sources */,
+				A35DDAC906319C738C89DA9F /* Mac/MacSettings.swift in Sources */,
+				DA66B3843620789C89B9FD42 /* Mac/MacSidebar.swift in Sources */,
+				3AB364011D19E749493FAE90 /* Mac/MessageList.swift in Sources */,
+				A13B184FB8061F4B4B9B0892 /* Mac/ReadingPane.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1213,6 +1486,75 @@
 			};
 			name = Release;
 		};
+		ACA6ADD2EF2D10C8A00B3A13 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ONLY_ACTIVE_ARCH = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Mac/CorresMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 16;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Mac/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSContactsUsageDescription = "Corres suggests people from your Contacts as you address an email and shows their photos beside their mail. Your contacts stay on this Mac.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Anwar Creative Studio";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres;
+				PRODUCT_NAME = Corres;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		F4BDA7919A269746D9A076DC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Mac/CorresMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 16;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Mac/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSContactsUsageDescription = "Corres suggests people from your Contacts as you address an email and shows their photos beside their mail. Your contacts stay on this Mac.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Anwar Creative Studio";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres;
+				PRODUCT_NAME = Corres;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1261,6 +1603,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		81EE5EF4DDF1AD4D02E615E9 /* Build configuration list for PBXNativeTarget "CorresMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ACA6ADD2EF2D10C8A00B3A13 /* Debug */,
+				F4BDA7919A269746D9A076DC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -1303,6 +1654,16 @@
 			productName = Postwright;
 		};
 		8F5EAE114EF4F89A6546179D /* Postwright */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/Postwright" */;
+			productName = Postwright;
+		};
+		3C4322D2370AE7774488DEF2 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 362DCEECAB286DF675BE4C19 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		69E19AB86C9A6402EEBB624A /* Postwright */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A1C0DE0000000000000E0001 /* XCLocalSwiftPackageReference "Packages/Postwright" */;
 			productName = Postwright;

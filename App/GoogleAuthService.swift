@@ -1,6 +1,5 @@
 import GoogleSignIn
 import Observation
-import UIKit
 
 /// Wraps GoogleSignIn for the interactive sign-in UI only. Kept out of Core
 /// deliberately, matching the "Gmail DTOs, OAuth, persistence details must
@@ -146,7 +145,7 @@ final class GoogleAuthService {
             var request = URLRequest(url: url)
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             guard let (data, response) = try? await URLSession.shared.data(for: request),
-                  (response as? HTTPURLResponse)?.statusCode == 200, UIImage(data: data) != nil,
+                  (response as? HTTPURLResponse)?.statusCode == 200, PlatformImage(data: data) != nil,
                   let file = ProfilePhotoCache.saveLocal(data, named: email) else { continue }
             setProfile(for: email, name: profiles[email]?.name, photo: file)
             return
@@ -431,10 +430,7 @@ final class GoogleAuthService {
         SendAsDirectory.publishOwnAddresses(accounts: accounts.map(\.email), aliases: SendAsDirectory.shared.allAddresses)
     }
 
-    private static func rootViewController() -> UIViewController? {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first(where: \.isKeyWindow)?.rootViewController
+    private static func rootViewController() -> SignInPresenter? {
+        Platform.signInPresenter
     }
 }

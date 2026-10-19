@@ -1,7 +1,11 @@
 import Foundation
 import Security
 import Observation
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 import UserNotifications
 
 /// The client half of Batch 25's push relay (see Server/push-relay). This
@@ -53,14 +57,14 @@ final class PushNotificationService {
         }
         isEnabled = true
         defaults.set(true, forKey: Self.enabledKey)
-        UIApplication.shared.registerForRemoteNotifications()
+        PushNotificationService.application.registerForRemoteNotifications()
         await renewWatch(accounts: accounts)
     }
 
     func disableAll(accounts: [String]) async {
         isEnabled = false
         defaults.set(false, forKey: Self.enabledKey)
-        UIApplication.shared.unregisterForRemoteNotifications()
+        PushNotificationService.application.unregisterForRemoteNotifications()
         await withTaskGroup(of: Void.self) { group in
             for account in accounts {
                 group.addTask { try? await self.client.stopWatching(account: account) }
@@ -405,4 +409,12 @@ final class PushNotificationService {
             throw ICloudInstantError.unavailable
         }
     }
+}
+
+extension PushNotificationService {
+    #if canImport(UIKit)
+    @MainActor static var application: UIApplication { .shared }
+    #else
+    @MainActor static var application: NSApplication { .shared }
+    #endif
 }

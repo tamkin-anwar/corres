@@ -83,7 +83,7 @@ final class MailIntelligence {
     /// Checked on every call: Apple Intelligence can finish downloading, or
     /// be switched on, while Corres is already running.
     var isAvailable: Bool {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             return SystemLanguageModel.default.availability == .available
         }
         return false
@@ -158,7 +158,7 @@ final class MailIntelligence {
             guard let summary, isConversation || !MailDigest.restatesOpening(summary, of: latest.text) else { return nil }
             return summary
         }
-        guard isAvailable, #available(iOS 26.0, *),
+        guard isAvailable, #available(iOS 26.0, macOS 26.0, *),
               let result = await generate(thread: thread, messages: readable, kind: kind, isConversation: isConversation,
                                           source: source, wantsSummary: wantsSummary) else {
             store(Insight(summary: nil, replyIntents: [], messageCount: messages.count), for: key)
@@ -280,7 +280,7 @@ final class MailIntelligence {
         let covered: Bool
     }
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private func generate(thread: Correspondence, messages: [MailDigest.Message], kind: MailDigest.Kind,
                           isConversation: Bool, source: String, wantsSummary: Bool) async -> Generated? {
         guard let latest = messages.last else { return nil }
@@ -413,7 +413,7 @@ final class MailIntelligence {
 
     /// One model call, retried once with a shorter email if it overflows
     /// the context window.
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private func respond(_ prompt: String, instructions: String) async -> EmailDigest? {
         do {
             let session = LanguageModelSession(instructions: instructions)
@@ -427,7 +427,7 @@ final class MailIntelligence {
         }
     }
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private func sectionNotes(_ section: String, index: Int, of count: Int) async -> [String]? {
         let prompt = "Section \(index + 1) of \(count) of a long email:\n\(section)"
         do {
@@ -444,7 +444,7 @@ final class MailIntelligence {
     /// natural voice, signed with `signOff`. Nil if the model is unavailable
     /// or declines.
     func draftReply(to thread: Correspondence, intent: String, signOff: String?) async -> String? {
-        guard isAvailable, #available(iOS 26.0, *) else { return nil }
+        guard isAvailable, #available(iOS 26.0, macOS 26.0, *) else { return nil }
         let prompt = """
         Write the body of a reply email.
         The message being replied to:
@@ -468,7 +468,7 @@ final class MailIntelligence {
     /// Rewrites the person's own text in `tone`, preserving meaning.
     func rewrite(_ text: String, tone: Tone) async -> String? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard isAvailable, !trimmed.isEmpty, #available(iOS 26.0, *) else { return nil }
+        guard isAvailable, !trimmed.isEmpty, #available(iOS 26.0, macOS 26.0, *) else { return nil }
         let prompt = """
         \(tone.instruction)
         Return only the rewritten email text, nothing before or after it.
@@ -520,7 +520,7 @@ final class MailIntelligence {
 
     // MARK: - Instructions
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private static let sharedRules = """
     Write to the reader as "you", never by their name or in the third \
     person, even where the email uses their name. Use only what the email says: never guess, never add a date, \
@@ -532,7 +532,7 @@ final class MailIntelligence {
     Some text may be marked as omitted; never guess at it.
     """
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private static let replyRules = """
     Replies: first decide whether a real person is waiting for this reader \
     to answer. Automated mail, receipts, welcomes, notifications, \
@@ -549,7 +549,7 @@ final class MailIntelligence {
     email.
     """
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private static let readingInstructions = """
     You help a busy person read their email. \(sharedRules)
 
@@ -573,7 +573,7 @@ final class MailIntelligence {
     \(replyRules)
     """
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private static let conversationInstructions = """
     You help a busy person catch up on an email conversation, given oldest \
     first; lines from "You" are the reader's own messages. \(sharedRules)
@@ -590,14 +590,14 @@ final class MailIntelligence {
     \(replyRules) Answer the latest message only.
     """
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private static let sectionInstructions = """
     You take notes on one section of a long email. List up to four short \
     points: asks, decisions, dates, amounts, names and changes. Copy \
     numbers and dates exactly. Use only what the section says.
     """
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, *)
     private static let writingInstructions = """
     You write emails on behalf of the person using this app. Write in a \
     natural, concise, human voice: no filler, no clichés like "I hope this \
@@ -664,7 +664,7 @@ final class MailIntelligence {
     }
 }
 
-@available(iOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, *)
 @Generable
 struct EmailDigest {
     @Guide(description: "One or two plain sentences to the reader as \"you\", under 40 words: what they're asked to do and by when, or else what happened or what the email offers. Only facts from the email.")
@@ -677,7 +677,7 @@ struct EmailDigest {
     let replyIntents: [String]
 }
 
-@available(iOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, *)
 @Generable
 struct SectionNotes {
     @Guide(description: "Up to four short points from this section: asks, decisions, dates, amounts, names. Numbers and dates copied exactly.")
