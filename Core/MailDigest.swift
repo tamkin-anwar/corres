@@ -317,6 +317,14 @@ public enum MailDigest {
                 if !lowerSource.contains(lower) { unsupported.append(token) }
             }
         }
+        // Alarm words only when the email says them: "your debit card was
+        // used" is not a "fraud alert", and a reminder isn't "overdue".
+        let lowerSummary = summary.lowercased()
+        // Likewise outcomes: a job alert is not "you're offered", and a
+        // shipping notice is not "refunded".
+        for stem in alarmStems + outcomeStems where lowerSummary.contains(stem) && !lowerSource.contains(stem) {
+            unsupported.append(stem)
+        }
         for match in summary.regexRanges(of: #"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"#) {
             let email = summary[match].lowercased()
             if !lowerSource.contains(email) { unsupported.append(email) }
@@ -335,6 +343,16 @@ public enum MailDigest {
     /// is applied claim by claim, matching word roots ("approval" is
     /// supported by "approve"), and leaves room for the words a summary
     /// adds to describe an email ("asks", "reminds", "wants").
+    /// Words that raise the alarm, as stems ("unauthori" covers
+    /// unauthorized and unauthorised).
+    static let alarmStems = ["fraud", "scam", "suspicious", "unauthori", "misuse", "compromis", "hacked", "breach",
+                             "stolen", "phishing", "urgent", "overdue", "past due", "declined", "suspend", "locked out",
+                             "terminat", "penalt", "legal action", "warrant", "arrest"]
+
+    /// Words that say something happened to the reader.
+    static let outcomeStems = ["offer", "approv", "accepted", "hired", "award", "you won", "winner", "selected",
+                               "rejected", "denied", "refund", "cancel", "expired"]
+
     public static func ungroundedClaims(in summary: String, source: String) -> [String] {
         let sourceRoots = roots(in: source)
         return claims(in: summary).filter { claim in

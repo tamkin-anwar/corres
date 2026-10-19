@@ -49,8 +49,9 @@ final class MailIntelligence {
         var rules: Int? = MailIntelligence.summaryRules
     }
 
-    /// Bumped when what's worth summarizing changes.
-    nonisolated static let summaryRules = 3
+    /// Bumped when what's worth summarizing changes, or how a summary is
+    /// checked against its email (4: alarm and outcome words).
+    nonisolated static let summaryRules = 4
 
     enum Tone: String, CaseIterable, Identifiable {
         case shorter = "Shorter", warmer = "Warmer", formal = "More Formal", proofread = "Proofread"

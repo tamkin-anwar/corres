@@ -8,6 +8,20 @@ struct MailDigestTests {
 
     // MARK: Readable text
 
+    /// A card-used notice is not a fraud alert: alarm words only when the
+    /// email says them.
+    @Test func alarmWordsNeedTheEmailToSayThem() {
+        let source = "Bank of America\nYour debit card was used\nYour debit card was used online, by phone, by mail or at a location where a merchant keyed in your card number. Amount $144.99"
+        #expect(MailDigest.unsupportedClaims(in: "Fraud alert: $144.99 debit card misuse", source: source).contains("fraud"))
+        #expect(MailDigest.unsupportedClaims(in: "Fraud alert: $144.99 debit card misuse", source: source).contains("misuse"))
+        #expect(MailDigest.unsupportedClaims(in: "Debit card used for $144.99", source: source).isEmpty)
+        let alert = "LinkedIn Job Alerts\nYour job alert for Operations Manager\nNew jobs in Texas match your preferences. Operations Enablement Lead at Swooped, United States (Remote)"
+        #expect(MailDigest.unsupportedClaims(in: "You're offered Operations Enablement Lead at Swooped.", source: alert).contains("offer"))
+        #expect(MailDigest.unsupportedClaims(in: "A new Operations Enablement Lead job at Swooped matches your alert.", source: alert).isEmpty)
+        let flagged = "We noticed suspicious activity on your account."
+        #expect(MailDigest.unsupportedClaims(in: "Suspicious activity on the account", source: flagged).isEmpty)
+    }
+
     @Test func htmlOnlyEmailBecomesReadableText() {
         let html = """
         <html><head><style>.x{color:red}</style><title>Hi</title></head><body>

@@ -223,7 +223,10 @@ final class SemanticTriageService {
     marketing, receipts, automated notifications, and FYI-only messages do not \
     need a reply even when they are relevant or worth reading. Be decisive. \
     Keep the reason short, specific, and in plain language, as if explaining \
-    the decision to the recipient in one breath.
+    the decision to the recipient in one breath. Describe only what the \
+    message itself says, in its own terms: a card-used notice is a card-used \
+    notice, not a fraud alert, and a reminder is not overdue. Never add \
+    alarm (fraud, suspicious, urgent, overdue) the message doesn't state.
 
     An automated message does need action when it carries a real obligation \
     or deadline for this person specifically: a bill or payment due, a \
@@ -248,7 +251,7 @@ final class SemanticTriageService {
         Sender: \(thread.sender)
         Subject: \(thread.subject)
         Message preview: \(thread.excerpt)
-        The recipient was \(thread.isDirectRecipient ? "addressed directly (To)" : "only copied (Cc)") on this message.
+        The recipient was \(thread.isDirectRecipient ? "in the To line" : "only copied (Cc)") on this message.
         \(thread.looksAutomated ? "This message shows signs of being automated or bulk mail (it includes an unsubscribe link, or comes from a no-reply address)." : "")
         \(thread.labelIds.contains("CATEGORY_UPDATES") ? "Gmail filed this under Updates (automated notifications, receipts, account alerts)." : "")
         \(thread.dueAt.map { "It names a deadline: \($0.formatted(date: .complete, time: .omitted))." } ?? "")
@@ -274,7 +277,7 @@ struct TriageAssessment {
 
     @Guide(description: "True only if this message genuinely expects a personal reply, decision, or action from the recipient. False for newsletters, receipts, notifications, automated mail, or messages that are informational only.")
     let needsReply: Bool
-    @Guide(description: "One short, specific, human-readable reason for the decision, under 12 words, e.g. 'Asks a direct question' or 'Marketing newsletter, no action needed'.")
+    @Guide(description: "One short, specific, human-readable reason for the decision, under 12 words, in the message's own terms, e.g. 'Asks when you can meet' or 'Marketing newsletter, no action needed'.")
     let reason: String
     @Guide(description: "How confident you are in this specific assessment, honestly. Low whenever the preview is too short or ambiguous to be sure, or the message could plausibly need a reply despite looking automated.")
     let confidence: Confidence

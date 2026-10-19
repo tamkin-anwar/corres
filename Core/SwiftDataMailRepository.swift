@@ -186,6 +186,22 @@ public actor SwiftDataMailRepository: MailRepository {
                 model.dueAt = nil
                 changed += 1
             }
+            // An on-device reason that says more than the email does ("fraud
+            // alert" for a card-used notice), from before reasons were held
+            // to the email's own alarm words: back to the rules, and
+            // assessed again.
+            if model.triagedMessageID != nil, !InboxClassifier.ruleReasons.contains(model.reason),
+               model.reason != InboxClassifier.promotedReason, model.reason != InboxClassifier.demotedReason {
+                let source = [model.sender, model.senderEmail ?? "", model.subject, model.excerpt].joined(separator: "\n").lowercased()
+                let reason = model.reason.lowercased()
+                // "Direct account alert…": the old prompt's own wording, echoed.
+                let echoed = reason.hasPrefix("direct ") && !source.contains("direct")
+                if echoed || MailDigest.alarmStems.contains(where: { reason.contains($0) && !source.contains($0) }) {
+                    model.reason = InboxClassifier.legacyUnreadReason
+                    model.triagedMessageID = nil
+                    changed += 1
+                }
+            }
             let decoded = model.excerpt.decodingHTMLEntities
             if decoded != model.excerpt { model.excerpt = decoded }
             if model.lastSentAt == nil, model.senderEmail?.lowercased() == model.account.lowercased() {

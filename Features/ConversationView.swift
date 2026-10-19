@@ -1030,7 +1030,7 @@ struct ConversationView: View {
             Button(thread.isUnread ? "Mark as Read" : "Mark as Unread") {
                 Task { await threadActions.toggleUnread(!thread.isUnread, for: [thread]) }
             }.keyboardShortcut("u", modifiers: [.command, .shift])
-            Button("Snooze") { showingSnooze = true }.keyboardShortcut("s", modifiers: [.command, .control])
+            Button("Snooze") { if store.isInLists(thread.id) { showingSnooze = true } }.keyboardShortcut("s", modifiers: [.command, .control])
             Button("Previous Conversation") { goToPrevious() }.keyboardShortcut(.upArrow, modifiers: [.command, .control])
             Button("Next Conversation") { goToNext() }.keyboardShortcut(.downArrow, modifiers: [.command, .control])
         }
@@ -1068,6 +1068,10 @@ struct ConversationView: View {
         case .unsubscribe: return unsubscribeService.canUnsubscribe(thread) && !thread.senderUnsubscribed
         case .calendar: return calendarEvent != nil && !thread.isFromAccountOwner
         case .spam: return !thread.isFromAccountOwner
+        // Snooze and Pin keep mail in your lists; mail opened from a
+        // mailbox (Trash, a folder) isn't in them, and saying "couldn't be
+        // saved" afterwards was the only answer.
+        case .snooze, .pin: return store.isInLists(thread.id)
         case .translate: if #available(iOS 17.4, *) { return true } else { return false }
         default: return true
         }

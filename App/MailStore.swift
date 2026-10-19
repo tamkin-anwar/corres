@@ -71,6 +71,9 @@ final class MailStore {
 
     func forgetBrowsed(_ id: ThreadID) { browsed[id] = nil }
 
+    /// Saved in Corres's own lists (the Inbox), not only opened from a mailbox.
+    func isInLists(_ id: ThreadID) -> Bool { allThreads.contains { $0.id == id } }
+
     /// A mailbox's conversation, moved back to the Inbox: it joins the
     /// lists now instead of waiting for the next sync to bring it.
     func adoptIntoInbox(_ thread: Correspondence) async {
@@ -173,6 +176,15 @@ final class MailStore {
 
     private func padForStressTest() async {
         let arguments = ProcessInfo.processInfo.arguments
+        // An ordinary launch clears copies a stress run left behind, so
+        // they don't sit beside real mail afterwards.
+        if !arguments.contains("-stressThreads") {
+            let leftovers = allThreads.filter { $0.id.providerID.contains("-stress") }.map(\.id)
+            guard !leftovers.isEmpty else { return }
+            for id in leftovers { try? await repository.remove(id) }
+            allThreads = (try? await repository.threads()) ?? allThreads
+            return
+        }
         guard let flag = arguments.firstIndex(of: "-stressThreads"), flag + 1 < arguments.count,
               let count = Int(arguments[flag + 1]), count > 0,
               !allThreads.isEmpty, !allThreads.contains(where: { $0.id.providerID.contains("-stress") }) else { return }
@@ -319,7 +331,7 @@ final class MailStore {
     /// Bump the version whenever `InboxClassifier`'s rules change, so
     /// already-synced threads get re-sorted under the new rules too (v2
     /// added the "someone you've written to" signal, v3 the 30-day limit).
-    private static let attentionRulesMigrationKey = "corres.migration.inboxClassifier.v12"
+    private static let attentionRulesMigrationKey = "corres.migration.inboxClassifier.v13"
 
     /// Runs `MailRepository.reclassifyLegacySyncDefaults` once per rules
     /// version. Only marks itself done on success, so a failed attempt
