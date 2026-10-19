@@ -13,7 +13,7 @@ Gmail client." Platform wording says iPhone only until the Mac app ships.
 | Field | Value |
 |---|---|
 | Name (30) | **Corres** |
-| Subtitle (30) | **Know what needs you** (19) |
+| Subtitle (30) | **Mail that knows what needs you** (30, set in App Store Connect 2026-10-19) |
 | Primary category | Productivity |
 | Secondary category | Business |
 | Content rights | Does not contain third-party content |
