@@ -105,6 +105,42 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         }
     }
 
+    // MARK: Sharing
+
+    /// Every report kept on this device, in one file a tester can send from
+    /// Settings: freezes, crashes, and the build and iOS they happened on.
+    /// Call stacks and what Corres was doing ("trash 1 thread"), never any
+    /// email or address.
+    static func diagnosticsFile() -> URL? {
+        var reports: [[String: Any]] = []
+        if let directory, let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) {
+            for file in files.sorted(by: { $0.lastPathComponent > $1.lastPathComponent }) {
+                guard let data = try? Data(contentsOf: file), let object = try? JSONSerialization.jsonObject(with: data) else { continue }
+                reports.append(["file": file.lastPathComponent, "report": object])
+            }
+        }
+        let info = Bundle.main.infoDictionary
+        let summary: [String: Any] = [
+            "app": "Corres \(info?["CFBundleShortVersionString"] as? String ?? "") (\(info?["CFBundleVersion"] as? String ?? ""))",
+            "system": "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)",
+            "model": Self.modelIdentifier,
+            "created": Date().formatted(.iso8601),
+            "reports": reports,
+            "recent": shared.lock.withLock { $0.breadcrumbs },
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: summary, options: [.prettyPrinted, .sortedKeys]) else { return nil }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Corres Diagnostics.json")
+        return (try? data.write(to: url, options: .atomic)) != nil ? url : nil
+    }
+
+    private static var modelIdentifier: String {
+        var system = utsname()
+        uname(&system)
+        return withUnsafeBytes(of: &system.machine) { buffer in
+            String(decoding: buffer.prefix { $0 != 0 }, as: UTF8.self)
+        }
+    }
+
     // MARK: Files
 
     private static func write(_ object: [String: Any], prefix: String) {

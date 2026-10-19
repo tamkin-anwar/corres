@@ -181,6 +181,8 @@ struct CorresShell: View {
                 }
                 watchICloud()
                 keepCurrent()
+                // Changes made while offline go now if they can.
+                Task { await ActionQueue.shared.drain() }
                 // New Since Last Opened: opening Corres clears it.
                 if CorresSettings.badge == .new { UserDefaults.standard.set(Date.now, forKey: CorresSettings.lastLeftKey); WidgetBridge.update(from: store.threads) }
             } else if phase == .background {

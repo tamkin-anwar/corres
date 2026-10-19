@@ -288,6 +288,11 @@ final class GmailSyncService {
     /// older loads the moment it's opened (`ThreadActionService.loadContent`).
     /// Runs in the foreground after a sync, never inside a silent-push window.
     func backfillContent() async {
+        // Every sync asks for this; one at a time, or two close syncs
+        // fetched the same bodies twice.
+        guard !isBackfilling else { return }
+        isBackfilling = true
+        defer { isBackfilling = false }
         guard let threads = try? await repository.threads() else { return }
         let pending = threads
             .filter { !$0.isBodyLoaded && $0.latestMessageID != nil && $0.id.account != "sample" }
@@ -303,6 +308,7 @@ final class GmailSyncService {
     }
 
     private static let backfillLimit = 200
+    private var isBackfilling = false
 
     /// The Mail tab's scroll-to-load: pages older Inbox mail in from where
     /// the first sync stopped. Skips threads already stored before spending

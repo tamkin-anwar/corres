@@ -137,6 +137,7 @@ public actor SwiftDataMailRepository: MailRepository {
                   model.latestMessageID == item.latestMessageID else { continue }
             model.body = item.body
             model.htmlBody = item.htmlBody
+            if let preview = MailDigest.preview(body: item.body, html: item.htmlBody) { model.excerpt = preview }
             model.attachmentsData = (try? JSONEncoder().encode(item.attachments)) ?? Data()
             model.isBodyLoaded = true
             // Outlook's headers (List-Unsubscribe) come with the full message,

@@ -23,6 +23,7 @@ struct PreferencesView: View {
     @State private var managingSubscription = false
     @State private var addingICloud = false
     @State private var addingOther = false
+    @State private var diagnosticsURL: URL?
 
     #if DEBUG
     @State private var corpusStatus: String?
@@ -161,12 +162,21 @@ struct PreferencesView: View {
                             settingLabel("Private by Design", "lock.shield")
                         }
                     }
+                    if let diagnosticsURL {
+                        ShareLink(item: diagnosticsURL) {
+                            settingLabel("Send Diagnostics", "stethoscope")
+                        }
+                        .foregroundStyle(CorresPalette.ink)
+                    }
+                } footer: {
+                    Text("If Corres freezes or closes, Send Diagnostics shares what it recorded: the build, the iOS version and where it stopped. Never your mail.")
                 }
                 #if DEBUG
                 developerSection
                 #endif
                 aboutFooter
             }
+            .task { diagnosticsURL = HangReporter.diagnosticsFile() }
             .scrollContentBackground(.hidden)
             .background(CorresPalette.canvas)
             .navigationTitle("Settings")

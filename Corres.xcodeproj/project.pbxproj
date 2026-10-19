@@ -11,6 +11,7 @@
 		C3C0DE00000000000000A001 /* App/MailServerDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F001 /* App/MailServerDiscovery.swift */; };
 		C3C0DE00000000000000A002 /* Features/OtherEmailSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F002 /* Features/OtherEmailSignInView.swift */; };
 		C3C0DE00000000000000A003 /* App/HangReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F003 /* App/HangReporter.swift */; };
+		C3C0DE00000000000000A004 /* App/ActionQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F004 /* App/ActionQueue.swift */; };
 		A1C0DE0000000000000000B1 /* App/IMAPWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000F1 /* App/IMAPWatcher.swift */; };
 		0D110BEBD3F6F71AB17AE002 /* Postwright in Frameworks */ = {isa = PBXBuildFile; productRef = 8F5EAE114EF4F89A6546179D /* Postwright */; };
 		CBA59B0FDCE83F1A231C9E47 /* App/IMAPSessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C096C44615F2419D412B136 /* App/IMAPSessions.swift */; };
@@ -252,6 +253,7 @@
 		C3C0DE00000000000000F001 /* App/MailServerDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MailServerDiscovery.swift; sourceTree = SOURCE_ROOT; };
 		C3C0DE00000000000000F002 /* Features/OtherEmailSignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/OtherEmailSignInView.swift; sourceTree = SOURCE_ROOT; };
 		C3C0DE00000000000000F003 /* App/HangReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/HangReporter.swift; sourceTree = SOURCE_ROOT; };
+		C3C0DE00000000000000F004 /* App/ActionQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ActionQueue.swift; sourceTree = SOURCE_ROOT; };
 		A1C0DE0000000000000000F1 /* App/IMAPWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/IMAPWatcher.swift; sourceTree = SOURCE_ROOT; };
 		2C096C44615F2419D412B136 /* App/IMAPSessions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/IMAPSessions.swift; sourceTree = SOURCE_ROOT; };
 		8CCEB6F4F7D60C9D7914B9BA /* App/IMAPMailClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/IMAPMailClient.swift; sourceTree = SOURCE_ROOT; };
@@ -482,6 +484,7 @@
 				C3C0DE00000000000000F001 /* App/MailServerDiscovery.swift */,
 				C3C0DE00000000000000F002 /* Features/OtherEmailSignInView.swift */,
 				C3C0DE00000000000000F003 /* App/HangReporter.swift */,
+				C3C0DE00000000000000F004 /* App/ActionQueue.swift */,
 				A1C0DE0000000000000000F1 /* App/IMAPWatcher.swift */,
 				5714C136B1C144BA9986F7BD /* App/FollowUps.swift */,
 				C2C84FA9213442ABAFDA59F7 /* Features/InvitationCard.swift */,
@@ -810,6 +813,7 @@
 				C3C0DE00000000000000A001 /* App/MailServerDiscovery.swift in Sources */,
 				C3C0DE00000000000000A002 /* Features/OtherEmailSignInView.swift in Sources */,
 				C3C0DE00000000000000A003 /* App/HangReporter.swift in Sources */,
+				C3C0DE00000000000000A004 /* App/ActionQueue.swift in Sources */,
 				A1C0DE0000000000000000B1 /* App/IMAPWatcher.swift in Sources */,
 				0FC1AEC8A0924D76B68B12C6 /* App/FollowUps.swift in Sources */,
 				2D1AEA72759A4140970CC4B7 /* Features/InvitationCard.swift in Sources */,

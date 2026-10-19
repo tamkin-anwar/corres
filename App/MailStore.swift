@@ -85,6 +85,13 @@ final class MailStore {
         await refresh()
     }
 
+    /// A removal the server refused after all (it waited while offline):
+    /// the conversation comes back as it was.
+    func putBack(_ thread: Correspondence) async {
+        _ = try? await repository.upsert([thread], isInitialSync: true)
+        await refresh()
+    }
+
     func hide(_ id: ThreadID) { hiddenIDs.insert(id) }
     /// For a setting that changes what the lists show without changing any
     /// mail (Screen new senders): every list rebuilds on its next redraw.

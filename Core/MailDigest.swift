@@ -61,6 +61,24 @@ public enum MailDigest {
         return wordCount(converted) > wordCount(plain) ? converted : plain
     }
 
+    /// The list preview, from the email itself once its body is here: the
+    /// writer's own words, without image captions ("Remitly logo Account
+    /// Arrow"), hidden preheaders, quoted history or signatures, and with
+    /// words from separate blocks kept apart ("Role" "The", not "RoleThe").
+    /// Providers' snippets are cut from raw HTML and keep all of that. Nil
+    /// when the email has too little of its own to say.
+    public static func preview(body: String, html: String?) -> String? {
+        let words = clean(readableText(body: body, html: html))
+            .split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+            .replacingPattern(#"\s{2,}"#, with: " ")
+        guard words.count >= 20 else { return nil }
+        guard words.count > 240, let cut = words.prefix(240).lastIndex(of: " ") else { return words }
+        return String(words[..<cut])
+    }
+
     /// HTML to readable text: no head, styles, scripts, comments or hidden
     /// preheaders; block elements become line breaks; entities decoded.
     public static func text(fromHTML html: String) -> String {

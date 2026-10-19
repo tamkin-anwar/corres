@@ -8,6 +8,21 @@ struct MailDigestTests {
 
     // MARK: Readable text
 
+    @Test func previewFromTheEmailNotItsCaptions() {
+        let html = """
+        <html><head><style>.x{color:red}</style></head><body>
+        <div style="display:none">Hidden preheader text here</div>
+        <img src="https://x.test/logo.png" alt="Remitly logo"><a href="#"><img alt="Account Arrow"></a>
+        <div>Operations Enablement Lead</div><div>The role is remote and starts in November.</div>
+        </body></html>
+        """
+        let preview = MailDigest.preview(body: "", html: html) ?? ""
+        #expect(!preview.contains("logo"))
+        #expect(!preview.contains("Hidden preheader"))
+        #expect(preview.contains("Lead The role"))
+        #expect(MailDigest.preview(body: "Thanks!", html: nil) == nil)
+    }
+
     /// A card-used notice is not a fraud alert: alarm words only when the
     /// email says them.
     @Test func alarmWordsNeedTheEmailToSayThem() {

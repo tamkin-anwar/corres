@@ -24,6 +24,13 @@ final class ThreadActionService {
     init(store: MailStore, auth: GoogleAuthService) {
         self.store = store
         self.auth = auth
+        // A change saved while offline that the server then refused: the
+        // conversation comes back, and you're told why.
+        ActionQueue.shared.onRefused = { [weak self] action, error in
+            guard let self else { return }
+            if let snapshot = action.snapshot { await self.store.putBack(snapshot) }
+            await self.report(error, failureMessage: "A change you made while offline couldn't be saved.", account: action.account)
+        }
     }
 
     enum RemovalKind: Equatable {
@@ -308,23 +315,17 @@ final class ThreadActionService {
         var done = false
         switch kind {
         case .archive:
-            await perform(thread, failureMessage: "Couldn't archive this conversation. Try again.", gmailCall: {
-                try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: ["INBOX"], account: thread.id.account)
-            }, local: { done = true })
+            await perform(thread, failureMessage: "Couldn't archive this conversation. Try again.",
+                          change: .modify(add: [], remove: ["INBOX"]), local: { done = true })
         case .trash:
-            await perform(thread, failureMessage: "Couldn't move this conversation to Trash. Try again.", gmailCall: {
-                try await self.client.trashThread(threadId: thread.id.providerID, account: thread.id.account)
-            }, local: { done = true })
+            await perform(thread, failureMessage: "Couldn't move this conversation to Trash. Try again.",
+                          change: .trash, local: { done = true })
         case .spam:
-            await perform(thread, failureMessage: "Couldn't report this conversation as spam. Try again.", gmailCall: {
-                try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: ["SPAM"],
-                                                   removeLabelIds: ["INBOX"], account: thread.id.account)
-            }, local: { done = true })
+            await perform(thread, failureMessage: "Couldn't report this conversation as spam. Try again.",
+                          change: .modify(add: ["SPAM"], remove: ["INBOX"]), local: { done = true })
         case .move(let labelId, _):
-            await perform(thread, failureMessage: "Couldn't move this conversation. Try again.", gmailCall: {
-                try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: [labelId],
-                                                   removeLabelIds: ["INBOX"], account: thread.id.account)
-            }, local: { done = true })
+            await perform(thread, failureMessage: "Couldn't move this conversation. Try again.",
+                          change: .modify(add: [labelId], remove: ["INBOX"]), local: { done = true })
         }
         return done
     }
@@ -368,13 +369,9 @@ final class ThreadActionService {
     /// row into a screen the person has already navigated away from.
     func setUnread(_ isUnread: Bool, for thread: Correspondence) async {
         let failureMessage = "Couldn't mark this conversation as \(isUnread ? "unread" : "read"). Try again."
-        await performOptimistic(thread, failureMessage: failureMessage, gmailCall: {
-            if isUnread {
-                try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: ["UNREAD"], account: thread.id.account)
-            } else {
-                try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: ["UNREAD"], account: thread.id.account)
-            }
-        }, local: { await self.store.setUnread(isUnread, for: thread.id) },
+        await performOptimistic(thread, failureMessage: failureMessage,
+                                change: isUnread ? .modify(add: ["UNREAD"], remove: []) : .modify(add: [], remove: ["UNREAD"]),
+                                local: { await self.store.setUnread(isUnread, for: thread.id) },
            revert: { await self.store.setUnread(!isUnread, for: thread.id) })
     }
 
@@ -440,13 +437,9 @@ final class ThreadActionService {
             }
             return labelIds
         }
-        await performOptimistic(thread, failureMessage: failureMessage, gmailCall: {
-            if isOn {
-                try await self.client.modifyThread(threadId: thread.id.providerID, addLabelIds: [labelId], account: thread.id.account)
-            } else {
-                try await self.client.modifyThread(threadId: thread.id.providerID, removeLabelIds: [labelId], account: thread.id.account)
-            }
-        }, local: { await self.store.setLabelIds(labelIds(isOn: isOn), for: thread.id) },
+        await performOptimistic(thread, failureMessage: failureMessage,
+                                change: isOn ? .modify(add: [labelId], remove: []) : .modify(add: [], remove: [labelId]),
+                                local: { await self.store.setLabelIds(labelIds(isOn: isOn), for: thread.id) },
            revert: { await self.store.setLabelIds(labelIds(isOn: !isOn), for: thread.id) })
     }
 
@@ -469,7 +462,7 @@ final class ThreadActionService {
     /// buttons lock the row the instant a swipe commits, not once a
     /// network call happens to finish; this matches that.
     private func perform(_ thread: Correspondence, failureMessage: String,
-                         gmailCall: () async throws -> Void, local: () async -> Void) async {
+                         change: ActionQueue.Action.Kind, local: () async -> Void) async {
         guard store.beginPending(thread.id) else { return }
         defer { store.endPending(thread.id) }
         #if DEBUG
@@ -487,13 +480,32 @@ final class ThreadActionService {
             }
             do {
                 try await guardModifyPermission(for: thread.id.account)
-                try await gmailCall()
+                try await send(change, for: thread, keeping: thread)
             } catch {
                 await report(error, failureMessage: failureMessage, account: thread.id.account)
                 return
             }
         }
         await local()
+    }
+
+    /// Straight to the server when it can go, or into `ActionQueue` when
+    /// it can't yet (offline, the server busy) or when this conversation
+    /// already has changes waiting, so they arrive in order. Throws only
+    /// when the server refused for good. `keeping`: for a removal, what to
+    /// put back if a waiting change is refused later.
+    private func send(_ change: ActionQueue.Action.Kind, for thread: Correspondence, keeping snapshot: Correspondence? = nil) async throws {
+        let account = thread.id.account, id = thread.id.providerID
+        let action = ActionQueue.Action(account: account, threadID: id, kind: change, snapshot: snapshot)
+        if ActionQueue.shared.hasWaiting(account: account, threadID: id) {
+            ActionQueue.shared.enqueue(action)
+            return
+        }
+        do {
+            try await ActionQueue.run(action, client: client)
+        } catch where ActionQueue.isTransient(error) {
+            ActionQueue.shared.enqueue(action)
+        }
     }
 
     /// Applies `local` immediately, then confirms with a real Gmail call in
@@ -503,7 +515,7 @@ final class ThreadActionService {
     /// trivial, non-destructive correction (`setUnread`/`toggleLabel`), never
     /// for Archive/Trash.
     private func performOptimistic(_ thread: Correspondence, failureMessage: String,
-                                   gmailCall: () async throws -> Void, local: () async -> Void,
+                                   change: ActionQueue.Action.Kind, local: () async -> Void,
                                    revert: () async -> Void) async {
         await local()
         guard thread.id.account != Self.sampleAccount else { return }
@@ -514,7 +526,7 @@ final class ThreadActionService {
         }
         do {
             try await guardModifyPermission(for: thread.id.account)
-            try await gmailCall()
+            try await send(change, for: thread)
         } catch {
             await report(error, failureMessage: failureMessage, account: thread.id.account)
             await revert()
