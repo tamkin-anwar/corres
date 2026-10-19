@@ -256,6 +256,7 @@ struct CorrespondenceList: View {
     @State private var appliedSearch = ""
     @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
     @Environment(AskService.self) private var ask: AskService?
+    @Environment(\.horizontalSizeClass) private var sizeClass
     /// Remembered: Mail opens where you left it, Primary at first.
     @AppStorage("corres.mailFilter") private var mailFilter = MailFilter.needsYou
     /// Needs You is part of Pro: without it the split shows what it does.
@@ -508,6 +509,8 @@ struct CorrespondenceList: View {
             // with a few hundred conversations that froze the app on a
             // swipe to Trash until iOS ended it (build 13).
             .onChange(of: rows.ids) { _, newValue in selected.formIntersection(newValue) }
+            .onAppear { if !results.isEmpty, !HangReporter.launchMeasured { HangReporter.finish("launch") } }
+            .onChange(of: results.isEmpty) { _, empty in if !empty, !HangReporter.launchMeasured { HangReporter.finish("launch") } }
             // Room below the last rows while the Undo pill shows, so any row
             // can be scrolled clear of it; while selecting, the action bar.
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -527,6 +530,7 @@ struct CorrespondenceList: View {
             .onDisappear { if isSelecting { endSelection() }; router.isSelecting = false }
             .onChange(of: destination) { endSelection() }
             .onChange(of: mailFilter) { endSelection() }
+            .onAppear { if sizeClass == .regular, destination == .mail, mailFilter == .needsYou { mailFilter = .primary } }
             .confirmationDialog("Move this conversation to Trash?",
                                 isPresented: Binding(get: { confirmingTrash != nil }, set: { if !$0 { confirmingTrash = nil } }),
                                 titleVisibility: .visible) {
@@ -841,7 +845,8 @@ struct CorrespondenceList: View {
     private var filterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 18) {
-                ForEach(MailFilter.allCases) { filter in
+                // On iPad the sidebar has Needs You; Mail's splits start at Primary.
+                ForEach(MailFilter.allCases.filter { sizeClass != .regular || $0 != .needsYou }) { filter in
                     Button {
                         mailFilter = filter
                     } label: {

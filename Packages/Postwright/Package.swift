@@ -8,7 +8,7 @@ import PackageDescription
 // still supports iOS 17 (later ones need iOS 18).
 let package = Package(
     name: "Postwright",
-    platforms: [.iOS(.v17), .macOS(.v14)],
+    platforms: [.iOS(.v17), .macOS(.v14), .macCatalyst(.v17)],
     products: [.library(name: "Postwright", targets: ["Postwright"])],
     dependencies: [
         .package(url: "https://github.com/apple/swift-nio-imap", .upToNextMinor(from: "0.4.0")),

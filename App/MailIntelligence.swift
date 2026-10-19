@@ -75,7 +75,9 @@ final class MailIntelligence {
     private var saveTask: Task<Void, Never>?
 
     init() {
-        loadCache()
+        // Off the main thread: up to 1,500 saved summaries decoded at launch
+        // held up the first screen.
+        Task { await loadCache() }
     }
 
     /// Checked on every call: Apple Intelligence can finish downloading, or
@@ -633,10 +635,15 @@ final class MailIntelligence {
             .appendingPathComponent("summaries-v\(cacheVersion).json")
     }
 
-    private func loadCache() {
-        guard let url = Self.cacheURL, let data = try? Data(contentsOf: url),
-              let saved = try? JSONDecoder().decode([String: Insight].self, from: data) else { return }
-        insights = saved
+    private func loadCache() async {
+        guard let url = Self.cacheURL else { return }
+        let saved = await Task.detached(priority: .utility) { () -> [String: Insight]? in
+            guard let data = try? Data(contentsOf: url) else { return nil }
+            return try? JSONDecoder().decode([String: Insight].self, from: data)
+        }.value
+        guard let saved else { return }
+        // Anything made since launch is newer than what was saved.
+        insights = saved.merging(insights) { _, new in new }
     }
 
     /// Written a moment after the last change, newest kept when over the

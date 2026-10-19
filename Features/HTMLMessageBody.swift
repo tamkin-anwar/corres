@@ -954,6 +954,7 @@ struct HTMLMessageBody: UIViewRepresentable {
             let height = min(height, Self.tallest)
             if !hasSize {
                 hasSize = true
+                HangReporter.finish("open")
                 if let webView, webView.alpha < 1 { UIView.animate(withDuration: 0.12) { webView.alpha = 1 } }
             }
             baseHeight = height

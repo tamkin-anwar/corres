@@ -61,6 +61,9 @@ struct CorresApp: App {
                 // when mail arrives, not when the on-device model finishes.
                 .onChange(of: appDelegate.sync.lastCompletedSync) {
                     Task { await FollowUps.shared.check(store: appDelegate.store) }
+                    // Mail that just arrived may have a move or snooze
+                    // waiting for it from your other devices.
+                    Task { await CloudSync.shared.apply() }
                     // Who to suggest in To, Cc and search: synced mail now,
                     // and each account's Sent history once.
                     Task {

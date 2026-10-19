@@ -89,6 +89,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         HangReporter.shared.start()
+        CloudSync.shared.start(store: store)
         // Registration must happen before this method returns, for every
         // launch, background or foreground alike: registering even one
         // async tick late is a documented source of silent failures where

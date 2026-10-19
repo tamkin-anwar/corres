@@ -281,16 +281,21 @@ final class MailStore {
         }
     }
 
+    // Your own moves, pins and snoozes follow you to your other devices
+    // (`CloudSync`); one arriving from another device isn't sent back.
     func update(_ id: ThreadID, to attention: Attention) async {
         await mutate(id) { try await self.repository.setAttention(attention, for: id) }
+        CloudSync.shared.recordAttention(attention, for: id, messageID: thread(id)?.latestMessageID)
     }
 
     func setPinned(_ isPinned: Bool, for id: ThreadID) async {
         await mutate(id) { try await self.repository.setPinned(isPinned, for: id) }
+        CloudSync.shared.recordPinned(isPinned, for: id)
     }
 
     func snooze(_ id: ThreadID, until: Date?) async {
         await mutate(id) { try await self.repository.snooze(id, until: until) }
+        CloudSync.shared.recordSnooze(until: until, for: id)
     }
 
     func setUnread(_ isUnread: Bool, for id: ThreadID) async {
@@ -394,6 +399,7 @@ final class MailStore {
     func setSenderDecision(_ decision: SenderDecision, senders: [(email: String, account: String)]) async {
         do {
             for sender in senders {
+                CloudSync.shared.recordDecision(decision, sender: sender.email, account: sender.account)
                 try await repository.setSenderDecision(decision, forSenderEmail: sender.email, account: sender.account)
             }
             allThreads = try await repository.threads()
@@ -421,7 +427,13 @@ final class MailStore {
         return senders
     }
 
+    /// A decision another device made, applied here.
+    func approveOrBlock(_ decision: SenderDecision, sender: String, account: String) async {
+        await setSenderDecision(decision, senderEmail: sender, account: account)
+    }
+
     private func setSenderDecision(_ decision: SenderDecision, senderEmail: String, account: String) async {
+        CloudSync.shared.recordDecision(decision, sender: senderEmail, account: account)
         do {
             try await repository.setSenderDecision(decision, forSenderEmail: senderEmail, account: account)
             allThreads = try await repository.threads()

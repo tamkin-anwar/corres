@@ -38,6 +38,7 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
     }
 
     func start() {
+        MainActor.assumeIsolated { Self.launchedAt = .now() }
         MXMetricManager.shared.add(self)
         // Diagnostics iOS already had waiting from an earlier run.
         didReceive(MXMetricManager.shared.pastDiagnosticPayloads)
@@ -105,6 +106,36 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         }
     }
 
+    // MARK: Speed
+
+    /// The two numbers that decide how fast Corres feels: launch until mail
+    /// is on screen (aim: under a second), and an email tapped until its
+    /// text is drawn (aim: under 0.2 seconds). The last 40 of each are
+    /// kept with the diagnostics.
+    @MainActor private static var marks: [String: DispatchTime] = [:]
+    @MainActor private static var timings: [String] = []
+    @MainActor private static var launchedAt = DispatchTime.now()
+
+    @MainActor static func start(_ name: String) { marks[name] = .now() }
+
+    @MainActor static func finish(_ name: String) {
+        guard let started = name == "launch" ? launchedAt : marks.removeValue(forKey: name) else { return }
+        let ms = (DispatchTime.now().uptimeNanoseconds - started.uptimeNanoseconds) / 1_000_000
+        log.info("\(name, privacy: .public): \(ms) ms")
+        timings.append("\(Date().formatted(.iso8601.time(includingFractionalSeconds: false))) \(name) \(ms) ms")
+        if timings.count > 80 { timings.removeFirst(timings.count - 80) }
+        if name == "launch" { marks["launch-done"] = .now() }
+        // Also on disk, so a development build's numbers can be read
+        // straight off the phone.
+        let snapshot = timings
+        Task.detached(priority: .utility) {
+            guard let directory, let data = try? JSONSerialization.data(withJSONObject: snapshot, options: .prettyPrinted) else { return }
+            try? data.write(to: directory.appendingPathComponent("timings.json"), options: .atomic)
+        }
+    }
+
+    @MainActor static var launchMeasured: Bool { marks["launch-done"] != nil }
+
     // MARK: Sharing
 
     /// Every report kept on this device, in one file a tester can send from
@@ -127,6 +158,7 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
             "created": Date().formatted(.iso8601),
             "reports": reports,
             "recent": shared.lock.withLock { $0.breadcrumbs },
+            "timings": MainActor.assumeIsolated { timings },
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: summary, options: [.prettyPrinted, .sortedKeys]) else { return nil }
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("Corres Diagnostics.json")

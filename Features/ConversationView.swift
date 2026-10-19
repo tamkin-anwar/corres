@@ -285,6 +285,8 @@ struct ConversationView: View {
         // Keyed on the latest message too, so a reply landing while the
         // conversation is open loads, is marked read and is summarized.
         .categoryMoveDialog($categoryChoice, threadActions: threadActions)
+        .onAppear { HangReporter.start("open") }
+        .onChange(of: currentID) { HangReporter.start("open") }
         .task(id: "\(currentID.account)|\(currentID.providerID)|\(currentThread?.latestMessageID ?? "")|\(currentThread?.lastSentAt?.timeIntervalSince1970 ?? 0)") {
             guard let thread = store.thread(currentID) else { return }
             // Loading the body and marking read are independent network
@@ -1069,7 +1071,12 @@ struct ConversationView: View {
         // mailbox (Trash, a folder) isn't in them, and saying "couldn't be
         // saved" afterwards was the only answer.
         case .snooze, .pin: return store.isInLists(thread.id)
-        case .translate: if #available(iOS 17.4, *) { return true } else { return false }
+        case .translate:
+            #if targetEnvironment(macCatalyst)
+            return false // the translation sheet is iPhone and iPad only
+            #else
+            if #available(iOS 17.4, *) { return true } else { return false }
+            #endif
         default: return true
         }
     }
@@ -1529,11 +1536,15 @@ private struct TranslateSheet: ViewModifier {
     let text: String
 
     func body(content: Content) -> some View {
+        #if targetEnvironment(macCatalyst)
+        content
+        #else
         if #available(iOS 17.4, *) {
             content.translationPresentation(isPresented: $isPresented, text: text)
         } else {
             content
         }
+        #endif
     }
 }
 
