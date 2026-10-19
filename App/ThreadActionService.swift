@@ -505,6 +505,8 @@ final class ThreadActionService {
             try await ActionQueue.run(action, client: client)
         } catch where ActionQueue.isTransient(error) {
             ActionQueue.shared.enqueue(action)
+        } catch where ActionQueue.isGone(error) {
+            // Deleted elsewhere already: the change has nothing left to do.
         }
     }
 

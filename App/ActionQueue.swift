@@ -79,22 +79,45 @@ final class ActionQueue {
         guard !draining, !actions.isEmpty else { return }
         draining = true
         defer { draining = false }
-        while let action = actions.first {
+        // An account that can't take changes yet (offline, or waiting to be
+        // signed in again) holds only its own: other accounts' go through.
+        var waitingAccounts = Set<String>()
+        var index = 0
+        var nextRetry: Int?
+        while index < actions.count {
+            let action = actions[index]
+            guard !waitingAccounts.contains(action.account) else { index += 1; continue }
             do {
                 try await Self.run(action, client: client)
-                actions.removeFirst()
+                actions.remove(at: index)
+                save()
+            } catch where Self.isGone(error) {
+                // Already gone on the server (deleted elsewhere): what this
+                // change wanted is true. Putting it back would undo that.
+                actions.remove(at: index)
                 save()
             } catch where Self.isTransient(error) {
-                actions[0].attempts += 1
+                actions[index].attempts += 1
                 save()
-                scheduleRetry(after: actions[0].attempts)
-                return
+                waitingAccounts.insert(action.account)
+                nextRetry = min(nextRetry ?? .max, actions[index].attempts)
+                index += 1
             } catch {
                 Self.log.error("A waiting change was refused: \(String(describing: error), privacy: .public)")
-                actions.removeFirst()
+                actions.remove(at: index)
                 save()
                 await onRefused?(action, error)
             }
+        }
+        if let nextRetry { scheduleRetry(after: nextRetry) }
+    }
+
+    /// The conversation no longer exists on the server.
+    static func isGone(_ error: Error) -> Bool {
+        switch error {
+        case GmailAPIClient.ClientError.badResponse(let status): status == 404
+        case GmailAPIClient.ClientError.refused(let status, _, _): status == 404
+        default: false
         }
     }
 
