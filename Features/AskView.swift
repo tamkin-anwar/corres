@@ -1,123 +1,21 @@
 import SwiftUI
 
-/// Ask your mail: type a question, get an answer from your own email with
-/// the conversations it came from, tappable.
-struct AskView: View {
+/// Ask your mail, inside Search: a question typed in the search field
+/// is answered here, above the results, from your own email, with the
+/// conversations it came from, tappable.
+struct AskAnswerCard: View {
     @Bindable var ask: AskService
-    @State private var text = ""
-    @FocusState private var focused: Bool
     @Environment(\.conversationSelection) private var splitSelection
 
-    /// Built from this person's own mail each time Ask opens (see
-    /// `AskService.suggestions`), so every one finds something.
-    @State private var suggestions: [String] = []
-
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                field
-                switch ask.phase {
-                case .idle: suggestionList
-                case .searching, .answering: progress
-                case .done: result
-                }
-            }
-            .padding(.horizontal, CorresSpace.page).padding(.top, 4).padding(.bottom, 32)
-            .readableWidth()
-            .frame(maxWidth: .infinity)
-        }
-        // The keyboard covers the tab bar, so every way out of it matters:
-        // scrolling, tapping anywhere outside the field, Cancel, or Search.
-        .scrollDismissesKeyboard(.immediately)
-        .background(CorresPalette.canvas.onTapGesture { focused = false })
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button { focused = false } label: { Image(systemName: "keyboard.chevron.compact.down") }
-                    .accessibilityLabel("Hide keyboard")
+        VStack(alignment: .leading, spacing: 14) {
+            switch ask.phase {
+            case .idle: EmptyView()
+            case .searching, .answering: progress
+            case .done: result
             }
         }
         .animation(.easeOut(duration: 0.2), value: ask.phase)
-        .onAppear { suggestions = ask.suggestions() }
-    }
-
-    private var field: some View {
-        HStack(spacing: 12) {
-            fieldCapsule
-            if focused {
-                Button("Cancel") { focused = false }
-                    .font(.body)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
-            }
-        }
-        .animation(.easeOut(duration: 0.2), value: focused)
-    }
-
-    private var fieldCapsule: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "sparkle.magnifyingglass").foregroundStyle(CorresPalette.accent)
-            TextField("Ask about your mail", text: $text)
-                .focused($focused)
-                .submitLabel(.search)
-                .onSubmit { submit(text) }
-            if !text.isEmpty {
-                Button {
-                    text = ""
-                    ask.reset()
-                    focused = true
-                } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(CorresPalette.tertiary)
-                }
-                .accessibilityLabel("Clear")
-            }
-        }
-        .padding(.horizontal, 16).frame(minHeight: 50)
-        .corresSurface(radius: 25)
-    }
-
-    private var suggestionList: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if !ask.recent.isEmpty {
-                HStack {
-                    Text("Recent").eyebrow()
-                    Spacer()
-                    Button("Clear") { ask.clearRecent() }.font(.footnote)
-                }
-                ForEach(ask.recent, id: \.self) { question in
-                    Button {
-                        text = question
-                        submit(question)
-                    } label: {
-                        Label(question, systemImage: "clock.arrow.circlepath")
-                            .labelStyle(TightLabelStyle())
-                            .font(.subheadline).foregroundStyle(CorresPalette.ink)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.bottom, 2)
-            }
-            Text("Try").eyebrow()
-            ForEach(suggestions.filter { !ask.recent.contains($0) }, id: \.self) { suggestion in
-                Button {
-                    text = suggestion
-                    submit(suggestion)
-                } label: {
-                    Text(suggestion)
-                }
-                .buttonStyle(CorresPillStyle())
-            }
-            Text("Ask about a person (“from Sam”), files (“attachments”), receipts or packages, and a time (“this month”, “last week”).")
-                .font(.footnote).foregroundStyle(CorresPalette.secondary)
-                .padding(.top, 4)
-            Label(ask.canAnswer ? "Answered on this \(Device.name) from your own mail. Nothing is sent to a server."
-                                : "Turn on Apple Intelligence for written answers. Until then, Ask finds the right emails.",
-                  systemImage: "lock")
-                .labelStyle(TightLabelStyle())
-                .font(.footnote).foregroundStyle(CorresPalette.tertiary)
-                .padding(.top, 8)
-        }
     }
 
     private var progress: some View {
@@ -198,8 +96,4 @@ struct AskView: View {
         }
     }
 
-    private func submit(_ question: String) {
-        focused = false
-        ask.ask(question)
-    }
 }

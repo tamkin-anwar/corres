@@ -9,22 +9,27 @@ struct CorresShell: View {
     var labelDirectory: LabelDirectory
     @Bindable var pushService: PushNotificationService
     @Bindable var unsubscribeService: UnsubscribeService
-    /// Opens to the first tab in Settings → Tab Bar.
-    @State private var selection = CorresSettings.tabs.first ?? .mail
-    @AppStorage(CorresSettings.tabsKey) private var tabsRaw = ""
-    private var tabs: [Destination] { CorresSettings.tabs(from: tabsRaw) }
+    /// One screen on iPhone: Mail, opening on its Needs You split. The
+    /// iPad sidebar still picks Needs You, Mail or Waiting.
+    @State private var selection: Destination = .mail
+    private var tabs: [Destination] { [.mail] }
+    @AppStorage("corres.mailFilter") private var mailFilter = MailFilter.needsYou
 
-    /// Goes to a screen: its tab when it has one, otherwise pushed onto
-    /// the tab you're on, so a link to a hidden screen (the Brief's
-    /// "All 4", a widget, Siri) still gets there.
+    /// Goes to a screen. On iPhone, Needs You (and the Brief it replaced)
+    /// is Mail's first split, and Waiting opens on top of Mail; a widget,
+    /// Siri, a notification and a link all land there.
     private func show(_ destination: Destination) {
-        if tabs.contains(destination) || sizeClass == .regular {
-            selection = destination
-        } else {
-            var path = paths[selection] ?? NavigationPath()
-            path.append(destination)
-            paths[selection] = path
+        if sizeClass == .regular {
+            selection = switch destination { case .brief: .needsYou; case .ask: .mail; default: destination }
+            return
         }
+        var path = NavigationPath()
+        switch destination {
+        case .needsYou, .brief: mailFilter = .needsYou
+        case .waiting: path.append(Destination.waiting)
+        case .mail, .ask: break
+        }
+        paths[.mail] = path
     }
 
     private var selectionBinding: Binding<Destination> {
@@ -95,13 +100,7 @@ struct CorresShell: View {
         router.pending = nil
         switch target {
         case .destination(let destination):
-            if tabs.contains(destination) || sizeClass == .regular {
-                selection = destination
-                paths[destination] = NavigationPath()
-            } else {
-                paths[selection] = NavigationPath()
-                show(destination)
-            }
+            show(destination)
         case .compose:
             composeDraft = Draft(kind: .new, to: "", subject: "")
         case .composeTo(let to, let subject, let body):
@@ -201,8 +200,6 @@ struct CorresShell: View {
             await ShareBridge.update(auth: auth, people: people, threads: store.threads)
         }
         .onChange(of: router.pending) { _, target in handle(target) }
-        // A tab hidden in Settings while it was showing.
-        .onChange(of: tabsRaw) { if sizeClass != .regular, !tabs.contains(selection) { selection = tabs.first ?? .mail } }
         .environment(\.proUnlocked, !requiresPro)
         // Right after someone connects their first Gmail account, offer the
         // trial once; after that it's only ever one tap away.
@@ -553,15 +550,12 @@ struct CorresShell: View {
                 ProLockView(destination: destination,
                             onUnlock: { showingPaywall = true },
                             onOpenMail: { show(.mail) })
-            } else if destination == .ask {
-                AskView(ask: ask)
-            } else if destination == .brief {
-                BriefView(store: store, sync: sync, auth: auth, threadActions: threadActions, selection: selectionBinding, showingScreener: $showingScreener,
-                          accountFilter: accountFilter, isActive: isActive)
             } else {
                 CorrespondenceList(store: store, sync: sync, auth: auth, threadActions: threadActions,
                                    destination: destination, accountFilter: accountFilter,
-                                   isActive: isActive)
+                                   isActive: isActive, needsYouLocked: requiresPro,
+                                   onUnlockPro: { showingPaywall = true }, showingScreener: $showingScreener,
+                                   onOpenWaiting: { show(.waiting) })
             }
         }
     }
@@ -576,36 +570,30 @@ struct CorresShell: View {
         }
     }
 
-    /// iPhone: one tab per destination, conversations pushed on top.
+    /// iPhone: Mail alone, no tab bar. Its splits (Needs You first) are
+    /// the views of your mail; conversations and Waiting push on top.
     private var tabLayout: some View {
-        TabView(selection: $selection) {
-            ForEach(tabs) { destination in
-                NavigationStack(path: path(for: destination)) {
-                    destinationContent(for: destination)
-                        .background(CorresPalette.canvas)
-                        .navigationTitle(title(for: destination))
-                        // Brief sets its own greeting as the headline; the
-                        // lists use the system large title, set in New York
-                        // (see CorresApp.init), which collapses on scroll.
-                        .navigationBarTitleDisplayMode(destination == .brief ? .inline : .large)
-                        .toolbar { toolbarContent }
-                        .navigationDestination(for: ConversationRoute.self) { route in
-                            ConversationView(store: store, outbox: outbox, threadActions: threadActions,
-                                            labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
-                                            route: route)
-                        }
-                        .modifier(MailboxDestinations(shell: self))
-                        // A screen that isn't a tab, opened from a link.
-                        .navigationDestination(for: Destination.self) { pushed in
-                            destinationContent(for: pushed, pushedOnto: destination)
-                                .background(CorresPalette.canvas)
-                                .navigationTitle(title(for: pushed))
-                                .navigationBarTitleDisplayMode(pushed == .brief ? .inline : .large)
-                        }
+        NavigationStack(path: path(for: .mail)) {
+            destinationContent(for: .mail)
+                .background(CorresPalette.canvas)
+                .navigationTitle(title(for: .mail))
+                // The system large title, set in New York (see
+                // CorresApp.init), which collapses on scroll.
+                .navigationBarTitleDisplayMode(.large)
+                .toolbar { toolbarContent }
+                .navigationDestination(for: ConversationRoute.self) { route in
+                    ConversationView(store: store, outbox: outbox, threadActions: threadActions,
+                                    labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
+                                    route: route)
                 }
-                .tabItem { Label(destination.rawValue, systemImage: destination.systemImage) }
-                .tag(destination)
-            }
+                .modifier(MailboxDestinations(shell: self))
+                // Waiting, opened from the row above Needs You or a link.
+                .navigationDestination(for: Destination.self) { pushed in
+                    destinationContent(for: pushed, pushedOnto: .mail)
+                        .background(CorresPalette.canvas)
+                        .navigationTitle(title(for: pushed))
+                        .navigationBarTitleDisplayMode(.large)
+                }
         }
     }
 
@@ -616,7 +604,7 @@ struct CorresShell: View {
         NavigationSplitView {
             List(selection: Binding(get: { Optional(selection) }, set: { if let new = $0 { selection = new } })) {
                 Section {
-                    ForEach(Destination.allCases) { destination in
+                    ForEach([Destination.needsYou, .mail, .waiting]) { destination in
                         NavigationLink(value: destination) {
                             LabeledContent {
                                 if let count = sidebarCount(for: destination), count > 0 {

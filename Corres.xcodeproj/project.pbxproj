@@ -102,7 +102,6 @@
 		98064E766A9846B6ACFAD115 /* Features/PremiumSwipeRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A582894B2EE49E0BA022D01 /* Features/PremiumSwipeRow.swift */; };
 		9ADBDB8EA7A9457EBAB271E4 /* Features/AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */; };
 		9B3A020AEDAA4F449B17B527 /* Shared/WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */; };
-		9D52FB6C7F9BA8A3A75AA58C /* Features/BriefView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F27FB96B40EED99BFE20A6 /* Features/BriefView.swift */; };
 		9EB4BC82CCA048A18F899919 /* Shared/WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */; };
 		AC57B9FF8D85450BAEC4B66A /* Features/PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */; };
 		AFB2E1F7559842468CF8DF98 /* Core/DetectedItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F6E3D3ED4A43908B1C100E /* Core/DetectedItems.swift */; };
@@ -321,7 +320,6 @@
 		C56F5DE2502E92807210146E /* Features/ScreenerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ScreenerView.swift; sourceTree = SOURCE_ROOT; };
 		D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PersistedCorrespondence.swift; sourceTree = SOURCE_ROOT; };
 		D68DA0977ACFA46A1C9952B4 /* Core/GmailAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/GmailAccount.swift; sourceTree = SOURCE_ROOT; };
-		D6F27FB96B40EED99BFE20A6 /* Features/BriefView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/BriefView.swift; sourceTree = SOURCE_ROOT; };
 		D9F4FF5A45F64058AC3E0BFB /* CorresWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CorresWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PaywallView.swift; sourceTree = SOURCE_ROOT; };
 		DC0B80EE1611396DB315C571 /* App/OutboxService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/OutboxService.swift; sourceTree = SOURCE_ROOT; };
@@ -537,7 +535,6 @@
 				3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */,
 				37AEABBF5B1C933392981114 /* DesignSystem/Materials.swift */,
 				16FDAA185499F66241648B25 /* DesignSystem/Tokens.swift */,
-				D6F27FB96B40EED99BFE20A6 /* Features/BriefView.swift */,
 				17EC2216CF5E6F988F527EB5 /* Features/ComposeView.swift */,
 				1B711AF08239E828BF9969F3 /* Features/ConversationView.swift */,
 				8A6D2AECED4C48E4222ADE95 /* Features/CorresShell.swift */,
@@ -867,7 +864,6 @@
 				896ABC29D193F2031450A89B /* DesignSystem/CorrespondenceMark.swift in Sources */,
 				198AA1E8786592DABC5E015E /* DesignSystem/Materials.swift in Sources */,
 				B4CF17BA7EBADAFFFE4C32D9 /* DesignSystem/Tokens.swift in Sources */,
-				9D52FB6C7F9BA8A3A75AA58C /* Features/BriefView.swift in Sources */,
 				E3ED3246FBF46344E2584016 /* Features/ComposeView.swift in Sources */,
 				180DDC0F37852583386242F8 /* Features/ConversationView.swift in Sources */,
 				C957750BEBE3C33F032D5D7C /* Features/CorresShell.swift in Sources */,

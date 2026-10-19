@@ -276,6 +276,7 @@ struct ProLockView: View {
     let destination: Destination
     let onUnlock: () -> Void
     let onOpenMail: () -> Void
+    var openMailTitle = "Go to Mail"
 
     var body: some View {
         VStack(spacing: 18) {
@@ -291,7 +292,7 @@ struct ProLockView: View {
             Button("Try Corres Pro Free", action: onUnlock)
                 .buttonStyle(CorresButtonStyle())
                 .padding(.top, 6)
-            Button("Go to Mail", action: onOpenMail)
+            Button(openMailTitle, action: onOpenMail)
                 .font(.subheadline.weight(.medium))
             Spacer(minLength: 40)
         }

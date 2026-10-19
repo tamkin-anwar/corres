@@ -220,20 +220,21 @@ enum CategoryContextCache {
     }
 }
 
-/// Primary first, as Gmail's tabs and Mail's categories open; Promotions,
-/// Social and Updates beside it; Everything one tap away. Where an email
-/// sits follows what you've taught Corres (`SenderLessons.category`).
+/// Mail's splits. Needs You first: Corres opens on what asks something of
+/// you, with the rest of your mail one tap along. Then Primary, as Gmail's
+/// tabs and Mail's categories open; Promotions, Social and Updates beside
+/// it; Everything. Where an email sits follows what you've taught Corres
+/// (`SenderLessons.category`). Flagged and Sent live in Mailboxes.
 enum MailFilter: String, CaseIterable, Identifiable {
-    case primary = "Primary", everything = "Everything", unread = "Unread", promotions = "Promotions",
-         social = "Social", updates = "Updates", flagged = "Flagged", sent = "Sent"
+    case needsYou = "Needs You", primary = "Primary", everything = "Everything", unread = "Unread",
+         promotions = "Promotions", social = "Social", updates = "Updates"
     var id: String { rawValue }
 
     @MainActor func includes(_ thread: Correspondence, context: InboxCategory.Context? = nil) -> Bool {
         switch self {
+        case .needsYou: thread.attention == .needsYou
         case .everything: true
         case .unread: thread.isUnread
-        case .flagged: thread.isFlagged
-        case .sent: thread.lastSentAt != nil
         case .primary: category(thread, context) == .primary
         case .promotions: category(thread, context) == .promotions
         case .social: category(thread, context) == .social
@@ -273,8 +274,21 @@ struct CorrespondenceList: View {
     /// keystroke filtered the whole mailbox on the main thread.
     @State private var appliedSearch = ""
     @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
+    @Environment(AskService.self) private var ask: AskService?
     /// Remembered: Mail opens where you left it, Primary at first.
-    @AppStorage("corres.mailFilter") private var mailFilter = MailFilter.primary
+    @AppStorage("corres.mailFilter") private var mailFilter = MailFilter.needsYou
+    /// Needs You is part of Pro: without it the split shows what it does.
+    var needsYouLocked = false
+    var onUnlockPro: (() -> Void)?
+    var showingScreener: Binding<Bool>?
+    var onOpenWaiting: (() -> Void)?
+
+    /// What this list is showing: Mail on its Needs You split behaves as
+    /// Needs You (its order, reasons, swipes and footer). Searching always
+    /// looks through all of Mail.
+    private var kind: Destination {
+        destination == .mail && mailFilter == .needsYou && appliedSearch.isEmpty ? .needsYou : destination
+    }
     @State private var categoryChoice: CategoryChoice?
     @State private var snoozeTarget: Correspondence?
     @Environment(\.conversationSelection) private var splitSelection
@@ -335,6 +349,10 @@ struct CorrespondenceList: View {
         var unread = 0
         /// Each account's marker, for the merged view.
         var tags: [String: AccountTag] = [:]
+        /// On the Needs You split: Waiting and new senders, for the rows on top.
+        var waitingCount = 0
+        var longestWait: String?
+        var pendingSenders = 0
         /// Built with hidden rows still in; `rows` leaves out `hidden`.
         var full: [Correspondence] = []
         var hidden: Set<ThreadID> = []
@@ -351,20 +369,31 @@ struct CorrespondenceList: View {
         let cache = rowsCache
         if !isActive, cache.key != nil { return cache }
         let key = RowsCache.Key(revision: store.contentRevision, minute: Int(Date.now.timeIntervalSince1970 / 60),
-                                account: accountFilter, accounts: accountsRevision, destination: destination,
+                                account: accountFilter, accounts: accountsRevision, destination: kind,
                                 search: appliedSearch, filter: mailFilter)
         let hidden = store.hiddenIDs
         if cache.key == key, cache.hidden == hidden { return cache }
         if cache.key != key {
             cache.full = buildResults()
             cache.key = key
+            if kind == .needsYou {
+                let waiting = MailQuery.prioritized(scopedThreads, attention: .waiting)
+                cache.waitingCount = waiting.count
+                cache.longestWait = waiting.map(\.waitingReference).min().map { oldest in
+                    let days = Calendar.current.dateComponents([.day], from: oldest, to: .now).day ?? 0
+                    return days < 1 ? "Since today" : "Longest \(days) \(days == 1 ? "day" : "days")"
+                }
+                let pending = AccountPreferences.scope(store.pendingSenderThreads, account: accountFilter,
+                                                       all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
+                cache.pendingSenders = Set(pending.compactMap(\.senderEmail)).count
+            }
         }
         // A swipe only hides a row: filter what's built, don't rebuild.
         let built = hidden.isEmpty ? cache.full : cache.full.filter { !hidden.contains($0.id) }
         cache.hidden = hidden
         cache.rows = built
         cache.ids = built.map(\.id)
-        if destination == .needsYou {
+        if kind == .needsYou {
             let horizon = Date.now.addingTimeInterval(3 * 86_400)
             cache.dueSoon = Set(built.lazy.filter { ($0.dueAt ?? .distantFuture) <= horizon }.map(\.id))
         } else {
@@ -381,28 +410,26 @@ struct CorrespondenceList: View {
     private func buildResults() -> [Correspondence] {
         let all: [Correspondence]
         let search = appliedSearch
-        if let attention = destination.attention, search.trimmingCharacters(in: .whitespaces).isEmpty {
+        if let attention = kind.attention, search.trimmingCharacters(in: .whitespaces).isEmpty {
             all = MailQuery.prioritized(scopedThreads, attention: attention)
         } else {
-            all = MailQuery.filter(scopedThreads, attention: destination.attention, search: search)
+            all = MailQuery.filter(scopedThreads, attention: kind.attention, search: search)
         }
-        guard destination == .mail, mailFilter != .everything else { return all }
+        guard kind == .mail, mailFilter != .everything, mailFilter != .needsYou else { return all }
         // Search looks in every category, as Gmail's and Mail's do: an
         // order confirmation in Updates is still found from Primary.
         let searching = !search.trimmingCharacters(in: .whitespaces).isEmpty
         guard !(searching && mailFilter.isCategory) else { return all }
         let context = CategoryContextCache.context(store)
         let filtered = all.filter { mailFilter.includes($0, context: context) }
-        // Sent reads like a Sent mailbox: by when you sent, newest first.
-        guard mailFilter == .sent else { return filtered }
-        return filtered.sorted { ($0.lastSentAt ?? .distantPast) > ($1.lastSentAt ?? .distantPast) }
+        return filtered
     }
 
     /// Needs You splits into what's due within three days and the rest,
     /// keeping the chronological order inside each group.
     private var dueSoonIDs: Set<ThreadID> { rows.dueSoon }
 
-    private var showingSent: Bool { destination == .mail && mailFilter == .sent }
+    private var showingSent: Bool { false }
 
     /// Who you wrote to: the person who answered, or the first person you
     /// sent it to, by name when Corres has seen them write.
@@ -467,18 +494,25 @@ struct CorrespondenceList: View {
             listContainer {
                 Section {
                     header
-                    if results.isEmpty {
-                        emptyState
-                    } else if !dueSoonIDs.isEmpty && dueSoonIDs.count < results.count {
-                        groupLabel("Due soon")
-                        conversationRows(results.filter { dueSoonIDs.contains($0.id) })
-                        groupLabel("When you can")
-                        conversationRows(results.filter { !dueSoonIDs.contains($0.id) })
+                    if destination == .mail, kind == .needsYou, needsYouLocked {
+                        ProLockView(destination: .needsYou, onUnlock: { onUnlockPro?() },
+                                    onOpenMail: { mailFilter = .primary }, openMailTitle: "Show Primary")
+                            .frame(minHeight: 440)
                     } else {
-                        conversationRows(results)
+                        if destination == .mail, kind == .needsYou { needsYouShortcuts }
+                        if results.isEmpty {
+                            emptyState
+                        } else if !dueSoonIDs.isEmpty && dueSoonIDs.count < results.count {
+                            groupLabel("Due soon")
+                            conversationRows(results.filter { dueSoonIDs.contains($0.id) })
+                            groupLabel("When you can")
+                            conversationRows(results.filter { !dueSoonIDs.contains($0.id) })
+                        } else {
+                            conversationRows(results)
+                        }
+                        olderMailFooter
+                        listFooter
                     }
-                    olderMailFooter
-                    listFooter
                 }
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
@@ -524,7 +558,19 @@ struct CorrespondenceList: View {
                 SnoozeSheet(kind: thread.mailKind) { date in Task { await store.snooze(thread.id, until: date) } }
             }
             .categoryMoveDialog($categoryChoice, threadActions: threadActions)
-            .searchable(text: $search, prompt: "Search conversations")
+            .searchable(text: $search, prompt: "Search, or ask a question")
+            .searchSuggestions {
+                // Questions asked before, one tap to ask again.
+                if search.isEmpty, let ask, !ask.recent.isEmpty {
+                    ForEach(ask.recent, id: \.self) { question in
+                        Label(question, systemImage: "clock.arrow.circlepath").searchCompletion(question)
+                    }
+                }
+            }
+            .onSubmit(of: .search) { askQuestion(search.trimmingCharacters(in: .whitespaces)) }
+            .onChange(of: search) { _, new in
+                if new.isEmpty { ask?.reset() }
+            }
             .refreshable {
                 _ = await sync?.syncAll(accounts: auth?.accounts.map(\.email) ?? [])
                 await store.load()
@@ -702,11 +748,56 @@ struct CorrespondenceList: View {
                 }
             }
             .padding(.horizontal, CorresSpace.page)
+            askSection
             peopleMatches
             if destination == .mail { filterBar }
         }
         .padding(.bottom, 6)
         .readableWidth()
+    }
+
+    /// A question typed in search ("when is my flight?") can be answered
+    /// from your mail, above the results: Ask, without a screen of its own.
+    @ViewBuilder
+    private var askSection: some View {
+        let typed = search.trimmingCharacters(in: .whitespaces)
+        if let ask, Self.looksLikeQuestion(typed) {
+            if ask.phase != .idle, ask.question.caseInsensitiveCompare(typed) == .orderedSame {
+                AskAnswerCard(ask: ask).padding(.horizontal, CorresSpace.page)
+            } else {
+                Button { askQuestion(typed) } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: needsYouLocked ? "lock" : "sparkle").foregroundStyle(CorresPalette.accent)
+                        Text("Answer from your mail").font(.subheadline.weight(.medium)).foregroundStyle(CorresPalette.ink)
+                        Spacer(minLength: 8)
+                        Image(systemName: "return").font(.footnote).foregroundStyle(CorresPalette.tertiary)
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .corresSurface()
+                .padding(.horizontal, CorresSpace.page)
+                .accessibilityHint("Answers your question from your own email")
+            }
+        }
+    }
+
+    private func askQuestion(_ question: String) {
+        guard let ask, Self.looksLikeQuestion(question) else { return }
+        if needsYouLocked { onUnlockPro?(); return }
+        ask.ask(question)
+    }
+
+    /// "When is my flight?", "what did Sam send", "receipts from Apple
+    /// this month": a question or a request, not a name to find.
+    static func looksLikeQuestion(_ text: String) -> Bool {
+        let words = text.lowercased().split(whereSeparator: { !$0.isLetter && $0 != "'" })
+        guard words.count >= 3 else { return false }
+        if text.contains("?") { return true }
+        let openers: Set<Substring> = ["when", "what", "where", "who", "whom", "which", "how", "why", "did", "does", "do",
+                                       "is", "are", "was", "were", "has", "have", "can", "could", "show", "find", "any"]
+        return openers.contains(words[0])
     }
 
     /// Typing a name in search offers the person, as Spark does: tap and
@@ -745,7 +836,7 @@ struct CorrespondenceList: View {
         let count = results.count
         let noun = count == 1 ? "conversation" : "conversations"
         let sample = (auth?.accounts.isEmpty ?? true) && !EntitlementStore.isScreenshotMode ? " · Sample mail" : ""
-        switch destination {
+        switch kind {
         case .needsYou:
             let due = dueSoonIDs.count
             return "\(count) \(noun)" + (due > 0 ? " · \(due) due soon" : "") + sample
@@ -789,6 +880,44 @@ struct CorrespondenceList: View {
         .sensoryFeedback(.selection, trigger: mailFilter)
     }
 
+    /// Above the Needs You split: replies you're owed, and new senders to
+    /// look at. What the Brief's cards were, without leaving the list.
+    private var needsYouShortcuts: some View {
+        let waiting = rows.waitingCount
+        let senders = rows.pendingSenders
+        return VStack(spacing: 0) {
+            Button { onOpenWaiting?() } label: {
+                shortcutRow(icon: "clock",
+                            title: waiting == 0 ? "Nothing in Waiting" : waiting == 1 ? "Waiting on 1 reply" : "Waiting on \(waiting) replies",
+                            detail: rows.longestWait)
+            }
+            .buttonStyle(.plain)
+            if senders > 0, let showingScreener {
+                Hairline(leading: 52)
+                Button { showingScreener.wrappedValue = true } label: {
+                    shortcutRow(icon: "checkmark.shield",
+                                title: "\(senders == 1 ? "1 new sender" : "\(senders) new senders") \(MailQuery.holdsNewSenders ? "to approve" : "to review")",
+                                detail: nil)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .corresSurface()
+        .padding(.horizontal, CorresSpace.page).padding(.top, 8).padding(.bottom, 6)
+    }
+
+    private func shortcutRow(icon: String, title: String, detail: String?) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon).font(.body).foregroundStyle(CorresPalette.secondary).frame(width: 24)
+            Text(title).foregroundStyle(CorresPalette.ink).lineLimit(1).layoutPriority(1)
+            Spacer(minLength: 8)
+            if let detail { Text(detail).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(1) }
+            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.tertiary)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 13)
+        .contentShape(Rectangle())
+    }
+
     private func groupLabel(_ title: String) -> some View {
         Text(title).eyebrow()
             .padding(.horizontal, CorresSpace.page).padding(.top, 14).padding(.bottom, 2)
@@ -798,11 +927,11 @@ struct CorrespondenceList: View {
 
     @ViewBuilder
     private var listFooter: some View {
-        if destination == .needsYou && !results.isEmpty {
+        if kind == .needsYou && !results.isEmpty {
             Text("Email that asks something of you, sorted on this \(Device.name). Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes \u{2192} Handled. Wrong call? Press and hold to move it.")
                 .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 18)
-        } else if destination == .waiting && !results.isEmpty {
+        } else if kind == .waiting && !results.isEmpty {
             Text("Where you asked someone something, from Corres or any other app, or moved it here yourself. Longest wait first; after three days it's time to follow up. No tracking pixels, no read receipts.")
                 .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 18)
@@ -810,7 +939,7 @@ struct CorrespondenceList: View {
     }
 
     private var emptyTitle: String {
-        switch destination {
+        switch kind {
         case .needsYou: "Nothing in Needs You"
         case .waiting: "Nothing in Waiting"
         default: mailFilter == .everything ? "No mail here" : "Nothing in \(mailFilter.rawValue)"
@@ -818,11 +947,10 @@ struct CorrespondenceList: View {
     }
 
     private var emptyDetail: String {
-        switch destination {
-        case .needsYou: "Anything Corres files here asks something of you. Everything else is in Mail."
+        switch kind {
+        case .needsYou: "When an email asks something of you, it shows here. The rest of your mail is in Primary."
         case .waiting: "When you reply to someone, or move a conversation here, it waits here until they answer."
-        default: mailFilter == .sent ? "Conversations you've written in, from Corres or any other app, show here."
-                                     : "Pull down to check for new mail."
+        default: "Pull down to check for new mail."
         }
     }
 
@@ -864,7 +992,7 @@ struct CorrespondenceList: View {
         case .handled:
             // Out of view the moment the swipe lands, not once the write
             // finishes, so the row collapses right after it slides off.
-            let leaves = destination != .mail
+            let leaves = kind != .mail
             if leaves { withAnimation(.snappy(duration: 0.3)) { store.hide(thread.id) } }
             Task {
                 await threadActions?.setAttention(.handled, for: thread)
@@ -898,17 +1026,17 @@ struct CorrespondenceList: View {
                 leadingShort: isSelecting ? nil : leadingVisual(for: leadingShortAction, thread: thread),
                 leadingLong: isSelecting ? nil : leadingVisual(for: leadingLongAction, thread: thread),
                 trailingShort: isSelecting ? nil : SwipeVisual(title: trailingShortAction.title, systemImage: trailingShortAction.systemImage,
-                                           tint: trailingShortAction.tint, removesRow: trailingShortAction.removesRow(in: destination)
+                                           tint: trailingShortAction.tint, removesRow: trailingShortAction.removesRow(in: kind)
                                                 && !(trailingShortAction == .trash && confirmTrash)),
                 trailingLong: isSelecting ? nil : SwipeVisual(title: trailingLongAction.title, systemImage: trailingLongAction.systemImage,
-                                          tint: trailingLongAction.tint, removesRow: trailingLongAction.removesRow(in: destination)
+                                          tint: trailingLongAction.tint, removesRow: trailingLongAction.removesRow(in: kind)
                                                && !(trailingLongAction == .trash && confirmTrash)),
                 onLeadingShort: { perform(leadingShortAction, on: thread) },
                 onLeadingLong: { perform(leadingLongAction, on: thread) },
                 onTrailingShort: { perform(trailingShortAction, on: thread) },
                 onTrailingLong: { perform(trailingLongAction, on: thread) }
             ) {
-                let row = CorrespondenceRow(thread: thread, showsReason: destination != .mail, accountTag: accountTag(for: thread),
+                let row = CorrespondenceRow(thread: thread, showsReason: kind != .mail, accountTag: accountTag(for: thread),
                                             sentTo: showingSent || thread.isFromAccountOwner ? recipientName(for: thread) : nil)
                 if isSelecting {
                     // Tapping selects, the way Mail's Select works.
@@ -1033,7 +1161,7 @@ struct CorrespondenceList: View {
     /// Gmail's own app does, instead of the list simply ending at however
     /// far back the first sync happened to reach. Not during a search,
     /// which already reaches the whole mailbox through Gmail's own search.
-    private var pagesOlderMail: Bool { destination == .mail && search.isEmpty && sync != nil }
+    private var pagesOlderMail: Bool { kind == .mail && search.isEmpty && sync != nil }
 
     private func loadOlderMail() {
         guard let sync, let auth else { return }
@@ -1069,7 +1197,7 @@ struct CorrespondenceList: View {
                 VStack(spacing: 0) {
                     ForEach(Array(results.enumerated()), id: \.element.id) { index, thread in
                         NavigationLink(value: ConversationRoute(id: thread.id, orderedIDs: orderedIDs)) {
-                            CorrespondenceRow(thread: thread, showsReason: destination != .mail)
+                            CorrespondenceRow(thread: thread, showsReason: kind != .mail)
                         }
                         if index < results.count - 1 { Hairline(leading: 76) }
                     }

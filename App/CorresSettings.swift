@@ -163,6 +163,12 @@ enum CorresSettings {
     static var screensNewSenders: Bool { defaults.bool(forKey: screenNewSendersKey) }
 
     @MainActor static func applyToCore() {
+        // Mail became the one home screen, opening on Needs You (it was the
+        // Brief and four tabs): once, every install starts there.
+        if !defaults.bool(forKey: "corres.migration.home.v1") {
+            defaults.set("Needs You", forKey: "corres.mailFilter")
+            defaults.set(true, forKey: "corres.migration.home.v1")
+        }
         MailQuery.holdsNewSenders = screensNewSenders
         InboxClassifier.vipAddresses = vips
         InboxClassifier.domainDecisions = domainRules
@@ -172,25 +178,6 @@ enum CorresSettings {
     }
 
     // MARK: Tab bar
-
-    /// Settings → Tab Bar: which screens are tabs, in order. Mail is
-    /// always one (it's the everything view, and where Corres falls back
-    /// when other screens are locked); the first tab is where Corres opens.
-    static let tabsKey = "corres.tabs"
-    static let defaultTabs: [Destination] = [.brief, .needsYou, .waiting, .mail, .ask]
-
-    static func tabs(from raw: String) -> [Destination] {
-        var seen = Set<Destination>()
-        var tabs = raw.split(separator: ",").compactMap { Destination(rawValue: String($0)) }
-            .filter { seen.insert($0).inserted }
-        if raw.isEmpty { tabs = defaultTabs }
-        if !tabs.contains(.mail) { tabs.append(.mail) }
-        return tabs
-    }
-
-    static func raw(for tabs: [Destination]) -> String { tabs.map(\.rawValue).joined(separator: ",") }
-
-    static var tabs: [Destination] { tabs(from: defaults.string(forKey: tabsKey) ?? "") }
 
     /// Settings → Email Toolbar: the actions on the bar under an email, in
     /// order. The rest are in its ⋯ menu; Reply stays beside the bar.
