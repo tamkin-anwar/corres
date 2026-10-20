@@ -12,8 +12,7 @@ public enum SampleCorrespondence {
         ]
         // Sofia's meeting has a real time and place, so sample mail shows
         // the calendar suggestion.
-        let thursday = Calendar.current.nextDate(after: now, matching: DateComponents(hour: 15, minute: 0, weekday: 5),
-                                                 matchingPolicy: .nextTime) ?? now.addingTimeInterval(3 * 86_400)
+        let thursday = meetingTime(now: now)
         let meeting = thursday.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) + " at 3:00 PM"
         return records.enumerated().map { index, row in
             let details = row.0 == "Sofia Laurent"
@@ -28,5 +27,33 @@ public enum SampleCorrespondence {
                 reason: row.4, attention: row.5
             )
         }
+    }
+
+    private static func meetingTime(now: Date) -> Date {
+        Calendar.current.nextDate(after: now, matching: DateComponents(hour: 15, minute: 0, weekday: 5),
+                                  matchingPolicy: .nextTime) ?? now.addingTimeInterval(3 * 86_400)
+    }
+
+    /// Sofia's email carries an invitation, as a real one would, so sample
+    /// mail shows answering it.
+    public static func invitation(for thread: Correspondence, now: Date = .now) -> Invitation? {
+        guard thread.id == ThreadID(account: "sample", providerID: "sample-2") else { return nil }
+        let start = meetingTime(now: now)
+        let ics = """
+        BEGIN:VCALENDAR
+        METHOD:REQUEST
+        BEGIN:VEVENT
+        UID:sample-meeting@corres.app
+        ORGANIZER;CN=Sofia Laurent:mailto:sofia@maison.example
+        ATTENDEE;PARTSTAT=NEEDS-ACTION:mailto:you@example.com
+        DTSTART:\(Invitation.stamp(start))
+        DTEND:\(Invitation.stamp(start.addingTimeInterval(45 * 60)))
+        SUMMARY:Thursday conversation
+        LOCATION:Maison Studio\\, 120 Grand Street\\, New York
+        SEQUENCE:0
+        END:VEVENT
+        END:VCALENDAR
+        """
+        return Invitation.parse(ics)
     }
 }

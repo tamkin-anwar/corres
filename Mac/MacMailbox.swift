@@ -53,6 +53,8 @@ enum MacMailbox: Hashable, Codable {
 
     /// Lists whose rows say why each one is there.
     var showsReasons: Bool { self == .needsYou || self == .waiting }
+    /// Sorted by what each conversation asks of you, so moving one takes it out.
+    var isAttentionList: Bool { self == .needsYou || self == .waiting }
 }
 
 /// One line of the message list: a conversation, or a group's label.
@@ -90,6 +92,7 @@ final class MacMailboxModel {
         let search: String
         let minute: Int
         let accounts: [String]
+        let serverMatches: Set<ThreadID>
     }
 
     init() {
@@ -99,7 +102,8 @@ final class MacMailboxModel {
         }
     }
 
-    func rows(store: MailStore, accounts: [String], remote: MacRemoteMailboxes) -> [MacRow] {
+    /// `serverMatches`: what the accounts' own search found for `search`.
+    func rows(store: MailStore, accounts: [String], remote: MacRemoteMailboxes, serverMatches: Set<ThreadID> = []) -> [MacRow] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         // Mail on the server: as fetched, less anything just moved away.
         if query.isEmpty, let kind = mailbox.remoteKind {
@@ -109,9 +113,9 @@ final class MacMailboxModel {
             return cachedRows
         }
         let key = CacheKey(revision: store.contentRevision, hidden: store.hiddenIDs, mailbox: mailbox, search: query,
-                           minute: Int(Date.now.timeIntervalSince1970 / 60), accounts: accounts)
+                           minute: Int(Date.now.timeIntervalSince1970 / 60), accounts: accounts, serverMatches: serverMatches)
         if key == cacheKey { return cachedRows }
-        cachedRows = build(store: store, query: query, accounts: accounts)
+        cachedRows = build(store: store, query: query, accounts: accounts, serverMatches: serverMatches)
         cacheKey = key
         return cachedRows
     }
@@ -129,11 +133,11 @@ final class MacMailboxModel {
         return threads[..<last].last(where: { !ids.contains($0.id) })?.id
     }
 
-    private func build(store: MailStore, query: String, accounts: [String]) -> [MacRow] {
+    private func build(store: MailStore, query: String, accounts: [String], serverMatches: Set<ThreadID>) -> [MacRow] {
         let threads = store.threads
         // Searching looks through everything, in every list, as Mail does.
         if !query.isEmpty {
-            return MailQuery.filter(store.searchableThreads, search: query).map(MacRow.thread)
+            return MailQuery.filter(store.searchableThreads, search: query, serverMatches: serverMatches).map(MacRow.thread)
         }
         switch mailbox {
         case .needsYou:

@@ -68,7 +68,15 @@ struct MailClient: Sendable {
     }
 
     func searchMessages(query: String, account: String) async throws -> [Correspondence] {
-        isICloud(account) ? try await icloud.searchMessages(query: query, account: account) : isOutlook(account) ? try await outlook.searchMessages(query: query, account: account) : try await gmail.searchMessages(query: query, account: account)
+        try await searchPage(query: query, account: account, pageToken: nil).items
+    }
+
+    /// A page of server search results, and where the next one starts
+    /// (nil when there's no more), for "Show More Results".
+    func searchPage(query: String, account: String, pageToken: String?) async throws -> (items: [Correspondence], nextPageToken: String?) {
+        isICloud(account) ? try await icloud.searchPage(query: query, account: account, pageToken: pageToken)
+            : isOutlook(account) ? try await outlook.searchPage(query: query, account: account, pageToken: pageToken)
+            : try await gmail.searchPage(query: query, account: account, pageToken: pageToken)
     }
 
     func sentAddressing(account: String, limit: Int) async throws -> [Addressing] {

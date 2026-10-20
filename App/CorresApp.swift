@@ -1,3 +1,4 @@
+import CoreSpotlight
 import GoogleSignIn
 import SwiftUI
 import UIKit
@@ -101,12 +102,17 @@ struct CorresApp: App {
                 .onOpenURL { url in
                     if !appDelegate.router.open(url) { GIDSignIn.sharedInstance.handle(url) }
                 }
+                // A conversation picked in Search on the Home Screen.
+                .onContinueUserActivity(CSSearchableItemActionType) { activity in
+                    if let id = SpotlightIndex.threadID(from: activity) { appDelegate.router.pending = .thread(id) }
+                }
                 // Widgets show what's on the phone; refresh their snapshot
                 // whenever the mail it summarizes changes.
                 // Keyed on the store's revision, not its threads: comparing
                 // the whole mailbox on every redraw of the root was itself
                 // work on each swipe.
                 .onChange(of: appDelegate.store.revision) {
+                    SpotlightIndex.shared.scheduleUpdate { [store = appDelegate.store] in store.searchableThreads }
                     WidgetBridge.scheduleUpdate { [store = appDelegate.store] in store.threads }
                 }
                 // Removing the last account forgets who you correspond with.

@@ -970,6 +970,18 @@ public enum InboxClassifier {
 }
 
 public extension String {
+    /// A row's preview line: entities decoded, and any markup a sender left
+    /// in their preview text (`<a href="…">`) taken out.
+    /// Inline images' placeholders (`[cid:image001.png@01DD…]`) too.
+    var previewText: String {
+        let decoded = decodingHTMLEntities
+        guard decoded.contains("<") || decoded.contains("[cid:") else { return decoded }
+        return decoded.replacingOccurrences(of: #"<[A-Za-z/!][^<>]{0,400}>"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(of: #"\[cid:[^\]]{0,200}\]"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(of: #"\s{2,}"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+    }
+
     /// Gmail's `snippet` field is HTML-escaped (`Don&#39;t`, `&amp;`), and
     /// was being shown verbatim in every row preview and notification.
     var decodingHTMLEntities: String {
@@ -1039,8 +1051,12 @@ public enum MailQuery {
         }
     }
 
+    /// `serverMatches`: conversations a provider's own search found for
+    /// this query. They show even when the words are only in a part of
+    /// the message not on the device (the full body of older mail), the
+    /// way Gmail's own results would.
     public static func filter(_ threads: [Correspondence], attention: Attention? = nil,
-                              search: String = "", now: Date = .now) -> [Correspondence] {
+                              search: String = "", serverMatches: Set<ThreadID> = [], now: Date = .now) -> [Correspondence] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         // Snooze hides a thread from its curated attention queue (that is the
         // point of snoozing it), but never from the catch-all Mail view and
@@ -1056,7 +1072,7 @@ public enum MailQuery {
             (!hideSnoozed || !item.isSnoozed(at: now)) &&
             (!hideUnscreened || !item.isScreenedOut) &&
             (attention == nil || item.attention(at: now) == attention) &&
-            (query.isEmpty || terms.matches(item))
+            (query.isEmpty || terms.matches(item, serverMatched: serverMatches.contains(item.id)))
         }
         return sortedNewestFirst(kept)
     }
@@ -1087,10 +1103,13 @@ public enum MailQuery {
             self.words = words.joined(separator: " ")
         }
 
-        public func matches(_ item: Correspondence) -> Bool {
-            if hasAttachment && item.attachments.isEmpty { return false }
+        public func matches(_ item: Correspondence, serverMatched: Bool = false) -> Bool {
+            // Before its body loads a message's attachments aren't known;
+            // the server's own search already checked for them.
+            if hasAttachment && item.attachments.isEmpty && !(serverMatched && !item.isBodyLoaded) { return false }
             if unread && !item.isUnread { return false }
             if flagged && !item.isFlagged { return false }
+            if serverMatched { return true }
             for name in from where ![item.sender, item.senderEmail ?? "", item.organization].contains(where: { $0.localizedStandardContains(name) }) {
                 return false
             }

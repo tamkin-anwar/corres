@@ -119,7 +119,7 @@ struct PreferencesView: View {
                         settingLabel("Sorting", "line.3.horizontal.decrease")
                     }
                     NavigationLink {
-                        ReadingSettingsView()
+                        ReadingSettingsView(store: store)
                     } label: {
                         settingLabel("Reading", "text.book.closed")
                     }
@@ -944,6 +944,7 @@ private struct ComposingSettingsView: View {
 // MARK: - Reading
 
 private struct ReadingSettingsView: View {
+    let store: MailStore
     @AppStorage(CorresSettings.remoteImagesKey) private var remoteImages = CorresSettings.RemoteImages.ask.rawValue
     @AppStorage(CorresSettings.markReadOnOpenKey) private var markReadOnOpen = true
     @AppStorage(CorresSettings.confirmTrashKey) private var confirmTrash = false
@@ -951,6 +952,7 @@ private struct ReadingSettingsView: View {
     @AppStorage(AfterRemoval.key) private var afterRemoval = AfterRemoval.nextConversation.rawValue
     @AppStorage(CorresSettings.summariesKey) private var summaries = true
     @AppStorage(CorresSettings.keyDetailsKey) private var keyDetails = true
+    @AppStorage(SpotlightIndex.enabledKey) private var inSpotlight = true
     @Environment(MailIntelligence.self) private var intelligence
 
     var body: some View {
@@ -987,6 +989,17 @@ private struct ReadingSettingsView: View {
                 }
             } footer: {
                 Text("With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser.")
+            }
+            Section {
+                Toggle("Show in Search", isOn: $inSpotlight)
+                    .onChange(of: inSpotlight) { _, on in
+                        Task {
+                            if on { await SpotlightIndex.shared.update(store.searchableThreads) }
+                            else { await SpotlightIndex.shared.removeAll() }
+                        }
+                    }
+            } footer: {
+                Text("Find your conversations from Search on the Home Screen, by who sent them, the subject or what they say. The index stays on this \(Device.name).")
             }
         }
         .scrollContentBackground(.hidden)

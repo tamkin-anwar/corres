@@ -268,6 +268,8 @@ struct CorrespondenceList: View {
             let destination: Destination
             let search: String
             let filter: MailFilter
+            /// What the providers' search found, as more of it arrives.
+            let serverMatches: Int
         }
         var key: Key?
         var rows: [Correspondence] = []
@@ -297,7 +299,7 @@ struct CorrespondenceList: View {
         if !isActive, cache.key != nil { return cache }
         let key = RowsCache.Key(revision: store.contentRevision, minute: Int(Date.now.timeIntervalSince1970 / 60),
                                 account: accountFilter, accounts: accountsRevision, destination: kind,
-                                search: appliedSearch, filter: mailFilter)
+                                search: appliedSearch, filter: mailFilter, serverMatches: serverMatches.count)
         let hidden = store.hiddenIDs
         if cache.key == key, cache.hidden == hidden { return cache }
         if cache.key != key {
@@ -334,13 +336,20 @@ struct CorrespondenceList: View {
 
     private var results: [Correspondence] { rows.rows }
 
+    /// What Gmail, Outlook or iCloud's own search found for what's typed.
+    private var serverMatches: Set<ThreadID> {
+        guard let sync, !appliedSearch.isEmpty,
+              sync.moreResultsQuery == appliedSearch.trimmingCharacters(in: .whitespacesAndNewlines) else { return [] }
+        return sync.serverMatches
+    }
+
     private func buildResults() -> [Correspondence] {
         let all: [Correspondence]
         let search = appliedSearch
         if let attention = kind.attention, search.trimmingCharacters(in: .whitespaces).isEmpty {
             all = MailQuery.prioritized(scopedThreads, attention: attention)
         } else {
-            all = MailQuery.filter(scopedThreads, attention: kind.attention, search: search)
+            all = MailQuery.filter(scopedThreads, attention: kind.attention, search: search, serverMatches: serverMatches)
         }
         guard kind == .mail, mailFilter != .everything, mailFilter != .needsYou else { return all }
         // Search looks in every category, as Gmail's and Mail's do: an
@@ -438,6 +447,7 @@ struct CorrespondenceList: View {
                             conversationRows(results)
                         }
                         olderMailFooter
+                        moreResultsFooter
                         listFooter
                     }
                 }
@@ -1120,6 +1130,36 @@ struct CorrespondenceList: View {
             .frame(maxWidth: .infinity).padding(.vertical, 16)
             .listRowSeparator(.hidden)
         }
+    }
+
+    /// Past the first 50 from each account: the next page loads as you
+    /// reach the end of the results, or with a tap.
+    @ViewBuilder
+    private var moreResultsFooter: some View {
+        if let sync, !appliedSearch.isEmpty, !results.isEmpty,
+           sync.moreResultsQuery == appliedSearch.trimmingCharacters(in: .whitespacesAndNewlines) {
+            if sync.isSearchingRemote {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Searching your mail…").font(.footnote).foregroundStyle(CorresPalette.secondary)
+                }
+                .frame(maxWidth: .infinity).padding(.vertical, 16)
+                .listRowSeparator(.hidden)
+            } else if !sync.moreResults.isEmpty {
+                Button { Task { await showMoreResults() } } label: {
+                    Text("Show More Results").font(.subheadline.weight(.medium)).foregroundStyle(CorresPalette.accent)
+                        .frame(maxWidth: .infinity).padding(.vertical, 16)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .listRowSeparator(.hidden)
+                .onAppear { Task { await showMoreResults() } }
+            }
+        }
+    }
+
+    private func showMoreResults() async {
+        if await sync?.searchMore() == true { await store.refresh() }
     }
 
     /// Used only by the offline preview-render script; List does not render through ImageRenderer.

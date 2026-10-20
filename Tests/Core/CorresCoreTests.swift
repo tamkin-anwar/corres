@@ -561,4 +561,23 @@ struct CorresCoreTests {
         #expect(item(["folder:Archive"]).isArchivedCopy)
         #expect(item(["CATEGORY_PROMOTIONS"]).isArchivedCopy)
     }
+
+    /// What a provider's own search found shows even when the words are
+    /// only in the part of the message not on the device yet; filters
+    /// like is:unread still apply to it here.
+    @Test func previewsLeaveOutStrayMarkup() {
+        #expect("Why it matters...<a href=\" src=\" alt=\"\" border=\"0\" /></a> More below".previewText == "Why it matters... More below")
+        #expect("Don&#39;t miss it".previewText == "Don't miss it")
+        #expect("a < b and 3 <4".previewText == "a < b and 3 <4")
+        #expect("[cid:image001.png@01DD5FDE.D10AB060] Congratulations".previewText == "Congratulations")
+    }
+
+    @Test func serverMatchesShowInSearch() {
+        let id = ThreadID(account: "me@example.com", providerID: "s2")
+        let item = Correspondence(id: id, sender: "Acme", organization: "Acme", subject: "Your statement",
+                                  excerpt: "Here it is", body: "", receivedAt: .now, dueAt: nil, reason: "", attention: .quiet)
+        #expect(MailQuery.filter([item], search: "invoice").isEmpty)
+        #expect(MailQuery.filter([item], search: "invoice", serverMatches: [id]).count == 1)
+        #expect(MailQuery.filter([item], search: "invoice is:unread", serverMatches: [id]).isEmpty)
+    }
 }

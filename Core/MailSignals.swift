@@ -321,19 +321,7 @@ public enum EventFinder {
             if fields[name] == nil { fields[name] = (String(line[line.index(after: colon)...]), String(key)) }
         }
         func icsDate(_ field: (value: String, params: String)?) -> Date? {
-            guard let field else { return nil }
-            let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            if field.value.hasSuffix("Z") {
-                formatter.timeZone = TimeZone(identifier: "UTC")
-                formatter.dateFormat = "yyyyMMdd'T'HHmmss'Z'"
-            } else if let tz = field.params.range(of: "TZID=") {
-                formatter.timeZone = TimeZone(identifier: String(field.params[tz.upperBound...]).components(separatedBy: ";")[0])
-                formatter.dateFormat = "yyyyMMdd'T'HHmmss"
-            } else {
-                formatter.dateFormat = field.value.count == 8 ? "yyyyMMdd" : "yyyyMMdd'T'HHmmss"
-            }
-            return formatter.date(from: field.value)
+            field.flatMap { ICalendar.date($0.value, params: $0.params)?.date }
         }
         guard let start = icsDate(fields["DTSTART"]), start > now.addingTimeInterval(-3_600) else { return nil }
         func text(_ key: String) -> String? {

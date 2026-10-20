@@ -90,12 +90,11 @@ struct ConversationView: View {
                         // An invitation: answer it here, as Gmail's Yes /
                         // Maybe / No; the organizer's calendar shows it.
                         if let invitation, !thread.isFromAccountOwner {
-                            InvitationCard(invitation: invitation, event: calendarEvent) { response in
-                                answer(invitation, with: response, in: thread)
+                            InvitationCard(invitation: invitation, senderEmail: thread.senderEmail, senderName: thread.sender) { response in
+                                Task { await outbox.sendNow(InvitationCard.reply(response, to: invitation, in: thread), replyingTo: thread) }
                             }
                             .padding(.horizontal, CorresSpace.page)
-                        }
-                        if let calendarEvent, !thread.isFromAccountOwner {
+                        } else if let calendarEvent, !thread.isFromAccountOwner {
                             CalendarSuggestionCard(event: calendarEvent, sender: thread.sender, threadKey: thread.id.providerID)
                                 .padding(.horizontal, CorresSpace.page)
                         }
@@ -303,7 +302,7 @@ struct ConversationView: View {
             // The event this email is about, once its full text is here.
             if let current = store.thread(currentID) {
                 calendarEvent = await Self.findEvent(in: current)
-                invitation = await Self.findInvitation(in: current)
+                invitation = await InvitationCard.find(in: current)
                 let aids = await Self.readingAids(in: current)
                 nextStep = aids.nextStep
                 glance = aids.glance
@@ -856,34 +855,6 @@ struct ConversationView: View {
     /// wording; see EventFinder.
     /// Off the main thread: parsing the HTML and running the date detector
     /// over a long email took long enough to catch the opening animation.
-    /// The invitation an email carries (its .ics), to answer.
-    nonisolated private static func findInvitation(in thread: Correspondence) async -> Invitation? {
-        guard let invite = thread.attachments.first(where: {
-                  $0.mimeType.lowercased().hasPrefix("text/calendar") || $0.filename.lowercased().hasSuffix(".ics") }),
-              let messageID = thread.latestMessageID, thread.id.account != "sample",
-              let data = try? await MailClient().fetchAttachmentData(messageId: messageID, attachmentId: invite.id,
-                                                                          account: thread.id.account),
-              let text = String(data: data, encoding: .utf8) else { return nil }
-        return Invitation.parse(text)
-    }
-
-    /// Sends the answer to the organizer, from the address it was sent to.
-    private func answer(_ invitation: Invitation, with response: Invitation.Response, in thread: Correspondence) {
-        let account = thread.id.account
-        let address = SendAsDirectory.shared.address(for: account, answering: thread)
-        let me = invitation.invitedAddress(among: [account] + SendAsDirectory.shared.addresses(for: account).map(\.email),
-                                           fallback: address?.email ?? account)
-        let name = address?.name.isEmpty == false ? address?.name : nil
-        let verb = response == .tentative ? "Tentatively accepted" : response.verb
-        var draft = Draft(kind: .reply, threadID: thread.id, fromAccount: account, to: invitation.organizerEmail,
-                          subject: "\(verb): \(invitation.summary)",
-                          body: "\(name ?? me) \(response == .accepted ? "accepted" : response == .tentative ? "might attend" : "declined") \u{201C}\(invitation.summary)\u{201D}.")
-        draft.fromAddress = address?.isPrimary == false ? address?.email : nil
-        draft.fromName = name
-        draft.calendarReply = invitation.reply(response, attendee: me, name: name)
-        InvitationCard.remember(response, for: invitation)
-        Task { await outbox.sendNow(draft, replyingTo: thread) }
-    }
 
     nonisolated private static func findEvent(in thread: Correspondence) async -> EventSuggestion? {
         if let html = thread.htmlBody, let structured = EventFinder.fromStructuredData(html) { return structured }

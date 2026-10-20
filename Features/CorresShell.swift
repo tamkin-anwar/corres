@@ -97,6 +97,9 @@ struct CorresShell: View {
     /// Acts on a widget tap, Siri/Shortcuts action or `corres://` link.
     private func handle(_ target: AppRouter.Target?) {
         guard let target else { return }
+        // Opened cold (from Search or a notification): the mail isn't
+        // loaded yet, so the conversation waits until it is.
+        if case .thread = target, store.state == .idle || store.state == .loading { return }
         router.pending = nil
         switch target {
         case .destination(let destination):
@@ -106,12 +109,12 @@ struct CorresShell: View {
         case .composeTo(let to, let subject, let body):
             composeDraft = Draft(kind: .new, to: to, subject: subject, body: body)
         case .thread(let id):
-            guard store.threads.contains(where: { $0.id == id }) else {
+            // Archived mail too: Search finds it, so it opens.
+            guard let thread = store.thread(id) else {
                 show(.needsYou)
                 return
             }
-            let thread = store.threads.first { $0.id == id }
-            let preferred: Destination = thread?.attention == .waiting ? .waiting : (thread?.attention == .needsYou ? .needsYou : .mail)
+            let preferred: Destination = thread.attention == .waiting ? .waiting : (thread.attention == .needsYou ? .needsYou : .mail)
             let destination = tabs.contains(preferred) || sizeClass == .regular ? preferred : .mail
             selection = destination
             let route = ConversationRoute(id: id, orderedIDs: [id])

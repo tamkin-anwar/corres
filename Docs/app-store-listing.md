@@ -1,6 +1,8 @@
 # App Store listing for Corres 1.0
 
-Drafted 2026-10-17, rewritten 2026-10-19 for Build 16 (one home on Needs
+Drafted 2026-10-17, rewritten 2026-10-19 for Build 16, and for Build 17
+(search past the first results, invitations, Corres in Home Screen
+Search) (one home on Needs
 You, no Brief, Ask in Search, iCloud and other accounts, offline changes,
 iCloud sync). Everything here pastes into App Store Connect → Corres →
 Distribution → iOS App 1.0. Character limits are Apple's; counts are
@@ -55,8 +57,13 @@ Updatable any time without a new build.
 > • Allow or block a whole company at once, and undo it if you change your mind.
 >
 > SEARCH THAT ANSWERS
-> • Search every account at once, with filters like from:, has:attachment and is:unread.
+> • Search every account at once, archived mail included, with filters like from:, has:attachment and is:unread.
 > • Ask a question like "when is my flight?" and get the answer from your own mail.
+> • Find any conversation from Search on your Home Screen too.
+>
+> INVITATIONS
+> • See when it is in your time zone, where, the video call to join, and whether you're free.
+> • Accept, Maybe or Decline from the email, and add it to your calendar in a tap.
 >
 > WRITING
 > • Drafts, Send Later, Undo Send, and a reminder if nobody replies.
@@ -83,7 +90,7 @@ Updatable any time without a new build.
 > Terms: https://anwarcreativestudio.com/corres/terms/
 > Privacy: https://anwarcreativestudio.com/corres/privacy/
 
-(2928 characters)
+(3199 characters)
 
 Prices match App Store Connect today ($20.00 monthly, $200.00 yearly,
 $1,000 Lifetime, 2-week free trial). If they change, change them here too:
@@ -128,6 +135,8 @@ Claude can render these from the sample account at the exact sizes.
 > To test with a real account, add an Outlook.com, Microsoft 365, iCloud or other email account in Settings → Add Account. Gmail sign-in works for Google test users only until Google finishes verifying the app; if you need a Gmail account, contact support@corres.app and we'll add one.
 >
 > Corres Pro (Needs You, Waiting, answers in Search, summaries and suggested replies) is an auto-renewable subscription with a free trial, plus a Lifetime purchase; use a Sandbox account to test.
+>
+> Calendar access is optional and only asked for when you tap Check Your Calendar on an invitation; it is read on the device to show whether you're free, and never leaves it.
 >
 > All mail is stored on the device. A push relay receives only "mailbox changed" signals from Google and Microsoft to wake the app; it never receives message content. For iCloud, instant notifications are opt-in per account: the app-specific password is sealed on the iPhone so only our watcher service can open it, and the watcher only notices that new mail arrived, never reading a message. Smart features use Apple's on-device Foundation Models.
 

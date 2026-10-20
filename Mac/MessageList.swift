@@ -74,6 +74,11 @@ struct MessageList: NSViewRepresentable {
                 let removed = IndexSet(oldIDs.indices.filter { !newSet.contains(oldIDs[$0]) })
                 let kept = oldIDs.enumerated().filter { !removed.contains($0.offset) }.map(\.element)
                 rows = newRows
+                // A conversation leaving the list on its own (answered, say)
+                // stays open in the reading pane, as in Mail: the update
+                // doesn't count as you choosing nothing.
+                applyingSelection = true
+                defer { applyingSelection = false }
                 if !removed.isEmpty, kept == newIDs, removed.count < 50 {
                     table.removeRows(at: removed, withAnimation: [.effectFade, .slideUp])
                     // Content in the kept rows may have changed too (read state).

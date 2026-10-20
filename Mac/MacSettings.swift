@@ -9,7 +9,7 @@ struct MacSettingsView: View {
         TabView {
             MacAccountsSettings(services: services)
                 .tabItem { Label("Accounts", systemImage: "at") }
-            MacGeneralSettings()
+            MacGeneralSettings(store: services.store)
                 .tabItem { Label("General", systemImage: "gearshape") }
             MacPlanSettings(entitlements: services.entitlements)
                 .tabItem { Label("Corres Pro", systemImage: "sparkle") }
@@ -163,6 +163,8 @@ private struct MacGeneralSettings: View {
     @AppStorage(CorresSettings.summariesKey) private var summaries = true
     @AppStorage(CorresSettings.markReadOnOpenKey) private var markRead = true
     @AppStorage(CorresSettings.remoteImagesKey) private var remoteImages = CorresSettings.RemoteImages.ask.rawValue
+    @AppStorage(SpotlightIndex.enabledKey) private var inSpotlight = true
+    let store: MailStore
 
     var body: some View {
         Form {
@@ -176,6 +178,16 @@ private struct MacGeneralSettings: View {
                 ForEach(CorresSettings.RemoteImages.allCases) { Text($0.title).tag($0.rawValue) }
             }
             Toggle("Summaries (Apple Intelligence, on this Mac)", isOn: $summaries)
+            Toggle(isOn: $inSpotlight) {
+                Text("Show in Spotlight")
+                Text("Find conversations from Spotlight by sender, subject or what they say. The index stays on this Mac.")
+            }
+            .onChange(of: inSpotlight) { _, on in
+                Task {
+                    if on { await SpotlightIndex.shared.update(store.searchableThreads) }
+                    else { await SpotlightIndex.shared.removeAll() }
+                }
+            }
         }
         .formStyle(.grouped)
     }

@@ -18,7 +18,7 @@ struct MacMainView: View {
     private var accounts: [String] { services.auth.accounts.map(\.email) }
 
     var body: some View {
-        let rows = model.rows(store: store, accounts: accounts, remote: services.remote)
+        let rows = model.rows(store: store, accounts: accounts, remote: services.remote, serverMatches: serverMatches)
         NavigationSplitView(columnVisibility: $columns) {
             MacSidebar(services: services, model: model)
                 .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 300)
@@ -45,6 +45,9 @@ struct MacMainView: View {
             NSApplication.shared.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
         }
         .onChange(of: services.sync.lastCompletedSync) { services.afterSync() }
+        .onChange(of: store.revision, initial: true) {
+            SpotlightIndex.shared.scheduleUpdate { [store] in store.searchableThreads }
+        }
         .onChange(of: services.sync.syncProgress) { Task { await store.refresh() } }
         // A notification, a widget or a corres:// link asking for a place.
         .onChange(of: services.router.pending, initial: true) { _, target in
@@ -109,6 +112,11 @@ struct MacMainView: View {
                             onKey: handleKey, menu: contextMenu,
                             onSwipe: { thread, action in perform(action, on: [thread]) },
                             onReachEnd: {
+                                // Searching: the next page of each account's results.
+                                if !model.search.isEmpty, !services.sync.moreResults.isEmpty {
+                                    Task { if await services.sync.searchMore() { await store.refresh() } }
+                                    return
+                                }
                                 guard let kind = model.mailbox.remoteKind else { return }
                                 Task { await services.remote.loadMore(kind, accounts: accounts, store: store) }
                             })
@@ -117,6 +125,12 @@ struct MacMainView: View {
         .navigationTitle(model.search.isEmpty ? model.mailbox.title : "Search")
         .navigationSubtitle(subtitle(rows))
         .background(CorresPalette.canvas)
+    }
+
+    private var serverMatches: Set<ThreadID> {
+        let query = model.search.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty, services.sync.moreResultsQuery == query else { return [] }
+        return services.sync.serverMatches
     }
 
     private func subtitle(_ rows: [MacRow]) -> String {
@@ -177,7 +191,10 @@ struct MacMainView: View {
 
     @ViewBuilder
     private var detail: some View {
-        let selected = model.selectedThreads
+        let listed = model.selectedThreads
+        // Still open after it left the list (answered, moved by a sync).
+        let selected = listed.isEmpty && model.selection.count == 1
+            ? model.selection.compactMap { store.thread($0) } : listed
         if selected.count == 1, let thread = selected.first {
             ReadingPane(thread: thread, services: services) { kind in compose(kind, thread) }
         } else if selected.count > 1 {
@@ -277,6 +294,11 @@ struct MacMainView: View {
             Task { action == .archive ? await actions.archive(selected) : await actions.trash(selected) }
         case .move(let attention):
             guard !selected.isEmpty else { return }
+            // Moved out of the list it's in: on to the next, as archiving does.
+            let ids = Set(selected.map(\.id))
+            if model.mailbox.isAttentionList, !model.selection.isDisjoint(with: ids) {
+                model.selection = model.neighbor(after: ids).map { [$0] } ?? []
+            }
             Task { await actions.setAttention(attention, for: selected) }
         case .toggleFlag:
             guard !selected.isEmpty else { return }
@@ -300,7 +322,7 @@ struct MacMainView: View {
         case .show(let mailbox):
             model.mailbox = mailbox
         case .next, .previous:
-            let threads = model.rows(store: store, accounts: accounts, remote: services.remote).compactMap(\.thread)
+            let threads = model.rows(store: store, accounts: accounts, remote: services.remote, serverMatches: serverMatches).compactMap(\.thread)
             guard !threads.isEmpty else { return }
             let current = threads.firstIndex { model.selection.contains($0.id) }
             let index = switch (action, current) {

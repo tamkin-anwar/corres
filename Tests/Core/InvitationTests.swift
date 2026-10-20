@@ -48,4 +48,62 @@ struct InvitationTests {
         #expect(reply.contains("ATTENDEE;PARTSTAT=ACCEPTED;CN=\"Tamkin Anwar\":mailto:me@x.test\r\n"))
         #expect(reply.contains("SUMMARY:Project review\\, round 2\r\n"))
     }
+
+    @Test func readsWhenWhereAndWho() {
+        let invite = Invitation.parse(ics.replacingOccurrences(of: "SEQUENCE:2\r", with: "SEQUENCE:2\r\nLOCATION:Room 4\\, Park Building\r"))!
+        #expect(invite.method == .request)
+        #expect(invite.organizerName == "Sara Wiltshire")
+        #expect(invite.location == "Room 4, Park Building")
+        #expect(invite.start == Date(timeIntervalSince1970: 1_792_155_600))
+        #expect(invite.end == Date(timeIntervalSince1970: 1_792_159_200))
+        #expect(!invite.isAllDay)
+        #expect(invite.joinURL == nil)
+    }
+
+    /// Outlook writes Windows zone names and puts Teams in the location.
+    @Test func readsOutlookInvitations() {
+        let outlook = """
+        BEGIN:VCALENDAR
+        METHOD:REQUEST
+        BEGIN:VEVENT
+        ORGANIZER;CN="Lee, Sam":mailto:sam@contoso.com
+        DTSTART;TZID=Eastern Standard Time:20261020T090000
+        DURATION:PT45M
+        UID:040000008200E00074C5B7101A82E008
+        SUMMARY;LANGUAGE=en-US:Weekly sync
+        LOCATION;LANGUAGE=en-US:Microsoft Teams Meeting
+        RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=TU
+        X-MICROSOFT-SKYPETEAMSMEETINGURL:https://teams.microsoft.com/l/meetup-join/19%3ameeting_abc
+        END:VEVENT
+        END:VCALENDAR
+        """
+        let invite = Invitation.parse(outlook)!
+        #expect(invite.organizerName == "Lee, Sam")
+        #expect(invite.summary == "Weekly sync")
+        // 9 AM in New York is 13:00 UTC in October.
+        #expect(invite.start == Date(timeIntervalSince1970: 1_792_501_200))
+        #expect(invite.end == Date(timeIntervalSince1970: 1_792_501_200 + 45 * 60))
+        #expect(invite.location == nil)
+        #expect(invite.joinService == "Microsoft Teams")
+        #expect(invite.repeats == "Every 2 weeks")
+    }
+
+    @Test func readsCancellationsAndAllDayEvents() {
+        let cancel = ics.replacingOccurrences(of: "METHOD:REQUEST", with: "METHOD:CANCEL")
+            .replacingOccurrences(of: "DTSTART;TZID=Europe/London:20261016T140000", with: "DTSTART;VALUE=DATE:20261016")
+            .replacingOccurrences(of: "SEQUENCE:2\r", with: "SEQUENCE:2\r\nDESCRIPTION:Join: https://meet.google.com/abc-defg-hij\\nThanks\r")
+        let invite = Invitation.parse(cancel)!
+        #expect(invite.method == .cancel)
+        #expect(invite.isAllDay)
+        #expect(invite.joinService == "Google Meet")
+        #expect(invite.joinURL?.absoluteString == "https://meet.google.com/abc-defg-hij")
+    }
+
+    @Test func readsDurationsAndRepeats() {
+        #expect(ICalendar.duration("PT1H30M") == 5_400)
+        #expect(ICalendar.duration("P1D") == 86_400)
+        #expect(ICalendar.repeats("FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR") == "Every weekday")
+        #expect(ICalendar.repeats("FREQ=MONTHLY") == "Every month")
+        #expect(ICalendar.zone("\"W. Europe Standard Time\"")?.identifier == "Europe/Berlin")
+    }
 }

@@ -16,6 +16,16 @@ final class GmailSyncService {
     private let client = MailClient()
     private let defaults = UserDefaults.standard
     private(set) var isSearchingRemote = false
+    /// Where each account's server results continue for the current
+    /// search, for "Show More Results". Empty when every account has
+    /// shown all it has, or nothing was searched.
+    private(set) var moreResults: [String: (query: String, token: String)] = [:]
+    /// The search `moreResults` and `serverMatches` belong to.
+    private(set) var moreResultsQuery = ""
+    /// What the providers' own search found for it, shown even when the
+    /// words are only in a part of the message not on the device.
+    private(set) var serverMatches: Set<ThreadID> = []
+    private var searchGeneration = 0
     /// Bumped whenever a sync pass pulls in data, from any entry point.
     /// `CorresApp` observes it to run on-device triage after *every* sync
     /// (pull-to-refresh, connecting an account), not just the launch and
@@ -38,7 +48,7 @@ final class GmailSyncService {
     }
 
     /// Reaches past what's already synced locally (see
-    /// `GmailAPIClient.searchMessages`'s doc comment) and merges any
+    /// `MailClient.searchPage`) and merges any
     /// matches into the store via the same `upsert` every ordinary sync
     /// uses, so a found result is not just shown once and forgotten: it's
     /// now part of the account's local mail like anything else synced.
@@ -51,11 +61,17 @@ final class GmailSyncService {
     /// to show.
     @discardableResult
     func search(_ query: String, accounts: [String]) async -> Bool {
-        guard !accounts.isEmpty else { return false }
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        searchGeneration += 1
+        let generation = searchGeneration
+        moreResults = [:]
+        serverMatches = []
+        moreResultsQuery = trimmed
+        isSearchingRemote = false
+        guard !accounts.isEmpty else { return false }
         guard trimmed.count >= Self.minSearchQueryLength else { return false }
         isSearchingRemote = true
-        defer { isSearchingRemote = false }
+        defer { if generation == searchGeneration { isSearchingRemote = false } }
         // Gmail's search endpoint is scoped to whichever account authorized
         // the call ("me"); reaching every connected account means one call
         // per account. Fired concurrently, not one after another: with more
@@ -65,29 +81,60 @@ final class GmailSyncService {
         // slowest single account. `repository` is a `@ModelActor`, already
         // safe to call concurrently from multiple tasks (calls queue on the
         // actor rather than racing).
-        return await withTaskGroup(of: Bool.self) { group in
-            for account in accounts {
-                // Gmail reads its own filters (from:, has:attachment); the
-                // others are searched for the words, and the filters apply
-                // to what comes back.
-                let terms = MailQuery.SearchTerms(trimmed)
-                // Filters alone ("is:unread") narrow what's here; asking the
-                // server would pull in every unread email you ever archived.
-                guard !terms.words.isEmpty || !terms.from.isEmpty || !terms.to.isEmpty else { continue }
-                let query = MailAccounts.provider(for: account) == .google ? trimmed
-                    : ([terms.words] + terms.from + terms.to).filter { !$0.isEmpty }.joined(separator: " ")
-                guard !query.isEmpty else { continue }
+        var pages: [(account: String, query: String)] = []
+        for account in accounts {
+            // Gmail reads its own filters (from:, has:attachment); the
+            // others are searched for the words, and the filters apply
+            // to what comes back.
+            let terms = MailQuery.SearchTerms(trimmed)
+            // Filters alone ("is:unread") narrow what's here; asking the
+            // server would pull in every unread email you ever archived.
+            guard !terms.words.isEmpty || !terms.from.isEmpty || !terms.to.isEmpty else { continue }
+            let query = MailAccounts.provider(for: account) == .google ? trimmed
+                : ([terms.words] + terms.from + terms.to).filter { !$0.isEmpty }.joined(separator: " ")
+            guard !query.isEmpty else { continue }
+            pages.append((account, query))
+        }
+        return await searchPages(pages.map { ($0.account, $0.query, nil) }, generation: generation)
+    }
+
+    /// The next page from every account that has more for the current
+    /// search: what "Show More Results" at the end of the results asks for.
+    @discardableResult
+    func searchMore() async -> Bool {
+        guard !moreResults.isEmpty, !isSearchingRemote else { return false }
+        let pages = moreResults.map { ($0.key, $0.value.query, Optional($0.value.token)) }
+        moreResults = [:]
+        isSearchingRemote = true
+        let generation = searchGeneration
+        defer { if generation == searchGeneration { isSearchingRemote = false } }
+        return await searchPages(pages, generation: generation)
+    }
+
+    /// One page of server results from each account, merged into the store,
+    /// remembering where each continues. Pages that land after a newer
+    /// search started are still saved, but don't offer "more" for it.
+    private func searchPages(_ pages: [(account: String, query: String, token: String?)], generation: Int) async -> Bool {
+        await withTaskGroup(of: (account: String, query: String, next: String?, found: [ThreadID], inserted: Bool).self) { group in
+            for page in pages {
                 group.addTask {
-                    guard let matches = try? await self.client.searchMessages(query: query, account: account), !matches.isEmpty else { return false }
+                    guard let result = try? await self.client.searchPage(query: page.query, account: page.account, pageToken: page.token) else {
+                        return (page.account, page.query, nil, [], false)
+                    }
                     // Approved, not screened: these are older messages you
                     // went looking for, not someone writing to you for the
                     // first time.
-                    let inserted = (try? await self.repository.upsert(matches, isInitialSync: true)) ?? 0
-                    return inserted > 0
+                    let inserted = result.items.isEmpty ? 0 : (try? await self.repository.upsert(result.items, isInitialSync: true)) ?? 0
+                    return (page.account, page.query, result.nextPageToken, result.items.map(\.id), inserted > 0)
                 }
             }
             var anyInserted = false
-            for await inserted in group where inserted { anyInserted = true }
+            for await result in group {
+                anyInserted = anyInserted || result.inserted
+                guard generation == searchGeneration else { continue }
+                serverMatches.formUnion(result.found)
+                if let next = result.next { moreResults[result.account] = (result.query, next) }
+            }
             return anyInserted
         }
     }

@@ -1,3 +1,4 @@
+import CoreSpotlight
 import GoogleSignIn
 import SwiftUI
 
@@ -26,6 +27,10 @@ struct CorresMacApp: App {
                 .task { await services.launch() }
                 .onOpenURL { url in
                     if !services.router.open(url) { GIDSignIn.sharedInstance.handle(url) }
+                }
+                // A conversation picked in Spotlight.
+                .onContinueUserActivity(CSSearchableItemActionType) { activity in
+                    if let id = SpotlightIndex.threadID(from: activity) { services.router.pending = .thread(id) }
                 }
         }
         .defaultSize(width: 1280, height: 820)

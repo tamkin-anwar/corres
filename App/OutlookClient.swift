@@ -152,14 +152,16 @@ struct OutlookClient: Sendable {
         return try await fetchMessages(ids: ids, account: account).items.sorted { $0.receivedAt < $1.receivedAt }
     }
 
-    func searchMessages(query: String, account: String) async throws -> [Correspondence] {
+    func searchPage(query: String, account: String, pageToken: String?) async throws -> (items: [Correspondence], nextPageToken: String?) {
         let term = "\"\(query.replacingOccurrences(of: "\"", with: ""))\"".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let page: GraphPage<GraphMessage> = try await getJSON("\(Self.base)/me/messages?$select=\(Self.listFields)&$search=\(term)&$top=50", account: account)
+        let url = pageToken ?? "\(Self.base)/me/messages?$select=\(Self.listFields)&$search=\(term)&$top=50"
+        let page: GraphPage<GraphMessage> = try await getJSON(url, account: account)
         let folders = try await OutlookFolders.shared.ids(for: account, client: self)
         // Graph searches Deleted Items and Junk too; results are saved with
         // your mail, so those would come back into Mail. Gmail leaves them out.
-        return page.value.map { map($0, account: account, folders: folders, full: false) }
-            .filter { !$0.labelIds.contains("TRASH") && !$0.labelIds.contains("SPAM") && !$0.labelIds.contains("DRAFT") }
+        return (page.value.map { map($0, account: account, folders: folders, full: false) }
+            .filter { !$0.labelIds.contains("TRASH") && !$0.labelIds.contains("SPAM") && !$0.labelIds.contains("DRAFT") },
+                page.nextLink)
     }
 
     func sentAddressing(account: String, limit: Int) async throws -> [GmailAPIClient.Addressing] {
@@ -570,7 +572,7 @@ struct OutlookClient: Sendable {
         return GmailAPIClient.build(
             account: account, threadID: message.conversationId ?? message.id, messageID: message.id,
             sender: sender, senderEmail: senderEmail, organization: GmailAPIClient.organization(fromEmail: senderEmail),
-            subject: (message.subject ?? "").isEmpty ? "(no subject)" : message.subject!, excerpt: message.bodyPreview ?? "",
+            subject: (message.subject ?? "").isEmpty ? "(no subject)" : message.subject!, excerpt: (message.bodyPreview ?? "").previewText,
             body: full ? plain : (message.bodyPreview ?? ""), htmlBody: html,
             messageIdHeader: message.internetMessageId?.trimmingCharacters(in: CharacterSet(charactersIn: "<>")),
             receivedAt: message.receivedDate ?? .now, isUnread: message.isRead == false,

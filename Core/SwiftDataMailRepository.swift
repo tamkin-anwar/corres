@@ -203,7 +203,7 @@ public actor SwiftDataMailRepository: MailRepository {
                     changed += 1
                 }
             }
-            let decoded = model.excerpt.decodingHTMLEntities
+            let decoded = model.excerpt.previewText
             if decoded != model.excerpt { model.excerpt = decoded }
             if model.lastSentAt == nil, model.senderEmail?.lowercased() == model.account.lowercased() {
                 model.lastSentAt = model.receivedAt

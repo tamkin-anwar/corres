@@ -401,6 +401,7 @@ final class GoogleAuthService {
         accounts.removeAll { $0.email == email }
         persistAccountList()
         MailIndexer.shared.forget(email)
+        Task { await SpotlightIndex.shared.forget(account: email) }
         profiles[email] = nil
         if let data = try? JSONEncoder().encode(profiles) { defaults.set(data, forKey: Self.profilesKey) }
         if MailAccounts.provider(for: email).usesIMAP {

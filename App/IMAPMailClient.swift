@@ -206,18 +206,24 @@ struct IMAPMailClient: Sendable {
 
     /// The whole mailbox, as Gmail's and Outlook's search are: Inbox, Sent
     /// and Archive, newest first.
-    func searchMessages(query: String, account: String) async throws -> [Correspondence] {
-        let keys: [String] = try await IMAPSessions.shared.with(account) { session in
+    /// The page token is how many of each folder's matches came before.
+    func searchPage(query: String, account: String, pageToken: String?) async throws -> (items: [Correspondence], nextPageToken: String?) {
+        let skip = pageToken.flatMap(Int.init) ?? 0
+        let page: (keys: [String], more: Bool) = try await IMAPSessions.shared.with(account) { session in
             let folders = try await session.folders()
             var found: [String] = []
+            var more = false
             for path in [folders.inbox, folders.sent, folders.archive].compactMap({ $0 }) {
                 let selected = try await session.connection.select(path)
-                let uids = try await session.connection.search(text: query).sorted(by: >).prefix(50)
+                let all = try await session.connection.search(text: query).sorted(by: >)
+                let uids = all.dropFirst(skip).prefix(50)
+                more = more || all.count > skip + 50
                 found += uids.map { "\(selected.uidValidity):\($0):\(path)" }
             }
-            return found
+            return (found, more)
         }
-        return try await fetchMetadata(ids: keys, account: account).items.sorted { $0.receivedAt > $1.receivedAt }
+        let items = try await fetchMetadata(ids: page.keys, account: account).items.sorted { $0.receivedAt > $1.receivedAt }
+        return (items, page.more ? String(skip + 50) : nil)
     }
 
     #if DEBUG

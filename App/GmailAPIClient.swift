@@ -339,17 +339,17 @@ struct GmailAPIClient {
     /// after, not a second full sync of the account.
     private let searchPageSize = 50
 
-    func searchMessages(query: String, account: String) async throws -> [Correspondence] {
+    func searchPage(query: String, account: String, pageToken: String?) async throws -> (items: [Correspondence], nextPageToken: String?) {
         let token = try await accessToken(for: account)
         var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
         components.queryItems = [
             URLQueryItem(name: "q", value: query),
             URLQueryItem(name: "maxResults", value: String(searchPageSize)),
-        ]
+        ] + (pageToken.map { [URLQueryItem(name: "pageToken", value: $0)] } ?? [])
         let (data, response) = try await authorizedRequest(url: components.url!, token: token)
         try validate(response)
         let list = try JSONDecoder().decode(MessageListResponse.self, from: data)
-        return try await fetchMetadata(ids: list.messages?.map(\.id) ?? [], account: account).items
+        return (try await fetchMetadata(ids: list.messages?.map(\.id) ?? [], account: account).items, list.nextPageToken)
     }
 
     // MARK: - People
@@ -886,7 +886,7 @@ struct GmailAPIClient {
             && (headers["list-unsubscribe-post"]?.lowercased().contains("one-click") ?? false)
         return Self.build(account: account, threadID: message.threadId ?? message.id, messageID: message.id,
                           sender: sender, senderEmail: senderEmail, organization: organization, subject: subject,
-                          excerpt: (message.snippet ?? "").decodingHTMLEntities, body: body, htmlBody: htmlBody,
+                          excerpt: (message.snippet ?? "").previewText, body: body, htmlBody: htmlBody,
                           messageIdHeader: messageIdHeader, receivedAt: receivedAt, isUnread: isUnread,
                           labelIds: message.labelIds ?? [], attachments: attachments, toRecipients: toRecipients,
                           ccRecipients: ccRecipients, replyTo: replyTo, listUnsubscribeMailto: listUnsubscribeMailto,

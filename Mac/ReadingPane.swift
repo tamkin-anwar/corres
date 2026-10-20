@@ -12,6 +12,7 @@ struct ReadingPane: View {
     @State private var bodyHeight: CGFloat = 1
     @State private var showImages = false
     @State private var showEarlier = false
+    @State private var invitation: Invitation?
     @Environment(\.colorScheme) private var colorScheme
 
     private var intelligence: MailIntelligence { services.intelligence }
@@ -26,6 +27,15 @@ struct ReadingPane: View {
                 statusCard
                     .padding(.horizontal, 28)
                     .padding(.bottom, 14)
+                // An invitation: answered here, as in Calendar.
+                if let invitation, !thread.isFromAccountOwner {
+                    InvitationCard(invitation: invitation, senderEmail: thread.senderEmail, senderName: thread.sender) { response in
+                        Task { await services.outbox.sendNow(InvitationCard.reply(response, to: invitation, in: thread), replyingTo: thread) }
+                    }
+                    .frame(maxWidth: 560, alignment: .leading)
+                    .padding(.horizontal, 28)
+                    .padding(.bottom, 14)
+                }
                 if let earlier = earlierMessages, !earlier.isEmpty {
                     earlierSection(earlier)
                         .padding(.horizontal, 28)
@@ -252,6 +262,7 @@ struct ReadingPane: View {
         HangReporter.start("open")
         showImages = false
         showEarlier = false
+        invitation = nil
         bodyHeight = 1
         if thread.isUnread && CorresSettings.markReadOnOpen {
             // A beat later, so arrowing quickly through the list doesn't
@@ -263,6 +274,7 @@ struct ReadingPane: View {
         async let content: Void = services.threadActions.loadContent(for: thread)
         async let history: Void = services.threadActions.loadHistory(for: thread)
         _ = await (content, history)
+        invitation = await InvitationCard.find(in: services.store.thread(thread.id) ?? thread)
         if summariesOn {
             await intelligence.prepareInsight(for: thread, conversation: services.threadActions.messages(in: thread))
         }
