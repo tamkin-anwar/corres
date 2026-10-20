@@ -78,8 +78,10 @@ extension Color {
 enum Device {
     #if os(macOS)
     static let name = "Mac"
+    static let settingsName = "System Settings"
     #else
     @MainActor static let name = UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
+    static let settingsName = "Settings"
     #endif
 }
 

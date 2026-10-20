@@ -52,7 +52,7 @@ final class PushNotificationService {
     func enableAll(accounts: [String]) async {
         let center = UNUserNotificationCenter.current()
         guard let granted = try? await center.requestAuthorization(options: [.alert, .badge, .sound]), granted else {
-            errorMessage = "Notifications need permission in iOS Settings to turn on."
+            errorMessage = "Notifications need permission in \(Device.settingsName) to turn on."
             return
         }
         isEnabled = true
@@ -156,7 +156,7 @@ final class PushNotificationService {
                         // "alerts": this build's notification extension shows
                         // the email itself, the moment it arrives, unless the
                         // account's notifications are off.
-                        let alerts = await MainActor.run { AccountPreferences.level(for: account) != nil }
+                        let alerts = await MainActor.run { Self.showsPushAlerts && AccountPreferences.level(for: account) != nil }
                         try? await self.post(path: "register-graph", body: ["subscriptionId": subscription.id, "clientState": subscription.secret,
                                                                             "emailAddress": account, "deviceToken": deviceTokenHex,
                                                                             "alerts": alerts ? "1" : "0"])
@@ -378,7 +378,7 @@ final class PushNotificationService {
     private func registerICloud(account: String, deviceToken: String) async throws {
         guard let password = IMAPCredentials.password(for: account) else { throw ICloudInstantError.noPassword }
         let sealed = try await Self.seal(password)
-        let alerts = await MainActor.run { AccountPreferences.level(for: account) != nil }
+        let alerts = await MainActor.run { Self.showsPushAlerts && AccountPreferences.level(for: account) != nil }
         let server = IMAPServer.for(account)
         try await post(path: "register-icloud", body: ["emailAddress": account, "deviceToken": deviceToken,
                                                        "sealedPassword": sealed, "alerts": alerts ? "1" : "0",
@@ -426,5 +426,14 @@ extension PushNotificationService {
     @MainActor static var application: UIApplication { .shared }
     #else
     @MainActor static var application: NSApplication { .shared }
+    #endif
+
+    /// Visible alert pushes need the notification extension that fills
+    /// them in, which only the iPhone and iPad have. The Mac gets silent
+    /// wake-ups, syncs, and posts its own notification.
+    #if os(iOS)
+    static let showsPushAlerts = true
+    #else
+    static let showsPushAlerts = false
     #endif
 }

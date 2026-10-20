@@ -10,6 +10,11 @@ struct MacMainView: View {
     @State private var snoozing: [Correspondence] = []
     @State private var showingPalette = false
     @State private var scheduledSelection: UUID?
+    @State private var showingShortcuts = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("corres.mac.welcomed") private var welcomed = false
+    @State private var showingWelcome = false
+    @FocusState private var searchFocused: Bool
 
     private var store: MailStore { services.store }
     private var dockCount: Int {
@@ -32,9 +37,25 @@ struct MacMainView: View {
         }
         .searchable(text: $model.search, placement: .toolbar, prompt: "Search, or ask a question")
         .onSubmit(of: .search) { submitSearch() }
-        .toolbar { toolbar }
+        .toolbar(id: "corres.main") { toolbar }
         .overlay(alignment: .bottom) { undoBar }
+        .searchFocused($searchFocused)
         .sheet(isPresented: $showingPalette) { MacCommandPalette(commands: paletteCommands) }
+        .sheet(isPresented: $showingShortcuts) { MacShortcutsSheet() }
+        .sheet(isPresented: $showingWelcome) {
+            MacWelcome { welcomed = true; showingWelcome = false }
+                .interactiveDismissDisabled()
+        }
+        .task {
+            // After accounts from your other devices have had a moment
+            // to arrive, so someone who has them isn't welcomed as new.
+            try? await Task.sleep(for: .seconds(2))
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-ShowWelcome") { showingWelcome = true; return }
+            if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly") { return }
+            #endif
+            if !welcomed, accounts.isEmpty { showingWelcome = true } else { welcomed = true }
+        }
         .sheet(isPresented: Binding(get: { !snoozing.isEmpty }, set: { if !$0 { snoozing = [] } })) {
             MacSnoozeSheet { date in
                 let threads = snoozing
@@ -250,36 +271,72 @@ struct MacMainView: View {
     // MARK: Toolbar
 
     @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        ToolbarItemGroup(placement: .primaryAction) {
-            Button { perform(.compose) } label: { Label("New Message", systemImage: "square.and.pencil") }
-                .help("New Message (⌘N)")
-            Button { perform(.archive) } label: { Label("Archive", systemImage: "archivebox") }
-                .help("Archive (⌃⌘A, or E)").disabled(model.selection.isEmpty)
-            Button { perform(.trash) } label: { Label("Delete", systemImage: "trash") }
-                .help("Delete (⌘⌫, or #)").disabled(model.selection.isEmpty)
-            Menu {
-                ForEach(Attention.choices, id: \.self) { attention in
-                    Button(attention.title) { perform(.move(attention)) }
-                }
-            } label: { Label("Move", systemImage: "arrow.right.circle") }
-                .help("Needs You, Waiting or Handled").disabled(model.selection.isEmpty)
-            Button { perform(.reply) } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
-                .help("Reply (⌘R, or R)").disabled(model.selection.count != 1)
-            Button { perform(.replyAll) } label: { Label("Reply All", systemImage: "arrowshape.turn.up.left.2") }
-                .help("Reply All (⇧⌘R, or A)").disabled(model.selection.count != 1)
-            Button { perform(.forward) } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
-                .help("Forward (⇧⌘F, or F)").disabled(model.selection.count != 1)
-            Menu {
-                ForEach(SnoozeOption.allCases, id: \.self) { option in
-                    Button(option.title) { perform(.snooze(option.date())) }
-                }
-                Divider()
-                Button("Choose a Time…") { perform(.askSnooze) }
-            } label: { Label("Snooze", systemImage: "moon.zzz") }
-                .help("Snooze (B)").disabled(model.selection.isEmpty)
-            Button { perform(.toggleFlag) } label: { Label("Flag", systemImage: "flag") }
-                .help("Flag (⇧⌘L, or S)").disabled(model.selection.isEmpty)
+    /// Right-click the toolbar › Customize Toolbar… to add, remove or
+    /// rearrange, as in Mail.
+    private var toolbar: some CustomizableToolbarContent {
+        Group {
+            ToolbarItem(id: "compose", placement: .primaryAction) {
+                Button { perform(.compose) } label: { Label("New Message", systemImage: "square.and.pencil") }
+                    .help("New Message (⌘N)")
+            }
+            ToolbarItem(id: "getMail", placement: .primaryAction, showsByDefault: false) {
+                Button { perform(.getMail) } label: { Label("Get Mail", systemImage: "arrow.clockwise") }
+                    .help("Get New Mail (⇧⌘N)")
+            }
+            ToolbarItem(id: "archive", placement: .primaryAction) {
+                Button { perform(.archive) } label: { Label("Archive", systemImage: "archivebox") }
+                    .help("Archive (⌃⌘A, or E)").disabled(model.selection.isEmpty)
+            }
+            ToolbarItem(id: "delete", placement: .primaryAction) {
+                Button { perform(.trash) } label: { Label("Delete", systemImage: "trash") }
+                    .help("Delete (⌘⌫, or #)").disabled(model.selection.isEmpty)
+            }
+            ToolbarItem(id: "move", placement: .primaryAction) {
+                Menu {
+                    ForEach(Attention.choices, id: \.self) { attention in
+                        Button(attention.title) { perform(.move(attention)) }
+                    }
+                } label: { Label("Move", systemImage: "arrow.right.circle") }
+                    .help("Needs You, Waiting or Handled").disabled(model.selection.isEmpty)
+            }
+            ToolbarItem(id: "reply", placement: .primaryAction) {
+                Button { perform(.reply) } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
+                    .help("Reply (⌘R, or R)").disabled(model.selection.count != 1)
+            }
+            ToolbarItem(id: "replyAll", placement: .primaryAction) {
+                Button { perform(.replyAll) } label: { Label("Reply All", systemImage: "arrowshape.turn.up.left.2") }
+                    .help("Reply All (⇧⌘R, or A)").disabled(model.selection.count != 1)
+            }
+            ToolbarItem(id: "forward", placement: .primaryAction) {
+                Button { perform(.forward) } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
+                    .help("Forward (⇧⌘F, or F)").disabled(model.selection.count != 1)
+            }
+            ToolbarItem(id: "snooze", placement: .primaryAction) {
+                Menu {
+                    ForEach(SnoozeOption.allCases, id: \.self) { option in
+                        Button(option.title) { perform(.snooze(option.date())) }
+                    }
+                    Divider()
+                    Button("Choose a Time…") { perform(.askSnooze) }
+                } label: { Label("Snooze", systemImage: "moon.zzz") }
+                    .help("Snooze (B)").disabled(model.selection.isEmpty)
+            }
+            ToolbarItem(id: "flag", placement: .primaryAction) {
+                Button { perform(.toggleFlag) } label: { Label("Flag", systemImage: "flag") }
+                    .help("Flag (⇧⌘L, or S)").disabled(model.selection.isEmpty)
+            }
+            ToolbarItem(id: "unread", placement: .primaryAction, showsByDefault: false) {
+                Button { perform(.toggleUnread) } label: { Label("Read/Unread", systemImage: "envelope.badge") }
+                    .help("Mark as Read or Unread (⇧⌘U, or U)").disabled(model.selection.isEmpty)
+            }
+            ToolbarItem(id: "print", placement: .primaryAction, showsByDefault: false) {
+                Button { perform(.print) } label: { Label("Print", systemImage: "printer") }
+                    .help("Print (⌘P)").disabled(model.selection.count != 1)
+            }
+            ToolbarItem(id: "palette", placement: .primaryAction, showsByDefault: false) {
+                Button { perform(.commandPalette) } label: { Label("Go To or Do", systemImage: "command") }
+                    .help("Go To or Do (⌘K)")
+            }
         }
     }
 
@@ -306,7 +363,7 @@ struct MacMainView: View {
         .overlay(Capsule().strokeBorder(CorresPalette.line))
         .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
         .padding(.bottom, 18)
-        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
     }
 
     // MARK: Actions
@@ -427,6 +484,10 @@ struct MacMainView: View {
             if actions.pendingRemoval != nil { actions.undoRemoval() } else { actions.undoLastChange() }
         case .commandPalette:
             showingPalette = true
+        case .shortcuts:
+            showingShortcuts = true
+        case .search:
+            searchFocused = true
         case .print:
             guard let thread = selected.first else { return }
             // The message as it is now, body loaded.
@@ -492,6 +553,8 @@ struct MacMainView: View {
         }
         commands += [
             Command(title: "Get New Mail", detail: "⇧⌘N", systemImage: "arrow.clockwise") { perform(.getMail) },
+            Command(title: "Keyboard Shortcuts", detail: "?", systemImage: "keyboard") { perform(.shortcuts) },
+            Command(title: "Search", detail: "/", systemImage: "magnifyingglass") { perform(.search) },
         ]
         return commands
     }
@@ -535,6 +598,8 @@ struct MacMainView: View {
         case "h": perform(.move(.handled))
         case "z": perform(.undo)
         case "b": perform(.askSnooze)
+        case "/": perform(.search)
+        case "?": perform(.shortcuts)
         default: return false
         }
         return true

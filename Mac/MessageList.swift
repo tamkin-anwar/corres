@@ -83,7 +83,9 @@ struct MessageList: NSViewRepresentable {
                 applyingSelection = true
                 defer { applyingSelection = false }
                 if !removed.isEmpty, kept == newIDs, removed.count < 50 {
-                    table.removeRows(at: removed, withAnimation: [.effectFade, .slideUp])
+                    // System Settings › Accessibility › Reduce Motion: no slide.
+                    let motion: NSTableView.AnimationOptions = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? [] : [.effectFade, .slideUp]
+                    table.removeRows(at: removed, withAnimation: motion)
                     // Content in the kept rows may have changed too (read state).
                     table.reloadData(forRowIndexes: IndexSet(integersIn: 0..<newRows.count), columnIndexes: [0])
                 } else if oldIDs == newIDs {

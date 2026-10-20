@@ -160,6 +160,7 @@ struct MacComposeView: View {
                         Image(systemName: "doc")
                         Text(file.filename).lineLimit(1)
                         Button { draft.attachments.removeAll { $0.id == file.id } } label: { Image(systemName: "xmark.circle.fill") }
+                            .accessibilityLabel("Remove \(file.filename)").help("Remove this attachment")
                             .buttonStyle(.borderless)
                     }
                     .padding(.horizontal, 10).padding(.vertical, 6)

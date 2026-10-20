@@ -166,6 +166,7 @@ private struct MacGeneralSettings: View {
     @AppStorage(CorresSettings.markReadOnOpenKey) private var markRead = true
     @AppStorage(CorresSettings.remoteImagesKey) private var remoteImages = CorresSettings.RemoteImages.ask.rawValue
     @AppStorage(SpotlightIndex.enabledKey) private var inSpotlight = true
+    @AppStorage(MacMenuBarSetting.key) private var inMenuBar = true
     let store: MailStore
 
     @State private var isDefaultMailApp = MacDefaultMail.isCorres
@@ -194,6 +195,10 @@ private struct MacGeneralSettings: View {
                 ForEach(CorresSettings.RemoteImages.allCases) { Text($0.title).tag($0.rawValue) }
             }
             Toggle("Summaries (Apple Intelligence, on this Mac)", isOn: $summaries)
+            Toggle(isOn: $inMenuBar) {
+                Text("Show in menu bar")
+                Text("How many emails need you, and the first few, from the menu bar.")
+            }
             Toggle(isOn: $inSpotlight) {
                 Text("Show in Spotlight")
                 Text("Find conversations from Spotlight by sender, subject or what they say. The index stays on this Mac.")
@@ -265,7 +270,9 @@ private struct MacSignaturesSettings: View {
                 .listStyle(.bordered)
                 HStack(spacing: 0) {
                     Button { add() } label: { Image(systemName: "plus").frame(width: 24, height: 20) }
+                        .accessibilityLabel("Add Signature").help("Add a signature")
                     Button { remove() } label: { Image(systemName: "minus").frame(width: 24, height: 20) }
+                        .accessibilityLabel("Delete Signature").help("Delete this signature")
                         .disabled(selection == nil)
                     Spacer()
                 }

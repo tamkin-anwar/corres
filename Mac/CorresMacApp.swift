@@ -12,6 +12,7 @@ struct CorresMacApp: App {
     @State private var services = MacServices()
     @State private var model = MacMailboxModel()
     @AppStorage("corres.appearance") private var appearance = "system"
+    @AppStorage(MacMenuBarSetting.key) private var inMenuBar = true
 
     var body: some Scene {
         Window("Corres", id: "main") {
@@ -42,6 +43,12 @@ struct CorresMacApp: App {
             MacCommands()
             // Format › Font: Bold, Italic, Underline, Bigger, Smaller.
             TextFormattingCommands()
+        }
+
+        MenuBarExtra(isInserted: $inMenuBar) {
+            MacMenuBarContent(services: services)
+        } label: {
+            MacMenuBarLabel(services: services)
         }
 
         // A conversation in a window of its own.

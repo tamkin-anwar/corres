@@ -9,8 +9,24 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
     /// bringing Corres forward. Set by MacServices once it's running.
     @MainActor static var handleAction: (@MainActor (_ action: String, _ id: ThreadID, _ typed: String?) async -> Void)?
 
+    /// The push token, and a wake-up push, handed to MacServices.
+    @MainActor static var didRegister: ((Data) -> Void)?
+    @MainActor static var didWake: (() -> Void)?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         UNUserNotificationCenter.current().delegate = self
+    }
+
+    func application(_ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        MainActor.assumeIsolated { MacAppDelegate.didRegister?(deviceToken) }
+    }
+
+    func application(_ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {}
+
+    /// A silent push: mail changed on the server, so check now rather
+    /// than at the next 20-second look.
+    func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String: Any]) {
+        MainActor.assumeIsolated { MacAppDelegate.didWake?() }
     }
 
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,

@@ -327,6 +327,8 @@
 		02F34C00220AA4AB44438ACC /* Mac/MacPrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FF2581BFBE48D3D08E794A /* Mac/MacPrinter.swift */; };
 		B35B765F6061B1A6AA7FE02A /* App/Handoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB0A95DC9E68544BA7F984E /* App/Handoff.swift */; };
 		2DB8C05CF37E44A679EF8854 /* App/Handoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB0A95DC9E68544BA7F984E /* App/Handoff.swift */; };
+		6075358C84B01A594A8EB8B3 /* Mac/MacMenuBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA41EFDD8598ACF903C6AA0 /* Mac/MacMenuBar.swift */; };
+		41EC969AD1428DB8F816DA98 /* Mac/MacWelcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0664F5F3434661ADA102F95 /* Mac/MacWelcome.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -526,6 +528,8 @@
 		4BD88A262431B14EF675E902 /* Mac/MacScheduled.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacScheduled.swift; sourceTree = SOURCE_ROOT; };
 		84FF2581BFBE48D3D08E794A /* Mac/MacPrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacPrinter.swift; sourceTree = SOURCE_ROOT; };
 		DDB0A95DC9E68544BA7F984E /* App/Handoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/Handoff.swift; sourceTree = SOURCE_ROOT; };
+		BCA41EFDD8598ACF903C6AA0 /* Mac/MacMenuBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacMenuBar.swift; sourceTree = SOURCE_ROOT; };
+		B0664F5F3434661ADA102F95 /* Mac/MacWelcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacWelcome.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -742,6 +746,8 @@
 				4BD88A262431B14EF675E902 /* Mac/MacScheduled.swift */,
 				84FF2581BFBE48D3D08E794A /* Mac/MacPrinter.swift */,
 				DDB0A95DC9E68544BA7F984E /* App/Handoff.swift */,
+				BCA41EFDD8598ACF903C6AA0 /* Mac/MacMenuBar.swift */,
+				B0664F5F3434661ADA102F95 /* Mac/MacWelcome.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1282,6 +1288,8 @@
 				F431A0400D699B9401B8F407 /* Mac/MacScheduled.swift in Sources */,
 				02F34C00220AA4AB44438ACC /* Mac/MacPrinter.swift in Sources */,
 				2DB8C05CF37E44A679EF8854 /* App/Handoff.swift in Sources */,
+				6075358C84B01A594A8EB8B3 /* Mac/MacMenuBar.swift in Sources */,
+				41EC969AD1428DB8F816DA98 /* Mac/MacWelcome.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

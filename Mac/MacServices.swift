@@ -94,6 +94,11 @@ final class MacServices {
         CloudSync.shared.start(store: store)
         PushNotificationService.registerNotificationActions()
         MacAppDelegate.handleAction = { [weak self] action, id, typed in await self?.notificationAction(action, id: id, typed: typed) }
+        MacAppDelegate.didRegister = { [weak self] token in
+            guard let self else { return }
+            Task { await self.pushService.didRegister(deviceToken: token, accounts: self.auth.accounts.map(\.email)) }
+        }
+        MacAppDelegate.didWake = { [weak self] in Task { await self?.checkForMail() } }
         async let loaded: Void = store.load()
         await auth.restoreConnectedAccounts()
         await loaded
@@ -114,6 +119,26 @@ final class MacServices {
         await outbox.resumeAfterRelaunch()
         watchIMAP()
         startChecking()
+        await startNotifications()
+    }
+
+    /// New-mail notifications, and the pushes that wake Corres the moment
+    /// mail changes: asked for once accounts are here, as Mail does on
+    /// first launch, then kept registered every launch.
+    private func startNotifications() async {
+        let accounts = auth.accounts.map(\.email)
+        guard !accounts.isEmpty else { return }
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        switch settings.authorizationStatus {
+        case .notDetermined:
+            await pushService.enableAll(accounts: accounts)
+        case .authorized, .provisional:
+            if !pushService.isEnabled { await pushService.enableAll(accounts: accounts) }
+            NSApplication.shared.registerForRemoteNotifications()
+            await pushService.renewWatchIfDue(accounts: accounts)
+        default:
+            break
+        }
     }
 
     /// Get New Mail (⇧⌘N), and the once-a-minute check.

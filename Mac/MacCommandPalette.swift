@@ -100,3 +100,46 @@ struct MacCommandPalette: View {
         DispatchQueue.main.async { command.run() }
     }
 }
+
+/// Every key Corres answers to, on one sheet: ? in the list, or Help ›
+/// Keyboard Shortcuts.
+struct MacShortcutsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    private let groups: [(String, [(String, String)])] = [
+        ("In the list", [("J  K", "Next and previous conversation"), ("E", "Archive"), ("#  or  ⌘⌫", "Delete"),
+                         ("H", "Mark as Handled"), ("B", "Snooze"), ("S", "Flag"), ("U", "Read or unread"),
+                         ("Z", "Undo"), ("Return", "Open in its own window"), ("/", "Search")]),
+        ("Writing", [("C  or  ⌘N", "New message"), ("R  or  ⌘R", "Reply"), ("A  or  ⇧⌘R", "Reply all"),
+                     ("F  or  ⇧⌘F", "Forward"), ("⇧⌘D", "Send")]),
+        ("Anywhere", [("⌘K", "Go to or do anything"), ("⌘1 to ⌘4", "Needs You, Waiting, Primary, Everything"),
+                      ("⇧⌘N", "Get new mail"), ("⌘P", "Print"), ("⌘,", "Settings"), ("?", "This sheet")]),
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                Text("Keyboard Shortcuts").font(.system(size: 22, weight: .regular, design: .serif))
+                Spacer()
+                Button("Done") { dismiss() }.keyboardShortcut(.defaultAction)
+            }
+            HStack(alignment: .top, spacing: 28) {
+                ForEach(groups, id: \.0) { group in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(group.0.uppercased()).font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.tertiary)
+                        ForEach(group.1, id: \.0) { key, meaning in
+                            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                                Text(key).font(.system(.callout, design: .monospaced).weight(.medium))
+                                    .frame(width: 92, alignment: .leading)
+                                Text(meaning).font(.callout).foregroundStyle(CorresPalette.secondary)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                }
+            }
+        }
+        .padding(24)
+        .frame(width: 760)
+    }
+}
