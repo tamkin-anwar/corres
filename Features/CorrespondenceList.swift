@@ -902,7 +902,18 @@ struct CorrespondenceList: View {
         }
     }
 
+    /// A question typed in Search is answered above the results; matching
+    /// its words against subjects finding nothing isn't worth saying.
+    @ViewBuilder
     private var emptyState: some View {
+        if ask != nil, Self.looksLikeQuestion(search.trimmingCharacters(in: .whitespaces)) {
+            EmptyView()
+        } else {
+            plainEmptyState
+        }
+    }
+
+    private var plainEmptyState: some View {
         ContentUnavailableView {
             Label(search.isEmpty ? emptyTitle : "No conversations found", systemImage: search.isEmpty ? "checkmark.circle" : "magnifyingglass")
         } description: {

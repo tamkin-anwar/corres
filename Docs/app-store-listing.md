@@ -126,7 +126,13 @@ search, so those carry the pitch. Made from the Simulator with sample mail
 7. **Works anywhere.** Changes made offline, and iCloud sync between devices.
 8. **Private by design.** The Private by Design screen.
 
-Claude can render these from the sample account at the exact sizes.
+Uploaded 2026-10-19, in `Docs/AppStore/`: six iPhone (App Store Connect's
+required slot is now 6.3", 1206 × 2622, in `iphone-6.3/`; the 1320 × 2868
+originals sit beside them) and three iPad 13" (2064 × 2752): Know what needs
+you, Every account one inbox, Ask your mail, Invitations answered, Never lose
+a thread, Private by design. Re-render with
+`swift Scripts/RenderStoreShot.swift <capture> <out> "Headline." "Line under it."`
+from Simulator captures of fresh sample mail (status bar at 9:41).
 
 ## App Review notes
 
