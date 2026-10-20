@@ -13,7 +13,7 @@ Gmail, Outlook, iCloud and almost any other account in one inbox, read and sorte
 
 Most mail apps answer "what did I receive?" Corres answers "what needs me?" It opens on Needs You, with the replies you're owed one row above, and every message is still one swipe along in Mail. Nothing is sorted out of reach.
 
-Built by [Anwar Creative Studio](https://anwarcreativestudio.com), alongside Artha. Status: in beta on TestFlight for iPhone and iPad (Build 17); the native Mac app is built and goes to TestFlight next. Website: [corres.app](https://corres.app).
+Built by [Anwar Creative Studio](https://anwarcreativestudio.com), alongside Artha. Status: in beta on TestFlight for iPhone and iPad (Build 17) and for Mac (Build 18), one purchase across all three. Website: [corres.app](https://corres.app).
 
 ## What it does
 
@@ -101,7 +101,7 @@ The first runs the domain suite (232 tests), the second the mail engine's (49). 
 
 ## Releasing
 
-- **TestFlight beta:** `Scripts/testflight.sh`. Beta builds include Pro for testers (`-D CORRES_BETA`, and only when installed from TestFlight or Xcode, never from the App Store).
+- **TestFlight beta:** `Scripts/testflight.sh` for iPhone and iPad, `Scripts/testflight-mac.sh` for the Mac (same App Store record, macOS added as a platform; the two share one build counter). Beta builds include Pro for testers (`-D CORRES_BETA`, and only when installed from TestFlight or Xcode, never from the App Store).
 - **App Store:** `Scripts/appstore.sh`, and submit *that* build number for review. Never submit a TestFlight beta build: App Review runs in the sandbox too, so the reviewer would get free Pro and the review would be rejected. The script refuses to upload if the beta flag got in.
 
 [Product specification](Docs/Product.md) · [Architecture decisions](Docs/Architecture.md) · [Design system](Docs/Design.md) · [Research](Docs/Research.md) · [Verification record](Docs/Verification.md)
