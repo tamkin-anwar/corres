@@ -134,6 +134,16 @@ a thread, Private by design. Re-render with
 `swift Scripts/RenderStoreShot.swift <capture> <out> "Headline." "Line under it."`
 from Simulator captures of fresh sample mail (status bar at 9:41).
 
+Mac (macOS App 1.0, uploaded 2026-10-19): five 2880 × 1800 in
+`Docs/AppStore/mac/` (Know what needs you, Every account one inbox, Ask your
+mail, Everything from the keyboard, Never lose a thread), captured from a
+debug build run with `-SampleMailOnly -ShowMailbox … -SelectThread sample-N`
+(sample mail in memory, Spotlight off, so a real Corres on the same Mac is
+untouched). The window has to be on a regular desktop Space: macOS doesn't
+draw windows on another Space or a full-screen one. The Mac description is
+the iOS one with Mac wording, an "A real Mac app" section, and no claim of
+instant alerts until they're verified on the Mac.
+
 ## App Review notes
 
 > Corres is an email client. It works without signing in: on first launch, tap "Explore Corres" to see every screen with sample data.

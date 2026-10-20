@@ -111,7 +111,7 @@ struct MacMainView: View {
                 askCard
             }
             if rows.isEmpty {
-                emptyState
+                emptyState.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 MessageList(rows: rows, showsReasons: model.mailbox.showsReasons && model.search.isEmpty,
                             accountColors: accountColors, selection: $model.selection,
@@ -162,6 +162,9 @@ struct MacMainView: View {
         } else if let source = model.mailbox.remoteSource, model.search.isEmpty, services.remote.failed(source) {
             ContentUnavailableView("Couldn't load \(model.mailbox.title)", systemImage: "wifi.exclamationmark",
                                    description: Text("Check your connection, then choose it again."))
+        } else if !model.search.isEmpty, services.ask.phase != .idle {
+            // A question is answered above; no "No Results" under the answer.
+            Color.clear
         } else if !model.search.isEmpty {
             ContentUnavailableView.search(text: model.search)
         } else if model.mailbox == .needsYou {
@@ -182,8 +185,15 @@ struct MacMainView: View {
                 if ask.phase == .searching || ask.phase == .answering { ProgressView().controlSize(.mini) }
             }
             if let answer = ask.answer {
-                Text(answer).font(.callout).foregroundStyle(CorresPalette.ink).textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
+                // Scrolls within a set height: an answer that asked the
+                // column for its full height pushed the whole window's
+                // content up out of view.
+                ScrollView {
+                    Text(answer).font(.callout).foregroundStyle(CorresPalette.ink).textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxHeight: 220)
+                .fixedSize(horizontal: false, vertical: true)
             } else if ask.phase == .done {
                 Text("Couldn't find an answer in your mail.").font(.callout).foregroundStyle(CorresPalette.secondary)
             }
@@ -292,7 +302,10 @@ struct MacMainView: View {
         case "primary": model.mailbox = .primary
         default: model.mailbox = .needsYou
         }
-        if let search = value("-SearchFor") { model.search = search }
+        if let search = value("-SearchFor") {
+            model.search = search
+            submitSearch()
+        }
         if let thread = value("-SelectThread") {
             try? await Task.sleep(for: .milliseconds(300))
             model.selection = [ThreadID(account: "sample", providerID: thread)]
@@ -409,10 +422,14 @@ struct MacMainView: View {
                 Command(title: "Snooze…", detail: what, systemImage: "moon.zzz") { perform(.askSnooze) },
                 Command(title: selected.allSatisfy(\.isFlagged) ? "Unflag" : "Flag", detail: what, systemImage: "flag") { perform(.toggleFlag) },
                 Command(title: selected.allSatisfy(\.isUnread) ? "Mark as Read" : "Mark as Unread", detail: what, systemImage: "envelope.badge") { perform(.toggleUnread) },
-                Command(title: "Move to Needs You", detail: what, systemImage: "exclamationmark.circle") { perform(.move(.needsYou)) },
-                Command(title: "Move to Waiting", detail: what, systemImage: "clock") { perform(.move(.waiting)) },
-                Command(title: "Mark as Handled", detail: what, systemImage: "checkmark.circle") { perform(.move(.handled)) },
             ]
+            // Only the moves that change something.
+            let moves: [(Attention, String, String)] = [(.needsYou, "Move to Needs You", "exclamationmark.circle"),
+                                                        (.waiting, "Move to Waiting", "clock"),
+                                                        (.handled, "Mark as Handled", "checkmark.circle")]
+            for (attention, title, icon) in moves where !selected.allSatisfy({ $0.attention == attention }) {
+                commands.append(Command(title: title, detail: what, systemImage: icon) { perform(.move(attention)) })
+            }
             if selected.count == 1 {
                 commands += [
                     Command(title: "Reply", detail: "⌘R", systemImage: "arrowshape.turn.up.left") { perform(.reply) },

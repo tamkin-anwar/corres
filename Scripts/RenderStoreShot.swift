@@ -2,16 +2,24 @@
 // own Obsidian, at the capture's exact pixel size (what App Store Connect
 // asks for: 1320 × 2868 for iPhone 6.9", 2064 × 2752 for iPad 13").
 //
-//   swift Scripts/RenderStoreShot.swift <capture.png> <out.png> "Headline." "One line under it."
+//   swift Scripts/RenderStoreShot.swift <capture.png> <out.png> "Headline." "One line under it." [WxH]
+//
+// A Mac window capture (wider than tall) goes on a 2880 × 1800 canvas, or
+// the size given, as the Mac App Store asks.
 import AppKit
 
 let args = CommandLine.arguments
-guard args.count == 5, let shot = NSImage(contentsOfFile: args[1]),
+guard args.count >= 5, let shot = NSImage(contentsOfFile: args[1]),
       let rep = shot.representations.first else {
-    print("usage: RenderStoreShot <capture.png> <out.png> <headline> <subhead>"); exit(1)
+    print("usage: RenderStoreShot <capture.png> <out.png> <headline> <subhead> [WxH]"); exit(1)
 }
-let width = rep.pixelsWide, height = rep.pixelsHigh
-let isPad = Double(width) / Double(height) > 0.6
+let isMac = rep.pixelsWide > rep.pixelsHigh
+var width = rep.pixelsWide, height = rep.pixelsHigh
+if isMac {
+    let size = (args.count > 5 ? args[5] : "2880x1800").split(separator: "x").compactMap { Int($0) }
+    width = size[0]; height = size[1]
+}
+let isPad = !isMac && Double(width) / Double(height) > 0.6
 
 guard let canvas = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height,
                                     bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
@@ -41,7 +49,7 @@ let paragraph = NSMutableParagraphStyle()
 paragraph.alignment = .center
 paragraph.lineBreakMode = .byWordWrapping
 let margin = W * 0.08
-let headSize = W * (isPad ? 0.058 : 0.088)
+let headSize = W * (isMac ? 0.034 : isPad ? 0.058 : 0.088)
 let head = NSAttributedString(string: args[3], attributes: [
     .font: font(headSize, serif: true, weight: .regular),
     .foregroundColor: NSColor(srgbRed: 0.95, green: 0.95, blue: 0.96, alpha: 1),
@@ -55,7 +63,7 @@ let sub = NSAttributedString(string: args[4], attributes: [
 let textWidth = W - margin * 2
 let headRect = head.boundingRect(with: CGSize(width: textWidth, height: H), options: [.usesLineFragmentOrigin])
 let subRect = sub.boundingRect(with: CGSize(width: textWidth, height: H), options: [.usesLineFragmentOrigin])
-let top = H * 0.055
+let top = H * (isMac ? 0.07 : 0.055)
 head.draw(with: CGRect(x: margin, y: H - top - headRect.height, width: textWidth, height: headRect.height),
           options: [.usesLineFragmentOrigin])
 let gap = headSize * 0.42
@@ -64,11 +72,12 @@ sub.draw(with: CGRect(x: margin, y: H - top - headRect.height - gap - subRect.he
 
 // The capture, scaled down and rounded like the device, running off the
 // bottom edge.
-let scale: CGFloat = isPad ? 0.80 : 0.82
-let shotW = W * scale, shotH = H * scale
+let scale: CGFloat = isMac ? 0.80 : isPad ? 0.80 : 0.82
+let shotW = W * scale
+let shotH = isMac ? shotW * CGFloat(rep.pixelsHigh) / CGFloat(rep.pixelsWide) : H * scale
 let shotTop = top + headRect.height + gap + subRect.height + H * 0.04
 let frame = CGRect(x: (W - shotW) / 2, y: H - shotTop - shotH, width: shotW, height: shotH)
-let radius = shotW * (isPad ? 0.035 : 0.115)
+let radius = shotW * (isMac ? 0.0105 : isPad ? 0.035 : 0.115)
 let path = CGPath(roundedRect: frame, cornerWidth: radius, cornerHeight: radius, transform: nil)
 cg.saveGState()
 cg.setShadow(offset: CGSize(width: 0, height: -W * 0.01), blur: W * 0.05,

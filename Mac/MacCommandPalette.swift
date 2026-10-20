@@ -41,6 +41,9 @@ struct MacCommandPalette: View {
                     .textFieldStyle(.plain)
                     .font(.title3)
                     .focused($focused)
+                    // The system's typing suggestions covered the list.
+                    .autocorrectionDisabled()
+                    .textContentType(.none)
                     .onSubmit(runHighlighted)
             }
             .padding(14)
