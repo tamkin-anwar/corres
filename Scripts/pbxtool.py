@@ -190,6 +190,91 @@ def add_mac_target(text: str) -> str:
     return text
 
 
+def add_mac_widgets(text: str) -> str:
+    """The desktop widgets for Corres for Mac: the iPhone widgets' code in
+    a macOS extension, embedded in CorresMac."""
+    name = "CorresMacWidgets"
+    if f"/* {name} */ = {{\n\t\t\tisa = PBXNativeTarget;" in text:
+        return text
+    mac = target_id(text, "CorresMac")
+    target, product = uid("target", name), uid("product", name)
+    sources, frameworks, resources = uid("sources", name), uid("frameworks", name), uid("resources", name)
+    config_list, debug, release = uid("configlist", name), uid("debug", name), uid("release", name)
+    embed_phase, embed_file = uid("embed", name), uid("embedfile", name)
+    proxy, dependency = uid("proxy", name), uid("dependency", name)
+
+    text = insert_in_section(text, "PBXFileReference",
+        f"\t\t{product} /* {name}.appex */ = {{isa = PBXFileReference; explicitFileType = \"wrapper.app-extension\"; includeInIndex = 0; path = {name}.appex; sourceTree = BUILT_PRODUCTS_DIR; }};\n")
+    text = append_to_list(text, "0A3E27B8CA818264D75C8D81 /* Products */ =", "children", f"{product} /* {name}.appex */")
+    text = insert_in_section(text, "PBXSourcesBuildPhase",
+        f"\t\t{sources} /* Sources */ = {{\n\t\t\tisa = PBXSourcesBuildPhase;\n\t\t\tbuildActionMask = 2147483647;\n"
+        f"\t\t\tfiles = (\n\t\t\t);\n\t\t\trunOnlyForDeploymentPostprocessing = 0;\n\t\t}};\n")
+    text = insert_in_section(text, "PBXFrameworksBuildPhase",
+        f"\t\t{frameworks} /* Frameworks */ = {{\n\t\t\tisa = PBXFrameworksBuildPhase;\n\t\t\tbuildActionMask = 2147483647;\n"
+        f"\t\t\tfiles = (\n\t\t\t);\n\t\t\trunOnlyForDeploymentPostprocessing = 0;\n\t\t}};\n")
+    text = insert_in_section(text, "PBXResourcesBuildPhase",
+        f"\t\t{resources} /* Resources */ = {{\n\t\t\tisa = PBXResourcesBuildPhase;\n\t\t\tbuildActionMask = 2147483647;\n"
+        f"\t\t\tfiles = (\n\t\t\t);\n\t\t\trunOnlyForDeploymentPostprocessing = 0;\n\t\t}};\n")
+    text = insert_in_section(text, "PBXNativeTarget",
+        f"\t\t{target} /* {name} */ = {{\n\t\t\tisa = PBXNativeTarget;\n"
+        f"\t\t\tbuildConfigurationList = {config_list} /* Build configuration list for PBXNativeTarget \"{name}\" */;\n"
+        f"\t\t\tbuildPhases = (\n\t\t\t\t{sources} /* Sources */,\n\t\t\t\t{frameworks} /* Frameworks */,\n\t\t\t\t{resources} /* Resources */,\n\t\t\t);\n"
+        f"\t\t\tbuildRules = (\n\t\t\t);\n\t\t\tdependencies = (\n\t\t\t);\n\t\t\tname = {name};\n"
+        f"\t\t\tproductName = {name};\n\t\t\tproductReference = {product} /* {name}.appex */;\n"
+        f"\t\t\tproductType = \"com.apple.product-type.app-extension\";\n\t\t}};\n")
+    text = append_to_list(text, "244210E48437B6556980A702 /* Project object */ =", "targets", f"{target} /* {name} */")
+
+    # Built before, and embedded in, the Mac app.
+    text = insert_in_section(text, "PBXContainerItemProxy",
+        f"\t\t{proxy} /* PBXContainerItemProxy */ = {{\n\t\t\tisa = PBXContainerItemProxy;\n"
+        f"\t\t\tcontainerPortal = 244210E48437B6556980A702 /* Project object */;\n\t\t\tproxyType = 1;\n"
+        f"\t\t\tremoteGlobalIDString = {target};\n\t\t\tremoteInfo = {name};\n\t\t}};\n")
+    text = insert_in_section(text, "PBXTargetDependency",
+        f"\t\t{dependency} /* PBXTargetDependency */ = {{\n\t\t\tisa = PBXTargetDependency;\n"
+        f"\t\t\ttarget = {target} /* {name} */;\n\t\t\ttargetProxy = {proxy} /* PBXContainerItemProxy */;\n\t\t}};\n")
+    text = append_to_list(text, f"{mac} /* CorresMac */ =", "dependencies", f"{dependency} /* PBXTargetDependency */")
+    text = insert_in_section(text, "PBXBuildFile",
+        f"\t\t{embed_file} /* {name}.appex in Embed Foundation Extensions */ = {{isa = PBXBuildFile; fileRef = {product} /* {name}.appex */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};\n")
+    text = insert_in_section(text, "PBXCopyFilesBuildPhase",
+        f"\t\t{embed_phase} /* Embed Foundation Extensions */ = {{\n\t\t\tisa = PBXCopyFilesBuildPhase;\n\t\t\tbuildActionMask = 2147483647;\n"
+        f"\t\t\tdstPath = \"\";\n\t\t\tdstSubfolderSpec = 13;\n"
+        f"\t\t\tfiles = (\n\t\t\t\t{embed_file} /* {name}.appex in Embed Foundation Extensions */,\n\t\t\t);\n"
+        f"\t\t\tname = \"Embed Foundation Extensions\";\n\t\t\trunOnlyForDeploymentPostprocessing = 0;\n\t\t}};\n")
+    text = append_to_list(text, f"{mac} /* CorresMac */ =", "buildPhases", f"{embed_phase} /* Embed Foundation Extensions */")
+
+    common = {
+        "APPLICATION_EXTENSION_API_ONLY": "YES",
+        "CODE_SIGN_ENTITLEMENTS": "Widgets/CorresMacWidgets.entitlements",
+        "CODE_SIGN_STYLE": "Automatic",
+        "CURRENT_PROJECT_VERSION": "18",
+        "DEVELOPMENT_TEAM": TEAM,
+        "ENABLE_HARDENED_RUNTIME": "YES",
+        "GENERATE_INFOPLIST_FILE": "YES",
+        "INFOPLIST_FILE": "Widgets/Info.plist",
+        "INFOPLIST_KEY_CFBundleDisplayName": "Corres",
+        "LD_RUNPATH_SEARCH_PATHS": ['"$(inherited)"', '"@executable_path/../Frameworks"', '"@executable_path/../../../../Frameworks"'],
+        "MACOSX_DEPLOYMENT_TARGET": "15.0",
+        "MARKETING_VERSION": "0.2.0",
+        "PRODUCT_BUNDLE_IDENTIFIER": "studio.anwarcreative.corres.widgets",
+        "PRODUCT_NAME": name,
+        "SDKROOT": "macosx",
+        "SKIP_INSTALL": "YES",
+        "SUPPORTED_PLATFORMS": "macosx",
+        "SWIFT_EMIT_LOC_STRINGS": "YES",
+    }
+    debug_settings = dict(common, ONLY_ACTIVE_ARCH="YES", SWIFT_ACTIVE_COMPILATION_CONDITIONS='"DEBUG $(inherited)"', SWIFT_OPTIMIZATION_LEVEL='"-Onone"')
+    release_settings = dict(common, SWIFT_OPTIMIZATION_LEVEL='"-O"')
+    text = insert_in_section(text, "XCBuildConfiguration",
+        f"\t\t{debug} /* Debug */ = {{\n\t\t\tisa = XCBuildConfiguration;\n\t\t\tbuildSettings = {{\n{settings(debug_settings)}\n\t\t\t}};\n\t\t\tname = Debug;\n\t\t}};\n"
+        f"\t\t{release} /* Release */ = {{\n\t\t\tisa = XCBuildConfiguration;\n\t\t\tbuildSettings = {{\n{settings(release_settings)}\n\t\t\t}};\n\t\t\tname = Release;\n\t\t}};\n")
+    text = insert_in_section(text, "XCConfigurationList",
+        f"\t\t{config_list} /* Build configuration list for PBXNativeTarget \"{name}\" */ = {{\n\t\t\tisa = XCConfigurationList;\n"
+        f"\t\t\tbuildConfigurations = (\n\t\t\t\t{debug} /* Debug */,\n\t\t\t\t{release} /* Release */,\n\t\t\t);\n"
+        f"\t\t\tdefaultConfigurationIsVisible = 0;\n\t\t\tdefaultConfigurationName = Release;\n\t\t}};\n")
+    text, _ = file_ref(text, "Widgets/CorresMacWidgets.entitlements")
+    return text
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         sys.exit(__doc__)
@@ -197,6 +282,8 @@ def main() -> None:
     command, args = sys.argv[1], sys.argv[2:]
     if command == "add-mac-target":
         text = add_mac_target(text)
+    elif command == "add-mac-widgets":
+        text = add_mac_widgets(text)
     elif command == "add-sources":
         text = add_sources(text, args[0], args[1:])
     elif command == "remove-sources":

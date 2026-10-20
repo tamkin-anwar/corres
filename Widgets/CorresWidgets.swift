@@ -33,6 +33,18 @@ struct SnapshotProvider: TimelineProvider {
     }
 }
 
+/// The Mac's desktop and Notification Center take the home-screen sizes;
+/// the Lock Screen's are the iPhone's own.
+enum WidgetSizes {
+    #if os(macOS)
+    static let needsYou: [WidgetFamily] = [.systemSmall, .systemMedium, .systemLarge]
+    static let waiting: [WidgetFamily] = [.systemSmall, .systemMedium]
+    #else
+    static let needsYou: [WidgetFamily] = [.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline]
+    static let waiting: [WidgetFamily] = [.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular]
+    #endif
+}
+
 // MARK: - Palette
 
 /// The app's Obsidian / Ivory tokens, repeated here: a widget extension
@@ -48,11 +60,21 @@ enum WidgetPalette {
 
 extension Color {
     init(light: UInt32, dark: UInt32) {
-        self.init(uiColor: UIColor { traits in
-            let hex = traits.userInterfaceStyle == .dark ? dark : light
-            return UIColor(red: CGFloat((hex >> 16) & 255) / 255, green: CGFloat((hex >> 8) & 255) / 255,
-                           blue: CGFloat(hex & 255) / 255, alpha: 1)
+        func rgb(_ hex: UInt32) -> (CGFloat, CGFloat, CGFloat) {
+            (CGFloat((hex >> 16) & 255) / 255, CGFloat((hex >> 8) & 255) / 255, CGFloat(hex & 255) / 255)
+        }
+        #if os(macOS)
+        // The Mac's desktop widgets follow the system appearance too.
+        self.init(nsColor: NSColor(name: nil) { appearance in
+            let (r, g, b) = rgb(appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light)
+            return NSColor(srgbRed: r, green: g, blue: b, alpha: 1)
         })
+        #else
+        self.init(uiColor: UIColor { traits in
+            let (r, g, b) = rgb(traits.userInterfaceStyle == .dark ? dark : light)
+            return UIColor(red: r, green: g, blue: b, alpha: 1)
+        })
+        #endif
     }
 }
 
@@ -67,7 +89,7 @@ struct NeedsYouWidget: Widget {
         }
         .configurationDisplayName("Needs You")
         .description("The conversations that ask something of you, with the reason for each.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline])
+        .supportedFamilies(WidgetSizes.needsYou)
     }
 }
 
@@ -80,7 +102,7 @@ struct WaitingWidget: Widget {
         }
         .configurationDisplayName("Waiting")
         .description("Conversations waiting on someone else's reply.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
+        .supportedFamilies(WidgetSizes.waiting)
     }
 }
 

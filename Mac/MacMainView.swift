@@ -71,6 +71,12 @@ struct MacMainView: View {
         .onChange(of: services.sync.lastCompletedSync) { services.afterSync() }
         .onChange(of: store.revision, initial: true) {
             SpotlightIndex.shared.scheduleUpdate { [store] in store.searchableThreads }
+            // The desktop widgets show what's on this Mac.
+            WidgetBridge.scheduleUpdate { [store] in store.threads }
+        }
+        .onChange(of: services.entitlements.isPro, initial: true) { _, isPro in
+            WidgetBridge.isLocked = !isPro
+            WidgetBridge.update(from: store.threads)
         }
         .onChange(of: services.sync.syncProgress) { Task { await store.refresh() } }
         // A notification, a widget or a corres:// link asking for a place.

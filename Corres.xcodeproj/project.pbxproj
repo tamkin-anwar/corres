@@ -329,6 +329,10 @@
 		2DB8C05CF37E44A679EF8854 /* App/Handoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB0A95DC9E68544BA7F984E /* App/Handoff.swift */; };
 		6075358C84B01A594A8EB8B3 /* Mac/MacMenuBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA41EFDD8598ACF903C6AA0 /* Mac/MacMenuBar.swift */; };
 		41EC969AD1428DB8F816DA98 /* Mac/MacWelcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0664F5F3434661ADA102F95 /* Mac/MacWelcome.swift */; };
+		B41AC8A0906E84D8F8A8591F /* CorresMacWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E7EE12AAF7B0E74D7F89AC5A /* CorresMacWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		53D726C8854CF04EDA6FDAAA /* Widgets/CorresWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44A006B97B0A489DAF0F9B18 /* Widgets/CorresWidgets.swift */; };
+		733BB260A110FDCDB4EB1292 /* Shared/WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */; };
+		843E875A92BF298C246A82D0 /* DesignSystem/CorrespondenceMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -353,6 +357,13 @@
 			remoteGlobalIDString = C0D6A807ACDA44B5BE049D1B;
 			remoteInfo = CorresShare;
 		};
+		1AE7BF574467E7019C7887DC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 244210E48437B6556980A702 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1A2EB6BF3910FEC212CAC528;
+			remoteInfo = CorresMacWidgets;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -365,6 +376,17 @@
 				61562B7EFBCA437FA5E0DBEA /* CorresWidgets.appex in Embed Foundation Extensions */,
 				E3DD019BA8C5426A84DE14F2 /* CorresShare.appex in Embed Foundation Extensions */,
 				209EEAAE3C8A4444A903CCFF /* CorresNotify.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E79CCCB453B1F24D6B77AEC8 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B41AC8A0906E84D8F8A8591F /* CorresMacWidgets.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -530,6 +552,8 @@
 		DDB0A95DC9E68544BA7F984E /* App/Handoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/Handoff.swift; sourceTree = SOURCE_ROOT; };
 		BCA41EFDD8598ACF903C6AA0 /* Mac/MacMenuBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacMenuBar.swift; sourceTree = SOURCE_ROOT; };
 		B0664F5F3434661ADA102F95 /* Mac/MacWelcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacWelcome.swift; sourceTree = SOURCE_ROOT; };
+		E7EE12AAF7B0E74D7F89AC5A /* CorresMacWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CorresMacWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		940592E18A6E97DA634BA271 /* Widgets/CorresMacWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Widgets/CorresMacWidgets.entitlements; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -575,6 +599,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		1ECECB1C3B8EB5F8B31B7F3A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -596,6 +627,7 @@
 				0CB72D373C9C4A0A956F4172 /* CorresShare.appex */,
 				51036E354994481EB7E9A6FD /* CorresNotify.appex */,
 				095C3F5B70B931C3C26330A8 /* Corres.app */,
+				E7EE12AAF7B0E74D7F89AC5A /* CorresMacWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -748,6 +780,7 @@
 				DDB0A95DC9E68544BA7F984E /* App/Handoff.swift */,
 				BCA41EFDD8598ACF903C6AA0 /* Mac/MacMenuBar.swift */,
 				B0664F5F3434661ADA102F95 /* Mac/MacWelcome.swift */,
+				940592E18A6E97DA634BA271 /* Widgets/CorresMacWidgets.entitlements */,
 			);
 			sourceTree = "<group>";
 		};
@@ -866,10 +899,12 @@
 				375C1973659C3086330557E5 /* Sources */,
 				A5A12F482C54A4DD7700C89F /* Frameworks */,
 				4A604C582FACE597C51C3475 /* Resources */,
+				E79CCCB453B1F24D6B77AEC8 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				EFE102EEE047355D1C9DF14C /* PBXTargetDependency */,
 			);
 			name = CorresMac;
 			packageProductDependencies = (
@@ -879,6 +914,23 @@
 			productName = Corres;
 			productReference = 095C3F5B70B931C3C26330A8 /* Corres.app */;
 			productType = "com.apple.product-type.application";
+		};
+		1A2EB6BF3910FEC212CAC528 /* CorresMacWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FF9BB23507CA5A2190B77046 /* Build configuration list for PBXNativeTarget "CorresMacWidgets" */;
+			buildPhases = (
+				90881AC3F98AC94D310F4EC2 /* Sources */,
+				1ECECB1C3B8EB5F8B31B7F3A /* Frameworks */,
+				7C46E8B50384008EA230C469 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CorresMacWidgets;
+			productName = CorresMacWidgets;
+			productReference = E7EE12AAF7B0E74D7F89AC5A /* CorresMacWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -910,6 +962,7 @@
 				C0D6A807ACDA44B5BE049D1B /* CorresShare */,
 				1D8B72C297E64DAA9CC754BC /* CorresNotify */,
 				FD378C42220E184091A4CF8F /* CorresMac */,
+				1A2EB6BF3910FEC212CAC528 /* CorresMacWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -945,6 +998,13 @@
 			files = (
 				9551AFC87703F9E148A92177 /* App/Assets.xcassets in Resources */,
 				10ACFDD56134B1F5C5ABB25B /* App/PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7C46E8B50384008EA230C469 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1293,6 +1353,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		90881AC3F98AC94D310F4EC2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				53D726C8854CF04EDA6FDAAA /* Widgets/CorresWidgets.swift in Sources */,
+				733BB260A110FDCDB4EB1292 /* Shared/WidgetSnapshot.swift in Sources */,
+				843E875A92BF298C246A82D0 /* DesignSystem/CorrespondenceMark.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1310,6 +1380,11 @@
 			isa = PBXTargetDependency;
 			target = C0D6A807ACDA44B5BE049D1B /* CorresShare */;
 			targetProxy = 916F97F119454A82ADE5259B /* PBXContainerItemProxy */;
+		};
+		EFE102EEE047355D1C9DF14C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1A2EB6BF3910FEC212CAC528 /* CorresMacWidgets */;
+			targetProxy = 1AE7BF574467E7019C7887DC /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1641,6 +1716,66 @@
 			};
 			name = Release;
 		};
+		044F95FAAC19BEB717D95105 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Widgets/CorresMacWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 18;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.widgets;
+				PRODUCT_NAME = CorresMacWidgets;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		3F3E3DACF1FE8A50AD2FD21E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Widgets/CorresMacWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 18;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.widgets;
+				PRODUCT_NAME = CorresMacWidgets;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1694,6 +1829,15 @@
 			buildConfigurations = (
 				ACA6ADD2EF2D10C8A00B3A13 /* Debug */,
 				F4BDA7919A269746D9A076DC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FF9BB23507CA5A2190B77046 /* Build configuration list for PBXNativeTarget "CorresMacWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				044F95FAAC19BEB717D95105 /* Debug */,
+				3F3E3DACF1FE8A50AD2FD21E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
