@@ -2,13 +2,16 @@
 
 Status: foundation preview, September 17, 2026.
 
-Current state (2026-10-19, Build 16): one home. Mail opens on Needs You,
+Current state (2026-10-19, Build 17): one home. Mail opens on Needs You,
 with Waiting and new senders as rows above it and Primary, Everything,
 Unread, Promotions, Social and Updates beside it. There is no tab bar and
 no Brief screen (the Morning Brief notification stays); Ask lives in
 Search. Gmail, Outlook, iCloud and other IMAP accounts are all supported.
-The README lists what ships today; the sections below are the original
-spec and its history.
+Build 17 brings the past year of mail onto the device for Search, pages
+server search past the first results, answers invitations properly, and
+puts conversations in Home Screen Search. A native Mac app (CorresMac)
+shares the engine and is next for TestFlight. The README lists what
+ships today; the sections below are the original spec and its history.
 
 ## Positioning
 
