@@ -1,0 +1,2187 @@
+/* No comment provided by engineer. */
+" · %lld due soon" = " · %lld件がまもなく期限";
+
+/* No comment provided by engineer. */
+" · %lld unread" = " · 未読%lld件";
+
+/* No comment provided by engineer. */
+" · Sample mail" = " · サンプルのメール";
+
+/* No comment provided by engineer. */
+" Due %@." = " 期限：%@。";
+
+/* No comment provided by engineer. */
+"·" = "·";
+
+/* No comment provided by engineer. */
+"“%@”" = "「%@」";
+
+/* No comment provided by engineer. */
+"%@" = "%@";
+
+/* No comment provided by engineer. */
+"%@ · %@" = "%@ · %@";
+
+/* No comment provided by engineer. */
+"%@ · not in All Inboxes" = "%@ · 「すべての受信ボックス」に非表示";
+
+/* No comment provided by engineer. */
+"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@／%@、自動更新。「設定」でいつでもキャンセルできます。";
+
+/* No comment provided by engineer. */
+"%@ account" = "%@アカウント";
+
+/* No comment provided by engineer. */
+"%@ asks other mail apps for an app password instead of your usual one." = "%@では、ほかのメールアプリに通常のパスワードではなくApp用パスワードが必要です。";
+
+/* No comment provided by engineer. */
+"%@ at %@" = "%@ %@";
+
+/* No comment provided by engineer. */
+"%@ didn't answer the last check. Corres keeps trying." = "%@が前回の確認に応答しませんでした。Corresは試行を続けます。";
+
+/* No comment provided by engineer. */
+"%@ didn't answer. Check your connection, or reconnect if it keeps happening." = "%@から応答がありません。接続を確認し、続くようなら再接続してください。";
+
+/* No comment provided by engineer. */
+"%@ didn't answer. Check your connection, or update the app-specific password if it keeps happening." = "%@から応答がありません。接続を確認し、続くようならApp用パスワードを更新してください。";
+
+/* No comment provided by engineer. */
+"%@ free, then renews. Cancel anytime." = "%@無料、その後は自動更新。いつでもキャンセルできます。";
+
+/* No comment provided by engineer. */
+"%@ is busy. Corres tries again in a moment." = "%@が混み合っています。Corresはまもなく再試行します。";
+
+/* No comment provided by engineer. */
+"%@ said: %@" = "%@からの応答：%@";
+
+/* No comment provided by engineer. */
+"%@ turned down Corres's access. Reconnect below." = "%@がCorresのアクセスを拒否しました。下で再接続してください。";
+
+/* No comment provided by engineer. */
+"%@, %@" = "%@、%@";
+
+/* No comment provided by engineer. */
+"%@, %@, %@" = "%@、%@、%@";
+
+/* No comment provided by engineer. */
+"%@, not a valid address" = "%@、有効なアドレスではありません";
+
+/* No comment provided by engineer. */
+"%@%@ · last %@" = "%@%@ · 最終 %@";
+
+/* No comment provided by engineer. */
+"%lld" = "%lld";
+
+/* No comment provided by engineer. */
+"%lld attachments couldn't be added" = "%lld件の添付ファイルを追加できませんでした";
+
+/* No comment provided by engineer. */
+"%lld conversations" = "%lld件の会話";
+
+/* No comment provided by engineer. */
+"%lld conversations need you." = "%lld件の会話が要対応です。";
+
+/* No comment provided by engineer. */
+"%lld conversations waiting on a reply" = "%lld件の会話が返信待ち";
+
+/* No comment provided by engineer. */
+"%lld days" = "%lld日";
+
+/* No comment provided by engineer. */
+"%lld emails" = "%lld件のメール";
+
+/* No comment provided by engineer. */
+"%lld more messages" = "ほか%lld件のメッセージ";
+
+/* No comment provided by engineer. */
+"%lld of %lld accounts" = "%lld/%lldアカウント";
+
+/* No comment provided by engineer. */
+"%lld seconds" = "%lld秒";
+
+/* No comment provided by engineer. */
+"%lld Selected" = "%lld件選択";
+
+/* No comment provided by engineer. */
+"%lld trackers blocked" = "%lld件のトラッカーをブロック";
+
+/* No comment provided by engineer. */
+"%lld unread" = "未読%lld件";
+
+/* No comment provided by engineer. */
+"%lldd" = "%lld日";
+
+/* No comment provided by engineer. */
+"%llds" = "%lld秒";
+
+/* No comment provided by engineer. */
+"1 conversation" = "1件の会話";
+
+/* No comment provided by engineer. */
+"1 conversation waiting on a reply" = "1件の会話が返信待ち";
+
+/* No comment provided by engineer. */
+"1 day" = "1日";
+
+/* No comment provided by engineer. */
+"1 email" = "1件のメール";
+
+/* No comment provided by engineer. */
+"1 Line" = "1行";
+
+/* No comment provided by engineer. */
+"1 tracker blocked" = "1件のトラッカーをブロック";
+
+/* No comment provided by engineer. */
+"2 Lines" = "2行";
+
+/* No comment provided by engineer. */
+"3 Lines" = "3行";
+
+/* No comment provided by engineer. */
+"587" = "587";
+
+/* No comment provided by engineer. */
+"993" = "993";
+
+/* No comment provided by engineer. */
+"A long conversation: this covers its first and most recent messages." = "長い会話です。最初のメッセージと最近のメッセージをまとめています。";
+
+/* No comment provided by engineer. */
+"A long email: this covers its key sections and its ending." = "長いメールです。主要な部分と結びをまとめています。";
+
+/* No comment provided by engineer. */
+"A one-sentence brief of your day, and what needs you first." = "1日の概要をひと言で。最初に対応すべきことも。";
+
+/* No comment provided by engineer. */
+"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "短くスワイプするとすぐに実行され、さらにスワイプすると2つ目の操作になります。スヌーズと移動は、会話の中でワンタップ、または行を長押しして使えます。";
+
+/* No comment provided by engineer. */
+"A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "小さな中継サーバが、メールボックスに変化があったことをCorresに知らせます。件名、差出人、本文を見ることはありません。";
+
+/* No comment provided by engineer. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "VIPからのメールは、CCで受け取っただけでも必ず「要対応」に入り、必ず通知されます。メールの⋯メニューから、またはリストで長押しして追加できます。スワイプで削除します。";
+
+/* No comment provided by engineer. */
+"Aa" = "Aa";
+
+/* No comment provided by engineer. */
+"Accept" = "承諾";
+
+/* No comment provided by engineer. */
+"Account" = "アカウント";
+
+/* No comment provided by engineer. */
+"Account and settings" = "アカウントと設定";
+
+/* No comment provided by engineer. */
+"Account Connection" = "アカウントの接続";
+
+/* No comment provided by engineer. */
+"Accounts" = "アカウント";
+
+/* No comment provided by engineer. */
+"Accounts and settings" = "アカウントと設定";
+
+/* No comment provided by engineer. */
+"Add" = "追加";
+
+/* No comment provided by engineer. */
+"Add %@" = "%@を追加";
+
+/* No comment provided by engineer. */
+"Add %@ to Calendar" = "%@をカレンダーに追加";
+
+/* No comment provided by engineer. */
+"Add %@ to VIPs" = "%@をVIPに追加";
+
+/* No comment provided by engineer. */
+"Add a Subject" = "件名を追加";
+
+/* No comment provided by engineer. */
+"Add an Email Account" = "メールアカウントを追加";
+
+/* No comment provided by engineer. */
+"Add Attachment" = "添付ファイルを追加";
+
+/* No comment provided by engineer. */
+"Add from Contacts" = "連絡先から追加";
+
+/* No comment provided by engineer. */
+"Add Link" = "リンクを追加";
+
+/* No comment provided by engineer. */
+"Add Signature" = "署名を追加";
+
+/* No comment provided by engineer. */
+"Add to Calendar" = "カレンダーに追加";
+
+/* No comment provided by engineer. */
+"Added" = "追加済み";
+
+/* No comment provided by engineer. */
+"Added below what you write, above the email you're replying to." = "入力した文の下、返信元のメールの上に追加されます。";
+
+/* No comment provided by engineer. */
+"Adding attachments to the forward" = "転送に添付ファイルを追加中";
+
+/* No comment provided by engineer. */
+"Adding attachments…" = "添付ファイルを追加中…";
+
+/* No comment provided by engineer. */
+"Addressing" = "宛先の入力";
+
+/* No comment provided by engineer. */
+"Adds a Bcc field: people copied without the others seeing" = "BCC欄を追加します。ほかの宛先に知られずに同報できます";
+
+/* No comment provided by engineer. */
+"Adds them to %@" = "%@に追加します";
+
+/* No comment provided by engineer. */
+"After Archiving" = "アーカイブ後";
+
+/* No comment provided by engineer. */
+"All" = "すべて";
+
+/* No comment provided by engineer. */
+"All accounts" = "すべてのアカウント";
+
+/* No comment provided by engineer. */
+"All Inboxes" = "すべての受信ボックス";
+
+/* No comment provided by engineer. */
+"All mail" = "すべてのメール";
+
+/* No comment provided by engineer. */
+"All Mail" = "すべてのメール";
+
+/* No comment provided by engineer. */
+"All New Mail" = "すべての新着メール";
+
+/* No comment provided by engineer. */
+"All of %@’s %@" = "%1$@の%2$@すべて";
+
+/* No comment provided by engineer. */
+"All Unread" = "すべての未読";
+
+/* No comment provided by engineer. */
+"Allow" = "許可";
+
+/* No comment provided by engineer. */
+"Allow %@" = "%@を許可";
+
+/* No comment provided by engineer. */
+"Allow %lld" = "%lld件を許可";
+
+/* No comment provided by engineer. */
+"Allow 1 company?" = "1社を許可しますか？";
+
+/* No comment provided by engineer. */
+"Allow 1 person?" = "1人を許可しますか？";
+
+/* No comment provided by engineer. */
+"Allow All" = "すべて許可";
+
+/* No comment provided by engineer. */
+"Allow all %lld companies?" = "%lld社すべてを許可しますか？";
+
+/* No comment provided by engineer. */
+"Allow all %lld people?" = "%lld人すべてを許可しますか？";
+
+/* No comment provided by engineer. */
+"Allow Corres to Change Out of Office" = "Corresに自動応答の変更を許可";
+
+/* No comment provided by engineer. */
+"Allow Everyone from %@" = "%@の全員を許可";
+
+/* No comment provided by engineer. */
+"Allowed" = "許可済み";
+
+/* No comment provided by engineer. */
+"Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "Corresが覚えた習慣も消去します。開くリスト、先に読む相手、よく使うスヌーズなどです。";
+
+/* No comment provided by engineer. */
+"Also Sends As" = "ほかの送信アドレス";
+
+/* No comment provided by engineer. */
+"Always Load" = "常に読み込む";
+
+/* No comment provided by engineer. */
+"Annual" = "年間";
+
+/* No comment provided by engineer. */
+"Answer · from %lld emails" = "回答 · %lld件のメールから";
+
+/* No comment provided by engineer. */
+"Answer · from 1 email" = "回答 · 1件のメールから";
+
+/* No comment provided by engineer. */
+"Answer from your mail" = "メールから回答";
+
+/* No comment provided by engineer. */
+"Answers your question from your own email" = "あなた自身のメールから質問に答えます";
+
+/* No comment provided by engineer. */
+"Anything from a real person, plus bills, appointments and other mail with a date that matters. Newsletters, promotions and social updates arrive silently." = "実在の人からのメールすべてと、請求書、予約など日付が大切なメール。ニュースレター、プロモーション、ソーシャルの更新は通知なしで届きます。";
+
+/* No comment provided by engineer. */
+"App Icon Badge" = "Appアイコンのバッジ";
+
+/* No comment provided by engineer. */
+"App password" = "App用パスワード";
+
+/* No comment provided by engineer. */
+"Apple asks other mail apps for an app-specific password instead of your Apple Account password. It takes about a minute, once." = "Appleでは、ほかのメールアプリにApple Accountのパスワードではなく、App用パスワードが必要です。最初の一度だけ、1分ほどで済みます。";
+
+/* No comment provided by engineer. */
+"Apple doesn't let other mail apps change iCloud's automatic reply. Set it at icloud.com/mail, under Settings, then Vacation." = "Appleでは、ほかのメールアプリがiCloudの自動応答を変更できません。icloud.com/mailの「設定」から「休暇」で設定してください。";
+
+/* No comment provided by engineer. */
+"Archive" = "アーカイブ";
+
+/* No comment provided by engineer. */
+"Archived" = "アーカイブしました";
+
+/* No comment provided by engineer. */
+"Archived %lld" = "%lld件をアーカイブしました";
+
+/* No comment provided by engineer. */
+"As you type a name in To, Cc or search, Corres suggests people you email, the ones you write to most first, and people in your Contacts once you allow it. All on this %@. Press and hold a suggestion to stop seeing it." = "宛先、CC、検索に名前を入力すると、Corresはよくメールする相手から順に候補を表示します。許可すると連絡先の人も候補に入ります。すべてこの%@上で行われます。候補を長押しすると表示されなくなります。";
+
+/* No comment provided by engineer. */
+"Ask a question, get the answer from your own email, on this %@." = "質問すると、この%@上であなた自身のメールから答えを見つけます。";
+
+/* No comment provided by engineer. */
+"Ask Before Moving to Trash" = "ゴミ箱に入れる前に確認";
+
+/* No comment provided by engineer. */
+"Ask First" = "最初に確認";
+
+/* No comment provided by engineer. */
+"Asks something of you" = "あなたに何かを求めています";
+
+/* No comment provided by engineer. */
+"Asks you" = "あなたへの依頼";
+
+/* No comment provided by engineer. */
+"At a glance" = "ひと目で";
+
+/* No comment provided by engineer. */
+"At the Top of Each Email" = "各メールの先頭";
+
+/* No comment provided by engineer. */
+"Attach a File" = "ファイルを添付";
+
+/* No comment provided by engineer. */
+"Attach a Photo" = "写真を添付";
+
+/* No comment provided by engineer. */
+"Back to List" = "リストに戻る";
+
+/* No comment provided by engineer. */
+"Balanced" = "標準";
+
+/* No comment provided by engineer. */
+"Balanced: email written to you by a person; mail you're only copied on stays in Mail." = "標準：人があなた宛てに書いたメール。CCで受け取っただけのメールは「メール」に残ります。";
+
+/* No comment provided by engineer. */
+"Bcc" = "BCC";
+
+/* No comment provided by engineer. */
+"Best regards,\nYour name\nTitle · Company" = "よろしくお願いいたします。\n名前\n役職 · 会社名";
+
+/* No comment provided by engineer. */
+"Block" = "ブロック";
+
+/* No comment provided by engineer. */
+"Block %@" = "%@をブロック";
+
+/* No comment provided by engineer. */
+"Block %@?" = "%@をブロックしますか？";
+
+/* No comment provided by engineer. */
+"Block %lld" = "%lld件をブロック";
+
+/* No comment provided by engineer. */
+"Block 1 company?" = "1社をブロックしますか？";
+
+/* No comment provided by engineer. */
+"Block 1 person?" = "1人をブロックしますか？";
+
+/* No comment provided by engineer. */
+"Block All" = "すべてブロック";
+
+/* No comment provided by engineer. */
+"Block all %lld companies?" = "%lld社すべてをブロックしますか？";
+
+/* No comment provided by engineer. */
+"Block all %lld people?" = "%lld人すべてをブロックしますか？";
+
+/* No comment provided by engineer. */
+"Block Everyone from %@" = "%@の全員をブロック";
+
+/* No comment provided by engineer. */
+"Blocked" = "ブロック済み";
+
+/* No comment provided by engineer. */
+"Blocked senders' mail stays out of every list on this %@, and they're never told. Swipe to allow one again." = "ブロックした差出人のメールは、この%@のどのリストにも表示されず、相手にも知らされません。スワイプで再び許可できます。";
+
+/* No comment provided by engineer. */
+"Buy Lifetime · %@" = "買い切りを購入 · %@";
+
+/* No comment provided by engineer. */
+"Can't reach %@ right now. Corres keeps trying." = "現在%@に接続できません。Corresは試行を続けます。";
+
+/* No comment provided by engineer. */
+"Cancel" = "キャンセル";
+
+/* No comment provided by engineer. */
+"Canceled" = "キャンセル済み";
+
+/* No comment provided by engineer. */
+"Cc" = "CC";
+
+/* No comment provided by engineer. */
+"Cc you" = "CCであなた宛て";
+
+/* No comment provided by engineer. */
+"Change" = "変更";
+
+/* No comment provided by engineer. */
+"Change Time" = "時刻を変更";
+
+/* No comment provided by engineer. */
+"Change where this conversation is sorted" = "この会話の振り分け先を変更";
+
+/* No comment provided by engineer. */
+"Check Your Calendar" = "カレンダーを確認";
+
+/* No comment provided by engineer. */
+"Check your connection and try again." = "接続を確認して、もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Choose File" = "ファイルを選択";
+
+/* No comment provided by engineer. */
+"Choose one from From when you write. Add or remove them in %@'s settings." = "メールを書くときに差出人から選べます。追加や削除は%@の設定で行います。";
+
+/* No comment provided by engineer. */
+"Choose one from the list." = "リストから1つ選んでください。";
+
+/* No comment provided by engineer. */
+"Close" = "閉じる";
+
+/* No comment provided by engineer. */
+"Closest matches" = "近い候補";
+
+/* No comment provided by engineer. */
+"Collapses this message" = "このメッセージを折りたたみます";
+
+/* No comment provided by engineer. */
+"Color" = "カラー";
+
+/* No comment provided by engineer. */
+"Companies · %lld" = "会社 · %lld";
+
+/* No comment provided by engineer. */
+"Company Rules" = "会社ごとのルール";
+
+/* No comment provided by engineer. */
+"Composing" = "作成";
+
+/* No comment provided by engineer. */
+"Connect" = "接続";
+
+/* No comment provided by engineer. */
+"Connect %@" = "%@を接続";
+
+/* No comment provided by engineer. */
+"Connect an account to see Drafts, Sent, All Mail, Spam, Trash and your labels." = "アカウントを接続すると、下書き、送信済み、すべてのメール、迷惑メール、ゴミ箱、ラベルが表示されます。";
+
+/* No comment provided by engineer. */
+"Connect iCloud Mail" = "iCloudメールを接続";
+
+/* No comment provided by engineer. */
+"Connect Your Email" = "メールを接続";
+
+/* No comment provided by engineer. */
+"Continue" = "続ける";
+
+/* No comment provided by engineer. */
+"Continue with %@" = "%@で続ける";
+
+/* No comment provided by engineer. */
+"Continue with Google" = "Googleで続ける";
+
+/* No comment provided by engineer. */
+"Continue with iCloud Mail" = "iCloudメールで続ける";
+
+/* No comment provided by engineer. */
+"Continue with Microsoft" = "Microsoftで続ける";
+
+/* No comment provided by engineer. */
+"Conversation unavailable" = "会話を表示できません";
+
+/* No comment provided by engineer. */
+"Copy Address" = "アドレスをコピー";
+
+/* No comment provided by engineer. */
+"corres" = "corres";
+
+/* No comment provided by engineer. */
+"Corres asks them to stop, the way their own unsubscribe link does. Block also hides anything they still send." = "Corresは、相手の配信停止リンクと同じ方法で停止を依頼します。ブロックすると、その後届いたメールも非表示になります。";
+
+/* No comment provided by engineer. */
+"Corres learns from your corrections, on this %@. Every lesson is listed there, and you can make it forget any of them." = "Corresはこの%@上で、あなたの修正から学びます。学んだことはすべてそこに表示され、どれでも忘れさせることができます。";
+
+/* No comment provided by engineer. */
+"Corres Pro" = "Corres Pro";
+
+/* No comment provided by engineer. */
+"Corres Pro · Annual" = "Corres Pro · 年間";
+
+/* No comment provided by engineer. */
+"Corres Pro · Lifetime" = "Corres Pro · 買い切り";
+
+/* No comment provided by engineer. */
+"Corres Pro · Monthly" = "Corres Pro · 月間";
+
+/* No comment provided by engineer. */
+"Corres remembers this for the mail you choose, and %@ learns it too. Change it any time in Settings > Sorting > What Corres Has Learned." = "Corresは選んだメールについてこれを覚え、%@も学習します。「設定」>「振り分け」>「Corresが学んだこと」でいつでも変更できます。";
+
+/* No comment provided by engineer. */
+"Corres sends it from this %@ at that time, or the moment it can if your %@ is off or offline." = "Corresはこの%@から指定の時刻に送信します。%@の電源が切れているかオフラインの場合は、送信できるようになりしだい送ります。";
+
+/* No comment provided by engineer. */
+"Couldn't Attach File" = "ファイルを添付できませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't Change Your Calendar" = "カレンダーを変更できませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't Connect" = "接続できませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't Download Attachment" = "添付ファイルをダウンロードできませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't Finish That" = "完了できませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't load %@" = "%@を読み込めませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't load Drafts" = "下書きを読み込めませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't Open Draft" = "下書きを開けませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't reach %@. Check your connection." = "%@に接続できませんでした。接続を確認してください。";
+
+/* No comment provided by engineer. */
+"Couldn't Save" = "保存できませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”" = "「%@」を送信できませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't Sync" = "同期できませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't Turn On Notifications" = "通知をオンにできませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't Unsubscribe" = "配信停止できませんでした";
+
+/* No comment provided by engineer. */
+"Customize" = "カスタマイズ";
+
+/* No comment provided by engineer. */
+"Dark" = "ダーク";
+
+/* No comment provided by engineer. */
+"Decline" = "辞退";
+
+/* No comment provided by engineer. */
+"Default Browser" = "デフォルトのブラウザ";
+
+/* No comment provided by engineer. */
+"Default Reply" = "デフォルトの返信";
+
+/* No comment provided by engineer. */
+"Delete" = "削除";
+
+/* No comment provided by engineer. */
+"Delete Draft" = "下書きを削除";
+
+/* No comment provided by engineer. */
+"Deleted %lld" = "%lld件を削除しました";
+
+/* No comment provided by engineer. */
+"Deselect All" = "すべての選択を解除";
+
+/* No comment provided by engineer. */
+"Dictate" = "音声入力";
+
+/* No comment provided by engineer. */
+"Dictation" = "音声入力";
+
+/* No comment provided by engineer. */
+"Did you mean to attach something?" = "何か添付するつもりでしたか？";
+
+/* No comment provided by engineer. */
+"Discard" = "破棄";
+
+/* No comment provided by engineer. */
+"Don’t Suggest" = "候補に表示しない";
+
+/* No comment provided by engineer. */
+"Don’t Suggest %@" = "%@を候補に表示しない";
+
+/* No comment provided by engineer. */
+"Done" = "完了";
+
+/* No comment provided by engineer. */
+"Done: off your lists, still in Mail" = "対応済み：リストから外れ、メールには残ります";
+
+/* No comment provided by engineer. */
+"Drafts" = "下書き";
+
+/* No comment provided by engineer. */
+"Drafts this reply on your %@ for you to review" = "この返信の下書きを%@上で作成し、確認できるようにします";
+
+/* No comment provided by engineer. */
+"Drafts you start anywhere show up here." = "どこで書き始めた下書きもここに表示されます。";
+
+/* No comment provided by engineer. */
+"Drafts, Sent, All Mail, Spam, Trash and labels" = "下書き、送信済み、すべてのメール、迷惑メール、ゴミ箱、ラベル";
+
+/* No comment provided by engineer. */
+"Drag to reorder, up to %lld. Reply always stays beside the bar." = "ドラッグで並べ替えられます（最大%lld個）。返信は常にバーの横にあります。";
+
+/* No comment provided by engineer. */
+"During this Focus, Corres shows and notifies for this account only." = "この集中モードの間、Corresはこのアカウントだけを表示し、通知します。";
+
+/* No comment provided by engineer. */
+"Edit" = "編集";
+
+/* No comment provided by engineer. */
+"Edit Signatures" = "署名を編集";
+
+/* No comment provided by engineer. */
+"Email" = "メール";
+
+/* No comment provided by engineer. */
+"Email Account" = "メールアカウント";
+
+/* No comment provided by engineer. */
+"Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "あなたに何かを求めるメールを、この%@上で振り分けます。済んだらスワイプするか「対応済み」をタップ。このリストから外れ、メールには残り、「メールボックス」→「対応済み」に入ります。違っていたら長押しで移動できます。";
+
+/* No comment provided by engineer. */
+"Email Toolbar" = "メールのツールバー";
+
+/* No comment provided by engineer. */
+"Email, considered." = "メールを、よく考えて。";
+
+/* No comment provided by engineer. */
+"Ends" = "終了";
+
+/* No comment provided by engineer. */
+"Enter Server Settings" = "サーバ設定を入力";
+
+/* No comment provided by engineer. */
+"Enter your address and Corres finds your mail server for you." = "アドレスを入力すると、Corresがメールサーバを見つけます。";
+
+/* No comment provided by engineer. */
+"Every account shares All Inboxes, newest first, each marked with its color. Switch to one account by tapping your photo." = "すべてのアカウントが「すべての受信ボックス」を共有し、新しい順に、それぞれの色付きで表示されます。写真をタップすると1つのアカウントに切り替えられます。";
+
+/* No comment provided by engineer. */
+"Every account shares one inbox, newest first. Switch to one account from the top of any screen." = "すべてのアカウントが1つの受信ボックスを共有し、新しい順に表示されます。どの画面でも上部から1つのアカウントに切り替えられます。";
+
+/* No comment provided by engineer. */
+"Every account, newest first" = "すべてのアカウント、新しい順";
+
+/* No comment provided by engineer. */
+"Every new email in your inbox, newsletters and promotions included." = "受信ボックスのすべての新着メール。ニュースレターやプロモーションも含みます。";
+
+/* No comment provided by engineer. */
+"Every unread email in your inbox, newsletters included." = "受信ボックスのすべての未読メール。ニュースレターも含みます。";
+
+/* No comment provided by engineer. */
+"Everyday" = "よく使う操作";
+
+/* No comment provided by engineer. */
+"Everyone who has emailed you, from mail on this %@. Swipe left to block or allow, right to unsubscribe, or press and hold for more." = "この%@上のメールから、あなたにメールをくれた全員。左にスワイプでブロックまたは許可、右にスワイプで配信停止、長押しでその他の操作。";
+
+/* No comment provided by engineer. */
+"Everyone who owes you a reply, and for how long." = "あなたへの返信がまだの人全員と、その期間。";
+
+/* No comment provided by engineer. */
+"Everyone who's reached you so far has already been reviewed." = "これまでにメールをくれた人はすべて確認済みです。";
+
+/* No comment provided by engineer. */
+"Everything" = "すべて";
+
+/* No comment provided by engineer. */
+"Everything Else" = "その他すべて";
+
+/* No comment provided by engineer. */
+"Everything from %@" = "%@からのすべて";
+
+/* No comment provided by engineer. */
+"Everything from People" = "人からのメールすべて";
+
+/* No comment provided by engineer. */
+"Everything from people: every email from a person, including ones you're copied on." = "人からのすべて：人からのメールすべて。CCで受け取ったものも含みます。";
+
+/* No comment provided by engineer. */
+"Everything that makes Corres Corres." = "Corresらしさのすべて。";
+
+/* No comment provided by engineer. */
+"Explore Corres" = "Corresを見てみる";
+
+/* No comment provided by engineer. */
+"Find your conversations from Search on the Home Screen, by who sent them, the subject or what they say. The index stays on this %@." = "ホーム画面の検索から、差出人、件名、内容で会話を探せます。インデックスはこの%@から出ません。";
+
+/* No comment provided by engineer. */
+"Finding your mail server…" = "メールサーバを探しています…";
+
+/* No comment provided by engineer. */
+"Finds this event on your calendar so you can remove it. Your calendar stays on this device." = "カレンダーでこの予定を探して削除できるようにします。カレンダーはこのデバイスから出ません。";
+
+/* No comment provided by engineer. */
+"First email from %@" = "%@からの最初のメール";
+
+/* No comment provided by engineer. */
+"First email from them" = "初めてのメール";
+
+/* No comment provided by engineer. */
+"First emails from people you haven't allowed or blocked yet." = "まだ許可もブロックもしていない人からの最初のメール。";
+
+/* No comment provided by engineer. */
+"Flag" = "フラグ";
+
+/* No comment provided by engineer. */
+"Flag a conversation to keep it here." = "会話にフラグを付けるとここに残せます。";
+
+/* No comment provided by engineer. */
+"Flagged" = "フラグ付き";
+
+/* No comment provided by engineer. */
+"Focused" = "集中";
+
+/* No comment provided by engineer. */
+"Focused: only email that asks something of you, has a deadline, or is from a VIP or someone you write to." = "集中：あなたに何かを求めるメール、期限のあるメール、VIPやあなたがメールする相手からのメールだけ。";
+
+/* No comment provided by engineer. */
+"Folders" = "フォルダ";
+
+/* No comment provided by engineer. */
+"Follow up" = "フォローアップ";
+
+/* No comment provided by engineer. */
+"Follow Up After" = "フォローアップまでの期間";
+
+/* No comment provided by engineer. */
+"Follows Settings → Notifications: %@." = "「設定」→「通知」に従います：%@。";
+
+/* No comment provided by engineer. */
+"Forget Everything" = "すべて忘れる";
+
+/* No comment provided by engineer. */
+"Formatting" = "書式";
+
+/* No comment provided by engineer. */
+"Forward" = "転送";
+
+/* No comment provided by engineer. */
+"Forward Without Them" = "添付なしで転送";
+
+/* No comment provided by engineer. */
+"Free" = "無料";
+
+/* No comment provided by engineer. */
+"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@無料、その後は%@／%@。トライアル終了前に「設定」でキャンセルすれば料金はかかりません。";
+
+/* No comment provided by engineer. */
+"Free trial · first charge %@" = "無料トライアル · 初回請求 %@";
+
+/* No comment provided by engineer. */
+"From" = "差出人";
+
+/* No comment provided by engineer. */
+"From a Person" = "個人から";
+
+/* No comment provided by engineer. */
+"From how you treat each sender's mail, counted on this %@." = "差出人ごとのメールの扱い方から、この%@上で集計します。";
+
+/* No comment provided by engineer. */
+"From someone" = "誰かから";
+
+/* No comment provided by engineer. */
+"Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail、Outlook、iCloudメール、Yahoo、AOL、Fastmailなど、ほとんどのメールに対応。メールはこの%@上で振り分けられ、読まれます。";
+
+/* No comment provided by engineer. */
+"Handled" = "対応済み";
+
+/* No comment provided by engineer. */
+"Handled. It's off your lists and stays in Mail and in Mailboxes → Handled." = "対応済み。リストから外れ、「メール」と「メールボックス」→「対応済み」に残ります。";
+
+/* No comment provided by engineer. */
+"Has attachments" = "添付ファイルあり";
+
+/* No comment provided by engineer. */
+"Hear what's in Needs You and who you're waiting on." = "「要対応」の内容と、返信を待っている相手を聞けます。";
+
+/* No comment provided by engineer. */
+"Held: they replied first. Tap to send or change it." = "保留中：先に返信がありました。タップして送信または変更します。";
+
+/* No comment provided by engineer. */
+"Hidden" = "非表示";
+
+/* No comment provided by engineer. */
+"Hide formatting" = "書式を隠す";
+
+/* No comment provided by engineer. */
+"Hides the summary" = "概要を隠します";
+
+/* No comment provided by engineer. */
+"Hides this mailbox" = "このメールボックスを隠します";
+
+/* No comment provided by engineer. */
+"How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits." = "メール一覧で各メールをどれだけ表示するか。「要対応」と「返信待ち」は理由が収まるよう1行です。";
+
+/* No comment provided by engineer. */
+"How your lists look, what each swipe does, and the actions under an email." = "リストの見た目、スワイプの動作、メールの下に並ぶ操作。";
+
+/* No comment provided by engineer. */
+"https://" = "https://";
+
+/* No comment provided by engineer. */
+"I'm away until…" = "不在期間の終了日…";
+
+/* No comment provided by engineer. */
+"iCloud" = "iCloud";
+
+/* No comment provided by engineer. */
+"iCloud Mail" = "iCloudメール";
+
+/* No comment provided by engineer. */
+"iCloud needs a new password" = "iCloudに新しいパスワードが必要です";
+
+/* No comment provided by engineer. */
+"iCloud stopped accepting the password Corres had, usually because your Apple Account password changed. Make a new one and Corres picks up where it left off." = "iCloudがCorresのパスワードを受け付けなくなりました。たいていはApple Accountのパスワードを変更したためです。新しいパスワードを作成すれば、Corresは続きから再開します。";
+
+/* No comment provided by engineer. */
+"If Corres freezes or closes, Send Diagnostics shares what it recorded: the build, the iOS version and where it stopped. Never your mail." = "Corresがフリーズしたり終了したりした場合、「診断情報を送信」で記録内容（ビルド、iOSのバージョン、停止した場所）を共有します。メールの内容は含まれません。";
+
+/* No comment provided by engineer. */
+"If iCloud stops syncing, make a new app-specific password at account.apple.com and update it here." = "iCloudの同期が止まったら、account.apple.comで新しいApp用パスワードを作成し、ここで更新してください。";
+
+/* No comment provided by engineer. */
+"If marking as read, archiving or flagging stops working, reconnect and keep every permission checked." = "開封済み、アーカイブ、フラグが効かなくなったら、再接続してすべての権限にチェックを入れたままにしてください。";
+
+/* No comment provided by engineer. */
+"If this account stops syncing, its password may have changed. Update it here." = "このアカウントの同期が止まった場合、パスワードが変わった可能性があります。ここで更新してください。";
+
+/* No comment provided by engineer. */
+"Images from the web stay off until you tap Show Images, so senders can't tell when you opened their email. Trusting a sender loads theirs from then on." = "Webの画像は「画像を表示」をタップするまで読み込まれないため、差出人にいつ開いたかを知られません。信頼した差出人の画像は以後読み込まれます。";
+
+/* No comment provided by engineer. */
+"Images load as soon as you open an email. Senders using tracking images can see when you opened it." = "メールを開くとすぐに画像が読み込まれます。トラッキング画像を使う差出人には、開いた時刻が知られる可能性があります。";
+
+/* No comment provided by engineer. */
+"Images off" = "画像オフ";
+
+/* No comment provided by engineer. */
+"imap.example.com" = "imap.example.com";
+
+/* No comment provided by engineer. */
+"in 3 days at 9am" = "in 3 days at 9am";
+
+/* No comment provided by engineer. */
+"In 3 Hours" = "3時間後";
+
+/* No comment provided by engineer. */
+"In Corres" = "Corres内";
+
+/* No comment provided by engineer. */
+"In short" = "要約";
+
+/* No comment provided by engineer. */
+"In Spam. Links and images may be unsafe." = "迷惑メール内。リンクや画像は安全でない可能性があります。";
+
+/* No comment provided by engineer. */
+"In Trash" = "ゴミ箱内";
+
+/* No comment provided by engineer. */
+"Include People from Your Contacts" = "連絡先の人も含める";
+
+/* No comment provided by engineer. */
+"Included for beta testers" = "ベータテスター向けに付属";
+
+/* No comment provided by engineer. */
+"Incoming (IMAP)" = "受信（IMAP）";
+
+/* No comment provided by engineer. */
+"Instant Notifications" = "即時通知";
+
+/* No comment provided by engineer. */
+"Intelligence" = "インテリジェンス";
+
+/* No comment provided by engineer. */
+"Invitation" = "招待";
+
+/* No comment provided by engineer. */
+"It leaves Needs You and Waiting until then, and stays in Mail and search the whole time." = "それまで「要対応」と「返信待ち」から外れ、その間もメールと検索には残ります。";
+
+/* No comment provided by engineer. */
+"Its mail is marked with this color in All Inboxes, so you can tell your accounts apart at a glance." = "このアカウントのメールは「すべての受信ボックス」でこの色が付き、ひと目で見分けられます。";
+
+/* No comment provided by engineer. */
+"Its mail is removed from this %@. It stays in %@." = "このアカウントのメールはこの%@から削除されます。%@には残ります。";
+
+/* No comment provided by engineer. */
+"Join %@" = "%@に参加";
+
+/* No comment provided by engineer. */
+"Just This Email" = "このメールだけ";
+
+/* No comment provided by engineer. */
+"Keep Editing" = "編集を続ける";
+
+/* No comment provided by engineer. */
+"Keep several, like a full one for new email and a short one for replies, and choose each account's." = "新規メール用の長い署名と返信用の短い署名など、複数作ってアカウントごとに選べます。";
+
+/* No comment provided by engineer. */
+"Kept on this %@" = "この%@に保存";
+
+/* No comment provided by engineer. */
+"Kept out of All Inboxes, Needs You and Waiting. It still syncs; switch to it by tapping your photo." = "「すべての受信ボックス」「要対応」「返信待ち」には表示しません。同期は続き、写真をタップすると切り替えられます。";
+
+/* No comment provided by engineer. */
+"Key Details" = "重要な情報";
+
+/* No comment provided by engineer. */
+"Labels" = "ラベル";
+
+/* No comment provided by engineer. */
+"Later Today" = "今日このあと";
+
+/* No comment provided by engineer. */
+"Learn from My Changes" = "変更から学習";
+
+/* No comment provided by engineer. */
+"Lessons" = "学んだこと";
+
+/* No comment provided by engineer. */
+"Lifetime" = "買い切り";
+
+/* No comment provided by engineer. */
+"Light" = "ライト";
+
+/* No comment provided by engineer. */
+"List" = "リスト";
+
+/* No comment provided by engineer. */
+"Lists" = "リスト";
+
+/* No comment provided by engineer. */
+"Loading older mail…" = "以前のメールを読み込み中…";
+
+/* No comment provided by engineer. */
+"Loading the full message…" = "メッセージ全体を読み込み中…";
+
+/* No comment provided by engineer. */
+"Long Swipe" = "長いスワイプ";
+
+/* No comment provided by engineer. */
+"Looking in your mail for “%@”…" = "メールから「%@」を探しています…";
+
+/* No comment provided by engineer. */
+"Mail" = "メール";
+
+/* No comment provided by engineer. */
+"Mail that arrived since you last left Corres. Opening Corres clears it." = "最後にCorresを離れてから届いたメール。Corresを開くとリセットされます。";
+
+/* No comment provided by engineer. */
+"Mailboxes" = "メールボックス";
+
+/* No comment provided by engineer. */
+"Mailing list" = "メーリングリスト";
+
+/* No comment provided by engineer. */
+"Make a new app-specific password and paste it here. Corres keeps your mail and settings as they are." = "新しいApp用パスワードを作成してここに貼り付けてください。メールと設定はそのまま残ります。";
+
+/* No comment provided by engineer. */
+"Make an app password" = "App用パスワードを作成";
+
+/* No comment provided by engineer. */
+"Make an app-specific password" = "App用パスワードを作成";
+
+/* No comment provided by engineer. */
+"Make VIP" = "VIPにする";
+
+/* No comment provided by engineer. */
+"Manage Accounts and Settings" = "アカウントと設定を管理";
+
+/* No comment provided by engineer. */
+"Manage Subscription" = "サブスクリプションを管理";
+
+/* No comment provided by engineer. */
+"Mark as Read" = "開封済みにする";
+
+/* No comment provided by engineer. */
+"Mark as Read When Opened" = "開いたら開封済みにする";
+
+/* No comment provided by engineer. */
+"Mark as Unread" = "未開封にする";
+
+/* No comment provided by engineer. */
+"Mark Read/Unread" = "開封済み／未開封";
+
+/* No comment provided by engineer. */
+"Maybe" = "未定";
+
+/* No comment provided by engineer. */
+"Message" = "メッセージ";
+
+/* No comment provided by engineer. */
+"month" = "月";
+
+/* No comment provided by engineer. */
+"Monthly" = "月間";
+
+/* No comment provided by engineer. */
+"More" = "その他";
+
+/* No comment provided by engineer. */
+"More actions" = "その他の操作";
+
+/* No comment provided by engineer. */
+"More for %@" = "%@のその他";
+
+/* No comment provided by engineer. */
+"Morning Brief" = "朝のまとめ";
+
+/* No comment provided by engineer. */
+"Most Email" = "ほとんどのメール";
+
+/* No comment provided by engineer. */
+"Most Recent" = "新しい順";
+
+/* No comment provided by engineer. */
+"Move %lld conversations to Trash?" = "%lld件の会話をゴミ箱に入れますか？";
+
+/* No comment provided by engineer. */
+"Move this conversation to Trash?" = "この会話をゴミ箱に入れますか？";
+
+/* No comment provided by engineer. */
+"Move To" = "移動";
+
+/* No comment provided by engineer. */
+"Move to %@" = "%@に移動";
+
+/* No comment provided by engineer. */
+"Move to Category" = "カテゴリに移動";
+
+/* No comment provided by engineer. */
+"Move to Drafts" = "下書きに移動";
+
+/* No comment provided by engineer. */
+"Move to Inbox" = "受信ボックスに移動";
+
+/* No comment provided by engineer. */
+"Move to Trash" = "ゴミ箱に入れる";
+
+/* No comment provided by engineer. */
+"Moved" = "移動しました";
+
+/* No comment provided by engineer. */
+"Moved to %@" = "%@に移動しました";
+
+/* No comment provided by engineer. */
+"Moved to Trash" = "ゴミ箱に入れました";
+
+/* No comment provided by engineer. */
+"Name" = "名前";
+
+/* No comment provided by engineer. */
+"Name is what Corres calls this account, like Work or Personal. Your Name is who your email is from." = "「名前」はCorresでのこのアカウントの呼び名です（仕事、個人など）。「あなたの名前」はメールの差出人として表示される名前です。";
+
+/* No comment provided by engineer. */
+"Name or address" = "名前またはアドレス";
+
+/* No comment provided by engineer. */
+"Name, like Full or Short" = "名前（例：フル、短縮）";
+
+/* No comment provided by engineer. */
+"Needs an Account" = "アカウントが必要です";
+
+/* No comment provided by engineer. */
+"Needs You" = "要対応";
+
+/* No comment provided by engineer. */
+"Needs You is part of Corres Pro. Open Corres to start your free trial." = "「要対応」はCorres Proの機能です。Corresを開いて無料トライアルを始めてください。";
+
+/* No comment provided by engineer. */
+"Never for This Sender" = "この差出人では使わない";
+
+/* No comment provided by engineer. */
+"New" = "新規";
+
+/* No comment provided by engineer. */
+"NEW" = "NEW";
+
+/* No comment provided by engineer. */
+"New Emails" = "新着メール";
+
+/* No comment provided by engineer. */
+"New Mail" = "新規メール";
+
+/* No comment provided by engineer. */
+"New message" = "新規メッセージ";
+
+/* No comment provided by engineer. */
+"New Message" = "新規メッセージ";
+
+/* No comment provided by engineer. */
+"New sender" = "新しい差出人";
+
+/* No comment provided by engineer. */
+"New Senders" = "新しい差出人";
+
+/* No comment provided by engineer. */
+"New Since Last Opened" = "最後に開いてからの新着";
+
+/* No comment provided by engineer. */
+"Newest first" = "新しい順";
+
+/* No comment provided by engineer. */
+"Newsletters, stores and services: anyone who sends with an unsubscribe link. Swipe right to unsubscribe." = "ニュースレター、ストア、サービス：配信停止リンク付きでメールを送る相手。右にスワイプで配信停止します。";
+
+/* No comment provided by engineer. */
+"Next" = "次へ";
+
+/* No comment provided by engineer. */
+"Next conversation" = "次の会話";
+
+/* No comment provided by engineer. */
+"Next Conversation" = "次の会話";
+
+/* No comment provided by engineer. */
+"Next step" = "次のステップ";
+
+/* No comment provided by engineer. */
+"Next step: %@" = "次のステップ：%@";
+
+/* No comment provided by engineer. */
+"Next Week" = "来週";
+
+/* No comment provided by engineer. */
+"No action needed" = "対応不要";
+
+/* No comment provided by engineer. */
+"No action needed: %@" = "対応不要：%@";
+
+/* No comment provided by engineer. */
+"No action needed." = "対応不要です。";
+
+/* No comment provided by engineer. */
+"No conversation selected" = "会話が選択されていません";
+
+/* No comment provided by engineer. */
+"No mail here" = "ここにメールはありません";
+
+/* No comment provided by engineer. */
+"No new companies." = "新しい会社はありません。";
+
+/* No comment provided by engineer. */
+"No new people." = "新しい人はいません。";
+
+/* No comment provided by engineer. */
+"No new senders" = "新しい差出人はいません";
+
+/* No comment provided by engineer. */
+"No new senders waiting." = "待機中の新しい差出人はいません。";
+
+/* No comment provided by engineer. */
+"No number on the icon." = "アイコンに数字を表示しません。";
+
+/* No comment provided by engineer. */
+"No reply in %lld days" = "%lld日間返信なし";
+
+/* No comment provided by engineer. */
+"No reply in 1 day" = "1日間返信なし";
+
+/* No comment provided by engineer. */
+"No senders yet." = "差出人はまだいません。";
+
+/* No comment provided by engineer. */
+"No Signature" = "署名なし";
+
+/* No comment provided by engineer. */
+"No spam. Spam is emptied after 30 days." = "迷惑メールはありません。迷惑メールは30日後に削除されます。";
+
+/* No comment provided by engineer. */
+"No subscriptions yet." = "購読はまだありません。";
+
+/* No comment provided by engineer. */
+"No VIPs yet" = "VIPはまだいません";
+
+/* No comment provided by engineer. */
+"Nobody blocked." = "ブロックした人はいません。";
+
+/* No comment provided by engineer. */
+"None" = "なし";
+
+/* No comment provided by engineer. */
+"Not available" = "利用できません";
+
+/* No comment provided by engineer. */
+"Not found" = "見つかりません";
+
+/* No comment provided by engineer. */
+"Not Now" = "今はしない";
+
+/* No comment provided by engineer. */
+"Not Spam" = "迷惑メールではない";
+
+/* No comment provided by engineer. */
+"Nothing for you to do" = "することはありません";
+
+/* No comment provided by engineer. */
+"Nothing here." = "ここには何もありません。";
+
+/* No comment provided by engineer. */
+"Nothing in %@" = "%@には何もありません";
+
+/* No comment provided by engineer. */
+"Nothing in Needs You" = "「要対応」には何もありません";
+
+/* No comment provided by engineer. */
+"Nothing in Waiting" = "「返信待ち」には何もありません";
+
+/* No comment provided by engineer. */
+"Nothing in your mail matched “%@”. Try a name, a company, or fewer words." = "メールに「%@」に一致するものはありませんでした。名前、会社名、または少ない語句でお試しください。";
+
+/* No comment provided by engineer. */
+"Nothing needs you right now." = "今、要対応のものはありません。";
+
+/* No comment provided by engineer. */
+"Nothing scheduled. Press and hold Send to send an email later." = "予約はありません。送信ボタンを長押しすると、あとで送信できます。";
+
+/* No comment provided by engineer. */
+"Nothing yet. Corres learns as you correct it." = "まだありません。修正するたびにCorresは学びます。";
+
+/* No comment provided by engineer. */
+"Notifications" = "通知";
+
+/* No comment provided by engineer. */
+"Notify Me About" = "通知する対象";
+
+/* No comment provided by engineer. */
+"Off" = "オフ";
+
+/* No comment provided by engineer. */
+"OK" = "OK";
+
+/* No comment provided by engineer. */
+"On" = "オン";
+
+/* No comment provided by engineer. */
+"On Calendar" = "カレンダーにあり";
+
+/* No comment provided by engineer. */
+"On the Bar" = "バーに表示";
+
+/* No comment provided by engineer. */
+"On this %@" = "この%@上";
+
+/* No comment provided by engineer. */
+"once" = "1回";
+
+/* No comment provided by engineer. */
+"One attachment couldn't be added" = "1件の添付ファイルを追加できませんでした";
+
+/* No comment provided by engineer. */
+"One conversation needs you." = "1件の会話が要対応です。";
+
+/* No comment provided by engineer. */
+"One moment" = "少々お待ちください";
+
+/* No comment provided by engineer. */
+"One payment of %@. No subscription." = "%@の1回払い。サブスクリプションではありません。";
+
+/* No comment provided by engineer. */
+"One quiet notification a day with what needs you and who you're waiting on. Tap it to open Needs You." = "要対応のものと返信待ちの相手を、1日1回の静かな通知で。タップすると「要対応」が開きます。";
+
+/* No comment provided by engineer. */
+"Only %@" = "%@のみ";
+
+/* No comment provided by engineer. */
+"Only Reply to My Contacts" = "連絡先にのみ応答";
+
+/* No comment provided by engineer. */
+"Only what asks something of you, so the number means something." = "あなたに何かを求めるものだけ。数字に意味が生まれます。";
+
+/* No comment provided by engineer. */
+"Only what Corres files in Needs You. The quietest option; an FYI from a person arrives silently." = "Corresが「要対応」に振り分けたものだけ。最も静かな設定で、人からの参考程度のメールは通知なしで届きます。";
+
+/* No comment provided by engineer. */
+"Only What Needs Me" = "要対応のものだけ";
+
+/* No comment provided by engineer. */
+"Only you see the name, when choosing a signature." = "名前は署名を選ぶときにあなただけに表示されます。";
+
+/* No comment provided by engineer. */
+"Open" = "開く";
+
+/* No comment provided by engineer. */
+"Open %@ Account Security" = "%@アカウントのセキュリティを開く";
+
+/* No comment provided by engineer. */
+"Open Apple Account" = "Apple Accountを開く";
+
+/* No comment provided by engineer. */
+"Open Corres once so it can sort your mail." = "メールを振り分けられるよう、一度Corresを開いてください。";
+
+/* No comment provided by engineer. */
+"Open iCloud Mail Settings" = "iCloudメールの設定を開く";
+
+/* No comment provided by engineer. */
+"Open Links" = "リンクの開き方";
+
+/* No comment provided by engineer. */
+"Open List" = "リストを開く";
+
+/* No comment provided by engineer. */
+"Open Needs You, Waiting or Mail in Corres." = "Corresで「要対応」「返信待ち」「メール」を開きます。";
+
+/* No comment provided by engineer. */
+"Open Next Conversation" = "次の会話を開く";
+
+/* No comment provided by engineer. */
+"Opened in Safari. Finish unsubscribing there." = "Safariで開きました。そちらで配信停止を完了してください。";
+
+/* No comment provided by engineer. */
+"Opens %@" = "%@を開きます";
+
+/* No comment provided by engineer. */
+"Opens the attachment" = "添付ファイルを開きます";
+
+/* No comment provided by engineer. */
+"Optional" = "任意";
+
+/* No comment provided by engineer. */
+"Or type it: xxxx-xxxx-xxxx-xxxx" = "または入力：xxxx-xxxx-xxxx-xxxx";
+
+/* No comment provided by engineer. */
+"Organize" = "整理";
+
+/* No comment provided by engineer. */
+"Other Email" = "その他のメール";
+
+/* No comment provided by engineer. */
+"Other Email Account" = "その他のメールアカウント";
+
+/* No comment provided by engineer. */
+"Other mail apps can't change this service's automatic reply. Set it on your email provider's website, usually under Settings, then Vacation or Auto Reply." = "ほかのメールアプリはこのサービスの自動応答を変更できません。メールプロバイダのWebサイトの「設定」から「休暇」や「自動応答」で設定してください。";
+
+/* No comment provided by engineer. */
+"Out of Office" = "不在";
+
+/* No comment provided by engineer. */
+"Outgoing (SMTP)" = "送信（SMTP）";
+
+/* No comment provided by engineer. */
+"Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Overdue" = "期限切れ";
+
+/* No comment provided by engineer. */
+"Overlaps %@" = "%@と重なっています";
+
+/* No comment provided by engineer. */
+"Overlaps %@ and %lld more" = "%@ほか%lld件と重なっています";
+
+/* No comment provided by engineer. */
+"Password" = "パスワード";
+
+/* No comment provided by engineer. */
+"Pay once. Shared with up to five family members." = "1回払い。最大5人の家族と共有できます。";
+
+/* No comment provided by engineer. */
+"People · %lld" = "人 · %lld";
+
+/* No comment provided by engineer. */
+"People and Time-Sensitive" = "人と時間厳守";
+
+/* No comment provided by engineer. */
+"per month" = "／月";
+
+/* No comment provided by engineer. */
+"per year" = "／年";
+
+/* No comment provided by engineer. */
+"Photo Library" = "写真ライブラリ";
+
+/* No comment provided by engineer. */
+"Pick a Date and Time" = "日時を選択";
+
+/* No comment provided by engineer. */
+"Pick a Time…" = "時刻を選択…";
+
+/* No comment provided by engineer. */
+"Pick another for one email from Signature, below what you're writing." = "このメールだけ別の署名を使うには、本文の下の「署名」から選びます。";
+
+/* No comment provided by engineer. */
+"Pin" = "ピン";
+
+/* No comment provided by engineer. */
+"Pinned" = "ピン留め";
+
+/* No comment provided by engineer. */
+"Plan" = "プラン";
+
+/* No comment provided by engineer. */
+"Plans couldn't load" = "プランを読み込めませんでした";
+
+/* No comment provided by engineer. */
+"Port" = "ポート";
+
+/* No comment provided by engineer. */
+"Preparing your space" = "準備しています";
+
+/* No comment provided by engineer. */
+"Press and hold for Reply All and Forward" = "長押しで全員に返信と転送";
+
+/* No comment provided by engineer. */
+"Press and hold to send later" = "長押しであとで送信";
+
+/* No comment provided by engineer. */
+"Preview" = "プレビュー";
+
+/* No comment provided by engineer. */
+"Preview as Free User" = "無料ユーザとしてプレビュー";
+
+/* No comment provided by engineer. */
+"Previous conversation" = "前の会話";
+
+/* No comment provided by engineer. */
+"Previous Conversation" = "前の会話";
+
+/* No comment provided by engineer. */
+"Primary" = "メイン";
+
+/* No comment provided by engineer. */
+"Privacy Policy" = "プライバシーポリシー";
+
+/* No comment provided by engineer. */
+"Private by Design" = "プライバシーを第一に";
+
+/* No comment provided by engineer. */
+"Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro." = "ベータのテスト中はProが含まれます。「無料ユーザとしてプレビュー」では、Proなしの状態を確認できます。";
+
+/* No comment provided by engineer. */
+"Promotions" = "プロモーション";
+
+/* No comment provided by engineer. */
+"Pull down to check for new mail." = "下に引いて新着メールを確認します。";
+
+/* No comment provided by engineer. */
+"Put away. It stays in Drafts." = "しまいました。下書きに残っています。";
+
+/* No comment provided by engineer. */
+"Read on this %@" = "この%@上で読み取り";
+
+/* No comment provided by engineer. */
+"Reading" = "閲覧";
+
+/* No comment provided by engineer. */
+"Reading what it found…" = "見つかったものを読んでいます…";
+
+/* No comment provided by engineer. */
+"Recipient" = "宛先";
+
+/* No comment provided by engineer. */
+"Reconnect" = "再接続";
+
+/* No comment provided by engineer. */
+"Reconnect with Google" = "Googleで再接続";
+
+/* No comment provided by engineer. */
+"Reconnect with Microsoft" = "Microsoftで再接続";
+
+/* No comment provided by engineer. */
+"Redeem Code" = "コードを使う";
+
+/* No comment provided by engineer. */
+"Remote Images" = "リモート画像";
+
+/* No comment provided by engineer. */
+"Remove" = "削除";
+
+/* No comment provided by engineer. */
+"Remove “%@” from your calendar?" = "「%@」をカレンダーから削除しますか？";
+
+/* No comment provided by engineer. */
+"Remove %@" = "%@を削除";
+
+/* No comment provided by engineer. */
+"Remove %@?" = "%@を削除しますか？";
+
+/* No comment provided by engineer. */
+"Remove Account" = "アカウントを削除";
+
+/* No comment provided by engineer. */
+"Remove from Calendar" = "カレンダーから削除";
+
+/* No comment provided by engineer. */
+"Remove from VIPs" = "VIPから削除";
+
+/* No comment provided by engineer. */
+"Removes this account and its mail from Corres on this %@. Nothing is deleted from %@." = "この%@上のCorresから、このアカウントとそのメールを削除します。%@からは何も削除されません。";
+
+/* No comment provided by engineer. */
+"Renews %@" = "%@に更新";
+
+/* No comment provided by engineer. */
+"Renews automatically. Cancel anytime." = "自動更新。いつでもキャンセルできます。";
+
+/* No comment provided by engineer. */
+"Replies & Forwards" = "返信と転送";
+
+/* No comment provided by engineer. */
+"Reply" = "返信";
+
+/* No comment provided by engineer. */
+"Reply All" = "全員に返信";
+
+/* No comment provided by engineer. */
+"Reported %lld as spam" = "%lld件を迷惑メールとして報告しました";
+
+/* No comment provided by engineer. */
+"Reported as spam" = "迷惑メールとして報告しました";
+
+/* No comment provided by engineer. */
+"Reset to Default" = "デフォルトに戻す";
+
+/* No comment provided by engineer. */
+"Restore" = "復元";
+
+/* No comment provided by engineer. */
+"Restore Purchases" = "購入を復元";
+
+/* No comment provided by engineer. */
+"Retry" = "再試行";
+
+/* No comment provided by engineer. */
+"Return on" = "戻る日時";
+
+/* No comment provided by engineer. */
+"Return to the List" = "リストに戻る";
+
+/* No comment provided by engineer. */
+"Review New Senders" = "新しい差出人を確認";
+
+/* No comment provided by engineer. */
+"Same as Settings" = "「設定」と同じ";
+
+/* No comment provided by engineer. */
+"Save" = "保存";
+
+/* No comment provided by engineer. */
+"Save Draft" = "下書きを保存";
+
+/* No comment provided by engineer. */
+"Save this draft?" = "この下書きを保存しますか？";
+
+/* No comment provided by engineer. */
+"Saved drafts wait at the bottom of the screen and in Drafts, on every device." = "保存した下書きは、すべてのデバイスで画面の下と「下書き」に表示されます。";
+
+/* No comment provided by engineer. */
+"Saved to Drafts" = "下書きに保存しました";
+
+/* No comment provided by engineer. */
+"Saving to Drafts…" = "下書きに保存中…";
+
+/* No comment provided by engineer. */
+"Saving…" = "保存中…";
+
+/* No comment provided by engineer. */
+"Scan Document" = "書類をスキャン";
+
+/* No comment provided by engineer. */
+"Schedule" = "予約";
+
+/* No comment provided by engineer. */
+"Schedule Anyway" = "このまま予約";
+
+/* No comment provided by engineer. */
+"Screen New Senders" = "新しい差出人を選別";
+
+/* No comment provided by engineer. */
+"Search, or ask a question" = "検索、または質問";
+
+/* No comment provided by engineer. */
+"Searching your mail…" = "メールを検索中…";
+
+/* No comment provided by engineer. */
+"Select" = "選択";
+
+/* No comment provided by engineer. */
+"Select All" = "すべて選択";
+
+/* No comment provided by engineer. */
+"Select Conversations" = "会話を選択";
+
+/* No comment provided by engineer. */
+"Select words first to link them; otherwise the address itself is added." = "リンクにするには先に語句を選択してください。選択しない場合はアドレスがそのまま追加されます。";
+
+/* No comment provided by engineer. */
+"Send" = "送信";
+
+/* No comment provided by engineer. */
+"Send and Share" = "送信と共有";
+
+/* No comment provided by engineer. */
+"Send Anyway" = "このまま送信";
+
+/* No comment provided by engineer. */
+"Send at" = "送信日時";
+
+/* No comment provided by engineer. */
+"Send Later" = "あとで送信";
+
+/* No comment provided by engineer. */
+"Send New Mail From" = "新規メールの差出人";
+
+/* No comment provided by engineer. */
+"Send Now" = "今すぐ送信";
+
+/* No comment provided by engineer. */
+"Send without a subject?" = "件名なしで送信しますか？";
+
+/* No comment provided by engineer. */
+"Send, Remind Me If No Reply" = "送信して、返信がなければ知らせる";
+
+/* No comment provided by engineer. */
+"Senders" = "差出人";
+
+/* No comment provided by engineer. */
+"Sending “%@”" = "「%@」を送信中";
+
+/* No comment provided by engineer. */
+"Sends %@" = "%@に送信";
+
+/* No comment provided by engineer. */
+"Sent" = "送信済み";
+
+/* No comment provided by engineer. */
+"Sent today" = "今日送信";
+
+/* No comment provided by engineer. */
+"Server Settings" = "サーバ設定";
+
+/* No comment provided by engineer. */
+"Settings" = "設定";
+
+/* No comment provided by engineer. */
+"Shared by your family" = "ファミリーで共有中";
+
+/* No comment provided by engineer. */
+"Short Swipe" = "短いスワイプ";
+
+/* No comment provided by engineer. */
+"Show" = "表示";
+
+/* No comment provided by engineer. */
+"Show Images" = "画像を表示";
+
+/* No comment provided by engineer. */
+"Show in All Inboxes" = "「すべての受信ボックス」に表示";
+
+/* No comment provided by engineer. */
+"Show in Search" = "検索に表示";
+
+/* No comment provided by engineer. */
+"Show More Results" = "さらに結果を表示";
+
+/* No comment provided by engineer. */
+"Show One Account" = "1つのアカウントを表示";
+
+/* No comment provided by engineer. */
+"Show Pictures" = "写真を表示";
+
+/* No comment provided by engineer. */
+"Shown" = "表示";
+
+/* No comment provided by engineer. */
+"Shows all mail with them" = "この人とのメールをすべて表示します";
+
+/* No comment provided by engineer. */
+"Shows options for this recipient" = "この宛先のオプションを表示します";
+
+/* No comment provided by engineer. */
+"Shows people from your Contacts, with their photos. Stays on this %@." = "連絡先の人を写真付きで表示します。この%@から出ません。";
+
+/* No comment provided by engineer. */
+"Shows the full message" = "メッセージ全体を表示します";
+
+/* No comment provided by engineer. */
+"Shows the summary" = "概要を表示します";
+
+/* No comment provided by engineer. */
+"Shows this mailbox" = "このメールボックスを表示します";
+
+/* No comment provided by engineer. */
+"Shows whether you're free then. Your calendar stays on this device." = "その時間が空いているかを表示します。カレンダーはこのデバイスから出ません。";
+
+/* No comment provided by engineer. */
+"Sign In Again" = "もう一度サインイン";
+
+/* No comment provided by engineer. */
+"Signature" = "署名";
+
+/* No comment provided by engineer. */
+"Signatures" = "署名";
+
+/* No comment provided by engineer. */
+"Signed out of %@. Sign in again to keep getting mail." = "%@からサインアウトしました。メールを受け取り続けるには再度サインインしてください。";
+
+/* No comment provided by engineer. */
+"smtp.example.com" = "smtp.example.com";
+
+/* No comment provided by engineer. */
+"Snooze" = "スヌーズ";
+
+/* No comment provided by engineer. */
+"Snooze until %@" = "%@までスヌーズ";
+
+/* No comment provided by engineer. */
+"Snooze…" = "スヌーズ…";
+
+/* No comment provided by engineer. */
+"Snoozed" = "スヌーズ中";
+
+/* No comment provided by engineer. */
+"Snoozed conversations wait here until they come back." = "スヌーズした会話は、戻るまでここで待機します。";
+
+/* No comment provided by engineer. */
+"Social" = "ソーシャル";
+
+/* No comment provided by engineer. */
+"Someone's first email shows like anyone else's, marked New, and you can allow or block them right from the email. Blocked senders stay hidden." = "初めてのメールもほかと同じように「新規」の印付きで表示され、メールから直接許可やブロックができます。ブロックした差出人は非表示のままです。";
+
+/* No comment provided by engineer. */
+"Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden." = "初めてのメールは許可するまで「新しい差出人」で待機するので、許可した人のメールだけが表示されます。ブロックした差出人は非表示のままです。";
+
+/* No comment provided by engineer. */
+"Someone's first email waits in New Senders until you allow them. These still notify, marked “New sender”, and you can allow or block them right from the email. Blocked senders never notify." = "初めてのメールは許可するまで「新しい差出人」で待機します。「新しい差出人」の印付きで通知され、メールから直接許可やブロックができます。ブロックした差出人は通知されません。";
+
+/* No comment provided by engineer. */
+"soon" = "まもなく";
+
+/* No comment provided by engineer. */
+"Sort By" = "並べ替え";
+
+/* No comment provided by engineer. */
+"Sort Into" = "振り分け先";
+
+/* No comment provided by engineer. */
+"Sorting" = "振り分け";
+
+/* No comment provided by engineer. */
+"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Nothing goes to a server." = "振り分け、概要、返信の候補、書き直しは、Apple Intelligenceによりこの%@上で行われます。サーバには何も送られません。";
+
+/* No comment provided by engineer. */
+"Sources" = "情報源";
+
+/* No comment provided by engineer. */
+"Spam" = "迷惑メール";
+
+/* No comment provided by engineer. */
+"Start %@ free" = "%@無料で始める";
+
+/* No comment provided by engineer. */
+"Start a new email in Corres." = "Corresで新規メールを書きます。";
+
+/* No comment provided by engineer. */
+"Start of Day" = "1日の始まり";
+
+/* No comment provided by engineer. */
+"Start with sample mail. Connect Gmail, Outlook, iCloud or another email account anytime from Settings." = "サンプルのメールで始めます。Gmail、Outlook、iCloudなどのメールアカウントは「設定」からいつでも接続できます。";
+
+/* No comment provided by engineer. */
+"Starts" = "開始";
+
+/* No comment provided by engineer. */
+"Still a tap away under ⋯ on the bar. An action that doesn't apply to an email (Unsubscribe without a list, Add to Calendar without an event) is dimmed on the bar." = "バーの⋯からワンタップで使えます。メールに当てはまらない操作（リストがないときの配信停止、予定がないときのカレンダーに追加）はバーで淡色表示になります。";
+
+/* No comment provided by engineer. */
+"Stop dictating" = "音声入力を停止";
+
+/* No comment provided by engineer. */
+"Subject" = "件名";
+
+/* No comment provided by engineer. */
+"Subscribe · %@" = "登録 · %@";
+
+/* No comment provided by engineer. */
+"Subscriptions" = "購読";
+
+/* No comment provided by engineer. */
+"Suggest from Contacts" = "連絡先から候補を表示";
+
+/* No comment provided by engineer. */
+"Suggested" = "おすすめ";
+
+/* No comment provided by engineer. */
+"Suggestions" = "候補";
+
+/* No comment provided by engineer. */
+"Summarize Emails" = "メールを要約";
+
+/* No comment provided by engineer. */
+"Summarizing" = "要約中";
+
+/* No comment provided by engineer. */
+"Swipe a lesson to forget it." = "学んだことをスワイプすると忘れさせられます。";
+
+/* No comment provided by engineer. */
+"Swipe left" = "左にスワイプ";
+
+/* No comment provided by engineer. */
+"Swipe right" = "右にスワイプ";
+
+/* No comment provided by engineer. */
+"Swipes" = "スワイプ";
+
+/* No comment provided by engineer. */
+"Sync Now" = "今すぐ同期";
+
+/* No comment provided by engineer. */
+"System" = "システム";
+
+/* No comment provided by engineer. */
+"Take Photo" = "写真を撮る";
+
+/* No comment provided by engineer. */
+"Takes this out of Needs You. It stays in Mail." = "「要対応」から外します。メールには残ります。";
+
+/* No comment provided by engineer. */
+"Terms of Use" = "利用規約";
+
+/* No comment provided by engineer. */
+"The app password" = "App用パスワード";
+
+/* No comment provided by engineer. */
+"The bar is full. Remove one to add another." = "バーがいっぱいです。追加するには1つ削除してください。";
+
+/* No comment provided by engineer. */
+"The conversations that ask something of you, with the reason for each." = "あなたに何かを求める会話と、それぞれの理由。";
+
+/* No comment provided by engineer. */
+"The organizer canceled this event." = "主催者がこの予定をキャンセルしました。";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd accepted the earlier version." = "主催者がこの予定を変更しました。以前の内容には承諾していました。";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd declined the earlier version." = "主催者がこの予定を変更しました。以前の内容には辞退していました。";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd said maybe to the earlier version." = "主催者がこの予定を変更しました。以前の内容には「未定」と回答していました。";
+
+/* No comment provided by engineer. */
+"The password" = "パスワード";
+
+/* No comment provided by engineer. */
+"The password stays in this %@'s Keychain. Your mail goes from iCloud straight to this %@; Corres's servers never see either." = "パスワードはこの%@のキーチェーンに保存されます。メールはiCloudからこの%@に直接届き、Corresのサーバはどちらも見ません。";
+
+/* No comment provided by engineer. */
+"Their mail already shows in Corres. Allow marks them as known; Block hides them quietly, for good. Neither changes your email account." = "この人のメールはすでにCorresに表示されています。「許可」で既知の差出人にし、「ブロック」で今後ずっと静かに非表示にします。どちらもメールアカウントは変更しません。";
+
+/* No comment provided by engineer. */
+"Their mail is hidden in Corres from now on, with no notice to them. Your email account isn't changed." = "今後この人のメールはCorresで非表示になり、相手には通知されません。メールアカウントは変更されません。";
+
+/* No comment provided by engineer. */
+"Their mail reaches Corres only once you allow them. Blocking hides them quietly, for good. Neither changes your email account." = "この人のメールは許可したときだけCorresに届きます。ブロックすると今後ずっと静かに非表示になります。どちらもメールアカウントは変更しません。";
+
+/* No comment provided by engineer. */
+"Their mail will be hidden quietly. You can undo this right after." = "この人のメールは静かに非表示になります。直後なら取り消せます。";
+
+/* No comment provided by engineer. */
+"Their mail will show in Corres. You can undo this right after." = "この人のメールがCorresに表示されます。直後なら取り消せます。";
+
+/* No comment provided by engineer. */
+"This account stays quiet. Its mail still syncs and sorts." = "このアカウントは通知しません。メールの同期と振り分けは続きます。";
+
+/* No comment provided by engineer. */
+"This address uses %@. Corres signs in to %@ directly, which is quicker and safer than a password." = "このアドレスは%@を使っています。Corresは%@に直接サインインします。パスワードより速く安全です。";
+
+/* No comment provided by engineer. */
+"This Evening, 6 PM" = "今晩18:00";
+
+/* No comment provided by engineer. */
+"This Weekend" = "今週末";
+
+/* No comment provided by engineer. */
+"Time" = "時刻";
+
+/* No comment provided by engineer. */
+"Time-sensitive" = "時間厳守";
+
+/* No comment provided by engineer. */
+"To" = "宛先";
+
+/* No comment provided by engineer. */
+"To " = "宛先：";
+
+/* No comment provided by engineer. */
+"To you" = "あなた宛て";
+
+/* No comment provided by engineer. */
+"Today" = "今日";
+
+/* No comment provided by engineer. */
+"today at %@" = "今日 %@";
+
+/* No comment provided by engineer. */
+"Today, %@" = "今日 %@";
+
+/* No comment provided by engineer. */
+"Tomorrow" = "明日";
+
+/* No comment provided by engineer. */
+"Tomorrow and Next Week come back at the start of your day; This Weekend an hour later, on Saturday." = "「明日」と「来週」は1日の始まりに戻り、「今週末」は土曜日のその1時間後に戻ります。";
+
+/* No comment provided by engineer. */
+"tomorrow at %@" = "明日 %@";
+
+/* No comment provided by engineer. */
+"Tomorrow, %@" = "明日 %@";
+
+/* No comment provided by engineer. */
+"Trash" = "ゴミ箱";
+
+/* No comment provided by engineer. */
+"Trash is empty. It's emptied after 30 days." = "ゴミ箱は空です。30日後に削除されます。";
+
+/* No comment provided by engineer. */
+"Try Again" = "もう一度試す";
+
+/* No comment provided by engineer. */
+"Try again." = "もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Try Corres Pro Free" = "Corres Proを無料で試す";
+
+/* No comment provided by engineer. */
+"Try it free for 14 days." = "14日間無料で試せます。";
+
+/* No comment provided by engineer. */
+"Try it free, then %@ a month or %@ a year." = "無料で試したあと、月額%@または年額%@。";
+
+/* No comment provided by engineer. */
+"Turn on Apple Intelligence in the Settings app for summaries, suggested replies and rewrites. Needs You still sorts your mail without it." = "概要、返信の候補、書き直しを使うには、設定アプリでApple Intelligenceをオンにしてください。オフでも「要対応」はメールを振り分けます。";
+
+/* No comment provided by engineer. */
+"Type a time" = "時刻を入力";
+
+/* No comment provided by engineer. */
+"Undo" = "取り消す";
+
+/* No comment provided by engineer. */
+"Undo Send" = "送信を取り消す";
+
+/* No comment provided by engineer. */
+"Undo Send holds a message for a moment so you can take it back. Reply All is used only when others were on the email; press and hold Reply for the other choice." = "「送信を取り消す」はメッセージを少しの間保留し、取り消せるようにします。「全員に返信」はほかの宛先がいるときだけ使われます。もう一方は返信ボタンを長押しします。";
+
+/* No comment provided by engineer. */
+"Unflag" = "フラグを外す";
+
+/* No comment provided by engineer. */
+"Unread" = "未読";
+
+/* No comment provided by engineer. */
+"Unread in Primary" = "メインの未読";
+
+/* No comment provided by engineer. */
+"Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "人からの未読メールと緊急のもの。プロモーション、ソーシャル、更新は数えません。";
+
+/* No comment provided by engineer. */
+"Unsnooze" = "スヌーズを解除";
+
+/* No comment provided by engineer. */
+"Unsubscribe" = "配信停止";
+
+/* No comment provided by engineer. */
+"Unsubscribe and Block" = "配信停止してブロック";
+
+/* No comment provided by engineer. */
+"Unsubscribe from %@?" = "%@の配信を停止しますか？";
+
+/* No comment provided by engineer. */
+"Unwanted Mail" = "不要なメール";
+
+/* No comment provided by engineer. */
+"Update App-Specific Password" = "App用パスワードを更新";
+
+/* No comment provided by engineer. */
+"Update Password" = "パスワードを更新";
+
+/* No comment provided by engineer. */
+"Updated Invitation" = "更新された招待";
+
+/* No comment provided by engineer. */
+"Updates" = "更新";
+
+/* No comment provided by engineer. */
+"Version %@ · Anwar Creative Studio" = "バージョン%@ · Anwar Creative Studio";
+
+/* No comment provided by engineer. */
+"VIP" = "VIP";
+
+/* No comment provided by engineer. */
+"VIPs" = "VIP";
+
+/* No comment provided by engineer. */
+"Waiting" = "返信待ち";
+
+/* No comment provided by engineer. */
+"Was %@" = "期限：%@";
+
+/* No comment provided by engineer. */
+"Was on %@, so it's out of Needs You. It stays in Mail." = "期限が%@だったため、「要対応」から外れました。メールには残ります。";
+
+/* No comment provided by engineer. */
+"What Corres Has Learned" = "Corresが学んだこと";
+
+/* No comment provided by engineer. */
+"What Needs Me" = "要対応のもの";
+
+/* No comment provided by engineer. */
+"When" = "日時";
+
+/* No comment provided by engineer. */
+"When an email asks something of you, it shows here. The rest of your mail is in Primary." = "メールがあなたに何かを求めると、ここに表示されます。その他のメールは「メイン」にあります。";
+
+/* No comment provided by engineer. */
+"When you reply to someone, or move a conversation here, it waits here until they answer." = "誰かに返信したり、会話をここに移したりすると、相手が答えるまでここで待機します。";
+
+/* No comment provided by engineer. */
+"When you say an email Apple Intelligence flagged needs no action, Corres stops flagging that kind of email from that sender; their other mail is untouched. When you move a sender's automated email into Needs You, it keeps that kind there. Corres also notices habits, like lists you never open or people you always read at once, and suggests a change, at most once a day. Everything stays on this %@." = "Apple Intelligenceが印を付けたメールを「対応不要」とすると、Corresはその差出人からの同じ種類のメールに印を付けなくなります。ほかのメールはそのままです。差出人の自動送信メールを「要対応」に移すと、その種類は以後そこに入ります。Corresは、開かないリストやいつもすぐ読む相手などの習慣にも気づき、1日1回まで変更を提案します。すべてこの%@から出ません。";
+
+/* No comment provided by engineer. */
+"When you're done with something in Needs You or Waiting, mark it Handled. It leaves those lists, stays in Mail, and is kept here." = "「要対応」や「返信待ち」の用件が済んだら、対応済みにしましょう。そのリストから外れ、「メール」に残り、ここに保管されます。";
+
+/* No comment provided by engineer. */
+"Where you asked someone something, from Corres or any other app, or moved it here yourself. Longest wait first; after three days it's time to follow up. No tracking pixels, no read receipts." = "Corresやほかのアプリで誰かに何かを頼んだメール、または自分でここに移したもの。待ち時間の長い順です。3日たったらフォローアップの目安。トラッキングピクセルも開封確認も使いません。";
+
+/* No comment provided by engineer. */
+"While it's on, %@ answers new email with your message and sends it even with this %@ off." = "オンの間、%@は新しいメールにあなたのメッセージで返信します。この%@の電源が切れていても送信されます。";
+
+/* No comment provided by engineer. */
+"With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "開いても開封済みにしない設定では、スワイプするか「開封済みにする」を選ぶまで未開封のままです。リンクはSafariのリーダーとコンテンツブロッカー付きでCorres内で開くか、デフォルトのブラウザで開きます。";
+
+/* No comment provided by engineer. */
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Proがなくても、メールの閲覧、返信、アーカイブ、検索は使えます。「要対応」「返信待ち」、検索での回答、デバイス上のインテリジェンスにはProが必要です。";
+
+/* No comment provided by engineer. */
+"Write the message %@ should send." = "%@が送るメッセージを入力してください。";
+
+/* No comment provided by engineer. */
+"year" = "年";
+
+/* No comment provided by engineer. */
+"Yesterday" = "昨日";
+
+/* No comment provided by engineer. */
+"You accepted" = "承諾済み";
+
+/* No comment provided by engineer. */
+"You declined" = "辞退済み";
+
+/* No comment provided by engineer. */
+"You haven't opened the last %lld from %@." = "%2$@からの直近%1$lld件を開いていません。";
+
+/* No comment provided by engineer. */
+"You read %@'s email within %lld minutes." = "%@のメールを%lld分以内に読んでいます。";
+
+/* No comment provided by engineer. */
+"You read %@'s email within a minute." = "%@のメールを1分以内に読んでいます。";
+
+/* No comment provided by engineer. */
+"You said maybe" = "未定と回答済み";
+
+/* No comment provided by engineer. */
+"You won't receive future mail from this sender. This can't be undone from Corres." = "今後この差出人からメールは届きません。Corresから取り消すことはできません。";
+
+/* No comment provided by engineer. */
+"You're free then" = "この時間は空いています";
+
+/* No comment provided by engineer. */
+"You're looking at sample mail." = "サンプルのメールを表示しています。";
+
+/* No comment provided by engineer. */
+"You're waiting on %lld replies." = "%lld件の返信を待っています。";
+
+/* No comment provided by engineer. */
+"You're waiting on one reply." = "1件の返信を待っています。";
+
+/* No comment provided by engineer. */
+"You're waiting on their reply" = "相手の返信を待っています";
+
+/* No comment provided by engineer. */
+"You've replied to %@ %lld times lately." = "最近%@に%lld回返信しています。";
+
+/* No comment provided by engineer. */
+"you@example.com" = "you@example.com";
+
+/* No comment provided by engineer. */
+"you@icloud.com" = "you@icloud.com";
+
+/* No comment provided by engineer. */
+"Your email address" = "メールアドレス";
+
+/* No comment provided by engineer. */
+"Your email mentions an attachment, but nothing is attached." = "メールで添付ファイルに触れていますが、何も添付されていません。";
+
+/* No comment provided by engineer. */
+"Your email provider's help pages list these. Corres connects securely: SSL for incoming mail, and SSL (465) or STARTTLS (587) for outgoing." = "メールプロバイダのヘルプページに記載されています。Corresは安全に接続します。受信はSSL、送信はSSL（465）またはSTARTTLS（587）です。";
+
+/* No comment provided by engineer. */
+"Your iCloud address" = "iCloudアドレス";
+
+/* No comment provided by engineer. */
+"Your mail server stopped accepting the password Corres has. Enter it again, or make a new app password." = "メールサーバがCorresのパスワードを受け付けなくなりました。もう一度入力するか、新しいApp用パスワードを作成してください。";
+
+/* No comment provided by engineer. */
+"Your mail server stopped accepting the password Corres has. Enter it again." = "メールサーバがCorresのパスワードを受け付けなくなりました。もう一度入力してください。";
+
+/* No comment provided by engineer. */
+"Your Name" = "あなたの名前";
+
+/* No comment provided by engineer. */
+"Your password" = "パスワード";
+
+/* No comment provided by engineer. */
+"Your password stays in this %@'s Keychain. Your mail goes from your provider straight to this %@." = "パスワードはこの%@のキーチェーンに保存されます。メールはプロバイダからこの%@に直接届きます。";
+
+/* No comment provided by engineer. */
+"Your sample conversations couldn't be opened." = "サンプルの会話を開けませんでした。";
+
+/* No comment provided by engineer. */
+"Your usual for %@" = "%@でいつも使う時刻";
+
+/* No comment provided by engineer. */
+"Yours for good · bought %@" = "ずっと使えます · %@に購入";
+

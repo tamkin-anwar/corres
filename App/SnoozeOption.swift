@@ -6,10 +6,10 @@ enum SnoozeOption: CaseIterable {
 
     var title: String {
         switch self {
-        case .laterToday: "Later Today"
-        case .tomorrow: "Tomorrow"
-        case .thisWeekend: "This Weekend"
-        case .nextWeek: "Next Week"
+        case .laterToday: String(localized: "Later Today")
+        case .tomorrow: String(localized: "Tomorrow")
+        case .thisWeekend: String(localized: "This Weekend")
+        case .nextWeek: String(localized: "Next Week")
         }
     }
 

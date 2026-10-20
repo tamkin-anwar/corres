@@ -10,9 +10,9 @@ enum PrimarySwipeAction: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .archive: "Archive"
-        case .trash: "Trash"
-        case .handled: "Handled"
+        case .archive: String(localized: "Archive")
+        case .trash: String(localized: "Trash")
+        case .handled: String(localized: "Handled")
         }
     }
     var systemImage: String {
@@ -52,9 +52,9 @@ enum LeadingSwipeAction: String, CaseIterable, Identifiable {
     /// *do*, not just name the fixed category of action.
     var settingsTitle: String {
         switch self {
-        case .pin: "Pin"
-        case .unread: "Mark Read/Unread"
-        case .flag: "Flag"
+        case .pin: String(localized: "Pin")
+        case .unread: String(localized: "Mark Read/Unread")
+        case .flag: String(localized: "Flag")
         }
     }
 }
@@ -69,8 +69,8 @@ enum AfterRemoval: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .nextConversation: "Open Next Conversation"
-        case .list: "Return to the List"
+        case .nextConversation: String(localized: "Open Next Conversation")
+        case .list: String(localized: "Return to the List")
         }
     }
 }

@@ -1,0 +1,21 @@
+/* No comment provided by engineer. */
+"Brief me with ${applicationName}" = "${applicationName}で概要を聞く";
+
+/* No comment provided by engineer. */
+"New email in ${applicationName}" = "${applicationName}で新規メール";
+
+/* No comment provided by engineer. */
+"Open ${list} in ${applicationName}" = "${applicationName}で${list}を開く";
+
+/* No comment provided by engineer. */
+"Show ${list} in ${applicationName}" = "${applicationName}で${list}を表示";
+
+/* No comment provided by engineer. */
+"What needs me in ${applicationName}" = "${applicationName}で要対応のものを確認";
+
+/* No comment provided by engineer. */
+"What's in ${applicationName}" = "${applicationName}の新着を確認";
+
+/* No comment provided by engineer. */
+"Write an email with ${applicationName}" = "${applicationName}でメールを書く";
+

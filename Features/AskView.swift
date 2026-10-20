@@ -36,7 +36,7 @@ struct AskAnswerCard: View {
         }
         if let answer = ask.answer {
             VStack(alignment: .leading, spacing: 10) {
-                Label(ask.answerFound ? "Answer · from \(ask.sources.count) \(ask.sources.count == 1 ? "email" : "emails")" : "Not found",
+                Label(!ask.answerFound ? "Not found" : ask.sources.count == 1 ? "Answer · from 1 email" : "Answer · from \(ask.sources.count) emails",
                       systemImage: ask.answerFound ? "sparkle" : "magnifyingglass")
                     .labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
                 Text(answer)

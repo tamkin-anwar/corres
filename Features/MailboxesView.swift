@@ -28,14 +28,14 @@ enum Mailbox: Hashable, Identifiable {
 
     var title: String {
         switch self {
-        case .drafts: "Drafts"
-        case .snoozed: "Snoozed"
-        case .handled: "Handled"
-        case .flagged: "Flagged"
-        case .sent: "Sent"
-        case .allMail: "All Mail"
-        case .spam: "Spam"
-        case .trash: "Trash"
+        case .drafts: String(localized: "Drafts")
+        case .snoozed: String(localized: "Snoozed")
+        case .handled: String(localized: "Handled")
+        case .flagged: String(localized: "Flagged")
+        case .sent: String(localized: "Sent")
+        case .allMail: String(localized: "All Mail")
+        case .spam: String(localized: "Spam")
+        case .trash: String(localized: "Trash")
         case let .label(_, name, _): name.components(separatedBy: "/").last ?? name
         }
     }
@@ -74,13 +74,13 @@ enum Mailbox: Hashable, Identifiable {
 
     var emptyMessage: String {
         switch self {
-        case .drafts: "Drafts you start anywhere show up here."
-        case .snoozed: "Snoozed conversations wait here until they come back."
-        case .handled: "When you're done with something in Needs You or Waiting, mark it Handled. It leaves those lists, stays in Mail, and is kept here."
-        case .flagged: "Flag a conversation to keep it here."
-        case .spam: "No spam. Spam is emptied after 30 days."
-        case .trash: "Trash is empty. It's emptied after 30 days."
-        default: "Nothing here."
+        case .drafts: String(localized: "Drafts you start anywhere show up here.")
+        case .snoozed: String(localized: "Snoozed conversations wait here until they come back.")
+        case .handled: String(localized: "When you're done with something in Needs You or Waiting, mark it Handled. It leaves those lists, stays in Mail, and is kept here.")
+        case .flagged: String(localized: "Flag a conversation to keep it here.")
+        case .spam: String(localized: "No spam. Spam is emptied after 30 days.")
+        case .trash: String(localized: "Trash is empty. It's emptied after 30 days.")
+        default: String(localized: "Nothing here.")
         }
     }
 }

@@ -408,7 +408,7 @@ enum MacDates {
     static func short(_ date: Date, now: Date = .now) -> String {
         let calendar = Calendar.current
         if calendar.isDateInToday(date) { return date.formatted(timeFormat) }
-        if calendar.isDateInYesterday(date) { return "Yesterday" }
+        if calendar.isDateInYesterday(date) { return String(localized: "Yesterday") }
         if let days = calendar.dateComponents([.day], from: date, to: now).day, days < 7 { return date.formatted(dayFormat) }
         if calendar.isDate(date, equalTo: now, toGranularity: .year) { return date.formatted(dateFormat) }
         return date.formatted(olderFormat)

@@ -127,11 +127,11 @@ struct SnoozeSheet: View {
     static func describe(_ date: Date) -> String {
         let calendar = Calendar.current
         let time = date.formatted(date: .omitted, time: .shortened)
-        if calendar.isDateInToday(date) { return "Today, \(time)" }
-        if calendar.isDateInTomorrow(date) { return "Tomorrow, \(time)" }
+        if calendar.isDateInToday(date) { return String(localized: "Today, \(time)") }
+        if calendar.isDateInTomorrow(date) { return String(localized: "Tomorrow, \(time)") }
         if let days = calendar.dateComponents([.day], from: .now, to: date).day, days < 6 {
             return "\(date.formatted(.dateTime.weekday(.wide))), \(time)"
         }
-        return "\(date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())), \(time)"
+        return String(localized: "\(date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())), \(time)")
     }
 }

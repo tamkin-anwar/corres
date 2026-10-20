@@ -187,12 +187,12 @@ final class ScheduledSends {
     static func describe(_ date: Date) -> String {
         let calendar = Calendar.current
         let time = date.formatted(date: .omitted, time: .shortened)
-        if calendar.isDateInToday(date) { return "today at \(time)" }
-        if calendar.isDateInTomorrow(date) { return "tomorrow at \(time)" }
+        if calendar.isDateInToday(date) { return String(localized: "today at \(time)") }
+        if calendar.isDateInTomorrow(date) { return String(localized: "tomorrow at \(time)") }
         if let days = calendar.dateComponents([.day], from: .now, to: date).day, days < 6 {
-            return "\(date.formatted(.dateTime.weekday(.wide))) at \(time)"
+            return String(localized: "\(date.formatted(.dateTime.weekday(.wide))) at \(time)")
         }
-        return "\(date.formatted(.dateTime.month(.abbreviated).day())) at \(time)"
+        return String(localized: "\(date.formatted(.dateTime.month(.abbreviated).day())) at \(time)")
     }
 
     // MARK: Suggested times

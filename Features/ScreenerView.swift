@@ -148,8 +148,16 @@ struct ScreenerView: View {
     }
 
     private func confirmTitle(count: Int) -> String {
-        let noun = tab == .people ? (count == 1 ? "person" : "people") : (count == 1 ? "company" : "companies")
-        return confirming == .blocked ? "Block all \(count) \(noun)?" : "Allow all \(count) \(noun)?"
+        switch (confirming == .blocked, tab == .people, count == 1) {
+        case (true, true, true): String(localized: "Block 1 person?")
+        case (true, true, false): String(localized: "Block all \(count) people?")
+        case (true, false, true): String(localized: "Block 1 company?")
+        case (true, false, false): String(localized: "Block all \(count) companies?")
+        case (false, true, true): String(localized: "Allow 1 person?")
+        case (false, true, false): String(localized: "Allow all \(count) people?")
+        case (false, false, true): String(localized: "Allow 1 company?")
+        case (false, false, false): String(localized: "Allow all \(count) companies?")
+        }
     }
 
     private func bulkActions(for shown: [SenderGroup]) -> some View {

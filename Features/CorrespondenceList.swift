@@ -153,7 +153,7 @@ struct CorrespondenceRow: View {
     static func timestamp(_ date: Date) -> String {
         let calendar = Calendar.current
         if calendar.isDateInToday(date) { return date.formatted(date: .omitted, time: .shortened) }
-        if calendar.isDateInYesterday(date) { return "Yesterday" }
+        if calendar.isDateInYesterday(date) { return String(localized: "Yesterday") }
         if let days = calendar.dateComponents([.day], from: date, to: .now).day, days < 7 {
             return date.formatted(.dateTime.weekday(.wide))
         }
@@ -781,17 +781,16 @@ struct CorrespondenceList: View {
 
     private var summaryLine: String {
         let count = results.count
-        let noun = count == 1 ? "conversation" : "conversations"
-        let sample = (auth?.accounts.isEmpty ?? true) && !EntitlementStore.isScreenshotMode ? " · Sample mail" : ""
+        let sample = (auth?.accounts.isEmpty ?? true) && !EntitlementStore.isScreenshotMode ? String(localized: " · Sample mail") : ""
         switch kind {
         case .needsYou:
             let due = dueSoonIDs.count
-            return "\(count) \(noun)" + (due > 0 ? " · \(due) due soon" : "") + sample
+            return (count == 1 ? String(localized: "1 conversation") : String(localized: "\(count) conversations")) + (due > 0 ? String(localized: " · \(due) due soon") : "") + sample
         case .waiting:
-            return (count == 1 ? "1 conversation waiting on a reply" : "\(count) conversations waiting on a reply") + sample
+            return (count == 1 ? String(localized: "1 conversation waiting on a reply") : String(localized: "\(count) conversations waiting on a reply")) + sample
         default:
             let unread = rows.unread
-            return "Newest first" + (unread > 0 ? " · \(unread) unread" : "") + sample
+            return String(localized: "Newest first") + (unread > 0 ? String(localized: " · \(unread) unread") : "") + sample
         }
     }
 
@@ -805,7 +804,7 @@ struct CorrespondenceList: View {
                     Button {
                         mailFilter = filter
                     } label: {
-                        Text(filter.rawValue)
+                        Text(filter.title)
                             .font(.subheadline.weight(mailFilter == filter ? .semibold : .medium))
                             .foregroundStyle(mailFilter == filter ? CorresPalette.ink : CorresPalette.secondary)
                             .padding(.vertical, 10)
@@ -888,17 +887,17 @@ struct CorrespondenceList: View {
 
     private var emptyTitle: String {
         switch kind {
-        case .needsYou: "Nothing in Needs You"
-        case .waiting: "Nothing in Waiting"
-        default: mailFilter == .everything ? "No mail here" : "Nothing in \(mailFilter.rawValue)"
+        case .needsYou: String(localized: "Nothing in Needs You")
+        case .waiting: String(localized: "Nothing in Waiting")
+        default: mailFilter == .everything ? String(localized: "No mail here") : String(localized: "Nothing in \(mailFilter.title)")
         }
     }
 
     private var emptyDetail: String {
         switch kind {
-        case .needsYou: "When an email asks something of you, it shows here. The rest of your mail is in Primary."
-        case .waiting: "When you reply to someone, or move a conversation here, it waits here until they answer."
-        default: "Pull down to check for new mail."
+        case .needsYou: String(localized: "When an email asks something of you, it shows here. The rest of your mail is in Primary.")
+        case .waiting: String(localized: "When you reply to someone, or move a conversation here, it waits here until they answer.")
+        default: String(localized: "Pull down to check for new mail.")
         }
     }
 

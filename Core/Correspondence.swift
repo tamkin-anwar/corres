@@ -16,10 +16,10 @@ public enum Attention: String, Codable, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .needsYou: "Needs You"
-        case .waiting: "Waiting"
-        case .quiet: "No action needed"
-        case .handled: "Handled"
+        case .needsYou: String(localized: "Needs You")
+        case .waiting: String(localized: "Waiting")
+        case .quiet: String(localized: "No action needed")
+        case .handled: String(localized: "Handled")
         }
     }
 
@@ -27,10 +27,10 @@ public enum Attention: String, Codable, CaseIterable, Sendable {
     /// (testers found the bare names arbitrary).
     public var explanation: String {
         switch self {
-        case .needsYou: "Asks something of you"
-        case .waiting: "You're waiting on their reply"
-        case .quiet: "Nothing for you to do"
-        case .handled: "Done: off your lists, still in Mail"
+        case .needsYou: String(localized: "Asks something of you")
+        case .waiting: String(localized: "You're waiting on their reply")
+        case .quiet: String(localized: "Nothing for you to do")
+        case .handled: String(localized: "Done: off your lists, still in Mail")
         }
     }
 

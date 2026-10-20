@@ -546,7 +546,7 @@ struct CorresShell: View {
         case .brief: ""
         case .mail:
             if let accountFilter { AccountPreferences.nickname(for: accountFilter) }
-            else { auth.accounts.count > 1 ? "All Inboxes" : "Mail" }
+            else { auth.accounts.count > 1 ? String(localized: "All Inboxes") : String(localized: "Mail") }
         default: destination.rawValue
         }
     }

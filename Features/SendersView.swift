@@ -293,37 +293,37 @@ struct SendersView: View {
 
     private func title(_ filter: SenderDirectory.Filter, count: Int) -> String {
         let name = switch filter {
-        case .all: "All"
-        case .allowed: "Allowed"
-        case .blocked: "Blocked"
-        case .new: "New"
-        case .subscriptions: "Subscriptions"
+        case .all: String(localized: "All")
+        case .allowed: String(localized: "Allowed")
+        case .blocked: String(localized: "Blocked")
+        case .new: String(localized: "New")
+        case .subscriptions: String(localized: "Subscriptions")
         }
         return "\(name) (\(count))"
     }
 
     private var footer: String {
         switch filter {
-        case .subscriptions: "Newsletters, stores and services: anyone who sends with an unsubscribe link. Swipe right to unsubscribe."
-        case .blocked: "Blocked senders' mail stays out of every list on this \(Device.name), and they're never told. Swipe to allow one again."
-        case .new: "First emails from people you haven't allowed or blocked yet."
-        default: "Everyone who has emailed you, from mail on this \(Device.name). Swipe left to block or allow, right to unsubscribe, or press and hold for more."
+        case .subscriptions: String(localized: "Newsletters, stores and services: anyone who sends with an unsubscribe link. Swipe right to unsubscribe.")
+        case .blocked: String(localized: "Blocked senders' mail stays out of every list on this \(Device.name), and they're never told. Swipe to allow one again.")
+        case .new: String(localized: "First emails from people you haven't allowed or blocked yet.")
+        default: String(localized: "Everyone who has emailed you, from mail on this \(Device.name). Swipe left to block or allow, right to unsubscribe, or press and hold for more.")
         }
     }
 
     private var emptyText: String {
         switch filter {
-        case .blocked: "Nobody blocked."
-        case .new: "No new senders waiting."
-        case .subscriptions: "No subscriptions yet."
-        default: "No senders yet."
+        case .blocked: String(localized: "Nobody blocked.")
+        case .new: String(localized: "No new senders waiting.")
+        case .subscriptions: String(localized: "No subscriptions yet.")
+        default: String(localized: "No senders yet.")
         }
     }
 
     private func detail(_ sender: SenderSummary) -> String {
-        let count = sender.count == 1 ? "1 email" : "\(sender.count) emails"
-        let unread = sender.unread > 0 ? " · \(sender.unread) unread" : ""
-        return "\(count)\(unread) · last \(sender.lastReceived.formatted(.relative(presentation: .named)))"
+        let count = sender.count == 1 ? String(localized: "1 email") : String(localized: "\(sender.count) emails")
+        let unread = sender.unread > 0 ? String(localized: " · \(sender.unread) unread") : ""
+        return String(localized: "\(count)\(unread) · last \(sender.lastReceived.formatted(.relative(presentation: .named)))")
     }
 
     private func badge(_ sender: SenderSummary) -> (text: String, color: Color)? {

@@ -13,15 +13,15 @@ enum MacMailbox: Hashable, Codable {
 
     var title: String {
         switch self {
-        case .needsYou: "Needs You"
-        case .waiting: "Waiting"
-        case .newSenders: "New Senders"
-        case .filter(let raw): raw
+        case .needsYou: String(localized: "Needs You")
+        case .waiting: String(localized: "Waiting")
+        case .newSenders: String(localized: "New Senders")
+        case .filter(let raw): MailFilter(rawValue: raw)?.title ?? raw
         case .account(let email): AccountPreferences.nickname(for: email)
-        case .flagged: "Flagged"
-        case .snoozed: "Snoozed"
-        case .handled: "Handled"
-        case .scheduled: "Send Later"
+        case .flagged: String(localized: "Flagged")
+        case .snoozed: String(localized: "Snoozed")
+        case .handled: String(localized: "Handled")
+        case .scheduled: String(localized: "Send Later")
         case .server(let raw): MacRemoteMailboxes.Kind(rawValue: raw)?.title ?? raw
         case .label(_, _, let name): name
         }

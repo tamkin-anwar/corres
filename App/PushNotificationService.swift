@@ -232,17 +232,17 @@ final class PushNotificationService {
 
         var title: String {
             switch self {
-            case .everything: "All New Mail"
-            case .people: "People and Time-Sensitive"
-            case .needsYou: "Only What Needs Me"
+            case .everything: String(localized: "All New Mail")
+            case .people: String(localized: "People and Time-Sensitive")
+            case .needsYou: String(localized: "Only What Needs Me")
             }
         }
 
         var detail: String {
             switch self {
-            case .everything: "Every new email in your inbox, newsletters and promotions included."
-            case .people: "Anything from a real person, plus bills, appointments and other mail with a date that matters. Newsletters, promotions and social updates arrive silently."
-            case .needsYou: "Only what Corres files in Needs You. The quietest option; an FYI from a person arrives silently."
+            case .everything: String(localized: "Every new email in your inbox, newsletters and promotions included.")
+            case .people: String(localized: "Anything from a real person, plus bills, appointments and other mail with a date that matters. Newsletters, promotions and social updates arrive silently.")
+            case .needsYou: String(localized: "Only what Corres files in Needs You. The quietest option; an FYI from a person arrives silently.")
             }
         }
 

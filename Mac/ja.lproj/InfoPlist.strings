@@ -1,0 +1,18 @@
+/* Bundle display name */
+"CFBundleDisplayName" = "Corres";
+
+/* Bundle name */
+"CFBundleName" = "Corres";
+
+/* Privacy - Calendars Full Access Usage Description */
+"NSCalendarsFullAccessUsageDescription" = "招待状で確認を頼むと、Corresは同じ時間に予定がないかカレンダーを確認し、キャンセルされた予定を削除できます。カレンダーはこのMacから出ません。";
+
+/* Privacy - Calendars Write Only Usage Description */
+"NSCalendarsWriteOnlyAccessUsageDescription" = "頼んだときに、Corresは承諾した招待をカレンダーに追加します。";
+
+/* Privacy - Contacts Usage Description */
+"NSContactsUsageDescription" = "Corresはメールの宛先を入力するときに連絡先から候補を表示し、メールの横に写真を表示します。連絡先はこのMacから出ません。";
+
+/* Copyright (human-readable) */
+"NSHumanReadableCopyright" = "© 2026 Anwar Creative Studio";
+

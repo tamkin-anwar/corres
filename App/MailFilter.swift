@@ -42,6 +42,18 @@ enum MailFilter: String, CaseIterable, Identifiable {
          promotions = "Promotions", social = "Social", updates = "Updates"
     var id: String { rawValue }
 
+    var title: String {
+        switch self {
+        case .needsYou: String(localized: "Needs You")
+        case .primary: String(localized: "Primary")
+        case .everything: String(localized: "Everything")
+        case .unread: String(localized: "Unread")
+        case .promotions: String(localized: "Promotions")
+        case .social: String(localized: "Social")
+        case .updates: String(localized: "Updates")
+        }
+    }
+
     @MainActor func includes(_ thread: Correspondence, context: InboxCategory.Context? = nil) -> Bool {
         switch self {
         case .needsYou: thread.attention == .needsYou

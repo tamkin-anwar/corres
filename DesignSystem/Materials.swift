@@ -117,9 +117,9 @@ struct DueChip: View {
 
     private var label: String {
         let calendar = Calendar.current
-        if isPast { return isEvent ? "Was \(date.formatted(.dateTime.month(.abbreviated).day()))" : "Overdue" }
-        if calendar.isDateInToday(date) { return "Today" }
-        if calendar.isDateInTomorrow(date) { return "Tomorrow" }
+        if isPast { return isEvent ? String(localized: "Was \(date.formatted(.dateTime.month(.abbreviated).day()))") : String(localized: "Overdue") }
+        if calendar.isDateInToday(date) { return String(localized: "Today") }
+        if calendar.isDateInTomorrow(date) { return String(localized: "Tomorrow") }
         if let days = calendar.dateComponents([.day], from: .now, to: date).day, days < 6, days >= 0 {
             return date.formatted(.dateTime.weekday(.abbreviated))
         }
@@ -144,7 +144,7 @@ struct WaitChip: View {
             .foregroundStyle(isNudge ? CorresPalette.accent : CorresPalette.tertiary)
             .padding(.horizontal, 8).padding(.vertical, 2)
             .overlay(Capsule().strokeBorder(isNudge ? CorresPalette.accent.opacity(0.5) : CorresPalette.line, lineWidth: 1))
-            .accessibilityLabel(days == 0 ? "Sent today" : "No reply in \(days) \(days == 1 ? "day" : "days")")
+            .accessibilityLabel(days == 0 ? "Sent today" : days == 1 ? "No reply in 1 day" : "No reply in \(days) days")
     }
 }
 

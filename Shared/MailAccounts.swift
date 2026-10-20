@@ -11,10 +11,10 @@ enum MailProvider: String, Codable, Sendable {
     /// "Gmail", "Outlook", "iCloud", "Email": what people call the service.
     var title: String {
         switch self {
-        case .google: "Gmail"
-        case .microsoft: "Outlook"
-        case .icloud: "iCloud"
-        case .imap: "Email"
+        case .google: String(localized: "Gmail")
+        case .microsoft: String(localized: "Outlook")
+        case .icloud: String(localized: "iCloud")
+        case .imap: String(localized: "Email")
         }
     }
 

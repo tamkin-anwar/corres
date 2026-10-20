@@ -32,10 +32,10 @@ final class EntitlementStore {
 
         var title: String {
             switch self {
-            case .none: "Free"
-            case .monthly: "Corres Pro · Monthly"
-            case .annual: "Corres Pro · Annual"
-            case .lifetime: "Corres Pro · Lifetime"
+            case .none: String(localized: "Free")
+            case .monthly: String(localized: "Corres Pro · Monthly")
+            case .annual: String(localized: "Corres Pro · Annual")
+            case .lifetime: String(localized: "Corres Pro · Lifetime")
             }
         }
     }

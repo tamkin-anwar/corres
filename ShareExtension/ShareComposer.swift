@@ -10,7 +10,7 @@ final class ShareComposer {
     enum Field: Hashable {
         case to, cc, bcc, subject, body
         var isAddress: Bool { self == .to || self == .cc || self == .bcc }
-        var title: String { self == .cc ? "Cc" : self == .bcc ? "Bcc" : "To" }
+        var title: String { self == .cc ? String(localized: "Cc") : self == .bcc ? String(localized: "Bcc") : String(localized: "To") }
     }
 
     enum Phase: Equatable {

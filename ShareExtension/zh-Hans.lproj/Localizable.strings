@@ -1,0 +1,147 @@
+/* No comment provided by engineer. */
+"%@ is over %@’s %@ limit. Remove something or pick a smaller size." = "%1$@超出了%2$@的 %3$@ 上限。请移除一些内容或选择更小的尺寸。";
+
+/* No comment provided by engineer. */
+"%@ is over %@’s %@ limit. Remove something." = "%1$@超出了%2$@的 %3$@ 上限。请移除一些内容。";
+
+/* No comment provided by engineer. */
+"%@, %@" = "%@，%@";
+
+/* No comment provided by engineer. */
+"%@, not a valid address" = "%@，不是有效的地址";
+
+/* No comment provided by engineer. */
+"%@:" = "%@：";
+
+/* No comment provided by engineer. */
+"Actual Size" = "实际大小";
+
+/* No comment provided by engineer. */
+"Add %@" = "添加 %@";
+
+/* No comment provided by engineer. */
+"Add a message" = "添加消息";
+
+/* No comment provided by engineer. */
+"Add Subject" = "添加主题";
+
+/* No comment provided by engineer. */
+"Asks something of you" = "向你提出了请求";
+
+/* No comment provided by engineer. */
+"Bcc" = "密送";
+
+/* No comment provided by engineer. */
+"Cancel" = "取消";
+
+/* No comment provided by engineer. */
+"Cc" = "抄送";
+
+/* No comment provided by engineer. */
+"Cc/Bcc" = "抄送/密送";
+
+/* No comment provided by engineer. */
+"Cc/Bcc, From: %@" = "抄送/密送，发件人：%@";
+
+/* No comment provided by engineer. */
+"Couldn’t Send" = "无法发送";
+
+/* No comment provided by engineer. */
+"Delete Draft" = "删除草稿";
+
+/* No comment provided by engineer. */
+"Done: off your lists, still in Mail" = "已处理：离开你的列表，仍在“邮件”中";
+
+/* No comment provided by engineer. */
+"Email" = "邮件";
+
+/* No comment provided by engineer. */
+"From:" = "发件人：";
+
+/* No comment provided by engineer. */
+"Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Handled" = "已处理";
+
+/* No comment provided by engineer. */
+"iCloud" = "iCloud";
+
+/* No comment provided by engineer. */
+"Large" = "大";
+
+/* No comment provided by engineer. */
+"Medium" = "中";
+
+/* No comment provided by engineer. */
+"Message" = "邮件";
+
+/* No comment provided by engineer. */
+"Move to %@" = "移到 %@";
+
+/* No comment provided by engineer. */
+"Needs You" = "需要你";
+
+/* No comment provided by engineer. */
+"No action needed" = "无需处理";
+
+/* No comment provided by engineer. */
+"Nothing for you to do" = "你无需做什么";
+
+/* No comment provided by engineer. */
+"OK" = "好";
+
+/* No comment provided by engineer. */
+"Open Corres First" = "请先打开 Corres";
+
+/* No comment provided by engineer. */
+"Open Corres once (and add your email account if you haven’t), then share again to write right here." = "打开一次 Corres（如果还没有添加邮件账户，请先添加），然后再次共享，就能直接在这里写邮件。";
+
+/* No comment provided by engineer. */
+"Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Photo Size" = "照片大小";
+
+/* No comment provided by engineer. */
+"Primary" = "主要";
+
+/* No comment provided by engineer. */
+"Promotions" = "促销";
+
+/* No comment provided by engineer. */
+"Remove" = "移除";
+
+/* No comment provided by engineer. */
+"Remove %@" = "移除 %@";
+
+/* No comment provided by engineer. */
+"Save Draft" = "存储草稿";
+
+/* No comment provided by engineer. */
+"Send" = "发送";
+
+/* No comment provided by engineer. */
+"Send without a subject?" = "不带主题发送？";
+
+/* No comment provided by engineer. */
+"Small" = "小";
+
+/* No comment provided by engineer. */
+"Social" = "社交";
+
+/* No comment provided by engineer. */
+"Subject:" = "主题：";
+
+/* No comment provided by engineer. */
+"To" = "收件人";
+
+/* No comment provided by engineer. */
+"Updates" = "动态";
+
+/* No comment provided by engineer. */
+"Waiting" = "等待中";
+
+/* No comment provided by engineer. */
+"You're waiting on their reply" = "你在等待对方回复";
+

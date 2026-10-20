@@ -1,0 +1,21 @@
+/* No comment provided by engineer. */
+"Brief me with ${applicationName}" = "用${applicationName}听简报";
+
+/* No comment provided by engineer. */
+"New email in ${applicationName}" = "在${applicationName}中新建邮件";
+
+/* No comment provided by engineer. */
+"Open ${list} in ${applicationName}" = "在${applicationName}中打开${list}";
+
+/* No comment provided by engineer. */
+"Show ${list} in ${applicationName}" = "在${applicationName}中显示${list}";
+
+/* No comment provided by engineer. */
+"What needs me in ${applicationName}" = "${applicationName}中有什么需要我处理";
+
+/* No comment provided by engineer. */
+"What's in ${applicationName}" = "${applicationName}里有什么";
+
+/* No comment provided by engineer. */
+"Write an email with ${applicationName}" = "用${applicationName}写邮件";
+

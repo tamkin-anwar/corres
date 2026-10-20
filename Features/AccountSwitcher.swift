@@ -116,8 +116,8 @@ struct AccountSwitcher: View {
     private func subtitle(for account: String?) -> String {
         guard let account else {
             let shown = AccountPreferences.allInboxesAccounts(emails).count
-            return shown == emails.count ? "Every account, newest first" : "\(shown) of \(emails.count) accounts"
+            return shown == emails.count ? String(localized: "Every account, newest first") : String(localized: "\(shown) of \(emails.count) accounts")
         }
-        return AccountPreferences.showsInAllInboxes(account) ? account : "\(account) · not in All Inboxes"
+        return AccountPreferences.showsInAllInboxes(account) ? account : String(localized: "\(account) · not in All Inboxes")
     }
 }

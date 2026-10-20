@@ -1,0 +1,18 @@
+/* Bundle display name */
+"CFBundleDisplayName" = "Corres";
+
+/* Bundle name */
+"CFBundleName" = "Corres";
+
+/* Privacy - Calendars Full Access Usage Description */
+"NSCalendarsFullAccessUsageDescription" = "초대장에서 요청하면 Corres가 같은 시간에 다른 일정이 있는지 캘린더를 확인하고, 취소된 일정을 삭제할 수 있습니다. 캘린더는 이 Mac에만 머뭅니다.";
+
+/* Privacy - Calendars Write Only Usage Description */
+"NSCalendarsWriteOnlyAccessUsageDescription" = "요청하면 Corres가 수락한 초대를 캘린더에 추가합니다.";
+
+/* Privacy - Contacts Usage Description */
+"NSContactsUsageDescription" = "이메일 주소를 입력할 때 Corres가 연락처에서 사람을 제안하고, 메일 옆에 사진을 보여줍니다. 연락처는 이 Mac에만 머뭅니다.";
+
+/* Copyright (human-readable) */
+"NSHumanReadableCopyright" = "© 2026 Anwar Creative Studio";
+

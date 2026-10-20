@@ -265,20 +265,20 @@ struct PreferencesView: View {
     private var planStatus: String {
         switch entitlements.plan {
         case .none where entitlements.isPro:
-            return "Included for beta testers"
+            return String(localized: "Included for beta testers")
         case .none:
             if let monthly = entitlements.product(EntitlementStore.ProductID.monthly),
                let annual = entitlements.product(EntitlementStore.ProductID.annual) {
-                return "Try it free, then \(monthly.displayPrice) a month or \(annual.displayPrice) a year."
+                return String(localized: "Try it free, then \(monthly.displayPrice) a month or \(annual.displayPrice) a year.")
             }
-            return "Try it free for 14 days."
+            return String(localized: "Try it free for 14 days.")
         case .monthly(let renews, let inTrial), .annual(let renews, let inTrial):
-            let date = renews.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "soon"
-            return inTrial ? "Free trial · first charge \(date)" : "Renews \(date)"
+            let date = renews.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? String(localized: "soon")
+            return inTrial ? String(localized: "Free trial · first charge \(date)") : String(localized: "Renews \(date)")
         case .lifetime(let purchased, let familyShared):
             // What you have, as Apple's own purchase screens say it.
-            return familyShared ? "Shared by your family"
-                : "Yours for good · bought \(purchased.formatted(date: .abbreviated, time: .omitted))"
+            return familyShared ? String(localized: "Shared by your family")
+                : String(localized: "Yours for good · bought \(purchased.formatted(date: .abbreviated, time: .omitted))")
         }
     }
 
@@ -706,8 +706,8 @@ private struct AccountDetailView: View {
     private var notifyFooter: String {
         let choice = AccountPreferences.Notify(rawValue: notify) ?? .standard
         switch choice {
-        case .standard: return "Follows Settings → Notifications: \(PushNotificationService.Level.current.title)."
-        case .off: return "This account stays quiet. Its mail still syncs and sorts."
+        case .standard: return String(localized: "Follows Settings → Notifications: \(PushNotificationService.Level.current.title).")
+        case .off: return String(localized: "This account stays quiet. Its mail still syncs and sorts.")
         case .everything: return PushNotificationService.Level.everything.detail
         case .people: return PushNotificationService.Level.people.detail
         case .needsYou: return PushNotificationService.Level.needsYou.detail
@@ -1113,9 +1113,9 @@ private struct SortingSettingsView: View {
 
     private var sensitivityDetail: String {
         switch InboxClassifier.Sensitivity(rawValue: sensitivity) ?? .balanced {
-        case .focused: "Focused: only email that asks something of you, has a deadline, or is from a VIP or someone you write to."
-        case .balanced: "Balanced: email written to you by a person; mail you're only copied on stays in Mail."
-        case .inclusive: "Everything from people: every email from a person, including ones you're copied on."
+        case .focused: String(localized: "Focused: only email that asks something of you, has a deadline, or is from a VIP or someone you write to.")
+        case .balanced: String(localized: "Balanced: email written to you by a person; mail you're only copied on stays in Mail.")
+        case .inclusive: String(localized: "Everything from people: every email from a person, including ones you're copied on.")
         }
     }
 }

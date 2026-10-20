@@ -1,0 +1,21 @@
+/* No comment provided by engineer. */
+"Brief me with ${applicationName}" = "Me atualize com o ${applicationName}";
+
+/* No comment provided by engineer. */
+"New email in ${applicationName}" = "Novo e-mail no ${applicationName}";
+
+/* No comment provided by engineer. */
+"Open ${list} in ${applicationName}" = "Abrir ${list} no ${applicationName}";
+
+/* No comment provided by engineer. */
+"Show ${list} in ${applicationName}" = "Mostrar ${list} no ${applicationName}";
+
+/* No comment provided by engineer. */
+"What needs me in ${applicationName}" = "O que precisa de mim no ${applicationName}";
+
+/* No comment provided by engineer. */
+"What's in ${applicationName}" = "O que tem no ${applicationName}";
+
+/* No comment provided by engineer. */
+"Write an email with ${applicationName}" = "Escrever um e-mail com o ${applicationName}";
+

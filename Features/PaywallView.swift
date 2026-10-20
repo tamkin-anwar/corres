@@ -149,9 +149,9 @@ struct PaywallView: View {
 
     private func planName(_ product: Product) -> String {
         switch product.id {
-        case EntitlementStore.ProductID.annual: "Annual"
-        case EntitlementStore.ProductID.monthly: "Monthly"
-        default: "Lifetime"
+        case EntitlementStore.ProductID.annual: String(localized: "Annual")
+        case EntitlementStore.ProductID.monthly: String(localized: "Monthly")
+        default: String(localized: "Lifetime")
         }
     }
 
@@ -166,18 +166,18 @@ struct PaywallView: View {
     private func planDetail(_ product: Product) -> String {
         switch product.id {
         case EntitlementStore.ProductID.lifetime:
-            return "Pay once. Shared with up to five family members."
+            return String(localized: "Pay once. Shared with up to five family members.")
         default:
-            if let trial = trialText(product) { return "\(trial) free, then renews. Cancel anytime." }
-            return "Renews automatically. Cancel anytime."
+            if let trial = trialText(product) { return String(localized: "\(trial) free, then renews. Cancel anytime.") }
+            return String(localized: "Renews automatically. Cancel anytime.")
         }
     }
 
     private func period(_ product: Product) -> String {
         switch product.subscription?.subscriptionPeriod.unit {
-        case .year: "per year"
-        case .month: "per month"
-        default: "once"
+        case .year: String(localized: "per year")
+        case .month: String(localized: "per month")
+        default: String(localized: "once")
         }
     }
 
@@ -228,21 +228,21 @@ struct PaywallView: View {
     }
 
     private var buttonTitle: String {
-        guard let product = selectedProduct else { return "Continue" }
-        if let trial = trialText(product) { return "Start \(trial) free" }
-        return product.id == EntitlementStore.ProductID.lifetime ? "Buy Lifetime · \(product.displayPrice)" : "Subscribe · \(product.displayPrice)"
+        guard let product = selectedProduct else { return String(localized: "Continue") }
+        if let trial = trialText(product) { return String(localized: "Start \(trial) free") }
+        return product.id == EntitlementStore.ProductID.lifetime ? String(localized: "Buy Lifetime · \(product.displayPrice)") : String(localized: "Subscribe · \(product.displayPrice)")
     }
 
     private var finePrint: String {
         guard let product = selectedProduct else { return "" }
         if product.id == EntitlementStore.ProductID.lifetime {
-            return "One payment of \(product.displayPrice). No subscription."
+            return String(localized: "One payment of \(product.displayPrice). No subscription.")
         }
-        let per = product.subscription?.subscriptionPeriod.unit == .year ? "year" : "month"
+        let per = product.subscription?.subscriptionPeriod.unit == .year ? String(localized: "year") : String(localized: "month")
         if let trial = trialText(product) {
-            return "Free for \(trial), then \(product.displayPrice) a \(per). Cancel anytime in Settings before the trial ends and you won't be charged."
+            return String(localized: "Free for \(trial), then \(product.displayPrice) a \(per). Cancel anytime in Settings before the trial ends and you won't be charged.")
         }
-        return "\(product.displayPrice) a \(per), renewing automatically. Cancel anytime in Settings."
+        return String(localized: "\(product.displayPrice) a \(per), renewing automatically. Cancel anytime in Settings.")
     }
 
     private var footer: some View {
@@ -304,10 +304,10 @@ struct ProLockView: View {
 
     private var pitch: String {
         switch destination {
-        case .brief: "A one-sentence brief of your day, and what needs you first."
-        case .needsYou: "The conversations that ask something of you, with the reason for each."
-        case .waiting: "Everyone who owes you a reply, and for how long."
-        case .ask: "Ask a question, get the answer from your own email, on this \(Device.name)."
+        case .brief: String(localized: "A one-sentence brief of your day, and what needs you first.")
+        case .needsYou: String(localized: "The conversations that ask something of you, with the reason for each.")
+        case .waiting: String(localized: "Everyone who owes you a reply, and for how long.")
+        case .ask: String(localized: "Ask a question, get the answer from your own email, on this \(Device.name).")
         case .mail: ""
         }
     }

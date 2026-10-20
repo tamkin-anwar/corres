@@ -1,0 +1,147 @@
+/* No comment provided by engineer. */
+"%@ is over %@’s %@ limit. Remove something or pick a smaller size." = "%1$@ supera el límite de %3$@ de %2$@. Quita algo o elige un tamaño menor.";
+
+/* No comment provided by engineer. */
+"%@ is over %@’s %@ limit. Remove something." = "%1$@ supera el límite de %3$@ de %2$@. Quita algo.";
+
+/* No comment provided by engineer. */
+"%@, %@" = "%@, %@";
+
+/* No comment provided by engineer. */
+"%@, not a valid address" = "%@, no es una dirección válida";
+
+/* No comment provided by engineer. */
+"%@:" = "%@:";
+
+/* No comment provided by engineer. */
+"Actual Size" = "Tamaño real";
+
+/* No comment provided by engineer. */
+"Add %@" = "Añadir %@";
+
+/* No comment provided by engineer. */
+"Add a message" = "Añadir un mensaje";
+
+/* No comment provided by engineer. */
+"Add Subject" = "Añadir asunto";
+
+/* No comment provided by engineer. */
+"Asks something of you" = "Te pide algo";
+
+/* No comment provided by engineer. */
+"Bcc" = "Cco";
+
+/* No comment provided by engineer. */
+"Cancel" = "Cancelar";
+
+/* No comment provided by engineer. */
+"Cc" = "Cc";
+
+/* No comment provided by engineer. */
+"Cc/Bcc" = "Cc/Cco";
+
+/* No comment provided by engineer. */
+"Cc/Bcc, From: %@" = "Cc/Cco, De: %@";
+
+/* No comment provided by engineer. */
+"Couldn’t Send" = "No se pudo enviar";
+
+/* No comment provided by engineer. */
+"Delete Draft" = "Eliminar borrador";
+
+/* No comment provided by engineer. */
+"Done: off your lists, still in Mail" = "Resuelto: fuera de tus listas, sigue en Correo";
+
+/* No comment provided by engineer. */
+"Email" = "Correo";
+
+/* No comment provided by engineer. */
+"From:" = "De:";
+
+/* No comment provided by engineer. */
+"Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Handled" = "Resuelto";
+
+/* No comment provided by engineer. */
+"iCloud" = "iCloud";
+
+/* No comment provided by engineer. */
+"Large" = "Grande";
+
+/* No comment provided by engineer. */
+"Medium" = "Mediana";
+
+/* No comment provided by engineer. */
+"Message" = "Mensaje";
+
+/* No comment provided by engineer. */
+"Move to %@" = "Mover a %@";
+
+/* No comment provided by engineer. */
+"Needs You" = "Te necesita";
+
+/* No comment provided by engineer. */
+"No action needed" = "No requiere acción";
+
+/* No comment provided by engineer. */
+"Nothing for you to do" = "No tienes nada que hacer";
+
+/* No comment provided by engineer. */
+"OK" = "OK";
+
+/* No comment provided by engineer. */
+"Open Corres First" = "Abre Corres primero";
+
+/* No comment provided by engineer. */
+"Open Corres once (and add your email account if you haven’t), then share again to write right here." = "Abre Corres una vez (y añade tu cuenta de correo si aún no lo has hecho) y vuelve a compartir para escribir aquí mismo.";
+
+/* No comment provided by engineer. */
+"Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Photo Size" = "Tamaño de la foto";
+
+/* No comment provided by engineer. */
+"Primary" = "Principal";
+
+/* No comment provided by engineer. */
+"Promotions" = "Promociones";
+
+/* No comment provided by engineer. */
+"Remove" = "Quitar";
+
+/* No comment provided by engineer. */
+"Remove %@" = "Quitar %@";
+
+/* No comment provided by engineer. */
+"Save Draft" = "Guardar borrador";
+
+/* No comment provided by engineer. */
+"Send" = "Enviar";
+
+/* No comment provided by engineer. */
+"Send without a subject?" = "¿Enviar sin asunto?";
+
+/* No comment provided by engineer. */
+"Small" = "Pequeña";
+
+/* No comment provided by engineer. */
+"Social" = "Social";
+
+/* No comment provided by engineer. */
+"Subject:" = "Asunto:";
+
+/* No comment provided by engineer. */
+"To" = "Para";
+
+/* No comment provided by engineer. */
+"Updates" = "Novedades";
+
+/* No comment provided by engineer. */
+"Waiting" = "En espera";
+
+/* No comment provided by engineer. */
+"You're waiting on their reply" = "Esperas su respuesta";
+

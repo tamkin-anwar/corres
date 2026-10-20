@@ -1,0 +1,957 @@
+/* No comment provided by engineer. */
+" Due %@." = " Vence %@.";
+
+/* No comment provided by engineer. */
+"%@" = "%@";
+
+/* No comment provided by engineer. */
+"%@ · up to date %@" = "%@ · atualizado %@";
+
+/* No comment provided by engineer. */
+"%@ at %@" = "%@ às %@";
+
+/* No comment provided by engineer. */
+"%@ didn't answer the last check. Corres keeps trying." = "%@ não respondeu à última verificação. O Corres continua tentando.";
+
+/* No comment provided by engineer. */
+"%@ is busy. Corres tries again in a moment." = "%@ está ocupado. O Corres tenta de novo em instantes.";
+
+/* No comment provided by engineer. */
+"%@ said: %@" = "%@ disse: %@";
+
+/* No comment provided by engineer. */
+"%@ turned down Corres's access. Reconnect below." = "%@ recusou o acesso do Corres. Reconecte abaixo.";
+
+/* No comment provided by engineer. */
+"%@: %@" = "%@: %@";
+
+/* No comment provided by engineer. */
+"%lld" = "%lld";
+
+/* No comment provided by engineer. */
+"%lld %@" = "%lld %@";
+
+/* No comment provided by engineer. */
+"%lld attachments" = "%lld anexos";
+
+/* No comment provided by engineer. */
+"%lld conversations" = "%lld conversas";
+
+/* No comment provided by engineer. */
+"%lld conversations need you." = "%lld conversas precisam de você.";
+
+/* No comment provided by engineer. */
+"%lld conversations selected" = "%lld conversas selecionadas";
+
+/* No comment provided by engineer. */
+"%lld conversations, %lld unread" = "%lld conversas, %lld não lidas";
+
+/* No comment provided by engineer. */
+"%lld earlier messages" = "%lld mensagens anteriores";
+
+/* No comment provided by engineer. */
+"%lld emails need you" = "%lld e-mails precisam de você";
+
+/* No comment provided by engineer. */
+"%lldd" = "%lldd";
+
+/* No comment provided by engineer. */
+"1 attachment" = "1 anexo";
+
+/* No comment provided by engineer. */
+"1 earlier message" = "1 mensagem anterior";
+
+/* No comment provided by engineer. */
+"1 email needs you" = "1 e-mail precisa de você";
+
+/* No comment provided by engineer. */
+"Accept" = "Aceitar";
+
+/* No comment provided by engineer. */
+"Account" = "Conta";
+
+/* No comment provided by engineer. */
+"Accounts" = "Contas";
+
+/* No comment provided by engineer. */
+"Accounts you add on your iPhone or iPad appear here on their own, through iCloud Keychain. Corres reads your mail straight from your provider on this Mac; our servers never receive it." = "As contas que você adiciona no iPhone ou iPad aparecem aqui sozinhas, pelas Chaves do iCloud. O Corres lê seus e-mails direto do seu provedor neste Mac; nossos servidores nunca os recebem.";
+
+/* No comment provided by engineer. */
+"Add a signature" = "Adicionar uma assinatura";
+
+/* No comment provided by engineer. */
+"Add an Account" = "Adicionar uma conta";
+
+/* No comment provided by engineer. */
+"Add an Email Account" = "Adicionar conta de e-mail";
+
+/* No comment provided by engineer. */
+"Add iCloud Mail" = "Adicionar o E-mail do iCloud";
+
+/* No comment provided by engineer. */
+"Add one with +, like a full one for new mail and a short one for replies." = "Adicione uma com +, como uma completa para e-mails novos e uma curta para respostas.";
+
+/* No comment provided by engineer. */
+"Add Signature" = "Adicionar assinatura";
+
+/* No comment provided by engineer. */
+"Add to Calendar" = "Adicionar ao calendário";
+
+/* No comment provided by engineer. */
+"All accounts" = "Todas as contas";
+
+/* No comment provided by engineer. */
+"All New Mail" = "Todos os e-mails novos";
+
+/* No comment provided by engineer. */
+"All Unread" = "Todos os não lidos";
+
+/* No comment provided by engineer. */
+"Always from %@" = "Sempre de %@";
+
+/* No comment provided by engineer. */
+"Always Load" = "Sempre carregar";
+
+/* No comment provided by engineer. */
+"Answer" = "Resposta";
+
+/* No comment provided by engineer. */
+"Anything from a real person, plus bills, appointments and other mail with a date that matters. Newsletters, promotions and social updates arrive silently." = "Tudo de pessoas reais, mais contas, compromissos e outros e-mails com uma data importante. Newsletters, promoções e novidades sociais chegam em silêncio.";
+
+/* No comment provided by engineer. */
+"App-specific password" = "Senha de app específica";
+
+/* No comment provided by engineer. */
+"Appearance" = "Aparência";
+
+/* No comment provided by engineer. */
+"Archive" = "Arquivar";
+
+/* No comment provided by engineer. */
+"Archive (⌃⌘A, or E)" = "Arquivar (⌃⌘A ou E)";
+
+/* No comment provided by engineer. */
+"Archive, delete, move or flag them together." = "Arquive, apague, mova ou sinalize todos juntos.";
+
+/* No comment provided by engineer. */
+"Archived" = "Arquivado";
+
+/* No comment provided by engineer. */
+"Archived %lld" = "%lld arquivados";
+
+/* No comment provided by engineer. */
+"Ask First" = "Perguntar antes";
+
+/* No comment provided by engineer. */
+"Asks something of you" = "Pede algo a você";
+
+/* No comment provided by engineer. */
+"Attach" = "Anexar";
+
+/* No comment provided by engineer. */
+"Attach a file" = "Anexar um arquivo";
+
+/* No comment provided by engineer. */
+"Automatic" = "Automático";
+
+/* No comment provided by engineer. */
+"Can't reach %@ right now. Corres keeps trying." = "Não foi possível acessar %@ agora. O Corres continua tentando.";
+
+/* No comment provided by engineer. */
+"Cancel" = "Cancelar";
+
+/* No comment provided by engineer. */
+"Canceled" = "Cancelado";
+
+/* No comment provided by engineer. */
+"Cc" = "Cc";
+
+/* No comment provided by engineer. */
+"Cc %lld" = "Cc %lld";
+
+/* No comment provided by engineer. */
+"Change" = "Alterar";
+
+/* No comment provided by engineer. */
+"Change Time" = "Alterar horário";
+
+/* No comment provided by engineer. */
+"Change Time…" = "Alterar horário…";
+
+/* No comment provided by engineer. */
+"Check Your Calendar" = "Verificar seu calendário";
+
+/* No comment provided by engineer. */
+"Check your connection, then choose it again." = "Verifique sua conexão e escolha novamente.";
+
+/* No comment provided by engineer. */
+"Checking for mail…" = "Verificando e-mails…";
+
+/* No comment provided by engineer. */
+"Choose a conversation to read it." = "Escolha uma conversa para lê-la.";
+
+/* No comment provided by engineer. */
+"Choose a scheduled email to read it, send it now, or change its time." = "Escolha um e-mail agendado para lê-lo, enviá-lo agora ou alterar o horário.";
+
+/* No comment provided by engineer. */
+"Choose a Time…" = "Escolher horário…";
+
+/* No comment provided by engineer. */
+"Choose Send Later in a new message to send it at a time you pick." = "Escolha Enviar depois em uma nova mensagem para enviá-la no horário que você quiser.";
+
+/* No comment provided by engineer. */
+"Conversation" = "Conversa";
+
+/* No comment provided by engineer. */
+"corres" = "corres";
+
+/* No comment provided by engineer. */
+"Corres" = "Corres";
+
+/* No comment provided by engineer. */
+"Corres Pro" = "Corres Pro";
+
+/* No comment provided by engineer. */
+"Corres Pro · Annual" = "Corres Pro · Anual";
+
+/* No comment provided by engineer. */
+"Corres Pro · Lifetime" = "Corres Pro · Vitalício";
+
+/* No comment provided by engineer. */
+"Corres Pro · Monthly" = "Corres Pro · Mensal";
+
+/* No comment provided by engineer. */
+"Corres Pro adds Needs You, Waiting, answers in Search, summaries and suggested replies. One purchase covers your iPhone, iPad and Mac." = "O Corres Pro adiciona Precisa de Você, Aguardando, respostas na busca, resumos e respostas sugeridas. Uma única compra vale para seu iPhone, iPad e Mac.";
+
+/* No comment provided by engineer. */
+"Corres sends it from this Mac at that time, or the moment it can if your Mac is asleep or offline." = "O Corres envia deste Mac nesse horário, ou assim que puder se o seu Mac estiver em repouso ou offline.";
+
+/* No comment provided by engineer. */
+"Corres: %lld emails need you" = "Corres: %lld e-mails precisam de você";
+
+/* No comment provided by engineer. */
+"Corres: 1 email needs you" = "Corres: 1 e-mail precisa de você";
+
+/* No comment provided by engineer. */
+"Corres: nothing needs you" = "Corres: nada precisa de você";
+
+/* No comment provided by engineer. */
+"Couldn't Attach" = "Não foi possível anexar";
+
+/* No comment provided by engineer. */
+"Couldn't Change Your Calendar" = "Não foi possível alterar seu calendário";
+
+/* No comment provided by engineer. */
+"Couldn't find an answer in your mail." = "Não foi encontrada uma resposta nos seus e-mails.";
+
+/* No comment provided by engineer. */
+"Couldn't load %@" = "Não foi possível carregar %@";
+
+/* No comment provided by engineer. */
+"Couldn't Save" = "Não foi possível salvar";
+
+/* No comment provided by engineer. */
+"Dark" = "Escuro";
+
+/* No comment provided by engineer. */
+"Decline" = "Recusar";
+
+/* No comment provided by engineer. */
+"Default Browser" = "Navegador padrão";
+
+/* No comment provided by engineer. */
+"Default email app" = "App de e-mail padrão";
+
+/* No comment provided by engineer. */
+"Delete" = "Apagar";
+
+/* No comment provided by engineer. */
+"Delete (⌘⌫, or #)" = "Apagar (⌘⌫ ou #)";
+
+/* No comment provided by engineer. */
+"Delete Signature" = "Apagar assinatura";
+
+/* No comment provided by engineer. */
+"Delete this scheduled email?" = "Apagar este e-mail agendado?";
+
+/* No comment provided by engineer. */
+"Delete this signature" = "Apagar esta assinatura";
+
+/* No comment provided by engineer. */
+"Deleted %lld" = "%lld apagados";
+
+/* No comment provided by engineer. */
+"Done" = "OK";
+
+/* No comment provided by engineer. */
+"Done: off your lists, still in Mail" = "Resolvido: fora das suas listas, ainda em E-mail";
+
+/* No comment provided by engineer. */
+"Drafts" = "Rascunhos";
+
+/* No comment provided by engineer. */
+"During this Focus, Corres shows and notifies for this account only." = "Durante este Foco, o Corres mostra e notifica apenas esta conta.";
+
+/* No comment provided by engineer. */
+"Edit" = "Editar";
+
+/* No comment provided by engineer. */
+"Email" = "E-mail";
+
+/* No comment provided by engineer. */
+"Email links in other apps open in Corres." = "Links de e-mail em outros apps abrem no Corres.";
+
+/* No comment provided by engineer. */
+"Email that asks something of you lands here, with the reason why." = "E-mails que pedem algo a você chegam aqui, com o motivo.";
+
+/* No comment provided by engineer. */
+"Email, considered." = "E-mail, bem pensado.";
+
+/* No comment provided by engineer. */
+"Every new email in your inbox, newsletters and promotions included." = "Todo e-mail novo na sua caixa de entrada, incluindo newsletters e promoções.";
+
+/* No comment provided by engineer. */
+"Every unread email in your inbox, newsletters included." = "Todo e-mail não lido na sua caixa de entrada, incluindo newsletters.";
+
+/* No comment provided by engineer. */
+"Everyday" = "Do dia a dia";
+
+/* No comment provided by engineer. */
+"Everything" = "Tudo";
+
+/* No comment provided by engineer. */
+"Explore Sample Mail" = "Explorar e-mails de exemplo";
+
+/* No comment provided by engineer. */
+"Find conversations from Spotlight by sender, subject or what they say. The index stays on this Mac." = "Encontre conversas pelo Spotlight por remetente, assunto ou conteúdo. O índice fica neste Mac.";
+
+/* No comment provided by engineer. */
+"Finds this event on your calendar so you can remove it. Your calendar stays on this device." = "Encontra este evento no seu calendário para você removê-lo. Seu calendário fica neste dispositivo.";
+
+/* No comment provided by engineer. */
+"Flag" = "Sinalizar";
+
+/* No comment provided by engineer. */
+"Flag (⇧⌘L, or S)" = "Sinalizar (⇧⌘L ou S)";
+
+/* No comment provided by engineer. */
+"Flagged" = "Sinalizados";
+
+/* No comment provided by engineer. */
+"Follow up" = "Acompanhar";
+
+/* No comment provided by engineer. */
+"Forward" = "Encaminhar";
+
+/* No comment provided by engineer. */
+"Forward (⇧⌘F, or F)" = "Encaminhar (⇧⌘F ou F)";
+
+/* No comment provided by engineer. */
+"Free" = "Grátis";
+
+/* No comment provided by engineer. */
+"General" = "Geral";
+
+/* No comment provided by engineer. */
+"Get Mail" = "Receber e-mails";
+
+/* No comment provided by engineer. */
+"Get New Mail" = "Receber novos e-mails";
+
+/* No comment provided by engineer. */
+"Get New Mail (⇧⌘N)" = "Receber novos e-mails (⇧⌘N)";
+
+/* No comment provided by engineer. */
+"Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Go to a mailbox or do something…" = "Ir para uma caixa ou fazer algo…";
+
+/* No comment provided by engineer. */
+"Go To or Do" = "Ir ou fazer";
+
+/* No comment provided by engineer. */
+"Go To or Do (⌘K)" = "Ir ou fazer (⌘K)";
+
+/* No comment provided by engineer. */
+"Go To or Do…" = "Ir ou fazer…";
+
+/* No comment provided by engineer. */
+"Handled" = "Resolvido";
+
+/* No comment provided by engineer. */
+"Handled. It stays in Mail." = "Resolvido. Continua em E-mail.";
+
+/* No comment provided by engineer. */
+"Hear what's in Needs You and who you're waiting on." = "Ouça o que há em Precisa de Você e de quem você está esperando resposta.";
+
+/* No comment provided by engineer. */
+"Held because they replied first. Send it, change it, or delete it." = "Retido porque responderam antes. Envie, altere ou apague.";
+
+/* No comment provided by engineer. */
+"Held: they replied first" = "Retido: responderam antes";
+
+/* No comment provided by engineer. */
+"How many emails need you, and the first few, from the menu bar." = "Quantos e-mails precisam de você, e os primeiros, na barra de menus.";
+
+/* No comment provided by engineer. */
+"iCloud" = "iCloud";
+
+/* No comment provided by engineer. */
+"Images hidden to protect your privacy" = "Imagens ocultas para proteger sua privacidade";
+
+/* No comment provided by engineer. */
+"Images hidden, and %lld trackers blocked" = "Imagens ocultas e %lld rastreadores bloqueados";
+
+/* No comment provided by engineer. */
+"Images hidden, and 1 tracker blocked" = "Imagens ocultas e 1 rastreador bloqueado";
+
+/* No comment provided by engineer. */
+"Images in email" = "Imagens no e-mail";
+
+/* No comment provided by engineer. */
+"In Corres" = "No Corres";
+
+/* No comment provided by engineer. */
+"In Needs You" = "Em Precisa de Você";
+
+/* No comment provided by engineer. */
+"In Needs You: " = "Em Precisa de Você:";
+
+/* No comment provided by engineer. */
+"In short" = "Em resumo";
+
+/* No comment provided by engineer. */
+"Invitation" = "Convite";
+
+/* No comment provided by engineer. */
+"It won't be sent, and it isn't kept in Drafts." = "Ele não será enviado nem guardado em Rascunhos.";
+
+/* No comment provided by engineer. */
+"It's removed from Corres on all your devices. Nothing is deleted from the account itself." = "É removido do Corres em todos os seus dispositivos. Nada é apagado da própria conta.";
+
+/* No comment provided by engineer. */
+"Join %@" = "Participar de %@";
+
+/* No comment provided by engineer. */
+"Keyboard Shortcuts" = "Atalhos de teclado";
+
+/* No comment provided by engineer. */
+"Later Today" = "Mais tarde hoje";
+
+/* No comment provided by engineer. */
+"Light" = "Claro";
+
+/* No comment provided by engineer. */
+"List" = "Lista";
+
+/* No comment provided by engineer. */
+"Mail" = "E-mail";
+
+/* No comment provided by engineer. */
+"Mail that arrived since you last left Corres. Opening Corres clears it." = "E-mails que chegaram desde a última vez que você saiu do Corres. Abrir o Corres zera a contagem.";
+
+/* No comment provided by engineer. */
+"Mailbox" = "Caixa";
+
+/* No comment provided by engineer. */
+"Mailboxes" = "Caixas";
+
+/* No comment provided by engineer. */
+"Make Corres the Default" = "Tornar o Corres o padrão";
+
+/* No comment provided by engineer. */
+"Make VIP" = "Tornar VIP";
+
+/* No comment provided by engineer. */
+"Mark as Handled" = "Marcar como resolvido";
+
+/* No comment provided by engineer. */
+"Mark as Read or Unread" = "Marcar como lido ou não lido";
+
+/* No comment provided by engineer. */
+"Mark as Read or Unread (⇧⌘U, or U)" = "Marcar como lido ou não lido (⇧⌘U ou U)";
+
+/* No comment provided by engineer. */
+"Mark as read when opened" = "Marcar como lido ao abrir";
+
+/* No comment provided by engineer. */
+"Maybe" = "Talvez";
+
+/* No comment provided by engineer. */
+"Message" = "Mensagem";
+
+/* No comment provided by engineer. */
+"Move" = "Mover";
+
+/* No comment provided by engineer. */
+"Move to Drafts" = "Mover para Rascunhos";
+
+/* No comment provided by engineer. */
+"Move to Needs You" = "Mover para Precisa de Você";
+
+/* No comment provided by engineer. */
+"Move to Waiting" = "Mover para Aguardando";
+
+/* No comment provided by engineer. */
+"Moved" = "Movido";
+
+/* No comment provided by engineer. */
+"Moved to %@" = "Movido para %@";
+
+/* No comment provided by engineer. */
+"Moved to Trash" = "Movido para o Lixo";
+
+/* No comment provided by engineer. */
+"Name" = "Nome";
+
+/* No comment provided by engineer. */
+"Needs You" = "Precisa de Você";
+
+/* No comment provided by engineer. */
+"Needs You is part of Corres Pro. Open Corres to start your free trial." = "Precisa de Você faz parte do Corres Pro. Abra o Corres para começar seu teste gratuito.";
+
+/* No comment provided by engineer. */
+"Needs You, Waiting or Handled" = "Precisa de Você, Aguardando ou Resolvido";
+
+/* No comment provided by engineer. */
+"New mail" = "Novos e-mails";
+
+/* No comment provided by engineer. */
+"New Message" = "Nova mensagem";
+
+/* No comment provided by engineer. */
+"New Message (⌘N)" = "Nova mensagem (⌘N)";
+
+/* No comment provided by engineer. */
+"New Senders" = "Novos remetentes";
+
+/* No comment provided by engineer. */
+"New Since Last Opened" = "Novos desde a última abertura";
+
+/* No comment provided by engineer. */
+"Next Week" = "Próxima semana";
+
+/* No comment provided by engineer. */
+"No accounts yet. Corres is showing sample mail." = "Nenhuma conta ainda. O Corres está mostrando e-mails de exemplo.";
+
+/* No comment provided by engineer. */
+"No action needed" = "Nenhuma ação necessária";
+
+/* No comment provided by engineer. */
+"No action needed: " = "Nenhuma ação necessária:";
+
+/* No comment provided by engineer. */
+"No conversations here." = "Nenhuma conversa aqui.";
+
+/* No comment provided by engineer. */
+"No number on the icon." = "Sem número no ícone.";
+
+/* No comment provided by engineer. */
+"No recipients" = "Sem destinatários";
+
+/* No comment provided by engineer. */
+"No reply in %lld days" = "Sem resposta há %lld dias";
+
+/* No comment provided by engineer. */
+"No reply in 1 day" = "Sem resposta há 1 dia";
+
+/* No comment provided by engineer. */
+"No signature selected" = "Nenhuma assinatura selecionada";
+
+/* No comment provided by engineer. */
+"Nothing for you to do" = "Nada para você fazer";
+
+/* No comment provided by engineer. */
+"Nothing matches “%@”." = "Nada corresponde a “%@”.";
+
+/* No comment provided by engineer. */
+"Nothing needs you" = "Nada precisa de você";
+
+/* No comment provided by engineer. */
+"Nothing needs you right now." = "Nada precisa de você agora.";
+
+/* No comment provided by engineer. */
+"Nothing scheduled" = "Nada agendado";
+
+/* No comment provided by engineer. */
+"Off" = "Desativado";
+
+/* No comment provided by engineer. */
+"OK" = "OK";
+
+/* No comment provided by engineer. */
+"On Calendar" = "No calendário";
+
+/* No comment provided by engineer. */
+"One conversation needs you." = "Uma conversa precisa de você.";
+
+/* No comment provided by engineer. */
+"Only %@" = "Só %@";
+
+/* No comment provided by engineer. */
+"Only what asks something of you, so the number means something." = "Só o que pede algo a você, para o número significar algo.";
+
+/* No comment provided by engineer. */
+"Only what Corres files in Needs You. The quietest option; an FYI from a person arrives silently." = "Só o que o Corres coloca em Precisa de Você. A opção mais silenciosa; um aviso informativo de uma pessoa chega em silêncio.";
+
+/* No comment provided by engineer. */
+"Only What Needs Me" = "Só o que precisa de mim";
+
+/* No comment provided by engineer. */
+"Open" = "Abrir";
+
+/* No comment provided by engineer. */
+"Open account.apple.com" = "Abrir account.apple.com";
+
+/* No comment provided by engineer. */
+"Open Corres" = "Abrir o Corres";
+
+/* No comment provided by engineer. */
+"Open Corres once so it can sort your mail." = "Abra o Corres uma vez para que ele possa classificar seus e-mails.";
+
+/* No comment provided by engineer. */
+"Open in New Window" = "Abrir em nova janela";
+
+/* No comment provided by engineer. */
+"Open List" = "Abrir lista";
+
+/* No comment provided by engineer. */
+"Open Needs You, Waiting or Mail in Corres." = "Abrir Precisa de Você, Aguardando ou E-mail no Corres.";
+
+/* No comment provided by engineer. */
+"Organize" = "Organizar";
+
+/* No comment provided by engineer. */
+"Other Email" = "Outro e-mail";
+
+/* No comment provided by engineer. */
+"Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Overdue" = "Atrasado";
+
+/* No comment provided by engineer. */
+"Overlaps %@" = "Conflita com %@";
+
+/* No comment provided by engineer. */
+"Overlaps %@ and %lld more" = "Conflita com %@ e mais %lld";
+
+/* No comment provided by engineer. */
+"Password" = "Senha";
+
+/* No comment provided by engineer. */
+"People and Time-Sensitive" = "Pessoas e urgentes";
+
+/* No comment provided by engineer. */
+"Plan" = "Plano";
+
+/* No comment provided by engineer. */
+"Primary" = "Principal";
+
+/* No comment provided by engineer. */
+"Print" = "Imprimir";
+
+/* No comment provided by engineer. */
+"Print (⌘P)" = "Imprimir (⌘P)";
+
+/* No comment provided by engineer. */
+"Print…" = "Imprimir…";
+
+/* No comment provided by engineer. */
+"Promotions" = "Promoções";
+
+/* No comment provided by engineer. */
+"Quick Look" = "Visualização Rápida";
+
+/* No comment provided by engineer. */
+"Quick Look %@" = "Visualização Rápida de %@";
+
+/* No comment provided by engineer. */
+"Read/Unread" = "Lido/Não lido";
+
+/* No comment provided by engineer. */
+"Redeem Code" = "Resgatar código";
+
+/* No comment provided by engineer. */
+"Remove" = "Remover";
+
+/* No comment provided by engineer. */
+"Remove “%@” from your calendar?" = "Remover “%@” do seu calendário?";
+
+/* No comment provided by engineer. */
+"Remove %@" = "Remover %@";
+
+/* No comment provided by engineer. */
+"Remove %@?" = "Remover %@?";
+
+/* No comment provided by engineer. */
+"Remove from Calendar" = "Remover do calendário";
+
+/* No comment provided by engineer. */
+"Remove this attachment" = "Remover este anexo";
+
+/* No comment provided by engineer. */
+"Remove…" = "Remover…";
+
+/* No comment provided by engineer. */
+"Replies" = "Respostas";
+
+/* No comment provided by engineer. */
+"Reply" = "Responder";
+
+/* No comment provided by engineer. */
+"Reply (⌘R, or R)" = "Responder (⌘R ou R)";
+
+/* No comment provided by engineer. */
+"Reply All" = "Responder a todos";
+
+/* No comment provided by engineer. */
+"Reply All (⇧⌘R, or A)" = "Responder a todos (⇧⌘R ou A)";
+
+/* No comment provided by engineer. */
+"Reported %lld as spam" = "%lld denunciados como spam";
+
+/* No comment provided by engineer. */
+"Reported as spam" = "Denunciado como spam";
+
+/* No comment provided by engineer. */
+"Restore Purchases" = "Restaurar compras";
+
+/* No comment provided by engineer. */
+"Same as Settings" = "Igual aos Ajustes";
+
+/* No comment provided by engineer. */
+"Sample mail · add an account in Settings" = "E-mails de exemplo · adicione uma conta nos Ajustes";
+
+/* No comment provided by engineer. */
+"Save As…" = "Salvar como…";
+
+/* No comment provided by engineer. */
+"Save to Downloads" = "Salvar em Downloads";
+
+/* No comment provided by engineer. */
+"Schedule" = "Agendar";
+
+/* No comment provided by engineer. */
+"Search, or ask a question" = "Busque ou faça uma pergunta";
+
+/* No comment provided by engineer. */
+"Searching your accounts…" = "Buscando nas suas contas…";
+
+/* No comment provided by engineer. */
+"Send" = "Enviar";
+
+/* No comment provided by engineer. */
+"Send (⇧⌘D)" = "Enviar (⇧⌘D)";
+
+/* No comment provided by engineer. */
+"Send and Share" = "Enviar e compartilhar";
+
+/* No comment provided by engineer. */
+"Send at" = "Enviar em";
+
+/* No comment provided by engineer. */
+"Send Later" = "Enviar depois";
+
+/* No comment provided by engineer. */
+"Send Now" = "Enviar agora";
+
+/* No comment provided by engineer. */
+"Send without a subject?" = "Enviar sem assunto?";
+
+/* No comment provided by engineer. */
+"Sends %@" = "Envia %@";
+
+/* No comment provided by engineer. */
+"Sends %@, from this Mac." = "Envia %@, deste Mac.";
+
+/* No comment provided by engineer. */
+"Sent" = "Enviados";
+
+/* No comment provided by engineer. */
+"Sent today" = "Enviado hoje";
+
+/* No comment provided by engineer. */
+"Show Images" = "Mostrar imagens";
+
+/* No comment provided by engineer. */
+"Show in menu bar" = "Mostrar na barra de menus";
+
+/* No comment provided by engineer. */
+"Show in Spotlight" = "Mostrar no Spotlight";
+
+/* No comment provided by engineer. */
+"Show One Account" = "Mostrar uma conta";
+
+/* No comment provided by engineer. */
+"Shows whether you're free then. Your calendar stays on this device." = "Mostra se você está livre nesse horário. Seu calendário fica neste dispositivo.";
+
+/* No comment provided by engineer. */
+"Sign In" = "Iniciar sessão";
+
+/* No comment provided by engineer. */
+"Signatures" = "Assinaturas";
+
+/* No comment provided by engineer. */
+"Signed out of %@. Sign in again to keep getting mail." = "Sessão encerrada em %@. Inicie sessão novamente para continuar recebendo e-mails.";
+
+/* No comment provided by engineer. */
+"Signing In…" = "Iniciando sessão…";
+
+/* No comment provided by engineer. */
+"Snooze" = "Adiar";
+
+/* No comment provided by engineer. */
+"Snooze (B)" = "Adiar (B)";
+
+/* No comment provided by engineer. */
+"Snooze until…" = "Adiar até…";
+
+/* No comment provided by engineer. */
+"Snoozed" = "Adiados";
+
+/* No comment provided by engineer. */
+"Social" = "Social";
+
+/* No comment provided by engineer. */
+"Something Went Wrong" = "Algo deu errado";
+
+/* No comment provided by engineer. */
+"Spam" = "Spam";
+
+/* No comment provided by engineer. */
+"Start a new email in Corres." = "Começar um novo e-mail no Corres.";
+
+/* No comment provided by engineer. */
+"Summaries (Apple Intelligence, on this Mac)" = "Resumos (Apple Intelligence, neste Mac)";
+
+/* No comment provided by engineer. */
+"The organizer canceled this event." = "O organizador cancelou este evento.";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd accepted the earlier version." = "O organizador alterou este evento. Você tinha aceitado a versão anterior.";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd declined the earlier version." = "O organizador alterou este evento. Você tinha recusado a versão anterior.";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd said maybe to the earlier version." = "O organizador alterou este evento. Você tinha respondido “talvez” à versão anterior.";
+
+/* No comment provided by engineer. */
+"This email is from a mailing list." = "Este e-mail é de uma lista de e-mails.";
+
+/* No comment provided by engineer. */
+"This Weekend" = "Este fim de semana";
+
+/* No comment provided by engineer. */
+"To " = "Para";
+
+/* No comment provided by engineer. */
+"Today" = "Hoje";
+
+/* No comment provided by engineer. */
+"today at %@" = "hoje às %@";
+
+/* No comment provided by engineer. */
+"Tomorrow" = "Amanhã";
+
+/* No comment provided by engineer. */
+"Tomorrow 8am, next friday, in 3 days" = "Tomorrow 8am, next friday, in 3 days";
+
+/* No comment provided by engineer. */
+"tomorrow at %@" = "amanhã às %@";
+
+/* No comment provided by engineer. */
+"Trash" = "Lixo";
+
+/* No comment provided by engineer. */
+"Undo" = "Desfazer";
+
+/* No comment provided by engineer. */
+"Unread" = "Não lidos";
+
+/* No comment provided by engineer. */
+"Unread in Primary" = "Não lidos em Principal";
+
+/* No comment provided by engineer. */
+"Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "E-mails não lidos de pessoas e tudo o que for urgente. Promoções, Social e Atualizações não contam.";
+
+/* No comment provided by engineer. */
+"Unsubscribe" = "Descadastrar";
+
+/* No comment provided by engineer. */
+"Unsubscribed. You won't get more from this list." = "Descadastrado. Você não receberá mais nada desta lista.";
+
+/* No comment provided by engineer. */
+"Unwanted Mail" = "E-mails indesejados";
+
+/* No comment provided by engineer. */
+"Updated %@" = "Atualizado %@";
+
+/* No comment provided by engineer. */
+"Updated Invitation" = "Convite atualizado";
+
+/* No comment provided by engineer. */
+"Updates" = "Atualizações";
+
+/* No comment provided by engineer. */
+"Use an app-specific password from account.apple.com → Sign-In and Security → App-Specific Passwords. You can turn it off there any time." = "Use uma senha de app específica de account.apple.com → Início de Sessão e Segurança → Senhas de App Específicas. Você pode desativá-la lá quando quiser.";
+
+/* No comment provided by engineer. */
+"Use for" = "Usar para";
+
+/* No comment provided by engineer. */
+"Waiting" = "Aguardando";
+
+/* No comment provided by engineer. */
+"Waiting on a reply" = "Aguardando resposta";
+
+/* No comment provided by engineer. */
+"Waiting: " = "Aguardando:";
+
+/* No comment provided by engineer. */
+"Was %@" = "Venceu em %@";
+
+/* No comment provided by engineer. */
+"What Needs Me" = "O que precisa de mim";
+
+/* No comment provided by engineer. */
+"Yahoo, AOL, Fastmail, Zoho or a work server. Corres finds the server settings for you." = "Yahoo, AOL, Fastmail, Zoho ou um servidor do trabalho. O Corres encontra os ajustes do servidor para você.";
+
+/* No comment provided by engineer. */
+"Yesterday" = "Ontem";
+
+/* No comment provided by engineer. */
+"You accepted" = "Você aceitou";
+
+/* No comment provided by engineer. */
+"You declined" = "Você recusou";
+
+/* No comment provided by engineer. */
+"You haven't opened the last %lld from %@." = "Você não abriu os últimos %lld de %@.";
+
+/* No comment provided by engineer. */
+"You read %@'s email within %lld minutes." = "Você lê os e-mails de %@ em até %lld minutos.";
+
+/* No comment provided by engineer. */
+"You read %@'s email within a minute." = "Você lê os e-mails de %@ em até um minuto.";
+
+/* No comment provided by engineer. */
+"You said maybe" = "Você respondeu talvez";
+
+/* No comment provided by engineer. */
+"You're free then" = "Você está livre nesse horário";
+
+/* No comment provided by engineer. */
+"You're waiting on %lld replies." = "Você está esperando %lld respostas.";
+
+/* No comment provided by engineer. */
+"You're waiting on one reply." = "Você está esperando uma resposta.";
+
+/* No comment provided by engineer. */
+"You're waiting on their reply" = "Você está esperando a resposta";
+
+/* No comment provided by engineer. */
+"You've replied to %@ %lld times lately." = "Você respondeu a %@ %lld vezes ultimamente.";
+

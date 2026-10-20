@@ -1,0 +1,147 @@
+/* No comment provided by engineer. */
+"%@ is over %@’s %@ limit. Remove something or pick a smaller size." = "%1$@이(가) %2$@의 %3$@ 한도를 초과합니다. 무언가를 제거하거나 더 작은 크기를 선택하세요.";
+
+/* No comment provided by engineer. */
+"%@ is over %@’s %@ limit. Remove something." = "%1$@이(가) %2$@의 %3$@ 한도를 초과합니다. 무언가를 제거하세요.";
+
+/* No comment provided by engineer. */
+"%@, %@" = "%@, %@";
+
+/* No comment provided by engineer. */
+"%@, not a valid address" = "%@, 유효한 주소가 아님";
+
+/* No comment provided by engineer. */
+"%@:" = "%@:";
+
+/* No comment provided by engineer. */
+"Actual Size" = "실제 크기";
+
+/* No comment provided by engineer. */
+"Add %@" = "%@ 추가";
+
+/* No comment provided by engineer. */
+"Add a message" = "메시지 추가";
+
+/* No comment provided by engineer. */
+"Add Subject" = "제목 추가";
+
+/* No comment provided by engineer. */
+"Asks something of you" = "나에게 무언가를 요청함";
+
+/* No comment provided by engineer. */
+"Bcc" = "숨은 참조";
+
+/* No comment provided by engineer. */
+"Cancel" = "취소";
+
+/* No comment provided by engineer. */
+"Cc" = "참조";
+
+/* No comment provided by engineer. */
+"Cc/Bcc" = "참조/숨은 참조";
+
+/* No comment provided by engineer. */
+"Cc/Bcc, From: %@" = "참조/숨은 참조, 보낸 사람: %@";
+
+/* No comment provided by engineer. */
+"Couldn’t Send" = "보낼 수 없음";
+
+/* No comment provided by engineer. */
+"Delete Draft" = "임시 저장 메일 삭제";
+
+/* No comment provided by engineer. */
+"Done: off your lists, still in Mail" = "처리됨: 목록에서 빠지고 메일에는 남음";
+
+/* No comment provided by engineer. */
+"Email" = "이메일";
+
+/* No comment provided by engineer. */
+"From:" = "보낸 사람:";
+
+/* No comment provided by engineer. */
+"Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Handled" = "처리됨";
+
+/* No comment provided by engineer. */
+"iCloud" = "iCloud";
+
+/* No comment provided by engineer. */
+"Large" = "크게";
+
+/* No comment provided by engineer. */
+"Medium" = "중간";
+
+/* No comment provided by engineer. */
+"Message" = "메시지";
+
+/* No comment provided by engineer. */
+"Move to %@" = "%@(으)로 이동";
+
+/* No comment provided by engineer. */
+"Needs You" = "나에게 필요";
+
+/* No comment provided by engineer. */
+"No action needed" = "조치 필요 없음";
+
+/* No comment provided by engineer. */
+"Nothing for you to do" = "할 일이 없음";
+
+/* No comment provided by engineer. */
+"OK" = "확인";
+
+/* No comment provided by engineer. */
+"Open Corres First" = "먼저 Corres를 여세요";
+
+/* No comment provided by engineer. */
+"Open Corres once (and add your email account if you haven’t), then share again to write right here." = "Corres를 한 번 열고(아직 이메일 계정을 추가하지 않았다면 추가하고), 다시 공유하면 여기서 바로 작성할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Photo Size" = "사진 크기";
+
+/* No comment provided by engineer. */
+"Primary" = "기본";
+
+/* No comment provided by engineer. */
+"Promotions" = "프로모션";
+
+/* No comment provided by engineer. */
+"Remove" = "제거";
+
+/* No comment provided by engineer. */
+"Remove %@" = "%@ 제거";
+
+/* No comment provided by engineer. */
+"Save Draft" = "임시 저장";
+
+/* No comment provided by engineer. */
+"Send" = "보내기";
+
+/* No comment provided by engineer. */
+"Send without a subject?" = "제목 없이 보내겠습니까?";
+
+/* No comment provided by engineer. */
+"Small" = "작게";
+
+/* No comment provided by engineer. */
+"Social" = "소셜";
+
+/* No comment provided by engineer. */
+"Subject:" = "제목:";
+
+/* No comment provided by engineer. */
+"To" = "받는 사람";
+
+/* No comment provided by engineer. */
+"Updates" = "업데이트";
+
+/* No comment provided by engineer. */
+"Waiting" = "대기 중";
+
+/* No comment provided by engineer. */
+"You're waiting on their reply" = "상대방의 답장을 기다리는 중";
+

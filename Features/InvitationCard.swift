@@ -122,8 +122,8 @@ struct InvitationCard: View {
     // MARK: What it says
 
     private var eyebrow: String {
-        if isCanceled { return "Canceled" }
-        return earlierAnswer != nil ? "Updated Invitation" : "Invitation"
+        if isCanceled { return String(localized: "Canceled") }
+        return earlierAnswer != nil ? String(localized: "Updated Invitation") : String(localized: "Invitation")
     }
 
     /// "Tuesday, October 20, 9:00 – 9:45 AM", in your own time zone.
@@ -161,8 +161,8 @@ struct InvitationCard: View {
     private var availability: some View {
         if calendar.canRead, invitation.start != nil, !invitation.isAllDay {
             if let first = overlaps.first {
-                let more = overlaps.count > 1 ? " and \(overlaps.count - 1) more" : ""
-                Label("Overlaps \(first)\(more)", systemImage: "exclamationmark.circle")
+                Label(overlaps.count > 1 ? "Overlaps \(first) and \(overlaps.count - 1) more" : "Overlaps \(first)",
+                      systemImage: "exclamationmark.circle")
                     .labelStyle(TightLabelStyle())
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(CorresPalette.flag)
@@ -264,7 +264,9 @@ struct InvitationCard: View {
         } else {
             VStack(alignment: .leading, spacing: 10) {
                 if let earlierAnswer {
-                    Text("The organizer changed this event. You'd \(earlierAnswer == .accepted ? "accepted" : earlierAnswer == .tentative ? "said maybe to" : "declined") the earlier version.")
+                    Text(earlierAnswer == .accepted ? "The organizer changed this event. You'd accepted the earlier version."
+                         : earlierAnswer == .tentative ? "The organizer changed this event. You'd said maybe to the earlier version."
+                         : "The organizer changed this event. You'd declined the earlier version.")
                         .font(.footnote).foregroundStyle(CorresPalette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -323,17 +325,17 @@ struct InvitationCard: View {
 
     private func youSaid(_ response: Invitation.Response) -> String {
         switch response {
-        case .accepted: "You accepted"
-        case .tentative: "You said maybe"
-        case .declined: "You declined"
+        case .accepted: String(localized: "You accepted")
+        case .tentative: String(localized: "You said maybe")
+        case .declined: String(localized: "You declined")
         }
     }
 
     private func title(_ response: Invitation.Response) -> String {
         switch response {
-        case .accepted: "Accept"
-        case .tentative: "Maybe"
-        case .declined: "Decline"
+        case .accepted: String(localized: "Accept")
+        case .tentative: String(localized: "Maybe")
+        case .declined: String(localized: "Decline")
         }
     }
 

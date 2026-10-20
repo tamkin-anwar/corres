@@ -1,0 +1,2187 @@
+/* No comment provided by engineer. */
+" · %lld due soon" = " · %lld 封即将到期";
+
+/* No comment provided by engineer. */
+" · %lld unread" = " · %lld 封未读";
+
+/* No comment provided by engineer. */
+" · Sample mail" = " · 示例邮件";
+
+/* No comment provided by engineer. */
+" Due %@." = " 截止%@。";
+
+/* No comment provided by engineer. */
+"·" = "·";
+
+/* No comment provided by engineer. */
+"“%@”" = "“%@”";
+
+/* No comment provided by engineer. */
+"%@" = "%@";
+
+/* No comment provided by engineer. */
+"%@ · %@" = "%@ · %@";
+
+/* No comment provided by engineer. */
+"%@ · not in All Inboxes" = "%@ · 不在“所有收件箱”中";
+
+/* No comment provided by engineer. */
+"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@/%@，自动续订。可随时在“设置”中取消。";
+
+/* No comment provided by engineer. */
+"%@ account" = "%@ 账户";
+
+/* No comment provided by engineer. */
+"%@ asks other mail apps for an app password instead of your usual one." = "%@ 要求其他邮件 App 使用 App 专用密码，而不是你平时的密码。";
+
+/* No comment provided by engineer. */
+"%@ at %@" = "%@ %@";
+
+/* No comment provided by engineer. */
+"%@ didn't answer the last check. Corres keeps trying." = "%@ 上次检查时没有响应。Corres 会继续尝试。";
+
+/* No comment provided by engineer. */
+"%@ didn't answer. Check your connection, or reconnect if it keeps happening." = "%@ 没有响应。请检查网络连接，如果持续出现，请重新连接。";
+
+/* No comment provided by engineer. */
+"%@ didn't answer. Check your connection, or update the app-specific password if it keeps happening." = "%@ 没有响应。请检查网络连接，如果持续出现，请更新 App 专用密码。";
+
+/* No comment provided by engineer. */
+"%@ free, then renews. Cancel anytime." = "免费%@，之后自动续订。可随时取消。";
+
+/* No comment provided by engineer. */
+"%@ is busy. Corres tries again in a moment." = "%@ 正忙。Corres 稍后会重试。";
+
+/* No comment provided by engineer. */
+"%@ said: %@" = "%@ 回复：%@";
+
+/* No comment provided by engineer. */
+"%@ turned down Corres's access. Reconnect below." = "%@ 拒绝了 Corres 的访问。请在下方重新连接。";
+
+/* No comment provided by engineer. */
+"%@, %@" = "%@，%@";
+
+/* No comment provided by engineer. */
+"%@, %@, %@" = "%@，%@，%@";
+
+/* No comment provided by engineer. */
+"%@, not a valid address" = "%@，不是有效的地址";
+
+/* No comment provided by engineer. */
+"%@%@ · last %@" = "%@%@ · 最近 %@";
+
+/* No comment provided by engineer. */
+"%lld" = "%lld";
+
+/* No comment provided by engineer. */
+"%lld attachments couldn't be added" = "%lld 个附件无法添加";
+
+/* No comment provided by engineer. */
+"%lld conversations" = "%lld 个对话";
+
+/* No comment provided by engineer. */
+"%lld conversations need you." = "%lld 个对话需要你。";
+
+/* No comment provided by engineer. */
+"%lld conversations waiting on a reply" = "%lld 个对话在等待回复";
+
+/* No comment provided by engineer. */
+"%lld days" = "%lld 天";
+
+/* No comment provided by engineer. */
+"%lld emails" = "%lld 封邮件";
+
+/* No comment provided by engineer. */
+"%lld more messages" = "还有 %lld 封邮件";
+
+/* No comment provided by engineer. */
+"%lld of %lld accounts" = "%lld/%lld 个账户";
+
+/* No comment provided by engineer. */
+"%lld seconds" = "%lld 秒";
+
+/* No comment provided by engineer. */
+"%lld Selected" = "已选择 %lld 项";
+
+/* No comment provided by engineer. */
+"%lld trackers blocked" = "已拦截 %lld 个追踪器";
+
+/* No comment provided by engineer. */
+"%lld unread" = "%lld 封未读";
+
+/* No comment provided by engineer. */
+"%lldd" = "%lld天";
+
+/* No comment provided by engineer. */
+"%llds" = "%lld秒";
+
+/* No comment provided by engineer. */
+"1 conversation" = "1 个对话";
+
+/* No comment provided by engineer. */
+"1 conversation waiting on a reply" = "1 个对话在等待回复";
+
+/* No comment provided by engineer. */
+"1 day" = "1 天";
+
+/* No comment provided by engineer. */
+"1 email" = "1 封邮件";
+
+/* No comment provided by engineer. */
+"1 Line" = "1 行";
+
+/* No comment provided by engineer. */
+"1 tracker blocked" = "已拦截 1 个追踪器";
+
+/* No comment provided by engineer. */
+"2 Lines" = "2 行";
+
+/* No comment provided by engineer. */
+"3 Lines" = "3 行";
+
+/* No comment provided by engineer. */
+"587" = "587";
+
+/* No comment provided by engineer. */
+"993" = "993";
+
+/* No comment provided by engineer. */
+"A long conversation: this covers its first and most recent messages." = "这是一段很长的对话：这里概括了最早和最近的邮件。";
+
+/* No comment provided by engineer. */
+"A long email: this covers its key sections and its ending." = "这是一封很长的邮件：这里概括了要点和结尾。";
+
+/* No comment provided by engineer. */
+"A one-sentence brief of your day, and what needs you first." = "一句话概括你的一天，以及最先需要你处理的事。";
+
+/* No comment provided by engineer. */
+"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "短扫立即执行；扫得更远则执行第二个操作。“稍后提醒”和“移到”在对话中轻点一下即可使用，也可按住某一行使用。";
+
+/* No comment provided by engineer. */
+"A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "一个小型中继服务会告诉 Corres 你的邮箱有变化。它从不会看到主题、发件人或邮件内容。";
+
+/* No comment provided by engineer. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "VIP 的邮件总是进入“需要你”，并总会通知你，即使你只是被抄送。可从其邮件的⋯菜单添加，或在列表中按住添加。轻扫即可移除。";
+
+/* No comment provided by engineer. */
+"Aa" = "Aa";
+
+/* No comment provided by engineer. */
+"Accept" = "接受";
+
+/* No comment provided by engineer. */
+"Account" = "账户";
+
+/* No comment provided by engineer. */
+"Account and settings" = "账户与设置";
+
+/* No comment provided by engineer. */
+"Account Connection" = "账户连接";
+
+/* No comment provided by engineer. */
+"Accounts" = "账户";
+
+/* No comment provided by engineer. */
+"Accounts and settings" = "账户与设置";
+
+/* No comment provided by engineer. */
+"Add" = "添加";
+
+/* No comment provided by engineer. */
+"Add %@" = "添加 %@";
+
+/* No comment provided by engineer. */
+"Add %@ to Calendar" = "将 %@ 添加到日历";
+
+/* No comment provided by engineer. */
+"Add %@ to VIPs" = "将 %@ 添加到 VIP";
+
+/* No comment provided by engineer. */
+"Add a Subject" = "添加主题";
+
+/* No comment provided by engineer. */
+"Add an Email Account" = "添加邮件账户";
+
+/* No comment provided by engineer. */
+"Add Attachment" = "添加附件";
+
+/* No comment provided by engineer. */
+"Add from Contacts" = "从通讯录添加";
+
+/* No comment provided by engineer. */
+"Add Link" = "添加链接";
+
+/* No comment provided by engineer. */
+"Add Signature" = "添加签名";
+
+/* No comment provided by engineer. */
+"Add to Calendar" = "添加到日历";
+
+/* No comment provided by engineer. */
+"Added" = "已添加";
+
+/* No comment provided by engineer. */
+"Added below what you write, above the email you're replying to." = "添加在你所写内容的下方、所回复邮件的上方。";
+
+/* No comment provided by engineer. */
+"Adding attachments to the forward" = "正在将附件添加到转发邮件";
+
+/* No comment provided by engineer. */
+"Adding attachments…" = "正在添加附件…";
+
+/* No comment provided by engineer. */
+"Addressing" = "填写收件人";
+
+/* No comment provided by engineer. */
+"Adds a Bcc field: people copied without the others seeing" = "添加密送栏：抄送的人互相看不到";
+
+/* No comment provided by engineer. */
+"Adds them to %@" = "将其添加到%@";
+
+/* No comment provided by engineer. */
+"After Archiving" = "归档后";
+
+/* No comment provided by engineer. */
+"All" = "全部";
+
+/* No comment provided by engineer. */
+"All accounts" = "所有账户";
+
+/* No comment provided by engineer. */
+"All Inboxes" = "所有收件箱";
+
+/* No comment provided by engineer. */
+"All mail" = "所有邮件";
+
+/* No comment provided by engineer. */
+"All Mail" = "所有邮件";
+
+/* No comment provided by engineer. */
+"All New Mail" = "所有新邮件";
+
+/* No comment provided by engineer. */
+"All of %@’s %@" = "%1$@的所有%2$@";
+
+/* No comment provided by engineer. */
+"All Unread" = "所有未读";
+
+/* No comment provided by engineer. */
+"Allow" = "允许";
+
+/* No comment provided by engineer. */
+"Allow %@" = "允许 %@";
+
+/* No comment provided by engineer. */
+"Allow %lld" = "允许 %lld 个";
+
+/* No comment provided by engineer. */
+"Allow 1 company?" = "允许 1 家公司？";
+
+/* No comment provided by engineer. */
+"Allow 1 person?" = "允许 1 个人？";
+
+/* No comment provided by engineer. */
+"Allow All" = "全部允许";
+
+/* No comment provided by engineer. */
+"Allow all %lld companies?" = "允许全部 %lld 家公司？";
+
+/* No comment provided by engineer. */
+"Allow all %lld people?" = "允许全部 %lld 个人？";
+
+/* No comment provided by engineer. */
+"Allow Corres to Change Out of Office" = "允许 Corres 更改自动回复";
+
+/* No comment provided by engineer. */
+"Allow Everyone from %@" = "允许来自 %@ 的所有人";
+
+/* No comment provided by engineer. */
+"Allowed" = "已允许";
+
+/* No comment provided by engineer. */
+"Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "同时忘记 Corres 注意到的习惯：你会打开哪些列表、先读谁的邮件，以及你常用的稍后提醒时间。";
+
+/* No comment provided by engineer. */
+"Also Sends As" = "其他发件地址";
+
+/* No comment provided by engineer. */
+"Always Load" = "始终载入";
+
+/* No comment provided by engineer. */
+"Annual" = "年付";
+
+/* No comment provided by engineer. */
+"Answer · from %lld emails" = "回答 · 来自 %lld 封邮件";
+
+/* No comment provided by engineer. */
+"Answer · from 1 email" = "回答 · 来自 1 封邮件";
+
+/* No comment provided by engineer. */
+"Answer from your mail" = "从你的邮件中找答案";
+
+/* No comment provided by engineer. */
+"Answers your question from your own email" = "从你自己的邮件中回答问题";
+
+/* No comment provided by engineer. */
+"Anything from a real person, plus bills, appointments and other mail with a date that matters. Newsletters, promotions and social updates arrive silently." = "来自真人的所有邮件，以及账单、预约等日期重要的邮件。简报、促销和社交动态会静默送达。";
+
+/* No comment provided by engineer. */
+"App Icon Badge" = "App 图标标记";
+
+/* No comment provided by engineer. */
+"App password" = "App 专用密码";
+
+/* No comment provided by engineer. */
+"Apple asks other mail apps for an app-specific password instead of your Apple Account password. It takes about a minute, once." = "Apple 要求其他邮件 App 使用 App 专用密码，而不是你的 Apple 账户密码。只需设置一次，大约一分钟。";
+
+/* No comment provided by engineer. */
+"Apple doesn't let other mail apps change iCloud's automatic reply. Set it at icloud.com/mail, under Settings, then Vacation." = "Apple 不允许其他邮件 App 更改 iCloud 的自动回复。请在 icloud.com/mail 的“设置”中的“休假”里设置。";
+
+/* No comment provided by engineer. */
+"Archive" = "归档";
+
+/* No comment provided by engineer. */
+"Archived" = "已归档";
+
+/* No comment provided by engineer. */
+"Archived %lld" = "已归档 %lld 个";
+
+/* No comment provided by engineer. */
+"As you type a name in To, Cc or search, Corres suggests people you email, the ones you write to most first, and people in your Contacts once you allow it. All on this %@. Press and hold a suggestion to stop seeing it." = "当你在收件人、抄送或搜索中输入名字时，Corres 会推荐你常联系的人，最常联系的排在最前；获得许可后，也会推荐通讯录中的人。一切都在这台%@上完成。按住某个建议即可不再显示。";
+
+/* No comment provided by engineer. */
+"Ask a question, get the answer from your own email, on this %@." = "提一个问题，在这台%@上从你自己的邮件中找到答案。";
+
+/* No comment provided by engineer. */
+"Ask Before Moving to Trash" = "移到废纸篓前询问";
+
+/* No comment provided by engineer. */
+"Ask First" = "先询问";
+
+/* No comment provided by engineer. */
+"Asks something of you" = "向你提出了请求";
+
+/* No comment provided by engineer. */
+"Asks you" = "向你提问";
+
+/* No comment provided by engineer. */
+"At a glance" = "一目了然";
+
+/* No comment provided by engineer. */
+"At the Top of Each Email" = "每封邮件顶部";
+
+/* No comment provided by engineer. */
+"Attach a File" = "附加文件";
+
+/* No comment provided by engineer. */
+"Attach a Photo" = "附加照片";
+
+/* No comment provided by engineer. */
+"Back to List" = "返回列表";
+
+/* No comment provided by engineer. */
+"Balanced" = "均衡";
+
+/* No comment provided by engineer. */
+"Balanced: email written to you by a person; mail you're only copied on stays in Mail." = "均衡：有人写给你的邮件；你只是被抄送的邮件留在“邮件”中。";
+
+/* No comment provided by engineer. */
+"Bcc" = "密送";
+
+/* No comment provided by engineer. */
+"Best regards,\nYour name\nTitle · Company" = "此致\n你的名字\n职位 · 公司";
+
+/* No comment provided by engineer. */
+"Block" = "屏蔽";
+
+/* No comment provided by engineer. */
+"Block %@" = "屏蔽 %@";
+
+/* No comment provided by engineer. */
+"Block %@?" = "屏蔽 %@？";
+
+/* No comment provided by engineer. */
+"Block %lld" = "屏蔽 %lld 个";
+
+/* No comment provided by engineer. */
+"Block 1 company?" = "屏蔽 1 家公司？";
+
+/* No comment provided by engineer. */
+"Block 1 person?" = "屏蔽 1 个人？";
+
+/* No comment provided by engineer. */
+"Block All" = "全部屏蔽";
+
+/* No comment provided by engineer. */
+"Block all %lld companies?" = "屏蔽全部 %lld 家公司？";
+
+/* No comment provided by engineer. */
+"Block all %lld people?" = "屏蔽全部 %lld 个人？";
+
+/* No comment provided by engineer. */
+"Block Everyone from %@" = "屏蔽来自 %@ 的所有人";
+
+/* No comment provided by engineer. */
+"Blocked" = "已屏蔽";
+
+/* No comment provided by engineer. */
+"Blocked senders' mail stays out of every list on this %@, and they're never told. Swipe to allow one again." = "被屏蔽发件人的邮件不会出现在这台%@上的任何列表中，对方也不会知道。轻扫即可重新允许。";
+
+/* No comment provided by engineer. */
+"Buy Lifetime · %@" = "购买终身版 · %@";
+
+/* No comment provided by engineer. */
+"Can't reach %@ right now. Corres keeps trying." = "目前无法连接 %@。Corres 会继续尝试。";
+
+/* No comment provided by engineer. */
+"Cancel" = "取消";
+
+/* No comment provided by engineer. */
+"Canceled" = "已取消";
+
+/* No comment provided by engineer. */
+"Cc" = "抄送";
+
+/* No comment provided by engineer. */
+"Cc you" = "抄送给你";
+
+/* No comment provided by engineer. */
+"Change" = "更改";
+
+/* No comment provided by engineer. */
+"Change Time" = "更改时间";
+
+/* No comment provided by engineer. */
+"Change where this conversation is sorted" = "更改此对话的分类位置";
+
+/* No comment provided by engineer. */
+"Check Your Calendar" = "查看你的日历";
+
+/* No comment provided by engineer. */
+"Check your connection and try again." = "请检查网络连接后重试。";
+
+/* No comment provided by engineer. */
+"Choose File" = "选择文件";
+
+/* No comment provided by engineer. */
+"Choose one from From when you write. Add or remove them in %@'s settings." = "写邮件时可在“发件人”中选择。可在%@的设置中添加或移除。";
+
+/* No comment provided by engineer. */
+"Choose one from the list." = "请从列表中选择一个。";
+
+/* No comment provided by engineer. */
+"Close" = "关闭";
+
+/* No comment provided by engineer. */
+"Closest matches" = "最接近的结果";
+
+/* No comment provided by engineer. */
+"Collapses this message" = "收起此邮件";
+
+/* No comment provided by engineer. */
+"Color" = "颜色";
+
+/* No comment provided by engineer. */
+"Companies · %lld" = "公司 · %lld";
+
+/* No comment provided by engineer. */
+"Company Rules" = "公司规则";
+
+/* No comment provided by engineer. */
+"Composing" = "撰写";
+
+/* No comment provided by engineer. */
+"Connect" = "连接";
+
+/* No comment provided by engineer. */
+"Connect %@" = "连接 %@";
+
+/* No comment provided by engineer. */
+"Connect an account to see Drafts, Sent, All Mail, Spam, Trash and your labels." = "连接账户后即可查看草稿、已发送、所有邮件、垃圾邮件、废纸篓和你的标签。";
+
+/* No comment provided by engineer. */
+"Connect iCloud Mail" = "连接 iCloud 邮件";
+
+/* No comment provided by engineer. */
+"Connect Your Email" = "连接你的邮箱";
+
+/* No comment provided by engineer. */
+"Continue" = "继续";
+
+/* No comment provided by engineer. */
+"Continue with %@" = "使用 %@ 继续";
+
+/* No comment provided by engineer. */
+"Continue with Google" = "使用 Google 继续";
+
+/* No comment provided by engineer. */
+"Continue with iCloud Mail" = "使用 iCloud 邮件继续";
+
+/* No comment provided by engineer. */
+"Continue with Microsoft" = "使用 Microsoft 继续";
+
+/* No comment provided by engineer. */
+"Conversation unavailable" = "对话不可用";
+
+/* No comment provided by engineer. */
+"Copy Address" = "拷贝地址";
+
+/* No comment provided by engineer. */
+"corres" = "corres";
+
+/* No comment provided by engineer. */
+"Corres asks them to stop, the way their own unsubscribe link does. Block also hides anything they still send." = "Corres 会像对方自己的退订链接那样请求停止发送。屏蔽还会隐藏对方之后发来的任何邮件。";
+
+/* No comment provided by engineer. */
+"Corres learns from your corrections, on this %@. Every lesson is listed there, and you can make it forget any of them." = "Corres 在这台%@上从你的更正中学习。每一条学到的内容都列在那里，你可以让它忘记其中任何一条。";
+
+/* No comment provided by engineer. */
+"Corres Pro" = "Corres Pro";
+
+/* No comment provided by engineer. */
+"Corres Pro · Annual" = "Corres Pro · 年付";
+
+/* No comment provided by engineer. */
+"Corres Pro · Lifetime" = "Corres Pro · 终身";
+
+/* No comment provided by engineer. */
+"Corres Pro · Monthly" = "Corres Pro · 月付";
+
+/* No comment provided by engineer. */
+"Corres remembers this for the mail you choose, and %@ learns it too. Change it any time in Settings > Sorting > What Corres Has Learned." = "Corres 会对你选择的邮件记住这一点，%@ 也会学到。你可以随时在“设置”>“分类”>“Corres 学到的内容”中更改。";
+
+/* No comment provided by engineer. */
+"Corres sends it from this %@ at that time, or the moment it can if your %@ is off or offline." = "Corres 会在那个时间从这台%@发送；如果你的%@已关机或离线，会在可以发送时立即发送。";
+
+/* No comment provided by engineer. */
+"Couldn't Attach File" = "无法附加文件";
+
+/* No comment provided by engineer. */
+"Couldn't Change Your Calendar" = "无法更改你的日历";
+
+/* No comment provided by engineer. */
+"Couldn't Connect" = "无法连接";
+
+/* No comment provided by engineer. */
+"Couldn't Download Attachment" = "无法下载附件";
+
+/* No comment provided by engineer. */
+"Couldn't Finish That" = "无法完成";
+
+/* No comment provided by engineer. */
+"Couldn't load %@" = "无法载入 %@";
+
+/* No comment provided by engineer. */
+"Couldn't load Drafts" = "无法载入草稿";
+
+/* No comment provided by engineer. */
+"Couldn't Open Draft" = "无法打开草稿";
+
+/* No comment provided by engineer. */
+"Couldn't reach %@. Check your connection." = "无法连接 %@。请检查网络连接。";
+
+/* No comment provided by engineer. */
+"Couldn't Save" = "无法存储";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”" = "无法发送“%@”";
+
+/* No comment provided by engineer. */
+"Couldn't Sync" = "无法同步";
+
+/* No comment provided by engineer. */
+"Couldn't Turn On Notifications" = "无法开启通知";
+
+/* No comment provided by engineer. */
+"Couldn't Unsubscribe" = "无法退订";
+
+/* No comment provided by engineer. */
+"Customize" = "自定";
+
+/* No comment provided by engineer. */
+"Dark" = "深色";
+
+/* No comment provided by engineer. */
+"Decline" = "拒绝";
+
+/* No comment provided by engineer. */
+"Default Browser" = "默认浏览器";
+
+/* No comment provided by engineer. */
+"Default Reply" = "默认回复方式";
+
+/* No comment provided by engineer. */
+"Delete" = "删除";
+
+/* No comment provided by engineer. */
+"Delete Draft" = "删除草稿";
+
+/* No comment provided by engineer. */
+"Deleted %lld" = "已删除 %lld 个";
+
+/* No comment provided by engineer. */
+"Deselect All" = "全部取消选择";
+
+/* No comment provided by engineer. */
+"Dictate" = "听写";
+
+/* No comment provided by engineer. */
+"Dictation" = "听写";
+
+/* No comment provided by engineer. */
+"Did you mean to attach something?" = "你是想附加什么吗？";
+
+/* No comment provided by engineer. */
+"Discard" = "放弃";
+
+/* No comment provided by engineer. */
+"Don’t Suggest" = "不再推荐";
+
+/* No comment provided by engineer. */
+"Don’t Suggest %@" = "不再推荐 %@";
+
+/* No comment provided by engineer. */
+"Done" = "完成";
+
+/* No comment provided by engineer. */
+"Done: off your lists, still in Mail" = "已处理：离开你的列表，仍在“邮件”中";
+
+/* No comment provided by engineer. */
+"Drafts" = "草稿";
+
+/* No comment provided by engineer. */
+"Drafts this reply on your %@ for you to review" = "在你的%@上为这封回复起草，供你查看";
+
+/* No comment provided by engineer. */
+"Drafts you start anywhere show up here." = "你在任何地方开始的草稿都会显示在这里。";
+
+/* No comment provided by engineer. */
+"Drafts, Sent, All Mail, Spam, Trash and labels" = "草稿、已发送、所有邮件、垃圾邮件、废纸篓和标签";
+
+/* No comment provided by engineer. */
+"Drag to reorder, up to %lld. Reply always stays beside the bar." = "拖移以重新排序，最多 %lld 个。“回复”始终在工具栏旁边。";
+
+/* No comment provided by engineer. */
+"During this Focus, Corres shows and notifies for this account only." = "在此专注模式下，Corres 只显示和通知这个账户的邮件。";
+
+/* No comment provided by engineer. */
+"Edit" = "编辑";
+
+/* No comment provided by engineer. */
+"Edit Signatures" = "编辑签名";
+
+/* No comment provided by engineer. */
+"Email" = "邮件";
+
+/* No comment provided by engineer. */
+"Email Account" = "邮件账户";
+
+/* No comment provided by engineer. */
+"Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "需要你回应的邮件，在这台%@上分类。处理完了？轻扫或轻点“已处理”：它会离开此列表，仍保留在“邮件”中，并在“邮箱”→“已处理”里等着。分错了？按住即可移动。";
+
+/* No comment provided by engineer. */
+"Email Toolbar" = "邮件工具栏";
+
+/* No comment provided by engineer. */
+"Email, considered." = "邮件，用心而为。";
+
+/* No comment provided by engineer. */
+"Ends" = "结束";
+
+/* No comment provided by engineer. */
+"Enter Server Settings" = "输入服务器设置";
+
+/* No comment provided by engineer. */
+"Enter your address and Corres finds your mail server for you." = "输入你的地址，Corres 会帮你找到邮件服务器。";
+
+/* No comment provided by engineer. */
+"Every account shares All Inboxes, newest first, each marked with its color. Switch to one account by tapping your photo." = "所有账户共享“所有收件箱”，最新的在前，并以各自的颜色标记。轻点你的照片可切换到单个账户。";
+
+/* No comment provided by engineer. */
+"Every account shares one inbox, newest first. Switch to one account from the top of any screen." = "所有账户共享一个收件箱，最新的在前。在任一屏幕顶部即可切换到单个账户。";
+
+/* No comment provided by engineer. */
+"Every account, newest first" = "所有账户，最新的在前";
+
+/* No comment provided by engineer. */
+"Every new email in your inbox, newsletters and promotions included." = "收件箱中的每封新邮件，包括简报和促销。";
+
+/* No comment provided by engineer. */
+"Every unread email in your inbox, newsletters included." = "收件箱中的每封未读邮件，包括简报。";
+
+/* No comment provided by engineer. */
+"Everyday" = "常用";
+
+/* No comment provided by engineer. */
+"Everyone who has emailed you, from mail on this %@. Swipe left to block or allow, right to unsubscribe, or press and hold for more." = "根据这台%@上的邮件，列出给你发过邮件的所有人。向左轻扫以屏蔽或允许，向右轻扫以退订，按住可查看更多。";
+
+/* No comment provided by engineer. */
+"Everyone who owes you a reply, and for how long." = "欠你回复的所有人，以及等了多久。";
+
+/* No comment provided by engineer. */
+"Everyone who's reached you so far has already been reviewed." = "目前联系过你的人都已审核完毕。";
+
+/* No comment provided by engineer. */
+"Everything" = "全部";
+
+/* No comment provided by engineer. */
+"Everything Else" = "其他所有邮件";
+
+/* No comment provided by engineer. */
+"Everything from %@" = "来自 %@ 的所有邮件";
+
+/* No comment provided by engineer. */
+"Everything from People" = "来自个人的所有邮件";
+
+/* No comment provided by engineer. */
+"Everything from people: every email from a person, including ones you're copied on." = "来自个人的所有邮件：每封来自真人的邮件，包括你被抄送的邮件。";
+
+/* No comment provided by engineer. */
+"Everything that makes Corres Corres." = "让 Corres 成为 Corres 的一切。";
+
+/* No comment provided by engineer. */
+"Explore Corres" = "探索 Corres";
+
+/* No comment provided by engineer. */
+"Find your conversations from Search on the Home Screen, by who sent them, the subject or what they say. The index stays on this %@." = "在主屏幕的搜索中，按发件人、主题或内容查找你的对话。索引只保留在这台%@上。";
+
+/* No comment provided by engineer. */
+"Finding your mail server…" = "正在查找你的邮件服务器…";
+
+/* No comment provided by engineer. */
+"Finds this event on your calendar so you can remove it. Your calendar stays on this device." = "在你的日历中找到此日程，以便你将其移除。你的日历只保留在这台设备上。";
+
+/* No comment provided by engineer. */
+"First email from %@" = "%@ 的第一封邮件";
+
+/* No comment provided by engineer. */
+"First email from them" = "对方的第一封邮件";
+
+/* No comment provided by engineer. */
+"First emails from people you haven't allowed or blocked yet." = "你还没有允许或屏蔽的人发来的第一封邮件。";
+
+/* No comment provided by engineer. */
+"Flag" = "旗标";
+
+/* No comment provided by engineer. */
+"Flag a conversation to keep it here." = "给对话加旗标即可保留在这里。";
+
+/* No comment provided by engineer. */
+"Flagged" = "已加旗标";
+
+/* No comment provided by engineer. */
+"Focused" = "专注";
+
+/* No comment provided by engineer. */
+"Focused: only email that asks something of you, has a deadline, or is from a VIP or someone you write to." = "专注：只有向你提出请求、有截止日期，或来自 VIP 或你常联系的人的邮件。";
+
+/* No comment provided by engineer. */
+"Folders" = "文件夹";
+
+/* No comment provided by engineer. */
+"Follow up" = "跟进";
+
+/* No comment provided by engineer. */
+"Follow Up After" = "跟进间隔";
+
+/* No comment provided by engineer. */
+"Follows Settings → Notifications: %@." = "跟随“设置”→“通知”：%@。";
+
+/* No comment provided by engineer. */
+"Forget Everything" = "全部忘记";
+
+/* No comment provided by engineer. */
+"Formatting" = "格式";
+
+/* No comment provided by engineer. */
+"Forward" = "转发";
+
+/* No comment provided by engineer. */
+"Forward Without Them" = "不带附件转发";
+
+/* No comment provided by engineer. */
+"Free" = "免费";
+
+/* No comment provided by engineer. */
+"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/%@。在试用结束前于“设置”中取消即不会收费。";
+
+/* No comment provided by engineer. */
+"Free trial · first charge %@" = "免费试用 · 首次扣款 %@";
+
+/* No comment provided by engineer. */
+"From" = "发件人";
+
+/* No comment provided by engineer. */
+"From a Person" = "来自个人";
+
+/* No comment provided by engineer. */
+"From how you treat each sender's mail, counted on this %@." = "根据你如何处理每位发件人的邮件，在这台%@上统计。";
+
+/* No comment provided by engineer. */
+"From someone" = "来自某人";
+
+/* No comment provided by engineer. */
+"Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail、Outlook、iCloud 邮件、Yahoo、AOL、Fastmail 以及几乎所有其他邮箱。你的邮件在这台%@上分类和阅读。";
+
+/* No comment provided by engineer. */
+"Handled" = "已处理";
+
+/* No comment provided by engineer. */
+"Handled. It's off your lists and stays in Mail and in Mailboxes → Handled." = "已处理。它离开你的列表，仍保留在“邮件”和“邮箱”→“已处理”中。";
+
+/* No comment provided by engineer. */
+"Has attachments" = "有附件";
+
+/* No comment provided by engineer. */
+"Hear what's in Needs You and who you're waiting on." = "听听“需要你”里有什么，以及你在等谁回复。";
+
+/* No comment provided by engineer. */
+"Held: they replied first. Tap to send or change it." = "已暂缓：对方先回复了。轻点以发送或更改。";
+
+/* No comment provided by engineer. */
+"Hidden" = "已隐藏";
+
+/* No comment provided by engineer. */
+"Hide formatting" = "隐藏格式";
+
+/* No comment provided by engineer. */
+"Hides the summary" = "隐藏摘要";
+
+/* No comment provided by engineer. */
+"Hides this mailbox" = "隐藏此邮箱";
+
+/* No comment provided by engineer. */
+"How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits." = "每封邮件在“邮件”中显示多少内容。“需要你”和“等待中”保持一行，以便显示原因。";
+
+/* No comment provided by engineer. */
+"How your lists look, what each swipe does, and the actions under an email." = "列表的外观、每次轻扫的操作，以及邮件下方的操作。";
+
+/* No comment provided by engineer. */
+"https://" = "https://";
+
+/* No comment provided by engineer. */
+"I'm away until…" = "我外出至…";
+
+/* No comment provided by engineer. */
+"iCloud" = "iCloud";
+
+/* No comment provided by engineer. */
+"iCloud Mail" = "iCloud 邮件";
+
+/* No comment provided by engineer. */
+"iCloud needs a new password" = "iCloud 需要新密码";
+
+/* No comment provided by engineer. */
+"iCloud stopped accepting the password Corres had, usually because your Apple Account password changed. Make a new one and Corres picks up where it left off." = "iCloud 不再接受 Corres 使用的密码，通常是因为你的 Apple 账户密码已更改。创建一个新的，Corres 就会从中断处继续。";
+
+/* No comment provided by engineer. */
+"If Corres freezes or closes, Send Diagnostics shares what it recorded: the build, the iOS version and where it stopped. Never your mail." = "如果 Corres 卡住或关闭，“发送诊断信息”会分享它记录的内容：版本号、iOS 版本以及停止的位置。绝不包括你的邮件。";
+
+/* No comment provided by engineer. */
+"If iCloud stops syncing, make a new app-specific password at account.apple.com and update it here." = "如果 iCloud 停止同步，请在 account.apple.com 创建新的 App 专用密码，并在这里更新。";
+
+/* No comment provided by engineer. */
+"If marking as read, archiving or flagging stops working, reconnect and keep every permission checked." = "如果标记为已读、归档或加旗标失效，请重新连接，并保留所有权限的勾选。";
+
+/* No comment provided by engineer. */
+"If this account stops syncing, its password may have changed. Update it here." = "如果此账户停止同步，可能是密码已更改。请在这里更新。";
+
+/* No comment provided by engineer. */
+"Images from the web stay off until you tap Show Images, so senders can't tell when you opened their email. Trusting a sender loads theirs from then on." = "网络图片在你轻点“显示图片”之前保持关闭，因此发件人无法得知你何时打开了邮件。信任某位发件人后，其图片将始终载入。";
+
+/* No comment provided by engineer. */
+"Images load as soon as you open an email. Senders using tracking images can see when you opened it." = "打开邮件时会立即载入图片。使用追踪图片的发件人可以得知你何时打开了邮件。";
+
+/* No comment provided by engineer. */
+"Images off" = "图片已关闭";
+
+/* No comment provided by engineer. */
+"imap.example.com" = "imap.example.com";
+
+/* No comment provided by engineer. */
+"in 3 days at 9am" = "in 3 days at 9am";
+
+/* No comment provided by engineer. */
+"In 3 Hours" = "3 小时后";
+
+/* No comment provided by engineer. */
+"In Corres" = "在 Corres 中";
+
+/* No comment provided by engineer. */
+"In short" = "简而言之";
+
+/* No comment provided by engineer. */
+"In Spam. Links and images may be unsafe." = "在垃圾邮件中。链接和图片可能不安全。";
+
+/* No comment provided by engineer. */
+"In Trash" = "在废纸篓中";
+
+/* No comment provided by engineer. */
+"Include People from Your Contacts" = "包括通讯录中的人";
+
+/* No comment provided by engineer. */
+"Included for beta testers" = "测试版用户免费使用";
+
+/* No comment provided by engineer. */
+"Incoming (IMAP)" = "收件（IMAP）";
+
+/* No comment provided by engineer. */
+"Instant Notifications" = "即时通知";
+
+/* No comment provided by engineer. */
+"Intelligence" = "智能";
+
+/* No comment provided by engineer. */
+"Invitation" = "邀请";
+
+/* No comment provided by engineer. */
+"It leaves Needs You and Waiting until then, and stays in Mail and search the whole time." = "在此之前，它会离开“需要你”和“等待中”，但始终保留在“邮件”和搜索中。";
+
+/* No comment provided by engineer. */
+"Its mail is marked with this color in All Inboxes, so you can tell your accounts apart at a glance." = "在“所有收件箱”中，此账户的邮件以这种颜色标记，让你一眼分清各个账户。";
+
+/* No comment provided by engineer. */
+"Its mail is removed from this %@. It stays in %@." = "此账户的邮件将从这台%@上移除，但仍保留在 %@ 中。";
+
+/* No comment provided by engineer. */
+"Join %@" = "加入 %@";
+
+/* No comment provided by engineer. */
+"Just This Email" = "仅这封邮件";
+
+/* No comment provided by engineer. */
+"Keep Editing" = "继续编辑";
+
+/* No comment provided by engineer. */
+"Keep several, like a full one for new email and a short one for replies, and choose each account's." = "可保留多个签名，比如新邮件用完整版、回复用简短版，并为每个账户选择。";
+
+/* No comment provided by engineer. */
+"Kept on this %@" = "保存在这台%@上";
+
+/* No comment provided by engineer. */
+"Kept out of All Inboxes, Needs You and Waiting. It still syncs; switch to it by tapping your photo." = "不出现在“所有收件箱”、“需要你”和“等待中”。仍会同步；轻点你的照片即可切换到它。";
+
+/* No comment provided by engineer. */
+"Key Details" = "关键信息";
+
+/* No comment provided by engineer. */
+"Labels" = "标签";
+
+/* No comment provided by engineer. */
+"Later Today" = "今天晚些时候";
+
+/* No comment provided by engineer. */
+"Learn from My Changes" = "从我的更改中学习";
+
+/* No comment provided by engineer. */
+"Lessons" = "学到的内容";
+
+/* No comment provided by engineer. */
+"Lifetime" = "终身";
+
+/* No comment provided by engineer. */
+"Light" = "浅色";
+
+/* No comment provided by engineer. */
+"List" = "列表";
+
+/* No comment provided by engineer. */
+"Lists" = "列表";
+
+/* No comment provided by engineer. */
+"Loading older mail…" = "正在载入更早的邮件…";
+
+/* No comment provided by engineer. */
+"Loading the full message…" = "正在载入完整邮件…";
+
+/* No comment provided by engineer. */
+"Long Swipe" = "长扫";
+
+/* No comment provided by engineer. */
+"Looking in your mail for “%@”…" = "正在你的邮件中查找“%@”…";
+
+/* No comment provided by engineer. */
+"Mail" = "邮件";
+
+/* No comment provided by engineer. */
+"Mail that arrived since you last left Corres. Opening Corres clears it." = "你上次离开 Corres 后收到的邮件。打开 Corres 即清零。";
+
+/* No comment provided by engineer. */
+"Mailboxes" = "邮箱";
+
+/* No comment provided by engineer. */
+"Mailing list" = "邮件列表";
+
+/* No comment provided by engineer. */
+"Make a new app-specific password and paste it here. Corres keeps your mail and settings as they are." = "创建新的 App 专用密码并粘贴到这里。Corres 会保留你的邮件和设置不变。";
+
+/* No comment provided by engineer. */
+"Make an app password" = "创建 App 专用密码";
+
+/* No comment provided by engineer. */
+"Make an app-specific password" = "创建 App 专用密码";
+
+/* No comment provided by engineer. */
+"Make VIP" = "设为 VIP";
+
+/* No comment provided by engineer. */
+"Manage Accounts and Settings" = "管理账户与设置";
+
+/* No comment provided by engineer. */
+"Manage Subscription" = "管理订阅";
+
+/* No comment provided by engineer. */
+"Mark as Read" = "标记为已读";
+
+/* No comment provided by engineer. */
+"Mark as Read When Opened" = "打开时标记为已读";
+
+/* No comment provided by engineer. */
+"Mark as Unread" = "标记为未读";
+
+/* No comment provided by engineer. */
+"Mark Read/Unread" = "标记为已读/未读";
+
+/* No comment provided by engineer. */
+"Maybe" = "待定";
+
+/* No comment provided by engineer. */
+"Message" = "邮件";
+
+/* No comment provided by engineer. */
+"month" = "月";
+
+/* No comment provided by engineer. */
+"Monthly" = "月付";
+
+/* No comment provided by engineer. */
+"More" = "更多";
+
+/* No comment provided by engineer. */
+"More actions" = "更多操作";
+
+/* No comment provided by engineer. */
+"More for %@" = "%@的更多选项";
+
+/* No comment provided by engineer. */
+"Morning Brief" = "晨间简报";
+
+/* No comment provided by engineer. */
+"Most Email" = "大部分邮件";
+
+/* No comment provided by engineer. */
+"Most Recent" = "最新";
+
+/* No comment provided by engineer. */
+"Move %lld conversations to Trash?" = "将 %lld 个对话移到废纸篓？";
+
+/* No comment provided by engineer. */
+"Move this conversation to Trash?" = "将此对话移到废纸篓？";
+
+/* No comment provided by engineer. */
+"Move To" = "移到";
+
+/* No comment provided by engineer. */
+"Move to %@" = "移到 %@";
+
+/* No comment provided by engineer. */
+"Move to Category" = "移到类别";
+
+/* No comment provided by engineer. */
+"Move to Drafts" = "移到草稿";
+
+/* No comment provided by engineer. */
+"Move to Inbox" = "移到收件箱";
+
+/* No comment provided by engineer. */
+"Move to Trash" = "移到废纸篓";
+
+/* No comment provided by engineer. */
+"Moved" = "已移动";
+
+/* No comment provided by engineer. */
+"Moved to %@" = "已移到 %@";
+
+/* No comment provided by engineer. */
+"Moved to Trash" = "已移到废纸篓";
+
+/* No comment provided by engineer. */
+"Name" = "名称";
+
+/* No comment provided by engineer. */
+"Name is what Corres calls this account, like Work or Personal. Your Name is who your email is from." = "“名称”是 Corres 对此账户的称呼，比如工作或个人。“你的名字”是邮件发件人显示的名字。";
+
+/* No comment provided by engineer. */
+"Name or address" = "名字或地址";
+
+/* No comment provided by engineer. */
+"Name, like Full or Short" = "名称，比如完整版或简短版";
+
+/* No comment provided by engineer. */
+"Needs an Account" = "需要账户";
+
+/* No comment provided by engineer. */
+"Needs You" = "需要你";
+
+/* No comment provided by engineer. */
+"Needs You is part of Corres Pro. Open Corres to start your free trial." = "“需要你”是 Corres Pro 的一部分。打开 Corres 开始免费试用。";
+
+/* No comment provided by engineer. */
+"Never for This Sender" = "对此发件人从不使用";
+
+/* No comment provided by engineer. */
+"New" = "新";
+
+/* No comment provided by engineer. */
+"NEW" = "新";
+
+/* No comment provided by engineer. */
+"New Emails" = "新邮件";
+
+/* No comment provided by engineer. */
+"New Mail" = "新邮件";
+
+/* No comment provided by engineer. */
+"New message" = "新邮件";
+
+/* No comment provided by engineer. */
+"New Message" = "新邮件";
+
+/* No comment provided by engineer. */
+"New sender" = "新发件人";
+
+/* No comment provided by engineer. */
+"New Senders" = "新发件人";
+
+/* No comment provided by engineer. */
+"New Since Last Opened" = "上次打开后的新邮件";
+
+/* No comment provided by engineer. */
+"Newest first" = "最新的在前";
+
+/* No comment provided by engineer. */
+"Newsletters, stores and services: anyone who sends with an unsubscribe link. Swipe right to unsubscribe." = "简报、商店和服务：发送时附带退订链接的发件人。向右轻扫即可退订。";
+
+/* No comment provided by engineer. */
+"Next" = "下一个";
+
+/* No comment provided by engineer. */
+"Next conversation" = "下一个对话";
+
+/* No comment provided by engineer. */
+"Next Conversation" = "下一个对话";
+
+/* No comment provided by engineer. */
+"Next step" = "下一步";
+
+/* No comment provided by engineer. */
+"Next step: %@" = "下一步：%@";
+
+/* No comment provided by engineer. */
+"Next Week" = "下周";
+
+/* No comment provided by engineer. */
+"No action needed" = "无需处理";
+
+/* No comment provided by engineer. */
+"No action needed: %@" = "无需处理：%@";
+
+/* No comment provided by engineer. */
+"No action needed." = "无需处理。";
+
+/* No comment provided by engineer. */
+"No conversation selected" = "未选择对话";
+
+/* No comment provided by engineer. */
+"No mail here" = "这里没有邮件";
+
+/* No comment provided by engineer. */
+"No new companies." = "没有新公司。";
+
+/* No comment provided by engineer. */
+"No new people." = "没有新联系人。";
+
+/* No comment provided by engineer. */
+"No new senders" = "没有新发件人";
+
+/* No comment provided by engineer. */
+"No new senders waiting." = "没有等待中的新发件人。";
+
+/* No comment provided by engineer. */
+"No number on the icon." = "图标上不显示数字。";
+
+/* No comment provided by engineer. */
+"No reply in %lld days" = "%lld 天未回复";
+
+/* No comment provided by engineer. */
+"No reply in 1 day" = "1 天未回复";
+
+/* No comment provided by engineer. */
+"No senders yet." = "还没有发件人。";
+
+/* No comment provided by engineer. */
+"No Signature" = "无签名";
+
+/* No comment provided by engineer. */
+"No spam. Spam is emptied after 30 days." = "没有垃圾邮件。垃圾邮件会在 30 天后清空。";
+
+/* No comment provided by engineer. */
+"No subscriptions yet." = "还没有订阅。";
+
+/* No comment provided by engineer. */
+"No VIPs yet" = "还没有 VIP";
+
+/* No comment provided by engineer. */
+"Nobody blocked." = "没有屏蔽任何人。";
+
+/* No comment provided by engineer. */
+"None" = "无";
+
+/* No comment provided by engineer. */
+"Not available" = "不可用";
+
+/* No comment provided by engineer. */
+"Not found" = "未找到";
+
+/* No comment provided by engineer. */
+"Not Now" = "以后再说";
+
+/* No comment provided by engineer. */
+"Not Spam" = "不是垃圾邮件";
+
+/* No comment provided by engineer. */
+"Nothing for you to do" = "你无需做什么";
+
+/* No comment provided by engineer. */
+"Nothing here." = "这里什么也没有。";
+
+/* No comment provided by engineer. */
+"Nothing in %@" = "%@中没有内容";
+
+/* No comment provided by engineer. */
+"Nothing in Needs You" = "“需要你”中没有内容";
+
+/* No comment provided by engineer. */
+"Nothing in Waiting" = "“等待中”没有内容";
+
+/* No comment provided by engineer. */
+"Nothing in your mail matched “%@”. Try a name, a company, or fewer words." = "你的邮件中没有与“%@”匹配的内容。试试名字、公司或更少的词。";
+
+/* No comment provided by engineer. */
+"Nothing needs you right now." = "现在没有需要你的事。";
+
+/* No comment provided by engineer. */
+"Nothing scheduled. Press and hold Send to send an email later." = "没有已安排的邮件。按住“发送”即可稍后发送邮件。";
+
+/* No comment provided by engineer. */
+"Nothing yet. Corres learns as you correct it." = "还没有内容。你每次更正，Corres 都会学习。";
+
+/* No comment provided by engineer. */
+"Notifications" = "通知";
+
+/* No comment provided by engineer. */
+"Notify Me About" = "通知我";
+
+/* No comment provided by engineer. */
+"Off" = "关闭";
+
+/* No comment provided by engineer. */
+"OK" = "好";
+
+/* No comment provided by engineer. */
+"On" = "打开";
+
+/* No comment provided by engineer. */
+"On Calendar" = "已在日历中";
+
+/* No comment provided by engineer. */
+"On the Bar" = "在工具栏上";
+
+/* No comment provided by engineer. */
+"On this %@" = "在这台%@上";
+
+/* No comment provided by engineer. */
+"once" = "一次";
+
+/* No comment provided by engineer. */
+"One attachment couldn't be added" = "有 1 个附件无法添加";
+
+/* No comment provided by engineer. */
+"One conversation needs you." = "1 个对话需要你。";
+
+/* No comment provided by engineer. */
+"One moment" = "请稍候";
+
+/* No comment provided by engineer. */
+"One payment of %@. No subscription." = "一次性支付 %@。不是订阅。";
+
+/* No comment provided by engineer. */
+"One quiet notification a day with what needs you and who you're waiting on. Tap it to open Needs You." = "每天一条安静的通知，告诉你什么需要你处理、你在等谁回复。轻点即可打开“需要你”。";
+
+/* No comment provided by engineer. */
+"Only %@" = "仅 %@";
+
+/* No comment provided by engineer. */
+"Only Reply to My Contacts" = "仅回复我的联系人";
+
+/* No comment provided by engineer. */
+"Only what asks something of you, so the number means something." = "只统计向你提出请求的邮件，让数字有意义。";
+
+/* No comment provided by engineer. */
+"Only what Corres files in Needs You. The quietest option; an FYI from a person arrives silently." = "仅 Corres 归入“需要你”的邮件。最安静的选项；来自个人的知会邮件会静默送达。";
+
+/* No comment provided by engineer. */
+"Only What Needs Me" = "仅需要我处理的";
+
+/* No comment provided by engineer. */
+"Only you see the name, when choosing a signature." = "只有你在选择签名时能看到名称。";
+
+/* No comment provided by engineer. */
+"Open" = "打开";
+
+/* No comment provided by engineer. */
+"Open %@ Account Security" = "打开 %@ 账户安全设置";
+
+/* No comment provided by engineer. */
+"Open Apple Account" = "打开 Apple 账户";
+
+/* No comment provided by engineer. */
+"Open Corres once so it can sort your mail." = "请打开一次 Corres，以便它为你的邮件分类。";
+
+/* No comment provided by engineer. */
+"Open iCloud Mail Settings" = "打开 iCloud 邮件设置";
+
+/* No comment provided by engineer. */
+"Open Links" = "打开链接";
+
+/* No comment provided by engineer. */
+"Open List" = "打开列表";
+
+/* No comment provided by engineer. */
+"Open Needs You, Waiting or Mail in Corres." = "在 Corres 中打开“需要你”、“等待中”或“邮件”。";
+
+/* No comment provided by engineer. */
+"Open Next Conversation" = "打开下一个对话";
+
+/* No comment provided by engineer. */
+"Opened in Safari. Finish unsubscribing there." = "已在 Safari 中打开。请在那里完成退订。";
+
+/* No comment provided by engineer. */
+"Opens %@" = "打开 %@";
+
+/* No comment provided by engineer. */
+"Opens the attachment" = "打开附件";
+
+/* No comment provided by engineer. */
+"Optional" = "可选";
+
+/* No comment provided by engineer. */
+"Or type it: xxxx-xxxx-xxxx-xxxx" = "或直接输入：xxxx-xxxx-xxxx-xxxx";
+
+/* No comment provided by engineer. */
+"Organize" = "整理";
+
+/* No comment provided by engineer. */
+"Other Email" = "其他邮箱";
+
+/* No comment provided by engineer. */
+"Other Email Account" = "其他邮件账户";
+
+/* No comment provided by engineer. */
+"Other mail apps can't change this service's automatic reply. Set it on your email provider's website, usually under Settings, then Vacation or Auto Reply." = "其他邮件 App 无法更改此服务的自动回复。请在你的邮件服务商网站上设置，通常在“设置”中的“休假”或“自动回复”里。";
+
+/* No comment provided by engineer. */
+"Out of Office" = "外出";
+
+/* No comment provided by engineer. */
+"Outgoing (SMTP)" = "发件（SMTP）";
+
+/* No comment provided by engineer. */
+"Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Overdue" = "已逾期";
+
+/* No comment provided by engineer. */
+"Overlaps %@" = "与%@冲突";
+
+/* No comment provided by engineer. */
+"Overlaps %@ and %lld more" = "与%@及另外 %lld 项冲突";
+
+/* No comment provided by engineer. */
+"Password" = "密码";
+
+/* No comment provided by engineer. */
+"Pay once. Shared with up to five family members." = "一次付费。可与最多五位家庭成员共享。";
+
+/* No comment provided by engineer. */
+"People · %lld" = "个人 · %lld";
+
+/* No comment provided by engineer. */
+"People and Time-Sensitive" = "个人与时效性";
+
+/* No comment provided by engineer. */
+"per month" = "每月";
+
+/* No comment provided by engineer. */
+"per year" = "每年";
+
+/* No comment provided by engineer. */
+"Photo Library" = "照片图库";
+
+/* No comment provided by engineer. */
+"Pick a Date and Time" = "选择日期和时间";
+
+/* No comment provided by engineer. */
+"Pick a Time…" = "选择时间…";
+
+/* No comment provided by engineer. */
+"Pick another for one email from Signature, below what you're writing." = "如需为某封邮件换一个签名，请在正文下方的“签名”中选择。";
+
+/* No comment provided by engineer. */
+"Pin" = "置顶";
+
+/* No comment provided by engineer. */
+"Pinned" = "已置顶";
+
+/* No comment provided by engineer. */
+"Plan" = "方案";
+
+/* No comment provided by engineer. */
+"Plans couldn't load" = "无法载入方案";
+
+/* No comment provided by engineer. */
+"Port" = "端口";
+
+/* No comment provided by engineer. */
+"Preparing your space" = "正在准备";
+
+/* No comment provided by engineer. */
+"Press and hold for Reply All and Forward" = "按住可全部回复和转发";
+
+/* No comment provided by engineer. */
+"Press and hold to send later" = "按住可稍后发送";
+
+/* No comment provided by engineer. */
+"Preview" = "预览";
+
+/* No comment provided by engineer. */
+"Preview as Free User" = "以免费用户身份预览";
+
+/* No comment provided by engineer. */
+"Previous conversation" = "上一个对话";
+
+/* No comment provided by engineer. */
+"Previous Conversation" = "上一个对话";
+
+/* No comment provided by engineer. */
+"Primary" = "主要";
+
+/* No comment provided by engineer. */
+"Privacy Policy" = "隐私政策";
+
+/* No comment provided by engineer. */
+"Private by Design" = "隐私至上的设计";
+
+/* No comment provided by engineer. */
+"Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro." = "测试版期间包含 Pro。“以免费用户身份预览”会显示没有 Pro 时的 App。";
+
+/* No comment provided by engineer. */
+"Promotions" = "促销";
+
+/* No comment provided by engineer. */
+"Pull down to check for new mail." = "下拉以检查新邮件。";
+
+/* No comment provided by engineer. */
+"Put away. It stays in Drafts." = "已收起，仍在草稿中。";
+
+/* No comment provided by engineer. */
+"Read on this %@" = "在这台%@上读取";
+
+/* No comment provided by engineer. */
+"Reading" = "阅读";
+
+/* No comment provided by engineer. */
+"Reading what it found…" = "正在阅读找到的内容…";
+
+/* No comment provided by engineer. */
+"Recipient" = "收件人";
+
+/* No comment provided by engineer. */
+"Reconnect" = "重新连接";
+
+/* No comment provided by engineer. */
+"Reconnect with Google" = "使用 Google 重新连接";
+
+/* No comment provided by engineer. */
+"Reconnect with Microsoft" = "使用 Microsoft 重新连接";
+
+/* No comment provided by engineer. */
+"Redeem Code" = "兑换代码";
+
+/* No comment provided by engineer. */
+"Remote Images" = "远程图片";
+
+/* No comment provided by engineer. */
+"Remove" = "移除";
+
+/* No comment provided by engineer. */
+"Remove “%@” from your calendar?" = "从日历中移除“%@”？";
+
+/* No comment provided by engineer. */
+"Remove %@" = "移除 %@";
+
+/* No comment provided by engineer. */
+"Remove %@?" = "移除 %@？";
+
+/* No comment provided by engineer. */
+"Remove Account" = "移除账户";
+
+/* No comment provided by engineer. */
+"Remove from Calendar" = "从日历中移除";
+
+/* No comment provided by engineer. */
+"Remove from VIPs" = "从 VIP 中移除";
+
+/* No comment provided by engineer. */
+"Removes this account and its mail from Corres on this %@. Nothing is deleted from %@." = "从这台%@上的 Corres 中移除此账户及其邮件。%@ 中的内容不会被删除。";
+
+/* No comment provided by engineer. */
+"Renews %@" = "%@续订";
+
+/* No comment provided by engineer. */
+"Renews automatically. Cancel anytime." = "自动续订。可随时取消。";
+
+/* No comment provided by engineer. */
+"Replies & Forwards" = "回复与转发";
+
+/* No comment provided by engineer. */
+"Reply" = "回复";
+
+/* No comment provided by engineer. */
+"Reply All" = "全部回复";
+
+/* No comment provided by engineer. */
+"Reported %lld as spam" = "已将 %lld 个报告为垃圾邮件";
+
+/* No comment provided by engineer. */
+"Reported as spam" = "已报告为垃圾邮件";
+
+/* No comment provided by engineer. */
+"Reset to Default" = "恢复默认";
+
+/* No comment provided by engineer. */
+"Restore" = "恢复";
+
+/* No comment provided by engineer. */
+"Restore Purchases" = "恢复购买";
+
+/* No comment provided by engineer. */
+"Retry" = "重试";
+
+/* No comment provided by engineer. */
+"Return on" = "提醒时间";
+
+/* No comment provided by engineer. */
+"Return to the List" = "返回列表";
+
+/* No comment provided by engineer. */
+"Review New Senders" = "查看新发件人";
+
+/* No comment provided by engineer. */
+"Same as Settings" = "与“设置”相同";
+
+/* No comment provided by engineer. */
+"Save" = "存储";
+
+/* No comment provided by engineer. */
+"Save Draft" = "存储草稿";
+
+/* No comment provided by engineer. */
+"Save this draft?" = "存储此草稿？";
+
+/* No comment provided by engineer. */
+"Saved drafts wait at the bottom of the screen and in Drafts, on every device." = "存储的草稿会在屏幕底部和“草稿”中等你，在所有设备上都是如此。";
+
+/* No comment provided by engineer. */
+"Saved to Drafts" = "已存储到草稿";
+
+/* No comment provided by engineer. */
+"Saving to Drafts…" = "正在存储到草稿…";
+
+/* No comment provided by engineer. */
+"Saving…" = "正在存储…";
+
+/* No comment provided by engineer. */
+"Scan Document" = "扫描文稿";
+
+/* No comment provided by engineer. */
+"Schedule" = "安排";
+
+/* No comment provided by engineer. */
+"Schedule Anyway" = "仍然安排";
+
+/* No comment provided by engineer. */
+"Screen New Senders" = "筛选新发件人";
+
+/* No comment provided by engineer. */
+"Search, or ask a question" = "搜索或提问";
+
+/* No comment provided by engineer. */
+"Searching your mail…" = "正在搜索你的邮件…";
+
+/* No comment provided by engineer. */
+"Select" = "选择";
+
+/* No comment provided by engineer. */
+"Select All" = "全选";
+
+/* No comment provided by engineer. */
+"Select Conversations" = "选择对话";
+
+/* No comment provided by engineer. */
+"Select words first to link them; otherwise the address itself is added." = "先选中文字再添加链接；否则将直接添加地址本身。";
+
+/* No comment provided by engineer. */
+"Send" = "发送";
+
+/* No comment provided by engineer. */
+"Send and Share" = "发送与共享";
+
+/* No comment provided by engineer. */
+"Send Anyway" = "仍然发送";
+
+/* No comment provided by engineer. */
+"Send at" = "发送时间";
+
+/* No comment provided by engineer. */
+"Send Later" = "稍后发送";
+
+/* No comment provided by engineer. */
+"Send New Mail From" = "新邮件的发件地址";
+
+/* No comment provided by engineer. */
+"Send Now" = "立即发送";
+
+/* No comment provided by engineer. */
+"Send without a subject?" = "不带主题发送？";
+
+/* No comment provided by engineer. */
+"Send, Remind Me If No Reply" = "发送，如无回复则提醒我";
+
+/* No comment provided by engineer. */
+"Senders" = "发件人";
+
+/* No comment provided by engineer. */
+"Sending “%@”" = "正在发送“%@”";
+
+/* No comment provided by engineer. */
+"Sends %@" = "%@发送";
+
+/* No comment provided by engineer. */
+"Sent" = "已发送";
+
+/* No comment provided by engineer. */
+"Sent today" = "今天已发送";
+
+/* No comment provided by engineer. */
+"Server Settings" = "服务器设置";
+
+/* No comment provided by engineer. */
+"Settings" = "设置";
+
+/* No comment provided by engineer. */
+"Shared by your family" = "由你的家庭共享";
+
+/* No comment provided by engineer. */
+"Short Swipe" = "短扫";
+
+/* No comment provided by engineer. */
+"Show" = "显示";
+
+/* No comment provided by engineer. */
+"Show Images" = "显示图片";
+
+/* No comment provided by engineer. */
+"Show in All Inboxes" = "在“所有收件箱”中显示";
+
+/* No comment provided by engineer. */
+"Show in Search" = "在搜索中显示";
+
+/* No comment provided by engineer. */
+"Show More Results" = "显示更多结果";
+
+/* No comment provided by engineer. */
+"Show One Account" = "显示单个账户";
+
+/* No comment provided by engineer. */
+"Show Pictures" = "显示照片";
+
+/* No comment provided by engineer. */
+"Shown" = "已显示";
+
+/* No comment provided by engineer. */
+"Shows all mail with them" = "显示与此人的所有邮件";
+
+/* No comment provided by engineer. */
+"Shows options for this recipient" = "显示此收件人的选项";
+
+/* No comment provided by engineer. */
+"Shows people from your Contacts, with their photos. Stays on this %@." = "显示通讯录中的人及其照片。只保留在这台%@上。";
+
+/* No comment provided by engineer. */
+"Shows the full message" = "显示完整邮件";
+
+/* No comment provided by engineer. */
+"Shows the summary" = "显示摘要";
+
+/* No comment provided by engineer. */
+"Shows this mailbox" = "显示此邮箱";
+
+/* No comment provided by engineer. */
+"Shows whether you're free then. Your calendar stays on this device." = "显示你那时是否有空。你的日历只保留在这台设备上。";
+
+/* No comment provided by engineer. */
+"Sign In Again" = "重新登录";
+
+/* No comment provided by engineer. */
+"Signature" = "签名";
+
+/* No comment provided by engineer. */
+"Signatures" = "签名";
+
+/* No comment provided by engineer. */
+"Signed out of %@. Sign in again to keep getting mail." = "已退出 %@。请重新登录以继续接收邮件。";
+
+/* No comment provided by engineer. */
+"smtp.example.com" = "smtp.example.com";
+
+/* No comment provided by engineer. */
+"Snooze" = "稍后提醒";
+
+/* No comment provided by engineer. */
+"Snooze until %@" = "稍后提醒至 %@";
+
+/* No comment provided by engineer. */
+"Snooze…" = "稍后提醒…";
+
+/* No comment provided by engineer. */
+"Snoozed" = "稍后提醒";
+
+/* No comment provided by engineer. */
+"Snoozed conversations wait here until they come back." = "稍后提醒的对话会在这里等到它们回来。";
+
+/* No comment provided by engineer. */
+"Social" = "社交";
+
+/* No comment provided by engineer. */
+"Someone's first email shows like anyone else's, marked New, and you can allow or block them right from the email. Blocked senders stay hidden." = "某人的第一封邮件会像其他邮件一样显示，并标为“新”，你可以直接在邮件中允许或屏蔽对方。被屏蔽的发件人保持隐藏。";
+
+/* No comment provided by engineer. */
+"Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden." = "某人的第一封邮件会在“新发件人”中等待，直到你允许，因此你只会看到你放行的人的邮件。被屏蔽的发件人保持隐藏。";
+
+/* No comment provided by engineer. */
+"Someone's first email waits in New Senders until you allow them. These still notify, marked “New sender”, and you can allow or block them right from the email. Blocked senders never notify." = "某人的第一封邮件会在“新发件人”中等待，直到你允许。这些邮件仍会通知，并标为“新发件人”，你可以直接在邮件中允许或屏蔽对方。被屏蔽的发件人从不通知。";
+
+/* No comment provided by engineer. */
+"soon" = "即将";
+
+/* No comment provided by engineer. */
+"Sort By" = "排序方式";
+
+/* No comment provided by engineer. */
+"Sort Into" = "分类到";
+
+/* No comment provided by engineer. */
+"Sorting" = "分类";
+
+/* No comment provided by engineer. */
+"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Nothing goes to a server." = "分类、摘要、建议回复和改写都由 Apple 智能在这台%@上完成。不会发送任何内容到服务器。";
+
+/* No comment provided by engineer. */
+"Sources" = "来源";
+
+/* No comment provided by engineer. */
+"Spam" = "垃圾邮件";
+
+/* No comment provided by engineer. */
+"Start %@ free" = "免费试用%@";
+
+/* No comment provided by engineer. */
+"Start a new email in Corres." = "在 Corres 中新建邮件。";
+
+/* No comment provided by engineer. */
+"Start of Day" = "一天的开始";
+
+/* No comment provided by engineer. */
+"Start with sample mail. Connect Gmail, Outlook, iCloud or another email account anytime from Settings." = "先从示例邮件开始。随时可在“设置”中连接 Gmail、Outlook、iCloud 或其他邮件账户。";
+
+/* No comment provided by engineer. */
+"Starts" = "开始";
+
+/* No comment provided by engineer. */
+"Still a tap away under ⋯ on the bar. An action that doesn't apply to an email (Unsubscribe without a list, Add to Calendar without an event) is dimmed on the bar." = "在工具栏的⋯中轻点一下仍可使用。不适用于某封邮件的操作（没有列表时的退订、没有日程时的添加到日历）会在工具栏上变暗。";
+
+/* No comment provided by engineer. */
+"Stop dictating" = "停止听写";
+
+/* No comment provided by engineer. */
+"Subject" = "主题";
+
+/* No comment provided by engineer. */
+"Subscribe · %@" = "订阅 · %@";
+
+/* No comment provided by engineer. */
+"Subscriptions" = "订阅";
+
+/* No comment provided by engineer. */
+"Suggest from Contacts" = "从通讯录推荐";
+
+/* No comment provided by engineer. */
+"Suggested" = "建议";
+
+/* No comment provided by engineer. */
+"Suggestions" = "建议";
+
+/* No comment provided by engineer. */
+"Summarize Emails" = "概括邮件";
+
+/* No comment provided by engineer. */
+"Summarizing" = "正在概括";
+
+/* No comment provided by engineer. */
+"Swipe a lesson to forget it." = "轻扫一条学到的内容即可让它忘记。";
+
+/* No comment provided by engineer. */
+"Swipe left" = "向左轻扫";
+
+/* No comment provided by engineer. */
+"Swipe right" = "向右轻扫";
+
+/* No comment provided by engineer. */
+"Swipes" = "轻扫";
+
+/* No comment provided by engineer. */
+"Sync Now" = "立即同步";
+
+/* No comment provided by engineer. */
+"System" = "系统";
+
+/* No comment provided by engineer. */
+"Take Photo" = "拍照";
+
+/* No comment provided by engineer. */
+"Takes this out of Needs You. It stays in Mail." = "将其移出“需要你”。仍保留在“邮件”中。";
+
+/* No comment provided by engineer. */
+"Terms of Use" = "使用条款";
+
+/* No comment provided by engineer. */
+"The app password" = "App 专用密码";
+
+/* No comment provided by engineer. */
+"The bar is full. Remove one to add another." = "工具栏已满。移除一个才能添加新的。";
+
+/* No comment provided by engineer. */
+"The conversations that ask something of you, with the reason for each." = "需要你回应的对话，以及各自的原因。";
+
+/* No comment provided by engineer. */
+"The organizer canceled this event." = "组织者已取消此日程。";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd accepted the earlier version." = "组织者更改了此日程。你之前已接受。";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd declined the earlier version." = "组织者更改了此日程。你之前已拒绝。";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd said maybe to the earlier version." = "组织者更改了此日程。你之前回复了“待定”。";
+
+/* No comment provided by engineer. */
+"The password" = "密码";
+
+/* No comment provided by engineer. */
+"The password stays in this %@'s Keychain. Your mail goes from iCloud straight to this %@; Corres's servers never see either." = "密码保存在这台%@的钥匙串中。你的邮件从 iCloud 直接传到这台%@；Corres 的服务器从不接触二者。";
+
+/* No comment provided by engineer. */
+"Their mail already shows in Corres. Allow marks them as known; Block hides them quietly, for good. Neither changes your email account." = "对方的邮件已显示在 Corres 中。“允许”会将其标为认识的人；“屏蔽”会永久地悄悄隐藏。两者都不会更改你的邮件账户。";
+
+/* No comment provided by engineer. */
+"Their mail is hidden in Corres from now on, with no notice to them. Your email account isn't changed." = "从现在起，对方的邮件会在 Corres 中隐藏，且不会通知对方。你的邮件账户不会更改。";
+
+/* No comment provided by engineer. */
+"Their mail reaches Corres only once you allow them. Blocking hides them quietly, for good. Neither changes your email account." = "只有你允许后，对方的邮件才会进入 Corres。屏蔽会永久地悄悄隐藏。两者都不会更改你的邮件账户。";
+
+/* No comment provided by engineer. */
+"Their mail will be hidden quietly. You can undo this right after." = "对方的邮件将被悄悄隐藏。你可以随即撤销。";
+
+/* No comment provided by engineer. */
+"Their mail will show in Corres. You can undo this right after." = "对方的邮件将显示在 Corres 中。你可以随即撤销。";
+
+/* No comment provided by engineer. */
+"This account stays quiet. Its mail still syncs and sorts." = "此账户保持安静。其邮件仍会同步和分类。";
+
+/* No comment provided by engineer. */
+"This address uses %@. Corres signs in to %@ directly, which is quicker and safer than a password." = "此地址使用 %@。Corres 直接登录 %@，比使用密码更快、更安全。";
+
+/* No comment provided by engineer. */
+"This Evening, 6 PM" = "今晚 18:00";
+
+/* No comment provided by engineer. */
+"This Weekend" = "本周末";
+
+/* No comment provided by engineer. */
+"Time" = "时间";
+
+/* No comment provided by engineer. */
+"Time-sensitive" = "时效性";
+
+/* No comment provided by engineer. */
+"To" = "收件人";
+
+/* No comment provided by engineer. */
+"To " = "发给";
+
+/* No comment provided by engineer. */
+"To you" = "发给你";
+
+/* No comment provided by engineer. */
+"Today" = "今天";
+
+/* No comment provided by engineer. */
+"today at %@" = "今天 %@";
+
+/* No comment provided by engineer. */
+"Today, %@" = "今天 %@";
+
+/* No comment provided by engineer. */
+"Tomorrow" = "明天";
+
+/* No comment provided by engineer. */
+"Tomorrow and Next Week come back at the start of your day; This Weekend an hour later, on Saturday." = "“明天”和“下周”会在你一天开始时回来；“本周末”在周六，再晚一小时。";
+
+/* No comment provided by engineer. */
+"tomorrow at %@" = "明天 %@";
+
+/* No comment provided by engineer. */
+"Tomorrow, %@" = "明天 %@";
+
+/* No comment provided by engineer. */
+"Trash" = "废纸篓";
+
+/* No comment provided by engineer. */
+"Trash is empty. It's emptied after 30 days." = "废纸篓是空的。会在 30 天后清空。";
+
+/* No comment provided by engineer. */
+"Try Again" = "再试一次";
+
+/* No comment provided by engineer. */
+"Try again." = "请再试一次。";
+
+/* No comment provided by engineer. */
+"Try Corres Pro Free" = "免费试用 Corres Pro";
+
+/* No comment provided by engineer. */
+"Try it free for 14 days." = "免费试用 14 天。";
+
+/* No comment provided by engineer. */
+"Try it free, then %@ a month or %@ a year." = "免费试用，之后每月 %@ 或每年 %@。";
+
+/* No comment provided by engineer. */
+"Turn on Apple Intelligence in the Settings app for summaries, suggested replies and rewrites. Needs You still sorts your mail without it." = "在“设置”App 中打开 Apple 智能，即可使用摘要、建议回复和改写。没有它，“需要你”仍会为你的邮件分类。";
+
+/* No comment provided by engineer. */
+"Type a time" = "输入时间";
+
+/* No comment provided by engineer. */
+"Undo" = "撤销";
+
+/* No comment provided by engineer. */
+"Undo Send" = "撤销发送";
+
+/* No comment provided by engineer. */
+"Undo Send holds a message for a moment so you can take it back. Reply All is used only when others were on the email; press and hold Reply for the other choice." = "“撤销发送”会将邮件暂留片刻，方便你撤回。只有邮件中还有其他人时才会使用“全部回复”；按住“回复”可选另一种方式。";
+
+/* No comment provided by engineer. */
+"Unflag" = "取消旗标";
+
+/* No comment provided by engineer. */
+"Unread" = "未读";
+
+/* No comment provided by engineer. */
+"Unread in Primary" = "“主要”中的未读";
+
+/* No comment provided by engineer. */
+"Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "来自个人的未读邮件以及任何紧急邮件。不计入促销、社交和动态。";
+
+/* No comment provided by engineer. */
+"Unsnooze" = "取消稍后提醒";
+
+/* No comment provided by engineer. */
+"Unsubscribe" = "退订";
+
+/* No comment provided by engineer. */
+"Unsubscribe and Block" = "退订并屏蔽";
+
+/* No comment provided by engineer. */
+"Unsubscribe from %@?" = "退订 %@？";
+
+/* No comment provided by engineer. */
+"Unwanted Mail" = "不想要的邮件";
+
+/* No comment provided by engineer. */
+"Update App-Specific Password" = "更新 App 专用密码";
+
+/* No comment provided by engineer. */
+"Update Password" = "更新密码";
+
+/* No comment provided by engineer. */
+"Updated Invitation" = "已更新的邀请";
+
+/* No comment provided by engineer. */
+"Updates" = "动态";
+
+/* No comment provided by engineer. */
+"Version %@ · Anwar Creative Studio" = "版本 %@ · Anwar Creative Studio";
+
+/* No comment provided by engineer. */
+"VIP" = "VIP";
+
+/* No comment provided by engineer. */
+"VIPs" = "VIP";
+
+/* No comment provided by engineer. */
+"Waiting" = "等待中";
+
+/* No comment provided by engineer. */
+"Was %@" = "截止%@";
+
+/* No comment provided by engineer. */
+"Was on %@, so it's out of Needs You. It stays in Mail." = "截止日期是%@，因此已移出“需要你”。仍保留在“邮件”中。";
+
+/* No comment provided by engineer. */
+"What Corres Has Learned" = "Corres 学到的内容";
+
+/* No comment provided by engineer. */
+"What Needs Me" = "需要我处理的";
+
+/* No comment provided by engineer. */
+"When" = "时间";
+
+/* No comment provided by engineer. */
+"When an email asks something of you, it shows here. The rest of your mail is in Primary." = "当邮件向你提出请求时，会显示在这里。其余邮件在“主要”中。";
+
+/* No comment provided by engineer. */
+"When you reply to someone, or move a conversation here, it waits here until they answer." = "当你回复某人，或将对话移到这里时，它会在这里等到对方回复。";
+
+/* No comment provided by engineer. */
+"When you say an email Apple Intelligence flagged needs no action, Corres stops flagging that kind of email from that sender; their other mail is untouched. When you move a sender's automated email into Needs You, it keeps that kind there. Corres also notices habits, like lists you never open or people you always read at once, and suggests a change, at most once a day. Everything stays on this %@." = "当你表示 Apple 智能标记的某封邮件无需处理时，Corres 不再标记该发件人同类邮件；对方的其他邮件不受影响。当你把某位发件人的自动邮件移到“需要你”时，这类邮件会保留在那里。Corres 还会注意你的习惯，比如从不打开的列表或总是马上阅读的人，并建议更改，每天最多一次。一切都保留在这台%@上。";
+
+/* No comment provided by engineer. */
+"When you're done with something in Needs You or Waiting, mark it Handled. It leaves those lists, stays in Mail, and is kept here." = "处理完“需要你”或“等待中”的事情后，将其标记为“已处理”。它会离开这些列表，仍保留在“邮件”中，并保存在这里。";
+
+/* No comment provided by engineer. */
+"Where you asked someone something, from Corres or any other app, or moved it here yourself. Longest wait first; after three days it's time to follow up. No tracking pixels, no read receipts." = "你向别人询问了某事的邮件，无论来自 Corres 还是其他 App，或是你自己移到这里的。等待最久的在前；三天后就该跟进了。不用追踪像素，也不用已读回执。";
+
+/* No comment provided by engineer. */
+"While it's on, %@ answers new email with your message and sends it even with this %@ off." = "开启期间，%@ 会用你的消息回复新邮件，即使这台%@关机也会发送。";
+
+/* No comment provided by engineer. */
+"With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "关闭“打开时标记为已读”后，对话会保持未读，直到你轻扫或选择“标记为已读”。链接会在 Corres 中以 Safari 阅读器和内容拦截器打开，或在你的默认浏览器中打开。";
+
+/* No comment provided by engineer. */
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "没有 Pro，“邮件”仍可正常使用：阅读、回复、归档和搜索。“需要你”、“等待中”、搜索中的回答以及设备端智能需要 Pro。";
+
+/* No comment provided by engineer. */
+"Write the message %@ should send." = "输入 %@ 应发送的消息。";
+
+/* No comment provided by engineer. */
+"year" = "年";
+
+/* No comment provided by engineer. */
+"Yesterday" = "昨天";
+
+/* No comment provided by engineer. */
+"You accepted" = "你已接受";
+
+/* No comment provided by engineer. */
+"You declined" = "你已拒绝";
+
+/* No comment provided by engineer. */
+"You haven't opened the last %lld from %@." = "你还没有打开 %2$@ 最近的 %1$lld 封邮件。";
+
+/* No comment provided by engineer. */
+"You read %@'s email within %lld minutes." = "你会在 %2$lld 分钟内阅读 %1$@ 的邮件。";
+
+/* No comment provided by engineer. */
+"You read %@'s email within a minute." = "你会在一分钟内阅读 %@ 的邮件。";
+
+/* No comment provided by engineer. */
+"You said maybe" = "你回复了待定";
+
+/* No comment provided by engineer. */
+"You won't receive future mail from this sender. This can't be undone from Corres." = "你将不再收到此发件人的邮件。此操作无法在 Corres 中撤销。";
+
+/* No comment provided by engineer. */
+"You're free then" = "你那时有空";
+
+/* No comment provided by engineer. */
+"You're looking at sample mail." = "你正在查看示例邮件。";
+
+/* No comment provided by engineer. */
+"You're waiting on %lld replies." = "你在等待 %lld 封回复。";
+
+/* No comment provided by engineer. */
+"You're waiting on one reply." = "你在等待 1 封回复。";
+
+/* No comment provided by engineer. */
+"You're waiting on their reply" = "你在等待对方回复";
+
+/* No comment provided by engineer. */
+"You've replied to %@ %lld times lately." = "最近你回复了 %@ %lld 次。";
+
+/* No comment provided by engineer. */
+"you@example.com" = "you@example.com";
+
+/* No comment provided by engineer. */
+"you@icloud.com" = "you@icloud.com";
+
+/* No comment provided by engineer. */
+"Your email address" = "你的邮件地址";
+
+/* No comment provided by engineer. */
+"Your email mentions an attachment, but nothing is attached." = "你的邮件提到了附件，但没有附加任何内容。";
+
+/* No comment provided by engineer. */
+"Your email provider's help pages list these. Corres connects securely: SSL for incoming mail, and SSL (465) or STARTTLS (587) for outgoing." = "你的邮件服务商的帮助页面会列出这些信息。Corres 采用安全连接：收件使用 SSL，发件使用 SSL（465）或 STARTTLS（587）。";
+
+/* No comment provided by engineer. */
+"Your iCloud address" = "你的 iCloud 地址";
+
+/* No comment provided by engineer. */
+"Your mail server stopped accepting the password Corres has. Enter it again, or make a new app password." = "你的邮件服务器不再接受 Corres 使用的密码。请重新输入，或创建新的 App 专用密码。";
+
+/* No comment provided by engineer. */
+"Your mail server stopped accepting the password Corres has. Enter it again." = "你的邮件服务器不再接受 Corres 使用的密码。请重新输入。";
+
+/* No comment provided by engineer. */
+"Your Name" = "你的名字";
+
+/* No comment provided by engineer. */
+"Your password" = "你的密码";
+
+/* No comment provided by engineer. */
+"Your password stays in this %@'s Keychain. Your mail goes from your provider straight to this %@." = "你的密码保存在这台%@的钥匙串中。你的邮件从服务商直接传到这台%@。";
+
+/* No comment provided by engineer. */
+"Your sample conversations couldn't be opened." = "无法打开你的示例对话。";
+
+/* No comment provided by engineer. */
+"Your usual for %@" = "你对%@的常用时间";
+
+/* No comment provided by engineer. */
+"Yours for good · bought %@" = "永久拥有 · 购买于 %@";
+

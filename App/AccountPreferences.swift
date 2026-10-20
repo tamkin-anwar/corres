@@ -159,11 +159,11 @@ enum AccountPreferences {
 
         var title: String {
             switch self {
-            case .standard: "Same as Settings"
+            case .standard: String(localized: "Same as Settings")
             case .everything: PushNotificationService.Level.everything.title
             case .people: PushNotificationService.Level.people.title
             case .needsYou: PushNotificationService.Level.needsYou.title
-            case .off: "Off"
+            case .off: String(localized: "Off")
             }
         }
     }

@@ -66,18 +66,19 @@ final class HabitWatcher {
     static func title(for suggestion: SenderHabits.Suggestion) -> String {
         switch suggestion {
         case .unsubscribe(_, let name, let unopened):
-            "You haven't opened the last \(unopened) from \(name)."
+            String(localized: "You haven't opened the last \(unopened) from \(name).")
         case .vip(_, let name, .readsQuickly(let minutes)):
-            "You read \(name)'s email within \(minutes == 1 ? "a minute" : "\(minutes) minutes")."
+            (minutes == 1 ? String(localized: "You read \(name)'s email within a minute.")
+                          : String(localized: "You read \(name)'s email within \(minutes) minutes."))
         case .vip(_, let name, .repliesOften(let count)):
-            "You've replied to \(name) \(count) times lately."
+            String(localized: "You've replied to \(name) \(count) times lately.")
         }
     }
 
     static func actionTitle(for suggestion: SenderHabits.Suggestion) -> String {
         switch suggestion {
-        case .unsubscribe: "Unsubscribe"
-        case .vip: "Make VIP"
+        case .unsubscribe: String(localized: "Unsubscribe")
+        case .vip: String(localized: "Make VIP")
         }
     }
 

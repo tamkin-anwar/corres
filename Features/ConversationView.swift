@@ -421,11 +421,11 @@ struct ConversationView: View {
         // Something you sent: who it went to. Never "To you".
         if thread.isFromAccountOwner {
             let names = thread.recipientNames
-            let to = names.isEmpty ? "Sent" : "To " + (names.count > 2 ? names.prefix(2).joined(separator: ", ") + " +\(names.count - 2)"
+            let to = names.isEmpty ? String(localized: "Sent") : String(localized: "To ") + (names.count > 2 ? names.prefix(2).joined(separator: ", ") + " +\(names.count - 2)"
                                                                           : names.joined(separator: ", "))
             return "\(to) · \(when)"
         }
-        let to = (thread.toRecipients.isEmpty || thread.isDirectRecipient) ? "To you" : "Cc you"
+        let to = (thread.toRecipients.isEmpty || thread.isDirectRecipient) ? String(localized: "To you") : String(localized: "Cc you")
         return thread.senderEmail.map { "\($0) · \(when)" } ?? "\(to) · \(when)"
     }
 
@@ -471,7 +471,7 @@ struct ConversationView: View {
                     if let blocked {
                         Image(systemName: "shield.lefthalf.filled").font(.caption)
                         Text(blocked.trackers > 0
-                             ? "\(blocked.trackers) \(blocked.trackers == 1 ? "tracker" : "trackers") blocked"
+                             ? (blocked.trackers == 1 ? "1 tracker blocked" : "\(blocked.trackers) trackers blocked")
                              : "Images off")
                             .lineLimit(1)
                         Button("Show Images") {
@@ -642,10 +642,10 @@ struct ConversationView: View {
     /// rather than the reason it once needed you.
     private func statusLine(for thread: Correspondence) -> String {
         if thread.isPastEvent(), let due = thread.dueAt {
-            return "Was on \(due.formatted(.dateTime.weekday(.wide).month(.wide).day())), so it's out of Needs You. It stays in Mail."
+            return String(localized: "Was on \(due.formatted(.dateTime.weekday(.wide).month(.wide).day())), so it's out of Needs You. It stays in Mail.")
         }
         switch thread.attention {
-        case .handled: return "Handled. It's off your lists and stays in Mail and in Mailboxes \u{2192} Handled."
+        case .handled: return String(localized: "Handled. It's off your lists and stays in Mail and in Mailboxes \u{2192} Handled.")
         case .quiet:
             // The reason often ends by saying so itself ("Marketing
             // newsletter, no action needed"); say it once.
@@ -653,7 +653,7 @@ struct ConversationView: View {
             let reason = thread.reason.replacingPattern(#"(?i)[\s,;.—–-]*no action (is )?needed[.!]?"#, with: "")
                 .replacingPattern(#"(?i)\s*kept out of needs you\.?"#, with: "")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            return reason.isEmpty ? "No action needed." : "No action needed: \(reason)"
+            return reason.isEmpty ? String(localized: "No action needed.") : String(localized: "No action needed: \(reason)")
         default: return thread.reason.isEmpty ? thread.attention.title : "\(thread.attention.title): \(thread.reason)"
         }
     }

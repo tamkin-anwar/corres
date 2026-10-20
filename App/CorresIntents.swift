@@ -35,17 +35,17 @@ struct WhatNeedsMeIntent: AppIntent {
     static func summary(of snapshot: WidgetSnapshot) -> String {
         var parts: [String] = []
         switch snapshot.needsYouCount {
-        case 0: parts.append("Nothing needs you right now.")
-        case 1: parts.append("One conversation needs you.")
-        default: parts.append("\(snapshot.needsYouCount) conversations need you.")
+        case 0: parts.append(String(localized: "Nothing needs you right now."))
+        case 1: parts.append(String(localized: "One conversation needs you."))
+        default: parts.append(String(localized: "\(snapshot.needsYouCount) conversations need you."))
         }
         let top = snapshot.needsYou.prefix(2).map { item in
-            let due = item.dueLabel.map { " Due \($0.lowercased())." } ?? ""
+            let due = item.dueLabel.map { String(localized: " Due \($0.lowercased()).") } ?? ""
             return "\(item.sender): \(item.reason.trimmingCharacters(in: .punctuationCharacters)).\(due)"
         }
         parts.append(contentsOf: top)
         if snapshot.waitingCount > 0 {
-            parts.append(snapshot.waitingCount == 1 ? "You're waiting on one reply." : "You're waiting on \(snapshot.waitingCount) replies.")
+            parts.append(snapshot.waitingCount == 1 ? String(localized: "You're waiting on one reply.") : String(localized: "You're waiting on \(snapshot.waitingCount) replies."))
         }
         return parts.joined(separator: " ")
     }

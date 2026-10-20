@@ -1,0 +1,18 @@
+/* Bundle display name */
+"CFBundleDisplayName" = "Corres";
+
+/* Bundle name */
+"CFBundleName" = "Corres";
+
+/* Privacy - Calendars Full Access Usage Description */
+"NSCalendarsFullAccessUsageDescription" = "Wenn du es bei einer Einladung möchtest, prüft Corres deinen Kalender auf Termine zur selben Zeit und kann einen abgesagten Termin entfernen. Dein Kalender bleibt auf diesem Mac.";
+
+/* Privacy - Calendars Write Only Usage Description */
+"NSCalendarsWriteOnlyAccessUsageDescription" = "Corres fügt die Einladungen, die du annimmst, deinem Kalender hinzu, wenn du es möchtest.";
+
+/* Privacy - Contacts Usage Description */
+"NSContactsUsageDescription" = "Corres schlägt beim Adressieren Personen aus deinen Kontakten vor und zeigt ihre Fotos neben ihren E-Mails. Deine Kontakte bleiben auf diesem Mac.";
+
+/* Copyright (human-readable) */
+"NSHumanReadableCopyright" = "© 2026 Anwar Creative Studio";
+

@@ -41,7 +41,7 @@ struct MacScheduledList: View {
         if !people.isEmpty { return people.joined(separator: ", ") }
         // Names without addresses, as typed.
         let typed = [draft.to, draft.cc ?? "", draft.bcc ?? ""].filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-        return typed.isEmpty ? "No recipients" : typed.joined(separator: ", ")
+        return typed.isEmpty ? String(localized: "No recipients") : typed.joined(separator: ", ")
     }
 }
 
@@ -98,7 +98,7 @@ struct MacScheduledDetail: View {
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if !item.draft.attachments.isEmpty {
-                    Label("\(item.draft.attachments.count) attachment\(item.draft.attachments.count == 1 ? "" : "s")", systemImage: "paperclip")
+                    Label(item.draft.attachments.count == 1 ? "1 attachment" : "\(item.draft.attachments.count) attachments", systemImage: "paperclip")
                         .font(.callout).foregroundStyle(CorresPalette.secondary)
                 }
             }

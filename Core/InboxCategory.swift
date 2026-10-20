@@ -12,10 +12,10 @@ public enum InboxCategory: String, Codable, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .primary: "Primary"
-        case .promotions: "Promotions"
-        case .social: "Social"
-        case .updates: "Updates"
+        case .primary: String(localized: "Primary")
+        case .promotions: String(localized: "Promotions")
+        case .social: String(localized: "Social")
+        case .updates: String(localized: "Updates")
         }
     }
 

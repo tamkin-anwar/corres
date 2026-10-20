@@ -1,0 +1,21 @@
+/* Bundle display name */
+"CFBundleDisplayName" = "Corres";
+
+/* Bundle name */
+"CFBundleName" = "Corres";
+
+/* Privacy - Calendars Full Access Usage Description */
+"NSCalendarsFullAccessUsageDescription" = "招待状で確認を頼むと、Corresは同じ時間に予定がないかカレンダーを確認し、キャンセルされた予定を削除できます。カレンダーはこのデバイスから出ません。";
+
+/* Privacy - Camera Usage Description */
+"NSCameraUsageDescription" = "Corresがカメラを使うのは、メールに添付する写真を撮るときや書類をスキャンするときだけです。";
+
+/* Privacy - Contacts Usage Description */
+"NSContactsUsageDescription" = "Corresはメールの宛先を入力するときに連絡先から候補を表示し、メールの横に写真を表示します。連絡先はこのデバイスから出ません。";
+
+/* Privacy - Microphone Usage Description */
+"NSMicrophoneUsageDescription" = "Corresがマイクを使うのは、メールを音声入力している間だけです。音声はこのデバイス上で文字に変換されます。";
+
+/* Privacy - Speech Recognition Usage Description */
+"NSSpeechRecognitionUsageDescription" = "Corresは音声入力をこのデバイス上で文字に変換します。音声がサーバに送られることはありません。";
+

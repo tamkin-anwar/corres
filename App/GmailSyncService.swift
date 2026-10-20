@@ -325,19 +325,19 @@ final class GmailSyncService {
     static func describe(_ error: Error, account: String) -> String {
         let service = MailAccounts.serviceTitle(for: account)
         if (error as NSError).domain == NSURLErrorDomain {
-            return "Can't reach \(service) right now. Corres keeps trying."
+            return String(localized: "Can't reach \(service) right now. Corres keeps trying.")
         }
         switch error {
         case GmailAPIClient.ClientError.notSignedIn:
-            return "Signed out of \(service). Sign in again to keep getting mail."
+            return String(localized: "Signed out of \(service). Sign in again to keep getting mail.")
         case GmailAPIClient.ClientError.badResponse(let status) where status == 401 || status == 403:
-            return "\(service) turned down Corres's access. Reconnect below."
+            return String(localized: "\(service) turned down Corres's access. Reconnect below.")
         case GmailAPIClient.ClientError.badResponse(let status) where status == 429 || status >= 500:
-            return "\(service) is busy. Corres tries again in a moment."
+            return String(localized: "\(service) is busy. Corres tries again in a moment.")
         case GmailAPIClient.ClientError.refused(_, _, let message?):
-            return "\(service) said: \(message)"
+            return String(localized: "\(service) said: \(message)")
         default:
-            return "\(service) didn't answer the last check. Corres keeps trying."
+            return String(localized: "\(service) didn't answer the last check. Corres keeps trying.")
         }
     }
 

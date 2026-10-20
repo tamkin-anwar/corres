@@ -175,10 +175,10 @@ enum PhotoSize: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .small: "Small"
-        case .medium: "Medium"
-        case .large: "Large"
-        case .actual: "Actual Size"
+        case .small: String(localized: "Small")
+        case .medium: String(localized: "Medium")
+        case .large: String(localized: "Large")
+        case .actual: String(localized: "Actual Size")
         }
     }
 

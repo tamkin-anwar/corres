@@ -53,10 +53,10 @@ final class ThreadActionService {
         var thread: Correspondence { threads[0] }
         var title: String {
             switch kind {
-            case .archive: return threads.count == 1 ? "Archived" : "Archived \(threads.count)"
-            case .trash: return threads.count == 1 ? "Moved to Trash" : "Deleted \(threads.count)"
-            case .spam: return threads.count == 1 ? "Reported as spam" : "Reported \(threads.count) as spam"
-            case .move(_, let name): return name.isEmpty ? "Moved" : "Moved to \(name)"
+            case .archive: return threads.count == 1 ? String(localized: "Archived") : String(localized: "Archived \(threads.count)")
+            case .trash: return threads.count == 1 ? String(localized: "Moved to Trash") : String(localized: "Deleted \(threads.count)")
+            case .spam: return threads.count == 1 ? String(localized: "Reported as spam") : String(localized: "Reported \(threads.count) as spam")
+            case .move(_, let name): return name.isEmpty ? String(localized: "Moved") : String(localized: "Moved to \(name)")
             }
         }
     }

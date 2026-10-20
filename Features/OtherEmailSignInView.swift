@@ -42,7 +42,9 @@ struct OtherEmailSignInView: View {
                         Image(systemName: "envelope").font(.system(size: 28)).foregroundStyle(CorresPalette.accent)
                         if reconnecting != nil {
                             Text("Sign In Again").font(.title3.weight(.semibold))
-                            Text("Your mail server stopped accepting the password Corres has. Enter it again\(service?.appPassword == true ? ", or make a new app password" : "").")
+                            Text(service?.appPassword == true
+                                 ? "Your mail server stopped accepting the password Corres has. Enter it again, or make a new app password."
+                                 : "Your mail server stopped accepting the password Corres has. Enter it again.")
                                 .font(.subheadline).foregroundStyle(CorresPalette.secondary)
                         } else {
                             Text(service.map { "Connect \($0.name)" } ?? "Add an Email Account").font(.title3.weight(.semibold))

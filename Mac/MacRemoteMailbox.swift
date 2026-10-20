@@ -10,11 +10,11 @@ final class MacRemoteMailboxes {
 
         var title: String {
             switch self {
-            case .drafts: "Drafts"
-            case .sent: "Sent"
-            case .archive: "Archive"
-            case .spam: "Spam"
-            case .trash: "Trash"
+            case .drafts: String(localized: "Drafts")
+            case .sent: String(localized: "Sent")
+            case .archive: String(localized: "Archive")
+            case .spam: String(localized: "Spam")
+            case .trash: String(localized: "Trash")
             }
         }
 

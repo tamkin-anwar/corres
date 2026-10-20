@@ -53,7 +53,7 @@ struct ComposeView: View {
     private enum Field {
         case to, cc, bcc, subject, body
         var isAddress: Bool { self == .to || self == .cc || self == .bcc }
-        var title: String { self == .cc ? "Cc" : self == .bcc ? "Bcc" : "To" }
+        var title: String { self == .cc ? String(localized: "Cc") : self == .bcc ? String(localized: "Bcc") : String(localized: "To") }
     }
     /// Bcc stays out of the way until asked for, as in Mail and Gmail.
     @State private var showsBcc = false
@@ -527,10 +527,10 @@ struct ComposeView: View {
 
     private var title: String {
         switch draft.kind {
-        case .new: "New Message"
-        case .reply: "Reply"
-        case .replyAll: "Reply All"
-        case .forward: "Forward"
+        case .new: String(localized: "New Message")
+        case .reply: String(localized: "Reply")
+        case .replyAll: String(localized: "Reply All")
+        case .forward: String(localized: "Forward")
         }
     }
 

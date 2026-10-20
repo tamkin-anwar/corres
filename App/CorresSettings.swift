@@ -18,7 +18,7 @@ enum CorresSettings {
     enum DefaultReply: String, CaseIterable, Identifiable {
         case reply, replyAll
         var id: String { rawValue }
-        var title: String { self == .reply ? "Reply" : "Reply All" }
+        var title: String { self == .reply ? String(localized: "Reply") : String(localized: "Reply All") }
     }
     static var defaultReply: DefaultReply {
         defaults.string(forKey: defaultReplyKey).flatMap(DefaultReply.init) ?? .reply
@@ -38,7 +38,7 @@ enum CorresSettings {
     enum RemoteImages: String, CaseIterable, Identifiable {
         case ask, always
         var id: String { rawValue }
-        var title: String { self == .ask ? "Ask First" : "Always Load" }
+        var title: String { self == .ask ? String(localized: "Ask First") : String(localized: "Always Load") }
     }
     static var remoteImages: RemoteImages {
         defaults.string(forKey: remoteImagesKey).flatMap(RemoteImages.init) ?? .ask
@@ -54,7 +54,7 @@ enum CorresSettings {
     enum OpenLinks: String, CaseIterable, Identifiable {
         case inCorres, browser
         var id: String { rawValue }
-        var title: String { self == .inCorres ? "In Corres" : "Default Browser" }
+        var title: String { self == .inCorres ? String(localized: "In Corres") : String(localized: "Default Browser") }
     }
     static var openLinks: OpenLinks {
         defaults.string(forKey: openLinksKey).flatMap(OpenLinks.init) ?? .inCorres
@@ -93,20 +93,20 @@ enum CorresSettings {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .needsYou: "Needs You"
-            case .primary: "Unread in Primary"
-            case .unread: "All Unread"
-            case .new: "New Since Last Opened"
-            case .off: "Off"
+            case .needsYou: String(localized: "Needs You")
+            case .primary: String(localized: "Unread in Primary")
+            case .unread: String(localized: "All Unread")
+            case .new: String(localized: "New Since Last Opened")
+            case .off: String(localized: "Off")
             }
         }
         var detail: String {
             switch self {
-            case .needsYou: "Only what asks something of you, so the number means something."
-            case .primary: "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted."
-            case .unread: "Every unread email in your inbox, newsletters included."
-            case .new: "Mail that arrived since you last left Corres. Opening Corres clears it."
-            case .off: "No number on the icon."
+            case .needsYou: String(localized: "Only what asks something of you, so the number means something.")
+            case .primary: String(localized: "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted.")
+            case .unread: String(localized: "Every unread email in your inbox, newsletters included.")
+            case .new: String(localized: "Mail that arrived since you last left Corres. Opening Corres clears it.")
+            case .off: String(localized: "No number on the icon.")
             }
         }
     }
@@ -209,10 +209,10 @@ enum CorresSettings {
         /// Grouped in Settings so the long list reads as kinds of action.
         var group: String {
             switch self {
-            case .archive, .trash, .flag, .snooze, .unread, .pin: "Everyday"
-            case .replyAll, .forward, .share, .print: "Send and Share"
-            case .moveTo, .labels, .vip, .calendar, .translate: "Organize"
-            case .spam, .block, .unsubscribe: "Unwanted Mail"
+            case .archive, .trash, .flag, .snooze, .unread, .pin: String(localized: "Everyday")
+            case .replyAll, .forward, .share, .print: String(localized: "Send and Share")
+            case .moveTo, .labels, .vip, .calendar, .translate: String(localized: "Organize")
+            case .spam, .block, .unsubscribe: String(localized: "Unwanted Mail")
             }
         }
     }

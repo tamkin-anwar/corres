@@ -172,11 +172,11 @@ struct MacMainView: View {
 
     private func subtitle(_ rows: [MacRow]) -> String {
         let count = rows.compactMap(\.thread).count
-        if !model.search.isEmpty && services.sync.isSearchingRemote { return "Searching your accounts…" }
-        if services.sync.isSyncing { return "Checking for mail…" }
+        if !model.search.isEmpty && services.sync.isSearchingRemote { return String(localized: "Searching your accounts…") }
+        if services.sync.isSyncing { return String(localized: "Checking for mail…") }
         if count == 0 { return "" }
         let unread = rows.compactMap(\.thread).filter(\.isUnread).count
-        return unread > 0 ? "\(count) conversations, \(unread) unread" : "\(count) conversations"
+        return unread > 0 ? String(localized: "\(count) conversations, \(unread) unread") : String(localized: "\(count) conversations")
     }
 
     private var accountColors: [String: NSColor] {

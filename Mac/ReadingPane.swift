@@ -111,8 +111,8 @@ struct ReadingPane: View {
     private var recipients: String {
         var parts: [String] = []
         let to = thread.recipientNames
-        if !to.isEmpty { parts.append("To " + to.joined(separator: ", ")) }
-        if !thread.ccRecipients.isEmpty { parts.append("Cc \(thread.ccRecipients.count)") }
+        if !to.isEmpty { parts.append(String(localized: "To ") + to.joined(separator: ", ")) }
+        if !thread.ccRecipients.isEmpty { parts.append(String(localized: "Cc \(thread.ccRecipients.count)")) }
         return parts.joined(separator: " · ")
     }
 
@@ -175,10 +175,10 @@ struct ReadingPane: View {
         let attention = thread.attention(at: .now)
         let reason = thread.reason.trimmingCharacters(in: .whitespacesAndNewlines)
         switch attention {
-        case .needsYou: return reason.isEmpty ? "In Needs You" : "In Needs You: " + reason
-        case .waiting: return reason.isEmpty ? "Waiting on a reply" : "Waiting: " + reason
-        case .handled: return "Handled. It stays in Mail."
-        case .quiet: return reason.isEmpty ? "No action needed" : "No action needed: " + reason
+        case .needsYou: return reason.isEmpty ? String(localized: "In Needs You") : String(localized: "In Needs You: ") + reason
+        case .waiting: return reason.isEmpty ? String(localized: "Waiting on a reply") : String(localized: "Waiting: ") + reason
+        case .handled: return String(localized: "Handled. It stays in Mail.")
+        case .quiet: return reason.isEmpty ? String(localized: "No action needed") : String(localized: "No action needed: ") + reason
         }
     }
 
@@ -259,7 +259,8 @@ struct ReadingPane: View {
         HStack(spacing: 10) {
             Image(systemName: "photo").foregroundStyle(CorresPalette.secondary)
             let trackers = thread.htmlBody.map(HTMLMessageBody.trackerCount(in:)) ?? 0
-            Text(trackers > 0 ? "Images hidden, and \(trackers) \(trackers == 1 ? "tracker" : "trackers") blocked"
+            Text(trackers == 1 ? "Images hidden, and 1 tracker blocked"
+                 : trackers > 1 ? "Images hidden, and \(trackers) trackers blocked"
                               : "Images hidden to protect your privacy")
                 .font(.callout).foregroundStyle(CorresPalette.secondary)
             Spacer()

@@ -1,0 +1,21 @@
+/* No comment provided by engineer. */
+"Brief me with ${applicationName}" = "${applicationName}로 브리핑 듣기";
+
+/* No comment provided by engineer. */
+"New email in ${applicationName}" = "${applicationName}에서 새로운 이메일";
+
+/* No comment provided by engineer. */
+"Open ${list} in ${applicationName}" = "${applicationName}에서 ${list} 열기";
+
+/* No comment provided by engineer. */
+"Show ${list} in ${applicationName}" = "${applicationName}에서 ${list} 보기";
+
+/* No comment provided by engineer. */
+"What needs me in ${applicationName}" = "${applicationName}에서 나에게 필요한 것";
+
+/* No comment provided by engineer. */
+"What's in ${applicationName}" = "${applicationName}에 무엇이 있나요";
+
+/* No comment provided by engineer. */
+"Write an email with ${applicationName}" = "${applicationName}로 이메일 쓰기";
+

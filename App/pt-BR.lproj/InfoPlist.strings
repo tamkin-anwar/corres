@@ -1,0 +1,21 @@
+/* Bundle display name */
+"CFBundleDisplayName" = "Corres";
+
+/* Bundle name */
+"CFBundleName" = "Corres";
+
+/* Privacy - Calendars Full Access Usage Description */
+"NSCalendarsFullAccessUsageDescription" = "Quando você pede em um convite, o Corres verifica se há algo no mesmo horário no seu calendário e pode remover um evento cancelado. Seu calendário fica neste dispositivo.";
+
+/* Privacy - Camera Usage Description */
+"NSCameraUsageDescription" = "O Corres usa a câmera apenas quando você tira uma foto ou digitaliza um documento para anexar a um e-mail.";
+
+/* Privacy - Contacts Usage Description */
+"NSContactsUsageDescription" = "O Corres sugere pessoas dos seus Contatos enquanto você endereça um e-mail e mostra as fotos delas ao lado dos e-mails. Seus contatos ficam neste dispositivo.";
+
+/* Privacy - Microphone Usage Description */
+"NSMicrophoneUsageDescription" = "O Corres usa o microfone apenas enquanto você dita um e-mail. A fala é transcrita neste dispositivo.";
+
+/* Privacy - Speech Recognition Usage Description */
+"NSSpeechRecognitionUsageDescription" = "O Corres transforma seu ditado em texto neste dispositivo. Sua voz nunca é enviada a um servidor.";
+
