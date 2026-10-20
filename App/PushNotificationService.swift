@@ -168,7 +168,13 @@ final class PushNotificationService {
                     // discard it explicitly.
                     _ = try? await self.client.watch(topicName: Self.pubsubTopicName, account: account)
                     if let deviceTokenHex {
-                        try? await self.post(path: "register", body: ["emailAddress": account, "deviceToken": deviceTokenHex])
+                        // Visible Gmail pushes only where the extension can stay
+                        // silent about changes that aren't new mail.
+                        let alerts = await MainActor.run {
+                            NotifyPolicy.gmailAlerts && Self.showsPushAlerts && AccountPreferences.level(for: account) != nil
+                        }
+                        try? await self.post(path: "register", body: ["emailAddress": account, "deviceToken": deviceTokenHex,
+                                                                      "gmailAlerts": alerts ? "1" : "0"])
                     }
                 }
             }

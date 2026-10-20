@@ -105,7 +105,10 @@ function sendSilentPush(deviceToken, environment) {
 // message, never anything from it. "New email" is what shows if the
 // extension can't fetch it in time. Priority 10, and not throttled the way
 // background pushes are, so it arrives as fast as the service's own app.
-function sendAlertPush(deviceToken, environment, emailAddress, messageId) {
+// For Gmail, whose notice names no message, `historyId` replaces
+// `messageId`: the extension asks Gmail itself what's new since then, and
+// stays silent if nothing is (Apple's notification filtering).
+function sendAlertPush(deviceToken, environment, emailAddress, messageId, historyId) {
   return new Promise((resolve) => {
     const client = http2.connect(`https://${APNS_HOSTS[environment]}`);
     client.on('error', () => resolve({ status: 0, reason: 'ConnectionError' }));
@@ -116,7 +119,7 @@ function sendAlertPush(deviceToken, environment, emailAddress, messageId) {
       'apns-topic': process.env.APNS_BUNDLE_ID,
       'apns-push-type': 'alert',
       'apns-priority': '10',
-      'apns-collapse-id': crypto.createHash('sha256').update(messageId).digest('hex').slice(0, 64),
+      'apns-collapse-id': crypto.createHash('sha256').update(messageId || `${emailAddress}:${historyId}`).digest('hex').slice(0, 64),
     });
     request.setEncoding('utf8');
     let status = 0;
@@ -132,7 +135,7 @@ function sendAlertPush(deviceToken, environment, emailAddress, messageId) {
     request.write(JSON.stringify({
       aps: { alert: { title: 'New email', body: emailAddress }, sound: 'default', 'mutable-content': 1 },
       account: emailAddress,
-      message: messageId,
+      ...(messageId ? { message: messageId } : { gmailHistory: String(historyId) }),
     }));
     request.end();
   });
@@ -149,7 +152,7 @@ async function wakeDevice(doc, alert) {
     : APNS_ENVIRONMENTS;
   for (const environment of order) {
     const { status, reason } = alert
-      ? await sendAlertPush(doc.id, environment, alert.emailAddress, alert.messageId)
+      ? await sendAlertPush(doc.id, environment, alert.emailAddress, alert.messageId, alert.historyId)
       : await sendSilentPush(doc.id, environment);
     if (status === 200) {
       if (environment !== known) await doc.ref.set({ apnsEnvironment: environment }, { merge: true });
@@ -197,7 +200,7 @@ const MAX_EMAIL_ADDRESSES_PER_DEVICE = 50;
 // Registering the same account twice is a harmless no-op (arrayUnion only
 // adds a value once).
 async function handleRegister(req, res) {
-  const { emailAddress, deviceToken } = req.body || {};
+  const { emailAddress, deviceToken, gmailAlerts } = req.body || {};
   if (!emailAddress || !deviceToken) {
     res.status(400).send('emailAddress and deviceToken are required');
     return;
@@ -212,8 +215,14 @@ async function handleRegister(req, res) {
     res.status(429).send('Too many accounts registered for this device');
     return;
   }
+  // "gmailAlerts": "1" only from builds whose notification extension can
+  // stay silent when a Gmail change isn't new mail (Apple's filtering
+  // entitlement). Everyone else keeps silent wake-ups.
   await devices.doc(deviceToken).set({
     emailAddresses: Firestore.FieldValue.arrayUnion(emailAddress),
+    gmailAlertAccounts: gmailAlerts === '1'
+      ? Firestore.FieldValue.arrayUnion(emailAddress)
+      : Firestore.FieldValue.arrayRemove(emailAddress),
     updatedAt: Firestore.FieldValue.serverTimestamp(),
     ...environmentFrom(req.body),
   }, { merge: true });
@@ -236,6 +245,7 @@ async function handleUnregister(req, res) {
     await devices.doc(deviceToken).set({
       emailAddresses: Firestore.FieldValue.arrayRemove(emailAddress),
       alertAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
+      gmailAlertAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
     }, { merge: true });
   } else {
     await devices.doc(deviceToken).delete();
@@ -262,15 +272,19 @@ async function handlePubSub(req, res) {
     return;
   }
   let emailAddress;
+  let historyId;
   try {
-    ({ emailAddress } = JSON.parse(Buffer.from(dataBase64, 'base64').toString('utf8')));
+    ({ emailAddress, historyId } = JSON.parse(Buffer.from(dataBase64, 'base64').toString('utf8')));
   } catch {
     res.status(204).send();
     return;
   }
   if (emailAddress) {
     const matches = await devices.where('emailAddresses', 'array-contains', emailAddress).get();
-    await Promise.all(matches.docs.map((doc) => wakeDevice(doc)));
+    await Promise.all(matches.docs.map((doc) => {
+      const alerting = historyId && (doc.data().gmailAlertAccounts || []).includes(emailAddress);
+      return wakeDevice(doc, alerting ? { emailAddress, historyId } : undefined);
+    }));
   }
   res.status(204).send();
 }

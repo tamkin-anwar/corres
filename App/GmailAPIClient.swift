@@ -466,6 +466,14 @@ struct GmailAPIClient {
         return (ids, pageToken)
     }
 
+    /// New Inbox mail since a Gmail history point, for the notification
+    /// extension when a Gmail push arrives: which messages, and where to
+    /// look from next time.
+    func newInboxMessageIDs(since startHistoryId: String, account: String) async throws -> (ids: [String], historyId: String?) {
+        let token = try await accessToken(for: account)
+        return try await listHistoryMessageIDs(since: startHistoryId, token: token, label: "INBOX")
+    }
+
     /// Gmail discards history IDs older than roughly a week; a `startHistoryId`
     /// outside that window 404s, which is the specific, expected signal to
     /// fall back to a full resync rather than a generic failure.

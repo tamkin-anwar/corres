@@ -35,6 +35,13 @@ final class NotificationService: UNNotificationServiceExtension, @unchecked Send
             self.contentHandler = contentHandler
             bestAttempt = content
         }
+        if let account = content.userInfo["account"] as? String, let history = content.userInfo["gmailHistory"] as? String {
+            task = Task { [self] in
+                let found = await Self.newGmail(account: account, history: history)
+                if let found { finish(found) } else { stayQuiet() }
+            }
+            return
+        }
         guard let account = content.userInfo["account"] as? String,
               let messageID = content.userInfo["message"] as? String else {
             finish(nil)
@@ -77,6 +84,38 @@ final class NotificationService: UNNotificationServiceExtension, @unchecked Send
             }
         }
         handler(content)
+    }
+
+    /// A Gmail change that wasn't new mail (a read, an archive), or new
+    /// mail Corres already showed: nothing on screen. Apple's notification
+    /// filtering entitlement makes an empty notification silent; builds
+    /// without it never ask the relay for these pushes.
+    private func stayQuiet() {
+        let handler: ((UNNotificationContent) -> Void)? = lock.withLock {
+            defer { contentHandler = nil }
+            return contentHandler
+        }
+        handler?(UNNotificationContent())
+    }
+
+    /// What's new in the Inbox since the last Gmail push this device saw:
+    /// the newest of it, filled in like any other email.
+    private static func newGmail(account: String, history: String) async -> Filled? {
+        guard let since = NotifyPolicy.gmailCursor(for: account) else {
+            // The first push only sets where to look from.
+            NotifyPolicy.setGmailCursor(history, for: account)
+            return nil
+        }
+        guard let found = try? await GmailAPIClient().newInboxMessageIDs(since: since, account: account) else {
+            NotifyPolicy.setGmailCursor(history, for: account)
+            return nil
+        }
+        NotifyPolicy.setGmailCursor(found.historyId ?? history, for: account)
+        let fresh = found.ids.filter { !NotifyPolicy.wasShown($0) }
+        // Gmail ids grow with time: the last is the newest.
+        guard let newest = fresh.max() else { return nil }
+        for id in fresh where id != newest { NotifyPolicy.markShown(id) }
+        return await fill(account: account, messageID: newest)
     }
 
     private static func fill(account: String, messageID: String) async -> Filled? {

@@ -39,6 +39,28 @@ struct NotifyPolicy: Codable, Sendable {
         defaults.set(Array(shown.suffix(300)), forKey: shownKey)
     }
 
+    // MARK: Gmail
+
+    /// Gmail's pushes say only that something changed. Builds with Apple's
+    /// notification filtering (CORRES_NSE_FILTERING, set once Apple grants
+    /// it) ask the relay for a visible push per change, and the extension
+    /// shows only what's new since this point, staying silent otherwise.
+    #if CORRES_NSE_FILTERING
+    static let gmailAlerts = true
+    #else
+    static let gmailAlerts = false
+    #endif
+
+    private static func cursorKey(_ account: String) -> String { "corres.gmailCursor.\(account.lowercased())" }
+
+    static func gmailCursor(for account: String) -> String? { defaults.string(forKey: cursorKey(account)) }
+
+    static func setGmailCursor(_ historyId: String, for account: String) {
+        // Only forward: pushes can arrive out of order.
+        if let current = gmailCursor(for: account), let old = UInt64(current), let new = UInt64(historyId), new <= old { return }
+        defaults.set(historyId, forKey: cursorKey(account))
+    }
+
     static func wasShown(_ messageID: String?) -> Bool {
         guard let messageID else { return false }
         return (defaults.stringArray(forKey: shownKey) ?? []).contains(messageID)

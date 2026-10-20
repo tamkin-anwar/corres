@@ -97,3 +97,25 @@ Set `PushNotificationService.relayBaseURL` and `.pubsubTopicName` (in `App/PushN
 - No Gmail OAuth token ever reaches this service. The app itself calls `users.watch` (it already holds the token for every other Gmail API call); this relay only needs to know which device token belongs to which email address to route Gmail's contentless ping.
 - Does not renew Gmail's watch subscription on its own. `users.watch` expires after 7 days; the app renews it at launch. An account that isn't opened for a week silently stops getting push until the next launch, a known, accepted gap, not a bug (see Docs/Architecture.md).
 - **Does not, and currently cannot, verify that a `/register`/`/unregister` call actually came from a genuine Corres install**, not just something shaped like one. Real authentication for these two routes — proving the caller is a real, unmodified copy of the app on genuine Apple hardware, without requiring a user-login system this app doesn't have — is what Apple's **App Attest** framework exists for, and would be the correct fix; it's real client-side + server-side work (a per-device attested key, a server-side verification call against Apple's attestation service) deliberately not built as part of this pass. Until then, the format validation and per-device registration cap in `index.js` raise the cost of casual abuse but are not a substitute for actual authentication — worth treating as a known, open gap, not a solved one.
+
+## Gmail alerts while Corres is closed (waiting on Apple)
+
+Gmail's push only says "this mailbox changed", which includes reads and
+archives, so a visible alert per change needs a notification extension
+that can stay silent. That takes Apple's notification filtering
+entitlement (requested 2026-10-14). Everything else is built and deployed:
+
+- `register` takes `gmailAlerts: "1"`; the device's `gmailAlertAccounts`
+  then get a visible mutable-content push per Gmail change, naming the
+  account and Gmail's `historyId` (`gmailHistory`), never mail content.
+- The extension asks Gmail for new Inbox messages since the last history
+  point it saw (kept in the App Group) and shows the newest, or delivers
+  empty content to stay silent.
+
+To switch on once Apple grants it: add
+`com.apple.developer.usernotifications.filtering` = true to
+`NotificationExtension/NotificationExtension.entitlements` (with the
+capability on the `studio.anwarcreative.corres.notify` App ID), and add
+`-D CORRES_NSE_FILTERING` to OTHER_SWIFT_FLAGS for the Corres and
+CorresNotify targets. Builds without the flag keep asking for silent
+wake-ups, so nothing changes until then.
