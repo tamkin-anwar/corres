@@ -102,6 +102,10 @@ struct CorresApp: App {
                 .onOpenURL { url in
                     if !appDelegate.router.open(url) { GIDSignIn.sharedInstance.handle(url) }
                 }
+                // Handed off from your Mac or another iPhone or iPad.
+                .onContinueUserActivity(Handoff.conversation) { activity in
+                    if let id = Handoff.threadID(activity) { appDelegate.router.pending = .thread(id) }
+                }
                 // A conversation picked in Search on the Home Screen.
                 .onContinueUserActivity(CSSearchableItemActionType) { activity in
                     if let id = SpotlightIndex.threadID(from: activity) { appDelegate.router.pending = .thread(id) }

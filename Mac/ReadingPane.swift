@@ -1,3 +1,4 @@
+import QuickLook
 import SwiftUI
 
 /// The open conversation: subject in New York, who it's from and to, why
@@ -46,6 +47,11 @@ struct ReadingPane: View {
                         .padding(.horizontal, 28)
                         .padding(.bottom, 10)
                 }
+                if services.unsubscribeService.canUnsubscribe(thread), !thread.senderUnsubscribed {
+                    unsubscribeLine
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 10)
+                }
                 Divider().padding(.horizontal, 28)
                 HTMLMessageBody(html: html, height: $bodyHeight, blockRemoteImages: !imagesAllowed)
                     .frame(height: bodyHeight)
@@ -63,6 +69,7 @@ struct ReadingPane: View {
         .background(CorresPalette.canvas)
         .id(thread.id)
         .task(id: thread.id) { await opened() }
+        .userActivity(Handoff.conversation) { activity in Handoff.describe(activity, thread) }
     }
 
     // MARK: Header
@@ -219,6 +226,35 @@ struct ReadingPane: View {
     private var blockedImages: Int { thread.htmlBody.map(HTMLMessageBody.remoteImageCount(in:)) ?? 0 }
     private var imagesAllowed: Bool { showImages || thread.imagesTrusted || CorresSettings.remoteImages == .always }
 
+    @State private var unsubscribing = false
+    @State private var unsubscribed = false
+
+    /// Mail's banner: a newsletter or list, one click to leave it.
+    private var unsubscribeLine: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "envelope.badge.shield.half.filled").foregroundStyle(CorresPalette.secondary)
+            Text(unsubscribed ? "Unsubscribed. You won't get more from this list."
+                              : "This email is from a mailing list.")
+                .font(.callout).foregroundStyle(CorresPalette.secondary)
+            Spacer()
+            if !unsubscribed {
+                if unsubscribing { ProgressView().controlSize(.small) }
+                Button("Unsubscribe") {
+                    unsubscribing = true
+                    Task {
+                        let outcome = await services.unsubscribeService.unsubscribe(from: thread, store: services.store)
+                        unsubscribing = false
+                        unsubscribed = outcome == .done
+                    }
+                }
+                .controlSize(.small)
+                .disabled(unsubscribing)
+            }
+        }
+        .padding(10)
+        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 8))
+    }
+
     private var imagesNotice: some View {
         HStack(spacing: 10) {
             Image(systemName: "photo").foregroundStyle(CorresPalette.secondary)
@@ -317,10 +353,13 @@ struct MacAttachmentChip: View {
     let thread: Correspondence
     @State private var working = false
     @State private var failed = false
+    @State private var previewURL: URL?
 
     var body: some View {
         let kind = AttachmentKind(filename: file.filename, mimeType: file.mimeType)
-        Button { Task { await open() } } label: {
+        // A click looks at it in Quick Look, as in Mail and Finder;
+        // Open hands it to its app.
+        Button { Task { previewURL = await download() } } label: {
             HStack(spacing: 8) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 6, style: .continuous).fill(kind.color)
@@ -340,8 +379,10 @@ struct MacAttachmentChip: View {
             .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(CorresPalette.line))
         }
         .buttonStyle(.plain)
-        .help("Open \(file.filename)")
+        .help("Quick Look \(file.filename)")
+        .quickLookPreview($previewURL)
         .contextMenu {
+            Button("Quick Look") { Task { previewURL = await download() } }
             Button("Open") { Task { await open() } }
             Button("Save to Downloads") { Task { await save(toDownloads: true) } }
             Button("Save As…") { Task { await save(toDownloads: false) } }

@@ -13,6 +13,8 @@ struct ComposeRequest: Codable, Hashable {
     var account: String?
     /// Continuing a draft saved on the server: replaced once sent.
     var serverDraftID: String?
+    /// A whole draft waiting in MacComposeHandoff (a scheduled email being edited).
+    var handoff: UUID?
     var id = UUID()
 }
 
@@ -78,6 +80,13 @@ struct MacComposeView: View {
             }
         }
         .popover(isPresented: $choosingTime, arrowEdge: .top) { sendLaterPicker }
+        // Files dragged in from Finder or another app are attached.
+        .dropDestination(for: URL.self) { urls, _ in
+            let files = urls.filter(\.isFileURL)
+            guard !files.isEmpty else { return false }
+            add(files)
+            return true
+        }
         .confirmationDialog("Send without a subject?", isPresented: $confirmEmptySubject) {
             Button("Send") { send(confirmed: true) }
             Button("Cancel", role: .cancel) {}
@@ -163,6 +172,16 @@ struct MacComposeView: View {
 
     private func load() {
         guard !loaded else { return }
+        if let handoff = request.handoff, let whole = MacComposeHandoff.drafts.removeValue(forKey: handoff) {
+            draft = whole
+            replyingTo = whole.threadID.flatMap { services.store.thread($0) }
+            fromAccount = whole.fromAccount ?? accounts.first ?? ""
+            showsCc = !(whole.cc ?? "").isEmpty
+            initialBody = whole.body
+            focus = .body
+            loaded = true
+            return
+        }
         if let id = request.thread, let thread = services.store.thread(id) {
             replyingTo = thread
             draft = thread.draft(kind: request.kind)
@@ -258,7 +277,12 @@ struct MacComposeView: View {
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         guard panel.runModal() == .OK else { return }
-        for url in panel.urls {
+        add(panel.urls)
+    }
+
+    /// From the Attach button, or dropped on the window from Finder.
+    private func add(_ urls: [URL]) {
+        for url in urls {
             guard let data = try? Data(contentsOf: url) else { continue }
             let type = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
             let file = PendingAttachment(filename: url.lastPathComponent, mimeType: type, data: data)

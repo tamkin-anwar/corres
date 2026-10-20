@@ -39,7 +39,15 @@ final class ScheduledSends {
     var announce: ((Item) -> Void)?
     private var timer: Task<Void, Never>?
 
-    private static var fileURL: URL { URL.applicationSupportDirectory.appending(path: "scheduled-sends.json") }
+    private static var fileURL: URL {
+        #if DEBUG
+        // Screenshots on sample mail beside a real Corres: never its queue.
+        if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly") {
+            return URL.temporaryDirectory.appending(path: "sample-scheduled-sends.json")
+        }
+        #endif
+        return URL.applicationSupportDirectory.appending(path: "scheduled-sends.json")
+    }
 
     private init() {
         if let data = try? Data(contentsOf: Self.fileURL),

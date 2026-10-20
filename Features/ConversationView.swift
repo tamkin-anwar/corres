@@ -255,6 +255,9 @@ struct ConversationView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .userActivity(Handoff.conversation, isActive: store.thread(currentID) != nil) { activity in
+            if let thread = store.thread(currentID) { Handoff.describe(activity, thread) }
+        }
         .sheet(item: $composeDraft) { draft in
             ComposeView(store: store, outbox: outbox, draft: draft,
                         sourceThread: store.thread(currentID))

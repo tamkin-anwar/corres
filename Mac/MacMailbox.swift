@@ -5,7 +5,7 @@ enum MacMailbox: Hashable, Codable {
     case needsYou, waiting, newSenders
     case filter(String)   // a MailFilter's raw value: Primary, Everything, Unread…
     case account(String)  // one account's inbox
-    case flagged, snoozed, handled
+    case flagged, snoozed, handled, scheduled
     case server(String)   // a MacRemoteMailboxes.Kind: Sent, Drafts, Archive, Spam, Trash
     case label(account: String, id: String, name: String)  // one account's label or folder
 
@@ -21,6 +21,7 @@ enum MacMailbox: Hashable, Codable {
         case .flagged: "Flagged"
         case .snoozed: "Snoozed"
         case .handled: "Handled"
+        case .scheduled: "Send Later"
         case .server(let raw): MacRemoteMailboxes.Kind(rawValue: raw)?.title ?? raw
         case .label(_, _, let name): name
         }
@@ -58,6 +59,7 @@ enum MacMailbox: Hashable, Codable {
         case .flagged: "flag"
         case .snoozed: "moon.zzz"
         case .handled: "checkmark.circle"
+        case .scheduled: "clock.arrow.circlepath"
         case .server(let raw): MacRemoteMailboxes.Kind(rawValue: raw)?.systemImage ?? "tray"
         case .label(_, let id, _): id.hasPrefix("folder:") ? "folder" : "tag"
         }
@@ -180,7 +182,7 @@ final class MacMailboxModel {
                 .sorted { ($0.snoozedUntil ?? .distantFuture) < ($1.snoozedUntil ?? .distantFuture) }.map(MacRow.thread)
         case .handled:
             return MailQuery.filter(threads).filter { $0.attention == .handled }.map(MacRow.thread)
-        case .server, .label:
+        case .server, .label, .scheduled:
             return []
         }
     }

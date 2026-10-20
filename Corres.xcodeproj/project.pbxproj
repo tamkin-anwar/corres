@@ -323,6 +323,10 @@
 		71B0AF9358A9DF7C9C008623 /* App/SpotlightIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557861A2B2C7D4BEECBE7EAC /* App/SpotlightIndex.swift */; };
 		F12669A81F4AD13BAEF5D984 /* App/SpotlightIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557861A2B2C7D4BEECBE7EAC /* App/SpotlightIndex.swift */; };
 		DB554D5836E1696ABA265D33 /* Mac/MacCommandPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = F774204AB22EFCF7D3FF3595 /* Mac/MacCommandPalette.swift */; };
+		F431A0400D699B9401B8F407 /* Mac/MacScheduled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD88A262431B14EF675E902 /* Mac/MacScheduled.swift */; };
+		02F34C00220AA4AB44438ACC /* Mac/MacPrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FF2581BFBE48D3D08E794A /* Mac/MacPrinter.swift */; };
+		B35B765F6061B1A6AA7FE02A /* App/Handoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB0A95DC9E68544BA7F984E /* App/Handoff.swift */; };
+		2DB8C05CF37E44A679EF8854 /* App/Handoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB0A95DC9E68544BA7F984E /* App/Handoff.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -519,6 +523,9 @@
 		39FEBA94CE4F05777B610D73 /* App/CalendarAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CalendarAccess.swift; sourceTree = SOURCE_ROOT; };
 		557861A2B2C7D4BEECBE7EAC /* App/SpotlightIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SpotlightIndex.swift; sourceTree = SOURCE_ROOT; };
 		F774204AB22EFCF7D3FF3595 /* Mac/MacCommandPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacCommandPalette.swift; sourceTree = SOURCE_ROOT; };
+		4BD88A262431B14EF675E902 /* Mac/MacScheduled.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacScheduled.swift; sourceTree = SOURCE_ROOT; };
+		84FF2581BFBE48D3D08E794A /* Mac/MacPrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacPrinter.swift; sourceTree = SOURCE_ROOT; };
+		DDB0A95DC9E68544BA7F984E /* App/Handoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/Handoff.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -732,6 +739,9 @@
 				39FEBA94CE4F05777B610D73 /* App/CalendarAccess.swift */,
 				557861A2B2C7D4BEECBE7EAC /* App/SpotlightIndex.swift */,
 				F774204AB22EFCF7D3FF3595 /* Mac/MacCommandPalette.swift */,
+				4BD88A262431B14EF675E902 /* Mac/MacScheduled.swift */,
+				84FF2581BFBE48D3D08E794A /* Mac/MacPrinter.swift */,
+				DDB0A95DC9E68544BA7F984E /* App/Handoff.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1100,6 +1110,7 @@
 				AFFF6307D6BC9F99A67A9475 /* App/MailIndexer.swift in Sources */,
 				1269410FE6ED3C2E42F6DACD /* App/CalendarAccess.swift in Sources */,
 				71B0AF9358A9DF7C9C008623 /* App/SpotlightIndex.swift in Sources */,
+				B35B765F6061B1A6AA7FE02A /* App/Handoff.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1268,6 +1279,9 @@
 				765D90852331D90DA05EA8AC /* Features/InvitationCard.swift in Sources */,
 				F12669A81F4AD13BAEF5D984 /* App/SpotlightIndex.swift in Sources */,
 				DB554D5836E1696ABA265D33 /* Mac/MacCommandPalette.swift in Sources */,
+				F431A0400D699B9401B8F407 /* Mac/MacScheduled.swift in Sources */,
+				02F34C00220AA4AB44438ACC /* Mac/MacPrinter.swift in Sources */,
+				2DB8C05CF37E44A679EF8854 /* App/Handoff.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

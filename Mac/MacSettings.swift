@@ -11,10 +11,12 @@ struct MacSettingsView: View {
                 .tabItem { Label("Accounts", systemImage: "at") }
             MacGeneralSettings(store: services.store)
                 .tabItem { Label("General", systemImage: "gearshape") }
+            MacSignaturesSettings(accounts: services.auth.accounts.map(\.email))
+                .tabItem { Label("Signatures", systemImage: "signature") }
             MacPlanSettings(entitlements: services.entitlements)
                 .tabItem { Label("Corres Pro", systemImage: "sparkle") }
         }
-        .frame(width: 560, height: 420)
+        .frame(width: 600, height: 460)
     }
 }
 
@@ -166,8 +168,22 @@ private struct MacGeneralSettings: View {
     @AppStorage(SpotlightIndex.enabledKey) private var inSpotlight = true
     let store: MailStore
 
+    @State private var isDefaultMailApp = MacDefaultMail.isCorres
+
     var body: some View {
         Form {
+            LabeledContent {
+                if isDefaultMailApp {
+                    Label("Corres", systemImage: "checkmark.circle.fill").foregroundStyle(CorresPalette.secondary)
+                } else {
+                    Button("Make Corres the Default") {
+                        Task { isDefaultMailApp = await MacDefaultMail.makeCorres() }
+                    }
+                }
+            } label: {
+                Text("Default email app")
+                Text("Email links in other apps open in Corres.")
+            }
             Picker("Appearance", selection: $appearance) {
                 Text("Automatic").tag("system")
                 Text("Light").tag("light")
@@ -209,5 +225,109 @@ private struct MacPlanSettings: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// The Mac's default email app: what opens mailto: links everywhere.
+@MainActor
+enum MacDefaultMail {
+    static var isCorres: Bool {
+        guard let mailto = URL(string: "mailto:"),
+              let current = NSWorkspace.shared.urlForApplication(toOpen: mailto) else { return false }
+        return Bundle(url: current)?.bundleIdentifier == Bundle.main.bundleIdentifier
+    }
+
+    /// macOS asks you to confirm.
+    static func makeCorres() async -> Bool {
+        do {
+            try await NSWorkspace.shared.setDefaultApplication(at: Bundle.main.bundleURL, toOpenURLsWithScheme: "mailto")
+        } catch {
+            return isCorres
+        }
+        return isCorres
+    }
+}
+
+/// Signatures on the Mac: the same named signatures as the iPhone's, and
+/// which one each account adds to new mail and to replies.
+private struct MacSignaturesSettings: View {
+    let accounts: [String]
+    @State private var signatures = Signatures.all
+    @State private var selection: String?
+    @State private var revision = 0
+
+    var body: some View {
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                List(signatures, selection: $selection) { signature in
+                    Text(signature.name.isEmpty ? "Untitled" : signature.name).tag(signature.id)
+                }
+                .listStyle(.bordered)
+                HStack(spacing: 0) {
+                    Button { add() } label: { Image(systemName: "plus").frame(width: 24, height: 20) }
+                    Button { remove() } label: { Image(systemName: "minus").frame(width: 24, height: 20) }
+                        .disabled(selection == nil)
+                    Spacer()
+                }
+                .buttonStyle(.borderless)
+                .padding(4)
+            }
+            .frame(width: 180)
+            Divider()
+            if let index = signatures.firstIndex(where: { $0.id == selection }) {
+                Form {
+                    TextField("Name", text: $signatures[index].name)
+                    TextEditor(text: $signatures[index].text)
+                        .font(.body)
+                        .frame(minHeight: 120)
+                    if !accounts.isEmpty {
+                        Section("Use for") {
+                            ForEach(accounts, id: \.self) { account in
+                                defaults(for: account, signature: signatures[index].id)
+                            }
+                        }
+                    }
+                }
+                .formStyle(.grouped)
+                .id(revision)
+            } else {
+                ContentUnavailableView("No signature selected", systemImage: "signature",
+                                       description: Text("Add one with +, like a full one for new mail and a short one for replies."))
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .onChange(of: signatures) { _, value in Signatures.all = value }
+        .onAppear { if selection == nil { selection = signatures.first?.id } }
+    }
+
+    private func defaults(for account: String, signature id: String) -> some View {
+        HStack {
+            Text(AccountPreferences.nickname(for: account)).lineLimit(1)
+            Spacer()
+            Toggle("New mail", isOn: binding(account, id, reply: false))
+            Toggle("Replies", isOn: binding(account, id, reply: true))
+        }
+        .toggleStyle(.checkbox)
+    }
+
+    private func binding(_ account: String, _ id: String, reply: Bool) -> Binding<Bool> {
+        Binding(get: { _ = revision; return Signatures.defaultID(for: account, reply: reply) == id },
+                set: { on in
+                    Signatures.setDefault(on ? id : "", for: account, reply: reply)
+                    revision += 1
+                })
+    }
+
+    private func add() {
+        let signature = Signature(name: "Signature \(signatures.count + 1)", text: "")
+        signatures.append(signature)
+        selection = signature.id
+    }
+
+    private func remove() {
+        guard let selection else { return }
+        Signatures.delete(selection)
+        signatures = Signatures.all
+        self.selection = signatures.first?.id
     }
 }

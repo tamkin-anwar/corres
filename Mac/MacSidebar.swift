@@ -40,6 +40,10 @@ struct MacSidebar: View {
             }
             Section("Mailboxes") {
                 row(.server(MacRemoteMailboxes.Kind.drafts.rawValue))
+                // As in Mail: there while something's waiting to go.
+                if !ScheduledSends.shared.items.isEmpty || model.mailbox == .scheduled {
+                    row(.scheduled, count: ScheduledSends.shared.items.count)
+                }
                 row(.server(MacRemoteMailboxes.Kind.sent.rawValue))
                 row(.server(MacRemoteMailboxes.Kind.archive.rawValue))
                 row(.flagged)

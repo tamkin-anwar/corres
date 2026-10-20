@@ -9,6 +9,7 @@ struct MacMainView: View {
     @State private var columns = NavigationSplitViewVisibility.all
     @State private var snoozing: [Correspondence] = []
     @State private var showingPalette = false
+    @State private var scheduledSelection: UUID?
 
     private var store: MailStore { services.store }
     private var dockCount: Int {
@@ -110,7 +111,9 @@ struct MacMainView: View {
             if services.ask.phase != .idle, !model.search.isEmpty {
                 askCard
             }
-            if rows.isEmpty {
+            if model.mailbox == .scheduled, model.search.isEmpty {
+                MacScheduledList(selection: $scheduledSelection)
+            } else if rows.isEmpty {
                 emptyState.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 MessageList(rows: rows, showsReasons: model.mailbox.showsReasons && model.search.isEmpty,
@@ -208,6 +211,24 @@ struct MacMainView: View {
 
     @ViewBuilder
     private var detail: some View {
+        if model.mailbox == .scheduled, model.search.isEmpty {
+            if let item = ScheduledSends.shared.items.first(where: { $0.id == scheduledSelection }) {
+                MacScheduledDetail(item: item, services: services) { draft in
+                    let handoff = UUID()
+                    MacComposeHandoff.drafts[handoff] = draft
+                    openWindow(value: ComposeRequest(kind: draft.kind, handoff: handoff))
+                }
+            } else {
+                ContentUnavailableView("Send Later", systemImage: "clock.arrow.circlepath",
+                                       description: Text("Choose a scheduled email to read it, send it now, or change its time."))
+            }
+        } else {
+            conversationDetail
+        }
+    }
+
+    @ViewBuilder
+    private var conversationDetail: some View {
         let listed = model.selectedThreads
         // Still open after it left the list (answered, moved by a sync).
         let selected = listed.isEmpty && model.selection.count == 1
@@ -406,6 +427,10 @@ struct MacMainView: View {
             if actions.pendingRemoval != nil { actions.undoRemoval() } else { actions.undoLastChange() }
         case .commandPalette:
             showingPalette = true
+        case .print:
+            guard let thread = selected.first else { return }
+            // The message as it is now, body loaded.
+            MacPrinter.print(store.thread(thread.id) ?? thread, in: NSApp.keyWindow)
         }
     }
 
@@ -436,6 +461,7 @@ struct MacMainView: View {
                     Command(title: "Reply All", detail: "⇧⌘R", systemImage: "arrowshape.turn.up.left.2") { perform(.replyAll) },
                     Command(title: "Forward", detail: "⇧⌘F", systemImage: "arrowshape.turn.up.right") { perform(.forward) },
                     Command(title: "Open in New Window", detail: "⌘O", systemImage: "macwindow") { perform(.openInWindow) },
+                    Command(title: "Print", detail: "⌘P", systemImage: "printer") { perform(.print) },
                 ]
             }
             // Filing, as Gmail's "Move to" does.
@@ -452,6 +478,7 @@ struct MacMainView: View {
         var places: [MacMailbox] = [.needsYou, .waiting]
         places += [MailFilter.primary, .everything, .unread, .promotions, .social, .updates].map { MacMailbox.filter($0.rawValue) }
         places += [.flagged, .snoozed, .handled]
+        if !ScheduledSends.shared.items.isEmpty { places.append(.scheduled) }
         places += MacRemoteMailboxes.Kind.allCases.map { MacMailbox.server($0.rawValue) }
         commands += places.map { place in
             Command(title: "Go to \(place.title)", detail: nil, systemImage: place.systemImage) { model.mailbox = place }
