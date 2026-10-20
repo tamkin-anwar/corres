@@ -322,6 +322,7 @@
 		765D90852331D90DA05EA8AC /* Features/InvitationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C84FA9213442ABAFDA59F7 /* Features/InvitationCard.swift */; };
 		71B0AF9358A9DF7C9C008623 /* App/SpotlightIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557861A2B2C7D4BEECBE7EAC /* App/SpotlightIndex.swift */; };
 		F12669A81F4AD13BAEF5D984 /* App/SpotlightIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557861A2B2C7D4BEECBE7EAC /* App/SpotlightIndex.swift */; };
+		DB554D5836E1696ABA265D33 /* Mac/MacCommandPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = F774204AB22EFCF7D3FF3595 /* Mac/MacCommandPalette.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -517,6 +518,7 @@
 		CC29ECFC5579458575BB8D76 /* App/MailIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/MailIndexer.swift; sourceTree = SOURCE_ROOT; };
 		39FEBA94CE4F05777B610D73 /* App/CalendarAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CalendarAccess.swift; sourceTree = SOURCE_ROOT; };
 		557861A2B2C7D4BEECBE7EAC /* App/SpotlightIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SpotlightIndex.swift; sourceTree = SOURCE_ROOT; };
+		F774204AB22EFCF7D3FF3595 /* Mac/MacCommandPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacCommandPalette.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -729,6 +731,7 @@
 				CC29ECFC5579458575BB8D76 /* App/MailIndexer.swift */,
 				39FEBA94CE4F05777B610D73 /* App/CalendarAccess.swift */,
 				557861A2B2C7D4BEECBE7EAC /* App/SpotlightIndex.swift */,
+				F774204AB22EFCF7D3FF3595 /* Mac/MacCommandPalette.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1264,6 +1267,7 @@
 				A65331F4FE6BB89D725A9D06 /* App/CalendarAccess.swift in Sources */,
 				765D90852331D90DA05EA8AC /* Features/InvitationCard.swift in Sources */,
 				F12669A81F4AD13BAEF5D984 /* App/SpotlightIndex.swift in Sources */,
+				DB554D5836E1696ABA265D33 /* Mac/MacCommandPalette.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

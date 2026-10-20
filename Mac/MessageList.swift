@@ -38,6 +38,9 @@ struct MessageList: NSViewRepresentable {
         table.doubleAction = #selector(Coordinator.doubleClicked)
         table.onKey = { [weak coordinator = context.coordinator] key in coordinator?.parent.onKey(key) ?? false }
         table.menuProvider = { [weak coordinator = context.coordinator] row in coordinator?.menu(forRow: row) }
+        // Dragged onto a mailbox in the sidebar to move there, as in Mail.
+        table.setDraggingSourceOperationMask(.move, forLocal: true)
+        table.setDraggingSourceOperationMask([], forLocal: false)
         let scroll = NSScrollView()
         scroll.documentView = table
         scroll.hasVerticalScroller = true
@@ -107,6 +110,16 @@ struct MessageList: NSViewRepresentable {
         }
 
         func numberOfRows(in tableView: NSTableView) -> Int { rows.count }
+
+        /// A dragged row carries its conversation, and the rest of the
+        /// selection when it's part of it.
+        func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> (any NSPasteboardWriting)? {
+            guard rows.indices.contains(row), let thread = rows[row].thread else { return nil }
+            let ids = parent.selection.contains(thread.id) ? parent.selection : [thread.id]
+            let item = NSPasteboardItem()
+            item.setString(MacDrag.encode(ids), forType: .string)
+            return item
+        }
 
         func tableView(_ tableView: NSTableView, isGroupRow row: Int) -> Bool {
             if case .group = rows[row] { true } else { false }

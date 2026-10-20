@@ -60,6 +60,32 @@ final class MacServices {
         people = PeopleDirectory()
     }
 
+    /// The buttons on a new-mail notification, as on the iPhone.
+    private func notificationAction(_ action: String, id: ThreadID, typed: String?) async {
+        if store.state != .loaded { await store.load() }
+        guard let thread = store.thread(id) else { return }
+        switch action {
+        case PushNotificationService.archiveAction:
+            await threadActions.archive(thread)
+            await threadActions.commitPendingRemoval()
+        case PushNotificationService.markReadAction:
+            await threadActions.setUnread(false, for: thread)
+        case PushNotificationService.replyAction:
+            let text = (typed ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { return }
+            var draft = thread.draft(kind: .reply)
+            draft.body = Draft.adding(signature: CorresSettings.signature(for: id.account, reply: true), to: text + draft.body)
+            if let address = SendAsDirectory.shared.address(for: id.account, answering: thread), !address.isPrimary {
+                draft.fromAddress = address.email
+                draft.fromName = address.name.isEmpty ? nil : address.name
+            }
+            await outbox.sendNow(draft, replyingTo: thread)
+            await threadActions.setUnread(false, for: thread)
+        default:
+            break
+        }
+    }
+
     /// Once per launch: open the mailbox, restore accounts, first sync.
     func launch() async {
         guard !launched else { return }
@@ -67,6 +93,7 @@ final class MacServices {
         HangReporter.shared.start()
         CloudSync.shared.start(store: store)
         PushNotificationService.registerNotificationActions()
+        MacAppDelegate.handleAction = { [weak self] action, id, typed in await self?.notificationAction(action, id: id, typed: typed) }
         async let loaded: Void = store.load()
         await auth.restoreConnectedAccounts()
         await loaded
@@ -173,6 +200,14 @@ final class MacServices {
 
     private static func makeModelContainer() -> (container: ModelContainer, inMemory: Bool) {
         let schema = Schema(CorresSchemaV1.models)
+        #if DEBUG
+        // Screenshots: sample mail in memory, never the store a real
+        // Corres on this Mac is using.
+        if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly"),
+           let sample = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]) {
+            return (sample, false)
+        }
+        #endif
         do {
             let container = try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self,
                                                configurations: [ModelConfiguration(schema: schema)])

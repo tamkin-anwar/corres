@@ -8,6 +8,7 @@ struct MacMainView: View {
     @Environment(\.openWindow) private var openWindow
     @State private var columns = NavigationSplitViewVisibility.all
     @State private var snoozing: [Correspondence] = []
+    @State private var showingPalette = false
 
     private var store: MailStore { services.store }
     private var dockCount: Int {
@@ -20,7 +21,7 @@ struct MacMainView: View {
     var body: some View {
         let rows = model.rows(store: store, accounts: accounts, remote: services.remote, serverMatches: serverMatches)
         NavigationSplitView(columnVisibility: $columns) {
-            MacSidebar(services: services, model: model)
+            MacSidebar(services: services, model: model, onDrop: drop)
                 .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 300)
         } content: {
             listColumn(rows)
@@ -32,6 +33,7 @@ struct MacMainView: View {
         .onSubmit(of: .search) { submitSearch() }
         .toolbar { toolbar }
         .overlay(alignment: .bottom) { undoBar }
+        .sheet(isPresented: $showingPalette) { MacCommandPalette(commands: paletteCommands) }
         .sheet(isPresented: Binding(get: { !snoozing.isEmpty }, set: { if !$0 { snoozing = [] } })) {
             MacSnoozeSheet { date in
                 let threads = snoozing
@@ -50,6 +52,11 @@ struct MacMainView: View {
         }
         .onChange(of: services.sync.syncProgress) { Task { await store.refresh() } }
         // A notification, a widget or a corres:// link asking for a place.
+        #if DEBUG
+        // App Store screenshots: -ShowMailbox needsYou|waiting|everything,
+        // -SelectThread sample-N, -SearchFor "text".
+        .task { await showForScreenshot() }
+        #endif
         .onChange(of: services.router.pending, initial: true) { _, target in
             guard let target else { return }
             services.router.pending = nil
@@ -57,7 +64,7 @@ struct MacMainView: View {
             case .thread(let id):
                 model.search = ""
                 if services.store.thread(id)?.attention == .needsYou { model.mailbox = .needsYou }
-                else if model.mailbox.remoteKind != nil || model.mailbox == .newSenders { model.mailbox = .filter(MailFilter.everything.rawValue) }
+                else if model.mailbox.remoteSource != nil || model.mailbox == .newSenders { model.mailbox = .filter(MailFilter.everything.rawValue) }
                 model.selection = [id]
             case .destination(let destination):
                 switch destination {
@@ -83,8 +90,8 @@ struct MacMainView: View {
             if await services.sync.search(query, accounts: accounts) { await store.refresh() }
         }
         .task(id: model.mailbox) {
-            guard let kind = model.mailbox.remoteKind else { return }
-            await services.remote.refresh(kind, accounts: accounts, store: store)
+            guard let source = model.mailbox.remoteSource else { return }
+            await services.remote.refresh(source, accounts: accounts, store: store)
         }
         .alert("Couldn't Save", isPresented: Binding(get: { store.errorMessage != nil },
                                                      set: { if !$0 { store.errorMessage = nil } })) {
@@ -117,8 +124,8 @@ struct MacMainView: View {
                                     Task { if await services.sync.searchMore() { await store.refresh() } }
                                     return
                                 }
-                                guard let kind = model.mailbox.remoteKind else { return }
-                                Task { await services.remote.loadMore(kind, accounts: accounts, store: store) }
+                                guard let source = model.mailbox.remoteSource else { return }
+                                Task { await services.remote.loadMore(source, accounts: accounts, store: store) }
                             })
             }
         }
@@ -150,10 +157,10 @@ struct MacMainView: View {
 
     @ViewBuilder
     private var emptyState: some View {
-        if let kind = model.mailbox.remoteKind, model.search.isEmpty, !services.remote.hasLoaded(kind) || services.remote.loading.contains(kind) {
+        if let source = model.mailbox.remoteSource, model.search.isEmpty, !services.remote.hasLoaded(source) || services.remote.loading.contains(source) {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let kind = model.mailbox.remoteKind, model.search.isEmpty, services.remote.failed(kind) {
-            ContentUnavailableView("Couldn't load \(kind.title)", systemImage: "wifi.exclamationmark",
+        } else if let source = model.mailbox.remoteSource, model.search.isEmpty, services.remote.failed(source) {
+            ContentUnavailableView("Couldn't load \(model.mailbox.title)", systemImage: "wifi.exclamationmark",
                                    description: Text("Check your connection, then choose it again."))
         } else if !model.search.isEmpty {
             ContentUnavailableView.search(text: model.search)
@@ -273,6 +280,53 @@ struct MacMainView: View {
 
     // MARK: Actions
 
+    #if DEBUG
+    private func showForScreenshot() async {
+        let args = ProcessInfo.processInfo.arguments
+        func value(_ flag: String) -> String? { args.firstIndex(of: flag).flatMap { args.indices.contains($0 + 1) ? args[$0 + 1] : nil } }
+        guard args.contains("-SampleMailOnly") else { return }
+        try? await Task.sleep(for: .seconds(1))
+        switch value("-ShowMailbox") {
+        case "waiting": model.mailbox = .waiting
+        case "everything": model.mailbox = .filter(MailFilter.everything.rawValue)
+        case "primary": model.mailbox = .primary
+        default: model.mailbox = .needsYou
+        }
+        if let search = value("-SearchFor") { model.search = search }
+        if let thread = value("-SelectThread") {
+            try? await Task.sleep(for: .milliseconds(300))
+            model.selection = [ThreadID(account: "sample", providerID: thread)]
+        }
+    }
+    #endif
+
+    /// Conversations dragged onto a mailbox: moved there, as in Mail.
+    private func drop(on mailbox: MacMailbox, _ ids: [ThreadID]) {
+        let threads = ids.compactMap { store.thread($0) }
+        guard !threads.isEmpty else { return }
+        switch mailbox {
+        case .needsYou: perform(.move(.needsYou), on: threads)
+        case .waiting: perform(.move(.waiting), on: threads)
+        case .handled: perform(.move(.handled), on: threads)
+        case .flagged: Task { await actions.toggleFlagged(true, for: threads) }
+        case .server(let raw) where raw == MacRemoteMailboxes.Kind.archive.rawValue: perform(.archive, on: threads)
+        case .server(let raw) where raw == MacRemoteMailboxes.Kind.trash.rawValue: perform(.trash, on: threads)
+        case .server(let raw) where raw == MacRemoteMailboxes.Kind.spam.rawValue:
+            services.remote.remove(Set(threads.map(\.id)))
+            Task { for thread in threads { await actions.reportSpam(thread) } }
+        case .label(let account, let id, let name):
+            // Labels and folders belong to one account.
+            let mine = threads.filter { $0.id.account == account }
+            if id.hasPrefix("cat:") {
+                Task { for thread in mine { await actions.toggleLabel(id, isOn: true, for: thread) } }
+            } else {
+                services.remote.remove(Set(mine.map(\.id)))
+                Task { for thread in mine { await actions.moveToLabel(id, named: name, thread) } }
+            }
+        default: break
+        }
+    }
+
     /// Runs an action on the selection, or on `threads` when given (a
     /// swiped row that isn't selected).
     func perform(_ action: MacAction, on threads: [Correspondence]? = nil) {
@@ -337,7 +391,65 @@ struct MacMainView: View {
             open(thread)
         case .undo:
             if actions.pendingRemoval != nil { actions.undoRemoval() } else { actions.undoLastChange() }
+        case .commandPalette:
+            showingPalette = true
         }
+    }
+
+    /// What ⌘K offers: acting on the selection first, then every place.
+    private var paletteCommands: [MacCommandPalette.Command] {
+        typealias Command = MacCommandPalette.Command
+        var commands: [Command] = [Command(title: "New Message", detail: "⌘N", systemImage: "square.and.pencil") { perform(.compose) }]
+        let selected = model.selectedThreads
+        if !selected.isEmpty {
+            let what = selected.count == 1 ? "this conversation" : "\(selected.count) conversations"
+            commands += [
+                Command(title: "Archive", detail: what, systemImage: "archivebox") { perform(.archive) },
+                Command(title: "Delete", detail: what, systemImage: "trash") { perform(.trash) },
+                Command(title: "Snooze…", detail: what, systemImage: "moon.zzz") { perform(.askSnooze) },
+                Command(title: selected.allSatisfy(\.isFlagged) ? "Unflag" : "Flag", detail: what, systemImage: "flag") { perform(.toggleFlag) },
+                Command(title: selected.allSatisfy(\.isUnread) ? "Mark as Read" : "Mark as Unread", detail: what, systemImage: "envelope.badge") { perform(.toggleUnread) },
+                Command(title: "Move to Needs You", detail: what, systemImage: "exclamationmark.circle") { perform(.move(.needsYou)) },
+                Command(title: "Move to Waiting", detail: what, systemImage: "clock") { perform(.move(.waiting)) },
+                Command(title: "Mark as Handled", detail: what, systemImage: "checkmark.circle") { perform(.move(.handled)) },
+            ]
+            if selected.count == 1 {
+                commands += [
+                    Command(title: "Reply", detail: "⌘R", systemImage: "arrowshape.turn.up.left") { perform(.reply) },
+                    Command(title: "Reply All", detail: "⇧⌘R", systemImage: "arrowshape.turn.up.left.2") { perform(.replyAll) },
+                    Command(title: "Forward", detail: "⇧⌘F", systemImage: "arrowshape.turn.up.right") { perform(.forward) },
+                    Command(title: "Open in New Window", detail: "⌘O", systemImage: "macwindow") { perform(.openInWindow) },
+                ]
+            }
+            // Filing, as Gmail's "Move to" does.
+            let account = selected[0].id.account
+            if selected.allSatisfy({ $0.id.account == account }) {
+                for label in services.labelDirectory.labels(for: account) where !label.isCategory {
+                    commands.append(Command(title: "Move to \(label.name)", detail: AccountPreferences.nickname(for: account),
+                                            systemImage: label.isFolder ? "folder" : "tag") {
+                        drop(on: .label(account: account, id: label.id, name: label.name), selected.map(\.id))
+                    })
+                }
+            }
+        }
+        var places: [MacMailbox] = [.needsYou, .waiting]
+        places += [MailFilter.primary, .everything, .unread, .promotions, .social, .updates].map { MacMailbox.filter($0.rawValue) }
+        places += [.flagged, .snoozed, .handled]
+        places += MacRemoteMailboxes.Kind.allCases.map { MacMailbox.server($0.rawValue) }
+        commands += places.map { place in
+            Command(title: "Go to \(place.title)", detail: nil, systemImage: place.systemImage) { model.mailbox = place }
+        }
+        for account in accounts {
+            for label in services.labelDirectory.labels(for: account) {
+                let place = MacMailbox.label(account: account, id: label.id, name: label.name)
+                commands.append(Command(title: "Go to \(label.name)", detail: accounts.count > 1 ? AccountPreferences.nickname(for: account) : nil,
+                                        systemImage: place.systemImage) { model.mailbox = place })
+            }
+        }
+        commands += [
+            Command(title: "Get New Mail", detail: "⇧⌘N", systemImage: "arrow.clockwise") { perform(.getMail) },
+        ]
+        return commands
     }
 
     /// Double-click or Return: a draft continues in Compose, anything else

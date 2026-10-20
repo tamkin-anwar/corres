@@ -5,7 +5,7 @@ import SwiftUI
 enum MacAction: Equatable {
     case compose, reply, replyAll, forward
     case archive, trash, move(Attention), toggleFlag, toggleUnread, snooze(Date?), askSnooze
-    case getMail, show(MacMailbox), next, previous, openInWindow, undo
+    case getMail, show(MacMailbox), next, previous, openInWindow, undo, commandPalette
 }
 
 /// The front window's actions, for the menu bar.
@@ -33,6 +33,9 @@ struct MacCommands: Commands {
                 .keyboardShortcut("n", modifiers: .command)
         }
         CommandMenu("Mailbox") {
+            Button("Go To or Do…") { actions?.perform(.commandPalette) }
+                .keyboardShortcut("k", modifiers: .command)
+            Divider()
             Button("Get New Mail") { actions?.perform(.getMail) }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
             Divider()

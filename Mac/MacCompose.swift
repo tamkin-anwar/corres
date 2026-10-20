@@ -59,11 +59,25 @@ struct MacComposeView: View {
                     .disabled(!draft.isSendable)
                     .help("Send (⇧⌘D)")
             }
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    ForEach(sendLaterPresets, id: \.date) { preset in
+                        Button(preset.title) { send(at: preset.date) }
+                    }
+                    Divider()
+                    Button("Choose a Time…") { choosingTime = true }
+                } label: {
+                    Label("Send Later", systemImage: "clock.arrow.circlepath")
+                }
+                .disabled(!draft.isSendable)
+                .help("Send Later")
+            }
             ToolbarItem {
                 Button { attach() } label: { Label("Attach", systemImage: "paperclip") }
                     .help("Attach a file")
             }
         }
+        .popover(isPresented: $choosingTime, arrowEdge: .top) { sendLaterPicker }
         .confirmationDialog("Send without a subject?", isPresented: $confirmEmptySubject) {
             Button("Send") { send(confirmed: true) }
             Button("Cancel", role: .cancel) {}
@@ -177,6 +191,65 @@ struct MacComposeView: View {
         }
         sent = true
         services.outbox.queueSend(draft, replyingTo: replyingTo)
+        dismiss()
+    }
+
+    // MARK: Send Later
+
+    @State private var choosingTime = false
+    @State private var chosenTime = Calendar.current.date(byAdding: .hour, value: 1, to: .now) ?? .now
+
+    /// Mail's own choices: tonight, tomorrow morning, and Monday.
+    private var sendLaterPresets: [(title: String, date: Date)] {
+        let calendar = Calendar.current
+        let now = Date.now
+        var presets: [(String, Date)] = []
+        if let tonight = calendar.date(bySettingHour: 21, minute: 0, second: 0, of: now), tonight > now.addingTimeInterval(1_800) {
+            presets.append(("Tonight at 9:00 PM", tonight))
+        }
+        if let morning = calendar.date(byAdding: .day, value: 1, to: now).flatMap({ calendar.date(bySettingHour: 8, minute: 0, second: 0, of: $0) }) {
+            presets.append(("Tomorrow at 8:00 AM", morning))
+        }
+        if let monday = calendar.nextDate(after: now, matching: DateComponents(hour: 8, weekday: 2), matchingPolicy: .nextTime),
+           !calendar.isDateInTomorrow(monday) {
+            presets.append(("Monday at 8:00 AM", monday))
+        }
+        return presets
+    }
+
+    private var sendLaterPicker: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Send Later").font(.headline)
+            DatePicker("Send at", selection: $chosenTime, in: Date.now.addingTimeInterval(60)...,
+                       displayedComponents: [.date, .hourAndMinute])
+                .datePickerStyle(.graphical)
+                .labelsHidden()
+            Text("Corres sends it from this Mac at that time, or the moment it can if your Mac is asleep or offline.")
+                .font(.caption).foregroundStyle(CorresPalette.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Spacer()
+                Button("Cancel") { choosingTime = false }
+                Button("Schedule") {
+                    choosingTime = false
+                    send(at: chosenTime)
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(16)
+        .frame(width: 300)
+    }
+
+    /// Held on this Mac until the time, then sent; the copy in Drafts goes,
+    /// so another device can't send it too.
+    private func send(at date: Date) {
+        guard draft.isSendable else { return }
+        sent = true
+        services.outbox.removeGmailDraft(of: draft, replyingTo: replyingTo)
+        var scheduled = draft
+        scheduled.gmailDraftID = nil
+        ScheduledSends.shared.schedule(scheduled, at: date)
         dismiss()
     }
 

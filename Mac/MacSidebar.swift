@@ -5,6 +5,9 @@ import SwiftUI
 struct MacSidebar: View {
     let services: MacServices
     @Bindable var model: MacMailboxModel
+    /// Conversations dropped on a mailbox.
+    var onDrop: (MacMailbox, [ThreadID]) -> Void = { _, _ in }
+    @State private var dropTarget: MacMailbox?
 
     private var store: MailStore { services.store }
     private var accounts: [String] { services.auth.accounts.map(\.email) }
@@ -45,9 +48,37 @@ struct MacSidebar: View {
                 row(.server(MacRemoteMailboxes.Kind.spam.rawValue))
                 row(.server(MacRemoteMailboxes.Kind.trash.rawValue))
             }
+            // Each account's own labels or folders, folded away until
+            // wanted: a Gmail account can have dozens.
+            ForEach(accounts.filter { !services.labelDirectory.labels(for: $0).isEmpty }, id: \.self) { account in
+                Section(isExpanded: expanded(account)) {
+                    ForEach(labels(for: account)) { label in
+                        row(.label(account: account, id: label.id, name: label.name))
+                    }
+                } header: {
+                    Text(accounts.count > 1 ? AccountPreferences.nickname(for: account) : "Labels")
+                }
+            }
         }
         .listStyle(.sidebar)
         .safeAreaInset(edge: .bottom) { footer }
+    }
+
+    @AppStorage("corres.mac.openLabelSections") private var openLabelSectionsRaw = ""
+
+    private func expanded(_ account: String) -> Binding<Bool> {
+        Binding(get: { openLabelSectionsRaw.split(separator: "|").contains { $0 == account } },
+                set: { open in
+                    var set = Set(openLabelSectionsRaw.split(separator: "|").map(String.init))
+                    if open { set.insert(account) } else { set.remove(account) }
+                    openLabelSectionsRaw = set.sorted().joined(separator: "|")
+                })
+    }
+
+    /// Folders before categories, then by name, as on the iPhone.
+    private func labels(for account: String) -> [GmailUserLabel] {
+        services.labelDirectory.labels(for: account)
+            .sorted { ($0.isFolder ? 0 : 1, $0.name.lowercased()) < ($1.isFolder ? 0 : 1, $1.name.lowercased()) }
     }
 
     private func row(_ mailbox: MacMailbox, count: Int? = nil, prominent: Bool = false) -> some View {
@@ -58,6 +89,15 @@ struct MacSidebar: View {
             // The sidebar keeps a row as it was until the row itself
             // changes; the count is part of what it is.
             .id("\(mailbox.title)-\(count ?? -1)")
+            .dropDestination(for: String.self) { items, _ in
+                let ids = items.flatMap(MacDrag.decode)
+                guard mailbox.acceptsDrop, !ids.isEmpty else { return false }
+                onDrop(mailbox, ids)
+                return true
+            } isTargeted: { over in
+                if over, mailbox.acceptsDrop { dropTarget = mailbox } else if dropTarget == mailbox { dropTarget = nil }
+            }
+            .listRowBackground(dropTarget == mailbox ? RoundedRectangle(cornerRadius: 6).fill(CorresPalette.accent.opacity(0.25)) : nil)
     }
 
     private var needsYouCount: Int { MailQuery.prioritized(store.threads, attention: .needsYou).count }

@@ -23,6 +23,24 @@ enum AccountSync {
         Keychain.setSynced(data, key: key)
     }
 
+    /// Adds these without dropping anything already listed: an account
+    /// this device can't open yet (its sign-in hasn't synced, say) is still
+    /// yours on the others. Only signing out takes one off.
+    static func include(_ accounts: [String]) {
+        let listed = roster().map(\.email)
+        let have = Set(listed.map { $0.lowercased() })
+        let missing = accounts.filter { !have.contains($0.lowercased()) }
+        guard !missing.isEmpty else { return }
+        publish(listed + missing)
+    }
+
+    /// Signed out: gone from your other devices too, and nothing else.
+    static func remove(_ email: String) {
+        let listed = roster().map(\.email)
+        guard listed.contains(where: { $0.caseInsensitiveCompare(email) == .orderedSame }) else { return }
+        publish(listed.filter { $0.caseInsensitiveCompare(email) != .orderedSame })
+    }
+
     static func roster() -> [Entry] {
         Keychain.getSynced(key: key).flatMap { try? JSONDecoder().decode([Entry].self, from: $0) } ?? []
     }

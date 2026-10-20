@@ -7,6 +7,7 @@ enum MacMailbox: Hashable, Codable {
     case account(String)  // one account's inbox
     case flagged, snoozed, handled
     case server(String)   // a MacRemoteMailboxes.Kind: Sent, Drafts, Archive, Spam, Trash
+    case label(account: String, id: String, name: String)  // one account's label or folder
 
     static let primary = MacMailbox.filter(MailFilter.primary.rawValue)
 
@@ -21,11 +22,21 @@ enum MacMailbox: Hashable, Codable {
         case .snoozed: "Snoozed"
         case .handled: "Handled"
         case .server(let raw): MacRemoteMailboxes.Kind(rawValue: raw)?.title ?? raw
+        case .label(_, _, let name): name
         }
     }
 
     var remoteKind: MacRemoteMailboxes.Kind? {
         if case .server(let raw) = self { MacRemoteMailboxes.Kind(rawValue: raw) } else { nil }
+    }
+
+    /// Mail fetched from the server as you open it, not Corres's own lists.
+    var remoteSource: MacRemoteMailboxes.Source? {
+        switch self {
+        case .server(let raw): MacRemoteMailboxes.Kind(rawValue: raw).map { .kind($0) }
+        case .label(let account, let id, _): .label(account: account, id: id)
+        default: nil
+        }
     }
 
     var systemImage: String {
@@ -48,6 +59,7 @@ enum MacMailbox: Hashable, Codable {
         case .snoozed: "moon.zzz"
         case .handled: "checkmark.circle"
         case .server(let raw): MacRemoteMailboxes.Kind(rawValue: raw)?.systemImage ?? "tray"
+        case .label(_, let id, _): id.hasPrefix("folder:") ? "folder" : "tag"
         }
     }
 
@@ -106,9 +118,9 @@ final class MacMailboxModel {
     func rows(store: MailStore, accounts: [String], remote: MacRemoteMailboxes, serverMatches: Set<ThreadID> = []) -> [MacRow] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         // Mail on the server: as fetched, less anything just moved away.
-        if query.isEmpty, let kind = mailbox.remoteKind {
+        if query.isEmpty, let source = mailbox.remoteSource {
             let hidden = store.hiddenIDs
-            cachedRows = remote.items(kind).filter { !hidden.contains($0.id) }.map(MacRow.thread)
+            cachedRows = remote.items(source).filter { !hidden.contains($0.id) }.map(MacRow.thread)
             cacheKey = nil
             return cachedRows
         }
@@ -168,8 +180,38 @@ final class MacMailboxModel {
                 .sorted { ($0.snoozedUntil ?? .distantFuture) < ($1.snoozedUntil ?? .distantFuture) }.map(MacRow.thread)
         case .handled:
             return MailQuery.filter(threads).filter { $0.attention == .handled }.map(MacRow.thread)
-        case .server:
+        case .server, .label:
             return []
+        }
+    }
+}
+
+/// Conversations dragged from the list, as plain text so SwiftUI's drop
+/// targets read them.
+enum MacDrag {
+    static let prefix = "corres-conversations:"
+
+    static func encode(_ ids: Set<ThreadID>) -> String {
+        prefix + ids.map { $0.account + "\u{1F}" + $0.providerID }.joined(separator: "\u{1E}")
+    }
+
+    static func decode(_ text: String) -> [ThreadID] {
+        guard text.hasPrefix(prefix) else { return [] }
+        return text.dropFirst(prefix.count).split(separator: "\u{1E}").compactMap { pair in
+            let parts = pair.split(separator: "\u{1F}", maxSplits: 1)
+            return parts.count == 2 ? ThreadID(account: String(parts[0]), providerID: String(parts[1])) : nil
+        }
+    }
+}
+
+extension MacMailbox {
+    /// What dropping conversations here does, if anything.
+    var acceptsDrop: Bool {
+        switch self {
+        case .needsYou, .waiting, .handled, .flagged, .label: true
+        case .server(let raw): raw == MacRemoteMailboxes.Kind.archive.rawValue || raw == MacRemoteMailboxes.Kind.trash.rawValue
+                || raw == MacRemoteMailboxes.Kind.spam.rawValue
+        default: false
         }
     }
 }

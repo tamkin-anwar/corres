@@ -5,6 +5,10 @@ import UserNotifications
 /// conversation, and the app comes forward when the Dock icon is clicked
 /// with no window open.
 final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+    /// Archive, Mark as Read and Reply from a notification, done without
+    /// bringing Corres forward. Set by MacServices once it's running.
+    @MainActor static var handleAction: (@MainActor (_ action: String, _ id: ThreadID, _ typed: String?) async -> Void)?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         UNUserNotificationCenter.current().delegate = self
     }
@@ -13,6 +17,15 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
                                             didReceive response: UNNotificationResponse) async {
         let info = response.notification.request.content.userInfo
         let account = info["account"] as? String, thread = info["thread"] as? String
+        let action = response.actionIdentifier
+        let typed = (response as? UNTextInputNotificationResponse)?.userText
+        if action != UNNotificationDefaultActionIdentifier, let account, let thread {
+            let id = ThreadID(account: account, providerID: thread)
+            await MainActor.run { () -> Task<Void, Never> in
+                Task { @MainActor in await MacAppDelegate.handleAction?(action, id, typed) }
+            }.value
+            return
+        }
         await MainActor.run {
             if let account, let thread {
                 AppRouter.shared.pending = .thread(ThreadID(account: account, providerID: thread))

@@ -28,7 +28,10 @@ final class GoogleAuthService {
     /// before `restoreConnectedAccounts()` finishes: sample mail must never
     /// be put back for someone who has real mail.
     nonisolated static var hasSavedAccounts: Bool {
-        !(UserDefaults.standard.stringArray(forKey: connectedAccountsKey) ?? []).isEmpty
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly") { return false }
+        #endif
+        return !(UserDefaults.standard.stringArray(forKey: connectedAccountsKey) ?? []).isEmpty
     }
 
     /// Requested upfront at connect time, one consent screen (incremental
@@ -58,6 +61,11 @@ final class GoogleAuthService {
     /// after updating, since their refresh token only ever lived in
     /// GoogleSignIn's own store, never in Corres's own Keychain entry.
     func restoreConnectedAccounts() async {
+        #if DEBUG
+        // App Store screenshots: sample mail only, whatever accounts this
+        // device has, and nothing written back to them.
+        if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly") { return }
+        #endif
         watchICloudPasswords()
         var storedEmails = defaults.stringArray(forKey: Self.connectedAccountsKey) ?? []
         // Added on your other devices (iCloud Keychain): signed in here too.
@@ -75,6 +83,7 @@ final class GoogleAuthService {
             await migrateLegacySingleAccountIfPresent(into: &restored)
         }
         accounts = restored
+        // Launching never shrinks the list your other devices use.
         persistAccountList()
         Task { await fillProfilesIfMissing() }
     }
@@ -399,7 +408,7 @@ final class GoogleAuthService {
     /// per-account equivalent of the old single-account `signOut()`.
     func signOut(_ email: String) async {
         accounts.removeAll { $0.email == email }
-        persistAccountList()
+        persistAccountList(removing: email)
         MailIndexer.shared.forget(email)
         Task { await SpotlightIndex.shared.forget(account: email) }
         profiles[email] = nil
@@ -429,9 +438,12 @@ final class GoogleAuthService {
         }
     }
 
-    private func persistAccountList() {
+    /// The list your other devices use only grows here, except for the one
+    /// account you signed out of: an account this device can't open yet is
+    /// still yours on the others.
+    private func persistAccountList(removing signedOut: String? = nil) {
         defaults.set(accounts.map(\.email), forKey: Self.connectedAccountsKey)
-        AccountSync.publish(accounts.map(\.email))
+        if let signedOut { AccountSync.remove(signedOut) } else { AccountSync.include(accounts.map(\.email)) }
         SendAsDirectory.publishOwnAddresses(accounts: accounts.map(\.email), aliases: SendAsDirectory.shared.allAddresses)
     }
 

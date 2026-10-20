@@ -12,7 +12,13 @@ final class SpotlightIndex {
     static let shared = SpotlightIndex()
 
     static let enabledKey = "corres.spotlight"
-    static var isEnabled: Bool { UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true }
+    static var isEnabled: Bool {
+        #if DEBUG
+        // Screenshots run on sample mail beside a real Corres: hands off its index.
+        if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly") { return false }
+        #endif
+        return UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true
+    }
 
     /// The newest conversations, enough for years of most people's mail.
     static let limit = 5_000

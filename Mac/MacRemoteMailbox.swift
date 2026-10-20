@@ -32,6 +32,20 @@ final class MacRemoteMailboxes {
         var labelId: String? { self == .archive ? nil : rawValue }
     }
 
+    /// A built-in mailbox across every account, or one account's own
+    /// label or folder.
+    enum Source: Hashable {
+        case kind(Kind)
+        case label(account: String, id: String)
+
+        var labelId: String? {
+            switch self {
+            case .kind(let kind): kind.labelId
+            case .label(_, let id): id
+            }
+        }
+    }
+
     private struct Page {
         var items: [Correspondence] = []
         var drafts: [ThreadID: String] = [:]
@@ -41,35 +55,37 @@ final class MacRemoteMailboxes {
         var failed = false
     }
 
-    private var pages: [Kind: Page] = [:]
-    private(set) var loading: Set<Kind> = []
+    private var pages: [Source: Page] = [:]
+    private(set) var loading: Set<Source> = []
     private let client = MailClient()
 
-    func items(_ kind: Kind) -> [Correspondence] { pages[kind]?.items ?? [] }
-    func hasLoaded(_ kind: Kind) -> Bool { pages[kind]?.loadedOnce ?? false }
-    func failed(_ kind: Kind) -> Bool { pages[kind]?.failed ?? false }
+    func items(_ source: Source) -> [Correspondence] { pages[source]?.items ?? [] }
+    func hasLoaded(_ source: Source) -> Bool { pages[source]?.loadedOnce ?? false }
+    func failed(_ source: Source) -> Bool { pages[source]?.failed ?? false }
     /// The server's draft for a conversation in Drafts, to continue it.
-    func draftID(for id: ThreadID) -> String? { pages[.drafts]?.drafts[id] }
+    func draftID(for id: ThreadID) -> String? { pages[.kind(.drafts)]?.drafts[id] }
 
-    func refresh(_ kind: Kind, accounts: [String], store: MailStore) async {
-        pages[kind] = Page(items: pages[kind]?.items ?? [])
+    func refresh(_ source: Source, accounts: [String], store: MailStore) async {
+        pages[source] = Page(items: pages[source]?.items ?? [])
         // Sample mail only: nothing on a server to fetch.
-        if accounts.isEmpty { pages[kind]?.loadedOnce = true; return }
-        await loadMore(kind, accounts: accounts, store: store, replacing: true)
+        if accounts.isEmpty { pages[source]?.loadedOnce = true; return }
+        await loadMore(source, accounts: accounts, store: store, replacing: true)
     }
 
-    func loadMore(_ kind: Kind, accounts: [String], store: MailStore, replacing: Bool = false) async {
-        guard !loading.contains(kind), !accounts.isEmpty else { return }
-        var page = pages[kind] ?? Page()
+    func loadMore(_ source: Source, accounts: [String], store: MailStore, replacing: Bool = false) async {
+        // A label lives in one account.
+        let accounts = if case .label(let account, _) = source { [account] } else { accounts }
+        guard !loading.contains(source), !accounts.isEmpty else { return }
+        var page = pages[source] ?? Page()
         let pending = accounts.filter { !page.exhausted.contains($0) }
         guard !pending.isEmpty else { return }
-        loading.insert(kind)
-        defer { loading.remove(kind) }
+        loading.insert(source)
+        defer { loading.remove(source) }
         var fetched: [Correspondence] = []
         var drafts: [ThreadID: String] = [:]
         var failed = false
         let client = client
-        if kind == .drafts {
+        if source == .kind(.drafts) {
             await withTaskGroup(of: (String, [(draftID: String, message: Correspondence)]?, String?).self) { group in
                 for account in pending {
                     let token = page.next[account]
@@ -91,7 +107,7 @@ final class MacRemoteMailboxes {
                 for account in pending {
                     let token = page.next[account]
                     group.addTask {
-                        guard let result = try? await client.listMailbox(labelId: kind.labelId, account: account,
+                        guard let result = try? await client.listMailbox(labelId: source.labelId, account: account,
                                                                           pageToken: token, pageSize: 50) else {
                             return (account, nil, nil)
                         }
@@ -117,11 +133,11 @@ final class MacRemoteMailboxes {
         page.drafts.merge(drafts) { $1 }
         page.loadedOnce = true
         page.failed = failed && fetched.isEmpty
-        pages[kind] = page
+        pages[source] = page
     }
 
     /// Gone from view at once after an archive, delete or move.
     func remove(_ ids: Set<ThreadID>) {
-        for kind in pages.keys { pages[kind]?.items.removeAll { ids.contains($0.id) } }
+        for source in pages.keys { pages[source]?.items.removeAll { ids.contains($0.id) } }
     }
 }
