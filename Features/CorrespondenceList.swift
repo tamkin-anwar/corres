@@ -77,7 +77,7 @@ struct CorrespondenceRow: View {
                     // it, which on a busy inbox was half the rows.
                     if thread.senderDecision == .pending, thread.receivedAt > .now.addingTimeInterval(-3 * 86_400) {
                         Text("NEW")
-                            .font(.caption2.weight(.semibold)).tracking(0.4)
+                            .font(.caption2.weight(.semibold)).letterSpacing(0.4)
                             .foregroundStyle(CorresPalette.accent)
                             .padding(.horizontal, 5).padding(.vertical, 1)
                             .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(CorresPalette.accent.opacity(0.5), lineWidth: 1))
@@ -91,7 +91,7 @@ struct CorrespondenceRow: View {
                             if let color = accountTag.color {
                                 Circle().fill(color).frame(width: 7, height: 7)
                             } else {
-                                Text(accountTag.text).font(.caption2.weight(.semibold)).tracking(0.4)
+                                Text(accountTag.text).font(.caption2.weight(.semibold)).letterSpacing(0.4)
                                     .foregroundStyle(CorresPalette.tertiary)
                             }
                         }

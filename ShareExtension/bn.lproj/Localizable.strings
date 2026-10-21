@@ -1,0 +1,354 @@
+/* No comment provided by engineer. */
+"%@ is over %@’s %@ limit. Remove something or pick a smaller size." = "%@ %@-এর %@ সীমা ছাড়িয়ে গেছে। কিছু সরান বা ছোট আকার বেছে নিন।";
+
+/* No comment provided by engineer. */
+"%@ is over %@’s %@ limit. Remove something." = "%@ %@-এর %@ সীমা ছাড়িয়ে গেছে। কিছু সরান।";
+
+/* No comment provided by engineer. */
+"%@, %@" = "%@, %@";
+
+/* No comment provided by engineer. */
+"%@, not a valid address" = "%@, সঠিক ঠিকানা নয়";
+
+/* No comment provided by engineer. */
+"%@:" = "%@:";
+
+/* No comment provided by engineer. */
+"Actual Size" = "আসল আকার";
+
+/* No comment provided by engineer. */
+"Add %@" = "%@ যোগ করুন";
+
+/* No comment provided by engineer. */
+"Add a message" = "একটি বার্তা যোগ করুন";
+
+/* No comment provided by engineer. */
+"Add Subject" = "বিষয় যোগ করুন";
+
+/* No comment provided by engineer. */
+"Already read." = "আগেই পড়া হয়েছে।";
+
+/* No comment provided by engineer. */
+"Amount" = "পরিমাণ";
+
+/* No comment provided by engineer. */
+"Asks something of you" = "আপনার কাছে কিছু চাইছে";
+
+/* No comment provided by engineer. */
+"Asks you something." = "আপনাকে কিছু জিজ্ঞেস করছে।";
+
+/* No comment provided by engineer. */
+"Asks you to pay." = "আপনাকে টাকা দিতে বলছে।";
+
+/* No comment provided by engineer. */
+"Automated update." = "স্বয়ংক্রিয় আপডেট।";
+
+/* No comment provided by engineer. */
+"Automated update. Kept out of Needs You." = "স্বয়ংক্রিয় আপডেট। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Bcc" = "Bcc";
+
+/* No comment provided by engineer. */
+"Book" = "বুক করুন";
+
+/* No comment provided by engineer. */
+"Bulk mail." = "গণ মেইল।";
+
+/* No comment provided by engineer. */
+"Bulk mail. Kept out of Needs You." = "গণ মেইল। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Cancel" = "বাতিল";
+
+/* No comment provided by engineer. */
+"Cc" = "Cc";
+
+/* No comment provided by engineer. */
+"Cc/Bcc" = "Cc/Bcc";
+
+/* No comment provided by engineer. */
+"Cc/Bcc, From: %@" = "Cc/Bcc, প্রেরক: %@";
+
+/* No comment provided by engineer. */
+"Charged" = "চার্জ করা হয়েছে";
+
+/* No comment provided by engineer. */
+"Check in" = "চেক-ইন করুন";
+
+/* No comment provided by engineer. */
+"Complete it" = "সম্পূর্ণ করুন";
+
+/* No comment provided by engineer. */
+"Confirm" = "নিশ্চিত করুন";
+
+/* No comment provided by engineer. */
+"Confirms something you did. Nothing to do unless it wasn't you." = "আপনি যা করেছেন তা নিশ্চিত করছে। আপনি না করে থাকলে ছাড়া কিছু করার নেই।";
+
+/* No comment provided by engineer. */
+"Couldn’t Send" = "পাঠানো যায়নি";
+
+/* No comment provided by engineer. */
+"Delete Draft" = "খসড়া মুছুন";
+
+/* No comment provided by engineer. */
+"Delivered" = "পৌঁছেছে";
+
+/* No comment provided by engineer. */
+"Delivery problem" = "ডেলিভারিতে সমস্যা";
+
+/* No comment provided by engineer. */
+"Done: off your lists, still in Mail" = "সম্পন্ন: আপনার তালিকা থেকে সরে, মেইলে থেকে যায়";
+
+/* No comment provided by engineer. */
+"Email" = "ইমেইল";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked." = "কোনো মানুষের কাছ থেকে, কিছু চাওয়া হয়নি।";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked. Kept out of Needs You." = "কোনো মানুষের কাছ থেকে, কিছু চাওয়া হয়নি। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"From a VIP." = "একজন VIP-এর কাছ থেকে।";
+
+/* No comment provided by engineer. */
+"From your other account." = "আপনার অন্য অ্যাকাউন্ট থেকে।";
+
+/* No comment provided by engineer. */
+"From your other account. Kept out of Needs You." = "আপনার অন্য অ্যাকাউন্ট থেকে। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"From:" = "প্রেরক:";
+
+/* No comment provided by engineer. */
+"Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Handled" = "সম্পন্ন";
+
+/* No comment provided by engineer. */
+"iCloud" = "iCloud";
+
+/* No comment provided by engineer. */
+"Join" = "যোগ দিন";
+
+/* No comment provided by engineer. */
+"Large" = "বড়";
+
+/* No comment provided by engineer. */
+"Mailing list." = "মেইলিং লিস্ট।";
+
+/* No comment provided by engineer. */
+"Mailing list. Kept out of Needs You." = "মেইলিং লিস্ট। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Medium" = "মাঝারি";
+
+/* No comment provided by engineer. */
+"Mentions a deadline." = "একটি শেষ সময়ের কথা বলছে।";
+
+/* No comment provided by engineer. */
+"Message" = "বার্তা";
+
+/* No comment provided by engineer. */
+"Move to %@" = "%@-এ সরান";
+
+/* No comment provided by engineer. */
+"Needs You" = "আপনার করণীয়";
+
+/* No comment provided by engineer. */
+"New Message" = "নতুন বার্তা";
+
+/* No comment provided by engineer. */
+"No action needed" = "কিছু করার নেই";
+
+/* No comment provided by engineer. */
+"No reply from %@ since %@. Follow up?" = "%2$@ থেকে %1$@-এর কোনো উত্তর নেই। ফলো-আপ করবেন?";
+
+/* No comment provided by engineer. */
+"Nothing for you to do" = "আপনার কিছু করার নেই";
+
+/* No comment provided by engineer. */
+"Nothing here asks anything of you." = "এখানে কিছুই আপনার কাছে কিছু চায় না।";
+
+/* No comment provided by engineer. */
+"OK" = "ঠিক আছে";
+
+/* No comment provided by engineer. */
+"On its way" = "পথে আছে";
+
+/* No comment provided by engineer. */
+"Open Corres First" = "আগে Corres খুলুন";
+
+/* No comment provided by engineer. */
+"Open Corres once (and add your email account if you haven’t), then share again to write right here." = "Corres একবার খুলুন (আর এখনো না করে থাকলে আপনার ইমেইল অ্যাকাউন্ট যোগ করুন), তারপর এখানেই লিখতে আবার শেয়ার করুন।";
+
+/* No comment provided by engineer. */
+"Order confirmed" = "অর্ডার নিশ্চিত হয়েছে";
+
+/* No comment provided by engineer. */
+"Out for delivery" = "ডেলিভারির জন্য বের হয়েছে";
+
+/* No comment provided by engineer. */
+"Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Overdue" = "সময় পেরিয়ে গেছে";
+
+/* No comment provided by engineer. */
+"Paid" = "পরিশোধিত";
+
+/* No comment provided by engineer. */
+"Pay" = "পরিশোধ করুন";
+
+/* No comment provided by engineer. */
+"Payment due" = "পরিশোধ বাকি";
+
+/* No comment provided by engineer. */
+"Payment failed" = "পরিশোধ ব্যর্থ হয়েছে";
+
+/* No comment provided by engineer. */
+"Photo Size" = "ছবির আকার";
+
+/* No comment provided by engineer. */
+"Placed here by your rule." = "আপনার নিয়ম অনুযায়ী এখানে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Primary" = "প্রধান";
+
+/* No comment provided by engineer. */
+"Promotion." = "প্রচার।";
+
+/* No comment provided by engineer. */
+"Promotion. Kept out of Needs You." = "প্রচার। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Promotions" = "প্রচার";
+
+/* No comment provided by engineer. */
+"Reads like it needs something from you." = "মনে হচ্ছে আপনার কাছে কিছু চায়।";
+
+/* No comment provided by engineer. */
+"Refund" = "ফেরত";
+
+/* No comment provided by engineer. */
+"Refunded" = "টাকা ফেরত দেওয়া হয়েছে";
+
+/* No comment provided by engineer. */
+"Register" = "নিবন্ধন করুন";
+
+/* No comment provided by engineer. */
+"Remove" = "সরান";
+
+/* No comment provided by engineer. */
+"Remove %@" = "%@ সরান";
+
+/* No comment provided by engineer. */
+"Reset password" = "পাসওয়ার্ড রিসেট";
+
+/* No comment provided by engineer. */
+"Review" = "দেখুন";
+
+/* No comment provided by engineer. */
+"RSVP" = "উত্তর দিন";
+
+/* No comment provided by engineer. */
+"Save Draft" = "খসড়া সংরক্ষণ করুন";
+
+/* No comment provided by engineer. */
+"Send" = "পাঠান";
+
+/* No comment provided by engineer. */
+"Send without a subject?" = "বিষয় ছাড়া পাঠাবেন?";
+
+/* No comment provided by engineer. */
+"Sign" = "স্বাক্ষর করুন";
+
+/* No comment provided by engineer. */
+"Small" = "ছোট";
+
+/* No comment provided by engineer. */
+"Social" = "সামাজিক";
+
+/* No comment provided by engineer. */
+"Social notification." = "সামাজিক নোটিফিকেশন।";
+
+/* No comment provided by engineer. */
+"Social notification. Kept out of Needs You." = "সামাজিক নোটিফিকেশন। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Something failed that only you can fix." = "এমন কিছু ব্যর্থ হয়েছে যা শুধু আপনিই ঠিক করতে পারেন।";
+
+/* No comment provided by engineer. */
+"Subject:" = "বিষয়:";
+
+/* No comment provided by engineer. */
+"Time-sensitive." = "সময়-সংবেদনশীল।";
+
+/* No comment provided by engineer. */
+"To" = "প্রাপক";
+
+/* No comment provided by engineer. */
+"Track package" = "প্যাকেজ ট্র্যাক করুন";
+
+/* No comment provided by engineer. */
+"Unread for over a month." = "এক মাসের বেশি অপঠিত।";
+
+/* No comment provided by engineer. */
+"Unread for over a month. Kept out of Needs You." = "এক মাসের বেশি অপঠিত। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Unread, from a person." = "অপঠিত, কোনো মানুষের কাছ থেকে।";
+
+/* No comment provided by engineer. */
+"Unread, from someone you've written to." = "অপঠিত, আপনি যাকে লিখেছেন তার কাছ থেকে।";
+
+/* No comment provided by engineer. */
+"Unread." = "অপঠিত।";
+
+/* No comment provided by engineer. */
+"Update payment" = "পেমেন্ট হালনাগাদ করুন";
+
+/* No comment provided by engineer. */
+"Updates" = "আপডেট";
+
+/* No comment provided by engineer. */
+"Verify" = "যাচাই করুন";
+
+/* No comment provided by engineer. */
+"View" = "দেখুন";
+
+/* No comment provided by engineer. */
+"Waiting" = "অপেক্ষায়";
+
+/* No comment provided by engineer. */
+"You asked. No reply yet." = "আপনি জিজ্ঞেস করেছেন। এখনো উত্তর নেই।";
+
+/* No comment provided by engineer. */
+"You forwarded this just now. Waiting for their response." = "আপনি এইমাত্র এটি ফরোয়ার্ড করেছেন। তাদের উত্তরের অপেক্ষায়।";
+
+/* No comment provided by engineer. */
+"You replied just now. Waiting for their response." = "আপনি এইমাত্র উত্তর দিয়েছেন। তাদের উত্তরের অপেক্ষায়।";
+
+/* No comment provided by engineer. */
+"You replied. Nothing pending." = "আপনি উত্তর দিয়েছেন। কিছু বাকি নেই।";
+
+/* No comment provided by engineer. */
+"You said mail like this needs no action." = "আপনি বলেছেন এমন মেইলে কিছু করার নেই।";
+
+/* No comment provided by engineer. */
+"You sent this. Nothing pending." = "আপনি এটি পাঠিয়েছেন। কিছু বাকি নেই।";
+
+/* No comment provided by engineer. */
+"You started this conversation. Waiting for a response." = "আপনি এই কথোপকথন শুরু করেছেন। উত্তরের অপেক্ষায়।";
+
+/* No comment provided by engineer. */
+"You're copied, not asked." = "আপনাকে কপি করা হয়েছে, কিছু চাওয়া হয়নি।";
+
+/* No comment provided by engineer. */
+"You're copied, not asked. Kept out of Needs You." = "আপনাকে কপি করা হয়েছে, কিছু চাওয়া হয়নি। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"You're waiting on their reply" = "আপনি তাদের উত্তরের অপেক্ষায়";
+

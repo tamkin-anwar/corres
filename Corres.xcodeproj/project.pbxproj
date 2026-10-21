@@ -585,6 +585,18 @@
 		8684F3C330874C44001A21F2 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
 		8684F3CF30874C44001A21F2 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		8684F3D030874C44001A21F2 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		86C036053088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
+		86C036063088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		86C036073088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/Localizable.strings; sourceTree = "<group>"; };
+		86C036083088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
+		86C036093088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		86C0360A3088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/Localizable.strings; sourceTree = "<group>"; };
+		86C0360B3088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		86C0360C3088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/Localizable.strings; sourceTree = "<group>"; };
+		86C0360D3088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		86C0360E3088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/Localizable.strings; sourceTree = "<group>"; };
+		86C0360F3088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		86C036103088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/Localizable.strings; sourceTree = "<group>"; };
 		86C7A94E308752BA00F622F6 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		86CA17AA3087500B00BEB200 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
 		86CA17AB3087500B00BEB200 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -1122,6 +1134,7 @@
 				ko,
 				fr,
 				"pt-BR",
+				bn,
 			);
 			mainGroup = 0D6E4079E36703EBD37C0072;
 			packageReferences = (
@@ -1624,6 +1637,7 @@
 				862D874030874FF5004BE495 /* ko */,
 				86CA17B03087500B00BEB200 /* fr */,
 				8669BE7C308750210097DDE2 /* pt-BR */,
+				86C0360B3088BC8D0070CF22 /* bn */,
 			);
 			name = InfoPlist.strings;
 			path = NotificationExtension;
@@ -1639,6 +1653,7 @@
 				862D874130874FF5004BE495 /* ko */,
 				86CA17B13087500B00BEB200 /* fr */,
 				8669BE7D308750210097DDE2 /* pt-BR */,
+				86C0360D3088BC8D0070CF22 /* bn */,
 			);
 			name = InfoPlist.strings;
 			path = ShareExtension;
@@ -1654,6 +1669,7 @@
 				862D874230874FF5004BE495 /* ko */,
 				86CA17B23087500B00BEB200 /* fr */,
 				8669BE7E308750210097DDE2 /* pt-BR */,
+				86C0360E3088BC8D0070CF22 /* bn */,
 			);
 			name = Localizable.strings;
 			path = ShareExtension;
@@ -1669,6 +1685,7 @@
 				862D873A30874FF5004BE495 /* ko */,
 				86CA17AA3087500B00BEB200 /* fr */,
 				8669BE76308750210097DDE2 /* pt-BR */,
+				86C036053088BC8D0070CF22 /* bn */,
 			);
 			name = AppShortcuts.strings;
 			path = App;
@@ -1684,6 +1701,7 @@
 				862D873D30874FF5004BE495 /* ko */,
 				86CA17AD3087500B00BEB200 /* fr */,
 				8669BE79308750210097DDE2 /* pt-BR */,
+				86C036083088BC8D0070CF22 /* bn */,
 			);
 			name = AppShortcuts.strings;
 			path = Mac;
@@ -1699,6 +1717,7 @@
 				862D873B30874FF5004BE495 /* ko */,
 				86CA17AB3087500B00BEB200 /* fr */,
 				8669BE77308750210097DDE2 /* pt-BR */,
+				86C036063088BC8D0070CF22 /* bn */,
 			);
 			name = InfoPlist.strings;
 			path = App;
@@ -1714,6 +1733,7 @@
 				862D873E30874FF5004BE495 /* ko */,
 				86CA17AE3087500B00BEB200 /* fr */,
 				8669BE7A308750210097DDE2 /* pt-BR */,
+				86C036093088BC8D0070CF22 /* bn */,
 			);
 			name = InfoPlist.strings;
 			path = Mac;
@@ -1729,6 +1749,7 @@
 				862D873C30874FF5004BE495 /* ko */,
 				86CA17AC3087500B00BEB200 /* fr */,
 				8669BE78308750210097DDE2 /* pt-BR */,
+				86C036073088BC8D0070CF22 /* bn */,
 			);
 			name = Localizable.strings;
 			path = App;
@@ -1744,6 +1765,7 @@
 				862D873F30874FF5004BE495 /* ko */,
 				86CA17AF3087500B00BEB200 /* fr */,
 				8669BE7B308750210097DDE2 /* pt-BR */,
+				86C0360A3088BC8D0070CF22 /* bn */,
 			);
 			name = Localizable.strings;
 			path = Mac;
@@ -1759,6 +1781,7 @@
 				862D874330874FF5004BE495 /* ko */,
 				86CA17B33087500B00BEB200 /* fr */,
 				8669BE7F308750210097DDE2 /* pt-BR */,
+				86C0360F3088BC8D0070CF22 /* bn */,
 			);
 			name = InfoPlist.strings;
 			path = Widgets;
@@ -1774,6 +1797,7 @@
 				862D874430874FF5004BE495 /* ko */,
 				86CA17B43087500B00BEB200 /* fr */,
 				8669BE80308750210097DDE2 /* pt-BR */,
+				86C036103088BC8D0070CF22 /* bn */,
 			);
 			name = Localizable.strings;
 			path = Widgets;
@@ -1789,6 +1813,7 @@
 				86F8F23A308752E90081A57E /* ko */,
 				8679CB1E308752FD006179DD /* fr */,
 				8639C78F3087531200413EB6 /* pt-BR */,
+				86C0360C3088BC8D0070CF22 /* bn */,
 			);
 			name = Localizable.strings;
 			path = NotificationExtension;

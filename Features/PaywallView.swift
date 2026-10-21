@@ -124,7 +124,7 @@ struct PaywallView: View {
                     HStack(spacing: 8) {
                         Text(planName(product)).font(.body.weight(.semibold)).foregroundStyle(CorresPalette.ink)
                         if let badge = badge(product) {
-                            Text(badge).font(.caption2.weight(.bold)).tracking(0.6).textCase(.uppercase)
+                            Text(badge).font(.caption2.weight(.bold)).letterSpacing(0.6).textCase(.uppercase)
                                 .foregroundStyle(CorresPalette.accentInk)
                                 .padding(.horizontal, 7).padding(.vertical, 2)
                                 .background(CorresPalette.accent, in: Capsule())

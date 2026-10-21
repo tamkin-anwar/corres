@@ -1,0 +1,1671 @@
+/* No comment provided by engineer. */
+" Due %@." = " শেষ সময় %@।";
+
+/* No comment provided by engineer. */
+"·" = "·";
+
+/* No comment provided by engineer. */
+"%@" = "%@";
+
+/* No comment provided by engineer. */
+"%@ · %@" = "%@ · %@";
+
+/* No comment provided by engineer. */
+"%@ · up to date %@" = "%@ · %@ পর্যন্ত হালনাগাদ";
+
+/* No comment provided by engineer. */
+"%@ at %@" = "%@, %@-এ";
+
+/* No comment provided by engineer. */
+"%@ becomes the recipient's first name as the template goes in, or is left out if there's no name to use." = "টেমপ্লেট বসানোর সময় %@ প্রাপকের নামের প্রথম অংশ হয়ে যায়, আর ব্যবহার করার মতো নাম না থাকলে বাদ যায়।";
+
+/* No comment provided by engineer. */
+"%@ belong in Needs You" = "%@ আপনার করণীয়-তে থাকবে";
+
+/* No comment provided by engineer. */
+"%@ didn't answer the last check. Corres keeps trying." = "%@ শেষবারের পরীক্ষায় সাড়া দেয়নি। Corres চেষ্টা চালিয়ে যাচ্ছে।";
+
+/* No comment provided by engineer. */
+"%@ go to %@" = "%@ যাবে %@-এ";
+
+/* No comment provided by engineer. */
+"%@ goes to %@" = "%@ যাবে %@-এ";
+
+/* No comment provided by engineer. */
+"%@ is busy. Corres tries again in a moment." = "%@ ব্যস্ত। Corres একটু পরে আবার চেষ্টা করবে।";
+
+/* No comment provided by engineer. */
+"%@ need no action from you" = "%@ থেকে আপনার কিছু করার নেই";
+
+/* No comment provided by engineer. */
+"%@ said: %@" = "%@ বলেছে: %@";
+
+/* No comment provided by engineer. */
+"%@ stay in Needs You" = "%@ আপনার করণীয়-তেই থাকবে";
+
+/* No comment provided by engineer. */
+"%@ turned down Corres's access. Reconnect below." = "%@ Corres-এর প্রবেশাধিকার নাকচ করেছে। নিচে আবার সংযুক্ত করুন।";
+
+/* No comment provided by engineer. */
+"%@, and more" = "%@ এবং আরও";
+
+/* No comment provided by engineer. */
+"%@: %@" = "%@: %@";
+
+/* No comment provided by engineer. */
+"%@’s %@" = "%@-এর %@";
+
+/* No comment provided by engineer. */
+"%lld" = "%lld";
+
+/* No comment provided by engineer. */
+"%lld %@" = "%lld %@";
+
+/* No comment provided by engineer. */
+"%lld attachments" = "%lldটি অ্যাটাচমেন্ট";
+
+/* No comment provided by engineer. */
+"%lld conversations" = "%lldটি কথোপকথন";
+
+/* No comment provided by engineer. */
+"%lld conversations need you." = "%lldটি কথোপকথনে আপনার করণীয় আছে।";
+
+/* No comment provided by engineer. */
+"%lld conversations, %lld unread" = "%lldটি কথোপকথন, %lldটি অপঠিত";
+
+/* No comment provided by engineer. */
+"%lld earlier messages" = "আগের %lldটি বার্তা";
+
+/* No comment provided by engineer. */
+"%lld emails need you" = "%lldটি ইমেইলে আপনার করণীয় আছে";
+
+/* No comment provided by engineer. */
+"%lld Files" = "%lldটি ফাইল";
+
+/* No comment provided by engineer. */
+"%lld new messages" = "%lldটি নতুন বার্তা";
+
+/* No comment provided by engineer. */
+"%lldd" = "%lldদি";
+
+/* No comment provided by engineer. */
+"1 attachment" = "1টি অ্যাটাচমেন্ট";
+
+/* No comment provided by engineer. */
+"1 earlier message" = "আগের 1টি বার্তা";
+
+/* No comment provided by engineer. */
+"1 email needs you" = "1টি ইমেইলে আপনার করণীয় আছে";
+
+/* No comment provided by engineer. */
+"1 File" = "1টি ফাইল";
+
+/* No comment provided by engineer. */
+"A name, address or company, like amazon.com" = "একটি নাম, ঠিকানা বা প্রতিষ্ঠান, যেমন amazon.com";
+
+/* No comment provided by engineer. */
+"Accept" = "গ্রহণ করুন";
+
+/* No comment provided by engineer. */
+"Account" = "অ্যাকাউন্ট";
+
+/* No comment provided by engineer. */
+"Accounts" = "অ্যাকাউন্ট";
+
+/* No comment provided by engineer. */
+"Accounts you add on your iPhone or iPad appear here on their own, through iCloud Keychain. Corres reads your mail straight from your provider on this Mac; our servers never receive it." = "আপনার iPhone বা iPad-এ যোগ করা অ্যাকাউন্টগুলো iCloud কিচেইনের মাধ্যমে নিজে থেকেই এখানে আসে। Corres এই Mac-এ আপনার মেইল সরাসরি আপনার সেবা থেকে পড়ে; আমাদের সার্ভার কখনো তা পায় না।";
+
+/* No comment provided by engineer. */
+"Add a signature" = "একটি স্বাক্ষর যোগ করুন";
+
+/* No comment provided by engineer. */
+"Add an Account" = "একটি অ্যাকাউন্ট যোগ করুন";
+
+/* No comment provided by engineer. */
+"Add an Email Account" = "একটি ইমেইল অ্যাকাউন্ট যোগ করুন";
+
+/* No comment provided by engineer. */
+"Add iCloud Mail" = "iCloud মেইল যোগ করুন";
+
+/* No comment provided by engineer. */
+"Add one with +, like a full one for new mail and a short one for replies." = "+ দিয়ে একটি যোগ করুন, যেমন নতুন মেইলের জন্য পুরোটা আর উত্তরের জন্য ছোটটা।";
+
+/* No comment provided by engineer. */
+"Add Signature" = "স্বাক্ষর যোগ করুন";
+
+/* No comment provided by engineer. */
+"Add to Calendar" = "ক্যালেন্ডারে যোগ করুন";
+
+/* No comment provided by engineer. */
+"All" = "সব";
+
+/* No comment provided by engineer. */
+"All accounts" = "সব অ্যাকাউন্ট";
+
+/* No comment provided by engineer. */
+"All New Mail" = "সব নতুন মেইল";
+
+/* No comment provided by engineer. */
+"All Unread" = "সব অপঠিত";
+
+/* No comment provided by engineer. */
+"Allow %@" = "%@-কে অনুমতি দিন";
+
+/* No comment provided by engineer. */
+"Already read." = "আগেই পড়া হয়েছে।";
+
+/* No comment provided by engineer. */
+"Always from %@" = "সবসময় %@ থেকে";
+
+/* No comment provided by engineer. */
+"Always Load" = "সবসময় লোড করুন";
+
+/* No comment provided by engineer. */
+"Always Needs You" = "সবসময় আপনার করণীয়";
+
+/* No comment provided by engineer. */
+"Amount" = "পরিমাণ";
+
+/* No comment provided by engineer. */
+"An address you receive at" = "যে ঠিকানায় আপনি মেইল পান";
+
+/* No comment provided by engineer. */
+"Answer" = "উত্তর";
+
+/* No comment provided by engineer. */
+"Anything from a real person, plus bills, appointments and other mail with a date that matters. Newsletters, promotions and social updates arrive silently." = "সত্যিকারের মানুষের যেকোনো মেইল, সাথে বিল, অ্যাপয়েন্টমেন্ট আর গুরুত্বপূর্ণ তারিখসহ মেইল। নিউজলেটার, প্রচার আর সামাজিক আপডেট চুপচাপ আসে।";
+
+/* No comment provided by engineer. */
+"Anywhere" = "যেকোনো জায়গায়";
+
+/* No comment provided by engineer. */
+"App-specific password" = "অ্যাপের জন্য আলাদা পাসওয়ার্ড";
+
+/* No comment provided by engineer. */
+"Appearance" = "চেহারা";
+
+/* No comment provided by engineer. */
+"Applied to %lld conversations." = "%lldটি কথোপকথনে প্রয়োগ হয়েছে।";
+
+/* No comment provided by engineer. */
+"Applied to 1 conversation." = "1টি কথোপকথনে প্রয়োগ হয়েছে।";
+
+/* No comment provided by engineer. */
+"Apply to Mail Already Here" = "আগের মেইলেও প্রয়োগ করুন";
+
+/* No comment provided by engineer. */
+"Archive" = "আর্কাইভ";
+
+/* No comment provided by engineer. */
+"Archive (⌃⌘A, or E)" = "আর্কাইভ (⌃⌘A, বা E)";
+
+/* No comment provided by engineer. */
+"Archive, delete, move or flag them together." = "একসাথে আর্কাইভ, মুছুন, সরান বা ফ্ল্যাগ দিন।";
+
+/* No comment provided by engineer. */
+"Archived" = "আর্কাইভ হয়েছে";
+
+/* No comment provided by engineer. */
+"Archived %lld" = "%lldটি আর্কাইভ হয়েছে";
+
+/* No comment provided by engineer. */
+"Archived mail leaves Needs You, so it won't be seen there." = "আর্কাইভ করা মেইল আপনার করণীয় থেকে সরে যায়, তাই সেখানে দেখা যাবে না।";
+
+/* No comment provided by engineer. */
+"Ask" = "জিজ্ঞাসা";
+
+/* No comment provided by engineer. */
+"Ask First" = "আগে জিজ্ঞেস করুন";
+
+/* No comment provided by engineer. */
+"Asks something of you" = "আপনার কাছে কিছু চাইছে";
+
+/* No comment provided by engineer. */
+"Asks you something." = "আপনাকে কিছু জিজ্ঞেস করছে।";
+
+/* No comment provided by engineer. */
+"Asks you to pay." = "আপনাকে টাকা দিতে বলছে।";
+
+/* No comment provided by engineer. */
+"Attach" = "যুক্ত করুন";
+
+/* No comment provided by engineer. */
+"Attach a file" = "একটি ফাইল যুক্ত করুন";
+
+/* No comment provided by engineer. */
+"Attachments" = "অ্যাটাচমেন্ট";
+
+/* No comment provided by engineer. */
+"Automated update." = "স্বয়ংক্রিয় আপডেট।";
+
+/* No comment provided by engineer. */
+"Automated update. Kept out of Needs You." = "স্বয়ংক্রিয় আপডেট। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Automatic" = "স্বয়ংক্রিয়";
+
+/* No comment provided by engineer. */
+"Beside companies' mail, the logo they publish for email, checked by its certificate. Corres's server fetches it, so the company never sees you, and is sent only the company's web address." = "প্রতিষ্ঠানের মেইলের পাশে তাদের ইমেইলের জন্য প্রকাশিত লোগো, সার্টিফিকেট দিয়ে যাচাই করা। Corres-এর সার্ভার সেটি আনে, তাই প্রতিষ্ঠানটি কখনো আপনাকে দেখে না, আর সার্ভারকে শুধু প্রতিষ্ঠানের ওয়েব ঠিকানা পাঠানো হয়।";
+
+/* No comment provided by engineer. */
+"Block" = "ব্লক করুন";
+
+/* No comment provided by engineer. */
+"Block %@" = "%@-কে ব্লক করুন";
+
+/* No comment provided by engineer. */
+"Block %@?" = "%@-কে ব্লক করবেন?";
+
+/* No comment provided by engineer. */
+"Block Sender" = "প্রেরককে ব্লক করুন";
+
+/* No comment provided by engineer. */
+"Book" = "বুক করুন";
+
+/* No comment provided by engineer. */
+"Brief" = "সারসংক্ষেপ";
+
+/* No comment provided by engineer. */
+"Bulk mail." = "গণ মেইল।";
+
+/* No comment provided by engineer. */
+"Bulk mail. Kept out of Needs You." = "গণ মেইল। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Can't reach %@ right now. Corres keeps trying." = "এখন %@-এ পৌঁছানো যাচ্ছে না। Corres চেষ্টা চালিয়ে যাচ্ছে।";
+
+/* No comment provided by engineer. */
+"Cancel" = "বাতিল";
+
+/* No comment provided by engineer. */
+"Canceled" = "বাতিল হয়েছে";
+
+/* No comment provided by engineer. */
+"Category" = "বিভাগ";
+
+/* No comment provided by engineer. */
+"Cc" = "Cc";
+
+/* No comment provided by engineer. */
+"Cc %lld" = "Cc %lld";
+
+/* No comment provided by engineer. */
+"Change" = "বদলান";
+
+/* No comment provided by engineer. */
+"Change Time" = "সময় বদলান";
+
+/* No comment provided by engineer. */
+"Change Time…" = "সময় বদলান…";
+
+/* No comment provided by engineer. */
+"Charged" = "চার্জ করা হয়েছে";
+
+/* No comment provided by engineer. */
+"Check in" = "চেক-ইন করুন";
+
+/* No comment provided by engineer. */
+"Check Your Calendar" = "আপনার ক্যালেন্ডার দেখুন";
+
+/* No comment provided by engineer. */
+"Check your connection, then choose it again." = "আপনার সংযোগ দেখুন, তারপর আবার বেছে নিন।";
+
+/* No comment provided by engineer. */
+"Checking for mail…" = "মেইল দেখা হচ্ছে…";
+
+/* No comment provided by engineer. */
+"Choose a conversation to read it." = "পড়তে একটি কথোপকথন বেছে নিন।";
+
+/* No comment provided by engineer. */
+"Choose a scheduled email to read it, send it now, or change its time." = "পড়তে, এখনই পাঠাতে বা সময় বদলাতে একটি নির্ধারিত ইমেইল বেছে নিন।";
+
+/* No comment provided by engineer. */
+"Choose a Time…" = "একটি সময় বেছে নিন…";
+
+/* No comment provided by engineer. */
+"Choose Send Later in a new message to send it at a time you pick." = "আপনার পছন্দের সময়ে পাঠাতে নতুন বার্তায় পরে পাঠান বেছে নিন।";
+
+/* No comment provided by engineer. */
+"codes" = "কোড";
+
+/* No comment provided by engineer. */
+"Company logos" = "প্রতিষ্ঠানের লোগো";
+
+/* No comment provided by engineer. */
+"Complete it" = "সম্পূর্ণ করুন";
+
+/* No comment provided by engineer. */
+"Confirm" = "নিশ্চিত করুন";
+
+/* No comment provided by engineer. */
+"Confirms something you did. Nothing to do unless it wasn't you." = "আপনি যা করেছেন তা নিশ্চিত করছে। আপনি না করে থাকলে ছাড়া কিছু করার নেই।";
+
+/* No comment provided by engineer. */
+"contains these words, ignoring case. Several words must all appear." = "এই শব্দগুলো আছে, বড়-ছোট হাতের অক্ষর বিবেচনা ছাড়া। কয়েকটি শব্দ থাকলে সবগুলো থাকতে হবে।";
+
+/* No comment provided by engineer. */
+"Conversation" = "কথোপকথন";
+
+/* No comment provided by engineer. */
+"Conversations" = "কথোপকথন";
+
+/* No comment provided by engineer. */
+"corres" = "corres";
+
+/* No comment provided by engineer. */
+"Corres" = "Corres";
+
+/* No comment provided by engineer. */
+"Corres decides" = "Corres ঠিক করবে";
+
+/* No comment provided by engineer. */
+"Corres Pro" = "Corres Pro";
+
+/* No comment provided by engineer. */
+"Corres Pro · Annual" = "Corres Pro · বার্ষিক";
+
+/* No comment provided by engineer. */
+"Corres Pro · Lifetime" = "Corres Pro · আজীবন";
+
+/* No comment provided by engineer. */
+"Corres Pro · Monthly" = "Corres Pro · মাসিক";
+
+/* No comment provided by engineer. */
+"Corres Pro adds Needs You, Waiting, answers in Search, summaries and suggested replies. One purchase covers your iPhone, iPad and Mac." = "Corres Pro যোগ করে আপনার করণীয়, অপেক্ষায়, সার্চে উত্তর, সারসংক্ষেপ আর প্রস্তাবিত উত্তর। একবার কিনলে আপনার iPhone, iPad আর Mac সবেই চলে।";
+
+/* No comment provided by engineer. */
+"Corres sends it from this Mac at that time, or the moment it can if your Mac is asleep or offline." = "Corres সেই সময়ে এই Mac থেকে এটি পাঠায়, অথবা আপনার Mac ঘুমিয়ে বা অফলাইনে থাকলে যখনই পারে তখন।";
+
+/* No comment provided by engineer. */
+"Corres: %lld emails need you" = "Corres: %lldটি ইমেইলে আপনার করণীয় আছে";
+
+/* No comment provided by engineer. */
+"Corres: 1 email needs you" = "Corres: 1টি ইমেইলে আপনার করণীয় আছে";
+
+/* No comment provided by engineer. */
+"Corres: nothing needs you" = "Corres: কোনো করণীয় নেই";
+
+/* No comment provided by engineer. */
+"Couldn't Attach" = "যুক্ত করা যায়নি";
+
+/* No comment provided by engineer. */
+"Couldn't Change Your Calendar" = "আপনার ক্যালেন্ডার বদলানো যায়নি";
+
+/* No comment provided by engineer. */
+"Couldn't download" = "ডাউনলোড করা যায়নি";
+
+/* No comment provided by engineer. */
+"Couldn't find an answer in your mail." = "আপনার মেইলে কোনো উত্তর পাওয়া যায়নি।";
+
+/* No comment provided by engineer. */
+"Couldn't load the full message." = "পুরো বার্তাটি লোড করা যায়নি।";
+
+/* No comment provided by engineer. */
+"Couldn't Save" = "সংরক্ষণ করা যায়নি";
+
+/* No comment provided by engineer. */
+"Dark" = "গাঢ়";
+
+/* No comment provided by engineer. */
+"Decline" = "প্রত্যাখ্যান করুন";
+
+/* No comment provided by engineer. */
+"Default Browser" = "ডিফল্ট ব্রাউজার";
+
+/* No comment provided by engineer. */
+"Default email app" = "ডিফল্ট ইমেইল অ্যাপ";
+
+/* No comment provided by engineer. */
+"Delete" = "মুছুন";
+
+/* No comment provided by engineer. */
+"Delete (⌘⌫, or #)" = "মুছুন (⌘⌫, বা #)";
+
+/* No comment provided by engineer. */
+"Delete Rule" = "নিয়ম মুছুন";
+
+/* No comment provided by engineer. */
+"Delete Signature" = "স্বাক্ষর মুছুন";
+
+/* No comment provided by engineer. */
+"Delete Template" = "টেমপ্লেট মুছুন";
+
+/* No comment provided by engineer. */
+"Delete this scheduled email?" = "এই নির্ধারিত ইমেইলটি মুছবেন?";
+
+/* No comment provided by engineer. */
+"Delete this signature" = "এই স্বাক্ষরটি মুছুন";
+
+/* No comment provided by engineer. */
+"Deleted %lld" = "%lldটি মোছা হয়েছে";
+
+/* No comment provided by engineer. */
+"Delivered" = "পৌঁছেছে";
+
+/* No comment provided by engineer. */
+"Delivery problem" = "ডেলিভারিতে সমস্যা";
+
+/* No comment provided by engineer. */
+"delivery updates" = "ডেলিভারির আপডেট";
+
+/* No comment provided by engineer. */
+"Do This" = "এটি করুন";
+
+/* No comment provided by engineer. */
+"Documents" = "ডকুমেন্ট";
+
+/* No comment provided by engineer. */
+"Done" = "সম্পন্ন";
+
+/* No comment provided by engineer. */
+"Done: off your lists, still in Mail" = "সম্পন্ন: আপনার তালিকা থেকে সরে, মেইলে থেকে যায়";
+
+/* No comment provided by engineer. */
+"Drafts" = "খসড়া";
+
+/* No comment provided by engineer. */
+"Due soon" = "শিগগির শেষ সময়";
+
+/* No comment provided by engineer. */
+"During this Focus, Corres shows and notifies for this account only." = "এই ফোকাসের সময় Corres শুধু এই অ্যাকাউন্টের মেইল দেখায় ও নোটিফিকেশন দেয়।";
+
+/* No comment provided by engineer. */
+"Edit" = "সম্পাদনা";
+
+/* No comment provided by engineer. */
+"Edit Rule" = "নিয়ম সম্পাদনা";
+
+/* No comment provided by engineer. */
+"Edit Template" = "টেমপ্লেট সম্পাদনা";
+
+/* No comment provided by engineer. */
+"Email" = "ইমেইল";
+
+/* No comment provided by engineer. */
+"Email links in other apps open in Corres." = "অন্য অ্যাপের ইমেইল লিংক Corres-এ খোলে।";
+
+/* No comment provided by engineer. */
+"Email that asks something of you lands here, with the reason why." = "যেসব ইমেইল আপনার কাছে কিছু চায় সেগুলো এখানে আসে, কারণসহ।";
+
+/* No comment provided by engineer. */
+"Email, considered." = "ইমেইল, ভেবেচিন্তে।";
+
+/* No comment provided by engineer. */
+"emails" = "ইমেইল";
+
+/* No comment provided by engineer. */
+"Every account, one inbox" = "সব অ্যাকাউন্ট, এক ইনবক্স";
+
+/* No comment provided by engineer. */
+"Every new email in your inbox, newsletters and promotions included." = "আপনার ইনবক্সের প্রতিটি নতুন ইমেইল, নিউজলেটার আর প্রচারসহ।";
+
+/* No comment provided by engineer. */
+"Every unread email in your inbox, newsletters included." = "আপনার ইনবক্সের প্রতিটি অপঠিত ইমেইল, নিউজলেটারসহ।";
+
+/* No comment provided by engineer. */
+"Everyday" = "প্রতিদিনের";
+
+/* No comment provided by engineer. */
+"Everything" = "সবকিছু";
+
+/* No comment provided by engineer. */
+"Everything Else" = "বাকি সব";
+
+/* No comment provided by engineer. */
+"Explore Sample Mail" = "নমুনা মেইল ঘুরে দেখুন";
+
+/* No comment provided by engineer. */
+"Files sent to you or by you show here." = "আপনাকে পাঠানো বা আপনার পাঠানো ফাইল এখানে দেখা যায়।";
+
+/* No comment provided by engineer. */
+"Find conversations from Spotlight by sender, subject or what they say. The index stays on this Mac." = "Spotlight থেকে প্রেরক, বিষয় বা লেখা দিয়ে কথোপকথন খুঁজুন। সূচিটি এই Mac-এই থাকে।";
+
+/* No comment provided by engineer. */
+"Finds this event on your calendar so you can remove it. Your calendar stays on this device." = "আপনার ক্যালেন্ডারে এই ইভেন্টটি খুঁজে দেয় যাতে আপনি সরাতে পারেন। আপনার ক্যালেন্ডার এই ডিভাইসেই থাকে।";
+
+/* No comment provided by engineer. */
+"Flag" = "ফ্ল্যাগ";
+
+/* No comment provided by engineer. */
+"Flag (⇧⌘L, or S)" = "ফ্ল্যাগ (⇧⌘L, বা S)";
+
+/* No comment provided by engineer. */
+"Flagged" = "ফ্ল্যাগ দেওয়া";
+
+/* No comment provided by engineer. */
+"Follow up" = "ফলো-আপ";
+
+/* No comment provided by engineer. */
+"Forward" = "ফরোয়ার্ড";
+
+/* No comment provided by engineer. */
+"Forward (⇧⌘F, or F)" = "ফরোয়ার্ড (⇧⌘F, বা F)";
+
+/* No comment provided by engineer. */
+"Free" = "বিনামূল্যে";
+
+/* No comment provided by engineer. */
+"From" = "প্রেরক";
+
+/* No comment provided by engineer. */
+"From “%@”" = "“%@” থেকে";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked." = "কোনো মানুষের কাছ থেকে, কিছু চাওয়া হয়নি।";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked. Kept out of Needs You." = "কোনো মানুষের কাছ থেকে, কিছু চাওয়া হয়নি। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"From a VIP." = "একজন VIP-এর কাছ থেকে।";
+
+/* No comment provided by engineer. */
+"From your mail on this %@. Nothing about them is looked up anywhere else." = "এই %@-এ আপনার মেইল থেকে। তাদের সম্পর্কে অন্য কোথাও কিছু খোঁজা হয় না।";
+
+/* No comment provided by engineer. */
+"From your other account." = "আপনার অন্য অ্যাকাউন্ট থেকে।";
+
+/* No comment provided by engineer. */
+"From your other account. Kept out of Needs You." = "আপনার অন্য অ্যাকাউন্ট থেকে। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"General" = "সাধারণ";
+
+/* No comment provided by engineer. */
+"Get Mail" = "মেইল আনুন";
+
+/* No comment provided by engineer. */
+"Get New Mail" = "নতুন মেইল আনুন";
+
+/* No comment provided by engineer. */
+"Get New Mail (⇧⌘N)" = "নতুন মেইল আনুন (⇧⌘N)";
+
+/* No comment provided by engineer. */
+"Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail, Outlook, iCloud and more. Accounts you added on your iPhone or iPad appear here on their own." = "Gmail, Outlook, iCloud আর আরও অনেক। আপনার iPhone বা iPad-এ যোগ করা অ্যাকাউন্টগুলো নিজে থেকেই এখানে আসে।";
+
+/* No comment provided by engineer. */
+"Go to a mailbox or do something…" = "কোনো মেইলবক্সে যান বা কিছু করুন…";
+
+/* No comment provided by engineer. */
+"Go To or Do" = "যান বা করুন";
+
+/* No comment provided by engineer. */
+"Go To or Do (⌘K)" = "যান বা করুন (⌘K)";
+
+/* No comment provided by engineer. */
+"Go To or Do…" = "যান বা করুন…";
+
+/* No comment provided by engineer. */
+"Handled" = "সম্পন্ন";
+
+/* No comment provided by engineer. */
+"Handled. It stays in Mail." = "সম্পন্ন। মেইলে থাকে।";
+
+/* No comment provided by engineer. */
+"Has attachments" = "অ্যাটাচমেন্ট আছে";
+
+/* No comment provided by engineer. */
+"Hear what's in Needs You and who you're waiting on." = "আপনার করণীয়-তে কী আছে আর কার উত্তরের অপেক্ষায় আছেন তা শুনুন।";
+
+/* No comment provided by engineer. */
+"Held because they replied first. Send it, change it, or delete it." = "তারা আগে উত্তর দেওয়ায় থামানো হয়েছে। পাঠান, বদলান বা মুছুন।";
+
+/* No comment provided by engineer. */
+"Held: they replied first" = "থামানো: তারা আগে উত্তর দিয়েছে";
+
+/* No comment provided by engineer. */
+"Here are a few times that work for me:\n\n%@\n\nDo any of these suit you?" = "আমার জন্য সুবিধাজনক কয়েকটি সময়:\n\n%@\n\nএর মধ্যে কোনোটি কি আপনার জন্য ঠিক আছে?";
+
+/* No comment provided by engineer. */
+"How many emails need you, and the first few, from the menu bar." = "মেনু বার থেকে কয়টি ইমেইলে আপনার করণীয় আছে, আর প্রথম কয়েকটি।";
+
+/* No comment provided by engineer. */
+"iCloud" = "iCloud";
+
+/* No comment provided by engineer. */
+"Images hidden to protect your privacy" = "আপনার গোপনীয়তা রক্ষায় ছবি লুকানো";
+
+/* No comment provided by engineer. */
+"Images hidden, and %lld trackers blocked" = "ছবি লুকানো, আর %lldটি ট্র্যাকার আটকানো হয়েছে";
+
+/* No comment provided by engineer. */
+"Images hidden, and 1 tracker blocked" = "ছবি লুকানো, আর 1টি ট্র্যাকার আটকানো হয়েছে";
+
+/* No comment provided by engineer. */
+"Images in email" = "ইমেইলের ছবি";
+
+/* No comment provided by engineer. */
+"In Corres" = "Corres-এ";
+
+/* No comment provided by engineer. */
+"In Needs You" = "আপনার করণীয়-তে";
+
+/* No comment provided by engineer. */
+"In Needs You: " = "আপনার করণীয়-তে: ";
+
+/* No comment provided by engineer. */
+"In short" = "সংক্ষেপে";
+
+/* No comment provided by engineer. */
+"Insert First Name" = "নামের প্রথম অংশ বসান";
+
+/* No comment provided by engineer. */
+"Invitation" = "আমন্ত্রণ";
+
+/* No comment provided by engineer. */
+"invitations" = "আমন্ত্রণ";
+
+/* No comment provided by engineer. */
+"It shows in Mailboxes, run again each time you open it." = "এটি মেইলবক্সে দেখা যায়, প্রতিবার খুললে নতুন করে চলে।";
+
+/* No comment provided by engineer. */
+"It won't be sent, and it isn't kept in Drafts." = "এটি পাঠানো হবে না, আর খসড়াতেও রাখা হবে না।";
+
+/* No comment provided by engineer. */
+"It's removed from Corres on all your devices. Nothing is deleted from the account itself." = "এটি আপনার সব ডিভাইসের Corres থেকে সরানো হবে। অ্যাকাউন্ট থেকে কিছুই মোছা হবে না।";
+
+/* No comment provided by engineer. */
+"Its %@" = "এর %@";
+
+/* No comment provided by engineer. */
+"Its mail" = "এর মেইল";
+
+/* No comment provided by engineer. */
+"Join" = "যোগ দিন";
+
+/* No comment provided by engineer. */
+"Join %@" = "%@-এ যোগ দিন";
+
+/* No comment provided by engineer. */
+"Keyboard Shortcuts" = "কিবোর্ড শর্টকাট";
+
+/* No comment provided by engineer. */
+"Kind" = "ধরন";
+
+/* No comment provided by engineer. */
+"Labels" = "লেবেল";
+
+/* No comment provided by engineer. */
+"Last email from them" = "তাদের শেষ ইমেইল";
+
+/* No comment provided by engineer. */
+"Later Today" = "আজ পরে";
+
+/* No comment provided by engineer. */
+"Light" = "হালকা";
+
+/* No comment provided by engineer. */
+"List" = "তালিকা";
+
+/* No comment provided by engineer. */
+"Made for the Mac" = "Mac-এর জন্য তৈরি";
+
+/* No comment provided by engineer. */
+"Mail" = "মেইল";
+
+/* No comment provided by engineer. */
+"Mail from %@" = "%@-এর মেইল";
+
+/* No comment provided by engineer. */
+"Mail that arrived since you last left Corres. Opening Corres clears it." = "শেষবার Corres ছাড়ার পর যে মেইল এসেছে। Corres খুললে এটি মুছে যায়।";
+
+/* No comment provided by engineer. */
+"Mail's shortcuts, ⌘K to go anywhere, and drag to file. Press ? any time to see every key." = "মেইলের শর্টকাট, যেকোনো জায়গায় যেতে ⌘K, আর টেনে এনে ফাইল করা। সব কি দেখতে যেকোনো সময় ? চাপুন।";
+
+/* No comment provided by engineer. */
+"Mailbox" = "মেইলবক্স";
+
+/* No comment provided by engineer. */
+"Mailboxes" = "মেইলবক্স";
+
+/* No comment provided by engineer. */
+"Mailing list." = "মেইলিং লিস্ট।";
+
+/* No comment provided by engineer. */
+"Mailing list. Kept out of Needs You." = "মেইলিং লিস্ট। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Make Corres the Default" = "Corres-কে ডিফল্ট করুন";
+
+/* No comment provided by engineer. */
+"Make VIP" = "VIP করুন";
+
+/* No comment provided by engineer. */
+"Manage Templates…" = "টেমপ্লেট পরিচালনা…";
+
+/* No comment provided by engineer. */
+"Mark as Handled" = "সম্পন্ন চিহ্নিত করুন";
+
+/* No comment provided by engineer. */
+"Mark as Read" = "পঠিত চিহ্নিত করুন";
+
+/* No comment provided by engineer. */
+"Mark as Read or Unread" = "পঠিত বা অপঠিত চিহ্নিত করুন";
+
+/* No comment provided by engineer. */
+"Mark as Read or Unread (⇧⌘U, or U)" = "পঠিত বা অপঠিত চিহ্নিত করুন (⇧⌘U, বা U)";
+
+/* No comment provided by engineer. */
+"Mark as read when opened" = "খুললেই পঠিত চিহ্নিত করুন";
+
+/* No comment provided by engineer. */
+"Mark as Unread" = "অপঠিত চিহ্নিত করুন";
+
+/* No comment provided by engineer. */
+"Mark Unread" = "অপঠিত চিহ্নিত করুন";
+
+/* No comment provided by engineer. */
+"Marked %lld as no action needed" = "%lldটি কিছু করার নেই বলে চিহ্নিত হয়েছে";
+
+/* No comment provided by engineer. */
+"Marked %lld as read" = "%lldটি পঠিত চিহ্নিত হয়েছে";
+
+/* No comment provided by engineer. */
+"Marked %lld as unread" = "%lldটি অপঠিত চিহ্নিত হয়েছে";
+
+/* No comment provided by engineer. */
+"Marked %lld Handled" = "%lldটি সম্পন্ন চিহ্নিত হয়েছে";
+
+/* No comment provided by engineer. */
+"Marked as no action needed" = "কিছু করার নেই বলে চিহ্নিত হয়েছে";
+
+/* No comment provided by engineer. */
+"Marked as read" = "পঠিত চিহ্নিত হয়েছে";
+
+/* No comment provided by engineer. */
+"Marked as unread" = "অপঠিত চিহ্নিত হয়েছে";
+
+/* No comment provided by engineer. */
+"Marked Handled" = "সম্পন্ন চিহ্নিত হয়েছে";
+
+/* No comment provided by engineer. */
+"Maybe" = "হয়তো";
+
+/* No comment provided by engineer. */
+"Mentions “%@”" = "“%@” উল্লেখ করেছে";
+
+/* No comment provided by engineer. */
+"Mentions a deadline." = "একটি শেষ সময়ের কথা বলছে।";
+
+/* No comment provided by engineer. */
+"Message" = "বার্তা";
+
+/* No comment provided by engineer. */
+"More Formal" = "আরও আনুষ্ঠানিক";
+
+/* No comment provided by engineer. */
+"Move" = "সরান";
+
+/* No comment provided by engineer. */
+"Move to" = "সরান";
+
+/* No comment provided by engineer. */
+"Move to %@" = "%@-এ সরান";
+
+/* No comment provided by engineer. */
+"Move to Drafts" = "খসড়ায় সরান";
+
+/* No comment provided by engineer. */
+"Move to Needs You" = "আপনার করণীয়-তে সরান";
+
+/* No comment provided by engineer. */
+"Move to Waiting" = "অপেক্ষায় সরান";
+
+/* No comment provided by engineer. */
+"Moved" = "সরানো হয়েছে";
+
+/* No comment provided by engineer. */
+"Moved %lld to %@" = "%lldটি %@-এ সরানো হয়েছে";
+
+/* No comment provided by engineer. */
+"Moved to %@" = "%@-এ সরানো হয়েছে";
+
+/* No comment provided by engineer. */
+"Moved to Trash" = "ট্র্যাশে সরানো হয়েছে";
+
+/* No comment provided by engineer. */
+"Mute" = "নিঃশব্দ করুন";
+
+/* No comment provided by engineer. */
+"Muted" = "নিঃশব্দ";
+
+/* No comment provided by engineer. */
+"Name" = "নাম";
+
+/* No comment provided by engineer. */
+"Name, like Directions or Thanks" = "নাম, যেমন ঠিকানার নির্দেশনা বা ধন্যবাদ";
+
+/* No comment provided by engineer. */
+"Name, sender or subject" = "নাম, প্রেরক বা বিষয়";
+
+/* No comment provided by engineer. */
+"Needs Attention" = "মনোযোগ প্রয়োজন";
+
+/* No comment provided by engineer. */
+"Needs You" = "আপনার করণীয়";
+
+/* No comment provided by engineer. */
+"Needs You is part of Corres Pro. Open Corres to start your free trial." = "আপনার করণীয় Corres Pro-এর অংশ। বিনামূল্যে ট্রায়াল শুরু করতে Corres খুলুন।";
+
+/* No comment provided by engineer. */
+"Needs You, Waiting or Handled" = "আপনার করণীয়, অপেক্ষায় বা সম্পন্ন";
+
+/* No comment provided by engineer. */
+"Never Needs You" = "কখনো আপনার করণীয় নয়";
+
+/* No comment provided by engineer. */
+"New Email" = "নতুন ইমেইল";
+
+/* No comment provided by engineer. */
+"New mail" = "নতুন মেইল";
+
+/* No comment provided by engineer. */
+"New Message" = "নতুন বার্তা";
+
+/* No comment provided by engineer. */
+"New Message (⌘N)" = "নতুন বার্তা (⌘N)";
+
+/* No comment provided by engineer. */
+"New Rule" = "নতুন নিয়ম";
+
+/* No comment provided by engineer. */
+"New sender · %@" = "নতুন প্রেরক · %@";
+
+/* No comment provided by engineer. */
+"New Senders" = "নতুন প্রেরক";
+
+/* No comment provided by engineer. */
+"New Since Last Opened" = "শেষবার খোলার পর থেকে নতুন";
+
+/* No comment provided by engineer. */
+"New Template" = "নতুন টেমপ্লেট";
+
+/* No comment provided by engineer. */
+"newsletters" = "নিউজলেটার";
+
+/* No comment provided by engineer. */
+"Next Week" = "আগামী সপ্তাহে";
+
+/* No comment provided by engineer. */
+"No accounts yet. Corres is showing sample mail." = "এখনো কোনো অ্যাকাউন্ট নেই। Corres নমুনা মেইল দেখাচ্ছে।";
+
+/* No comment provided by engineer. */
+"No action needed" = "কিছু করার নেই";
+
+/* No comment provided by engineer. */
+"No action needed: " = "কিছু করার নেই: ";
+
+/* No comment provided by engineer. */
+"No Attachments" = "কোনো অ্যাটাচমেন্ট নেই";
+
+/* No comment provided by engineer. */
+"No conversations here." = "এখানে কোনো কথোপকথন নেই।";
+
+/* No comment provided by engineer. */
+"No Matches" = "কোনো মিল নেই";
+
+/* No comment provided by engineer. */
+"No number on the icon." = "আইকনে কোনো সংখ্যা নয়।";
+
+/* No comment provided by engineer. */
+"No recipients" = "কোনো প্রাপক নেই";
+
+/* No comment provided by engineer. */
+"No reply from %@ since %@. Follow up?" = "%2$@ থেকে %1$@-এর কোনো উত্তর নেই। ফলো-আপ করবেন?";
+
+/* No comment provided by engineer. */
+"No reply in %lld days" = "%lld দিনে কোনো উত্তর নেই";
+
+/* No comment provided by engineer. */
+"No reply in 1 day" = "1 দিনে কোনো উত্তর নেই";
+
+/* No comment provided by engineer. */
+"No subject" = "বিষয় নেই";
+
+/* No comment provided by engineer. */
+"Nothing for you to do" = "আপনার কিছু করার নেই";
+
+/* No comment provided by engineer. */
+"Nothing here asks anything of you." = "এখানে কিছুই আপনার কাছে কিছু চায় না।";
+
+/* No comment provided by engineer. */
+"Nothing here yet. A rule acts on mail as it arrives, on every account: into Promotions, out of Needs You, marked read, archived." = "এখানে এখনো কিছু নেই। একটি নিয়ম মেইল আসার সময়ই প্রতিটি অ্যাকাউন্টে কাজ করে: প্রচারে নেওয়া, আপনার করণীয় থেকে সরানো, পঠিত চিহ্নিত করা, আর্কাইভ করা।";
+
+/* No comment provided by engineer. */
+"Nothing here yet. Save replies you write often, like directions, a thank-you or a meeting link, and add one from Templates while you write." = "এখানে এখনো কিছু নেই। প্রায়ই লেখেন এমন উত্তর সংরক্ষণ করুন, যেমন ঠিকানার নির্দেশনা, ধন্যবাদ বা মিটিং লিংক, আর লেখার সময় টেমপ্লেট থেকে একটি যোগ করুন।";
+
+/* No comment provided by engineer. */
+"Nothing matches “%@”." = "“%@”-এর সাথে কিছু মেলেনি।";
+
+/* No comment provided by engineer. */
+"Nothing needs you" = "কোনো করণীয় নেই";
+
+/* No comment provided by engineer. */
+"Nothing needs you right now." = "এই মুহূর্তে আপনার কিছু করার নেই।";
+
+/* No comment provided by engineer. */
+"Nothing unread in %@." = "%@-এ কিছু অপঠিত নেই।";
+
+/* No comment provided by engineer. */
+"notifications" = "নোটিফিকেশন";
+
+/* No comment provided by engineer. */
+"Off" = "বন্ধ";
+
+/* No comment provided by engineer. */
+"OK" = "ঠিক আছে";
+
+/* No comment provided by engineer. */
+"On" = "চালু";
+
+/* No comment provided by engineer. */
+"On Calendar" = "ক্যালেন্ডারে আছে";
+
+/* No comment provided by engineer. */
+"On its way" = "পথে আছে";
+
+/* No comment provided by engineer. */
+"On the Way" = "পথে আছে";
+
+/* No comment provided by engineer. */
+"On this device and your others through iCloud." = "এই ডিভাইসে আর iCloud দিয়ে আপনার অন্য ডিভাইসগুলোতে।";
+
+/* No comment provided by engineer. */
+"One conversation needs you." = "একটি কথোপকথনে আপনার করণীয় আছে।";
+
+/* No comment provided by engineer. */
+"Only %@" = "শুধু %@";
+
+/* No comment provided by engineer. */
+"Only what asks something of you, so the number means something." = "শুধু যা আপনার কাছে কিছু চায়, যাতে সংখ্যাটির একটা মানে থাকে।";
+
+/* No comment provided by engineer. */
+"Only what Corres files in Needs You. The quietest option; an FYI from a person arrives silently." = "শুধু যা Corres আপনার করণীয়-তে রাখে। সবচেয়ে শান্ত বিকল্প; কোনো মানুষের শুধু জানানোর মেইল চুপচাপ আসে।";
+
+/* No comment provided by engineer. */
+"Only What Needs Me" = "শুধু যা আমার করণীয়";
+
+/* No comment provided by engineer. */
+"Only you see the name, when choosing a template." = "টেমপ্লেট বাছাইয়ের সময় নামটি শুধু আপনি দেখেন।";
+
+/* No comment provided by engineer. */
+"Open" = "খুলুন";
+
+/* No comment provided by engineer. */
+"Open account.apple.com" = "account.apple.com খুলুন";
+
+/* No comment provided by engineer. */
+"Open Corres" = "Corres খুলুন";
+
+/* No comment provided by engineer. */
+"Open Corres once so it can sort your mail." = "আপনার মেইল সাজাতে Corres একবার খুলুন।";
+
+/* No comment provided by engineer. */
+"Open in New Window" = "নতুন উইন্ডোতে খুলুন";
+
+/* No comment provided by engineer. */
+"Open List" = "তালিকা খুলুন";
+
+/* No comment provided by engineer. */
+"Open Needs You" = "আপনার করণীয় খুলুন";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "Corres-এ আপনার করণীয় খুলুন।";
+
+/* No comment provided by engineer. */
+"Open Needs You, Waiting or Mail in Corres." = "Corres-এ আপনার করণীয়, অপেক্ষায় বা মেইল খুলুন।";
+
+/* No comment provided by engineer. */
+"Opens its conversation" = "এর কথোপকথন খোলে";
+
+/* No comment provided by engineer. */
+"Opens the email" = "ইমেইলটি খোলে";
+
+/* No comment provided by engineer. */
+"Order confirmed" = "অর্ডার নিশ্চিত হয়েছে";
+
+/* No comment provided by engineer. */
+"Orders and Receipts" = "অর্ডার ও রসিদ";
+
+/* No comment provided by engineer. */
+"Organize" = "গোছান";
+
+/* No comment provided by engineer. */
+"Other" = "অন্যান্য";
+
+/* No comment provided by engineer. */
+"Other Email" = "অন্য ইমেইল";
+
+/* No comment provided by engineer. */
+"Out for delivery" = "ডেলিভারির জন্য বের হয়েছে";
+
+/* No comment provided by engineer. */
+"Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Overdue" = "সময় পেরিয়ে গেছে";
+
+/* No comment provided by engineer. */
+"Overlaps %@" = "%@-এর সাথে মিলে যায়";
+
+/* No comment provided by engineer. */
+"Overlaps %@ and %lld more" = "%@ ও আরও %lldটির সাথে মিলে যায়";
+
+/* No comment provided by engineer. */
+"Paid" = "পরিশোধিত";
+
+/* No comment provided by engineer. */
+"Password" = "পাসওয়ার্ড";
+
+/* No comment provided by engineer. */
+"Pay" = "পরিশোধ করুন";
+
+/* No comment provided by engineer. */
+"Payment due" = "পরিশোধ বাকি";
+
+/* No comment provided by engineer. */
+"Payment failed" = "পরিশোধ ব্যর্থ হয়েছে";
+
+/* No comment provided by engineer. */
+"People and Time-Sensitive" = "মানুষ ও সময়-সংবেদনশীল";
+
+/* No comment provided by engineer. */
+"Photos and Videos" = "ছবি ও ভিডিও";
+
+/* No comment provided by engineer. */
+"Pin" = "পিন";
+
+/* No comment provided by engineer. */
+"Pinned" = "পিন করা";
+
+/* No comment provided by engineer. */
+"Placed here by your rule." = "আপনার নিয়ম অনুযায়ী এখানে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Plan" = "প্ল্যান";
+
+/* No comment provided by engineer. */
+"Primary" = "প্রধান";
+
+/* No comment provided by engineer. */
+"Print" = "প্রিন্ট";
+
+/* No comment provided by engineer. */
+"Print (⌘P)" = "প্রিন্ট (⌘P)";
+
+/* No comment provided by engineer. */
+"Print…" = "প্রিন্ট…";
+
+/* No comment provided by engineer. */
+"Private by design" = "গোপনীয়তা শুরু থেকেই";
+
+/* No comment provided by engineer. */
+"Promotion." = "প্রচার।";
+
+/* No comment provided by engineer. */
+"Promotion. Kept out of Needs You." = "প্রচার। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Promotions" = "প্রচার";
+
+/* No comment provided by engineer. */
+"Proofread" = "প্রুফরিড";
+
+/* No comment provided by engineer. */
+"Purchases" = "কেনাকাটা";
+
+/* No comment provided by engineer. */
+"Quick Look" = "কুইক লুক";
+
+/* No comment provided by engineer. */
+"Quick Look %@" = "%@ কুইক লুক";
+
+/* No comment provided by engineer. */
+"Read/Unread" = "পঠিত/অপঠিত";
+
+/* No comment provided by engineer. */
+"Reads like it needs something from you." = "মনে হচ্ছে আপনার কাছে কিছু চায়।";
+
+/* No comment provided by engineer. */
+"receipts" = "রসিদ";
+
+/* No comment provided by engineer. */
+"Receipts and delivery updates from the last four months show here." = "গত চার মাসের রসিদ আর ডেলিভারির আপডেট এখানে দেখা যায়।";
+
+/* No comment provided by engineer. */
+"Recent" = "সাম্প্রতিক";
+
+/* No comment provided by engineer. */
+"Redeem Code" = "কোড রিডিম করুন";
+
+/* No comment provided by engineer. */
+"Refund" = "ফেরত";
+
+/* No comment provided by engineer. */
+"Refunded" = "টাকা ফেরত দেওয়া হয়েছে";
+
+/* No comment provided by engineer. */
+"Register" = "নিবন্ধন করুন";
+
+/* No comment provided by engineer. */
+"Remove" = "সরান";
+
+/* No comment provided by engineer. */
+"Remove “%@” from your calendar?" = "আপনার ক্যালেন্ডার থেকে “%@” সরাবেন?";
+
+/* No comment provided by engineer. */
+"Remove %@" = "%@ সরান";
+
+/* No comment provided by engineer. */
+"Remove %@?" = "%@ সরাবেন?";
+
+/* No comment provided by engineer. */
+"Remove from Calendar" = "ক্যালেন্ডার থেকে সরান";
+
+/* No comment provided by engineer. */
+"Remove Saved Search" = "সংরক্ষিত সার্চ সরান";
+
+/* No comment provided by engineer. */
+"Remove this attachment" = "এই অ্যাটাচমেন্টটি সরান";
+
+/* No comment provided by engineer. */
+"Remove…" = "সরান…";
+
+/* No comment provided by engineer. */
+"Replies" = "উত্তর";
+
+/* No comment provided by engineer. */
+"Reply" = "উত্তর";
+
+/* No comment provided by engineer. */
+"Reply (⌘R, or R)" = "উত্তর (⌘R, বা R)";
+
+/* No comment provided by engineer. */
+"Reply All" = "সবাইকে উত্তর";
+
+/* No comment provided by engineer. */
+"Reply All (⇧⌘R, or A)" = "সবাইকে উত্তর (⇧⌘R, বা A)";
+
+/* No comment provided by engineer. */
+"Report Spam" = "স্প্যাম হিসেবে জানান";
+
+/* No comment provided by engineer. */
+"Reported %lld as spam" = "%lldটি স্প্যাম হিসেবে জানানো হয়েছে";
+
+/* No comment provided by engineer. */
+"Reported as spam" = "স্প্যাম হিসেবে জানানো হয়েছে";
+
+/* No comment provided by engineer. */
+"Reset password" = "পাসওয়ার্ড রিসেট";
+
+/* No comment provided by engineer. */
+"Restore Purchases" = "কেনাকাটা পুনরুদ্ধার";
+
+/* No comment provided by engineer. */
+"Review" = "দেখুন";
+
+/* No comment provided by engineer. */
+"RSVP" = "উত্তর দিন";
+
+/* No comment provided by engineer. */
+"Rules" = "নিয়ম";
+
+/* No comment provided by engineer. */
+"Rules act on mail that arrives after you make them. They run in order, and on this device and your others through iCloud." = "নিয়ম তৈরির পরে আসা মেইলে কাজ করে। এগুলো ক্রমানুসারে চলে, এই ডিভাইসে আর iCloud দিয়ে আপনার অন্য ডিভাইসগুলোতে।";
+
+/* No comment provided by engineer. */
+"Same as Settings" = "সেটিংসের মতো";
+
+/* No comment provided by engineer. */
+"Sample mail · add an account in Settings" = "নমুনা মেইল · সেটিংসে একটি অ্যাকাউন্ট যোগ করুন";
+
+/* No comment provided by engineer. */
+"Save" = "সংরক্ষণ করুন";
+
+/* No comment provided by engineer. */
+"Save as Template" = "টেমপ্লেট হিসেবে সংরক্ষণ করুন";
+
+/* No comment provided by engineer. */
+"Save As…" = "এভাবে সংরক্ষণ করুন…";
+
+/* No comment provided by engineer. */
+"Save Search" = "সার্চ সংরক্ষণ করুন";
+
+/* No comment provided by engineer. */
+"Save to Downloads" = "ডাউনলোডসে সংরক্ষণ করুন";
+
+/* No comment provided by engineer. */
+"Saved" = "সংরক্ষিত";
+
+/* No comment provided by engineer. */
+"Saved Search" = "সংরক্ষিত সার্চ";
+
+/* No comment provided by engineer. */
+"Saved Searches" = "সংরক্ষিত সার্চ";
+
+/* No comment provided by engineer. */
+"Schedule" = "সময় নির্ধারণ";
+
+/* No comment provided by engineer. */
+"Search" = "খুঁজুন";
+
+/* No comment provided by engineer. */
+"Search, or ask a question" = "খুঁজুন, অথবা প্রশ্ন করুন";
+
+/* No comment provided by engineer. */
+"Searching your accounts…" = "আপনার অ্যাকাউন্টগুলোতে খোঁজা হচ্ছে…";
+
+/* No comment provided by engineer. */
+"Send" = "পাঠান";
+
+/* No comment provided by engineer. */
+"Send (⇧⌘D)" = "পাঠান (⇧⌘D)";
+
+/* No comment provided by engineer. */
+"Send and Share" = "পাঠান ও শেয়ার করুন";
+
+/* No comment provided by engineer. */
+"Send at" = "পাঠানোর সময়";
+
+/* No comment provided by engineer. */
+"Send Later" = "পরে পাঠান";
+
+/* No comment provided by engineer. */
+"Send Now" = "এখনই পাঠান";
+
+/* No comment provided by engineer. */
+"Send without a subject?" = "বিষয় ছাড়া পাঠাবেন?";
+
+/* No comment provided by engineer. */
+"Sends %@" = "%@ পাঠায়";
+
+/* No comment provided by engineer. */
+"Sends %@, from this Mac." = "এই Mac থেকে %@ পাঠায়।";
+
+/* No comment provided by engineer. */
+"Sent" = "পাঠানো";
+
+/* No comment provided by engineer. */
+"Sent today" = "আজ পাঠানো";
+
+/* No comment provided by engineer. */
+"Share" = "শেয়ার করুন";
+
+/* No comment provided by engineer. */
+"Shorter" = "আরও ছোট";
+
+/* No comment provided by engineer. */
+"Show All" = "সব দেখান";
+
+/* No comment provided by engineer. */
+"Show Images" = "ছবি দেখান";
+
+/* No comment provided by engineer. */
+"Show in menu bar" = "মেনু বারে দেখান";
+
+/* No comment provided by engineer. */
+"Show in Spotlight" = "Spotlight-এ দেখান";
+
+/* No comment provided by engineer. */
+"Show One Account" = "একটি অ্যাকাউন্ট দেখান";
+
+/* No comment provided by engineer. */
+"Show only unread mail in this list (⌘L)" = "এই তালিকায় শুধু অপঠিত মেইল দেখান (⌘L)";
+
+/* No comment provided by engineer. */
+"Show your mail with %@" = "%@-এর সাথে আপনার মেইল দেখান";
+
+/* No comment provided by engineer. */
+"Shows whether you're free then. Your calendar stays on this device." = "সেই সময় আপনি ফাঁকা কিনা দেখায়। আপনার ক্যালেন্ডার এই ডিভাইসেই থাকে।";
+
+/* No comment provided by engineer. */
+"Sign" = "স্বাক্ষর করুন";
+
+/* No comment provided by engineer. */
+"Sign In" = "সাইন ইন";
+
+/* No comment provided by engineer. */
+"Signatures" = "স্বাক্ষর";
+
+/* No comment provided by engineer. */
+"Signed out of %@. Sign in again to keep getting mail." = "%@ থেকে সাইন আউট হয়েছে। মেইল পেতে থাকতে আবার সাইন ইন করুন।";
+
+/* No comment provided by engineer. */
+"Signing In…" = "সাইন ইন হচ্ছে…";
+
+/* No comment provided by engineer. */
+"Snooze" = "স্নুজ";
+
+/* No comment provided by engineer. */
+"Snooze (B)" = "স্নুজ (B)";
+
+/* No comment provided by engineer. */
+"Snooze until…" = "এই সময় পর্যন্ত স্নুজ…";
+
+/* No comment provided by engineer. */
+"Snooze…" = "স্নুজ…";
+
+/* No comment provided by engineer. */
+"Snoozed" = "স্নুজ করা";
+
+/* No comment provided by engineer. */
+"Social" = "সামাজিক";
+
+/* No comment provided by engineer. */
+"Social notification." = "সামাজিক নোটিফিকেশন।";
+
+/* No comment provided by engineer. */
+"Social notification. Kept out of Needs You." = "সামাজিক নোটিফিকেশন। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Something failed that only you can fix." = "এমন কিছু ব্যর্থ হয়েছে যা শুধু আপনিই ঠিক করতে পারেন।";
+
+/* No comment provided by engineer. */
+"Something Went Wrong" = "কিছু একটা ভুল হয়েছে";
+
+/* No comment provided by engineer. */
+"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service." = "সাজানো, সারসংক্ষেপ আর খসড়া এই Mac-এ হয়। আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI সেবায় যায় না।";
+
+/* No comment provided by engineer. */
+"Spam" = "স্প্যাম";
+
+/* No comment provided by engineer. */
+"Start a new email in Corres." = "Corres-এ নতুন ইমেইল শুরু করুন।";
+
+/* No comment provided by engineer. */
+"Subject" = "বিষয়";
+
+/* No comment provided by engineer. */
+"Subject (optional)" = "বিষয় (ঐচ্ছিক)";
+
+/* No comment provided by engineer. */
+"Subject has “%@”" = "বিষয়ে “%@” আছে";
+
+/* No comment provided by engineer. */
+"Suggest Times from Your Calendar" = "আপনার ক্যালেন্ডার থেকে সময় প্রস্তাব করুন";
+
+/* No comment provided by engineer. */
+"Summaries (Apple Intelligence, on this Mac)" = "সারসংক্ষেপ (Apple Intelligence, এই Mac-এ)";
+
+/* No comment provided by engineer. */
+"Templates" = "টেমপ্লেট";
+
+/* No comment provided by engineer. */
+"Text" = "লেখা";
+
+/* No comment provided by engineer. */
+"The few conversations that ask something of you, with the reason for each." = "যে অল্প কয়েকটি কথোপকথন আপনার কাছে কিছু চায়, প্রতিটির কারণসহ।";
+
+/* No comment provided by engineer. */
+"The organizer canceled this event." = "আয়োজক এই ইভেন্টটি বাতিল করেছেন।";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd accepted the earlier version." = "আয়োজক এই ইভেন্টটি বদলেছেন। আগের সংস্করণে আপনি সম্মতি দিয়েছিলেন।";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd declined the earlier version." = "আয়োজক এই ইভেন্টটি বদলেছেন। আগের সংস্করণ আপনি প্রত্যাখ্যান করেছিলেন।";
+
+/* No comment provided by engineer. */
+"The organizer changed this event. You'd said maybe to the earlier version." = "আয়োজক এই ইভেন্টটি বদলেছেন। আগের সংস্করণে আপনি হয়তো বলেছিলেন।";
+
+/* No comment provided by engineer. */
+"Their mail is hidden in Corres from now on, with no notice to them. Your email account isn't changed." = "এখন থেকে তাদের মেইল Corres-এ লুকানো থাকবে, তাদের কিছু না জানিয়ে। আপনার ইমেইল অ্যাকাউন্ট বদলায় না।";
+
+/* No comment provided by engineer. */
+"This email is from a mailing list." = "এই ইমেইলটি একটি মেইলিং লিস্ট থেকে।";
+
+/* No comment provided by engineer. */
+"This Weekend" = "এই সপ্তাহান্তে";
+
+/* No comment provided by engineer. */
+"Three open times from your calendar, in a reply you can change." = "আপনার ক্যালেন্ডার থেকে তিনটি ফাঁকা সময়, এমন একটি উত্তরে যা আপনি বদলাতে পারেন।";
+
+/* No comment provided by engineer. */
+"Time-sensitive." = "সময়-সংবেদনশীল।";
+
+/* No comment provided by engineer. */
+"To" = "প্রাপক";
+
+/* No comment provided by engineer. */
+"To " = "প্রাপক ";
+
+/* No comment provided by engineer. */
+"To “%@”" = "“%@”-কে";
+
+/* No comment provided by engineer. */
+"To: %@" = "প্রাপক: %@";
+
+/* No comment provided by engineer. */
+"Today" = "আজ";
+
+/* No comment provided by engineer. */
+"today at %@" = "আজ %@-এ";
+
+/* No comment provided by engineer. */
+"Tomorrow" = "আগামীকাল";
+
+/* No comment provided by engineer. */
+"Tomorrow 8am, next friday, in 3 days" = "Tomorrow 8am, next friday, in 3 days";
+
+/* No comment provided by engineer. */
+"tomorrow at %@" = "আগামীকাল %@-এ";
+
+/* No comment provided by engineer. */
+"Top Results" = "সেরা ফলাফল";
+
+/* No comment provided by engineer. */
+"Track package" = "প্যাকেজ ট্র্যাক করুন";
+
+/* No comment provided by engineer. */
+"Translate" = "অনুবাদ করুন";
+
+/* No comment provided by engineer. */
+"Trash" = "ট্র্যাশ";
+
+/* No comment provided by engineer. */
+"Try Again" = "আবার চেষ্টা করুন";
+
+/* No comment provided by engineer. */
+"Try another name." = "অন্য একটি নাম দিয়ে চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Undo" = "ফিরিয়ে নিন";
+
+/* No comment provided by engineer. */
+"Unflag" = "ফ্ল্যাগ সরান";
+
+/* No comment provided by engineer. */
+"Unflagged" = "ফ্ল্যাগ সরানো হয়েছে";
+
+/* No comment provided by engineer. */
+"Unmute" = "শব্দ চালু করুন";
+
+/* No comment provided by engineer. */
+"Unpinned" = "পিন সরানো হয়েছে";
+
+/* No comment provided by engineer. */
+"Unread" = "অপঠিত";
+
+/* No comment provided by engineer. */
+"Unread for over a month." = "এক মাসের বেশি অপঠিত।";
+
+/* No comment provided by engineer. */
+"Unread for over a month. Kept out of Needs You." = "এক মাসের বেশি অপঠিত। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"Unread in Primary" = "প্রধান-এ অপঠিত";
+
+/* No comment provided by engineer. */
+"Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "মানুষের অপঠিত মেইল আর জরুরি যেকোনো কিছু। প্রচার, সামাজিক আর আপডেট গোনা হয় না।";
+
+/* No comment provided by engineer. */
+"Unread Only" = "শুধু অপঠিত";
+
+/* No comment provided by engineer. */
+"Unread, from a person." = "অপঠিত, কোনো মানুষের কাছ থেকে।";
+
+/* No comment provided by engineer. */
+"Unread, from someone you've written to." = "অপঠিত, আপনি যাকে লিখেছেন তার কাছ থেকে।";
+
+/* No comment provided by engineer. */
+"Unread." = "অপঠিত।";
+
+/* No comment provided by engineer. */
+"Unsnooze" = "স্নুজ বাতিল";
+
+/* No comment provided by engineer. */
+"Unsubscribe" = "আনসাবস্ক্রাইব";
+
+/* No comment provided by engineer. */
+"Unsubscribed. You won't get more from this list." = "আনসাবস্ক্রাইব হয়েছে। এই লিস্ট থেকে আর কিছু পাবেন না।";
+
+/* No comment provided by engineer. */
+"Untitled" = "শিরোনামহীন";
+
+/* No comment provided by engineer. */
+"Unwanted Mail" = "অনাকাঙ্ক্ষিত মেইল";
+
+/* No comment provided by engineer. */
+"Update payment" = "পেমেন্ট হালনাগাদ করুন";
+
+/* No comment provided by engineer. */
+"Updated %@" = "হালনাগাদ %@";
+
+/* No comment provided by engineer. */
+"Updated Invitation" = "আমন্ত্রণ বদলেছে";
+
+/* No comment provided by engineer. */
+"Updates" = "আপডেট";
+
+/* No comment provided by engineer. */
+"Use an app-specific password from account.apple.com → Sign-In and Security → App-Specific Passwords. You can turn it off there any time." = "account.apple.com → সাইন-ইন ও নিরাপত্তা → অ্যাপের জন্য আলাদা পাসওয়ার্ড থেকে একটি পাসওয়ার্ড ব্যবহার করুন। সেখানে যেকোনো সময় বন্ধ করতে পারেন।";
+
+/* No comment provided by engineer. */
+"Use for" = "ব্যবহার করুন";
+
+/* No comment provided by engineer. */
+"Used only when the email has no subject yet." = "শুধু তখনই ব্যবহৃত হয় যখন ইমেইলে এখনো বিষয় নেই।";
+
+/* No comment provided by engineer. */
+"Verify" = "যাচাই করুন";
+
+/* No comment provided by engineer. */
+"View" = "দেখুন";
+
+/* No comment provided by engineer. */
+"VIP" = "VIP";
+
+/* No comment provided by engineer. */
+"Waiting" = "অপেক্ষায়";
+
+/* No comment provided by engineer. */
+"Waiting on a reply" = "উত্তরের অপেক্ষায়";
+
+/* No comment provided by engineer. */
+"Waiting: " = "অপেক্ষায়: ";
+
+/* No comment provided by engineer. */
+"Warmer" = "আরও আন্তরিক";
+
+/* No comment provided by engineer. */
+"Was %@" = "আগে ছিল %@";
+
+/* No comment provided by engineer. */
+"What Needs Me" = "আমার করণীয়";
+
+/* No comment provided by engineer. */
+"What needs you, first" = "আপনার করণীয়, সবার আগে";
+
+/* No comment provided by engineer. */
+"When" = "কখন";
+
+/* No comment provided by engineer. */
+"When an email" = "যখন কোনো ইমেইল";
+
+/* No comment provided by engineer. */
+"When you can" = "সময় পেলে";
+
+/* No comment provided by engineer. */
+"Won't flag %@ again" = "%@ আর চিহ্নিত করা হবে না";
+
+/* No comment provided by engineer. */
+"Words anywhere in the email" = "ইমেইলের যেকোনো জায়গায় থাকা শব্দ";
+
+/* No comment provided by engineer. */
+"Words in the subject" = "বিষয়ে থাকা শব্দ";
+
+/* No comment provided by engineer. */
+"Write" = "লিখুন";
+
+/* No comment provided by engineer. */
+"Yahoo, AOL, Fastmail, Zoho or a work server. Corres finds the server settings for you." = "Yahoo, AOL, Fastmail, Zoho বা কাজের সার্ভার। Corres আপনার জন্য সার্ভার সেটিংস খুঁজে নেয়।";
+
+/* No comment provided by engineer. */
+"Yesterday" = "গতকাল";
+
+/* No comment provided by engineer. */
+"You accepted" = "আপনি সম্মতি দিয়েছেন";
+
+/* No comment provided by engineer. */
+"You asked. No reply yet." = "আপনি জিজ্ঞেস করেছেন। এখনো উত্তর নেই।";
+
+/* No comment provided by engineer. */
+"You declined" = "আপনি প্রত্যাখ্যান করেছেন";
+
+/* No comment provided by engineer. */
+"You forwarded this just now. Waiting for their response." = "আপনি এইমাত্র এটি ফরোয়ার্ড করেছেন। তাদের উত্তরের অপেক্ষায়।";
+
+/* No comment provided by engineer. */
+"You haven't opened the last %lld from %@." = "%2$@ থেকে আসা শেষ %1$lldটি আপনি খোলেননি।";
+
+/* No comment provided by engineer. */
+"You last wrote" = "আপনি শেষ লিখেছেন";
+
+/* No comment provided by engineer. */
+"You read %@'s email within %lld minutes." = "%@-এর ইমেইল আপনি %lld মিনিটের মধ্যে পড়েন।";
+
+/* No comment provided by engineer. */
+"You read %@'s email within a minute." = "%@-এর ইমেইল আপনি এক মিনিটের মধ্যে পড়েন।";
+
+/* No comment provided by engineer. */
+"You replied just now. Waiting for their response." = "আপনি এইমাত্র উত্তর দিয়েছেন। তাদের উত্তরের অপেক্ষায়।";
+
+/* No comment provided by engineer. */
+"You replied. Nothing pending." = "আপনি উত্তর দিয়েছেন। কিছু বাকি নেই।";
+
+/* No comment provided by engineer. */
+"You said mail like this needs no action." = "আপনি বলেছেন এমন মেইলে কিছু করার নেই।";
+
+/* No comment provided by engineer. */
+"You said maybe" = "আপনি হয়তো বলেছেন";
+
+/* No comment provided by engineer. */
+"You sent this. Nothing pending." = "আপনি এটি পাঠিয়েছেন। কিছু বাকি নেই।";
+
+/* No comment provided by engineer. */
+"You started this conversation. Waiting for a response." = "আপনি এই কথোপকথন শুরু করেছেন। উত্তরের অপেক্ষায়।";
+
+/* No comment provided by engineer. */
+"You're copied, not asked." = "আপনাকে কপি করা হয়েছে, কিছু চাওয়া হয়নি।";
+
+/* No comment provided by engineer. */
+"You're copied, not asked. Kept out of Needs You." = "আপনাকে কপি করা হয়েছে, কিছু চাওয়া হয়নি। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* No comment provided by engineer. */
+"You're free then" = "তখন আপনি ফাঁকা";
+
+/* No comment provided by engineer. */
+"You're waiting on %lld replies." = "আপনি %lldটি উত্তরের অপেক্ষায় আছেন।";
+
+/* No comment provided by engineer. */
+"You're waiting on one reply." = "আপনি একটি উত্তরের অপেক্ষায় আছেন।";
+
+/* No comment provided by engineer. */
+"You're waiting on their reply" = "আপনি তাদের উত্তরের অপেক্ষায়";
+
+/* No comment provided by engineer. */
+"You've replied to %@ %lld times lately." = "সম্প্রতি আপনি %@-কে %lld বার উত্তর দিয়েছেন।";
+

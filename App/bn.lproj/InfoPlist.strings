@@ -1,0 +1,21 @@
+/* Bundle display name */
+"CFBundleDisplayName" = "Corres";
+
+/* Bundle name */
+"CFBundleName" = "Corres";
+
+/* Privacy - Calendars Full Access Usage Description */
+"NSCalendarsFullAccessUsageDescription" = "আপনি চাইলে Corres আপনার ক্যালেন্ডার দেখে: আমন্ত্রণের সময় আপনি ফাঁকা কিনা, কেউ আপনার সময় জানতে চাইলে কোন সময়গুলো দেওয়া যায়, আর বাতিল হওয়া ইভেন্ট সরিয়ে ফেলা। আপনার ক্যালেন্ডার এই ডিভাইসেই থাকে।";
+
+/* Privacy - Camera Usage Description */
+"NSCameraUsageDescription" = "ইমেইলে যুক্ত করতে ছবি তুললে বা ডকুমেন্ট স্ক্যান করলেই কেবল Corres ক্যামেরা ব্যবহার করে।";
+
+/* Privacy - Contacts Usage Description */
+"NSContactsUsageDescription" = "ইমেইলে ঠিকানা লেখার সময় Corres আপনার কন্টাক্টস থেকে মানুষের নাম প্রস্তাব করে এবং তাদের মেইলের পাশে ছবি দেখায়। আপনার কন্টাক্টস এই ডিভাইসেই থাকে।";
+
+/* Privacy - Microphone Usage Description */
+"NSMicrophoneUsageDescription" = "আপনি ইমেইল বলে লেখানোর সময়ই কেবল Corres মাইক্রোফোন ব্যবহার করে। কথা এই ডিভাইসেই লেখায় রূপান্তরিত হয়।";
+
+/* Privacy - Speech Recognition Usage Description */
+"NSSpeechRecognitionUsageDescription" = "Corres আপনার বলা কথা এই ডিভাইসেই লেখায় রূপান্তর করে। আপনার কণ্ঠস্বর কখনো কোনো সার্ভারে পাঠানো হয় না।";
+

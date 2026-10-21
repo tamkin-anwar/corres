@@ -1,0 +1,21 @@
+/* No comment provided by engineer. */
+"Brief me with ${applicationName}" = "${applicationName} দিয়ে আমাকে সারসংক্ষেপ দাও";
+
+/* No comment provided by engineer. */
+"New email in ${applicationName}" = "${applicationName}-এ নতুন ইমেইল";
+
+/* No comment provided by engineer. */
+"Open ${list} in ${applicationName}" = "${applicationName}-এ ${list} খোলো";
+
+/* No comment provided by engineer. */
+"Show ${list} in ${applicationName}" = "${applicationName}-এ ${list} দেখাও";
+
+/* No comment provided by engineer. */
+"What needs me in ${applicationName}" = "${applicationName}-এ আমার কী করণীয়";
+
+/* No comment provided by engineer. */
+"What's in ${applicationName}" = "${applicationName}-এ কী আছে";
+
+/* No comment provided by engineer. */
+"Write an email with ${applicationName}" = "${applicationName} দিয়ে একটি ইমেইল লেখো";
+

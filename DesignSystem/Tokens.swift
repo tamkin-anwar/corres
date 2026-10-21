@@ -109,7 +109,14 @@ enum CorresType {
 extension View {
     /// Tracked uppercase label style used for section eyebrows.
     func eyebrow(_ color: Color = CorresPalette.tertiary) -> some View {
-        self.font(CorresType.eyebrow).tracking(1.6).textCase(.uppercase).foregroundStyle(color)
+        self.font(CorresType.eyebrow).letterSpacing(1.6).textCase(.uppercase).foregroundStyle(color)
+    }
+
+    /// Letter spacing for small capitals, in scripts made of separate
+    /// letters. Bengali, Japanese, Chinese and Korean are drawn joined or
+    /// as whole characters, and spacing pulled Bengali words apart.
+    func letterSpacing(_ amount: CGFloat) -> some View {
+        modifier(LetterSpacing(amount: amount))
     }
 
     /// Caps content at a comfortable reading width on iPad and landscape
@@ -269,5 +276,17 @@ struct Hairline: View {
     @Environment(\.displayScale) private var displayScale
     var body: some View {
         Rectangle().fill(CorresPalette.line).frame(height: 1 / displayScale).padding(.leading, leading)
+    }
+}
+
+private struct LetterSpacing: ViewModifier {
+    let amount: CGFloat
+    @Environment(\.locale) private var locale
+
+    func body(content: Content) -> some View {
+        // The language's usual script, even when the setting doesn't name
+        // one ("bn" is "bn-Beng-BD").
+        let script = Locale.Language(identifier: locale.language.maximalIdentifier).script?.identifier ?? "Latn"
+        content.tracking(["Latn", "Cyrl", "Grek"].contains(script) ? amount : 0)
     }
 }
