@@ -5,6 +5,7 @@ target don't have to go through Xcode's UI.
     Scripts/pbxtool.py add-mac-target
     Scripts/pbxtool.py add-sources <TargetName> <path> [<path> ...]
     Scripts/pbxtool.py remove-sources <TargetName> <path> [<path> ...]
+    Scripts/pbxtool.py add-resources <TargetName> <path> [<path> ...]
 
 Paths are relative to the repository root (sourceTree SOURCE_ROOT, the way
 every existing file is referenced). IDs are derived from what they name, so
@@ -48,7 +49,7 @@ def file_ref(text: str, path: str) -> tuple[str, str]:
         return text, m.group(1)
     ref = uid("ref", path)
     kind = {"swift": "sourcecode.swift", "plist": "text.plist.xml", "entitlements": "text.plist.entitlements",
-            "xcassets": "folder.assetcatalog"}.get(path.rsplit(".", 1)[-1], "text")
+            "xcassets": "folder.assetcatalog", "icon": "folder.iconcomposer.icon"}.get(path.rsplit(".", 1)[-1], "text")
     entry = f"\t\t{ref} /* {path} */ = {{isa = PBXFileReference; lastKnownFileType = {kind}; path = {path}; sourceTree = SOURCE_ROOT; }};\n"
     text = insert_in_section(text, "PBXFileReference", entry)
     main = re.search(r"mainGroup = ([0-9A-F]{24});", text).group(1)
@@ -81,6 +82,21 @@ def add_sources(text: str, target_name: str, paths: list[str]) -> str:
             text, "PBXBuildFile",
             f"\t\t{build} /* {path} in Sources */ = {{isa = PBXBuildFile; fileRef = {ref} /* {path} */; }};\n")
         text = append_to_list(text, sources + " /* Sources */ =", "files", f"{build} /* {path} in Sources */")
+    return text
+
+
+def add_resources(text: str, target_name: str, paths: list[str]) -> str:
+    target = target_id(text, target_name)
+    resources = phase_id(text, target, "Resources")
+    for path in paths:
+        text, ref = file_ref(text, path)
+        build = uid("build", target_name, path, "resources")
+        if build in text:
+            continue
+        text = insert_in_section(
+            text, "PBXBuildFile",
+            f"\t\t{build} /* {path} in Resources */ = {{isa = PBXBuildFile; fileRef = {ref} /* {path} */; }};\n")
+        text = append_to_list(text, resources + " /* Resources */ =", "files", f"{build} /* {path} in Resources */")
     return text
 
 
@@ -286,6 +302,8 @@ def main() -> None:
         text = add_mac_widgets(text)
     elif command == "add-sources":
         text = add_sources(text, args[0], args[1:])
+    elif command == "add-resources":
+        text = add_resources(text, args[0], args[1:])
     elif command == "remove-sources":
         text = remove_sources(text, args[0], args[1:])
     else:

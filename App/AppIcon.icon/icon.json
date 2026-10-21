@@ -1,0 +1,155 @@
+{
+  "fill-specializations": [
+    {
+      "value": {
+        "linear-gradient": [
+          "srgb:0.11373,0.12549,0.15294,1.00000",
+          "srgb:0.02353,0.02353,0.02745,1.00000"
+        ]
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "srgb:0.11373,0.12549,0.15294,1.00000",
+          "srgb:0.02353,0.02353,0.02745,1.00000"
+        ]
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "Inner",
+      "layers": [
+        {
+          "name": "inner",
+          "image-name": "inner.svg",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "srgb:0.56078,0.70588,0.90980,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "automatic-gradient": "srgb:0.56078,0.70588,0.90980,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:0.85000,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "lighting": "individual",
+      "shadow": {
+        "kind": "layer-color",
+        "opacity": 0.5
+      },
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.35
+      }
+    },
+    {
+      "name": "Titanium",
+      "layers": [
+        {
+          "name": "dot",
+          "image-name": "dot.svg",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "srgb:0.90196,0.91373,0.93333,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "automatic-gradient": "srgb:0.90196,0.91373,0.93333,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            }
+          ]
+        },
+        {
+          "name": "outer",
+          "image-name": "outer.svg",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "srgb:0.90196,0.91373,0.93333,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "automatic-gradient": "srgb:0.90196,0.91373,0.93333,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "lighting": "individual",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.3
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}
