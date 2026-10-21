@@ -140,6 +140,10 @@ struct MacMainView: View {
             }
             if model.mailbox == .scheduled, model.search.isEmpty {
                 MacScheduledList(selection: $scheduledSelection)
+            } else if model.mailbox == .purchases, model.search.isEmpty {
+                PurchasesView(store: store, accounts: accounts) { model.selection = [$0] }
+            } else if model.mailbox == .attachments, model.search.isEmpty {
+                AttachmentsView(store: store, accounts: accounts) { model.selection = [$0] }
             } else if rows.isEmpty {
                 emptyState.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -339,6 +343,11 @@ struct MacMainView: View {
                 Button { perform(.print) } label: { Label("Print", systemImage: "printer") }
                     .help("Print (⌘P)").disabled(model.selection.count != 1)
             }
+            ToolbarItem(id: "saveSearch", placement: .primaryAction) {
+                // While searching: keep it as a mailbox in the sidebar.
+                SaveSearchButton(query: model.search)
+                    .help("Save Search")
+            }
             ToolbarItem(id: "palette", placement: .primaryAction, showsByDefault: false) {
                 Button { perform(.commandPalette) } label: { Label("Go To or Do", systemImage: "command") }
                     .help("Go To or Do (⌘K)")
@@ -384,6 +393,8 @@ struct MacMainView: View {
         case "waiting": model.mailbox = .waiting
         case "everything": model.mailbox = .filter(MailFilter.everything.rawValue)
         case "primary": model.mailbox = .primary
+        case "purchases": model.mailbox = .purchases
+        case "attachments": model.mailbox = .attachments
         default: model.mailbox = .needsYou
         }
         if let search = value("-SearchFor") {
@@ -618,27 +629,35 @@ struct MacMainView: View {
             entry.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
             menu.addItem(entry)
         }
-        item("Reply", "arrowshape.turn.up.left", .reply)
-        item("Reply All", "arrowshape.turn.up.left.2", .replyAll)
-        item("Forward", "arrowshape.turn.up.right", .forward)
+        item(String(localized: "Reply"), "arrowshape.turn.up.left", .reply)
+        item(String(localized: "Reply All"), "arrowshape.turn.up.left.2", .replyAll)
+        item(String(localized: "Forward"), "arrowshape.turn.up.right", .forward)
         menu.addItem(.separator())
-        item("Archive", "archivebox", .archive)
-        item("Delete", "trash", .trash)
+        item(String(localized: "Archive"), "archivebox", .archive)
+        item(String(localized: "Delete"), "trash", .trash)
         menu.addItem(.separator())
         for attention in Attention.choices {
-            item("Move to \(attention.title)", attention == .needsYou ? "exclamationmark.circle" : attention == .waiting ? "clock" : "checkmark.circle",
+            item(String(localized: "Move to \(attention.title)"),
+                 attention == .needsYou ? "exclamationmark.circle" : attention == .waiting ? "clock" : "checkmark.circle",
                  .move(attention))
         }
         menu.addItem(.separator())
-        item(thread.isUnread ? "Mark as Read" : "Mark as Unread", "envelope.badge", .toggleUnread)
-        item(thread.isFlagged ? "Unflag" : "Flag", "flag", .toggleFlag)
+        item(thread.isUnread ? String(localized: "Mark as Read") : String(localized: "Mark as Unread"), "envelope.badge", .toggleUnread)
+        item(thread.isFlagged ? String(localized: "Unflag") : String(localized: "Flag"), "flag", .toggleFlag)
         if thread.isSnoozed(at: .now) {
-            item("Unsnooze", "moon.zzz", .snooze(nil))
+            item(String(localized: "Unsnooze"), "moon.zzz", .snooze(nil))
         } else {
-            item("Snooze…", "moon.zzz", .askSnooze)
+            item(String(localized: "Snooze…"), "moon.zzz", .askSnooze)
         }
+        // Mute: out of your lists, and new replies stay quiet.
+        let isMuted = Organizer.shared.isMuted(thread.id)
+        let mute = ClosureMenuItem(title: isMuted ? String(localized: "Unmute") : String(localized: "Mute")) {
+            if isMuted { Organizer.shared.unmute(thread.id) } else { Organizer.shared.mute(thread) }
+        }
+        mute.image = NSImage(systemSymbolName: isMuted ? "bell" : "bell.slash", accessibilityDescription: nil)
+        menu.addItem(mute)
         menu.addItem(.separator())
-        item("Open in New Window", "macwindow", .openInWindow)
+        item(String(localized: "Open in New Window"), "macwindow", .openInWindow)
         return menu
     }
 

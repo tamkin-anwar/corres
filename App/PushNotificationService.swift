@@ -193,6 +193,7 @@ final class PushNotificationService {
         policy.vips = Array(CorresSettings.vips)
         policy.blocked = Array(Set(threads.filter { $0.senderDecision == .blocked }.compactMap { $0.senderEmail?.lowercased() }))
         policy.blockedDomains = CorresSettings.domainRules.filter { $0.value == .blocked }.map(\.key)
+        policy.mutedThreads = Organizer.shared.mutedProviderIDs
         policy.save()
     }
 
@@ -320,15 +321,15 @@ final class PushNotificationService {
     /// Registered every launch; iOS shows these under a long-press on any
     /// single-conversation notification, without opening Corres.
     static func registerNotificationActions() {
-        let archive = UNNotificationAction(identifier: archiveAction, title: "Archive",
+        let archive = UNNotificationAction(identifier: archiveAction, title: String(localized: "Archive"),
                                            options: [], icon: UNNotificationActionIcon(systemImageName: "archivebox"))
-        let markRead = UNNotificationAction(identifier: markReadAction, title: "Mark as Read",
+        let markRead = UNNotificationAction(identifier: markReadAction, title: String(localized: "Mark as Read"),
                                             options: [], icon: UNNotificationActionIcon(systemImageName: "envelope.open"))
         // Mail's and Gmail's quick reply: typed in the notification, sent
         // from it.
-        let reply = UNTextInputNotificationAction(identifier: replyAction, title: "Reply", options: [],
+        let reply = UNTextInputNotificationAction(identifier: replyAction, title: String(localized: "Reply"), options: [],
                                                   icon: UNNotificationActionIcon(systemImageName: "arrowshape.turn.up.left"),
-                                                  textInputButtonTitle: "Send", textInputPlaceholder: "Reply")
+                                                  textInputButtonTitle: String(localized: "Send"), textInputPlaceholder: String(localized: "Reply"))
         let category = UNNotificationCategory(identifier: messageCategory, actions: [reply, archive, markRead],
                                               intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
@@ -337,17 +338,17 @@ final class PushNotificationService {
     func notifyAboutNewMail(_ threads: [Correspondence]) {
         // Already on screen from the notification extension, the instant
         // it arrived: never twice.
-        let threads = threads.filter { !NotifyPolicy.wasShown($0.latestMessageID) }
+        let threads = threads.filter { !NotifyPolicy.wasShown($0.latestMessageID) && !Organizer.shared.isMuted($0.id) }
         guard !threads.isEmpty else { return }
         let content = UNMutableNotificationContent()
         if threads.count == 1, let thread = threads.first {
             content.title = thread.sender
-            content.subtitle = thread.senderDecision == .pending ? "New sender · \(thread.subject)" : thread.subject
+            content.subtitle = thread.senderDecision == .pending ? String(localized: "New sender · \(thread.subject)") : thread.subject
             content.body = thread.excerpt
         } else {
-            content.title = "\(threads.count) new messages"
+            content.title = String(localized: "\(threads.count) new messages")
             let senders = threads.prefix(3).map(\.sender).joined(separator: ", ")
-            content.body = threads.count > 3 ? "\(senders), and more" : senders
+            content.body = threads.count > 3 ? String(localized: "\(senders), and more") : senders
         }
         content.sound = .default
         if threads.count == 1, let thread = threads.first {

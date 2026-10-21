@@ -1,11 +1,74 @@
 /* No comment provided by engineer. */
+"Already read." = "已读。";
+
+/* No comment provided by engineer. */
+"Amount" = "金额";
+
+/* No comment provided by engineer. */
 "Asks something of you" = "向你提出了请求";
+
+/* No comment provided by engineer. */
+"Asks you something." = "向你提了问题。";
+
+/* No comment provided by engineer. */
+"Asks you to pay." = "要求你付款。";
+
+/* No comment provided by engineer. */
+"Automated update." = "自动更新。";
+
+/* No comment provided by engineer. */
+"Automated update. Kept out of Needs You." = "自动更新。未放入“需要你”。";
+
+/* No comment provided by engineer. */
+"Book" = "预订";
+
+/* No comment provided by engineer. */
+"Bulk mail." = "群发邮件。";
+
+/* No comment provided by engineer. */
+"Bulk mail. Kept out of Needs You." = "群发邮件。未放入“需要你”。";
+
+/* No comment provided by engineer. */
+"Charged" = "扣款";
+
+/* No comment provided by engineer. */
+"Check in" = "办理登机";
+
+/* No comment provided by engineer. */
+"Complete it" = "完成";
+
+/* No comment provided by engineer. */
+"Confirm" = "确认";
+
+/* No comment provided by engineer. */
+"Confirms something you did. Nothing to do unless it wasn't you." = "确认了你做过的操作。除非不是你本人，否则无需处理。";
+
+/* No comment provided by engineer. */
+"Delivered" = "已送达";
+
+/* No comment provided by engineer. */
+"Delivery problem" = "配送问题";
 
 /* No comment provided by engineer. */
 "Done: off your lists, still in Mail" = "已处理：离开你的列表，仍在“邮件”中";
 
 /* No comment provided by engineer. */
 "Email" = "邮件";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked." = "来自个人，没有提出请求。";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked. Kept out of Needs You." = "来自个人，没有提出请求。未放入“需要你”。";
+
+/* No comment provided by engineer. */
+"From a VIP." = "来自 VIP。";
+
+/* No comment provided by engineer. */
+"From your other account." = "来自你的另一个账户。";
+
+/* No comment provided by engineer. */
+"From your other account. Kept out of Needs You." = "来自你的另一个账户。未放入“需要你”。";
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
@@ -17,31 +80,172 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
+"Join" = "加入";
+
+/* No comment provided by engineer. */
+"Mailing list." = "邮件列表。";
+
+/* No comment provided by engineer. */
+"Mailing list. Kept out of Needs You." = "邮件列表。未放入“需要你”。";
+
+/* No comment provided by engineer. */
+"Mentions a deadline." = "提到了截止日期。";
+
+/* No comment provided by engineer. */
 "Needs You" = "需要你";
 
 /* No comment provided by engineer. */
 "No action needed" = "无需处理";
 
 /* No comment provided by engineer. */
+"No reply from %@ since %@. Follow up?" = "自%2$@以来 %1$@ 未回复。要跟进吗？";
+
+/* No comment provided by engineer. */
 "Nothing for you to do" = "你无需做什么";
+
+/* No comment provided by engineer. */
+"Nothing here asks anything of you." = "这里没有任何事需要你处理。";
+
+/* No comment provided by engineer. */
+"On its way" = "正在运送";
+
+/* No comment provided by engineer. */
+"Order confirmed" = "订单已确认";
+
+/* No comment provided by engineer. */
+"Out for delivery" = "正在派送";
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
 
 /* No comment provided by engineer. */
+"Overdue" = "已逾期";
+
+/* No comment provided by engineer. */
+"Paid" = "已付款";
+
+/* No comment provided by engineer. */
+"Pay" = "付款";
+
+/* No comment provided by engineer. */
+"Payment due" = "待付款";
+
+/* No comment provided by engineer. */
+"Payment failed" = "付款失败";
+
+/* No comment provided by engineer. */
+"Placed here by your rule." = "已按你的规则放到这里。";
+
+/* No comment provided by engineer. */
 "Primary" = "主要";
+
+/* No comment provided by engineer. */
+"Promotion." = "促销。";
+
+/* No comment provided by engineer. */
+"Promotion. Kept out of Needs You." = "促销。未放入“需要你”。";
 
 /* No comment provided by engineer. */
 "Promotions" = "促销";
 
 /* No comment provided by engineer. */
+"Reads like it needs something from you." = "看起来需要你做些什么。";
+
+/* No comment provided by engineer. */
+"Refund" = "退款";
+
+/* No comment provided by engineer. */
+"Refunded" = "已退款";
+
+/* No comment provided by engineer. */
+"Register" = "注册";
+
+/* No comment provided by engineer. */
+"Reset password" = "重设密码";
+
+/* No comment provided by engineer. */
+"Review" = "查看";
+
+/* No comment provided by engineer. */
+"RSVP" = "回复邀请";
+
+/* No comment provided by engineer. */
+"Sign" = "签署";
+
+/* No comment provided by engineer. */
 "Social" = "社交";
+
+/* No comment provided by engineer. */
+"Social notification." = "社交通知。";
+
+/* No comment provided by engineer. */
+"Social notification. Kept out of Needs You." = "社交通知。未放入“需要你”。";
+
+/* No comment provided by engineer. */
+"Something failed that only you can fix." = "出现了只有你能解决的问题。";
+
+/* No comment provided by engineer. */
+"Time-sensitive." = "有时效性。";
+
+/* No comment provided by engineer. */
+"Track package" = "追踪包裹";
+
+/* No comment provided by engineer. */
+"Unread for over a month." = "超过一个月未读。";
+
+/* No comment provided by engineer. */
+"Unread for over a month. Kept out of Needs You." = "超过一个月未读。未放入“需要你”。";
+
+/* No comment provided by engineer. */
+"Unread, from a person." = "未读，来自个人。";
+
+/* No comment provided by engineer. */
+"Unread, from someone you've written to." = "未读，来自你写过信的人。";
+
+/* No comment provided by engineer. */
+"Unread." = "未读。";
+
+/* No comment provided by engineer. */
+"Update payment" = "更新付款信息";
 
 /* No comment provided by engineer. */
 "Updates" = "动态";
 
 /* No comment provided by engineer. */
+"Verify" = "验证";
+
+/* No comment provided by engineer. */
+"View" = "查看";
+
+/* No comment provided by engineer. */
 "Waiting" = "等待中";
+
+/* No comment provided by engineer. */
+"You asked. No reply yet." = "你提了问题，还没有回复。";
+
+/* No comment provided by engineer. */
+"You forwarded this just now. Waiting for their response." = "你刚刚转发了邮件，正在等待回复。";
+
+/* No comment provided by engineer. */
+"You replied just now. Waiting for their response." = "你刚刚回复了，正在等待对方回复。";
+
+/* No comment provided by engineer. */
+"You replied. Nothing pending." = "你已回复，没有待处理的事。";
+
+/* No comment provided by engineer. */
+"You said mail like this needs no action." = "你说过这类邮件无需处理。";
+
+/* No comment provided by engineer. */
+"You sent this. Nothing pending." = "这是你发出的，没有待处理的事。";
+
+/* No comment provided by engineer. */
+"You started this conversation. Waiting for a response." = "这是你发起的对话，正在等待回复。";
+
+/* No comment provided by engineer. */
+"You're copied, not asked." = "你只是被抄送，没有被询问。";
+
+/* No comment provided by engineer. */
+"You're copied, not asked. Kept out of Needs You." = "你只是被抄送，没有被询问。未放入“需要你”。";
 
 /* No comment provided by engineer. */
 "You're waiting on their reply" = "你在等待对方回复";

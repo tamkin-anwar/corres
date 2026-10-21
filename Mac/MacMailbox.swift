@@ -8,10 +8,12 @@ enum MacMailbox: Hashable, Codable {
     case flagged, snoozed, handled, scheduled
     case server(String)   // a MacRemoteMailboxes.Kind: Sent, Drafts, Archive, Spam, Trash
     case label(account: String, id: String, name: String)  // one account's label or folder
+    case purchases, attachments, muted
+    case saved(String)    // a SavedSearch's id
 
     static let primary = MacMailbox.filter(MailFilter.primary.rawValue)
 
-    var title: String {
+    @MainActor var title: String {
         switch self {
         case .needsYou: String(localized: "Needs You")
         case .waiting: String(localized: "Waiting")
@@ -24,6 +26,10 @@ enum MacMailbox: Hashable, Codable {
         case .scheduled: String(localized: "Send Later")
         case .server(let raw): MacRemoteMailboxes.Kind(rawValue: raw)?.title ?? raw
         case .label(_, _, let name): name
+        case .purchases: String(localized: "Purchases")
+        case .attachments: String(localized: "Attachments")
+        case .muted: String(localized: "Muted")
+        case .saved(let id): Organizer.shared.savedSearches.first { $0.id.uuidString == id }?.name ?? String(localized: "Saved Search")
         }
     }
 
@@ -62,6 +68,10 @@ enum MacMailbox: Hashable, Codable {
         case .scheduled: "clock.arrow.circlepath"
         case .server(let raw): MacRemoteMailboxes.Kind(rawValue: raw)?.systemImage ?? "tray"
         case .label(_, let id, _): id.hasPrefix("folder:") ? "folder" : "tag"
+        case .purchases: "bag"
+        case .attachments: "paperclip"
+        case .muted: "bell.slash"
+        case .saved: "magnifyingglass"
         }
     }
 
@@ -160,7 +170,8 @@ final class MacMailboxModel {
             let soon = all.filter { ($0.dueAt ?? .distantFuture) <= horizon }
             guard !soon.isEmpty, soon.count < all.count else { return all.map(MacRow.thread) }
             let rest = all.filter { ($0.dueAt ?? .distantFuture) > horizon }
-            return [.group("Due soon")] + soon.map(MacRow.thread) + [.group("When you can")] + rest.map(MacRow.thread)
+            return [.group(String(localized: "Due soon"))] + soon.map(MacRow.thread)
+                + [.group(String(localized: "When you can"))] + rest.map(MacRow.thread)
         case .waiting:
             return MailQuery.prioritized(threads, attention: .waiting).map(MacRow.thread)
         case .newSenders:
@@ -182,7 +193,13 @@ final class MacMailboxModel {
                 .sorted { ($0.snoozedUntil ?? .distantFuture) < ($1.snoozedUntil ?? .distantFuture) }.map(MacRow.thread)
         case .handled:
             return MailQuery.filter(threads).filter { $0.attention == .handled }.map(MacRow.thread)
-        case .server, .label, .scheduled:
+        case .muted:
+            return store.searchableThreads.filter { Organizer.shared.isMuted($0.id) }
+                .sorted { $0.receivedAt > $1.receivedAt }.map(MacRow.thread)
+        case .saved(let id):
+            guard let saved = Organizer.shared.savedSearches.first(where: { $0.id.uuidString == id }) else { return [] }
+            return MailQuery.filter(store.searchableThreads, search: saved.query).map(MacRow.thread)
+        case .server, .label, .scheduled, .purchases, .attachments:
             return []
         }
     }

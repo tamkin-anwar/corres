@@ -47,6 +47,7 @@ final class CloudSync {
         CorresSettings.badgeKey, "corres.lessons", "corres.signatures",
         "corres.trailingShortSwipeAction", "corres.trailingLongSwipeAction",
         "corres.leadingShortSwipeAction", "corres.leadingLongSwipeAction",
+        Organizer.rulesKey, Organizer.templatesKey, Organizer.searchesKey, Organizer.mutedKey,
     ]
 
     private let cloud = NSUbiquitousKeyValueStore.default

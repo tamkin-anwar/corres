@@ -26,10 +26,37 @@
 "Add Subject" = "Ajouter un objet";
 
 /* No comment provided by engineer. */
+"Already read." = "Déjà lu.";
+
+/* No comment provided by engineer. */
+"Amount" = "Montant";
+
+/* No comment provided by engineer. */
 "Asks something of you" = "Vous demande quelque chose";
 
 /* No comment provided by engineer. */
+"Asks you something." = "Vous pose une question.";
+
+/* No comment provided by engineer. */
+"Asks you to pay." = "Vous demande de payer.";
+
+/* No comment provided by engineer. */
+"Automated update." = "Mise à jour automatique.";
+
+/* No comment provided by engineer. */
+"Automated update. Kept out of Needs You." = "Mise à jour automatique. Gardée hors de Pour vous.";
+
+/* No comment provided by engineer. */
 "Bcc" = "Cci";
+
+/* No comment provided by engineer. */
+"Book" = "Réserver";
+
+/* No comment provided by engineer. */
+"Bulk mail." = "Envoi groupé.";
+
+/* No comment provided by engineer. */
+"Bulk mail. Kept out of Needs You." = "Envoi groupé. Gardé hors de Pour vous.";
 
 /* No comment provided by engineer. */
 "Cancel" = "Annuler";
@@ -44,16 +71,52 @@
 "Cc/Bcc, From: %@" = "Cc/Cci, De : %@";
 
 /* No comment provided by engineer. */
+"Charged" = "Prélevé";
+
+/* No comment provided by engineer. */
+"Check in" = "S’enregistrer";
+
+/* No comment provided by engineer. */
+"Complete it" = "Le compléter";
+
+/* No comment provided by engineer. */
+"Confirm" = "Confirmer";
+
+/* No comment provided by engineer. */
+"Confirms something you did. Nothing to do unless it wasn't you." = "Confirme une action de votre part. Rien à faire, sauf si ce n’était pas vous.";
+
+/* No comment provided by engineer. */
 "Couldn’t Send" = "Envoi impossible";
 
 /* No comment provided by engineer. */
 "Delete Draft" = "Supprimer le brouillon";
 
 /* No comment provided by engineer. */
+"Delivered" = "Livré";
+
+/* No comment provided by engineer. */
+"Delivery problem" = "Problème de livraison";
+
+/* No comment provided by engineer. */
 "Done: off your lists, still in Mail" = "Traité : hors de vos listes, toujours dans Messagerie";
 
 /* No comment provided by engineer. */
 "Email" = "E-mail";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked." = "D’une personne, sans question.";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked. Kept out of Needs You." = "D’une personne, sans question. Gardé hors de Pour vous.";
+
+/* No comment provided by engineer. */
+"From a VIP." = "D’un VIP.";
+
+/* No comment provided by engineer. */
+"From your other account." = "De votre autre compte.";
+
+/* No comment provided by engineer. */
+"From your other account. Kept out of Needs You." = "De votre autre compte. Gardé hors de Pour vous.";
 
 /* No comment provided by engineer. */
 "From:" = "De :";
@@ -68,10 +131,22 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
+"Join" = "Rejoindre";
+
+/* No comment provided by engineer. */
 "Large" = "Grande";
 
 /* No comment provided by engineer. */
+"Mailing list." = "Liste de diffusion.";
+
+/* No comment provided by engineer. */
+"Mailing list. Kept out of Needs You." = "Liste de diffusion. Gardée hors de Pour vous.";
+
+/* No comment provided by engineer. */
 "Medium" = "Moyenne";
+
+/* No comment provided by engineer. */
+"Mentions a deadline." = "Mentionne une échéance.";
 
 /* No comment provided by engineer. */
 "Message" = "Message";
@@ -83,13 +158,25 @@
 "Needs You" = "Pour vous";
 
 /* No comment provided by engineer. */
+"New Message" = "Nouveau message";
+
+/* No comment provided by engineer. */
 "No action needed" = "Aucune action requise";
+
+/* No comment provided by engineer. */
+"No reply from %@ since %@. Follow up?" = "Pas de réponse de %@ depuis %@. Relancer ?";
 
 /* No comment provided by engineer. */
 "Nothing for you to do" = "Rien à faire pour vous";
 
 /* No comment provided by engineer. */
+"Nothing here asks anything of you." = "Rien ici ne vous demande quoi que ce soit.";
+
+/* No comment provided by engineer. */
 "OK" = "OK";
+
+/* No comment provided by engineer. */
+"On its way" = "En route";
 
 /* No comment provided by engineer. */
 "Open Corres First" = "Ouvrez d’abord Corres";
@@ -98,22 +185,73 @@
 "Open Corres once (and add your email account if you haven’t), then share again to write right here." = "Ouvrez Corres une fois (et ajoutez votre compte de messagerie si ce n’est pas fait), puis partagez à nouveau pour écrire directement ici.";
 
 /* No comment provided by engineer. */
+"Order confirmed" = "Commande confirmée";
+
+/* No comment provided by engineer. */
+"Out for delivery" = "En cours de livraison";
+
+/* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Overdue" = "En retard";
+
+/* No comment provided by engineer. */
+"Paid" = "Payé";
+
+/* No comment provided by engineer. */
+"Pay" = "Payer";
+
+/* No comment provided by engineer. */
+"Payment due" = "Paiement dû";
+
+/* No comment provided by engineer. */
+"Payment failed" = "Échec du paiement";
 
 /* No comment provided by engineer. */
 "Photo Size" = "Taille des photos";
 
 /* No comment provided by engineer. */
+"Placed here by your rule." = "Placé ici par votre règle.";
+
+/* No comment provided by engineer. */
 "Primary" = "Principale";
 
 /* No comment provided by engineer. */
+"Promotion." = "Promotion.";
+
+/* No comment provided by engineer. */
+"Promotion. Kept out of Needs You." = "Promotion. Gardée hors de Pour vous.";
+
+/* No comment provided by engineer. */
 "Promotions" = "Promotions";
+
+/* No comment provided by engineer. */
+"Reads like it needs something from you." = "Semble attendre quelque chose de votre part.";
+
+/* No comment provided by engineer. */
+"Refund" = "Remboursement";
+
+/* No comment provided by engineer. */
+"Refunded" = "Remboursé";
+
+/* No comment provided by engineer. */
+"Register" = "S’inscrire";
 
 /* No comment provided by engineer. */
 "Remove" = "Retirer";
 
 /* No comment provided by engineer. */
 "Remove %@" = "Retirer %@";
+
+/* No comment provided by engineer. */
+"Reset password" = "Réinitialiser le mot de passe";
+
+/* No comment provided by engineer. */
+"Review" = "Examiner";
+
+/* No comment provided by engineer. */
+"RSVP" = "Répondre à l’invitation";
 
 /* No comment provided by engineer. */
 "Save Draft" = "Enregistrer le brouillon";
@@ -125,22 +263,91 @@
 "Send without a subject?" = "Envoyer sans objet ?";
 
 /* No comment provided by engineer. */
+"Sign" = "Signer";
+
+/* No comment provided by engineer. */
 "Small" = "Petite";
 
 /* No comment provided by engineer. */
 "Social" = "Réseaux sociaux";
 
 /* No comment provided by engineer. */
+"Social notification." = "Notification sociale.";
+
+/* No comment provided by engineer. */
+"Social notification. Kept out of Needs You." = "Notification sociale. Gardée hors de Pour vous.";
+
+/* No comment provided by engineer. */
+"Something failed that only you can fix." = "Un échec que vous seul pouvez corriger.";
+
+/* No comment provided by engineer. */
 "Subject:" = "Objet :";
+
+/* No comment provided by engineer. */
+"Time-sensitive." = "Urgent.";
 
 /* No comment provided by engineer. */
 "To" = "À";
 
 /* No comment provided by engineer. */
+"Track package" = "Suivre le colis";
+
+/* No comment provided by engineer. */
+"Unread for over a month." = "Non lu depuis plus d’un mois.";
+
+/* No comment provided by engineer. */
+"Unread for over a month. Kept out of Needs You." = "Non lu depuis plus d’un mois. Gardé hors de Pour vous.";
+
+/* No comment provided by engineer. */
+"Unread, from a person." = "Non lu, d’une personne.";
+
+/* No comment provided by engineer. */
+"Unread, from someone you've written to." = "Non lu, de quelqu’un à qui vous avez écrit.";
+
+/* No comment provided by engineer. */
+"Unread." = "Non lu.";
+
+/* No comment provided by engineer. */
+"Update payment" = "Mettre à jour le paiement";
+
+/* No comment provided by engineer. */
 "Updates" = "Mises à jour";
 
 /* No comment provided by engineer. */
+"Verify" = "Vérifier";
+
+/* No comment provided by engineer. */
+"View" = "Voir";
+
+/* No comment provided by engineer. */
 "Waiting" = "En attente";
+
+/* No comment provided by engineer. */
+"You asked. No reply yet." = "Vous avez posé une question. Pas encore de réponse.";
+
+/* No comment provided by engineer. */
+"You forwarded this just now. Waiting for their response." = "Vous venez de transférer ceci. En attente de réponse.";
+
+/* No comment provided by engineer. */
+"You replied just now. Waiting for their response." = "Vous venez de répondre. En attente de réponse.";
+
+/* No comment provided by engineer. */
+"You replied. Nothing pending." = "Vous avez répondu. Rien en attente.";
+
+/* No comment provided by engineer. */
+"You said mail like this needs no action." = "Vous avez indiqué que ce type d’e-mail ne demande rien.";
+
+/* No comment provided by engineer. */
+"You sent this. Nothing pending." = "Vous avez envoyé ceci. Rien en attente.";
+
+/* No comment provided by engineer. */
+"You started this conversation. Waiting for a response." = "Vous avez commencé cette conversation. En attente de réponse.";
+
+/* No comment provided by engineer. */
+"You're copied, not asked." = "Vous êtes en copie, sans question.";
+
+/* No comment provided by engineer. */
+"You're copied, not asked. Kept out of Needs You." = "Vous êtes en copie, sans question. Gardé hors de Pour vous.";
 
 /* No comment provided by engineer. */
 "You're waiting on their reply" = "Vous attendez sa réponse";

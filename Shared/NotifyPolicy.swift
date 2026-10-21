@@ -15,6 +15,9 @@ struct NotifyPolicy: Codable, Sendable {
     /// Companies blocked by a Screener rule (lowercased domains). Optional
     /// so a policy saved before it existed still loads.
     var blockedDomains: [String]?
+    /// Conversations you muted (their ids at the service): new mail in
+    /// them arrives without a sound or banner. Optional, like the above.
+    var mutedThreads: [String]?
 
     private static let key = "corres.notifyPolicy"
     private static var defaults: UserDefaults { MailAccounts.groupDefaults }

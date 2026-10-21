@@ -414,6 +414,17 @@ struct ComposeView: View {
                         .accessibilityLabel(dictation.isListening ? "Stop dictating" : "Dictate")
                     }
                     signatureMenu
+                    Menu {
+                        TemplateMenuItems(recipientName: firstRecipientName, currentSubject: draft.subject,
+                                          currentBody: ownText.text) { subject, body in
+                            if let subject, draft.subject.trimmingCharacters(in: .whitespaces).isEmpty { draft.subject = subject }
+                            insert(body)
+                        }
+                    } label: {
+                        Image(systemName: "text.badge.plus").frame(width: 18)
+                    }
+                    .buttonStyle(CorresPillStyle())
+                    .accessibilityLabel("Templates")
                     if intelligence.isAvailable && proUnlocked {
                     if let beforeRewrite {
                         Button {
@@ -494,6 +505,13 @@ struct ComposeView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(label)
         .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    /// The first person it's going to, by name, for a template's
+    /// {first name}.
+    private var firstRecipientName: String? {
+        PeopleIndex.entries(in: draft.to).compactMap { PeopleIndex.parse($0) }.first
+            .flatMap { $0.name.isEmpty ? nil : Person.readable($0.name) }
     }
 
     /// Adds text at the end of the person's own words, above any quote.

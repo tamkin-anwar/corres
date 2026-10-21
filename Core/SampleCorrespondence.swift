@@ -14,7 +14,7 @@ public enum SampleCorrespondence {
         // the calendar suggestion.
         let thursday = meetingTime(now: now)
         let meeting = thursday.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) + " at 3:00 PM"
-        return records.enumerated().map { index, row in
+        let people = records.enumerated().map { index, row in
             let details = row.0 == "Sofia Laurent"
                 ? "\n\nThe meeting is \(meeting), at Maison Studio, 120 Grand Street, New York, NY 10013."
                 : ""
@@ -27,6 +27,24 @@ public enum SampleCorrespondence {
                 reason: row.4, attention: row.5
             )
         }
+        // A receipt with its invoice and a delivery on its way, so
+        // Purchases and Attachments have something to show.
+        let receipt = Correspondence(
+            id: ThreadID(account: "sample", providerID: "sample-\(records.count)"),
+            sender: "Atelier Supply", senderEmail: "orders@ateliersupply.example", organization: "Atelier Supply",
+            subject: "Your order is confirmed", excerpt: "Order 4471-2208. Order total $86.40.",
+            body: "Thanks for your order.\n\nOrder number: 4471-2208\nLinen sketchbook, A4 × 2\nOrder total $86.40\n\nYour invoice is attached.",
+            receivedAt: now.addingTimeInterval(-26 * 3600), dueAt: nil,
+            reason: InboxClassifier.BulkKind.updates.reason, attention: .quiet,
+            attachments: [MailAttachment(id: "sample-invoice", filename: "Invoice 4471-2208.pdf", mimeType: "application/pdf", sizeBytes: 84_211)])
+        let delivery = Correspondence(
+            id: ThreadID(account: "sample", providerID: "sample-\(records.count + 1)"),
+            sender: "Atelier Supply", senderEmail: "shipping@ateliersupply.example", organization: "Atelier Supply",
+            subject: "Your package is out for delivery", excerpt: "Order 4471-2208 is out for delivery and arrives today.",
+            body: "Good news: your order is out for delivery and arrives today.\n\nOrder number: 4471-2208",
+            receivedAt: now.addingTimeInterval(-3 * 3600), dueAt: nil,
+            reason: InboxClassifier.BulkKind.updates.reason, attention: .quiet)
+        return people + [receipt, delivery]
     }
 
     private static func meetingTime(now: Date) -> Date {

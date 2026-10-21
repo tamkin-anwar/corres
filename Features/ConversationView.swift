@@ -197,6 +197,10 @@ struct ConversationView: View {
                 } message: {
                     Text("Their mail is hidden in Corres from now on, with no notice to them. Your email account isn't changed.")
                 }
+                .sheet(item: $personCard) { person in
+                    PersonView(person: person, store: store, open: { currentID = $0 },
+                               write: { address in router.pending = .composeTo(to: address, subject: "", body: "") })
+                }
                 .sheet(isPresented: $addingEvent) {
                     if let calendarEvent {
                         NewEventSheet(event: calendarEvent, sender: thread.sender) { _ in }
@@ -402,7 +406,23 @@ struct ConversationView: View {
     private func goToPrevious() { if let i = currentIndex, i > 0 { currentID = orderedIDs[i - 1] } }
     private func goToNext() { if let i = currentIndex, i < orderedIDs.count - 1 { currentID = orderedIDs[i + 1] } }
 
+    @ViewBuilder
     private func messageHeader(for thread: Correspondence) -> some View {
+        if !thread.isFromAccountOwner, let email = thread.senderEmail {
+            // Who they are in your mail: conversations, files, VIP, block.
+            Button {
+                personCard = PersonRef(email: email, name: thread.sender, account: thread.id.account)
+            } label: {
+                headerContent(for: thread).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Shows your mail with them")
+        } else {
+            headerContent(for: thread)
+        }
+    }
+
+    private func headerContent(for thread: Correspondence) -> some View {
         HStack(spacing: 12) {
             CorrespondentAvatar(initials: thread.isFromAccountOwner ? "Y" : thread.initials,
                                 email: thread.isFromAccountOwner ? nil : thread.senderEmail, size: CGSize(width: 44, height: 44))
@@ -686,7 +706,7 @@ struct ConversationView: View {
     private func glanceBlock(_ glance: Glance) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             if let status = glance.status {
-                Label(status, systemImage: glance.isAlert ? "exclamationmark.circle.fill" : "checkmark.circle")
+                Label(Glance.display(status), systemImage: glance.isAlert ? "exclamationmark.circle.fill" : "checkmark.circle")
                     .labelStyle(TightLabelStyle())
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(glance.isAlert ? CorresPalette.alert : CorresPalette.ink)
@@ -706,7 +726,7 @@ struct ConversationView: View {
     private func glanceFacts(_ glance: Glance) -> some View {
         ForEach(glance.facts, id: \.self) { fact in
             VStack(alignment: .leading, spacing: 1) {
-                Text(fact.label).font(.caption).foregroundStyle(CorresPalette.secondary)
+                Text(Glance.display(fact.label)).font(.caption).foregroundStyle(CorresPalette.secondary)
                 Text(fact.value).font(.body.weight(.semibold)).monospacedDigit().foregroundStyle(CorresPalette.ink)
                     .textSelection(.enabled)
             }
@@ -738,7 +758,7 @@ struct ConversationView: View {
                     Label("Next step", systemImage: "arrow.turn.down.right")
                         .labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(step.label).font(.body.weight(.semibold)).foregroundStyle(CorresPalette.ink)
+                        Text(Glance.display(step.label)).font(.body.weight(.semibold)).foregroundStyle(CorresPalette.ink)
                         if !step.host.isEmpty {
                             Text(step.host).font(.footnote).foregroundStyle(CorresPalette.secondary).lineLimit(1)
                         }
@@ -750,7 +770,7 @@ struct ConversationView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Next step: \(step.label)")
+        .accessibilityLabel("Next step: \(Glance.display(step.label))")
         .accessibilityHint("Opens \(step.host)")
     }
 
@@ -1057,6 +1077,7 @@ struct ConversationView: View {
             thread.senderEmail.map(InboxClassifier.isVIP) == true
                 ? ("star.slash", String(localized: "Remove from VIPs"), nil) : ("star", String(localized: "Add \(thread.sender) to VIPs"), nil)
         case .block: ("hand.raised", String(localized: "Block \(thread.sender)"), nil)
+        case .mute: Organizer.shared.isMuted(thread.id) ? ("bell", String(localized: "Unmute"), nil) : ("bell.slash", String(localized: "Mute"), nil)
         default: (action.systemImage, action.title, nil)
         }
     }
@@ -1106,6 +1127,12 @@ struct ConversationView: View {
         case .share: Self.share(thread)
         case .print: Self.print(thread)
         case .translate: showingTranslation = true
+        case .mute:
+            if Organizer.shared.isMuted(thread.id) {
+                Organizer.shared.unmute(thread.id)
+            } else {
+                Organizer.shared.mute(thread)
+            }
         case .moveTo, .labels: break // menus; see `menuContent`
         }
     }
@@ -1164,6 +1191,7 @@ struct ConversationView: View {
     }
 
     @State private var confirmingBlock: Correspondence?
+    @State private var personCard: PersonRef?
     @State private var addingEvent = false
     @State private var showingTranslation = false
 

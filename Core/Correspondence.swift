@@ -798,6 +798,8 @@ public enum InboxClassifier {
     public static let demotedReason = "Nothing here asks anything of you."
     public static let fromYouReason = "From your other account. Kept out of Needs You."
     public static let confirmationReason = "Confirms something you did. Nothing to do unless it wasn't you."
+    /// Placed by a rule you set (Settings → Sorting → Rules).
+    public static let ruleReason = "Placed here by your rule."
 
     /// Every reason these rules can produce for unread mail: a thread
     /// carrying one of these (and never triaged) still reflects a pure rule
@@ -1217,6 +1219,7 @@ extension InboxClassifier {
         demotedReason: String(localized: "Nothing here asks anything of you."),
         fromYouReason: String(localized: "From your other account. Kept out of Needs You."),
         confirmationReason: String(localized: "Confirms something you did. Nothing to do unless it wasn't you."),
+        ruleReason: String(localized: "Placed here by your rule."),
         BulkKind.promotions.reason: String(localized: "Promotion. Kept out of Needs You."),
         BulkKind.social.reason: String(localized: "Social notification. Kept out of Needs You."),
         BulkKind.forums.reason: String(localized: "Mailing list. Kept out of Needs You."),

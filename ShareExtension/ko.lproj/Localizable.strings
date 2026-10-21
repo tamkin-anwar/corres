@@ -26,10 +26,37 @@
 "Add Subject" = "제목 추가";
 
 /* No comment provided by engineer. */
+"Already read." = "이미 읽었습니다.";
+
+/* No comment provided by engineer. */
+"Amount" = "금액";
+
+/* No comment provided by engineer. */
 "Asks something of you" = "나에게 무언가를 요청함";
 
 /* No comment provided by engineer. */
+"Asks you something." = "질문하고 있습니다.";
+
+/* No comment provided by engineer. */
+"Asks you to pay." = "결제를 요청합니다.";
+
+/* No comment provided by engineer. */
+"Automated update." = "자동 업데이트입니다.";
+
+/* No comment provided by engineer. */
+"Automated update. Kept out of Needs You." = "자동 업데이트입니다. '나에게 필요'에 넣지 않았습니다.";
+
+/* No comment provided by engineer. */
 "Bcc" = "숨은 참조";
+
+/* No comment provided by engineer. */
+"Book" = "예약";
+
+/* No comment provided by engineer. */
+"Bulk mail." = "대량 메일입니다.";
+
+/* No comment provided by engineer. */
+"Bulk mail. Kept out of Needs You." = "대량 메일입니다. '나에게 필요'에 넣지 않았습니다.";
 
 /* No comment provided by engineer. */
 "Cancel" = "취소";
@@ -44,16 +71,52 @@
 "Cc/Bcc, From: %@" = "참조/숨은 참조, 보낸 사람: %@";
 
 /* No comment provided by engineer. */
+"Charged" = "청구 금액";
+
+/* No comment provided by engineer. */
+"Check in" = "체크인";
+
+/* No comment provided by engineer. */
+"Complete it" = "완료하기";
+
+/* No comment provided by engineer. */
+"Confirm" = "확인";
+
+/* No comment provided by engineer. */
+"Confirms something you did. Nothing to do unless it wasn't you." = "내가 한 일을 확인하는 메일입니다. 본인이 아니라면 확인하세요.";
+
+/* No comment provided by engineer. */
 "Couldn’t Send" = "보낼 수 없음";
 
 /* No comment provided by engineer. */
 "Delete Draft" = "임시 저장 메일 삭제";
 
 /* No comment provided by engineer. */
+"Delivered" = "배달됨";
+
+/* No comment provided by engineer. */
+"Delivery problem" = "배송 문제";
+
+/* No comment provided by engineer. */
 "Done: off your lists, still in Mail" = "처리됨: 목록에서 빠지고 메일에는 남음";
 
 /* No comment provided by engineer. */
 "Email" = "이메일";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked." = "사람이 보낸 메일이며, 요청은 없습니다.";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked. Kept out of Needs You." = "사람이 보낸 메일이며, 요청은 없습니다. '나에게 필요'에 넣지 않았습니다.";
+
+/* No comment provided by engineer. */
+"From a VIP." = "VIP가 보냈습니다.";
+
+/* No comment provided by engineer. */
+"From your other account." = "내 다른 계정에서 보냈습니다.";
+
+/* No comment provided by engineer. */
+"From your other account. Kept out of Needs You." = "내 다른 계정에서 보냈습니다. '나에게 필요'에 넣지 않았습니다.";
 
 /* No comment provided by engineer. */
 "From:" = "보낸 사람:";
@@ -68,10 +131,22 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
+"Join" = "참여";
+
+/* No comment provided by engineer. */
 "Large" = "크게";
 
 /* No comment provided by engineer. */
+"Mailing list." = "메일링 리스트입니다.";
+
+/* No comment provided by engineer. */
+"Mailing list. Kept out of Needs You." = "메일링 리스트입니다. '나에게 필요'에 넣지 않았습니다.";
+
+/* No comment provided by engineer. */
 "Medium" = "중간";
+
+/* No comment provided by engineer. */
+"Mentions a deadline." = "마감이 언급되어 있습니다.";
 
 /* No comment provided by engineer. */
 "Message" = "메시지";
@@ -83,13 +158,25 @@
 "Needs You" = "나에게 필요";
 
 /* No comment provided by engineer. */
+"New Message" = "새로운 메시지";
+
+/* No comment provided by engineer. */
 "No action needed" = "조치 필요 없음";
+
+/* No comment provided by engineer. */
+"No reply from %@ since %@. Follow up?" = "%2$@ 이후 %1$@의 답장이 없습니다. 후속 조치할까요?";
 
 /* No comment provided by engineer. */
 "Nothing for you to do" = "할 일이 없음";
 
 /* No comment provided by engineer. */
+"Nothing here asks anything of you." = "여기에는 나에게 요청하는 것이 없습니다.";
+
+/* No comment provided by engineer. */
 "OK" = "확인";
+
+/* No comment provided by engineer. */
+"On its way" = "배송 중";
 
 /* No comment provided by engineer. */
 "Open Corres First" = "먼저 Corres를 여세요";
@@ -98,22 +185,73 @@
 "Open Corres once (and add your email account if you haven’t), then share again to write right here." = "Corres를 한 번 열고(아직 이메일 계정을 추가하지 않았다면 추가하고), 다시 공유하면 여기서 바로 작성할 수 있습니다.";
 
 /* No comment provided by engineer. */
+"Order confirmed" = "주문 확인됨";
+
+/* No comment provided by engineer. */
+"Out for delivery" = "배달 중";
+
+/* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Overdue" = "기한 지남";
+
+/* No comment provided by engineer. */
+"Paid" = "결제됨";
+
+/* No comment provided by engineer. */
+"Pay" = "결제";
+
+/* No comment provided by engineer. */
+"Payment due" = "결제 예정";
+
+/* No comment provided by engineer. */
+"Payment failed" = "결제 실패";
 
 /* No comment provided by engineer. */
 "Photo Size" = "사진 크기";
 
 /* No comment provided by engineer. */
+"Placed here by your rule." = "내 규칙에 따라 여기로 분류했습니다.";
+
+/* No comment provided by engineer. */
 "Primary" = "기본";
 
 /* No comment provided by engineer. */
+"Promotion." = "프로모션입니다.";
+
+/* No comment provided by engineer. */
+"Promotion. Kept out of Needs You." = "프로모션입니다. '나에게 필요'에 넣지 않았습니다.";
+
+/* No comment provided by engineer. */
 "Promotions" = "프로모션";
+
+/* No comment provided by engineer. */
+"Reads like it needs something from you." = "나에게 무언가가 필요한 것 같습니다.";
+
+/* No comment provided by engineer. */
+"Refund" = "환불";
+
+/* No comment provided by engineer. */
+"Refunded" = "환불됨";
+
+/* No comment provided by engineer. */
+"Register" = "등록";
 
 /* No comment provided by engineer. */
 "Remove" = "제거";
 
 /* No comment provided by engineer. */
 "Remove %@" = "%@ 제거";
+
+/* No comment provided by engineer. */
+"Reset password" = "암호 재설정";
+
+/* No comment provided by engineer. */
+"Review" = "검토";
+
+/* No comment provided by engineer. */
+"RSVP" = "참석 여부 회신";
 
 /* No comment provided by engineer. */
 "Save Draft" = "임시 저장";
@@ -125,22 +263,91 @@
 "Send without a subject?" = "제목 없이 보내겠습니까?";
 
 /* No comment provided by engineer. */
+"Sign" = "서명하기";
+
+/* No comment provided by engineer. */
 "Small" = "작게";
 
 /* No comment provided by engineer. */
 "Social" = "소셜";
 
 /* No comment provided by engineer. */
+"Social notification." = "소셜 알림입니다.";
+
+/* No comment provided by engineer. */
+"Social notification. Kept out of Needs You." = "소셜 알림입니다. '나에게 필요'에 넣지 않았습니다.";
+
+/* No comment provided by engineer. */
+"Something failed that only you can fix." = "나만 해결할 수 있는 문제가 발생했습니다.";
+
+/* No comment provided by engineer. */
 "Subject:" = "제목:";
+
+/* No comment provided by engineer. */
+"Time-sensitive." = "시간 민감합니다.";
 
 /* No comment provided by engineer. */
 "To" = "받는 사람";
 
 /* No comment provided by engineer. */
+"Track package" = "택배 추적";
+
+/* No comment provided by engineer. */
+"Unread for over a month." = "한 달 넘게 읽지 않았습니다.";
+
+/* No comment provided by engineer. */
+"Unread for over a month. Kept out of Needs You." = "한 달 넘게 읽지 않았습니다. '나에게 필요'에 넣지 않았습니다.";
+
+/* No comment provided by engineer. */
+"Unread, from a person." = "읽지 않음, 사람이 보냈습니다.";
+
+/* No comment provided by engineer. */
+"Unread, from someone you've written to." = "읽지 않음, 메일을 주고받은 사람이 보냈습니다.";
+
+/* No comment provided by engineer. */
+"Unread." = "읽지 않음.";
+
+/* No comment provided by engineer. */
+"Update payment" = "결제 정보 업데이트";
+
+/* No comment provided by engineer. */
 "Updates" = "업데이트";
 
 /* No comment provided by engineer. */
+"Verify" = "인증";
+
+/* No comment provided by engineer. */
+"View" = "보기";
+
+/* No comment provided by engineer. */
 "Waiting" = "대기 중";
+
+/* No comment provided by engineer. */
+"You asked. No reply yet." = "내가 질문했습니다. 아직 답장이 없습니다.";
+
+/* No comment provided by engineer. */
+"You forwarded this just now. Waiting for their response." = "방금 전달했습니다. 답장을 기다리는 중입니다.";
+
+/* No comment provided by engineer. */
+"You replied just now. Waiting for their response." = "방금 답장했습니다. 답장을 기다리는 중입니다.";
+
+/* No comment provided by engineer. */
+"You replied. Nothing pending." = "답장했습니다. 남은 일이 없습니다.";
+
+/* No comment provided by engineer. */
+"You said mail like this needs no action." = "이런 메일은 조치가 필요 없다고 지정했습니다.";
+
+/* No comment provided by engineer. */
+"You sent this. Nothing pending." = "내가 보냈습니다. 남은 일이 없습니다.";
+
+/* No comment provided by engineer. */
+"You started this conversation. Waiting for a response." = "내가 시작한 대화입니다. 답장을 기다리는 중입니다.";
+
+/* No comment provided by engineer. */
+"You're copied, not asked." = "참조로 받았을 뿐 요청은 없습니다.";
+
+/* No comment provided by engineer. */
+"You're copied, not asked. Kept out of Needs You." = "참조로 받았을 뿐 요청은 없습니다. '나에게 필요'에 넣지 않았습니다.";
 
 /* No comment provided by engineer. */
 "You're waiting on their reply" = "상대방의 답장을 기다리는 중";

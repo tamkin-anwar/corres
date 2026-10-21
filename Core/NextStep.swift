@@ -336,3 +336,41 @@ extension MailDigest {
     /// "Thu, 15 Oct", "October 20, 2026", "20 October 2026", "10/20/2026".
     private static let datePattern = #"((?:(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?,?\s+)?(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?)(?:,?\s+\d{4})?|\d{1,2}/\d{1,2}(?:/\d{2,4})?)"#
 }
+
+extension Glance {
+    /// A status, figure or step label Corres wrote, in the reader's
+    /// language. Kept in English underneath (Purchases sorts by it); a
+    /// label copied from the email itself passes through as written.
+    public static func display(_ label: String) -> String { displayLabels[label] ?? label }
+
+    private static let displayLabels: [String: String] = [
+        "Payment failed": String(localized: "Payment failed"),
+        "Delivery problem": String(localized: "Delivery problem"),
+        "Overdue": String(localized: "Overdue"),
+        "Delivered": String(localized: "Delivered"),
+        "Out for delivery": String(localized: "Out for delivery"),
+        "On its way": String(localized: "On its way"),
+        "Refunded": String(localized: "Refunded"),
+        "Payment due": String(localized: "Payment due"),
+        "Paid": String(localized: "Paid"),
+        "Order confirmed": String(localized: "Order confirmed"),
+        "Charged": String(localized: "Charged"),
+        "Refund": String(localized: "Refund"),
+        "Amount": String(localized: "Amount"),
+        "Book": String(localized: "Book"),
+        "Pay": String(localized: "Pay"),
+        "Update payment": String(localized: "Update payment"),
+        "Track package": String(localized: "Track package"),
+        "Confirm": String(localized: "Confirm"),
+        "Verify": String(localized: "Verify"),
+        "Sign": String(localized: "Sign"),
+        "RSVP": String(localized: "RSVP"),
+        "Register": String(localized: "Register"),
+        "Reset password": String(localized: "Reset password"),
+        "Complete it": String(localized: "Complete it"),
+        "Check in": String(localized: "Check in"),
+        "View": String(localized: "View"),
+        "Review": String(localized: "Review"),
+        "Join": String(localized: "Join"),
+    ]
+}

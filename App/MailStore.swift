@@ -160,6 +160,7 @@ final class MailStore {
             await loadRenderTestEmails()
             #endif
             state = .loaded
+            afterRefresh?()
         } catch is CancellationError {
             state = .idle
         } catch {
@@ -261,7 +262,11 @@ final class MailStore {
             waiting.forEach { $0.resume() }
         } while refreshAgain
         isRefreshing = false
+        afterRefresh?()
     }
+    /// Told after each reload from storage, which is when new mail has
+    /// arrived: rules and muted conversations act on it (Organizer).
+    @ObservationIgnored var afterRefresh: (@MainActor () -> Void)?
     @ObservationIgnored private var isRefreshing = false
     @ObservationIgnored private var refreshAgain = false
     @ObservationIgnored private var refreshWaiters: [CheckedContinuation<Void, Never>] = []

@@ -450,6 +450,7 @@ struct CorrespondenceList: View {
                         }
                         olderMailFooter
                         moreResultsFooter
+                        saveSearchFooter
                         listFooter
                     }
                 }
@@ -1154,6 +1155,20 @@ struct CorrespondenceList: View {
             }
             .frame(maxWidth: .infinity).padding(.vertical, 16)
             .listRowSeparator(.hidden)
+        }
+    }
+
+    /// Keeps a search you'll run again as a mailbox (Mailboxes → Saved
+    /// Searches).
+    @ViewBuilder
+    private var saveSearchFooter: some View {
+        if !appliedSearch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !results.isEmpty {
+            SaveSearchButton(query: appliedSearch)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(CorresPalette.accent)
+                .frame(maxWidth: .infinity).padding(.vertical, 12)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
         }
     }
 

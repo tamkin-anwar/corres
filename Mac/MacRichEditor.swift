@@ -11,6 +11,8 @@ struct MacRichEditor: NSViewRepresentable {
     @Binding var html: String?
     var initialText: String
     var focusOnAppear = false
+    /// Lets Compose put text in where the cursor is (a template).
+    var inserter: MacTextInserter?
 
     func makeNSView(context: Context) -> NSScrollView {
         let scroll = NSTextView.scrollableTextView()
@@ -34,6 +36,7 @@ struct MacRichEditor: NSViewRepresentable {
                                         range: NSRange(location: 0, length: (initialText as NSString).length))
         scroll.drawsBackground = false
         context.coordinator.textView = text
+        inserter?.textView = text
         if focusOnAppear {
             DispatchQueue.main.async {
                 text.window?.makeFirstResponder(text)
@@ -70,5 +73,20 @@ struct MacRichEditor: NSViewRepresentable {
             }
             parent.html = RichBody.html(runs)
         }
+    }
+}
+
+/// Puts text into the compose body where the cursor is, as typing would,
+/// so it's undoable and the draft hears about it.
+@MainActor
+final class MacTextInserter {
+    weak var textView: NSTextView?
+
+    func insert(_ text: String) {
+        guard let textView else { return }
+        let range = textView.selectedRange()
+        let at = range.location == NSNotFound ? NSRange(location: (textView.string as NSString).length, length: 0) : range
+        textView.window?.makeFirstResponder(textView)
+        textView.insertText(text, replacementRange: at)
     }
 }

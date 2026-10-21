@@ -74,6 +74,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         auth = authService
         outbox = OutboxService(store: mailStore, auth: authService, repository: repository)
         threadActions = ThreadActionService(store: mailStore, auth: authService)
+        Organizer.shared.attach(store: mailStore, actions: threadActions)
         labelDirectory = LabelDirectory()
         pushService = PushNotificationService()
         unsubscribeService = UnsubscribeService()

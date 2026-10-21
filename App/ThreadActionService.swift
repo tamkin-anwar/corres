@@ -129,11 +129,11 @@ final class ThreadActionService {
                                                 reason: InboxClassifier.lessonReason, messageID: messageID)
             }
         }
-        let count = before.count == 1 ? "" : " \(before.count)"
+        let n = before.count
         let moved = switch attention {
-        case .handled: "Marked\(count) Handled"
-        case .quiet: "Marked\(count) as no action needed"
-        default: "Moved\(count) to \(attention.title)"
+        case .handled: n == 1 ? String(localized: "Marked Handled") : String(localized: "Marked \(n) Handled")
+        case .quiet: n == 1 ? String(localized: "Marked as no action needed") : String(localized: "Marked \(n) as no action needed")
+        default: n == 1 ? String(localized: "Moved to \(attention.title)") : String(localized: "Moved \(n) to \(attention.title)")
         }
         let title = learned.count == 1 && before.count == 1 ? learned[0] : moved
         let icon = !learned.isEmpty ? "brain" : attention == .handled ? "checkmark.circle" : "arrow.right.circle"
@@ -192,8 +192,14 @@ final class ThreadActionService {
     func toggleUnread(_ isUnread: Bool, for threads: [Correspondence]) async {
         let before = threads.map { ($0, $0.isUnread) }
         for thread in threads { await setUnread(isUnread, for: thread) }
-        let count = threads.count == 1 ? "" : " \(threads.count)"
-        offerUndo("Marked\(count) as \(isUnread ? "unread" : "read")", systemImage: isUnread ? "envelope.badge" : "envelope.open") { [weak self] in
+        let n = threads.count
+        let said = switch (isUnread, n == 1) {
+        case (true, true): String(localized: "Marked as unread")
+        case (true, false): String(localized: "Marked \(n) as unread")
+        case (false, true): String(localized: "Marked as read")
+        case (false, false): String(localized: "Marked \(n) as read")
+        }
+        offerUndo(said, systemImage: isUnread ? "envelope.badge" : "envelope.open") { [weak self] in
             for (thread, was) in before { await self?.setUnread(was, for: thread) }
         }
     }
@@ -201,7 +207,7 @@ final class ThreadActionService {
     func toggleFlagged(_ isFlagged: Bool, for threads: [Correspondence]) async {
         let before = threads.map { ($0, $0.isFlagged) }
         for thread in threads { await setFlagged(isFlagged, for: thread) }
-        offerUndo(isFlagged ? "Flagged" : "Unflagged", systemImage: isFlagged ? "flag" : "flag.slash") { [weak self] in
+        offerUndo(isFlagged ? String(localized: "Flagged") : String(localized: "Unflagged"), systemImage: isFlagged ? "flag" : "flag.slash") { [weak self] in
             for (thread, was) in before { await self?.setFlagged(was, for: thread) }
         }
     }
@@ -209,7 +215,7 @@ final class ThreadActionService {
     func togglePinned(_ thread: Correspondence) async {
         let was = thread.isPinned
         await store.setPinned(!was, for: thread.id)
-        offerUndo(was ? "Unpinned" : "Pinned", systemImage: was ? "pin.slash" : "pin") { [store] in
+        offerUndo(was ? String(localized: "Unpinned") : String(localized: "Pinned"), systemImage: was ? "pin.slash" : "pin") { [store] in
             await store.setPinned(was, for: thread.id)
         }
     }
@@ -275,6 +281,33 @@ final class ThreadActionService {
             self.pendingRemoval = nil
             self.enqueue(pending)
         }
+    }
+
+    /// Archived for you by a rule or a muted conversation: out of the
+    /// lists at once, to the server in turn, with no Undo pill and nothing
+    /// counted as a habit of yours.
+    func archiveQuietly(_ threads: [Correspondence]) {
+        guard !threads.isEmpty else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { for thread in threads { store.hide(thread.id) } }
+        let pending = PendingRemoval(threads: threads, kind: .archive)
+        let previous = commitQueue
+        commitQueue = Task { [weak self] in
+            await previous?.value
+            await self?.commit(pending)
+        }
+    }
+
+    /// Into a category for one email, said nowhere: a rule did it. Gmail's
+    /// own tab follows, as when you move it yourself.
+    func applyCategoryQuietly(_ category: InboxCategory, to thread: Correspondence) async {
+        guard thread.id.account != Self.sampleAccount else { return }
+        await store.setLabelIds(thread.labelIds.filter { !InboxCategory.gmailLabels.contains($0) } + [category.gmailLabel], for: thread.id)
+        store.listsShouldRebuild()
+        try? await client.modifyThread(threadId: thread.id.providerID, addLabelIds: [category.gmailLabel],
+                                       removeLabelIds: Array(InboxCategory.gmailLabels.subtracting([category.gmailLabel])),
+                                       account: thread.id.account)
     }
 
     /// The tail of the removals already on their way to Gmail.

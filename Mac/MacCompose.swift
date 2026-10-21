@@ -34,6 +34,7 @@ struct MacComposeView: View {
     /// What the body starts with (a reply's quote and signature).
     @State private var initialBody = ""
     @State private var attachmentError: String?
+    @State private var inserter = MacTextInserter()
     @FocusState private var focus: Field?
     @Environment(\.dismiss) private var dismiss
 
@@ -45,7 +46,7 @@ struct MacComposeView: View {
             Divider()
             if loaded {
                 MacRichEditor(plain: $draft.body, html: $draft.bodyHTML, initialText: initialBody,
-                              focusOnAppear: !draft.to.isEmpty)
+                              focusOnAppear: !draft.to.isEmpty, inserter: inserter)
             } else {
                 Spacer()
             }
@@ -78,6 +79,20 @@ struct MacComposeView: View {
                 Button { attach() } label: { Label("Attach", systemImage: "paperclip") }
                     .help("Attach a file")
             }
+            ToolbarItem {
+                Menu {
+                    TemplateMenuItems(recipientName: firstRecipientName, currentSubject: draft.subject,
+                                      currentBody: draft.body) { subject, body in
+                        if let subject, draft.subject.trimmingCharacters(in: .whitespaces).isEmpty { draft.subject = subject }
+                        inserter.insert(body)
+                    }
+                    Divider()
+                    SettingsLink { Text("Manage Templates…") }
+                } label: {
+                    Label("Templates", systemImage: "text.badge.plus")
+                }
+                .help("Templates")
+            }
         }
         .popover(isPresented: $choosingTime, arrowEdge: .top) { sendLaterPicker }
         // Files dragged in from Finder or another app are attached.
@@ -104,6 +119,13 @@ struct MacComposeView: View {
             guard loaded, !sent, !draft.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !draft.to.isEmpty else { return }
             services.outbox.autosave(draft, replyingTo: replyingTo)
         }
+    }
+
+    /// The first person it's going to, by name, for a template's
+    /// {first name}.
+    private var firstRecipientName: String? {
+        PeopleIndex.entries(in: draft.to).compactMap { PeopleIndex.parse($0) }.first
+            .flatMap { $0.name.isEmpty ? nil : Person.readable($0.name) }
     }
 
     @State private var sent = false

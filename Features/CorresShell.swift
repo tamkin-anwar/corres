@@ -94,6 +94,25 @@ struct CorresShell: View {
         Binding(get: { paths[destination] ?? NavigationPath() }, set: { paths[destination] = $0 })
     }
 
+    /// A conversation opened from a list pushed onto the current screen
+    /// (Purchases, Attachments, a person): on top of it, so Back returns
+    /// there.
+    func openPushed(_ id: ThreadID) {
+        let route = ConversationRoute(id: id, orderedIDs: [id])
+        if sizeClass == .regular {
+            splitRoute = route
+        } else {
+            var path = paths[selection] ?? NavigationPath()
+            path.append(route)
+            paths[selection] = path
+        }
+    }
+
+    /// A new email to someone (from their person card).
+    func write(to address: String) {
+        composeDraft = Draft(kind: .new, to: address, subject: "")
+    }
+
     /// Acts on a widget tap, Siri/Shortcuts action or `corres://` link.
     private func handle(_ target: AppRouter.Target?) {
         guard let target else { return }
@@ -200,7 +219,7 @@ struct CorresShell: View {
         .task {
             let scheduled = ScheduledSends.shared
             scheduled.announce = { [threadActions] item in
-                threadActions.offerUndo("Sends \(ScheduledSends.describe(item.sendAt))", systemImage: "clock.arrow.circlepath") {
+                threadActions.offerUndo(String(localized: "Sends \(ScheduledSends.describe(item.sendAt))"), systemImage: "clock.arrow.circlepath") {
                     if let draft = scheduled.remove(item.id) { composeDraft = draft }
                 }
             }
@@ -779,7 +798,8 @@ private struct MailboxDestinations: ViewModifier {
         content
             .navigationDestination(for: MailboxesRoute.self) { _ in
                 MailboxesView(store: shell.store, threadActions: shell.threadActions, labelDirectory: shell.labelDirectory,
-                              outbox: shell.outbox, auth: shell.auth, accounts: shell.mailboxAccounts)
+                              outbox: shell.outbox, auth: shell.auth, accounts: shell.mailboxAccounts,
+                              open: { shell.openPushed($0) })
             }
             .navigationDestination(for: Mailbox.self) { mailbox in
                 if mailbox == .drafts {

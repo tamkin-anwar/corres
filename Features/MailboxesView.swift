@@ -93,6 +93,8 @@ struct MailboxesView: View {
     let auth: GoogleAuthService
     /// Which accounts' mailboxes: one, or every connected account.
     let accounts: [String]
+    /// Opens a conversation from Purchases or Attachments.
+    var open: (ThreadID) -> Void = { _ in }
 
     /// Edit, as in Mail: tick what shows, drag to reorder. Stored as ids
     /// (`Mailbox.id`), so a new label appears at the end of its list,
@@ -158,6 +160,7 @@ struct MailboxesView: View {
                 }
             }
             section(arranged(builtIns), header: nil)
+            if !isEditing { organizeSection }
             if accounts.isEmpty {
                 Section {} footer: {
                     Text("Connect an account to see Drafts, Sent, All Mail, Spam, Trash and your labels.")
@@ -184,6 +187,44 @@ struct MailboxesView: View {
             }
         }
         .task { await labelDirectory.refreshIfConnected(accounts: accounts) }
+    }
+
+    /// Corres's own views across every account: purchases, files, what
+    /// you muted, and the searches you saved.
+    @ViewBuilder
+    private var organizeSection: some View {
+        let organizer = Organizer.shared
+        Section {
+            NavigationLink {
+                PurchasesView(store: store, accounts: accounts, open: open)
+            } label: { Label("Purchases", systemImage: "bag") }
+            .listRowBackground(CorresPalette.surface)
+            NavigationLink {
+                AttachmentsView(store: store, accounts: accounts, open: open)
+            } label: { Label("Attachments", systemImage: "paperclip") }
+            .listRowBackground(CorresPalette.surface)
+            if !organizer.muted.isEmpty {
+                NavigationLink {
+                    MutedView(store: store, accounts: accounts)
+                } label: {
+                    LabeledContent {
+                        Text(organizer.muted.count, format: .number).monospacedDigit()
+                    } label: { Label("Muted", systemImage: "bell.slash") }
+                }
+                .listRowBackground(CorresPalette.surface)
+            }
+        }
+        if !organizer.savedSearches.isEmpty {
+            Section("Saved Searches") {
+                ForEach(organizer.savedSearches) { search in
+                    NavigationLink {
+                        SavedSearchView(search: search, store: store, accounts: accounts)
+                    } label: { Label(search.name, systemImage: "magnifyingglass") }
+                    .listRowBackground(CorresPalette.surface)
+                }
+                .onMove { organizer.moveSearches(from: $0, to: $1) }
+            }
+        }
     }
 
     @ViewBuilder

@@ -907,7 +907,15 @@ private struct ComposingSettingsView: View {
                 } label: {
                     LabeledContent("Signatures") {
                         let count = Signatures.all.count
-                        Text(count == 0 ? "None" : "\(count)")
+                        Text(count == 0 ? String(localized: "None") : "\(count)")
+                    }
+                }
+                NavigationLink {
+                    TemplatesView()
+                } label: {
+                    LabeledContent("Templates") {
+                        let count = Organizer.shared.templates.count
+                        Text(count == 0 ? String(localized: "None") : "\(count)")
                     }
                 }
             } footer: {
@@ -1073,6 +1081,18 @@ private struct SortingSettingsView: View {
 
     var body: some View {
         Form {
+            Section {
+                NavigationLink {
+                    RulesView()
+                } label: {
+                    LabeledContent("Rules") {
+                        let count = Organizer.shared.rules.count
+                        Text(count == 0 ? String(localized: "None") : "\(count)")
+                    }
+                }
+            } footer: {
+                Text("Do something with certain mail as it arrives, on every account: into a category, out of Needs You, marked read or archived.")
+            }
             Section {
                 Picker("Needs You", selection: $sensitivity) {
                     Text("Focused").tag(InboxClassifier.Sensitivity.focused.rawValue)

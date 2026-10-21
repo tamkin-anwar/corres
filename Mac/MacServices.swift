@@ -49,6 +49,7 @@ final class MacServices {
         self.auth = auth
         outbox = OutboxService(store: store, auth: auth, repository: repository)
         threadActions = ThreadActionService(store: store, auth: auth)
+        Organizer.shared.attach(store: store, actions: threadActions)
         labelDirectory = LabelDirectory()
         pushService = PushNotificationService()
         unsubscribeService = UnsubscribeService()

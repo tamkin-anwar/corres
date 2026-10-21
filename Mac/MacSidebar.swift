@@ -52,6 +52,21 @@ struct MacSidebar: View {
                 row(.server(MacRemoteMailboxes.Kind.spam.rawValue))
                 row(.server(MacRemoteMailboxes.Kind.trash.rawValue))
             }
+            Section("Organize") {
+                row(.purchases)
+                row(.attachments)
+                if !Organizer.shared.muted.isEmpty || model.mailbox == .muted { row(.muted) }
+            }
+            if !Organizer.shared.savedSearches.isEmpty {
+                Section("Saved Searches") {
+                    ForEach(Organizer.shared.savedSearches) { search in
+                        row(.saved(search.id.uuidString))
+                            .contextMenu {
+                                Button("Remove Saved Search", role: .destructive) { Organizer.shared.delete(search: search.id) }
+                            }
+                    }
+                }
+            }
             // Each account's own labels or folders, folded away until
             // wanted: a Gmail account can have dozens.
             ForEach(accounts.filter { !services.labelDirectory.labels(for: $0).isEmpty }, id: \.self) { account in

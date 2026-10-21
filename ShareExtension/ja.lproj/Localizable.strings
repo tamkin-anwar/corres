@@ -26,10 +26,37 @@
 "Add Subject" = "件名を追加";
 
 /* No comment provided by engineer. */
+"Already read." = "開封済みです。";
+
+/* No comment provided by engineer. */
+"Amount" = "金額";
+
+/* No comment provided by engineer. */
 "Asks something of you" = "あなたに何かを求めています";
 
 /* No comment provided by engineer. */
+"Asks you something." = "質問されています。";
+
+/* No comment provided by engineer. */
+"Asks you to pay." = "支払いを求めています。";
+
+/* No comment provided by engineer. */
+"Automated update." = "自動通知です。";
+
+/* No comment provided by engineer. */
+"Automated update. Kept out of Needs You." = "自動通知です。「要対応」には入れません。";
+
+/* No comment provided by engineer. */
 "Bcc" = "BCC";
+
+/* No comment provided by engineer. */
+"Book" = "予約";
+
+/* No comment provided by engineer. */
+"Bulk mail." = "一斉送信メールです。";
+
+/* No comment provided by engineer. */
+"Bulk mail. Kept out of Needs You." = "一斉送信メールです。「要対応」には入れません。";
 
 /* No comment provided by engineer. */
 "Cancel" = "キャンセル";
@@ -44,16 +71,52 @@
 "Cc/Bcc, From: %@" = "CC/BCC、差出人：%@";
 
 /* No comment provided by engineer. */
+"Charged" = "請求額";
+
+/* No comment provided by engineer. */
+"Check in" = "チェックイン";
+
+/* No comment provided by engineer. */
+"Complete it" = "完了する";
+
+/* No comment provided by engineer. */
+"Confirm" = "確認";
+
+/* No comment provided by engineer. */
+"Confirms something you did. Nothing to do unless it wasn't you." = "あなたの操作の確認です。心当たりがなければ対応してください。";
+
+/* No comment provided by engineer. */
 "Couldn’t Send" = "送信できませんでした";
 
 /* No comment provided by engineer. */
 "Delete Draft" = "下書きを削除";
 
 /* No comment provided by engineer. */
+"Delivered" = "配達済み";
+
+/* No comment provided by engineer. */
+"Delivery problem" = "配達の問題";
+
+/* No comment provided by engineer. */
 "Done: off your lists, still in Mail" = "対応済み：リストから外れ、メールには残ります";
 
 /* No comment provided by engineer. */
 "Email" = "メール";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked." = "人からのメールで、質問はありません。";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked. Kept out of Needs You." = "人からのメールで、質問はありません。「要対応」には入れません。";
+
+/* No comment provided by engineer. */
+"From a VIP." = "VIPからです。";
+
+/* No comment provided by engineer. */
+"From your other account." = "あなたの別のアカウントからです。";
+
+/* No comment provided by engineer. */
+"From your other account. Kept out of Needs You." = "あなたの別のアカウントからです。「要対応」には入れません。";
 
 /* No comment provided by engineer. */
 "From:" = "差出人：";
@@ -68,10 +131,22 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
+"Join" = "参加";
+
+/* No comment provided by engineer. */
 "Large" = "大";
 
 /* No comment provided by engineer. */
+"Mailing list." = "メーリングリストです。";
+
+/* No comment provided by engineer. */
+"Mailing list. Kept out of Needs You." = "メーリングリストです。「要対応」には入れません。";
+
+/* No comment provided by engineer. */
 "Medium" = "中";
+
+/* No comment provided by engineer. */
+"Mentions a deadline." = "期限が書かれています。";
 
 /* No comment provided by engineer. */
 "Message" = "メッセージ";
@@ -83,13 +158,25 @@
 "Needs You" = "要対応";
 
 /* No comment provided by engineer. */
+"New Message" = "新規メッセージ";
+
+/* No comment provided by engineer. */
 "No action needed" = "対応不要";
+
+/* No comment provided by engineer. */
+"No reply from %@ since %@. Follow up?" = "%1$@から%2$@以降返信がありません。フォローアップしますか？";
 
 /* No comment provided by engineer. */
 "Nothing for you to do" = "することはありません";
 
 /* No comment provided by engineer. */
+"Nothing here asks anything of you." = "ここにはあなたへの依頼はありません。";
+
+/* No comment provided by engineer. */
 "OK" = "OK";
+
+/* No comment provided by engineer. */
+"On its way" = "配送中";
 
 /* No comment provided by engineer. */
 "Open Corres First" = "先にCorresを開いてください";
@@ -98,22 +185,73 @@
 "Open Corres once (and add your email account if you haven’t), then share again to write right here." = "Corresを一度開いて（まだならメールアカウントを追加して）から、もう一度共有すると、ここで直接書けます。";
 
 /* No comment provided by engineer. */
+"Order confirmed" = "注文確定";
+
+/* No comment provided by engineer. */
+"Out for delivery" = "配達中";
+
+/* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Overdue" = "期限切れ";
+
+/* No comment provided by engineer. */
+"Paid" = "支払い済み";
+
+/* No comment provided by engineer. */
+"Pay" = "支払う";
+
+/* No comment provided by engineer. */
+"Payment due" = "支払い期限";
+
+/* No comment provided by engineer. */
+"Payment failed" = "支払いに失敗";
 
 /* No comment provided by engineer. */
 "Photo Size" = "写真のサイズ";
 
 /* No comment provided by engineer. */
+"Placed here by your rule." = "あなたのルールでここに振り分けました。";
+
+/* No comment provided by engineer. */
 "Primary" = "メイン";
 
 /* No comment provided by engineer. */
+"Promotion." = "プロモーションです。";
+
+/* No comment provided by engineer. */
+"Promotion. Kept out of Needs You." = "プロモーションです。「要対応」には入れません。";
+
+/* No comment provided by engineer. */
 "Promotions" = "プロモーション";
+
+/* No comment provided by engineer. */
+"Reads like it needs something from you." = "何かを求めているようです。";
+
+/* No comment provided by engineer. */
+"Refund" = "返金";
+
+/* No comment provided by engineer. */
+"Refunded" = "返金済み";
+
+/* No comment provided by engineer. */
+"Register" = "登録";
 
 /* No comment provided by engineer. */
 "Remove" = "削除";
 
 /* No comment provided by engineer. */
 "Remove %@" = "%@を削除";
+
+/* No comment provided by engineer. */
+"Reset password" = "パスワードをリセット";
+
+/* No comment provided by engineer. */
+"Review" = "確認する";
+
+/* No comment provided by engineer. */
+"RSVP" = "出欠を返信";
 
 /* No comment provided by engineer. */
 "Save Draft" = "下書きを保存";
@@ -125,22 +263,91 @@
 "Send without a subject?" = "件名なしで送信しますか？";
 
 /* No comment provided by engineer. */
+"Sign" = "署名する";
+
+/* No comment provided by engineer. */
 "Small" = "小";
 
 /* No comment provided by engineer. */
 "Social" = "ソーシャル";
 
 /* No comment provided by engineer. */
+"Social notification." = "ソーシャルの通知です。";
+
+/* No comment provided by engineer. */
+"Social notification. Kept out of Needs You." = "ソーシャルの通知です。「要対応」には入れません。";
+
+/* No comment provided by engineer. */
+"Something failed that only you can fix." = "あなたにしか直せない失敗が起きています。";
+
+/* No comment provided by engineer. */
 "Subject:" = "件名：";
+
+/* No comment provided by engineer. */
+"Time-sensitive." = "時間厳守です。";
 
 /* No comment provided by engineer. */
 "To" = "宛先";
 
 /* No comment provided by engineer. */
+"Track package" = "荷物を追跡";
+
+/* No comment provided by engineer. */
+"Unread for over a month." = "1か月以上未開封です。";
+
+/* No comment provided by engineer. */
+"Unread for over a month. Kept out of Needs You." = "1か月以上未開封です。「要対応」には入れません。";
+
+/* No comment provided by engineer. */
+"Unread, from a person." = "未開封、人からのメールです。";
+
+/* No comment provided by engineer. */
+"Unread, from someone you've written to." = "未開封、やり取りのある相手からです。";
+
+/* No comment provided by engineer. */
+"Unread." = "未開封です。";
+
+/* No comment provided by engineer. */
+"Update payment" = "支払い情報を更新";
+
+/* No comment provided by engineer. */
 "Updates" = "更新";
 
 /* No comment provided by engineer. */
+"Verify" = "確認する";
+
+/* No comment provided by engineer. */
+"View" = "表示";
+
+/* No comment provided by engineer. */
 "Waiting" = "返信待ち";
+
+/* No comment provided by engineer. */
+"You asked. No reply yet." = "あなたが質問しました。まだ返信はありません。";
+
+/* No comment provided by engineer. */
+"You forwarded this just now. Waiting for their response." = "さきほど転送しました。返信を待っています。";
+
+/* No comment provided by engineer. */
+"You replied just now. Waiting for their response." = "さきほど返信しました。返信を待っています。";
+
+/* No comment provided by engineer. */
+"You replied. Nothing pending." = "返信済みです。保留中のことはありません。";
+
+/* No comment provided by engineer. */
+"You said mail like this needs no action." = "このようなメールは対応不要だとあなたが指定しました。";
+
+/* No comment provided by engineer. */
+"You sent this. Nothing pending." = "あなたが送信しました。保留中のことはありません。";
+
+/* No comment provided by engineer. */
+"You started this conversation. Waiting for a response." = "あなたが始めた会話です。返信を待っています。";
+
+/* No comment provided by engineer. */
+"You're copied, not asked." = "CCで受け取っただけで、質問はありません。";
+
+/* No comment provided by engineer. */
+"You're copied, not asked. Kept out of Needs You." = "CCで受け取っただけで、質問はありません。「要対応」には入れません。";
 
 /* No comment provided by engineer. */
 "You're waiting on their reply" = "相手の返信を待っています";

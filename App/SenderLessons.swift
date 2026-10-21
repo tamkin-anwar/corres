@@ -31,12 +31,12 @@ enum SenderLessons {
         var id: String { email + "|" + (mailKind?.rawValue ?? "") + "|" + (category == nil ? "needs" : "category") }
 
         var summary: String {
-            let what = mailKind.map { "Its \($0.plural)" } ?? "Its mail"
+            let what = mailKind.map { String(localized: "Its \($0.plural)") } ?? String(localized: "Its mail")
             switch kind {
-            case .quiet: return "\(what) need no action from you"
-            case .keep: return "\(what) belong in Needs You"
+            case .quiet: return String(localized: "\(what) need no action from you")
+            case .keep: return String(localized: "\(what) belong in Needs You")
             case .primary, .promotions, .social, .updates:
-                return "\(what) go to \(category?.title ?? "")"
+                return String(localized: "\(what) go to \(category?.title ?? "")")
             }
         }
 
@@ -126,7 +126,7 @@ enum SenderLessons {
         let undo = { all = beforeLessons; threadCategories = beforeThreads }
         guard scope != .thisEmail, let email = thread.senderEmail?.lowercased() else {
             threadCategories[key(thread)] = category.rawValue
-            return ("Moved to \(category.title)", undo)
+            return (String(localized: "Moved to \(category.title)"), undo)
         }
         let mailKind: MailDigest.Kind? = scope == .thisKind ? thread.mailKind : nil
         let kind = Lesson.Kind(rawValue: category.rawValue) ?? .primary
@@ -135,8 +135,8 @@ enum SenderLessons {
         lessons.append(Lesson(email: email, name: thread.sender, kind: kind, learnedAt: .now, mailKind: mailKind))
         all = lessons
         threadCategories[key(thread)] = nil
-        let what = mailKind.map { "\(thread.sender)\u{2019}s \($0.plural)" } ?? "Mail from \(thread.sender)"
-        return ("\(what) \(mailKind == nil ? "goes" : "go") to \(category.title)", undo)
+        let what = mailKind.map { String(localized: "\(thread.sender)\u{2019}s \($0.plural)") } ?? String(localized: "Mail from \(thread.sender)")
+        return (mailKind == nil ? String(localized: "\(what) goes to \(category.title)") : String(localized: "\(what) go to \(category.title)"), undo)
     }
 
     /// Learns from a move you made, and says what it learned (for the Undo
@@ -160,8 +160,8 @@ enum SenderLessons {
         var lessons = all.filter { !($0.email == email && $0.category == nil && ($0.mailKind == mailKind || $0.mailKind == nil)) }
         lessons.append(Lesson(email: email, name: thread.sender, kind: kind, learnedAt: .now, mailKind: mailKind))
         all = lessons
-        let what = "\(thread.sender)\u{2019}s \(mailKind.plural)"
-        return kind == .quiet ? "Won't flag \(what) again" : "\(what) stay in Needs You"
+        let what = String(localized: "\(thread.sender)\u{2019}s \(mailKind.plural)")
+        return kind == .quiet ? String(localized: "Won't flag \(what) again") : String(localized: "\(what) stay in Needs You")
     }
 
     static func forget(_ id: String) { all = all.filter { $0.id != id } }
@@ -175,13 +175,13 @@ extension MailDigest.Kind {
     /// "receipts", for "Amazon's receipts".
     var plural: String {
         switch self {
-        case .personal: "emails"
-        case .receipt: "receipts"
-        case .shipping: "delivery updates"
-        case .code: "codes"
-        case .invite: "invitations"
-        case .newsletter: "newsletters"
-        case .notification: "notifications"
+        case .personal: String(localized: "emails")
+        case .receipt: String(localized: "receipts")
+        case .shipping: String(localized: "delivery updates")
+        case .code: String(localized: "codes")
+        case .invite: String(localized: "invitations")
+        case .newsletter: String(localized: "newsletters")
+        case .notification: String(localized: "notifications")
         }
     }
 }

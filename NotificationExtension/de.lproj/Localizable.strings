@@ -1,11 +1,74 @@
 /* No comment provided by engineer. */
+"Already read." = "Bereits gelesen.";
+
+/* No comment provided by engineer. */
+"Amount" = "Betrag";
+
+/* No comment provided by engineer. */
 "Asks something of you" = "Will etwas von dir";
+
+/* No comment provided by engineer. */
+"Asks you something." = "Stellt dir eine Frage.";
+
+/* No comment provided by engineer. */
+"Asks you to pay." = "Bittet dich zu zahlen.";
+
+/* No comment provided by engineer. */
+"Automated update." = "Automatisches Update.";
+
+/* No comment provided by engineer. */
+"Automated update. Kept out of Needs You." = "Automatisches Update. Nicht in „Braucht dich“.";
+
+/* No comment provided by engineer. */
+"Book" = "Buchen";
+
+/* No comment provided by engineer. */
+"Bulk mail." = "Massen-E-Mail.";
+
+/* No comment provided by engineer. */
+"Bulk mail. Kept out of Needs You." = "Massen-E-Mail. Nicht in „Braucht dich“.";
+
+/* No comment provided by engineer. */
+"Charged" = "Abgebucht";
+
+/* No comment provided by engineer. */
+"Check in" = "Einchecken";
+
+/* No comment provided by engineer. */
+"Complete it" = "Abschließen";
+
+/* No comment provided by engineer. */
+"Confirm" = "Bestätigen";
+
+/* No comment provided by engineer. */
+"Confirms something you did. Nothing to do unless it wasn't you." = "Bestätigt etwas, das du getan hast. Nichts zu tun, außer du warst es nicht.";
+
+/* No comment provided by engineer. */
+"Delivered" = "Zugestellt";
+
+/* No comment provided by engineer. */
+"Delivery problem" = "Zustellproblem";
 
 /* No comment provided by engineer. */
 "Done: off your lists, still in Mail" = "Erledigt: aus deinen Listen, weiter in „E-Mail“";
 
 /* No comment provided by engineer. */
 "Email" = "E-Mail";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked." = "Von einer Person, keine Frage.";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked. Kept out of Needs You." = "Von einer Person, keine Frage. Nicht in „Braucht dich“.";
+
+/* No comment provided by engineer. */
+"From a VIP." = "Von einem VIP.";
+
+/* No comment provided by engineer. */
+"From your other account." = "Von deinem anderen Account.";
+
+/* No comment provided by engineer. */
+"From your other account. Kept out of Needs You." = "Von deinem anderen Account. Nicht in „Braucht dich“.";
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
@@ -17,31 +80,172 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
+"Join" = "Teilnehmen";
+
+/* No comment provided by engineer. */
+"Mailing list." = "Mailingliste.";
+
+/* No comment provided by engineer. */
+"Mailing list. Kept out of Needs You." = "Mailingliste. Nicht in „Braucht dich“.";
+
+/* No comment provided by engineer. */
+"Mentions a deadline." = "Nennt eine Frist.";
+
+/* No comment provided by engineer. */
 "Needs You" = "Braucht dich";
 
 /* No comment provided by engineer. */
 "No action needed" = "Nichts zu tun";
 
 /* No comment provided by engineer. */
+"No reply from %@ since %@. Follow up?" = "Keine Antwort von %@ seit %@. Nachfassen?";
+
+/* No comment provided by engineer. */
 "Nothing for you to do" = "Für dich gibt es nichts zu tun";
+
+/* No comment provided by engineer. */
+"Nothing here asks anything of you." = "Hier will nichts etwas von dir.";
+
+/* No comment provided by engineer. */
+"On its way" = "Unterwegs";
+
+/* No comment provided by engineer. */
+"Order confirmed" = "Bestellung bestätigt";
+
+/* No comment provided by engineer. */
+"Out for delivery" = "In Zustellung";
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
 
 /* No comment provided by engineer. */
+"Overdue" = "Überfällig";
+
+/* No comment provided by engineer. */
+"Paid" = "Bezahlt";
+
+/* No comment provided by engineer. */
+"Pay" = "Bezahlen";
+
+/* No comment provided by engineer. */
+"Payment due" = "Zahlung fällig";
+
+/* No comment provided by engineer. */
+"Payment failed" = "Zahlung fehlgeschlagen";
+
+/* No comment provided by engineer. */
+"Placed here by your rule." = "Von deiner Regel hierher sortiert.";
+
+/* No comment provided by engineer. */
 "Primary" = "Allgemein";
+
+/* No comment provided by engineer. */
+"Promotion." = "Werbung.";
+
+/* No comment provided by engineer. */
+"Promotion. Kept out of Needs You." = "Werbung. Nicht in „Braucht dich“.";
 
 /* No comment provided by engineer. */
 "Promotions" = "Werbung";
 
 /* No comment provided by engineer. */
+"Reads like it needs something from you." = "Liest sich, als bräuchte es etwas von dir.";
+
+/* No comment provided by engineer. */
+"Refund" = "Erstattung";
+
+/* No comment provided by engineer. */
+"Refunded" = "Erstattet";
+
+/* No comment provided by engineer. */
+"Register" = "Registrieren";
+
+/* No comment provided by engineer. */
+"Reset password" = "Passwort zurücksetzen";
+
+/* No comment provided by engineer. */
+"Review" = "Prüfen";
+
+/* No comment provided by engineer. */
+"RSVP" = "Zusagen oder absagen";
+
+/* No comment provided by engineer. */
+"Sign" = "Unterschreiben";
+
+/* No comment provided by engineer. */
 "Social" = "Soziale Netzwerke";
+
+/* No comment provided by engineer. */
+"Social notification." = "Soziale Mitteilung.";
+
+/* No comment provided by engineer. */
+"Social notification. Kept out of Needs You." = "Soziale Mitteilung. Nicht in „Braucht dich“.";
+
+/* No comment provided by engineer. */
+"Something failed that only you can fix." = "Etwas ist fehlgeschlagen, das nur du beheben kannst.";
+
+/* No comment provided by engineer. */
+"Time-sensitive." = "Zeitkritisch.";
+
+/* No comment provided by engineer. */
+"Track package" = "Sendung verfolgen";
+
+/* No comment provided by engineer. */
+"Unread for over a month." = "Seit über einem Monat ungelesen.";
+
+/* No comment provided by engineer. */
+"Unread for over a month. Kept out of Needs You." = "Seit über einem Monat ungelesen. Nicht in „Braucht dich“.";
+
+/* No comment provided by engineer. */
+"Unread, from a person." = "Ungelesen, von einer Person.";
+
+/* No comment provided by engineer. */
+"Unread, from someone you've written to." = "Ungelesen, von jemandem, dem du geschrieben hast.";
+
+/* No comment provided by engineer. */
+"Unread." = "Ungelesen.";
+
+/* No comment provided by engineer. */
+"Update payment" = "Zahlungsdaten aktualisieren";
 
 /* No comment provided by engineer. */
 "Updates" = "Updates";
 
 /* No comment provided by engineer. */
+"Verify" = "Bestätigen";
+
+/* No comment provided by engineer. */
+"View" = "Ansehen";
+
+/* No comment provided by engineer. */
 "Waiting" = "Wartet";
+
+/* No comment provided by engineer. */
+"You asked. No reply yet." = "Du hast gefragt. Noch keine Antwort.";
+
+/* No comment provided by engineer. */
+"You forwarded this just now. Waiting for their response." = "Du hast das gerade weitergeleitet. Wartet auf Antwort.";
+
+/* No comment provided by engineer. */
+"You replied just now. Waiting for their response." = "Du hast gerade geantwortet. Wartet auf Antwort.";
+
+/* No comment provided by engineer. */
+"You replied. Nothing pending." = "Du hast geantwortet. Nichts offen.";
+
+/* No comment provided by engineer. */
+"You said mail like this needs no action." = "Du hast gesagt, dass solche E-Mails nichts erfordern.";
+
+/* No comment provided by engineer. */
+"You sent this. Nothing pending." = "Du hast das gesendet. Nichts offen.";
+
+/* No comment provided by engineer. */
+"You started this conversation. Waiting for a response." = "Du hast diese Konversation begonnen. Wartet auf Antwort.";
+
+/* No comment provided by engineer. */
+"You're copied, not asked." = "Du bist in Kopie, nicht gefragt.";
+
+/* No comment provided by engineer. */
+"You're copied, not asked. Kept out of Needs You." = "Du bist in Kopie, nicht gefragt. Nicht in „Braucht dich“.";
 
 /* No comment provided by engineer. */
 "You're waiting on their reply" = "Du wartest auf ihre Antwort";

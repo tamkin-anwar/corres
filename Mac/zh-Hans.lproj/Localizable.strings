@@ -2,7 +2,13 @@
 " Due %@." = " 截止%@。";
 
 /* No comment provided by engineer. */
+"·" = "·";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
+
+/* No comment provided by engineer. */
+"%@ · %@" = "%@ · %@";
 
 /* No comment provided by engineer. */
 "%@ · up to date %@" = "%@ · 已更新 %@";
@@ -11,19 +17,43 @@
 "%@ at %@" = "%@ %@";
 
 /* No comment provided by engineer. */
+"%@ becomes the recipient's first name as the template goes in, or is left out if there's no name to use." = "插入模板时，%@ 会替换为收件人的名字；如果不知道名字，则会省略。";
+
+/* No comment provided by engineer. */
+"%@ belong in Needs You" = "%@会进入“需要你”";
+
+/* No comment provided by engineer. */
 "%@ didn't answer the last check. Corres keeps trying." = "%@ 上次检查时没有响应。Corres 会继续尝试。";
+
+/* No comment provided by engineer. */
+"%@ go to %@" = "%1$@会进入%2$@";
+
+/* No comment provided by engineer. */
+"%@ goes to %@" = "%1$@会进入%2$@";
 
 /* No comment provided by engineer. */
 "%@ is busy. Corres tries again in a moment." = "%@ 正忙。Corres 稍后会重试。";
 
 /* No comment provided by engineer. */
+"%@ need no action from you" = "%@无需你处理";
+
+/* No comment provided by engineer. */
 "%@ said: %@" = "%@ 回复：%@";
+
+/* No comment provided by engineer. */
+"%@ stay in Needs You" = "%@会留在“需要你”";
 
 /* No comment provided by engineer. */
 "%@ turned down Corres's access. Reconnect below." = "%@ 拒绝了 Corres 的访问。请在下方重新连接。";
 
 /* No comment provided by engineer. */
+"%@, and more" = "%@等";
+
+/* No comment provided by engineer. */
 "%@: %@" = "%@：%@";
+
+/* No comment provided by engineer. */
+"%@’s %@" = "%1$@的%2$@";
 
 /* No comment provided by engineer. */
 "%lld" = "%lld";
@@ -53,6 +83,12 @@
 "%lld emails need you" = "%lld 封邮件需要你";
 
 /* No comment provided by engineer. */
+"%lld Files" = "%lld 个文件";
+
+/* No comment provided by engineer. */
+"%lld new messages" = "%lld 封新邮件";
+
+/* No comment provided by engineer. */
 "%lldd" = "%lld天";
 
 /* No comment provided by engineer. */
@@ -63,6 +99,12 @@
 
 /* No comment provided by engineer. */
 "1 email needs you" = "1 封邮件需要你";
+
+/* No comment provided by engineer. */
+"1 File" = "1 个文件";
+
+/* No comment provided by engineer. */
+"A name, address or company, like amazon.com" = "名字、地址或公司，比如 amazon.com";
 
 /* No comment provided by engineer. */
 "Accept" = "接受";
@@ -98,6 +140,9 @@
 "Add to Calendar" = "添加到日历";
 
 /* No comment provided by engineer. */
+"All" = "全部";
+
+/* No comment provided by engineer. */
 "All accounts" = "所有账户";
 
 /* No comment provided by engineer. */
@@ -107,10 +152,25 @@
 "All Unread" = "所有未读";
 
 /* No comment provided by engineer. */
+"Allow %@" = "允许 %@";
+
+/* No comment provided by engineer. */
+"Already read." = "已读。";
+
+/* No comment provided by engineer. */
 "Always from %@" = "始终来自 %@";
 
 /* No comment provided by engineer. */
 "Always Load" = "始终载入";
+
+/* No comment provided by engineer. */
+"Always Needs You" = "始终“需要你”";
+
+/* No comment provided by engineer. */
+"Amount" = "金额";
+
+/* No comment provided by engineer. */
+"An address you receive at" = "你收信使用的地址";
 
 /* No comment provided by engineer. */
 "Answer" = "回答";
@@ -119,10 +179,22 @@
 "Anything from a real person, plus bills, appointments and other mail with a date that matters. Newsletters, promotions and social updates arrive silently." = "来自真人的所有邮件，以及账单、预约等日期重要的邮件。简报、促销和社交动态会静默送达。";
 
 /* No comment provided by engineer. */
+"Anywhere" = "任意位置";
+
+/* No comment provided by engineer. */
 "App-specific password" = "App 专用密码";
 
 /* No comment provided by engineer. */
 "Appearance" = "外观";
+
+/* No comment provided by engineer. */
+"Applied to %lld conversations." = "已应用到 %lld 个对话。";
+
+/* No comment provided by engineer. */
+"Applied to 1 conversation." = "已应用到 1 个对话。";
+
+/* No comment provided by engineer. */
+"Apply to Mail Already Here" = "应用到已有的邮件";
 
 /* No comment provided by engineer. */
 "Archive" = "归档";
@@ -140,10 +212,22 @@
 "Archived %lld" = "已归档 %lld 个";
 
 /* No comment provided by engineer. */
+"Archived mail leaves Needs You, so it won't be seen there." = "归档的邮件会离开“需要你”，所以不会出现在那里。";
+
+/* No comment provided by engineer. */
+"Ask" = "提问";
+
+/* No comment provided by engineer. */
 "Ask First" = "先询问";
 
 /* No comment provided by engineer. */
 "Asks something of you" = "向你提出了请求";
+
+/* No comment provided by engineer. */
+"Asks you something." = "向你提了问题。";
+
+/* No comment provided by engineer. */
+"Asks you to pay." = "要求你付款。";
 
 /* No comment provided by engineer. */
 "Attach" = "附加";
@@ -152,7 +236,40 @@
 "Attach a file" = "附加文件";
 
 /* No comment provided by engineer. */
+"Attachments" = "附件";
+
+/* No comment provided by engineer. */
+"Automated update." = "自动更新。";
+
+/* No comment provided by engineer. */
+"Automated update. Kept out of Needs You." = "自动更新。未放入“需要你”。";
+
+/* No comment provided by engineer. */
 "Automatic" = "自动";
+
+/* No comment provided by engineer. */
+"Block" = "屏蔽";
+
+/* No comment provided by engineer. */
+"Block %@" = "屏蔽 %@";
+
+/* No comment provided by engineer. */
+"Block %@?" = "屏蔽 %@？";
+
+/* No comment provided by engineer. */
+"Block Sender" = "屏蔽发件人";
+
+/* No comment provided by engineer. */
+"Book" = "预订";
+
+/* No comment provided by engineer. */
+"Brief" = "简报";
+
+/* No comment provided by engineer. */
+"Bulk mail." = "群发邮件。";
+
+/* No comment provided by engineer. */
+"Bulk mail. Kept out of Needs You." = "群发邮件。未放入“需要你”。";
 
 /* No comment provided by engineer. */
 "Can't reach %@ right now. Corres keeps trying." = "目前无法连接 %@。Corres 会继续尝试。";
@@ -162,6 +279,9 @@
 
 /* No comment provided by engineer. */
 "Canceled" = "已取消";
+
+/* No comment provided by engineer. */
+"Category" = "类别";
 
 /* No comment provided by engineer. */
 "Cc" = "抄送";
@@ -177,6 +297,12 @@
 
 /* No comment provided by engineer. */
 "Change Time…" = "更改时间…";
+
+/* No comment provided by engineer. */
+"Charged" = "扣款";
+
+/* No comment provided by engineer. */
+"Check in" = "办理登机";
 
 /* No comment provided by engineer. */
 "Check Your Calendar" = "查看你的日历";
@@ -200,13 +326,34 @@
 "Choose Send Later in a new message to send it at a time you pick." = "在新邮件中选择“稍后发送”，即可在你选择的时间发送。";
 
 /* No comment provided by engineer. */
+"codes" = "验证码";
+
+/* No comment provided by engineer. */
+"Complete it" = "完成";
+
+/* No comment provided by engineer. */
+"Confirm" = "确认";
+
+/* No comment provided by engineer. */
+"Confirms something you did. Nothing to do unless it wasn't you." = "确认了你做过的操作。除非不是你本人，否则无需处理。";
+
+/* No comment provided by engineer. */
+"contains these words, ignoring case. Several words must all appear." = "包含这些词语时（不区分大小写）。多个词语必须全部出现。";
+
+/* No comment provided by engineer. */
 "Conversation" = "对话";
+
+/* No comment provided by engineer. */
+"Conversations" = "对话";
 
 /* No comment provided by engineer. */
 "corres" = "corres";
 
 /* No comment provided by engineer. */
 "Corres" = "Corres";
+
+/* No comment provided by engineer. */
+"Corres decides" = "由 Corres 决定";
 
 /* No comment provided by engineer. */
 "Corres Pro" = "Corres Pro";
@@ -242,6 +389,9 @@
 "Couldn't Change Your Calendar" = "无法更改你的日历";
 
 /* No comment provided by engineer. */
+"Couldn't download" = "无法下载";
+
+/* No comment provided by engineer. */
 "Couldn't find an answer in your mail." = "在你的邮件中找不到答案。";
 
 /* No comment provided by engineer. */
@@ -269,7 +419,13 @@
 "Delete (⌘⌫, or #)" = "删除（⌘⌫ 或 #）";
 
 /* No comment provided by engineer. */
+"Delete Rule" = "删除规则";
+
+/* No comment provided by engineer. */
 "Delete Signature" = "删除签名";
+
+/* No comment provided by engineer. */
+"Delete Template" = "删除模板";
 
 /* No comment provided by engineer. */
 "Delete this scheduled email?" = "删除此已安排的邮件？";
@@ -281,6 +437,21 @@
 "Deleted %lld" = "已删除 %lld 个";
 
 /* No comment provided by engineer. */
+"Delivered" = "已送达";
+
+/* No comment provided by engineer. */
+"Delivery problem" = "配送问题";
+
+/* No comment provided by engineer. */
+"delivery updates" = "配送更新";
+
+/* No comment provided by engineer. */
+"Do This" = "执行操作";
+
+/* No comment provided by engineer. */
+"Documents" = "文稿";
+
+/* No comment provided by engineer. */
 "Done" = "完成";
 
 /* No comment provided by engineer. */
@@ -290,10 +461,19 @@
 "Drafts" = "草稿";
 
 /* No comment provided by engineer. */
+"Due soon" = "即将到期";
+
+/* No comment provided by engineer. */
 "During this Focus, Corres shows and notifies for this account only." = "在此专注模式下，Corres 只显示和通知这个账户的邮件。";
 
 /* No comment provided by engineer. */
 "Edit" = "编辑";
+
+/* No comment provided by engineer. */
+"Edit Rule" = "编辑规则";
+
+/* No comment provided by engineer. */
+"Edit Template" = "编辑模板";
 
 /* No comment provided by engineer. */
 "Email" = "邮件";
@@ -306,6 +486,12 @@
 
 /* No comment provided by engineer. */
 "Email, considered." = "邮件，用心而为。";
+
+/* No comment provided by engineer. */
+"emails" = "邮件";
+
+/* No comment provided by engineer. */
+"Every account, one inbox" = "所有账户，一个收件箱";
 
 /* No comment provided by engineer. */
 "Every new email in your inbox, newsletters and promotions included." = "收件箱中的每封新邮件，包括简报和促销。";
@@ -321,6 +507,9 @@
 
 /* No comment provided by engineer. */
 "Explore Sample Mail" = "探索示例邮件";
+
+/* No comment provided by engineer. */
+"Files sent to you or by you show here." = "你收发的文件会显示在这里。";
 
 /* No comment provided by engineer. */
 "Find conversations from Spotlight by sender, subject or what they say. The index stays on this Mac." = "通过“聚焦”按发件人、主题或内容查找对话。索引只保留在这台 Mac 上。";
@@ -350,6 +539,30 @@
 "Free" = "免费";
 
 /* No comment provided by engineer. */
+"From" = "发件人";
+
+/* No comment provided by engineer. */
+"From “%@”" = "来自“%@”";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked." = "来自个人，没有提出请求。";
+
+/* No comment provided by engineer. */
+"From a person, nothing asked. Kept out of Needs You." = "来自个人，没有提出请求。未放入“需要你”。";
+
+/* No comment provided by engineer. */
+"From a VIP." = "来自 VIP。";
+
+/* No comment provided by engineer. */
+"From your mail on this %@. Nothing about them is looked up anywhere else." = "来自你在这台%@上的邮件。不会在其他地方查询关于此人的信息。";
+
+/* No comment provided by engineer. */
+"From your other account." = "来自你的另一个账户。";
+
+/* No comment provided by engineer. */
+"From your other account. Kept out of Needs You." = "来自你的另一个账户。未放入“需要你”。";
+
+/* No comment provided by engineer. */
 "General" = "通用";
 
 /* No comment provided by engineer. */
@@ -363,6 +576,9 @@
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail, Outlook, iCloud and more. Accounts you added on your iPhone or iPad appear here on their own." = "Gmail、Outlook、iCloud 等。你在 iPhone 或 iPad 上添加的账户会自动出现在这里。";
 
 /* No comment provided by engineer. */
 "Go to a mailbox or do something…" = "前往邮箱或执行操作…";
@@ -381,6 +597,9 @@
 
 /* No comment provided by engineer. */
 "Handled. It stays in Mail." = "已处理。仍保留在“邮件”中。";
+
+/* No comment provided by engineer. */
+"Has attachments" = "有附件";
 
 /* No comment provided by engineer. */
 "Hear what's in Needs You and who you're waiting on." = "听听“需要你”里有什么，以及你在等谁回复。";
@@ -422,7 +641,16 @@
 "In short" = "简而言之";
 
 /* No comment provided by engineer. */
+"Insert First Name" = "插入名字";
+
+/* No comment provided by engineer. */
 "Invitation" = "邀请";
+
+/* No comment provided by engineer. */
+"invitations" = "邀请";
+
+/* No comment provided by engineer. */
+"It shows in Mailboxes, run again each time you open it." = "它会显示在“邮箱”中，每次打开时重新搜索。";
 
 /* No comment provided by engineer. */
 "It won't be sent, and it isn't kept in Drafts." = "它不会被发送，也不会保留在草稿中。";
@@ -431,10 +659,28 @@
 "It's removed from Corres on all your devices. Nothing is deleted from the account itself." = "将从你所有设备上的 Corres 中移除。账户本身不会删除任何内容。";
 
 /* No comment provided by engineer. */
+"Its %@" = "其%@";
+
+/* No comment provided by engineer. */
+"Its mail" = "其邮件";
+
+/* No comment provided by engineer. */
+"Join" = "加入";
+
+/* No comment provided by engineer. */
 "Join %@" = "加入 %@";
 
 /* No comment provided by engineer. */
 "Keyboard Shortcuts" = "键盘快捷键";
+
+/* No comment provided by engineer. */
+"Kind" = "类型";
+
+/* No comment provided by engineer. */
+"Labels" = "标签";
+
+/* No comment provided by engineer. */
+"Last email from them" = "最近一封来自对方的邮件";
 
 /* No comment provided by engineer. */
 "Later Today" = "今天晚些时候";
@@ -446,10 +692,19 @@
 "List" = "列表";
 
 /* No comment provided by engineer. */
+"Made for the Mac" = "为 Mac 打造";
+
+/* No comment provided by engineer. */
 "Mail" = "邮件";
 
 /* No comment provided by engineer. */
+"Mail from %@" = "来自 %@ 的邮件";
+
+/* No comment provided by engineer. */
 "Mail that arrived since you last left Corres. Opening Corres clears it." = "你上次离开 Corres 后收到的邮件。打开 Corres 即清零。";
+
+/* No comment provided by engineer. */
+"Mail's shortcuts, ⌘K to go anywhere, and drag to file. Press ? any time to see every key." = "沿用“邮件”的快捷键，⌘K 前往任意位置，拖移即可归档。随时按 ? 查看所有按键。";
 
 /* No comment provided by engineer. */
 "Mailbox" = "邮箱";
@@ -458,13 +713,25 @@
 "Mailboxes" = "邮箱";
 
 /* No comment provided by engineer. */
+"Mailing list." = "邮件列表。";
+
+/* No comment provided by engineer. */
+"Mailing list. Kept out of Needs You." = "邮件列表。未放入“需要你”。";
+
+/* No comment provided by engineer. */
 "Make Corres the Default" = "将 Corres 设为默认";
 
 /* No comment provided by engineer. */
 "Make VIP" = "设为 VIP";
 
 /* No comment provided by engineer. */
+"Manage Templates…" = "管理模板…";
+
+/* No comment provided by engineer. */
 "Mark as Handled" = "标记为已处理";
+
+/* No comment provided by engineer. */
+"Mark as Read" = "标记为已读";
 
 /* No comment provided by engineer. */
 "Mark as Read or Unread" = "标记为已读或未读";
@@ -476,13 +743,58 @@
 "Mark as read when opened" = "打开时标记为已读";
 
 /* No comment provided by engineer. */
+"Mark as Unread" = "标记为未读";
+
+/* No comment provided by engineer. */
+"Mark Unread" = "标为未读";
+
+/* No comment provided by engineer. */
+"Marked %lld as no action needed" = "已将 %lld 个标为无需处理";
+
+/* No comment provided by engineer. */
+"Marked %lld as read" = "已将 %lld 个标为已读";
+
+/* No comment provided by engineer. */
+"Marked %lld as unread" = "已将 %lld 个标为未读";
+
+/* No comment provided by engineer. */
+"Marked %lld Handled" = "已将 %lld 个标为已处理";
+
+/* No comment provided by engineer. */
+"Marked as no action needed" = "已标为无需处理";
+
+/* No comment provided by engineer. */
+"Marked as read" = "已标为已读";
+
+/* No comment provided by engineer. */
+"Marked as unread" = "已标为未读";
+
+/* No comment provided by engineer. */
+"Marked Handled" = "已标为已处理";
+
+/* No comment provided by engineer. */
 "Maybe" = "待定";
+
+/* No comment provided by engineer. */
+"Mentions “%@”" = "提到“%@”";
+
+/* No comment provided by engineer. */
+"Mentions a deadline." = "提到了截止日期。";
 
 /* No comment provided by engineer. */
 "Message" = "邮件";
 
 /* No comment provided by engineer. */
+"More Formal" = "更正式";
+
+/* No comment provided by engineer. */
 "Move" = "移动";
+
+/* No comment provided by engineer. */
+"Move to" = "移到";
+
+/* No comment provided by engineer. */
+"Move to %@" = "移到 %@";
 
 /* No comment provided by engineer. */
 "Move to Drafts" = "移到草稿";
@@ -497,13 +809,31 @@
 "Moved" = "已移动";
 
 /* No comment provided by engineer. */
+"Moved %lld to %@" = "已将 %lld 个移到%@";
+
+/* No comment provided by engineer. */
 "Moved to %@" = "已移到 %@";
 
 /* No comment provided by engineer. */
 "Moved to Trash" = "已移到废纸篓";
 
 /* No comment provided by engineer. */
+"Mute" = "静音";
+
+/* No comment provided by engineer. */
+"Muted" = "已静音";
+
+/* No comment provided by engineer. */
 "Name" = "名称";
+
+/* No comment provided by engineer. */
+"Name, like Directions or Thanks" = "名称，比如“路线”或“感谢”";
+
+/* No comment provided by engineer. */
+"Name, sender or subject" = "名称、发件人或主题";
+
+/* No comment provided by engineer. */
+"Needs Attention" = "需要留意";
 
 /* No comment provided by engineer. */
 "Needs You" = "需要你";
@@ -515,6 +845,9 @@
 "Needs You, Waiting or Handled" = "需要你、等待中或已处理";
 
 /* No comment provided by engineer. */
+"Never Needs You" = "从不“需要你”";
+
+/* No comment provided by engineer. */
 "New mail" = "新邮件";
 
 /* No comment provided by engineer. */
@@ -524,10 +857,22 @@
 "New Message (⌘N)" = "新邮件（⌘N）";
 
 /* No comment provided by engineer. */
+"New Rule" = "新建规则";
+
+/* No comment provided by engineer. */
+"New sender · %@" = "新发件人 · %@";
+
+/* No comment provided by engineer. */
 "New Senders" = "新发件人";
 
 /* No comment provided by engineer. */
 "New Since Last Opened" = "上次打开后的新邮件";
+
+/* No comment provided by engineer. */
+"New Template" = "新建模板";
+
+/* No comment provided by engineer. */
+"newsletters" = "简报";
 
 /* No comment provided by engineer. */
 "Next Week" = "下周";
@@ -542,13 +887,25 @@
 "No action needed: " = "无需处理：";
 
 /* No comment provided by engineer. */
+"No Attachments" = "没有附件";
+
+/* No comment provided by engineer. */
 "No conversations here." = "这里没有对话。";
+
+/* No comment provided by engineer. */
+"No Matches" = "没有匹配项";
 
 /* No comment provided by engineer. */
 "No number on the icon." = "图标上不显示数字。";
 
 /* No comment provided by engineer. */
+"No Purchases" = "没有购物记录";
+
+/* No comment provided by engineer. */
 "No recipients" = "没有收件人";
+
+/* No comment provided by engineer. */
+"No reply from %@ since %@. Follow up?" = "自%2$@以来 %1$@ 未回复。要跟进吗？";
 
 /* No comment provided by engineer. */
 "No reply in %lld days" = "%lld 天未回复";
@@ -560,7 +917,19 @@
 "No signature selected" = "未选择签名";
 
 /* No comment provided by engineer. */
+"No subject" = "无主题";
+
+/* No comment provided by engineer. */
 "Nothing for you to do" = "你无需做什么";
+
+/* No comment provided by engineer. */
+"Nothing here asks anything of you." = "这里没有任何事需要你处理。";
+
+/* No comment provided by engineer. */
+"Nothing here yet. A rule acts on mail as it arrives, on every account: into Promotions, out of Needs You, marked read, archived." = "还没有规则。规则会在所有账户上处理到达的邮件：放入“促销”、移出“需要你”、标为已读或归档。";
+
+/* No comment provided by engineer. */
+"Nothing here yet. Save replies you write often, like directions, a thank-you or a meeting link, and add one from Templates while you write." = "还没有模板。保存你经常写的回复，比如路线、感谢或会议链接，写邮件时从“模板”中添加。";
 
 /* No comment provided by engineer. */
 "Nothing matches “%@”." = "没有与“%@”匹配的内容。";
@@ -575,13 +944,28 @@
 "Nothing scheduled" = "没有已安排的邮件";
 
 /* No comment provided by engineer. */
+"notifications" = "通知";
+
+/* No comment provided by engineer. */
 "Off" = "关闭";
 
 /* No comment provided by engineer. */
 "OK" = "好";
 
 /* No comment provided by engineer. */
+"On" = "打开";
+
+/* No comment provided by engineer. */
 "On Calendar" = "已在日历中";
+
+/* No comment provided by engineer. */
+"On its way" = "正在运送";
+
+/* No comment provided by engineer. */
+"On the Way" = "运送中";
+
+/* No comment provided by engineer. */
+"On this device and your others through iCloud." = "保存在这台设备上，并通过 iCloud 同步到你的其他设备。";
 
 /* No comment provided by engineer. */
 "One conversation needs you." = "1 个对话需要你。";
@@ -597,6 +981,9 @@
 
 /* No comment provided by engineer. */
 "Only What Needs Me" = "仅需要我处理的";
+
+/* No comment provided by engineer. */
+"Only you see the name, when choosing a template." = "只有你在选择模板时能看到名称。";
 
 /* No comment provided by engineer. */
 "Open" = "打开";
@@ -620,10 +1007,28 @@
 "Open Needs You, Waiting or Mail in Corres." = "在 Corres 中打开“需要你”、“等待中”或“邮件”。";
 
 /* No comment provided by engineer. */
+"Opens its conversation" = "打开所在对话";
+
+/* No comment provided by engineer. */
+"Opens the email" = "打开邮件";
+
+/* No comment provided by engineer. */
+"Order confirmed" = "订单已确认";
+
+/* No comment provided by engineer. */
+"Orders and Receipts" = "订单与收据";
+
+/* No comment provided by engineer. */
 "Organize" = "整理";
 
 /* No comment provided by engineer. */
+"Other" = "其他";
+
+/* No comment provided by engineer. */
 "Other Email" = "其他邮箱";
+
+/* No comment provided by engineer. */
+"Out for delivery" = "正在派送";
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
@@ -638,10 +1043,34 @@
 "Overlaps %@ and %lld more" = "与%@及另外 %lld 项冲突";
 
 /* No comment provided by engineer. */
+"Paid" = "已付款";
+
+/* No comment provided by engineer. */
 "Password" = "密码";
 
 /* No comment provided by engineer. */
+"Pay" = "付款";
+
+/* No comment provided by engineer. */
+"Payment due" = "待付款";
+
+/* No comment provided by engineer. */
+"Payment failed" = "付款失败";
+
+/* No comment provided by engineer. */
 "People and Time-Sensitive" = "个人与时效性";
+
+/* No comment provided by engineer. */
+"Photos and Videos" = "照片和视频";
+
+/* No comment provided by engineer. */
+"Pin" = "置顶";
+
+/* No comment provided by engineer. */
+"Pinned" = "已置顶";
+
+/* No comment provided by engineer. */
+"Placed here by your rule." = "已按你的规则放到这里。";
 
 /* No comment provided by engineer. */
 "Plan" = "方案";
@@ -659,7 +1088,22 @@
 "Print…" = "打印…";
 
 /* No comment provided by engineer. */
+"Private by design" = "隐私至上的设计";
+
+/* No comment provided by engineer. */
+"Promotion." = "促销。";
+
+/* No comment provided by engineer. */
+"Promotion. Kept out of Needs You." = "促销。未放入“需要你”。";
+
+/* No comment provided by engineer. */
 "Promotions" = "促销";
+
+/* No comment provided by engineer. */
+"Proofread" = "校对";
+
+/* No comment provided by engineer. */
+"Purchases" = "购物";
 
 /* No comment provided by engineer. */
 "Quick Look" = "快速查看";
@@ -671,7 +1115,28 @@
 "Read/Unread" = "已读/未读";
 
 /* No comment provided by engineer. */
+"Reads like it needs something from you." = "看起来需要你做些什么。";
+
+/* No comment provided by engineer. */
+"receipts" = "收据";
+
+/* No comment provided by engineer. */
+"Receipts and delivery updates from the last four months show here." = "过去四个月的收据和配送更新会显示在这里。";
+
+/* No comment provided by engineer. */
+"Recent" = "最近";
+
+/* No comment provided by engineer. */
 "Redeem Code" = "兑换代码";
+
+/* No comment provided by engineer. */
+"Refund" = "退款";
+
+/* No comment provided by engineer. */
+"Refunded" = "已退款";
+
+/* No comment provided by engineer. */
+"Register" = "注册";
 
 /* No comment provided by engineer. */
 "Remove" = "移除";
@@ -687,6 +1152,9 @@
 
 /* No comment provided by engineer. */
 "Remove from Calendar" = "从日历中移除";
+
+/* No comment provided by engineer. */
+"Remove Saved Search" = "移除已存储的搜索";
 
 /* No comment provided by engineer. */
 "Remove this attachment" = "移除此附件";
@@ -710,13 +1178,31 @@
 "Reply All (⇧⌘R, or A)" = "全部回复（⇧⌘R 或 A）";
 
 /* No comment provided by engineer. */
+"Report Spam" = "报告垃圾邮件";
+
+/* No comment provided by engineer. */
 "Reported %lld as spam" = "已将 %lld 个报告为垃圾邮件";
 
 /* No comment provided by engineer. */
 "Reported as spam" = "已报告为垃圾邮件";
 
 /* No comment provided by engineer. */
+"Reset password" = "重设密码";
+
+/* No comment provided by engineer. */
 "Restore Purchases" = "恢复购买";
+
+/* No comment provided by engineer. */
+"Review" = "查看";
+
+/* No comment provided by engineer. */
+"RSVP" = "回复邀请";
+
+/* No comment provided by engineer. */
+"Rules" = "规则";
+
+/* No comment provided by engineer. */
+"Rules act on mail that arrives after you make them. They run in order, and on this device and your others through iCloud." = "规则只处理你创建后到达的邮件。它们按顺序运行，在这台设备上以及通过 iCloud 在你的其他设备上运行。";
 
 /* No comment provided by engineer. */
 "Same as Settings" = "与“设置”相同";
@@ -725,13 +1211,34 @@
 "Sample mail · add an account in Settings" = "示例邮件 · 在“设置”中添加账户";
 
 /* No comment provided by engineer. */
+"Save" = "存储";
+
+/* No comment provided by engineer. */
+"Save as Template" = "存为模板";
+
+/* No comment provided by engineer. */
 "Save As…" = "存储为…";
+
+/* No comment provided by engineer. */
+"Save Search" = "存储搜索";
 
 /* No comment provided by engineer. */
 "Save to Downloads" = "存储到“下载”";
 
 /* No comment provided by engineer. */
+"Saved" = "已存储";
+
+/* No comment provided by engineer. */
+"Saved Search" = "已存储的搜索";
+
+/* No comment provided by engineer. */
+"Saved Searches" = "已存储的搜索";
+
+/* No comment provided by engineer. */
 "Schedule" = "安排";
+
+/* No comment provided by engineer. */
+"Search" = "搜索";
 
 /* No comment provided by engineer. */
 "Search, or ask a question" = "搜索或提问";
@@ -773,6 +1280,12 @@
 "Sent today" = "今天已发送";
 
 /* No comment provided by engineer. */
+"Share" = "共享";
+
+/* No comment provided by engineer. */
+"Shorter" = "更简短";
+
+/* No comment provided by engineer. */
 "Show Images" = "显示图片";
 
 /* No comment provided by engineer. */
@@ -785,7 +1298,13 @@
 "Show One Account" = "显示单个账户";
 
 /* No comment provided by engineer. */
+"Show your mail with %@" = "显示与 %@ 的邮件";
+
+/* No comment provided by engineer. */
 "Shows whether you're free then. Your calendar stays on this device." = "显示你那时是否有空。你的日历只保留在这台设备上。";
+
+/* No comment provided by engineer. */
+"Sign" = "签署";
 
 /* No comment provided by engineer. */
 "Sign In" = "登录";
@@ -809,13 +1328,28 @@
 "Snooze until…" = "稍后提醒至…";
 
 /* No comment provided by engineer. */
+"Snooze…" = "稍后提醒…";
+
+/* No comment provided by engineer. */
 "Snoozed" = "稍后提醒";
 
 /* No comment provided by engineer. */
 "Social" = "社交";
 
 /* No comment provided by engineer. */
+"Social notification." = "社交通知。";
+
+/* No comment provided by engineer. */
+"Social notification. Kept out of Needs You." = "社交通知。未放入“需要你”。";
+
+/* No comment provided by engineer. */
+"Something failed that only you can fix." = "出现了只有你能解决的问题。";
+
+/* No comment provided by engineer. */
 "Something Went Wrong" = "出了点问题";
+
+/* No comment provided by engineer. */
+"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service." = "分类、摘要和草稿都在这台 Mac 上完成。你的邮件绝不会发送到我们的服务器或 AI 服务。";
 
 /* No comment provided by engineer. */
 "Spam" = "垃圾邮件";
@@ -824,7 +1358,25 @@
 "Start a new email in Corres." = "在 Corres 中新建邮件。";
 
 /* No comment provided by engineer. */
+"Subject" = "主题";
+
+/* No comment provided by engineer. */
+"Subject (optional)" = "主题（可选）";
+
+/* No comment provided by engineer. */
+"Subject has “%@”" = "主题包含“%@”";
+
+/* No comment provided by engineer. */
 "Summaries (Apple Intelligence, on this Mac)" = "摘要（Apple 智能，在这台 Mac 上）";
+
+/* No comment provided by engineer. */
+"Templates" = "模板";
+
+/* No comment provided by engineer. */
+"Text" = "正文";
+
+/* No comment provided by engineer. */
+"The few conversations that ask something of you, with the reason for each." = "需要你回应的对话，以及各自的原因。";
 
 /* No comment provided by engineer. */
 "The organizer canceled this event." = "组织者已取消此日程。";
@@ -839,13 +1391,28 @@
 "The organizer changed this event. You'd said maybe to the earlier version." = "组织者更改了此日程。你之前回复了“待定”。";
 
 /* No comment provided by engineer. */
+"Their mail is hidden in Corres from now on, with no notice to them. Your email account isn't changed." = "从现在起，对方的邮件会在 Corres 中隐藏，且不会通知对方。你的邮件账户不会更改。";
+
+/* No comment provided by engineer. */
 "This email is from a mailing list." = "这封邮件来自邮件列表。";
 
 /* No comment provided by engineer. */
 "This Weekend" = "本周末";
 
 /* No comment provided by engineer. */
+"Time-sensitive." = "有时效性。";
+
+/* No comment provided by engineer. */
+"To" = "收件人";
+
+/* No comment provided by engineer. */
 "To " = "发给";
+
+/* No comment provided by engineer. */
+"To “%@”" = "发给“%@”";
+
+/* No comment provided by engineer. */
+"To: %@" = "发给：%@";
 
 /* No comment provided by engineer. */
 "Today" = "今天";
@@ -863,13 +1430,40 @@
 "tomorrow at %@" = "明天 %@";
 
 /* No comment provided by engineer. */
+"Track package" = "追踪包裹";
+
+/* No comment provided by engineer. */
+"Translate" = "翻译";
+
+/* No comment provided by engineer. */
 "Trash" = "废纸篓";
+
+/* No comment provided by engineer. */
+"Try another name." = "试试别的名称。";
 
 /* No comment provided by engineer. */
 "Undo" = "撤销";
 
 /* No comment provided by engineer. */
+"Unflag" = "取消旗标";
+
+/* No comment provided by engineer. */
+"Unflagged" = "已取消旗标";
+
+/* No comment provided by engineer. */
+"Unmute" = "取消静音";
+
+/* No comment provided by engineer. */
+"Unpinned" = "已取消置顶";
+
+/* No comment provided by engineer. */
 "Unread" = "未读";
+
+/* No comment provided by engineer. */
+"Unread for over a month." = "超过一个月未读。";
+
+/* No comment provided by engineer. */
+"Unread for over a month. Kept out of Needs You." = "超过一个月未读。未放入“需要你”。";
 
 /* No comment provided by engineer. */
 "Unread in Primary" = "“主要”中的未读";
@@ -878,13 +1472,31 @@
 "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "来自个人的未读邮件以及任何紧急邮件。不计入促销、社交和动态。";
 
 /* No comment provided by engineer. */
+"Unread, from a person." = "未读，来自个人。";
+
+/* No comment provided by engineer. */
+"Unread, from someone you've written to." = "未读，来自你写过信的人。";
+
+/* No comment provided by engineer. */
+"Unread." = "未读。";
+
+/* No comment provided by engineer. */
+"Unsnooze" = "取消稍后提醒";
+
+/* No comment provided by engineer. */
 "Unsubscribe" = "退订";
 
 /* No comment provided by engineer. */
 "Unsubscribed. You won't get more from this list." = "已退订。你不会再收到此列表的邮件。";
 
 /* No comment provided by engineer. */
+"Untitled" = "未命名";
+
+/* No comment provided by engineer. */
 "Unwanted Mail" = "不想要的邮件";
+
+/* No comment provided by engineer. */
+"Update payment" = "更新付款信息";
 
 /* No comment provided by engineer. */
 "Updated %@" = "更新于 %@";
@@ -902,6 +1514,18 @@
 "Use for" = "用于";
 
 /* No comment provided by engineer. */
+"Used only when the email has no subject yet." = "仅在邮件还没有主题时使用。";
+
+/* No comment provided by engineer. */
+"Verify" = "验证";
+
+/* No comment provided by engineer. */
+"View" = "查看";
+
+/* No comment provided by engineer. */
+"VIP" = "VIP";
+
+/* No comment provided by engineer. */
 "Waiting" = "等待中";
 
 /* No comment provided by engineer. */
@@ -911,10 +1535,37 @@
 "Waiting: " = "等待中：";
 
 /* No comment provided by engineer. */
+"Warmer" = "更亲切";
+
+/* No comment provided by engineer. */
 "Was %@" = "截止%@";
 
 /* No comment provided by engineer. */
 "What Needs Me" = "需要我处理的";
+
+/* No comment provided by engineer. */
+"What needs you, first" = "需要你的，先看到";
+
+/* No comment provided by engineer. */
+"When" = "时间";
+
+/* No comment provided by engineer. */
+"When an email" = "当邮件的";
+
+/* No comment provided by engineer. */
+"When you can" = "有空再看";
+
+/* No comment provided by engineer. */
+"Won't flag %@ again" = "不再标记%@";
+
+/* No comment provided by engineer. */
+"Words anywhere in the email" = "邮件中任意位置的词语";
+
+/* No comment provided by engineer. */
+"Words in the subject" = "主题中的词语";
+
+/* No comment provided by engineer. */
+"Write" = "写邮件";
 
 /* No comment provided by engineer. */
 "Yahoo, AOL, Fastmail, Zoho or a work server. Corres finds the server settings for you." = "Yahoo、AOL、Fastmail、Zoho 或工作服务器。Corres 会帮你找到服务器设置。";
@@ -926,10 +1577,19 @@
 "You accepted" = "你已接受";
 
 /* No comment provided by engineer. */
+"You asked. No reply yet." = "你提了问题，还没有回复。";
+
+/* No comment provided by engineer. */
 "You declined" = "你已拒绝";
 
 /* No comment provided by engineer. */
+"You forwarded this just now. Waiting for their response." = "你刚刚转发了邮件，正在等待回复。";
+
+/* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "你还没有打开 %2$@ 最近的 %1$lld 封邮件。";
+
+/* No comment provided by engineer. */
+"You last wrote" = "你最近一次写信";
 
 /* No comment provided by engineer. */
 "You read %@'s email within %lld minutes." = "你会在 %2$lld 分钟内阅读 %1$@ 的邮件。";
@@ -938,7 +1598,28 @@
 "You read %@'s email within a minute." = "你会在一分钟内阅读 %@ 的邮件。";
 
 /* No comment provided by engineer. */
+"You replied just now. Waiting for their response." = "你刚刚回复了，正在等待对方回复。";
+
+/* No comment provided by engineer. */
+"You replied. Nothing pending." = "你已回复，没有待处理的事。";
+
+/* No comment provided by engineer. */
+"You said mail like this needs no action." = "你说过这类邮件无需处理。";
+
+/* No comment provided by engineer. */
 "You said maybe" = "你回复了待定";
+
+/* No comment provided by engineer. */
+"You sent this. Nothing pending." = "这是你发出的，没有待处理的事。";
+
+/* No comment provided by engineer. */
+"You started this conversation. Waiting for a response." = "这是你发起的对话，正在等待回复。";
+
+/* No comment provided by engineer. */
+"You're copied, not asked." = "你只是被抄送，没有被询问。";
+
+/* No comment provided by engineer. */
+"You're copied, not asked. Kept out of Needs You." = "你只是被抄送，没有被询问。未放入“需要你”。";
 
 /* No comment provided by engineer. */
 "You're free then" = "你那时有空";

@@ -14,6 +14,8 @@ struct ReadingPane: View {
     @State private var showImages = false
     @State private var showEarlier = false
     @State private var invitation: Invitation?
+    @State private var personCard: PersonRef?
+    @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
 
     private var intelligence: MailIntelligence { services.intelligence }
@@ -25,6 +27,7 @@ struct ReadingPane: View {
                     .padding(.horizontal, 28)
                     .padding(.top, 22)
                     .padding(.bottom, 14)
+                    .sheet(item: $personCard) { personSheet($0) }
                 statusCard
                     .padding(.horizontal, 28)
                     .padding(.bottom, 14)
@@ -74,6 +77,17 @@ struct ReadingPane: View {
 
     // MARK: Header
 
+    private func personSheet(_ person: PersonRef) -> some View {
+        PersonView(person: person, store: services.store,
+                   open: { id in AppRouter.shared.pending = .thread(id) },
+                   write: { address in openWindow(value: ComposeRequest(kind: .new, to: address)) })
+    }
+
+    private func showPerson() {
+        guard !thread.isFromAccountOwner, let email = thread.senderEmail else { return }
+        personCard = PersonRef(email: email, name: thread.sender, account: thread.id.account)
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(thread.subject.isEmpty ? String(localized: "No subject") : thread.subject)
@@ -82,10 +96,18 @@ struct ReadingPane: View {
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(alignment: .top, spacing: 12) {
-                CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail, size: CGSize(width: 38, height: 38))
+                Button { showPerson() } label: {
+                    CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail, size: CGSize(width: 38, height: 38))
+                }
+                .buttonStyle(.plain)
+                .help("Show your mail with \(thread.sender)")
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(thread.sender).font(.headline).foregroundStyle(CorresPalette.ink)
+                        Button { showPerson() } label: {
+                            Text(thread.sender).font(.headline).foregroundStyle(CorresPalette.ink)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Show your mail with \(thread.sender)")
                         if let email = thread.senderEmail, email.lowercased() != thread.sender.lowercased() {
                             Text(email).font(.subheadline).foregroundStyle(CorresPalette.secondary)
                                 .textSelection(.enabled)

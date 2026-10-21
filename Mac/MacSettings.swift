@@ -13,6 +13,10 @@ struct MacSettingsView: View {
                 .tabItem { Label("General", systemImage: "gearshape") }
             MacSignaturesSettings(accounts: services.auth.accounts.map(\.email))
                 .tabItem { Label("Signatures", systemImage: "signature") }
+            NavigationStack { TemplatesView() }
+                .tabItem { Label("Templates", systemImage: "text.badge.plus") }
+            NavigationStack { RulesView() }
+                .tabItem { Label("Rules", systemImage: "line.3.horizontal.decrease") }
             MacPlanSettings(entitlements: services.entitlements)
                 .tabItem { Label("Corres Pro", systemImage: "sparkle") }
         }

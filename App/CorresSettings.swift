@@ -181,7 +181,7 @@ enum CorresSettings {
              unread = "Mark Unread", pin = "Pin", replyAll = "Reply All", forward = "Forward",
              moveTo = "Move to", labels = "Labels", spam = "Report Spam", block = "Block Sender",
              unsubscribe = "Unsubscribe", vip = "VIP", calendar = "Add to Calendar",
-             share = "Share", print = "Print", translate = "Translate"
+             share = "Share", print = "Print", translate = "Translate", mute = "Mute"
         var id: String { rawValue }
         var systemImage: String {
             switch self {
@@ -203,6 +203,7 @@ enum CorresSettings {
             case .share: "square.and.arrow.up"
             case .print: "printer"
             case .translate: "translate"
+            case .mute: "bell.slash"
             }
         }
 
@@ -227,6 +228,7 @@ enum CorresSettings {
             case .share: String(localized: "Share")
             case .print: String(localized: "Print")
             case .translate: String(localized: "Translate")
+            case .mute: String(localized: "Mute")
             }
         }
 
@@ -235,7 +237,7 @@ enum CorresSettings {
             switch self {
             case .archive, .trash, .flag, .snooze, .unread, .pin: String(localized: "Everyday")
             case .replyAll, .forward, .share, .print: String(localized: "Send and Share")
-            case .moveTo, .labels, .vip, .calendar, .translate: String(localized: "Organize")
+            case .moveTo, .labels, .vip, .calendar, .translate, .mute: String(localized: "Organize")
             case .spam, .block, .unsubscribe: String(localized: "Unwanted Mail")
             }
         }
