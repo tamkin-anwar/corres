@@ -331,8 +331,8 @@ final class ThreadCellView: NSTableCellView {
         isUnread = thread.isUnread
         self.showsReason = showsReason
         sender.stringValue = thread.isFromAccountOwner && !thread.toRecipients.isEmpty
-            ? "To: " + thread.counterpartName() : thread.sender
-        subject.stringValue = thread.subject.isEmpty ? "(No subject)" : thread.subject
+            ? String(localized: "To: \(thread.counterpartName())") : thread.sender
+        subject.stringValue = thread.subject.isEmpty ? String(localized: "No subject") : thread.subject
         time.stringValue = MacDates.short(thread.receivedAt)
         symbols = []
         if thread.isSnoozed(at: .now) { symbols.append(("moon.zzz.fill", .secondaryLabelColor)) }
@@ -344,14 +344,23 @@ final class ThreadCellView: NSTableCellView {
         if showsReason, !thread.reason.isEmpty {
             // The reason, then the preview: one line each.
             let preview = thread.excerpt.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\n", with: " ")
-            detail.stringValue = "↪ " + thread.reason + (preview.isEmpty ? "" : "\n" + preview)
+            detail.stringValue = "↪ " + thread.displayReason + (preview.isEmpty ? "" : "\n" + preview)
             detail.maximumNumberOfLines = 2
         } else {
             detail.stringValue = thread.excerpt.trimmingCharacters(in: .whitespacesAndNewlines)
             detail.maximumNumberOfLines = 2
         }
         updateColors()
-        setAccessibilityLabel("\(thread.isUnread ? "Unread. " : "")\(thread.sender). \(thread.subject). \(MacDates.short(thread.receivedAt))")
+        // VoiceOver hears what the row shows: its state, who, what, when
+        // and why it's here.
+        var spoken: [String] = []
+        if thread.isUnread { spoken.append(String(localized: "Unread")) }
+        if thread.isFlagged { spoken.append(String(localized: "Flagged")) }
+        if thread.isPinned { spoken.append(String(localized: "Pinned")) }
+        spoken += [sender.stringValue, subject.stringValue, time.stringValue]
+        if !thread.attachments.isEmpty { spoken.append(String(localized: "Has attachments")) }
+        if showsReason, !thread.reason.isEmpty { spoken.append(thread.displayReason) }
+        setAccessibilityLabel(spoken.joined(separator: ", "))
     }
 
     override var backgroundStyle: NSView.BackgroundStyle {

@@ -62,7 +62,7 @@ final class MacPrinter: NSObject, WKNavigationDelegate {
         img { max-width: 100%; height: auto; }
         </style></head><body>
         <div class="head">
-        <h1 class="subject">\(escape(thread.subject.isEmpty ? "(No subject)" : thread.subject))</h1>
+        <h1 class="subject">\(escape(thread.subject.isEmpty ? String(localized: "No subject") : thread.subject))</h1>
         <p class="row"><b>From:</b> \(from)</p>
         \(to.isEmpty ? "" : "<p class=\"row\"><b>To:</b> \(to)</p>")
         <p class="row"><b>Date:</b> \(escape(date))</p>

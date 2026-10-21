@@ -222,7 +222,8 @@ final class SemanticTriageService {
     recipient — not whether it is generically "important." Newsletters, \
     marketing, receipts, automated notifications, and FYI-only messages do not \
     need a reply even when they are relevant or worth reading. Be decisive. \
-    Keep the reason short, specific, and in plain language, as if explaining \
+    Keep the reason short, specific, and in plain language, in the same \
+    language as the message, as if explaining \
     the decision to the recipient in one breath. Describe only what the \
     message itself says, in its own terms: a card-used notice is a card-used \
     notice, not a fraud alert, and a reminder is not overdue. Never add \

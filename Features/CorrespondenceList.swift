@@ -130,7 +130,7 @@ struct CorrespondenceRow: View {
                         ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
                         : AnyLayout(HStackLayout(spacing: 8))
                     layout {
-                        ReasonLine(text: thread.reason, isIntelligence: thread.isIntelligenceReason)
+                        ReasonLine(text: thread.displayReason, isIntelligence: thread.isIntelligenceReason)
                         if !typeSize.isAccessibilitySize { Spacer(minLength: 4) }
                         if let due = thread.dueAt, thread.attention == .needsYou {
                             DueChip(date: due, isEvent: MailSignals.isEvent(thread.subject + "\n" + thread.excerpt))
@@ -174,6 +174,7 @@ extension Correspondence {
 }
 
 struct CorrespondenceList: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     var scrolls = true
     let store: MailStore
     /// Optional: nil only for the offline preview-render script, which never
@@ -310,7 +311,8 @@ struct CorrespondenceList: View {
                 cache.waitingCount = waiting.count
                 cache.longestWait = waiting.map(\.waitingReference).min().map { oldest in
                     let days = Calendar.current.dateComponents([.day], from: oldest, to: .now).day ?? 0
-                    return days < 1 ? "Since today" : "Longest \(days) \(days == 1 ? "day" : "days")"
+                    return days < 1 ? String(localized: "Since today")
+                        : days == 1 ? String(localized: "Longest 1 day") : String(localized: "Longest \(days) days")
                 }
                 let pending = AccountPreferences.scope(store.pendingSenderThreads, account: accountFilter,
                                                        all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
@@ -651,7 +653,7 @@ struct CorrespondenceList: View {
         }
     }
 
-    private func bulkButton(_ icon: String, _ label: String, action: @escaping () async -> Void) -> some View {
+    private func bulkButton(_ icon: String, _ label: LocalizedStringKey, action: @escaping () async -> Void) -> some View {
         Button {
             Task {
                 await action()
@@ -663,7 +665,7 @@ struct CorrespondenceList: View {
         .disabled(selected.isEmpty)
     }
 
-    private func bulkLabel(_ icon: String, _ label: String) -> some View {
+    private func bulkLabel(_ icon: String, _ label: LocalizedStringKey) -> some View {
         Image(systemName: icon)
             .font(.body.weight(.medium))
             .frame(maxWidth: .infinity, minHeight: 50)
@@ -843,7 +845,9 @@ struct CorrespondenceList: View {
                 Hairline(leading: 52)
                 Button { showingScreener.wrappedValue = true } label: {
                     shortcutRow(icon: "checkmark.shield",
-                                title: "\(senders == 1 ? "1 new sender" : "\(senders) new senders") \(MailQuery.holdsNewSenders ? "to approve" : "to review")",
+                                title: MailQuery.holdsNewSenders
+                                    ? (senders == 1 ? "1 new sender to approve" : "\(senders) new senders to approve")
+                                    : (senders == 1 ? "1 new sender to review" : "\(senders) new senders to review"),
                                 detail: nil)
                 }
                 .buttonStyle(.plain)
@@ -853,19 +857,30 @@ struct CorrespondenceList: View {
         .padding(.horizontal, CorresSpace.page).padding(.top, 8).padding(.bottom, 6)
     }
 
-    private func shortcutRow(icon: String, title: String, detail: String?) -> some View {
+    private func shortcutRow(icon: String, title: LocalizedStringKey, detail: String?) -> some View {
         HStack(spacing: 14) {
-            Image(systemName: icon).font(.body).foregroundStyle(CorresPalette.secondary).frame(width: 24)
-            Text(title).foregroundStyle(CorresPalette.ink).lineLimit(1).layoutPriority(1)
-            Spacer(minLength: 8)
-            if let detail { Text(detail).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(1) }
+            Image(systemName: icon).font(.body).foregroundStyle(CorresPalette.secondary)
+                .frame(width: typeSize.isAccessibilitySize ? nil : 24)
+            if typeSize.isAccessibilitySize {
+                // At the largest sizes the count and the wait each get
+                // their own lines rather than both being cut short.
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).foregroundStyle(CorresPalette.ink)
+                    if let detail { Text(detail).font(.subheadline).foregroundStyle(CorresPalette.secondary) }
+                }
+                Spacer(minLength: 8)
+            } else {
+                Text(title).foregroundStyle(CorresPalette.ink).lineLimit(1).layoutPriority(1)
+                Spacer(minLength: 8)
+                if let detail { Text(detail).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(1) }
+            }
             Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.tertiary)
         }
         .padding(.horizontal, 14).padding(.vertical, 13)
         .contentShape(Rectangle())
     }
 
-    private func groupLabel(_ title: String) -> some View {
+    private func groupLabel(_ title: LocalizedStringKey) -> some View {
         Text(title).eyebrow()
             .padding(.horizontal, CorresSpace.page).padding(.top, 14).padding(.bottom, 2)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -916,7 +931,7 @@ struct CorrespondenceList: View {
         ContentUnavailableView {
             Label(search.isEmpty ? emptyTitle : "No conversations found", systemImage: search.isEmpty ? "checkmark.circle" : "magnifyingglass")
         } description: {
-            Text(search.isEmpty ? emptyDetail : "Try a name, subject, or organization.")
+            Text(search.isEmpty ? emptyDetail : String(localized: "Try a name, subject, or organization."))
         }
         .padding(.horizontal, CorresSpace.page)
     }

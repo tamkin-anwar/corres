@@ -56,6 +56,14 @@ final class MailIntelligence {
     enum Tone: String, CaseIterable, Identifiable {
         case shorter = "Shorter", warmer = "Warmer", formal = "More Formal", proofread = "Proofread"
         var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .shorter: String(localized: "Shorter")
+            case .warmer: String(localized: "Warmer")
+            case .formal: String(localized: "More Formal")
+            case .proofread: String(localized: "Proofread")
+            }
+        }
         var instruction: String {
             switch self {
             case .shorter: "Make it noticeably shorter and more direct. Keep every fact, date, and commitment."
@@ -529,7 +537,8 @@ final class MailIntelligence {
     only if the email does. Never state an action, request, approval or \
     change the email doesn't describe; when an email says little (mostly \
     images, captions or a template), say only what is literally there. \
-    Some text may be marked as omitted; never guess at it.
+    Some text may be marked as omitted; never guess at it. Write in the \
+    same language as the email.
     """
 
     @available(iOS 26.0, macOS 26.0, *)
@@ -603,7 +612,8 @@ final class MailIntelligence {
     natural, concise, human voice: no filler, no clichés like "I hope this \
     email finds you well," no subject line, no placeholders in brackets. \
     Never invent facts, dates, prices, or commitments the person didn't \
-    give. Output only the email text.
+    give. Write in the language of the email being answered, or of the \
+    person's own words if there is no email. Output only the email text.
     """
 
     // MARK: - Text

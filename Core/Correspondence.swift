@@ -1172,3 +1172,72 @@ extension Correspondence {
         }
     }
 }
+
+extension InboxClassifier {
+    /// The reasons above in the reader's language. They're stored in
+    /// English (they're compared and re-run as rules), so they're translated
+    /// only when shown. A reason the on-device check wrote is already in the
+    /// email's own language and passes through unchanged.
+    public static func displayReason(_ reason: String) -> String {
+        if let known = displayReasons[reason] { return known }
+        // Written when you send, with a verb or a name in it.
+        if reason == "You replied just now. Waiting for their response." {
+            return String(localized: "You replied just now. Waiting for their response.")
+        }
+        if reason == "You forwarded this just now. Waiting for their response." {
+            return String(localized: "You forwarded this just now. Waiting for their response.")
+        }
+        if let match = reason.firstMatch(of: /^No reply from (.+) since (.+)\. Follow up\?$/) {
+            let name = String(match.1), day = String(match.2)
+            return String(localized: "No reply from \(name) since \(day). Follow up?")
+        }
+        return reason
+    }
+
+    private static let displayReasons: [String: String] = [
+        legacyUnreadReason: String(localized: "Unread."),
+        personalUnreadReason: String(localized: "Unread, from a person."),
+        correspondentReason: String(localized: "Unread, from someone you've written to."),
+        staleReason: String(localized: "Unread for over a month. Kept out of Needs You."),
+        readReason: String(localized: "Already read."),
+        legacyReadReason: String(localized: "Already read."),
+        questionReason: String(localized: "Asks you something."),
+        deadlineReason: String(localized: "Mentions a deadline."),
+        obligationReason: String(localized: "Time-sensitive."),
+        copiedReason: String(localized: "You're copied, not asked. Kept out of Needs You."),
+        vipReason: String(localized: "From a VIP."),
+        fyiReason: String(localized: "From a person, nothing asked. Kept out of Needs You."),
+        askedReason: String(localized: "You asked. No reply yet."),
+        repliedReason: String(localized: "You replied. Nothing pending."),
+        startedReason: String(localized: "You sent this. Nothing pending."),
+        lessonReason: String(localized: "You said mail like this needs no action."),
+        failureReason: String(localized: "Something failed that only you can fix."),
+        paymentReason: String(localized: "Asks you to pay."),
+        promotedReason: String(localized: "Reads like it needs something from you."),
+        demotedReason: String(localized: "Nothing here asks anything of you."),
+        fromYouReason: String(localized: "From your other account. Kept out of Needs You."),
+        confirmationReason: String(localized: "Confirms something you did. Nothing to do unless it wasn't you."),
+        BulkKind.promotions.reason: String(localized: "Promotion. Kept out of Needs You."),
+        BulkKind.social.reason: String(localized: "Social notification. Kept out of Needs You."),
+        BulkKind.forums.reason: String(localized: "Mailing list. Kept out of Needs You."),
+        BulkKind.updates.reason: String(localized: "Automated update. Kept out of Needs You."),
+        BulkKind.automated.reason: String(localized: "Bulk mail. Kept out of Needs You."),
+        "You started this conversation. Waiting for a response.": String(localized: "You started this conversation. Waiting for a response."),
+        // As they read once "Kept out of Needs You" is taken off, where the
+        // line already says so.
+        "Promotion.": String(localized: "Promotion."),
+        "Social notification.": String(localized: "Social notification."),
+        "Mailing list.": String(localized: "Mailing list."),
+        "Automated update.": String(localized: "Automated update."),
+        "Bulk mail.": String(localized: "Bulk mail."),
+        "Unread for over a month.": String(localized: "Unread for over a month."),
+        "You're copied, not asked.": String(localized: "You're copied, not asked."),
+        "From a person, nothing asked.": String(localized: "From a person, nothing asked."),
+        "From your other account.": String(localized: "From your other account."),
+    ]
+}
+
+extension Correspondence {
+    /// `reason`, in the reader's language.
+    public var displayReason: String { InboxClassifier.displayReason(reason) }
+}

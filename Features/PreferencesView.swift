@@ -102,7 +102,7 @@ struct PreferencesView: View {
                         NotificationSettingsView(auth: auth, pushService: pushService, store: store)
                     } label: {
                         LabeledContent {
-                            Text(auth.accounts.isEmpty ? "Needs an Account" : (pushService.isEnabled ? "On" : "Off"))
+                            Text(auth.accounts.isEmpty ? String(localized: "Needs an Account") : (pushService.isEnabled ? String(localized: "On") : String(localized: "Off")))
                         } label: {
                             settingLabel("Notifications", "bell.badge")
                         }
@@ -429,7 +429,7 @@ struct PreferencesView: View {
         return build.map { "\(short) (\($0))" } ?? short
     }
 
-    private func settingLabel(_ title: String, _ icon: String) -> some View {
+    private func settingLabel(_ title: LocalizedStringKey, _ icon: String) -> some View {
         Label {
             Text(title)
         } icon: {
@@ -808,7 +808,7 @@ private struct SignaturesView: View {
                         SignatureDefaultPicker(account: account, reply: false)
                         SignatureDefaultPicker(account: account, reply: true)
                     } header: {
-                        Text(account == "sample" ? "Defaults" : AccountPreferences.nickname(for: account) + " · " + account)
+                        Text(account == "sample" ? String(localized: "Defaults") : AccountPreferences.nickname(for: account) + " · " + account)
                     }
                 }
             }
@@ -861,7 +861,7 @@ private struct SignatureEditor: View {
             }
             .scrollContentBackground(.hidden)
             .background(CorresPalette.canvas)
-            .navigationTitle(signature.name.isEmpty ? "New Signature" : signature.name)
+            .navigationTitle(signature.name.isEmpty ? String(localized: "New Signature") : signature.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel", role: .cancel) { dismiss() } }
@@ -1198,7 +1198,7 @@ private struct ReadingBarSettingsView: View {
         List {
             Section {
                 ForEach(actions) { action in
-                    Label(action.rawValue, systemImage: action.systemImage)
+                    Label(action.title, systemImage: action.systemImage)
                 }
                 .onMove { from, to in
                     var updated = actions
@@ -1223,14 +1223,14 @@ private struct ReadingBarSettingsView: View {
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: "plus.circle.fill").foregroundStyle(isFull ? CorresPalette.tertiary : .green)
-                                Label(action.rawValue, systemImage: action.systemImage).foregroundStyle(CorresPalette.ink)
+                                Label(action.title, systemImage: action.systemImage).foregroundStyle(CorresPalette.ink)
                             }
                         }
                         .disabled(isFull)
-                        .accessibilityLabel("Add \(action.rawValue)")
+                        .accessibilityLabel("Add \(action.title)")
                     }
                 } header: {
-                    Text(group == groups.first ? "In the ⋯ menu · \(group)" : group)
+                    Text(group == groups.first ? String(localized: "In the ⋯ menu · \(group)") : group)
                 } footer: {
                     if group == groups.last {
                         Text(isFull ? "The bar is full. Remove one to add another." : "Still a tap away under ⋯ on the bar. An action that doesn't apply to an email (Unsubscribe without a list, Add to Calendar without an event) is dimmed on the bar.")
@@ -1419,7 +1419,7 @@ private struct PrivacyView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func row(_ title: String, _ icon: String, _ detail: String) -> some View {
+    private func row(_ title: LocalizedStringKey, _ icon: String, _ detail: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: icon).font(.title3).foregroundStyle(CorresPalette.accent).frame(width: 28)
             VStack(alignment: .leading, spacing: 4) {

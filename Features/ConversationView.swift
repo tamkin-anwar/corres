@@ -14,6 +14,7 @@ struct ConversationRoute: Hashable {
 }
 
 struct ConversationView: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.colorScheme) private var colorSchemeForPage
     let store: MailStore
     let outbox: OutboxService
@@ -406,7 +407,7 @@ struct ConversationView: View {
             CorrespondentAvatar(initials: thread.isFromAccountOwner ? "Y" : thread.initials,
                                 email: thread.isFromAccountOwner ? nil : thread.senderEmail, size: CGSize(width: 44, height: 44))
             VStack(alignment: .leading, spacing: 2) {
-                Text(thread.isFromAccountOwner ? "You" : thread.sender).font(.body.weight(.semibold))
+                Text(thread.isFromAccountOwner ? String(localized: "You") : thread.sender).font(.body.weight(.semibold))
                 Text(recipientLine(for: thread))
                     .font(.subheadline).foregroundStyle(CorresPalette.secondary)
                     .lineLimit(1)
@@ -534,7 +535,7 @@ struct ConversationView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(summaryCollapsed ? "\(title), collapsed" : title)
+            .accessibilityLabel(summaryCollapsed ? String(localized: "\(title), collapsed") : title)
             .accessibilityHint(summaryCollapsed ? "Shows the summary" : "Hides the summary")
             if !summaryCollapsed {
                 Text(summary)
@@ -600,42 +601,63 @@ struct ConversationView: View {
                 nextStepRow(nextStep)
                 Hairline().padding(.vertical, 2)
             }
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(statusLine(for: thread))
-                    .font(.footnote)
-                    .foregroundStyle(CorresPalette.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 8)
-                // One tap to take it out of Needs You (it stays in Mail);
-                // under Change alone, testers didn't find it.
-                if thread.attention(at: .now) == .needsYou {
-                    Button {
-                        Task { await threadActions.setAttention(.handled, for: thread) }
-                    } label: {
-                        Label("Handled", systemImage: "checkmark.circle")
-                            .font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.accent)
-                            .frame(minHeight: 32)
+            // At the largest text sizes the line gets the full width and
+            // its buttons go under it; side by side, both broke mid-word.
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(statusLine(for: thread))
+                        .font(.footnote)
+                        .foregroundStyle(CorresPalette.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 18) { statusActions(for: thread) }
+                        VStack(alignment: .leading, spacing: 4) { statusActions(for: thread) }
                     }
-                    .accessibilityHint("Takes this out of Needs You. It stays in Mail.")
                 }
-                Menu {
-                    Section("Move To") {
-                        AttentionChoices(current: thread.attention) { attention in
-                            Task { await threadActions.setAttention(attention, for: thread) }
-                        }
-                    }
-                    CategoryMenuItems(thread: thread) { categoryChoice = $0 }
-                } label: {
-                    Text("Change").font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.accent)
-                        .frame(minHeight: 32)
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(statusLine(for: thread))
+                        .font(.footnote)
+                        .foregroundStyle(CorresPalette.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    statusActions(for: thread)
                 }
-                .accessibilityLabel("Change where this conversation is sorted")
             }
         }
         .padding(.horizontal, hasMore ? 16 : 0).padding(.vertical, hasMore ? 12 : 0)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background { if hasMore { Color.clear.corresSurface(radius: 18) } }
         .animation(.easeOut(duration: 0.25), value: insight)
+    }
+
+    /// Handled and Change, beside or under the status line.
+    @ViewBuilder
+    private func statusActions(for thread: Correspondence) -> some View {
+        // One tap to take it out of Needs You (it stays in Mail);
+        // under Change alone, testers didn't find it.
+        if thread.attention(at: .now) == .needsYou {
+            Button {
+                Task { await threadActions.setAttention(.handled, for: thread) }
+            } label: {
+                Label("Handled", systemImage: "checkmark.circle")
+                    .font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                    .frame(minHeight: 32)
+            }
+            .accessibilityHint("Takes this out of Needs You. It stays in Mail.")
+        }
+        Menu {
+            Section("Move To") {
+                AttentionChoices(current: thread.attention) { attention in
+                    Task { await threadActions.setAttention(attention, for: thread) }
+                }
+            }
+            CategoryMenuItems(thread: thread) { categoryChoice = $0 }
+        } label: {
+            Text("Change").font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                .frame(minHeight: 32)
+        }
+        .accessibilityLabel("Change where this conversation is sorted")
     }
 
     /// Where this conversation sits and why. Handled says where it went
@@ -653,8 +675,9 @@ struct ConversationView: View {
             let reason = thread.reason.replacingPattern(#"(?i)[\s,;.—–-]*no action (is )?needed[.!]?"#, with: "")
                 .replacingPattern(#"(?i)\s*kept out of needs you\.?"#, with: "")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            return reason.isEmpty ? String(localized: "No action needed.") : String(localized: "No action needed: \(reason)")
-        default: return thread.reason.isEmpty ? thread.attention.title : "\(thread.attention.title): \(thread.reason)"
+            return reason.isEmpty ? String(localized: "No action needed.")
+                : String(localized: "No action needed: \(InboxClassifier.displayReason(reason))")
+        default: return thread.reason.isEmpty ? thread.attention.title : "\(thread.attention.title): \(thread.displayReason)"
         }
     }
 
@@ -977,9 +1000,16 @@ struct ConversationView: View {
             .background(CorresMetalBackground(shape: AnyShape(Circle())))
             .accessibilityLabel("Reply")
             .accessibilityHint("Press and hold for Reply All and Forward")
+            .accessibilityShowsLargeContentViewer {
+                Image(systemName: "arrowshape.turn.up.left.fill")
+                Text("Reply")
+            }
         }
         .disabled(store.pending.contains(thread.id))
         .padding(.horizontal, CorresSpace.medium)
+        // The bar keeps its size at the largest text sizes, as the system
+        // bars do; press and hold shows an action large instead.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 
     @Environment(\.colorScheme) private var scheme
@@ -1019,15 +1049,15 @@ struct ConversationView: View {
     /// ("Unflag" once flagged).
     private func appearance(of action: CorresSettings.ReadingAction, for thread: Correspondence) -> (icon: String, title: String, tint: Color?) {
         switch action {
-        case .flag: thread.isFlagged ? ("flag.fill", "Unflag", CorresPalette.flag) : ("flag", "Flag", nil)
-        case .unread: thread.isUnread ? ("envelope.open", "Mark as Read", nil) : ("envelope.badge", "Mark as Unread", nil)
-        case .pin: thread.isPinned ? ("pin.fill", "Unpin", nil) : ("pin", "Pin", nil)
-        case .trash: ("trash", "Move to Trash", nil)
+        case .flag: thread.isFlagged ? ("flag.fill", String(localized: "Unflag"), CorresPalette.flag) : ("flag", String(localized: "Flag"), nil)
+        case .unread: thread.isUnread ? ("envelope.open", String(localized: "Mark as Read"), nil) : ("envelope.badge", String(localized: "Mark as Unread"), nil)
+        case .pin: thread.isPinned ? ("pin.fill", String(localized: "Unpin"), nil) : ("pin", String(localized: "Pin"), nil)
+        case .trash: ("trash", String(localized: "Move to Trash"), nil)
         case .vip:
             thread.senderEmail.map(InboxClassifier.isVIP) == true
-                ? ("star.slash", "Remove from VIPs", nil) : ("star", "Add \(thread.sender) to VIPs", nil)
-        case .block: ("hand.raised", "Block \(thread.sender)", nil)
-        default: (action.systemImage, action.rawValue, nil)
+                ? ("star.slash", String(localized: "Remove from VIPs"), nil) : ("star", String(localized: "Add \(thread.sender) to VIPs"), nil)
+        case .block: ("hand.raised", String(localized: "Block \(thread.sender)"), nil)
+        default: (action.systemImage, action.title, nil)
         }
     }
 
@@ -1210,6 +1240,12 @@ struct ConversationView: View {
         }
         .buttonStyle(CorresRowButtonStyle())
         .accessibilityLabel(label)
+        // The bar keeps its size at the largest text sizes, as the system
+        // bars do; press and hold shows the action large instead.
+        .accessibilityShowsLargeContentViewer {
+            Image(systemName: systemImage)
+            Text(label)
+        }
     }
 
     private func moreMenu(for thread: Correspondence) -> some View {

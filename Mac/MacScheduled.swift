@@ -21,7 +21,7 @@ struct MacScheduledList: View {
                         Text(item.sendAt.formatted(date: .abbreviated, time: .shortened))
                             .font(.caption).foregroundStyle(CorresPalette.secondary)
                     }
-                    Text(item.draft.subject.isEmpty ? "No subject" : item.draft.subject).lineLimit(1)
+                    Text(item.draft.subject.isEmpty ? String(localized: "No subject") : item.draft.subject).lineLimit(1)
                     Label(item.heldBecauseReplied ? "Held: they replied first" : "Sends \(ScheduledSends.describe(item.sendAt))",
                           systemImage: item.heldBecauseReplied ? "pause.circle" : "clock.arrow.circlepath")
                         .font(.caption)
@@ -59,7 +59,7 @@ struct MacScheduledDetail: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Text(item.draft.subject.isEmpty ? "No subject" : item.draft.subject)
+                Text(item.draft.subject.isEmpty ? String(localized: "No subject") : item.draft.subject)
                     .font(.system(size: 24, weight: .regular, design: .serif))
                     .textSelection(.enabled)
                 VStack(alignment: .leading, spacing: 4) {
@@ -114,7 +114,7 @@ struct MacScheduledDetail: View {
         }
     }
 
-    private func line(_ label: String, _ value: String) -> some View {
+    private func line(_ label: LocalizedStringKey, _ value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(label).foregroundStyle(CorresPalette.secondary)
             Text(value).textSelection(.enabled)

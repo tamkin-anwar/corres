@@ -24,7 +24,7 @@ struct MacMenuBarContent: View {
                     openWindow(id: "main")
                     NSApp.activate()
                 } label: {
-                    Text("\(thread.sender): \(thread.subject.isEmpty ? "(No subject)" : thread.subject)")
+                    Text("\(thread.sender): \(thread.subject.isEmpty ? String(localized: "No subject") : thread.subject)")
                 }
             }
         }

@@ -49,7 +49,7 @@ struct MacWelcome: View {
         .background(CorresPalette.canvas)
     }
 
-    private func point(_ icon: String, _ title: String, _ detail: String) -> some View {
+    private func point(_ icon: String, _ title: LocalizedStringKey, _ detail: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: icon)
                 .font(.body.weight(.medium))

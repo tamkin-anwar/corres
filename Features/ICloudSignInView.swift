@@ -128,7 +128,7 @@ struct ICloudSignInView: View {
         }
     }
 
-    private func step(_ number: Int, _ text: String) -> some View {
+    private func step(_ number: Int, _ text: LocalizedStringKey) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text("\(number)").font(.subheadline.weight(.semibold).monospacedDigit())
                 .foregroundStyle(CorresPalette.accent).frame(width: 18)

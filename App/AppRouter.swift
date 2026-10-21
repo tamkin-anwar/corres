@@ -67,6 +67,15 @@ final class AppRouter {
 enum Destination: String, CaseIterable, Identifiable {
     case brief = "Brief", needsYou = "Needs You", waiting = "Waiting", mail = "Mail", ask = "Ask"
     var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .brief: String(localized: "Brief")
+        case .needsYou: String(localized: "Needs You")
+        case .waiting: String(localized: "Waiting")
+        case .mail: String(localized: "Mail")
+        case .ask: String(localized: "Ask")
+        }
+    }
     /// SF Symbols: vector, weight-matched to the tab label, and rendered by
     /// the system at the display's native scale.
     var systemImage: String {

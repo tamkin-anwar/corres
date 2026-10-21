@@ -53,7 +53,7 @@ struct MacComposeView: View {
         }
         .background(CorresPalette.canvas)
         .frame(minWidth: 560, minHeight: 420)
-        .navigationTitle(draft.subject.isEmpty ? "New Message" : draft.subject)
+        .navigationTitle(draft.subject.isEmpty ? String(localized: "New Message") : draft.subject)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { send() } label: { Label("Send", systemImage: "paperplane.fill") }

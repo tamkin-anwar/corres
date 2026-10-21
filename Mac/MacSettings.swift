@@ -265,7 +265,7 @@ private struct MacSignaturesSettings: View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
                 List(signatures, selection: $selection) { signature in
-                    Text(signature.name.isEmpty ? "Untitled" : signature.name).tag(signature.id)
+                    Text(signature.name.isEmpty ? String(localized: "Untitled") : signature.name).tag(signature.id)
                 }
                 .listStyle(.bordered)
                 HStack(spacing: 0) {

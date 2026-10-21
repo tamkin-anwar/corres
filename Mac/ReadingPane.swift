@@ -76,7 +76,7 @@ struct ReadingPane: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(thread.subject.isEmpty ? "(No subject)" : thread.subject)
+            Text(thread.subject.isEmpty ? String(localized: "No subject") : thread.subject)
                 .font(.system(size: 24, weight: .regular, design: .serif))
                 .foregroundStyle(CorresPalette.ink)
                 .textSelection(.enabled)
@@ -173,7 +173,7 @@ struct ReadingPane: View {
 
     private var statusLine: String {
         let attention = thread.attention(at: .now)
-        let reason = thread.reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        let reason = thread.displayReason.trimmingCharacters(in: .whitespacesAndNewlines)
         switch attention {
         case .needsYou: return reason.isEmpty ? String(localized: "In Needs You") : String(localized: "In Needs You: ") + reason
         case .waiting: return reason.isEmpty ? String(localized: "Waiting on a reply") : String(localized: "Waiting: ") + reason
@@ -369,7 +369,7 @@ struct MacAttachmentChip: View {
                 .frame(width: 26, height: 26)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(file.filename).lineLimit(1).truncationMode(.middle)
-                    Text(failed ? "Couldn't download" : ByteCountFormatter.string(fromByteCount: Int64(file.sizeBytes), countStyle: .file))
+                    Text(failed ? String(localized: "Couldn't download") : ByteCountFormatter.string(fromByteCount: Int64(file.sizeBytes), countStyle: .file))
                         .font(.caption).foregroundStyle(failed ? CorresPalette.alert : CorresPalette.secondary)
                 }
                 if working { ProgressView().controlSize(.small) }

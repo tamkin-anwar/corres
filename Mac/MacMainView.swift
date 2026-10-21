@@ -159,7 +159,7 @@ struct MacMainView: View {
                             })
             }
         }
-        .navigationTitle(model.search.isEmpty ? model.mailbox.title : "Search")
+        .navigationTitle(model.search.isEmpty ? model.mailbox.title : String(localized: "Search"))
         .navigationSubtitle(subtitle(rows))
         .background(CorresPalette.canvas)
     }

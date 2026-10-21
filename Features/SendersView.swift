@@ -58,7 +58,7 @@ struct SendersView: View {
             }
             Section {
                 if shown.isEmpty {
-                    Text(search.isEmpty ? emptyText : "No senders match \u{201C}\(search)\u{201D}.")
+                    Text(search.isEmpty ? emptyText : String(localized: "No senders match \u{201C}\(search)\u{201D}."))
                         .foregroundStyle(CorresPalette.secondary)
                 }
                 ForEach(shown) { sender in

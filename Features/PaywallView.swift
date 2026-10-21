@@ -75,7 +75,7 @@ struct PaywallView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func benefit(_ icon: String, _ title: String, _ detail: String) -> some View {
+    private func benefit(_ icon: String, _ title: LocalizedStringKey, _ detail: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: icon).font(.body.weight(.medium)).foregroundStyle(CorresPalette.accent).frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
@@ -284,7 +284,7 @@ struct ProLockView: View {
             Image(systemName: destination.systemImage)
                 .font(.system(size: 40, weight: .light))
                 .foregroundStyle(CorresPalette.accent)
-            Text(destination.rawValue).font(CorresType.title)
+            Text(destination.title).font(CorresType.title)
             Text(pitch)
                 .font(.body).foregroundStyle(CorresPalette.secondary)
                 .multilineTextAlignment(.center)

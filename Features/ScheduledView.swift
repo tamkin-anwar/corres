@@ -76,8 +76,8 @@ struct ScheduledView: View {
             .compactMap { PeopleIndex.parse($0) }
             .map { $0.name.isEmpty ? $0.email : Person.readable($0.name) }
         return VStack(alignment: .leading, spacing: 3) {
-            Text(to.isEmpty ? "No recipients" : to.joined(separator: ", ")).font(.body.weight(.semibold)).lineLimit(1)
-            Text(item.draft.subject.isEmpty ? "No subject" : item.draft.subject).font(.subheadline).lineLimit(1)
+            Text(to.isEmpty ? String(localized: "No recipients") : to.joined(separator: ", ")).font(.body.weight(.semibold)).lineLimit(1)
+            Text(item.draft.subject.isEmpty ? String(localized: "No subject") : item.draft.subject).font(.subheadline).lineLimit(1)
             Label(item.heldBecauseReplied ? "Held: they replied first. Tap to send or change it."
                                           : "Sends \(ScheduledSends.describe(item.sendAt))",
                   systemImage: item.heldBecauseReplied ? "pause.circle" : "clock.arrow.circlepath")

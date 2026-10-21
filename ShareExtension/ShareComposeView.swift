@@ -29,7 +29,7 @@ struct ShareComposeView: View {
                 }
             }
             .background(CorresPalette.canvas)
-            .navigationTitle(composer.subject.isEmpty ? "New Message" : composer.subject)
+            .navigationTitle(composer.subject.isEmpty ? String(localized: "New Message") : composer.subject)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

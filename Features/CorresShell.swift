@@ -475,7 +475,7 @@ struct CorresShell: View {
             HStack(spacing: 10) {
                 Image(systemName: "square.and.pencil").foregroundStyle(CorresPalette.secondary)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(shelved.draft.subject.isEmpty ? "Draft" : shelved.draft.subject)
+                    Text(shelved.draft.subject.isEmpty ? String(localized: "Draft") : shelved.draft.subject)
                         .font(.subheadline.weight(.medium)).lineLimit(1)
                     Text(shelved.isSavedToGmail ? "Saved to Drafts" : shelved.couldNotSave ? "Kept on this \(Device.name)" : "Saving to Drafts\u{2026}")
                         .font(.caption).foregroundStyle(CorresPalette.secondary)
@@ -547,7 +547,7 @@ struct CorresShell: View {
         case .mail:
             if let accountFilter { AccountPreferences.nickname(for: accountFilter) }
             else { auth.accounts.count > 1 ? String(localized: "All Inboxes") : String(localized: "Mail") }
-        default: destination.rawValue
+        default: destination.title
         }
     }
 
@@ -592,7 +592,7 @@ struct CorresShell: View {
                                     Text(count, format: .number).monospacedDigit()
                                 }
                             } label: {
-                                Label(destination.rawValue, systemImage: destination.systemImage)
+                                Label(destination.title, systemImage: destination.systemImage)
                             }
                         }
                     }

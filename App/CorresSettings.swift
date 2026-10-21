@@ -206,6 +206,30 @@ enum CorresSettings {
             }
         }
 
+        /// The name shown for it (rawValue is what's saved).
+        var title: String {
+            switch self {
+            case .archive: String(localized: "Archive")
+            case .trash: String(localized: "Trash")
+            case .flag: String(localized: "Flag")
+            case .snooze: String(localized: "Snooze")
+            case .unread: String(localized: "Mark Unread")
+            case .pin: String(localized: "Pin")
+            case .replyAll: String(localized: "Reply All")
+            case .forward: String(localized: "Forward")
+            case .moveTo: String(localized: "Move to")
+            case .labels: String(localized: "Labels")
+            case .spam: String(localized: "Report Spam")
+            case .block: String(localized: "Block Sender")
+            case .unsubscribe: String(localized: "Unsubscribe")
+            case .vip: String(localized: "VIP")
+            case .calendar: String(localized: "Add to Calendar")
+            case .share: String(localized: "Share")
+            case .print: String(localized: "Print")
+            case .translate: String(localized: "Translate")
+            }
+        }
+
         /// Grouped in Settings so the long list reads as kinds of action.
         var group: String {
             switch self {

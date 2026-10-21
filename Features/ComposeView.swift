@@ -137,7 +137,7 @@ struct ComposeView: View {
                     }
                     .animation(reveal, value: activeField)
                     .animation(reveal, value: showsBcc)
-                    field(title: "Subject", text: $draft.subject, isEditable: true)
+                    subjectField(text: $draft.subject)
                         .focused($focusedField, equals: .subject)
                     Divider().padding(.leading, CorresSpace.page)
                     // Above the message, not below it: under the editor
@@ -385,7 +385,7 @@ struct ComposeView: View {
                 HStack(spacing: 10) {
                     Image(systemName: "waveform").symbolEffect(.variableColor.iterative, isActive: true)
                         .foregroundStyle(CorresPalette.accent)
-                    Text(dictation.transcript.isEmpty ? "Listening…" : dictation.transcript)
+                    Text(dictation.transcript.isEmpty ? String(localized: "Listening…") : dictation.transcript)
                         .font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(2)
                     Spacer(minLength: 8)
                     Button("Done") { finishDictation() }.font(.subheadline.weight(.semibold))
@@ -431,7 +431,7 @@ struct ComposeView: View {
                         } label: {
                             HStack(spacing: 6) {
                                 if rewriting == tone { ProgressView().controlSize(.mini) }
-                                Text(tone.rawValue)
+                                Text(tone.title)
                             }
                         }
                         .buttonStyle(CorresPillStyle())
@@ -483,7 +483,7 @@ struct ComposeView: View {
         }
     }
 
-    private func formatButton(_ symbol: String, _ label: String, on: Bool, action: @escaping () -> Void) -> some View {
+    private func formatButton(_ symbol: String, _ label: LocalizedStringKey, on: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.body.weight(.medium))
@@ -966,7 +966,7 @@ struct ComposeView: View {
     @State private var dismissedHiddenNotice = false
     @State private var dismissedCrowdNotice = false
 
-    private func bccNotice(_ text: String, action: String, perform: @escaping () -> Void) -> some View {
+    private func bccNotice(_ text: LocalizedStringKey, action: LocalizedStringKey, perform: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(text, systemImage: "eye.slash")
                 .labelStyle(TightLabelStyle())
@@ -1184,19 +1184,11 @@ struct ComposeView: View {
         draft.fromName = pick.name.isEmpty ? nil : pick.name
     }
 
-    private func field(title: String, text: Binding<String>, isEditable: Bool) -> some View {
+    private func subjectField(text: Binding<String>) -> some View {
         HStack(spacing: 12) {
-            Text(title).font(.subheadline).foregroundStyle(CorresPalette.secondary).frame(width: 64, alignment: .leading)
-            if isEditable {
-                let isAddressField = title == "To" || title == "Cc"
-                TextField(title == "To" ? "Recipient" : title == "Cc" ? "Optional" : "Subject", text: text)
-                    .textInputAutocapitalization(isAddressField ? .never : .sentences)
-                    .keyboardType(isAddressField ? .emailAddress : .default)
-                    .autocorrectionDisabled(isAddressField)
-            } else {
-                Text(text.wrappedValue).foregroundStyle(CorresPalette.secondary)
-                Spacer()
-            }
+            Text("Subject").font(.subheadline).foregroundStyle(CorresPalette.secondary).frame(width: 64, alignment: .leading)
+            TextField("Subject", text: text)
+                .textInputAutocapitalization(.sentences)
         }
         .padding(.horizontal, CorresSpace.page).frame(minHeight: 44)
     }

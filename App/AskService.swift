@@ -280,7 +280,7 @@ final class AskService {
     things, use only dates after today. Marketing and promotional emails \
     never count as an answer. List the numbers of the emails your answer \
     came from. If they don't contain the answer, set found to false and say \
-    briefly what you couldn't find.
+    briefly what you couldn't find. Answer in the language of the question.
     """
 
     @available(iOS 26.0, macOS 26.0, *)
@@ -299,7 +299,8 @@ final class AskService {
     line from the email, never with a name, amount or date the emails don't \
     contain, and without mentioning the search tool. List the numbers of the emails your \
     answer came from. If they don't contain the answer, set found to false \
-    and say briefly what you couldn't find.
+    and say briefly what you couldn't find. Answer in the language of the \
+    question.
     """
 }
 

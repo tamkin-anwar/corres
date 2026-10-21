@@ -121,7 +121,7 @@ final class SpotlightIndex {
 
     nonisolated private static func item(_ thread: Correspondence) -> CSSearchableItem {
         let attributes = CSSearchableItemAttributeSet(contentType: .emailMessage)
-        let subject = thread.subject.isEmpty ? "(No subject)" : thread.subject
+        let subject = thread.subject.isEmpty ? String(localized: "No subject") : thread.subject
         attributes.title = subject
         attributes.displayName = subject
         attributes.subject = subject

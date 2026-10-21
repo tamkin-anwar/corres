@@ -63,7 +63,7 @@ struct EarlierMessages: View {
                                         size: CGSize(width: 30, height: 30))
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(alignment: .firstTextBaseline) {
-                            Text(isMine ? "You" : message.sender).font(.subheadline.weight(.semibold)).lineLimit(1)
+                            Text(isMine ? String(localized: "You") : message.sender).font(.subheadline.weight(.semibold)).lineLimit(1)
                             Spacer(minLength: 6)
                             Text(CorrespondenceRow.timestamp(message.receivedAt))
                                 .font(.caption).monospacedDigit().foregroundStyle(CorresPalette.tertiary)

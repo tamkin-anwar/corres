@@ -531,7 +531,7 @@ struct DraftsView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(item.message.toRecipients.isEmpty ? "No recipients" : "To: " + item.message.toRecipients.joined(separator: ", "))
                                 .font(.body.weight(.medium)).foregroundStyle(CorresPalette.ink).lineLimit(1)
-                            Text(item.message.subject.isEmpty ? "(no subject)" : item.message.subject)
+                            Text(item.message.subject.isEmpty ? String(localized: "(no subject)") : item.message.subject)
                                 .font(.subheadline).foregroundStyle(CorresPalette.ink).lineLimit(1)
                             Text(item.message.excerpt).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(2)
                         }

@@ -79,7 +79,7 @@ enum WidgetBridge {
         func item(_ thread: Correspondence) -> WidgetSnapshot.Item {
             WidgetSnapshot.Item(account: thread.id.account, threadID: thread.id.providerID,
                                 sender: thread.counterpartName(knownNames: known),
-                                subject: thread.subject, reason: thread.reason, receivedAt: thread.receivedAt,
+                                subject: thread.subject, reason: thread.displayReason, receivedAt: thread.receivedAt,
                                 isUnread: thread.isUnread, dueLabel: thread.dueAt.map(dueLabel))
         }
         let isSample = !threads.isEmpty && threads.allSatisfy { $0.id.account == "sample" }
