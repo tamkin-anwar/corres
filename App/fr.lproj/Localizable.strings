@@ -686,6 +686,9 @@
 "Continue with Microsoft" = "Continuer avec Microsoft";
 
 /* No comment provided by engineer. */
+"Conversation" = "Conversation";
+
+/* No comment provided by engineer. */
 "Conversation unavailable" = "Conversation indisponible";
 
 /* No comment provided by engineer. */
@@ -1079,6 +1082,9 @@
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail et presque toutes les autres messageries. Vos e-mails sont triés et lus sur votre %@.";
 
 /* No comment provided by engineer. */
+"Go" = "Aller";
+
+/* No comment provided by engineer. */
 "Handled" = "Traité";
 
 /* No comment provided by engineer. */
@@ -1092,6 +1098,9 @@
 
 /* No comment provided by engineer. */
 "Held: they replied first. Tap to send or change it." = "Retenu : ils ont répondu avant. Touchez pour l’envoyer ou le modifier.";
+
+/* No comment provided by engineer. */
+"Here are a few times that work for me:\n\n%@\n\nDo any of these suit you?" = "Voici quelques créneaux qui me conviennent :\n\n%@\n\nL’un d’eux vous convient-il ?";
 
 /* No comment provided by engineer. */
 "Hidden" = "Masqué";
@@ -1340,6 +1349,9 @@
 "Manage Subscription" = "Gérer l’abonnement";
 
 /* No comment provided by engineer. */
+"Mark as Handled" = "Marquer comme traité";
+
+/* No comment provided by engineer. */
 "Mark as Read" = "Marquer comme lu";
 
 /* No comment provided by engineer. */
@@ -1515,6 +1527,9 @@
 
 /* No comment provided by engineer. */
 "NEW" = "NOUVEAU";
+
+/* No comment provided by engineer. */
+"New Email" = "Nouvel e-mail";
 
 /* No comment provided by engineer. */
 "New Emails" = "Nouveaux e-mails";
@@ -1823,6 +1838,12 @@
 "Open List" = "Ouvrir la liste";
 
 /* No comment provided by engineer. */
+"Open Needs You" = "Ouvrir Pour vous";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "Ouvrir Pour vous dans Corres.";
+
+/* No comment provided by engineer. */
 "Open Needs You, Waiting or Mail in Corres." = "Ouvrir Pour vous, En attente ou Messagerie dans Corres.";
 
 /* No comment provided by engineer. */
@@ -2022,6 +2043,9 @@
 
 /* No comment provided by engineer. */
 "Reads like it needs something from you." = "Semble attendre quelque chose de votre part.";
+
+/* No comment provided by engineer. */
+"Reads your calendar on this device" = "Lit votre calendrier sur cet appareil";
 
 /* No comment provided by engineer. */
 "receipts" = "reçus";
@@ -2459,6 +2483,9 @@
 "Suggest from Contacts" = "Suggérer depuis Contacts";
 
 /* No comment provided by engineer. */
+"Suggest Times" = "Proposer des créneaux";
+
+/* No comment provided by engineer. */
 "Suggested" = "Suggéré";
 
 /* No comment provided by engineer. */
@@ -2562,6 +2589,9 @@
 
 /* No comment provided by engineer. */
 "This Weekend" = "Ce week-end";
+
+/* No comment provided by engineer. */
+"Three open times from your calendar, in a reply you can change." = "Trois créneaux libres de votre calendrier, dans une réponse que vous pouvez modifier.";
 
 /* No comment provided by engineer. */
 "Time" = "Heure";

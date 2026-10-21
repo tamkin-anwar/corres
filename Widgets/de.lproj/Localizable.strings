@@ -2,19 +2,37 @@
 "%lld %@" = "%lld %@";
 
 /* No comment provided by engineer. */
+"Conversation" = "Konversation";
+
+/* No comment provided by engineer. */
 "Conversations waiting on someone else's reply." = "Konversationen, die auf die Antwort von jemand anderem warten.";
 
 /* No comment provided by engineer. */
 "Corres Pro" = "Corres Pro";
 
 /* No comment provided by engineer. */
+"Mark as Handled" = "Als erledigt markieren";
+
+/* No comment provided by engineer. */
 "Needs You" = "Braucht dich";
+
+/* No comment provided by engineer. */
+"New Email" = "Neue E-Mail";
 
 /* No comment provided by engineer. */
 "Open Corres to start your free trial." = "Öffne Corres, um deinen kostenlosen Test zu starten.";
 
 /* No comment provided by engineer. */
+"Open Needs You" = "„Braucht dich“ öffnen";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "„Braucht dich“ in Corres öffnen.";
+
+/* No comment provided by engineer. */
 "SAMPLE" = "BEISPIEL";
+
+/* No comment provided by engineer. */
+"Start a new email in Corres." = "Eine neue E-Mail in Corres beginnen.";
 
 /* No comment provided by engineer. */
 "The conversations that ask something of you, with the reason for each." = "Die Konversationen, die etwas von dir wollen, jeweils mit dem Grund.";

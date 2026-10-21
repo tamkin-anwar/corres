@@ -5,7 +5,7 @@
 "CFBundleName" = "Corres";
 
 /* Privacy - Calendars Full Access Usage Description */
-"NSCalendarsFullAccessUsageDescription" = "当你在邀请中要求时，Corres 会查看你的日历在同一时间是否有其他安排，并可移除已取消的日程。你的日历只保留在这台 Mac 上。";
+"NSCalendarsFullAccessUsageDescription" = "在你要求时，Corres 会查看你的日历：邀请时间你是否有空、有人问你何时有空时可提供的空闲时间，以及移除已取消的日程。你的日历只保留在这台 Mac 上。";
 
 /* Privacy - Calendars Write Only Usage Description */
 "NSCalendarsWriteOnlyAccessUsageDescription" = "在你要求时，Corres 会将你接受的邀请添加到日历。";

@@ -58,6 +58,16 @@ final class CalendarAccess {
         .sorted { $0.startDate < $1.startDate }
     }
 
+    /// Times you're busy, for offering free ones ("When are you free?").
+    func busy(from start: Date, to end: Date) -> [(start: Date, end: Date)] {
+        guard canRead, end > start else { return [] }
+        let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
+        return store.events(matching: predicate)
+            .filter { !$0.isAllDay && $0.availability != .free && $0.status != .canceled
+                && $0.attendees?.first(where: \.isCurrentUser)?.participantStatus != .declined }
+            .map { (start: $0.startDate, end: $0.endDate) }
+    }
+
     /// This event on your calendar, when it's there: Google, Outlook and
     /// iCloud add invitations by themselves.
     func event(title: String, start: Date) -> EKEvent? {

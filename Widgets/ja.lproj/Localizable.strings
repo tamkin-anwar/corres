@@ -2,19 +2,37 @@
 "%lld %@" = "%lld %@";
 
 /* No comment provided by engineer. */
+"Conversation" = "会話";
+
+/* No comment provided by engineer. */
 "Conversations waiting on someone else's reply." = "ほかの人の返信を待っている会話。";
 
 /* No comment provided by engineer. */
 "Corres Pro" = "Corres Pro";
 
 /* No comment provided by engineer. */
+"Mark as Handled" = "対応済みにする";
+
+/* No comment provided by engineer. */
 "Needs You" = "要対応";
+
+/* No comment provided by engineer. */
+"New Email" = "新規メール";
 
 /* No comment provided by engineer. */
 "Open Corres to start your free trial." = "Corresを開いて無料トライアルを始めてください。";
 
 /* No comment provided by engineer. */
+"Open Needs You" = "「要対応」を開く";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "Corresで「要対応」を開きます。";
+
+/* No comment provided by engineer. */
 "SAMPLE" = "サンプル";
+
+/* No comment provided by engineer. */
+"Start a new email in Corres." = "Corresで新規メールを書きます。";
 
 /* No comment provided by engineer. */
 "The conversations that ask something of you, with the reason for each." = "あなたに何かを求める会話と、それぞれの理由。";

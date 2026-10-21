@@ -621,6 +621,10 @@ struct ConversationView: View {
                 nextStepRow(nextStep)
                 Hairline().padding(.vertical, 2)
             }
+            if !thread.isFromAccountOwner, thread.attention != .handled, Scheduling.asksForTime(thread.body) {
+                suggestTimesRow(for: thread)
+                Hairline().padding(.vertical, 2)
+            }
             // At the largest text sizes the line gets the full width and
             // its buttons go under it; side by side, both broke mid-word.
             if typeSize.isAccessibilitySize {
@@ -649,6 +653,43 @@ struct ConversationView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background { if hasMore { Color.clear.corresSurface(radius: 18) } }
         .animation(.easeOut(duration: 0.25), value: insight)
+    }
+
+    /// "When are you free?": three open times from your calendar, in a
+    /// reply to read and change before sending. The calendar is read on
+    /// this device, and only when you tap.
+    private func suggestTimesRow(for thread: Correspondence) -> some View {
+        Button {
+            Task {
+                let calendar = CalendarAccess.shared
+                if !calendar.canRead { await calendar.requestRead() }
+                guard calendar.canRead else { return }
+                let now = Date.now
+                let busy = calendar.busy(from: now, to: now.addingTimeInterval(8 * 86_400))
+                let slots = Scheduling.freeSlots(busy: busy, from: now)
+                guard !slots.isEmpty else { return }
+                let times = slots.map {
+                    "• " + $0.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().hour().minute().timeZone(.specificName(.short)))
+                }.joined(separator: "\n")
+                let text = String(localized: "Here are a few times that work for me:\n\n\(times)\n\nDo any of these suit you?") + "\n\n"
+                compose(.reply, from: thread, prefill: text)
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "calendar.badge.clock").foregroundStyle(CorresPalette.accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Suggest Times").font(.body.weight(.semibold)).foregroundStyle(CorresPalette.ink)
+                    Text("Three open times from your calendar, in a reply you can change.")
+                        .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Reads your calendar on this device")
     }
 
     /// Handled and Change, beside or under the status line.

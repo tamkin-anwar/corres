@@ -5,7 +5,7 @@
 "CFBundleName" = "Corres";
 
 /* Privacy - Calendars Full Access Usage Description */
-"NSCalendarsFullAccessUsageDescription" = "Wenn du es bei einer Einladung möchtest, prüft Corres deinen Kalender auf Termine zur selben Zeit und kann einen abgesagten Termin entfernen. Dein Kalender bleibt auf diesem Mac.";
+"NSCalendarsFullAccessUsageDescription" = "Wenn du es möchtest, prüft Corres deinen Kalender: ob du für eine Einladung frei bist, freie Zeiten, wenn dich jemand fragt, wann du Zeit hast, und das Entfernen abgesagter Termine. Dein Kalender bleibt auf diesem Mac.";
 
 /* Privacy - Calendars Write Only Usage Description */
 "NSCalendarsWriteOnlyAccessUsageDescription" = "Corres fügt die Einladungen, die du annimmst, deinem Kalender hinzu, wenn du es möchtest.";

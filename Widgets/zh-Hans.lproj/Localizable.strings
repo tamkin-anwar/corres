@@ -2,19 +2,37 @@
 "%lld %@" = "%lld %@";
 
 /* No comment provided by engineer. */
+"Conversation" = "对话";
+
+/* No comment provided by engineer. */
 "Conversations waiting on someone else's reply." = "等待他人回复的对话。";
 
 /* No comment provided by engineer. */
 "Corres Pro" = "Corres Pro";
 
 /* No comment provided by engineer. */
+"Mark as Handled" = "标记为已处理";
+
+/* No comment provided by engineer. */
 "Needs You" = "需要你";
+
+/* No comment provided by engineer. */
+"New Email" = "新邮件";
 
 /* No comment provided by engineer. */
 "Open Corres to start your free trial." = "打开 Corres 开始免费试用。";
 
 /* No comment provided by engineer. */
+"Open Needs You" = "打开“需要你”";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "在 Corres 中打开“需要你”。";
+
+/* No comment provided by engineer. */
 "SAMPLE" = "示例";
+
+/* No comment provided by engineer. */
+"Start a new email in Corres." = "在 Corres 中新建邮件。";
 
 /* No comment provided by engineer. */
 "The conversations that ask something of you, with the reason for each." = "需要你回应的对话，以及各自的原因。";

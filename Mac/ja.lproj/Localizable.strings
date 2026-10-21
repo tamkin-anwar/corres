@@ -611,6 +611,9 @@
 "Held: they replied first" = "保留中：先に返信がありました";
 
 /* No comment provided by engineer. */
+"Here are a few times that work for me:\n\n%@\n\nDo any of these suit you?" = "都合のよい時間はこちらです：\n\n%@\n\nいずれかでご都合はいかがでしょうか？";
+
+/* No comment provided by engineer. */
 "How many emails need you, and the first few, from the menu bar." = "要対応のメールの件数と最初の数件をメニューバーに表示します。";
 
 /* No comment provided by engineer. */
@@ -848,6 +851,9 @@
 "Never Needs You" = "「要対応」にしない";
 
 /* No comment provided by engineer. */
+"New Email" = "新規メール";
+
+/* No comment provided by engineer. */
 "New mail" = "新着メール";
 
 /* No comment provided by engineer. */
@@ -1002,6 +1008,12 @@
 
 /* No comment provided by engineer. */
 "Open List" = "リストを開く";
+
+/* No comment provided by engineer. */
+"Open Needs You" = "「要対応」を開く";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "Corresで「要対応」を開きます。";
 
 /* No comment provided by engineer. */
 "Open Needs You, Waiting or Mail in Corres." = "Corresで「要対応」「返信待ち」「メール」を開きます。";
@@ -1367,6 +1379,9 @@
 "Subject has “%@”" = "件名に「%@」";
 
 /* No comment provided by engineer. */
+"Suggest Times from Your Calendar" = "カレンダーから時間を提案";
+
+/* No comment provided by engineer. */
 "Summaries (Apple Intelligence, on this Mac)" = "要約（Apple Intelligence、このMac上）";
 
 /* No comment provided by engineer. */
@@ -1398,6 +1413,9 @@
 
 /* No comment provided by engineer. */
 "This Weekend" = "今週末";
+
+/* No comment provided by engineer. */
+"Three open times from your calendar, in a reply you can change." = "カレンダーの空き時間を3つ、編集できる返信に入れます。";
 
 /* No comment provided by engineer. */
 "Time-sensitive." = "時間厳守です。";

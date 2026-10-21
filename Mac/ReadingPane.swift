@@ -31,6 +31,11 @@ struct ReadingPane: View {
                 statusCard
                     .padding(.horizontal, 28)
                     .padding(.bottom, 14)
+                if !thread.isFromAccountOwner, thread.attention != .handled, Scheduling.asksForTime(thread.body) {
+                    suggestTimes
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 14)
+                }
                 // An invitation: answered here, as in Calendar.
                 if let invitation, !thread.isFromAccountOwner {
                     InvitationCard(invitation: invitation, senderEmail: thread.senderEmail, senderName: thread.sender) { response in
@@ -76,6 +81,33 @@ struct ReadingPane: View {
     }
 
     // MARK: Header
+
+    /// "When are you free?": three open times from your calendar, in a
+    /// reply to change before sending. Read on this Mac, only on a click.
+    private var suggestTimes: some View {
+        Button {
+            Task {
+                let calendar = CalendarAccess.shared
+                if !calendar.canRead { await calendar.requestRead() }
+                guard calendar.canRead else { return }
+                let now = Date.now
+                let slots = Scheduling.freeSlots(busy: calendar.busy(from: now, to: now.addingTimeInterval(8 * 86_400)), from: now)
+                guard !slots.isEmpty else { return }
+                let times = slots.map {
+                    "• " + $0.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().hour().minute().timeZone(.specificName(.short)))
+                }.joined(separator: "\n")
+                var draft = thread.draft(kind: .reply)
+                draft.body = String(localized: "Here are a few times that work for me:\n\n\(times)\n\nDo any of these suit you?") + "\n\n" + draft.body
+                let handoff = UUID()
+                MacComposeHandoff.drafts[handoff] = draft
+                openWindow(value: ComposeRequest(kind: .reply, handoff: handoff))
+            }
+        } label: {
+            Label("Suggest Times from Your Calendar", systemImage: "calendar.badge.clock")
+        }
+        .buttonStyle(.bordered)
+        .help("Three open times from your calendar, in a reply you can change.")
+    }
 
     private func personSheet(_ person: PersonRef) -> some View {
         PersonView(person: person, store: services.store,

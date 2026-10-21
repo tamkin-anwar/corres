@@ -611,6 +611,9 @@
 "Held: they replied first" = "已暂缓：对方先回复了";
 
 /* No comment provided by engineer. */
+"Here are a few times that work for me:\n\n%@\n\nDo any of these suit you?" = "以下时间我都可以：\n\n%@\n\n其中有你方便的时间吗？";
+
+/* No comment provided by engineer. */
 "How many emails need you, and the first few, from the menu bar." = "在菜单栏中显示有多少封邮件需要你，以及前几封。";
 
 /* No comment provided by engineer. */
@@ -848,6 +851,9 @@
 "Never Needs You" = "从不“需要你”";
 
 /* No comment provided by engineer. */
+"New Email" = "新邮件";
+
+/* No comment provided by engineer. */
 "New mail" = "新邮件";
 
 /* No comment provided by engineer. */
@@ -1002,6 +1008,12 @@
 
 /* No comment provided by engineer. */
 "Open List" = "打开列表";
+
+/* No comment provided by engineer. */
+"Open Needs You" = "打开“需要你”";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "在 Corres 中打开“需要你”。";
 
 /* No comment provided by engineer. */
 "Open Needs You, Waiting or Mail in Corres." = "在 Corres 中打开“需要你”、“等待中”或“邮件”。";
@@ -1367,6 +1379,9 @@
 "Subject has “%@”" = "主题包含“%@”";
 
 /* No comment provided by engineer. */
+"Suggest Times from Your Calendar" = "从日历建议时间";
+
+/* No comment provided by engineer. */
 "Summaries (Apple Intelligence, on this Mac)" = "摘要（Apple 智能，在这台 Mac 上）";
 
 /* No comment provided by engineer. */
@@ -1398,6 +1413,9 @@
 
 /* No comment provided by engineer. */
 "This Weekend" = "本周末";
+
+/* No comment provided by engineer. */
+"Three open times from your calendar, in a reply you can change." = "从你的日历中找出三个空闲时间，放进可修改的回复里。";
 
 /* No comment provided by engineer. */
 "Time-sensitive." = "有时效性。";

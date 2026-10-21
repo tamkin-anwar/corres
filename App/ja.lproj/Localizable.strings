@@ -686,6 +686,9 @@
 "Continue with Microsoft" = "Microsoftで続ける";
 
 /* No comment provided by engineer. */
+"Conversation" = "会話";
+
+/* No comment provided by engineer. */
 "Conversation unavailable" = "会話を表示できません";
 
 /* No comment provided by engineer. */
@@ -1079,6 +1082,9 @@
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail、Outlook、iCloudメール、Yahoo、AOL、Fastmailなど、ほとんどのメールに対応。メールはこの%@上で振り分けられ、読まれます。";
 
 /* No comment provided by engineer. */
+"Go" = "移動";
+
+/* No comment provided by engineer. */
 "Handled" = "対応済み";
 
 /* No comment provided by engineer. */
@@ -1092,6 +1098,9 @@
 
 /* No comment provided by engineer. */
 "Held: they replied first. Tap to send or change it." = "保留中：先に返信がありました。タップして送信または変更します。";
+
+/* No comment provided by engineer. */
+"Here are a few times that work for me:\n\n%@\n\nDo any of these suit you?" = "都合のよい時間はこちらです：\n\n%@\n\nいずれかでご都合はいかがでしょうか？";
 
 /* No comment provided by engineer. */
 "Hidden" = "非表示";
@@ -1340,6 +1349,9 @@
 "Manage Subscription" = "サブスクリプションを管理";
 
 /* No comment provided by engineer. */
+"Mark as Handled" = "対応済みにする";
+
+/* No comment provided by engineer. */
 "Mark as Read" = "開封済みにする";
 
 /* No comment provided by engineer. */
@@ -1515,6 +1527,9 @@
 
 /* No comment provided by engineer. */
 "NEW" = "NEW";
+
+/* No comment provided by engineer. */
+"New Email" = "新規メール";
 
 /* No comment provided by engineer. */
 "New Emails" = "新着メール";
@@ -1823,6 +1838,12 @@
 "Open List" = "リストを開く";
 
 /* No comment provided by engineer. */
+"Open Needs You" = "「要対応」を開く";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "Corresで「要対応」を開きます。";
+
+/* No comment provided by engineer. */
 "Open Needs You, Waiting or Mail in Corres." = "Corresで「要対応」「返信待ち」「メール」を開きます。";
 
 /* No comment provided by engineer. */
@@ -2022,6 +2043,9 @@
 
 /* No comment provided by engineer. */
 "Reads like it needs something from you." = "何かを求めているようです。";
+
+/* No comment provided by engineer. */
+"Reads your calendar on this device" = "このデバイス上でカレンダーを読み取ります";
 
 /* No comment provided by engineer. */
 "receipts" = "領収書";
@@ -2459,6 +2483,9 @@
 "Suggest from Contacts" = "連絡先から候補を表示";
 
 /* No comment provided by engineer. */
+"Suggest Times" = "時間を提案";
+
+/* No comment provided by engineer. */
 "Suggested" = "おすすめ";
 
 /* No comment provided by engineer. */
@@ -2562,6 +2589,9 @@
 
 /* No comment provided by engineer. */
 "This Weekend" = "今週末";
+
+/* No comment provided by engineer. */
+"Three open times from your calendar, in a reply you can change." = "カレンダーの空き時間を3つ、編集できる返信に入れます。";
 
 /* No comment provided by engineer. */
 "Time" = "時刻";

@@ -611,6 +611,9 @@
 "Held: they replied first" = "Retenu : ils ont répondu avant";
 
 /* No comment provided by engineer. */
+"Here are a few times that work for me:\n\n%@\n\nDo any of these suit you?" = "Voici quelques créneaux qui me conviennent :\n\n%@\n\nL’un d’eux vous convient-il ?";
+
+/* No comment provided by engineer. */
 "How many emails need you, and the first few, from the menu bar." = "Combien d’e-mails vous attendent, et les premiers, depuis la barre des menus.";
 
 /* No comment provided by engineer. */
@@ -848,6 +851,9 @@
 "Never Needs You" = "Jamais Pour vous";
 
 /* No comment provided by engineer. */
+"New Email" = "Nouvel e-mail";
+
+/* No comment provided by engineer. */
 "New mail" = "Nouveaux e-mails";
 
 /* No comment provided by engineer. */
@@ -1002,6 +1008,12 @@
 
 /* No comment provided by engineer. */
 "Open List" = "Ouvrir la liste";
+
+/* No comment provided by engineer. */
+"Open Needs You" = "Ouvrir Pour vous";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "Ouvrir Pour vous dans Corres.";
 
 /* No comment provided by engineer. */
 "Open Needs You, Waiting or Mail in Corres." = "Ouvrir Pour vous, En attente ou Messagerie dans Corres.";
@@ -1367,6 +1379,9 @@
 "Subject has “%@”" = "L’objet contient « %@ »";
 
 /* No comment provided by engineer. */
+"Suggest Times from Your Calendar" = "Proposer des créneaux de votre calendrier";
+
+/* No comment provided by engineer. */
 "Summaries (Apple Intelligence, on this Mac)" = "Résumés (Apple Intelligence, sur ce Mac)";
 
 /* No comment provided by engineer. */
@@ -1398,6 +1413,9 @@
 
 /* No comment provided by engineer. */
 "This Weekend" = "Ce week-end";
+
+/* No comment provided by engineer. */
+"Three open times from your calendar, in a reply you can change." = "Trois créneaux libres de votre calendrier, dans une réponse que vous pouvez modifier.";
 
 /* No comment provided by engineer. */
 "Time-sensitive." = "Urgent.";

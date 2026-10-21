@@ -686,6 +686,9 @@
 "Continue with Microsoft" = "Microsoft로 계속하기";
 
 /* No comment provided by engineer. */
+"Conversation" = "대화";
+
+/* No comment provided by engineer. */
 "Conversation unavailable" = "대화를 사용할 수 없음";
 
 /* No comment provided by engineer. */
@@ -1079,6 +1082,9 @@
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail, Outlook, iCloud 메일, Yahoo, AOL, Fastmail 등 거의 모든 이메일. 메일은 이 %@에서 분류되고 읽힙니다.";
 
 /* No comment provided by engineer. */
+"Go" = "이동";
+
+/* No comment provided by engineer. */
 "Handled" = "처리됨";
 
 /* No comment provided by engineer. */
@@ -1092,6 +1098,9 @@
 
 /* No comment provided by engineer. */
 "Held: they replied first. Tap to send or change it." = "보류됨: 상대방이 먼저 답장했습니다. 탭하여 보내거나 변경하세요.";
+
+/* No comment provided by engineer. */
+"Here are a few times that work for me:\n\n%@\n\nDo any of these suit you?" = "다음 시간이 가능합니다:\n\n%@\n\n이 중 편하신 시간이 있을까요?";
 
 /* No comment provided by engineer. */
 "Hidden" = "숨김";
@@ -1340,6 +1349,9 @@
 "Manage Subscription" = "구독 관리";
 
 /* No comment provided by engineer. */
+"Mark as Handled" = "처리됨으로 표시";
+
+/* No comment provided by engineer. */
 "Mark as Read" = "읽음으로 표시";
 
 /* No comment provided by engineer. */
@@ -1515,6 +1527,9 @@
 
 /* No comment provided by engineer. */
 "NEW" = "신규";
+
+/* No comment provided by engineer. */
+"New Email" = "새로운 이메일";
 
 /* No comment provided by engineer. */
 "New Emails" = "새로운 이메일";
@@ -1823,6 +1838,12 @@
 "Open List" = "목록 열기";
 
 /* No comment provided by engineer. */
+"Open Needs You" = "'나에게 필요' 열기";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "Corres에서 '나에게 필요'를 엽니다.";
+
+/* No comment provided by engineer. */
 "Open Needs You, Waiting or Mail in Corres." = "Corres에서 '나에게 필요', '대기 중' 또는 메일을 엽니다.";
 
 /* No comment provided by engineer. */
@@ -2022,6 +2043,9 @@
 
 /* No comment provided by engineer. */
 "Reads like it needs something from you." = "나에게 무언가가 필요한 것 같습니다.";
+
+/* No comment provided by engineer. */
+"Reads your calendar on this device" = "이 기기에서 캘린더를 읽습니다";
 
 /* No comment provided by engineer. */
 "receipts" = "영수증";
@@ -2459,6 +2483,9 @@
 "Suggest from Contacts" = "연락처에서 제안";
 
 /* No comment provided by engineer. */
+"Suggest Times" = "시간 제안";
+
+/* No comment provided by engineer. */
 "Suggested" = "추천";
 
 /* No comment provided by engineer. */
@@ -2562,6 +2589,9 @@
 
 /* No comment provided by engineer. */
 "This Weekend" = "이번 주말";
+
+/* No comment provided by engineer. */
+"Three open times from your calendar, in a reply you can change." = "캘린더에서 비어 있는 시간 세 개를 수정할 수 있는 답장에 넣습니다.";
 
 /* No comment provided by engineer. */
 "Time" = "시간";

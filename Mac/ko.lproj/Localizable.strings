@@ -611,6 +611,9 @@
 "Held: they replied first" = "보류됨: 상대방이 먼저 답장함";
 
 /* No comment provided by engineer. */
+"Here are a few times that work for me:\n\n%@\n\nDo any of these suit you?" = "다음 시간이 가능합니다:\n\n%@\n\n이 중 편하신 시간이 있을까요?";
+
+/* No comment provided by engineer. */
 "How many emails need you, and the first few, from the menu bar." = "나를 기다리는 이메일 수와 처음 몇 개를 메뉴 막대에서 보여줍니다.";
 
 /* No comment provided by engineer. */
@@ -848,6 +851,9 @@
 "Never Needs You" = "'나에게 필요'에 넣지 않음";
 
 /* No comment provided by engineer. */
+"New Email" = "새로운 이메일";
+
+/* No comment provided by engineer. */
 "New mail" = "새로운 메일";
 
 /* No comment provided by engineer. */
@@ -1002,6 +1008,12 @@
 
 /* No comment provided by engineer. */
 "Open List" = "목록 열기";
+
+/* No comment provided by engineer. */
+"Open Needs You" = "'나에게 필요' 열기";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "Corres에서 '나에게 필요'를 엽니다.";
 
 /* No comment provided by engineer. */
 "Open Needs You, Waiting or Mail in Corres." = "Corres에서 '나에게 필요', '대기 중' 또는 메일을 엽니다.";
@@ -1367,6 +1379,9 @@
 "Subject has “%@”" = "제목에 '%@' 포함";
 
 /* No comment provided by engineer. */
+"Suggest Times from Your Calendar" = "캘린더에서 시간 제안";
+
+/* No comment provided by engineer. */
 "Summaries (Apple Intelligence, on this Mac)" = "요약(Apple Intelligence, 이 Mac에서)";
 
 /* No comment provided by engineer. */
@@ -1398,6 +1413,9 @@
 
 /* No comment provided by engineer. */
 "This Weekend" = "이번 주말";
+
+/* No comment provided by engineer. */
+"Three open times from your calendar, in a reply you can change." = "캘린더에서 비어 있는 시간 세 개를 수정할 수 있는 답장에 넣습니다.";
 
 /* No comment provided by engineer. */
 "Time-sensitive." = "시간 민감합니다.";

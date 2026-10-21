@@ -686,6 +686,9 @@
 "Continue with Microsoft" = "使用 Microsoft 继续";
 
 /* No comment provided by engineer. */
+"Conversation" = "对话";
+
+/* No comment provided by engineer. */
 "Conversation unavailable" = "对话不可用";
 
 /* No comment provided by engineer. */
@@ -1079,6 +1082,9 @@
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail、Outlook、iCloud 邮件、Yahoo、AOL、Fastmail 以及几乎所有其他邮箱。你的邮件在这台%@上分类和阅读。";
 
 /* No comment provided by engineer. */
+"Go" = "前往";
+
+/* No comment provided by engineer. */
 "Handled" = "已处理";
 
 /* No comment provided by engineer. */
@@ -1092,6 +1098,9 @@
 
 /* No comment provided by engineer. */
 "Held: they replied first. Tap to send or change it." = "已暂缓：对方先回复了。轻点以发送或更改。";
+
+/* No comment provided by engineer. */
+"Here are a few times that work for me:\n\n%@\n\nDo any of these suit you?" = "以下时间我都可以：\n\n%@\n\n其中有你方便的时间吗？";
 
 /* No comment provided by engineer. */
 "Hidden" = "已隐藏";
@@ -1340,6 +1349,9 @@
 "Manage Subscription" = "管理订阅";
 
 /* No comment provided by engineer. */
+"Mark as Handled" = "标记为已处理";
+
+/* No comment provided by engineer. */
 "Mark as Read" = "标记为已读";
 
 /* No comment provided by engineer. */
@@ -1515,6 +1527,9 @@
 
 /* No comment provided by engineer. */
 "NEW" = "新";
+
+/* No comment provided by engineer. */
+"New Email" = "新邮件";
 
 /* No comment provided by engineer. */
 "New Emails" = "新邮件";
@@ -1823,6 +1838,12 @@
 "Open List" = "打开列表";
 
 /* No comment provided by engineer. */
+"Open Needs You" = "打开“需要你”";
+
+/* No comment provided by engineer. */
+"Open Needs You in Corres." = "在 Corres 中打开“需要你”。";
+
+/* No comment provided by engineer. */
 "Open Needs You, Waiting or Mail in Corres." = "在 Corres 中打开“需要你”、“等待中”或“邮件”。";
 
 /* No comment provided by engineer. */
@@ -2022,6 +2043,9 @@
 
 /* No comment provided by engineer. */
 "Reads like it needs something from you." = "看起来需要你做些什么。";
+
+/* No comment provided by engineer. */
+"Reads your calendar on this device" = "在这台设备上读取你的日历";
 
 /* No comment provided by engineer. */
 "receipts" = "收据";
@@ -2459,6 +2483,9 @@
 "Suggest from Contacts" = "从通讯录推荐";
 
 /* No comment provided by engineer. */
+"Suggest Times" = "建议时间";
+
+/* No comment provided by engineer. */
 "Suggested" = "建议";
 
 /* No comment provided by engineer. */
@@ -2562,6 +2589,9 @@
 
 /* No comment provided by engineer. */
 "This Weekend" = "本周末";
+
+/* No comment provided by engineer. */
+"Three open times from your calendar, in a reply you can change." = "从你的日历中找出三个空闲时间，放进可修改的回复里。";
 
 /* No comment provided by engineer. */
 "Time" = "时间";
