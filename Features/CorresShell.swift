@@ -249,6 +249,7 @@ struct CorresShell: View {
         }
         .task {
             if !hasExplored { showingWelcome = true }
+            HangReporter.step("first frame")
             if store.state == .idle { await store.load() }
             handle(router.pending)
         }
@@ -528,7 +529,7 @@ struct CorresShell: View {
     /// screen, so its rows never updated (a swiped row sprang back).
     private func destinationContent(for destination: Destination, pushedOnto host: Destination? = nil) -> some View {
         let isActive = selection == (host ?? destination)
-        switch store.state {
+        switch store.displayState {
         case .idle, .loading:
             // The launch screen's own mark, at the same size and centered
             // on the whole screen, so launch hands off without the mark
@@ -586,6 +587,7 @@ struct CorresShell: View {
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar { toolbarContent }
                 .navigationDestination(for: ConversationRoute.self) { route in
+                    let _ = HangReporter.startOpening("\(route.id.account)|\(route.id.providerID)")
                     ConversationView(store: store, outbox: outbox, threadActions: threadActions,
                                     labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
                                     route: route)

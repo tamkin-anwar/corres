@@ -69,6 +69,14 @@ struct MacMainView: View {
         }
         .focusedSceneValue(\.macActions, MacActions(perform: { perform($0) }))
         .onChange(of: model.selection) { _, selection in if filtersUnread { keptRead.formUnion(selection) } }
+        // The next few after the one you're on, and the top of a mailbox,
+        // read ahead: arrowing down shows each at once.
+        .task(id: [model.selection.first.map { "\($0.account)|\($0.providerID)" } ?? "", model.mailbox.title]) {
+            try? await Task.sleep(for: .milliseconds(300))
+            let threads = visibleRows().compactMap(\.thread).map(\.id)
+            let after = threads.firstIndex { model.selection.contains($0) }.map { Array(threads.dropFirst($0 + 1).prefix(3)) } ?? []
+            await store.prefetchStoredContent(after + threads.prefix(6))
+        }
         .onChange(of: model.mailbox) { keptRead = [] }
         .onChange(of: unreadOnly) { keptRead = [] }
         // What needs you, on the Dock icon.
@@ -303,7 +311,8 @@ struct MacMainView: View {
         let selected = listed.isEmpty && model.selection.count == 1
             ? model.selection.compactMap { store.thread($0) } : listed
         if selected.count == 1, let thread = selected.first {
-            ReadingPane(thread: thread, services: services) { kind in compose(kind, thread) }
+            // From the store, which adds the HTML once it's read.
+            ReadingPane(thread: store.thread(thread.id) ?? thread, services: services) { kind in compose(kind, thread) }
         } else if selected.count > 1 {
             ContentUnavailableView("\(selected.count) conversations selected", systemImage: "square.stack",
                                    description: Text("Archive, delete, move or flag them together."))

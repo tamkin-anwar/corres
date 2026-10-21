@@ -123,6 +123,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         coordinator.resetZoom(webView)
         #endif
         WKWebViewPool.shared.sizeRouter(for: webView).target = coordinator
+        HangReporter.lap("preparing \(html.utf8.count / 1024) KB")
         var processed = blockRemoteImages ? Self.blockingRemoteImages(in: html) : html
         processed = Self.strippingEmbeddedViewportMeta(processed)
         // Remote stylesheets and fonts held the whole email back: WebKit
@@ -147,6 +148,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         webView.loadHTMLString(Self.wrap(processed, kind: kind, dark: dark, textSize: textSize,
                                          load: coordinator.loadGeneration, lateStyles: lateStyles),
                                baseURL: Self.placeholderBaseURL)
+        HangReporter.lap("handed to WebKit")
     }
 
     static let placeholderBaseURL = URL(string: "https://mail.corres.app/")
@@ -763,6 +765,22 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         return value.trimmingCharacters(in: CharacterSet(charactersIn: "\"' ")).replacingOccurrences(of: "&amp;", with: "&")
     }
 
+    /// A small designed email, run through everything a real one is, to
+    /// warm a pooled web view: its first real email then draws as fast as
+    /// later ones (measured: 1.4 seconds for the first, 0.2 for the rest,
+    /// when the pool was warmed with an empty page).
+    static var warmUpPage: String {
+        let sample = """
+        <table width="100%" style="background:#f4f4f4"><tr><td align="center">
+        <table width="600" style="background:#ffffff;font-family:Helvetica,Arial,sans-serif;color:#333333">
+        <tr><td style="padding:24px"><h1 style="font-size:22px">Your order is on its way</h1>
+        <p style="font-size:15px;line-height:22px">Thanks for your order. We'll let you know when it arrives.</p>
+        <a href="https://example.com" style="display:inline-block;padding:12px 20px;background:#0a7cff;color:#fff">Track</a>
+        </td></tr></table></td></tr></table>
+        """
+        return wrap(sample, kind: .designed, dark: false, textSize: 17)
+    }
+
     private static func wrap(_ html: String, kind: BodyKind, dark: Bool, textSize: CGFloat, load: Int = 0,
                              lateStyles: [String] = []) -> String {
         let adaptiveRules = """
@@ -976,6 +994,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         private static let tallest: CGFloat = 80_000
 
         func receiveSize(load: Int, height: CGFloat, webView: WKWebView?) {
+            if !hasSize { HangReporter.lap("size \(Int(height)) for load \(load), current \(loadGeneration)") }
             guard load == loadGeneration, height > 0 else { return }
             if growthLoad != load {
                 growthLoad = load; lastGrowth = 0; equalGrowths = 0; growthStopped = false
@@ -1006,6 +1025,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            HangReporter.lap("WebKit loaded")
             let generation = loadGeneration
             // A backstop in case the script's first report hasn't arrived:
             // ask it to measure now, and never leave the email hidden.

@@ -358,11 +358,15 @@ struct ReadingPane: View {
     // MARK: Loading
 
     private var html: String {
-        thread.htmlBody ?? HTMLMessageBody.page(forPlainText: thread.body)
+        // Blank for the moment the HTML is read from storage, rather than
+        // the plain text flashing first.
+        if services.store.needsStoredContent(thread.id) { return "" }
+        return thread.htmlBody ?? HTMLMessageBody.page(forPlainText: thread.body)
     }
 
     private func opened() async {
         HangReporter.start("open")
+        await services.store.loadStoredContent(thread.id)
         showImages = false
         showEarlier = false
         invitation = nil

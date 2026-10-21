@@ -23,8 +23,167 @@ public actor SwiftDataMailRepository: MailRepository {
         modelContext = ModelContext(modelContainer)
     }
 
+    /// Every conversation, without its HTML: see `listProperties`.
+    /// Leaves `changes()` as it is: sync reads everything for its own
+    /// checks, and the store must still hear what changed.
     public func threads() throws -> [Correspondence] {
-        try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>()).map(\.asCorrespondence)
+        try modelContext.fetch(PersistedCorrespondence.summaries(withText: true)).map(\.asListCorrespondence)
+    }
+
+    /// The newest conversations, for the first screen at launch; the rest
+    /// follow with `threads()`.
+    public func recentThreads(limit: Int) throws -> [Correspondence] {
+        var descriptor = PersistedCorrespondence.summaries(withText: true)
+        descriptor.sortBy = [SortDescriptor(\.receivedAt, order: .reverse)]
+        descriptor.fetchLimit = limit
+        return try modelContext.fetch(descriptor).map(\.asListCorrespondence)
+    }
+
+    public func threads(account: String, receivedFrom start: Date, to end: Date) throws -> [Correspondence] {
+        var descriptor = PersistedCorrespondence.summaries(withText: true)
+        descriptor.predicate = #Predicate { $0.account == account && $0.receivedAt >= start && $0.receivedAt <= end }
+        return try modelContext.fetch(descriptor).map(\.asListCorrespondence)
+    }
+
+    public func threadsAwaitingContent(limit: Int) throws -> [Correspondence] {
+        var descriptor = PersistedCorrespondence.summaries(withText: true)
+        descriptor.predicate = #Predicate { !$0.isBodyLoaded && $0.latestMessageID != nil && $0.account != "sample" }
+        descriptor.sortBy = [SortDescriptor(\.receivedAt, order: .reverse)]
+        descriptor.fetchLimit = limit
+        return try modelContext.fetch(descriptor).map(\.asListCorrespondence)
+    }
+
+    public func threadsWithoutMessageID(account: String) throws -> [Correspondence] {
+        var descriptor = PersistedCorrespondence.summaries(withText: true)
+        descriptor.predicate = #Predicate { $0.account == account && $0.latestMessageID == nil }
+        return try modelContext.fetch(descriptor).map(\.asListCorrespondence)
+    }
+
+    public func storedIDs() throws -> Set<String> {
+        var descriptor = FetchDescriptor<PersistedCorrespondence>()
+        descriptor.propertiesToFetch = [\.compositeID]
+        return Set(try modelContext.fetch(descriptor).map(\.compositeID))
+    }
+
+    // MARK: Senders
+
+    /// What's known about each sender across every conversation: their
+    /// Screener answer, trusted images, unsubscribes, and everyone you've
+    /// written to. Read from all conversations once, then kept up to date
+    /// as conversations are saved (`save()`): reading every conversation
+    /// on each sync took most of a second even on a Mac.
+    struct SenderFacts {
+        var decisions: [String: SenderDecision] = [:]
+        var imageTrust: Set<String> = []
+        var unsubscribed: Set<String> = []
+        var correspondents: Set<String> = []
+
+        mutating func learn(from model: PersistedCorrespondence) {
+            guard let senderEmail = model.senderEmail else { return }
+            let key = SwiftDataMailRepository.senderKey(account: model.account, senderEmail: senderEmail)
+            decisions[key] = SenderDecision(rawValue: model.senderDecisionRaw) ?? .approved
+            if model.imagesTrusted { imageTrust.insert(key) }
+            if model.senderUnsubscribed { unsubscribed.insert(key) }
+            if senderEmail.lowercased() == model.account.lowercased() {
+                for recipient in model.toRecipients + model.ccRecipients {
+                    correspondents.insert(SwiftDataMailRepository.senderKey(account: model.account, senderEmail: recipient.lowercased()))
+                }
+            }
+        }
+    }
+
+    private var cachedSenderFacts: SenderFacts?
+
+    private func senderFacts() throws -> SenderFacts {
+        if let cachedSenderFacts { return cachedSenderFacts }
+        var facts = SenderFacts()
+        for model in try modelContext.fetch(PersistedCorrespondence.senderFacts()) { facts.learn(from: model) }
+        cachedSenderFacts = facts
+        return facts
+    }
+
+    // MARK: Changes
+
+    /// Conversations written since the store last read the mail. Reading
+    /// all 5,000 again after each sync or tap took seconds on a phone;
+    /// the store asks for these instead (`changes()`).
+    private var changedIDs = Set<String>()
+    private var removedIDs = Set<ThreadID>()
+    /// Set when what changed isn't known: the next `changes()` says to
+    /// read everything.
+    private var needsFullRead = false
+
+    private func save() throws {
+        for case let model as PersistedCorrespondence in modelContext.insertedModelsArray + modelContext.changedModelsArray {
+            changedIDs.insert(model.compositeID)
+            cachedSenderFacts?.learn(from: model)
+        }
+        for case let model as PersistedCorrespondence in modelContext.deletedModelsArray {
+            removedIDs.insert(ThreadID(account: model.account, providerID: model.providerID))
+        }
+        try modelContext.save()
+    }
+
+    public func changes() throws -> StoredChanges? {
+        let ids = Array(changedIDs), gone = removedIDs
+        changedIDs = []
+        removedIDs = []
+        if needsFullRead {
+            needsFullRead = false
+            return nil
+        }
+        guard !ids.isEmpty else { return StoredChanges(updated: [], removed: Array(gone)) }
+        var updated: [Correspondence] = []
+        for start in stride(from: 0, to: ids.count, by: 500) {
+            let chunk = Array(ids[start..<min(start + 500, ids.count)])
+            var descriptor = PersistedCorrespondence.summaries(withText: true)
+            descriptor.predicate = #Predicate { chunk.contains($0.compositeID) }
+            updated += try modelContext.fetch(descriptor).map(\.asListCorrespondence)
+        }
+        let present = Set(updated.map(\.id))
+        return StoredChanges(updated: updated, removed: gone.filter { !present.contains($0) })
+    }
+
+    public func thread(_ id: ThreadID) throws -> Correspondence? {
+        let compositeID = PersistedCorrespondence.compositeID(account: id.account, providerID: id.providerID)
+        var descriptor = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.compositeID == compositeID })
+        descriptor.fetchLimit = 1
+        guard let model = try modelContext.fetch(descriptor).first else { return nil }
+        var thread = model.asListCorrespondence
+        thread.htmlBody = try content(compositeID)?.html ?? model.htmlBody
+        return thread
+    }
+
+    // MARK: Message content
+
+    private func content(_ compositeID: String) throws -> PersistedMessageContent? {
+        var descriptor = FetchDescriptor<PersistedMessageContent>(predicate: #Predicate { $0.compositeID == compositeID })
+        descriptor.fetchLimit = 1
+        return try modelContext.fetch(descriptor).first
+    }
+
+    /// Keeps a message's HTML apart from its conversation (see
+    /// `PersistedMessageContent`), with what the lists need to know about
+    /// it saved on the conversation itself. Set the text (`body`) first.
+    private func setContent(_ html: String?, on model: PersistedCorrespondence) throws {
+        if model.htmlBody != nil { model.htmlBody = nil }
+        model.htmlImageOnly = html.map { Correspondence.isRemoteImageOnly(body: model.body, html: $0) } ?? false
+        if let existing = try content(model.compositeID) {
+            existing.html = html
+        } else if html != nil {
+            modelContext.insert(PersistedMessageContent(compositeID: model.compositeID, html: html))
+        }
+    }
+
+    /// Moves HTML saved inside conversations, before it was kept apart, a
+    /// batch at a time. Returns how many moved: 0 once there's none left.
+    public func moveContent(batch: Int) throws -> Int {
+        var descriptor = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.htmlBody != nil })
+        descriptor.fetchLimit = batch
+        let models = try modelContext.fetch(descriptor)
+        for model in models { try setContent(model.htmlBody, on: model) }
+        if !models.isEmpty { try save() }
+        return models.count
     }
 
     @discardableResult
@@ -120,14 +279,14 @@ public actor SwiftDataMailRepository: MailRepository {
                 changed += 1
             }
         }
-        if changed > 0 { try modelContext.save() }
+        if changed > 0 { try save() }
         return changed
     }
 
     @discardableResult
     public func applyLoadedContent(_ items: [Correspondence]) throws -> Int {
         guard !items.isEmpty else { return 0 }
-        let correspondents = Self.correspondents(in: try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>()), plus: [])
+        let correspondents = try senderFacts().correspondents
         var filled = 0
         for item in items {
             let compositeID = PersistedCorrespondence.compositeID(account: item.id.account, providerID: item.id.providerID)
@@ -136,7 +295,7 @@ public actor SwiftDataMailRepository: MailRepository {
             guard let model = try modelContext.fetch(descriptor).first,
                   model.latestMessageID == item.latestMessageID else { continue }
             model.body = item.body
-            model.htmlBody = item.htmlBody
+            try setContent(item.htmlBody, on: model)
             if let preview = MailDigest.preview(body: item.body, html: item.htmlBody) { model.excerpt = preview }
             model.attachmentsData = (try? JSONEncoder().encode(item.attachments)) ?? Data()
             model.isBodyLoaded = true
@@ -157,7 +316,7 @@ public actor SwiftDataMailRepository: MailRepository {
             Self.applyRules(to: model, correspondents: correspondents, now: .now)
             filled += 1
         }
-        if filled > 0 { try modelContext.save() }
+        if filled > 0 { try save() }
         return filled
     }
 
@@ -170,6 +329,8 @@ public actor SwiftDataMailRepository: MailRepository {
     /// are decoded too, since they came from Gmail's HTML-escaped `snippet`.
     @discardableResult
     public func reclassifyLegacySyncDefaults() throws -> Int {
+        // Whole messages: every one goes through the rules, which read the
+        // text, and one fetch of everything beats a fetch per conversation.
         let models = try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>())
         let correspondents = Self.correspondents(in: models, plus: [])
         var changed = 0
@@ -210,7 +371,7 @@ public actor SwiftDataMailRepository: MailRepository {
             }
             if Self.applyRules(to: model, correspondents: correspondents, now: .now) { changed += 1 }
         }
-        try modelContext.save()
+        try save()
         return changed
     }
 
@@ -259,7 +420,8 @@ public actor SwiftDataMailRepository: MailRepository {
             let automated = Correspondence.isAutomated(listUnsubscribeMailto: model.listUnsubscribeMailto,
                                                        listUnsubscribeURL: model.listUnsubscribeURL,
                                                        senderEmail: model.senderEmail, senderName: model.sender,
-                                                       body: model.isBodyLoaded ? model.body : nil, html: model.htmlBody)
+                                                       body: model.isBodyLoaded ? model.body : nil, html: model.htmlBody,
+                                                       imageOnly: model.htmlImageOnly)
             let bulk = InboxClassifier.bulkKind(labelIds: model.labelIds, looksAutomated: automated)
             if recent {
                 due = bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text, now: now)
@@ -305,8 +467,10 @@ public actor SwiftDataMailRepository: MailRepository {
             let created = Correspondence.started(
                 by: draft, id: realThreadID ?? ThreadID(account: Self.localAccount, providerID: UUID().uuidString),
                 sentAt: sentAt, sentCopy: sentCopy, attention: attention, reason: reason)
-            modelContext.insert(PersistedCorrespondence(from: created))
-            try modelContext.save()
+            let model = PersistedCorrespondence(from: created)
+            modelContext.insert(model)
+            try setContent(created.htmlBody, on: model)
+            try save()
             return created
         }
         let model = try fetchOne(threadID)
@@ -317,7 +481,7 @@ public actor SwiftDataMailRepository: MailRepository {
         model.lastSentAt = sentAt
         model.dueAt = nil
         model.snoozedUntil = nil
-        try modelContext.save()
+        try save()
         return model.asCorrespondence
     }
 
@@ -340,20 +504,25 @@ public actor SwiftDataMailRepository: MailRepository {
 
     public func remove(_ id: ThreadID) throws {
         let model = try fetchOne(id)
+        if let content = try content(model.compositeID) { modelContext.delete(content) }
         modelContext.delete(model)
-        try modelContext.save()
+        try save()
     }
 
     public func seedIfNeeded(now: Date) throws {
         guard try modelContext.fetchCount(FetchDescriptor<PersistedCorrespondence>()) == 0 else { return }
-        insertSampleData(now: now)
-        try modelContext.save()
+        try insertSampleData(now: now)
+        try save()
     }
 
     public func resetToSampleData(now: Date) throws {
+        // Deleted all at once, unseen by `save()`: start over.
+        cachedSenderFacts = nil
+        needsFullRead = true
         try modelContext.delete(model: PersistedCorrespondence.self)
-        insertSampleData(now: now)
-        try modelContext.save()
+        try modelContext.delete(model: PersistedMessageContent.self)
+        try insertSampleData(now: now)
+        try save()
     }
 
     public func deleteSampleData() throws {
@@ -361,22 +530,32 @@ public actor SwiftDataMailRepository: MailRepository {
     }
 
     public func deleteAccountData(_ account: String) throws {
+        cachedSenderFacts = nil
         let descriptor = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.account == account })
         let matches = try modelContext.fetch(descriptor)
         guard !matches.isEmpty else { return }
+        let prefix = PersistedCorrespondence.compositeID(account: account, providerID: "")
+        try modelContext.delete(model: PersistedMessageContent.self, where: #Predicate { $0.compositeID.starts(with: prefix) })
         for model in matches { modelContext.delete(model) }
-        try modelContext.save()
+        try save()
     }
 
     @discardableResult
     public func upsert(_ incoming: [Correspondence], isInitialSync: Bool) throws -> Int {
-        let existingModels = try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>())
+        // What's known about each sender is kept (`senderFacts`); whole
+        // conversations are read only for the ones in this batch. Reading
+        // every conversation made each sync take seconds on a phone.
+        let facts = try senderFacts()
+        let incomingIDs = Array(Set(incoming.map { PersistedCorrespondence.compositeID(account: $0.id.account, providerID: $0.id.providerID) }))
+        var existingModels: [PersistedCorrespondence] = []
+        for start in stride(from: 0, to: incomingIDs.count, by: 500) {
+            let chunk = Array(incomingIDs[start..<min(start + 500, incomingIDs.count)])
+            existingModels += try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { chunk.contains($0.compositeID) }))
+        }
         // Never `uniqueKeysWithValues`: it crashes on a duplicate, on every sync.
         var existingByCompositeID = Dictionary(existingModels.map { ($0.compositeID, $0) }, uniquingKeysWith: { first, _ in first })
-        var knownSenderDecisions = Self.senderDecisions(in: existingModels)
-        let knownImageTrust = Self.imageTrust(in: existingModels)
-        let knownUnsubscribed = Self.unsubscribed(in: existingModels)
-        let correspondents = Self.correspondents(in: existingModels, plus: incoming)
+        var knownSenderDecisions = facts.decisions
+        let correspondents = facts.correspondents.union(Self.correspondents(in: [], plus: incoming))
         var inserted = 0
         var changed = false
         for var item in incoming {
@@ -421,7 +600,7 @@ public actor SwiftDataMailRepository: MailRepository {
                 existing.subject = item.subject
                 existing.excerpt = item.excerpt
                 existing.body = item.body
-                existing.htmlBody = item.htmlBody
+                try setContent(item.htmlBody, on: existing)
                 existing.isBodyLoaded = item.isBodyLoaded
                 existing.messageIdHeader = item.messageIdHeader
                 existing.latestMessageID = incomingMessageID
@@ -492,16 +671,17 @@ public actor SwiftDataMailRepository: MailRepository {
                         : InboxClassifier.domainDecision(for: senderEmail) ?? .pending
                     knownSenderDecisions[key] = item.senderDecision
                 }
-                if knownImageTrust[key] == true { item.imagesTrusted = true }
-                if knownUnsubscribed[key] == true { item.senderUnsubscribed = true }
+                if facts.imageTrust.contains(key) { item.imagesTrusted = true }
+                if facts.unsubscribed.contains(key) { item.senderUnsubscribed = true }
             }
             let model = PersistedCorrespondence(from: item)
             modelContext.insert(model)
+            try setContent(item.htmlBody, on: model)
             existingByCompositeID[compositeID] = model
             inserted += 1
             changed = true
         }
-        if changed { try modelContext.save() }
+        if changed { try save() }
         return inserted
     }
 
@@ -511,7 +691,7 @@ public actor SwiftDataMailRepository: MailRepository {
         let matches = try modelContext.fetch(descriptor)
         guard !matches.isEmpty else { return }
         for model in matches { model.senderDecisionRaw = decision.rawValue }
-        try modelContext.save()
+        try save()
     }
 
     public func trustSenderImages(forSenderEmail senderEmail: String, account: String) throws {
@@ -520,7 +700,7 @@ public actor SwiftDataMailRepository: MailRepository {
         let matches = try modelContext.fetch(descriptor)
         guard !matches.isEmpty else { return }
         for model in matches { model.imagesTrusted = true }
-        try modelContext.save()
+        try save()
     }
 
     public func markSenderUnsubscribed(forSenderEmail senderEmail: String, account: String) throws {
@@ -529,7 +709,7 @@ public actor SwiftDataMailRepository: MailRepository {
         let matches = try modelContext.fetch(descriptor)
         guard !matches.isEmpty else { return }
         for model in matches { model.senderUnsubscribed = true }
-        try modelContext.save()
+        try save()
     }
 
     public func outboxEntries() throws -> [OutboxRecord] {
@@ -544,7 +724,7 @@ public actor SwiftDataMailRepository: MailRepository {
         } else {
             modelContext.insert(PersistedOutboxEntry(from: entry))
         }
-        try modelContext.save()
+        try save()
     }
 
     public func removeOutboxEntry(id: UUID) throws {
@@ -552,28 +732,10 @@ public actor SwiftDataMailRepository: MailRepository {
         descriptor.fetchLimit = 1
         guard let existing = try modelContext.fetch(descriptor).first else { return }
         modelContext.delete(existing)
-        try modelContext.save()
+        try save()
     }
 
-    private static func senderKey(account: String, senderEmail: String) -> String { "\(account)|\(senderEmail)" }
-
-    private static func senderDecisions(in models: [PersistedCorrespondence]) -> [String: SenderDecision] {
-        var map: [String: SenderDecision] = [:]
-        for model in models {
-            guard let senderEmail = model.senderEmail else { continue }
-            map[senderKey(account: model.account, senderEmail: senderEmail)] = SenderDecision(rawValue: model.senderDecisionRaw) ?? .approved
-        }
-        return map
-    }
-
-    private static func imageTrust(in models: [PersistedCorrespondence]) -> [String: Bool] {
-        var map: [String: Bool] = [:]
-        for model in models {
-            guard let senderEmail = model.senderEmail, model.imagesTrusted else { continue }
-            map[senderKey(account: model.account, senderEmail: senderEmail)] = true
-        }
-        return map
-    }
+    static func senderKey(account: String, senderEmail: String) -> String { "\(account)|\(senderEmail)" }
 
     /// Everyone this account has written to, keyed like `senderKey` (with
     /// the address lowercased), from threads whose latest message is the
@@ -598,18 +760,11 @@ public actor SwiftDataMailRepository: MailRepository {
         return keys
     }
 
-    private static func unsubscribed(in models: [PersistedCorrespondence]) -> [String: Bool] {
-        var map: [String: Bool] = [:]
-        for model in models {
-            guard let senderEmail = model.senderEmail, model.senderUnsubscribed else { continue }
-            map[senderKey(account: model.account, senderEmail: senderEmail)] = true
-        }
-        return map
-    }
-
-    private func insertSampleData(now: Date) {
+    private func insertSampleData(now: Date) throws {
         for item in SampleCorrespondence.make(now: now) {
-            modelContext.insert(PersistedCorrespondence(from: item))
+            let model = PersistedCorrespondence(from: item)
+            modelContext.insert(model)
+            try setContent(item.htmlBody, on: model)
         }
     }
 
@@ -617,7 +772,7 @@ public actor SwiftDataMailRepository: MailRepository {
     private func mutate(_ id: ThreadID, _ change: (PersistedCorrespondence) -> Void) throws -> Correspondence {
         let model = try fetchOne(id)
         change(model)
-        try modelContext.save()
+        try save()
         return model.asCorrespondence
     }
 
@@ -633,4 +788,31 @@ public actor SwiftDataMailRepository: MailRepository {
     }
 
     private static let localAccount = "sample"
+}
+
+/// Reads a message's HTML on its own connection to the store, so opening
+/// an email never waits behind a sync writing to it
+/// (`SwiftDataMailRepository` does one thing at a time). Measured: half a
+/// second waiting, for a read that takes a millisecond.
+public actor MessageContentReader {
+    private let container: ModelContainer
+    private let queue = DispatchSerialQueue(label: "studio.anwarcreative.corres.messagereader", qos: .userInitiated)
+    public nonisolated var unownedExecutor: UnownedSerialExecutor { queue.asUnownedSerialExecutor() }
+
+    public init(modelContainer: ModelContainer) {
+        container = modelContainer
+    }
+
+    /// A fresh context each time, so it never answers from an old copy.
+    public func html(for id: ThreadID) -> String? {
+        let context = ModelContext(container)
+        let compositeID = PersistedCorrespondence.compositeID(account: id.account, providerID: id.providerID)
+        var content = FetchDescriptor<PersistedMessageContent>(predicate: #Predicate { $0.compositeID == compositeID })
+        content.fetchLimit = 1
+        if let html = (try? context.fetch(content))?.first?.html { return html }
+        // Saved before HTML was kept apart, and not moved yet.
+        var thread = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.compositeID == compositeID })
+        thread.fetchLimit = 1
+        return (try? context.fetch(thread))?.first?.htmlBody
+    }
 }

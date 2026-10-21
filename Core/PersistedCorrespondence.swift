@@ -70,6 +70,10 @@ public final class PersistedCorrespondence {
     /// When you last wrote in this conversation, kept after they reply, so
     /// Sent can list it.
     public var lastSentAt: Date? = nil
+    /// See `Correspondence.htmlImageOnly`. The HTML itself is kept apart,
+    /// in `PersistedMessageContent`; `htmlBody` here only holds mail saved
+    /// before that, until it's moved (`SwiftDataMailRepository.moveContent`).
+    public var htmlImageOnly: Bool = false
 
     public init(from correspondence: Correspondence) {
         self.compositeID = Self.compositeID(account: correspondence.id.account, providerID: correspondence.id.providerID)
@@ -108,9 +112,50 @@ public final class PersistedCorrespondence {
         self.lastSentAt = correspondence.lastSentAt
     }
 
-    public var asCorrespondence: Correspondence {
-        Correspondence(id: ThreadID(account: account, providerID: providerID), sender: sender, senderEmail: senderEmail,
-                       organization: organization, subject: subject, excerpt: excerpt, body: body, htmlBody: htmlBody,
+    /// Everything but the message itself. The list, sync and sorting read
+    /// these for every conversation; the HTML (nine tenths of what's
+    /// stored, about 300 MB for 5,500 conversations) and the text are
+    /// read for the one being opened. Reading them for all was what made
+    /// launch, each sync and each opened email take seconds.
+    static var summaryProperties: [PartialKeyPath<PersistedCorrespondence>] { [
+        \.compositeID, \.account, \.providerID, \.sender, \.senderEmail, \.organization, \.subject, \.excerpt,
+        \.messageIdHeader, \.latestMessageID, \.receivedAt, \.dueAt, \.reason, \.attentionRaw, \.isPinned,
+        \.snoozedUntil, \.senderDecisionRaw, \.imagesTrusted, \.attachmentsData, \.isUnread, \.labelIds,
+        \.listUnsubscribeMailto, \.listUnsubscribeURL, \.listUnsubscribeOneClick, \.senderUnsubscribed,
+        \.toRecipients, \.ccRecipients, \.replyTo, \.triagedMessageID, \.isBodyLoaded, \.waitingSince, \.lastSentAt,
+        \.htmlImageOnly,
+    ] }
+
+    /// What the list holds: the text, for search and the signals read
+    /// from it, without the HTML. The HTML is read when a conversation is
+    /// opened (`SwiftDataMailRepository.thread`).
+    static var listProperties: [PartialKeyPath<PersistedCorrespondence>] { summaryProperties + [\.body] }
+
+    /// Fetches every conversation's summary only. Anything else read from
+    /// one of these still loads, for that conversation alone.
+    static func summaries(withText: Bool = false) -> FetchDescriptor<PersistedCorrespondence> {
+        var descriptor = FetchDescriptor<PersistedCorrespondence>()
+        descriptor.propertiesToFetch = withText ? listProperties : summaryProperties
+        return descriptor
+    }
+
+    /// Just what's known about each sender and whom you've written to:
+    /// for sorting new mail, across every conversation.
+    static func senderFacts() -> FetchDescriptor<PersistedCorrespondence> {
+        var descriptor = FetchDescriptor<PersistedCorrespondence>()
+        descriptor.propertiesToFetch = [\.compositeID, \.account, \.senderEmail, \.senderDecisionRaw, \.imagesTrusted,
+                                        \.senderUnsubscribed, \.toRecipients, \.ccRecipients]
+        return descriptor
+    }
+
+    public var asCorrespondence: Correspondence { correspondence(html: htmlBody) }
+
+    /// As the list holds it: no HTML, which is never read from the store.
+    var asListCorrespondence: Correspondence { correspondence(html: nil) }
+
+    private func correspondence(html: String?) -> Correspondence {
+        var item = Correspondence(id: ThreadID(account: account, providerID: providerID), sender: sender, senderEmail: senderEmail,
+                       organization: organization, subject: subject, excerpt: excerpt, body: body, htmlBody: html,
                        messageIdHeader: messageIdHeader, latestMessageID: latestMessageID, receivedAt: receivedAt, dueAt: dueAt,
                        reason: reason, attention: Attention(rawValue: attentionRaw) ?? .quiet,
                        isPinned: isPinned, snoozedUntil: snoozedUntil,
@@ -122,7 +167,24 @@ public final class PersistedCorrespondence {
                        listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
                        listUnsubscribeOneClick: listUnsubscribeOneClick, senderUnsubscribed: senderUnsubscribed,
                        isBodyLoaded: isBodyLoaded, waitingSince: waitingSince, lastSentAt: lastSentAt)
+        item.htmlImageOnly = htmlImageOnly
+        return item
     }
 
     public static func compositeID(account: String, providerID: String) -> String { "\(account)|\(providerID)" }
+}
+
+/// A message's HTML, kept apart from its conversation: nine tenths of what
+/// Corres stores, and read only when the conversation is opened. Inside
+/// the conversation's own row, every read of the list had to step past it
+/// on disk.
+@Model
+public final class PersistedMessageContent {
+    @Attribute(.unique) public var compositeID: String
+    public var html: String?
+
+    public init(compositeID: String, html: String?) {
+        self.compositeID = compositeID
+        self.html = html
+    }
 }

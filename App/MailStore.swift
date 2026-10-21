@@ -9,6 +9,7 @@ final class MailStore {
     private var allThreads: [Correspondence] = [] {
         didSet {
             listedThreads = allThreads.filter { !$0.isArchivedCopy }
+            positions = Dictionary(allThreads.indices.map { (allThreads[$0].id, $0) }, uniquingKeysWith: { first, _ in first })
             if !holdingRevision { revision &+= 1; contentRevision &+= 1 }
         }
     }
@@ -20,6 +21,62 @@ final class MailStore {
     /// is told, so Undo can bring them straight back.
     private(set) var hiddenIDs: Set<ThreadID> = [] { didSet { if !holdingRevision { revision &+= 1 } } }
     @ObservationIgnored private var holdingRevision = false
+    /// Where each conversation is in `allThreads`: `thread(_:)` is asked
+    /// many times a redraw, and searched 5,000 conversations each time.
+    @ObservationIgnored private var positions: [ThreadID: Int] = [:]
+
+    /// The HTML of conversations opened lately. The lists hold every
+    /// conversation without it (see `SwiftDataMailRepository.threads`);
+    /// it's read from storage, about a millisecond, when one is opened.
+    private(set) var contents: [ThreadID: String] = [:]
+    /// Conversations already looked up, HTML or not, oldest first.
+    @ObservationIgnored private var contentOrder: [ThreadID] = []
+    private static let contentsKept = 40
+
+    /// Whether a conversation's HTML is still to be read from storage:
+    /// the reader waits for it rather than drawing the plain text first.
+    func needsStoredContent(_ id: ThreadID) -> Bool {
+        guard let thread = thread(id), thread.isBodyLoaded, thread.htmlBody == nil else { return false }
+        return !contentOrder.contains(id)
+    }
+
+    /// Reads HTML apart from the repository, so an open never waits on a
+    /// sync (`MessageContentReader`). Set by the app.
+    @ObservationIgnored var contentReader: MessageContentReader?
+
+    /// Reads an opened conversation's HTML from storage.
+    func loadStoredContent(_ id: ThreadID) async {
+        guard needsStoredContent(id) else { return }
+        let html: String? = if let contentReader { await contentReader.html(for: id) }
+            else { try? await repository.thread(id)?.htmlBody }
+        remember(html, for: id)
+    }
+
+    /// The conversations at the top of a list, read ahead so opening one
+    /// shows it at once.
+    func prefetchStoredContent(_ ids: [ThreadID]) async {
+        for id in ids where needsStoredContent(id) {
+            await loadStoredContent(id)
+        }
+    }
+
+    /// The whole conversation as stored, for work that reads the message
+    /// itself (a summary) without opening it. Not kept.
+    func storedThread(_ thread: Correspondence) async -> Correspondence {
+        guard thread.isBodyLoaded, thread.htmlBody == nil else { return thread }
+        if let html = contents[thread.id] { var full = thread; full.htmlBody = html; return full }
+        return (try? await repository.thread(thread.id)) ?? thread
+    }
+
+    private func remember(_ html: String?, for id: ThreadID) {
+        contentOrder.removeAll { $0 == id }
+        contentOrder.append(id)
+        contents[id] = html
+        if contentOrder.count > Self.contentsKept {
+            let old = contentOrder.removeFirst()
+            contents[old] = nil
+        }
+    }
 
     /// Several changes the lists see as one, so they rebuild once.
     private func asOneChange(_ changes: () -> Void) {
@@ -56,9 +113,15 @@ final class MailStore {
     private(set) var browsed: [ThreadID: Correspondence] = [:]
 
     /// A conversation by id, wherever it came from: the Inbox, or a mailbox.
+    /// With its HTML, once read (`loadStoredContent`).
     func thread(_ id: ThreadID) -> Correspondence? {
-        if !hiddenIDs.contains(id), let found = allThreads.first(where: { $0.id == id }) { return found }
-        return hiddenIDs.contains(id) ? nil : browsed[id]
+        guard !hiddenIDs.contains(id) else { return nil }
+        if let index = positions[id], allThreads.indices.contains(index), allThreads[index].id == id {
+            var found = allThreads[index]
+            if found.htmlBody == nil, let html = contents[id] { found.htmlBody = html }
+            return found
+        }
+        return browsed[id]
     }
 
     /// Address → the name its owner writes under, worked out once per
@@ -93,7 +156,10 @@ final class MailStore {
     /// A mailbox's conversation, moved back to the Inbox: it joins the
     /// lists now instead of waiting for the next sync to bring it.
     func adoptIntoInbox(_ thread: Correspondence) async {
-        var item = browsed[thread.id] ?? thread
+        var item = await storedThread(browsed[thread.id] ?? thread)
+        // A copy from the list carries no HTML: read the message again
+        // when it's opened, rather than saving it without.
+        if item.htmlBody == nil { item.isBodyLoaded = false }
         item.labelIds.removeAll { ["TRASH", "SPAM"].contains($0) }
         if !item.labelIds.contains("INBOX") { item.labelIds.append("INBOX") }
         browsed[thread.id] = nil
@@ -104,6 +170,10 @@ final class MailStore {
     /// A removal the server refused after all (it waited while offline):
     /// the conversation comes back as it was.
     func putBack(_ thread: Correspondence) async {
+        // Its saved copy came from the list, without the HTML: the message
+        // is read again when opened, rather than saved without it.
+        var thread = thread
+        if thread.htmlBody == nil { thread.isBodyLoaded = false }
         _ = try? await repository.upsert([thread], isInitialSync: true)
         await refresh()
     }
@@ -150,17 +220,50 @@ final class MailStore {
 
     private var firstLoad: Task<Void, Never>?
 
+    /// Once, after updating from a build that kept each email's HTML inside
+    /// its conversation: moved to its own place a batch at a time, between
+    /// everything else, which makes every later read of the lists several
+    /// times faster. Nothing changes on screen.
+    private func moveStoredContent() {
+        Task(priority: .utility) { [repository] in
+            var moved = 0
+            while let count = try? await repository.moveContent(batch: 100), count > 0 {
+                moved += count
+                try? await Task.sleep(for: .milliseconds(150))
+            }
+            if moved > 0 {
+                HangReporter.note("moved \(moved) messages' HTML")
+                await refresh()
+            }
+        }
+    }
+    private static let firstScreen = 300
+
+    /// What the screen shows: the lists as soon as the newest mail is
+    /// read, before the rest of the mailbox follows.
+    var displayState: LoadState { state == .loading && !allThreads.isEmpty ? .loaded : state }
+
     private func loadFirst() async {
         state = .loading
         do {
             if seedsSampleMail() { try await repository.seedIfNeeded(now: .now) }
+            // The newest first, so the first screen is up in a moment, then
+            // everything (thousands of conversations take a few seconds on
+            // a phone). Lists show as soon as the first part is here.
+            HangReporter.step("reading mail")
+            allThreads = try await repository.recentThreads(limit: Self.firstScreen)
+            HangReporter.step("newest \(allThreads.count) read")
             allThreads = try await repository.threads()
+            HangReporter.step("all \(allThreads.count) read")
             #if DEBUG
             await padForStressTest()
             await loadRenderTestEmails()
             #endif
             state = .loaded
             afterRefresh?()
+            moveStoredContent()
+            // The newest few, read ahead: the first one opened shows at once.
+            Task { await prefetchStoredContent(threads.sorted { $0.receivedAt > $1.receivedAt }.prefix(8).map(\.id)) }
         } catch is CancellationError {
             state = .idle
         } catch {
@@ -257,13 +360,38 @@ final class MailStore {
             refreshAgain = false
             let waiting = refreshWaiters
             refreshWaiters = []
-            allThreads = (try? await repository.threads()) ?? allThreads
+            // Only what changed since the last read, once the whole mailbox
+            // is here: reading all of it again took seconds on a phone.
+            if state == .loaded, let changes = try? await repository.changes() {
+                apply(changes)
+            } else {
+                allThreads = (try? await repository.threads()) ?? allThreads
+            }
             // Everyone who asked before this reload began now has it.
             waiting.forEach { $0.resume() }
         } while refreshAgain
         isRefreshing = false
         afterRefresh?()
     }
+    private func apply(_ changes: StoredChanges) {
+        guard !changes.updated.isEmpty || !changes.removed.isEmpty else { return }
+        var threads = allThreads
+        var known = positions
+        for item in changes.updated {
+            if let index = known[item.id], threads.indices.contains(index) {
+                threads[index] = item
+            } else {
+                known[item.id] = threads.count
+                threads.append(item)
+            }
+        }
+        if !changes.removed.isEmpty {
+            let gone = Set(changes.removed)
+            threads.removeAll { gone.contains($0.id) }
+        }
+        allThreads = threads
+    }
+
     /// Told after each reload from storage, which is when new mail has
     /// arrived: rules and muted conversations act on it (Organizer).
     @ObservationIgnored var afterRefresh: (@MainActor () -> Void)?
@@ -349,6 +477,9 @@ final class MailStore {
     /// `mutate`: nothing the person decided changed, so a failure has no
     /// business showing a save-error alert; the thread just stays unloaded.
     func applyLoadedContent(_ items: [Correspondence]) async {
+        // Arrived for a conversation being read: keep its HTML, since the
+        // reload below brings the list back without it.
+        for item in items { remember(item.htmlBody, for: item.id) }
         // A mailbox's conversation, opened: its full message replaces the
         // preview, keeping what's been changed on it here.
         let browsedItems = items.filter { item in browsed[item.id] != nil && !allThreads.contains { $0.id == item.id } }
@@ -423,7 +554,7 @@ final class MailStore {
                 CloudSync.shared.recordDecision(decision, sender: sender.email, account: sender.account)
                 try await repository.setSenderDecision(decision, forSenderEmail: sender.email, account: sender.account)
             }
-            allThreads = try await repository.threads()
+            await refresh()
         } catch {
             errorMessage = "Couldn't update these senders. Try again."
         }
@@ -457,7 +588,7 @@ final class MailStore {
         CloudSync.shared.recordDecision(decision, sender: senderEmail, account: account)
         do {
             try await repository.setSenderDecision(decision, forSenderEmail: senderEmail, account: account)
-            allThreads = try await repository.threads()
+            await refresh()
         } catch {
             errorMessage = "Couldn't update this sender. Try again."
         }
@@ -473,7 +604,7 @@ final class MailStore {
     func trustSenderImages(_ senderEmail: String, account: String) async {
         do {
             try await repository.trustSenderImages(forSenderEmail: senderEmail, account: account)
-            allThreads = try await repository.threads()
+            await refresh()
         } catch {
             errorMessage = "Couldn't remember this sender. Try again."
         }
@@ -487,7 +618,7 @@ final class MailStore {
     func markSenderUnsubscribed(_ senderEmail: String, account: String) async {
         do {
             try await repository.markSenderUnsubscribed(forSenderEmail: senderEmail, account: account)
-            allThreads = try await repository.threads()
+            await refresh()
         } catch {
             errorMessage = "Couldn't remember this unsubscribe. Try again."
         }

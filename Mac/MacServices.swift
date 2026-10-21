@@ -39,6 +39,7 @@ final class MacServices {
         let repository = Self.makeRepository(container)
         CorresSettings.applyToCore()
         let store = MailStore(repository: repository)
+        store.contentReader = MessageContentReader(modelContainer: container)
         store.seedsSampleMail = { !GoogleAuthService.hasSavedAccounts }
         let auth = GoogleAuthService()
         self.store = store
@@ -59,6 +60,7 @@ final class MacServices {
         unsubscribeService = UnsubscribeService()
         semanticTriage = SemanticTriageService()
         intelligence = MailIntelligence()
+        intelligence.storedThread = { [weak store] in await store?.storedThread($0) ?? $0 }
         router = AppRouter.shared
         ask = AskService(store: store, sync: sync, auth: auth)
         entitlements = EntitlementStore()

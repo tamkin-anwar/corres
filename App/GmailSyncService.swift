@@ -354,9 +354,8 @@ final class GmailSyncService {
         let inboxDates = listed.filter { $0.labelIds.contains("INBOX") }.map(\.receivedAt)
         guard let oldest = inboxDates.min(), let newest = inboxDates.max() else { return }
         let listedIDs = Set(listed.map(\.id))
-        let gone = try await repository.threads().filter { thread in
-            thread.id.account == account && thread.labelIds.contains("INBOX") && !listedIDs.contains(thread.id)
-                && thread.receivedAt >= oldest && thread.receivedAt <= newest
+        let gone = try await repository.threads(account: account, receivedFrom: oldest, to: newest).filter { thread in
+            thread.labelIds.contains("INBOX") && !listedIDs.contains(thread.id)
         }
         for thread in gone { try await repository.remove(thread.id) }
         if !gone.isEmpty {
@@ -381,11 +380,7 @@ final class GmailSyncService {
         guard !isBackfilling else { return }
         isBackfilling = true
         defer { isBackfilling = false }
-        guard let threads = try? await repository.threads() else { return }
-        let pending = threads
-            .filter { !$0.isBodyLoaded && $0.latestMessageID != nil && $0.id.account != "sample" }
-            .sorted { $0.receivedAt > $1.receivedAt }
-            .prefix(Self.backfillLimit)
+        guard let pending = try? await repository.threadsAwaitingContent(limit: Self.backfillLimit) else { return }
         for (account, accountThreads) in Dictionary(grouping: pending, by: \.id.account) {
             let ids = accountThreads.compactMap(\.latestMessageID)
             for chunk in ids.chunked(into: GmailAPIClient.batchSize) {
@@ -447,9 +442,8 @@ final class GmailSyncService {
         let inboxDates = listed.filter { $0.labelIds.contains("INBOX") }.map(\.receivedAt)
         guard let oldest = inboxDates.min(), let newest = inboxDates.max() else { return }
         let listedIDs = Set(listed.map(\.id))
-        let suspects = try await repository.threads().filter { thread in
-            thread.id.account == account && thread.labelIds.contains("INBOX") && !listedIDs.contains(thread.id)
-                && thread.receivedAt >= oldest && thread.receivedAt <= newest && thread.latestMessageID != nil
+        let suspects = try await repository.threads(account: account, receivedFrom: oldest, to: newest).filter { thread in
+            thread.labelIds.contains("INBOX") && !listedIDs.contains(thread.id) && thread.latestMessageID != nil
         }
         guard !suspects.isEmpty else { return }
         var changes: [RemoteMessageChange] = []
@@ -493,7 +487,7 @@ final class GmailSyncService {
         guard !isLoadingOlder, !accounts.isEmpty else { return false }
         isLoadingOlder = true
         defer { isLoadingOlder = false }
-        let known = Set(((try? await repository.threads()) ?? []).map { "\($0.id.account)|\($0.id.providerID)" })
+        let known = (try? await repository.storedIDs()) ?? []
         var anyLoaded = false
         for account in accounts where !isOlderInboxExhausted(for: account) {
             var pageToken = olderInboxPageToken(for: account)
@@ -565,8 +559,8 @@ final class GmailSyncService {
     /// recipient shown as the sender. Each is replaced by the real message,
     /// once; upsert always lets the real copy replace a placeholder.
     private func repairSentPlaceholders(account: String) async {
-        guard let threads = try? await repository.threads() else { return }
-        let broken = threads.filter { $0.id.account == account && $0.latestMessageID == nil && $0.lastSentAt != nil }
+        guard let threads = try? await repository.threadsWithoutMessageID(account: account) else { return }
+        let broken = threads.filter { $0.lastSentAt != nil }
         for thread in broken.prefix(20) {
             guard let messages = try? await client.fetchThreadMessages(threadId: thread.id.providerID, account: account),
                   let latest = messages.last else { continue }

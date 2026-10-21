@@ -28,7 +28,7 @@ final class WKWebViewPool {
         guard available.isEmpty else { return }
         for _ in 0..<poolSize {
             let webView = makeWebView()
-            webView.loadHTMLString("<html></html>", baseURL: nil)
+            webView.loadHTMLString(HTMLMessageBody.warmUpPage, baseURL: HTMLMessageBody.placeholderBaseURL)
             available.append(webView)
             // One at a time, letting touches through in between.
             await Task.yield()

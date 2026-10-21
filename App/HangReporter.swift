@@ -42,7 +42,7 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
     }
 
     func start() {
-        MainActor.assumeIsolated { Self.launchedAt = .now() }
+        MainActor.assumeIsolated { Self.launchedAt = Self.processStart ?? .now() }
         MXMetricManager.shared.add(self)
         // Diagnostics iOS already had waiting from an earlier run.
         didReceive(MXMetricManager.shared.pastDiagnosticPayloads)
@@ -118,9 +118,19 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
     /// kept with the diagnostics.
     @MainActor private static var marks: [String: DispatchTime] = [:]
     @MainActor private static var timings: [String] = []
-    @MainActor private static var launchedAt = DispatchTime.now()
+    @MainActor private static var launchedAt = processStart ?? DispatchTime.now()
 
     @MainActor static func start(_ name: String) { marks[name] = .now() }
+
+    /// Starts timing an email being opened, once for that email, from the
+    /// moment its screen is asked for (before anything is drawn).
+    @MainActor static func startOpening(_ key: String) {
+        guard openingKey != key else { return }
+        openingKey = key
+        marks["open"] = .now()
+    }
+    @MainActor private static var openingKey: String?
+    @MainActor static func closedOpening() { openingKey = nil }
 
     @MainActor static func finish(_ name: String) {
         guard let started = name == "launch" ? launchedAt : marks.removeValue(forKey: name) else { return }
@@ -139,6 +149,22 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
     }
 
     @MainActor static var launchMeasured: Bool { marks["launch-done"] != nil }
+
+    /// A point on the way to opening an email, timed from the tap, kept
+    /// with the timings so a slow open says where the time went.
+    @MainActor static func lap(_ label: String) {
+        guard let started = marks["open"] else { return }
+        let ms = (DispatchTime.now().uptimeNanoseconds - started.uptimeNanoseconds) / 1_000_000
+        timings.append("\(Date().formatted(.iso8601.time(includingFractionalSeconds: false))) open: \(label) at \(ms) ms")
+    }
+
+    /// A point on the way to the first screen, timed from launch, so a slow
+    /// launch says where the time went.
+    @MainActor static func step(_ name: String) {
+        guard !launchMeasured else { return }
+        let ms = (DispatchTime.now().uptimeNanoseconds - launchedAt.uptimeNanoseconds) / 1_000_000
+        timings.append("\(Date().formatted(.iso8601.time(includingFractionalSeconds: false))) launch: \(name) at \(ms) ms")
+    }
 
     // MARK: Sharing
 
@@ -175,6 +201,21 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         return withUnsafeBytes(of: &system.machine) { buffer in
             String(decoding: buffer.prefix { $0 != 0 }, as: UTF8.self)
         }
+    }
+
+    /// When this process started, so launch is timed from the tap, not
+    /// from partway through setting up.
+    private static var processStart: DispatchTime? {
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        var request: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
+        guard sysctl(&request, 4, &info, &size, nil, 0) == 0 else { return nil }
+        let started = info.kp_proc.p_un.__p_starttime
+        let startedAt = Double(started.tv_sec) + Double(started.tv_usec) / 1_000_000
+        let ago = Date().timeIntervalSince1970 - startedAt
+        guard ago > 0, ago < 120 else { return nil }
+        let now = DispatchTime.now().uptimeNanoseconds
+        return DispatchTime(uptimeNanoseconds: now - UInt64(ago * 1_000_000_000))
     }
 
     // MARK: Failures

@@ -3,6 +3,26 @@ import Foundation
 /// Views never depend on Gmail DTOs or authentication credentials.
 public protocol MailRepository: Sendable {
     func threads() async throws -> [Correspondence]
+    /// One conversation as stored, its full message included.
+    func thread(_ id: ThreadID) async throws -> Correspondence?
+    /// What was written since the last `threads()` or `changes()`, or nil
+    /// when only a full read can say.
+    func changes() async throws -> StoredChanges?
+    /// The newest `limit` conversations, without their HTML.
+    func recentThreads(limit: Int) async throws -> [Correspondence]
+    /// Narrow reads for sync, each a small query rather than the whole
+    /// mailbox: an account's conversations received between two dates;
+    /// the newest whose message is still to download; every stored id
+    /// ("account|providerID").
+    func threads(account: String, receivedFrom start: Date, to end: Date) async throws -> [Correspondence]
+    func threadsAwaitingContent(limit: Int) async throws -> [Correspondence]
+    /// An account's conversations with no message id yet (sent copies
+    /// Corres saved itself).
+    func threadsWithoutMessageID(account: String) async throws -> [Correspondence]
+    func storedIDs() async throws -> Set<String>
+    /// Moves HTML saved inside conversations into its own place, a batch
+    /// at a time; returns how many moved, 0 when done.
+    func moveContent(batch: Int) async throws -> Int
     /// Each returns the single thread as it now stands, the same pattern
     /// `send` already used: lets a caller splice just that one item into an
     /// in-memory list instead of re-fetching every thread just to find the
@@ -163,6 +183,14 @@ public protocol MailRepository: Sendable {
 
 public enum RepositoryError: Error, Equatable { case threadNotFound }
 
+/// Conversations written since the last read: as they now stand, and the
+/// ids of those removed.
+public struct StoredChanges: Sendable {
+    public let updated: [Correspondence]
+    public let removed: [ThreadID]
+}
+
+
 /// Deliberately transient, fictional data. No mail or credentials are persisted.
 public actor SampleMailRepository: MailRepository {
     private var items: [Correspondence]
@@ -231,6 +259,20 @@ public actor SampleMailRepository: MailRepository {
     /// Sample threads carry hand-written editorial reasons, never the old
     /// Gmail sync default, so there's nothing here to reclassify.
     public func reclassifyLegacySyncDefaults() -> Int { 0 }
+
+    public func thread(_ id: ThreadID) -> Correspondence? { items.first { $0.id == id } }
+    /// Sample mail is a handful of conversations: always read whole.
+    public func changes() -> StoredChanges? { nil }
+    public func recentThreads(limit: Int) -> [Correspondence] { items }
+    public func threads(account: String, receivedFrom start: Date, to end: Date) -> [Correspondence] {
+        items.filter { $0.id.account == account && $0.receivedAt >= start && $0.receivedAt <= end }
+    }
+    public func threadsAwaitingContent(limit: Int) -> [Correspondence] { [] }
+    public func threadsWithoutMessageID(account: String) -> [Correspondence] {
+        items.filter { $0.id.account == account && $0.latestMessageID == nil }
+    }
+    public func moveContent(batch: Int) -> Int { 0 }
+    public func storedIDs() -> Set<String> { Set(items.map { "\($0.id.account)|\($0.id.providerID)" }) }
 
     /// Sample threads never exist in Gmail, so nothing remote can change them.
     public func applyRemoteChanges(_ changes: [RemoteMessageChange]) -> Int { 0 }

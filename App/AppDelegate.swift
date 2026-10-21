@@ -54,12 +54,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     override init() {
+        HangReporter.step("setup began")
         let (container, usedInMemoryFallback) = Self.makeModelContainer()
+        HangReporter.step("storage opened")
         let repository = Self.makeRepository(container)
         CorresSettings.applyToCore()
         let mailStore = MailStore(repository: repository)
+        mailStore.contentReader = MessageContentReader(modelContainer: container)
         mailStore.seedsSampleMail = { !GoogleAuthService.hasSavedAccounts }
         let authService = GoogleAuthService()
+        HangReporter.step("accounts ready")
         store = mailStore
         // A real, silent-until-now failure mode, found in a review sweep:
         // this used to fall back to an in-memory store with nothing telling
@@ -80,8 +84,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         unsubscribeService = UnsubscribeService()
         semanticTriageService = SemanticTriageService()
         mailIntelligence = MailIntelligence()
+        mailIntelligence.storedThread = { [weak mailStore] in await mailStore?.storedThread($0) ?? $0 }
         router = AppRouter.shared
         askService = AskService(store: mailStore, sync: sync, auth: authService)
+        HangReporter.step("services ready")
         entitlements = EntitlementStore()
         people = PeopleDirectory()
         super.init()
@@ -90,6 +96,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         HangReporter.shared.start()
+        HangReporter.step("app started")
         CloudSync.shared.start(store: store)
         // Registration must happen before this method returns, for every
         // launch, background or foreground alike: registering even one

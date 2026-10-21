@@ -89,7 +89,7 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// The message's original rich-text rendering, when the provider sent
     /// one. `body` is always a plain-text-safe fallback; this is what
     /// actually renders when present (sanitized, isolated; see ADR 006).
-    public let htmlBody: String?
+    public var htmlBody: String?
     /// The RFC 5322 `Message-ID` of this message, without its surrounding
     /// `<...>`, when the provider sent one. Real Gmail threading of an
     /// outgoing reply depends on echoing this back as `In-Reply-To`/
@@ -203,6 +203,10 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// When you last wrote in this conversation, from any app; nil if you
     /// never have. Sent lists these, newest first.
     public var lastSentAt: Date?
+    /// Whether the HTML is only remote images (a sign of bulk mail), saved
+    /// with the conversation so it's known without the HTML, which the
+    /// lists don't hold. Nil when not worked out.
+    public var htmlImageOnly: Bool?
 
     /// Flagged in iOS Mail, starred in Gmail: the same thing underneath, a
     /// Gmail `STARRED` label, so it mirrors both ways through the labels
@@ -295,10 +299,10 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     public var looksAutomated: Bool {
         // A message never changes once sent: its answer is kept, keyed by
         // the message and whether its body has loaded yet.
-        let key = "\(id.account)|\(id.providerID)|\(latestMessageID ?? subject)|\(isBodyLoaded)|\(listUnsubscribeMailto != nil || listUnsubscribeURL != nil)"
+        let key = "\(id.account)|\(id.providerID)|\(latestMessageID ?? subject)|\(isBodyLoaded)|\(listUnsubscribeMailto != nil || listUnsubscribeURL != nil)|\(htmlImageOnly == true)"
         return Self.automatedMemo.value(key) {
             Self.isAutomated(listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL, senderEmail: senderEmail,
-                             senderName: sender, body: isBodyLoaded ? body : nil, html: htmlBody)
+                             senderName: sender, body: isBodyLoaded ? body : nil, html: htmlBody, imageOnly: htmlImageOnly == true)
         }
     }
     private static let automatedMemo = Memo<String, Bool>()
@@ -313,8 +317,9 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// bulk mail with no List-Unsubscribe, the kind Gmail would file as
     /// spam but Outlook's Focused often lets through.
     public static func isAutomated(listUnsubscribeMailto: String?, listUnsubscribeURL: String?, senderEmail: String?,
-                                   senderName: String? = nil, body: String? = nil, html: String? = nil) -> Bool {
-        if listUnsubscribeMailto != nil || listUnsubscribeURL != nil { return true }
+                                   senderName: String? = nil, body: String? = nil, html: String? = nil,
+                                   imageOnly: Bool = false) -> Bool {
+        if listUnsubscribeMailto != nil || listUnsubscribeURL != nil || imageOnly { return true }
         guard let senderEmail else { return false }
         // "noreply@", but also "noreply-purchases@", "no_reply.alerts@",
         // "donotreply@" and system senders like "notifications@".

@@ -107,7 +107,11 @@ struct ConversationView: View {
                         if !knownLabels.isEmpty {
                             labelChips(knownLabels).padding(.horizontal, CorresSpace.page)
                         }
-                        if let html = thread.htmlBody {
+                        if store.needsStoredContent(thread.id) {
+                            // The HTML is a moment away in storage: hold
+                            // its place rather than flash the plain text.
+                            Color.clear.frame(height: max(htmlHeight, 120))
+                        } else if let html = thread.htmlBody {
                             // Full width, no card: real HTML mail is a
                             // fixed-width table (often 600pt), and wrapping
                             // it in padding narrow enough to clip that table
@@ -304,9 +308,12 @@ struct ConversationView: View {
         // Keyed on the latest message too, so a reply landing while the
         // conversation is open loads, is marked read and is summarized.
         .categoryMoveDialog($categoryChoice, threadActions: threadActions)
-        .onAppear { HangReporter.start("open") }
-        .onChange(of: currentID) { HangReporter.start("open") }
+        .onChange(of: currentID) { HangReporter.startOpening("\(currentID.account)|\(currentID.providerID)") }
+        .onDisappear { HangReporter.closedOpening() }
         .task(id: "\(currentID.account)|\(currentID.providerID)|\(currentThread?.latestMessageID ?? "")|\(currentThread?.lastSentAt?.timeIntervalSince1970 ?? 0)") {
+            HangReporter.lap("view up")
+            await store.loadStoredContent(currentID)
+            HangReporter.lap("message read from storage")
             guard let thread = store.thread(currentID) else { return }
             // Loading the body and marking read are independent network
             // calls; neither should wait on the other.

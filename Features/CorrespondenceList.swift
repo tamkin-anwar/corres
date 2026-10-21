@@ -486,6 +486,12 @@ struct CorrespondenceList: View {
             // with a few hundred conversations that froze the app on a
             // swipe to Trash until iOS ended it (build 13).
             .onChange(of: rows.ids) { _, newValue in selected.formIntersection(newValue) }
+            // The top of the list, read ahead: opening one shows it at once.
+            .task(id: isActive ? Array(rows.ids.prefix(8)) : []) {
+                guard isActive else { return }
+                try? await Task.sleep(for: .milliseconds(400))
+                await store.prefetchStoredContent(Array(rows.ids.prefix(8)))
+            }
             .onAppear { if !results.isEmpty, !HangReporter.launchMeasured { HangReporter.finish("launch") } }
             .onChange(of: results.isEmpty) { _, empty in if !empty, !HangReporter.launchMeasured { HangReporter.finish("launch") } }
             // Room below the last rows while the Undo pill shows, so any row

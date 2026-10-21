@@ -131,9 +131,14 @@ final class MailIntelligence {
     /// thread, oldest first, when known; with more than one, the summary
     /// covers where the whole conversation stands. Safe to call repeatedly
     /// from `.task`; concurrent calls for the same message coalesce.
+    /// Reads a conversation's message from storage when the list's copy
+    /// (which has no HTML) is all a caller has. Set by the app.
+    @ObservationIgnored var storedThread: ((Correspondence) async -> Correspondence)?
+
     func prepareInsight(for thread: Correspondence, conversation: [Correspondence]? = nil) async {
         let key = Self.key(for: thread)
-        let messages = (conversation?.isEmpty == false ? conversation : nil) ?? [thread]
+        var messages = (conversation?.isEmpty == false ? conversation : nil) ?? [thread]
+        if messages.count == 1, messages[0].htmlBody == nil, let storedThread { messages = [await storedThread(messages[0])] }
         if let existing = insights[key], existing.rules == Self.summaryRules, existing.messageCount >= messages.count { return }
         guard thread.isBodyLoaded, !inFlight.contains(key) else { return }
         inFlight.insert(key)
