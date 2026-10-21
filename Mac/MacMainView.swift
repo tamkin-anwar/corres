@@ -427,9 +427,7 @@ struct MacMainView: View {
         }
         .font(.callout)
         .padding(.horizontal, 16).padding(.vertical, 10)
-        .background(.regularMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(CorresPalette.line))
-        .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+        .corresGlass(in: Capsule())
         .padding(.bottom, 18)
         .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
     }

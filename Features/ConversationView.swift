@@ -258,7 +258,7 @@ struct ConversationView: View {
                     Text("Adding attachments…").font(.footnote.weight(.medium))
                 }
                 .padding(.horizontal, 14).padding(.vertical, 9)
-                .background(.regularMaterial, in: Capsule())
+                .corresGlass(in: Capsule())
                 .padding(.top, 8)
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .accessibilityLabel("Adding attachments to the forward")
@@ -983,6 +983,7 @@ struct ConversationView: View {
     }
 
     private func bottomChrome(for thread: Correspondence) -> some View {
+        CorresGlassGroup {
         VStack(spacing: 10) {
             // Gone once you've answered: the last word is yours, or it's
             // waiting on them.
@@ -1013,6 +1014,7 @@ struct ConversationView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             actionBar(for: thread)
+        }
         }
         .padding(.bottom, 6)
         .animation(.easeOut(duration: 0.25), value: intelligence.insight(for: thread)?.replyIntents)

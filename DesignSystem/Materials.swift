@@ -28,6 +28,23 @@ extension View {
     }
 }
 
+/// Glass controls that sit together (the reading bar and Reply, the reply
+/// suggestions above them) drawn as one group, as Apple recommends: they
+/// blend where they meet and morph as they come and go, and the system
+/// renders the group in one pass instead of each piece on its own.
+struct CorresGlassGroup<Content: View>: View {
+    var spacing: CGFloat = 12
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        if #available(iOS 26.0, macOS 26.0, *) {
+            GlassEffectContainer(spacing: spacing) { content }
+        } else {
+            content
+        }
+    }
+}
+
 /// A round monogram, or the person's photo from your Contacts once you've
 /// allowed them (read on this iPhone, never fetched from a server: no
 /// Gravatar, no tracking pixel of a logo). Initials are set in SF at a

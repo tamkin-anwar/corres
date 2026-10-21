@@ -270,7 +270,7 @@ struct ScreenerView: View {
                 Button("Undo") { take(undo) }.font(.subheadline.weight(.semibold))
             }
             .padding(.horizontal, 18).padding(.vertical, 14)
-            .background(.regularMaterial, in: Capsule())
+            .corresGlass(in: Capsule())
             .padding(.horizontal, CorresSpace.page).padding(.bottom, 12)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .task(id: undo.message) {
