@@ -27,6 +27,8 @@ public actor IMAPConnection {
     private var channel: Channel?
     private var responses: ResponseQueue?
     private var tagCounter = 0
+    /// Between IDLE and its tagged end. Only DONE may be sent meanwhile.
+    private var inIdle = false
     public private(set) var capabilities = Capabilities([])
     public private(set) var selectedFolder: String?
 
@@ -86,7 +88,11 @@ public actor IMAPConnection {
     }
 
     public func logout() async {
-        _ = try? await run(.logout)
+        // Mid-IDLE (a wait cut off before it ended), the only thing the
+        // server and swift-nio-imap accept is DONE; a LOGOUT then stopped
+        // the app. Just close.
+        if !inIdle { _ = try? await run(.logout) }
+        inIdle = false
         try? await channel?.close()
         channel = nil
         responses = nil
@@ -297,6 +303,7 @@ public actor IMAPConnection {
         tagCounter += 1
         let tag = "C\(tagCounter)"
         try await channel.writeAndFlush(IMAPClientHandler.Message.part(.tagged(TaggedCommand(tag: tag, command: .idleStart))))
+        inIdle = true
         var changes: [Change] = []
         var idling = false
         var done = false
@@ -331,6 +338,7 @@ public actor IMAPConnection {
                 record(r)
             }
         }
+        inIdle = false
         // Several EXISTS in a row: only the latest count matters.
         if let lastExists = changes.last(where: { if case .exists = $0 { true } else { false } }) {
             changes.removeAll { if case .exists = $0 { true } else { false } }
@@ -345,6 +353,15 @@ public actor IMAPConnection {
     @discardableResult
     func run(_ command: Command, folder: String = "") async throws -> ResponseCollector {
         guard let channel else { throw ConnectionError.notConnected }
+        // Left in IDLE by a wait that was cut off: nothing but DONE can be
+        // sent (swift-nio-imap stops the process otherwise). This
+        // connection is spent; the caller opens a fresh one.
+        guard !inIdle else {
+            try? await channel.close()
+            self.channel = nil
+            responses = nil
+            throw ConnectionError.disconnected
+        }
         tagCounter += 1
         let tag = "C\(tagCounter)"
         var collector = ResponseCollector(tag: tag, folder: folder)

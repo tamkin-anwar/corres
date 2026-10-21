@@ -503,6 +503,9 @@
 "Bcc" = "密送";
 
 /* No comment provided by engineer. */
+"Beside companies' mail, the logo they publish for email, checked by its certificate. Corres's server fetches it, so the company never sees you, and is sent only the company's web address." = "在公司的邮件旁显示其为邮件发布、并经证书验证的标志。标志由 Corres 的服务器获取，公司永远看不到你，服务器也只会收到公司的网址。";
+
+/* No comment provided by engineer. */
 "Best regards,\nYour name\nTitle · Company" = "此致\n你的名字\n职位 · 公司";
 
 /* No comment provided by engineer. */
@@ -638,6 +641,9 @@
 "Companies · %lld" = "公司 · %lld";
 
 /* No comment provided by engineer. */
+"Company logos" = "公司标志";
+
+/* No comment provided by engineer. */
 "Company Rules" = "公司规则";
 
 /* No comment provided by engineer. */
@@ -687,9 +693,6 @@
 
 /* No comment provided by engineer. */
 "Conversation" = "对话";
-
-/* No comment provided by engineer. */
-"Conversation unavailable" = "对话不可用";
 
 /* No comment provided by engineer. */
 "Conversations" = "对话";
@@ -747,12 +750,6 @@
 
 /* No comment provided by engineer. */
 "Couldn't Finish That" = "无法完成";
-
-/* No comment provided by engineer. */
-"Couldn't load %@" = "无法载入 %@";
-
-/* No comment provided by engineer. */
-"Couldn't load Drafts" = "无法载入草稿";
 
 /* No comment provided by engineer. */
 "Couldn't load the full message." = "无法载入完整邮件。";
@@ -1613,7 +1610,7 @@
 "No Attachments" = "没有附件";
 
 /* No comment provided by engineer. */
-"No conversation selected" = "未选择对话";
+"No conversations found" = "未找到对话";
 
 /* No comment provided by engineer. */
 "No mail here" = "这里没有邮件";
@@ -1628,16 +1625,10 @@
 "No new people." = "没有新联系人。";
 
 /* No comment provided by engineer. */
-"No new senders" = "没有新发件人";
-
-/* No comment provided by engineer. */
 "No new senders waiting." = "没有等待中的新发件人。";
 
 /* No comment provided by engineer. */
 "No number on the icon." = "图标上不显示数字。";
-
-/* No comment provided by engineer. */
-"No Purchases" = "没有购物记录";
 
 /* No comment provided by engineer. */
 "No read receipts, ever" = "绝不发送已读回执";
@@ -1724,12 +1715,6 @@
 "Nothing in your mail matched “%@”. Try a name, a company, or fewer words." = "你的邮件中没有与“%@”匹配的内容。试试名字、公司或更少的词。";
 
 /* No comment provided by engineer. */
-"Nothing Matches" = "没有匹配的内容";
-
-/* No comment provided by engineer. */
-"Nothing Muted" = "没有已静音的对话";
-
-/* No comment provided by engineer. */
 "Nothing needs you right now." = "现在没有需要你的事。";
 
 /* No comment provided by engineer. */
@@ -1788,9 +1773,6 @@
 
 /* No comment provided by engineer. */
 "One conversation needs you." = "1 个对话需要你。";
-
-/* No comment provided by engineer. */
-"One moment" = "请稍候";
 
 /* No comment provided by engineer. */
 "One payment of %@. No subscription." = "一次性支付 %@。不是订阅。";

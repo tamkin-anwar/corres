@@ -171,6 +171,7 @@ private struct MacGeneralSettings: View {
     @AppStorage(CorresSettings.remoteImagesKey) private var remoteImages = CorresSettings.RemoteImages.ask.rawValue
     @AppStorage(SpotlightIndex.enabledKey) private var inSpotlight = true
     @AppStorage(MacMenuBarSetting.key) private var inMenuBar = true
+    @AppStorage(BrandLogos.enabledKey) private var companyLogos = true
     let store: MailStore
 
     @State private var isDefaultMailApp = MacDefaultMail.isCorres
@@ -203,6 +204,11 @@ private struct MacGeneralSettings: View {
                 Text("Show in menu bar")
                 Text("How many emails need you, and the first few, from the menu bar.")
             }
+            Toggle(isOn: $companyLogos) {
+                Text("Company logos")
+                Text("Beside companies' mail, the logo they publish for email, checked by its certificate. Corres's server fetches it, so the company never sees you, and is sent only the company's web address.")
+            }
+            .onChange(of: companyLogos) { _, on in if !on { BrandLogos.shared.forgetAll() } }
             Toggle(isOn: $inSpotlight) {
                 Text("Show in Spotlight")
                 Text("Find conversations from Spotlight by sender, subject or what they say. The index stays on this Mac.")

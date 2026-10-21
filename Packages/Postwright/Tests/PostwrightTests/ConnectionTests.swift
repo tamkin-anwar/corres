@@ -381,4 +381,19 @@ struct ActionTests {
         #expect(changes.isEmpty)
         try await c.setFlags(["\\Seen"], uids: [3], add: true)
     }
+
+    /// A wait cut off mid-IDLE (Corres leaving the screen) used to leave the
+    /// connection in IDLE, and the LOGOUT after it stopped the app inside
+    /// swift-nio-imap. It closes instead, and later commands fail cleanly.
+    @Test func cancellingDuringIdleThenLoggingOutDoesNotCrash() async throws {
+        let s = server(capabilities: "IMAP4rev1 IDLE")
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        let wait = Task { try await c.waitForChanges(wait: .seconds(30)) }
+        try await Task.sleep(for: .milliseconds(200))
+        wait.cancel()
+        _ = try? await wait.value
+        await c.logout()
+        await #expect(throws: (any Error).self) { try await c.setFlags(["\\Seen"], uids: [3], add: true) }
+    }
 }

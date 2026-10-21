@@ -503,6 +503,9 @@
 "Bcc" = "BCC";
 
 /* No comment provided by engineer. */
+"Beside companies' mail, the logo they publish for email, checked by its certificate. Corres's server fetches it, so the company never sees you, and is sent only the company's web address." = "企業からのメールの横に、その企業がメール用に公開し証明書で確認されたロゴを表示します。ロゴはCorresのサーバーが取得するので、企業にあなたが見えることはなく、送られるのは企業のWebアドレスだけです。";
+
+/* No comment provided by engineer. */
 "Best regards,\nYour name\nTitle · Company" = "よろしくお願いいたします。\n名前\n役職 · 会社名";
 
 /* No comment provided by engineer. */
@@ -638,6 +641,9 @@
 "Companies · %lld" = "会社 · %lld";
 
 /* No comment provided by engineer. */
+"Company logos" = "企業のロゴ";
+
+/* No comment provided by engineer. */
 "Company Rules" = "会社ごとのルール";
 
 /* No comment provided by engineer. */
@@ -687,9 +693,6 @@
 
 /* No comment provided by engineer. */
 "Conversation" = "会話";
-
-/* No comment provided by engineer. */
-"Conversation unavailable" = "会話を表示できません";
 
 /* No comment provided by engineer. */
 "Conversations" = "会話";
@@ -747,12 +750,6 @@
 
 /* No comment provided by engineer. */
 "Couldn't Finish That" = "完了できませんでした";
-
-/* No comment provided by engineer. */
-"Couldn't load %@" = "%@を読み込めませんでした";
-
-/* No comment provided by engineer. */
-"Couldn't load Drafts" = "下書きを読み込めませんでした";
 
 /* No comment provided by engineer. */
 "Couldn't load the full message." = "メッセージ全体を読み込めませんでした。";
@@ -1613,7 +1610,7 @@
 "No Attachments" = "添付ファイルはありません";
 
 /* No comment provided by engineer. */
-"No conversation selected" = "会話が選択されていません";
+"No conversations found" = "会話が見つかりません";
 
 /* No comment provided by engineer. */
 "No mail here" = "ここにメールはありません";
@@ -1628,16 +1625,10 @@
 "No new people." = "新しい人はいません。";
 
 /* No comment provided by engineer. */
-"No new senders" = "新しい差出人はいません";
-
-/* No comment provided by engineer. */
 "No new senders waiting." = "待機中の新しい差出人はいません。";
 
 /* No comment provided by engineer. */
 "No number on the icon." = "アイコンに数字を表示しません。";
-
-/* No comment provided by engineer. */
-"No Purchases" = "購入はありません";
 
 /* No comment provided by engineer. */
 "No read receipts, ever" = "開封確認は一切なし";
@@ -1724,12 +1715,6 @@
 "Nothing in your mail matched “%@”. Try a name, a company, or fewer words." = "メールに「%@」に一致するものはありませんでした。名前、会社名、または少ない語句でお試しください。";
 
 /* No comment provided by engineer. */
-"Nothing Matches" = "一致するものはありません";
-
-/* No comment provided by engineer. */
-"Nothing Muted" = "ミュート中の会話はありません";
-
-/* No comment provided by engineer. */
 "Nothing needs you right now." = "今、要対応のものはありません。";
 
 /* No comment provided by engineer. */
@@ -1788,9 +1773,6 @@
 
 /* No comment provided by engineer. */
 "One conversation needs you." = "1件の会話が要対応です。";
-
-/* No comment provided by engineer. */
-"One moment" = "少々お待ちください";
 
 /* No comment provided by engineer. */
 "One payment of %@. No subscription." = "%@の1回払い。サブスクリプションではありません。";

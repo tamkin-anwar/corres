@@ -503,6 +503,9 @@
 "Bcc" = "Blindkopie";
 
 /* No comment provided by engineer. */
+"Beside companies' mail, the logo they publish for email, checked by its certificate. Corres's server fetches it, so the company never sees you, and is sent only the company's web address." = "Neben E-Mails von Firmen das Logo, das sie für E-Mail veröffentlichen, geprüft anhand seines Zertifikats. Der Server von Corres ruft es ab, sodass die Firma dich nie sieht, und erhält nur die Webadresse der Firma.";
+
+/* No comment provided by engineer. */
 "Best regards,\nYour name\nTitle · Company" = "Viele Grüße\nDein Name\nPosition · Firma";
 
 /* No comment provided by engineer. */
@@ -638,6 +641,9 @@
 "Companies · %lld" = "Firmen · %lld";
 
 /* No comment provided by engineer. */
+"Company logos" = "Firmenlogos";
+
+/* No comment provided by engineer. */
 "Company Rules" = "Firmenregeln";
 
 /* No comment provided by engineer. */
@@ -687,9 +693,6 @@
 
 /* No comment provided by engineer. */
 "Conversation" = "Konversation";
-
-/* No comment provided by engineer. */
-"Conversation unavailable" = "Konversation nicht verfügbar";
 
 /* No comment provided by engineer. */
 "Conversations" = "Konversationen";
@@ -747,12 +750,6 @@
 
 /* No comment provided by engineer. */
 "Couldn't Finish That" = "Konnte nicht abgeschlossen werden";
-
-/* No comment provided by engineer. */
-"Couldn't load %@" = "%@ konnte nicht geladen werden";
-
-/* No comment provided by engineer. */
-"Couldn't load Drafts" = "Entwürfe konnten nicht geladen werden";
 
 /* No comment provided by engineer. */
 "Couldn't load the full message." = "Die vollständige Nachricht konnte nicht geladen werden.";
@@ -1613,7 +1610,7 @@
 "No Attachments" = "Keine Anhänge";
 
 /* No comment provided by engineer. */
-"No conversation selected" = "Keine Konversation ausgewählt";
+"No conversations found" = "Keine Unterhaltungen gefunden";
 
 /* No comment provided by engineer. */
 "No mail here" = "Hier sind keine E-Mails";
@@ -1628,16 +1625,10 @@
 "No new people." = "Keine neuen Personen.";
 
 /* No comment provided by engineer. */
-"No new senders" = "Keine neuen Absender";
-
-/* No comment provided by engineer. */
 "No new senders waiting." = "Keine neuen Absender warten.";
 
 /* No comment provided by engineer. */
 "No number on the icon." = "Keine Zahl auf dem Symbol.";
-
-/* No comment provided by engineer. */
-"No Purchases" = "Keine Einkäufe";
 
 /* No comment provided by engineer. */
 "No read receipts, ever" = "Niemals Lesebestätigungen";
@@ -1724,12 +1715,6 @@
 "Nothing in your mail matched “%@”. Try a name, a company, or fewer words." = "In deinen E-Mails passt nichts zu „%@“. Versuche es mit einem Namen, einer Firma oder weniger Wörtern.";
 
 /* No comment provided by engineer. */
-"Nothing Matches" = "Nichts passt";
-
-/* No comment provided by engineer. */
-"Nothing Muted" = "Nichts stummgeschaltet";
-
-/* No comment provided by engineer. */
 "Nothing needs you right now." = "Gerade braucht dich nichts.";
 
 /* No comment provided by engineer. */
@@ -1788,9 +1773,6 @@
 
 /* No comment provided by engineer. */
 "One conversation needs you." = "Eine Konversation braucht dich.";
-
-/* No comment provided by engineer. */
-"One moment" = "Einen Moment";
 
 /* No comment provided by engineer. */
 "One payment of %@. No subscription." = "Einmalzahlung von %@. Kein Abo.";

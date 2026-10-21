@@ -503,6 +503,9 @@
 "Bcc" = "숨은 참조";
 
 /* No comment provided by engineer. */
+"Beside companies' mail, the logo they publish for email, checked by its certificate. Corres's server fetches it, so the company never sees you, and is sent only the company's web address." = "회사 메일 옆에 회사가 이메일용으로 게시하고 인증서로 확인된 로고를 표시합니다. 로고는 Corres 서버가 가져오므로 회사는 사용자를 볼 수 없으며, 서버에는 회사의 웹 주소만 전달됩니다.";
+
+/* No comment provided by engineer. */
 "Best regards,\nYour name\nTitle · Company" = "감사합니다.\n이름\n직함 · 회사";
 
 /* No comment provided by engineer. */
@@ -638,6 +641,9 @@
 "Companies · %lld" = "회사 · %lld";
 
 /* No comment provided by engineer. */
+"Company logos" = "회사 로고";
+
+/* No comment provided by engineer. */
 "Company Rules" = "회사 규칙";
 
 /* No comment provided by engineer. */
@@ -687,9 +693,6 @@
 
 /* No comment provided by engineer. */
 "Conversation" = "대화";
-
-/* No comment provided by engineer. */
-"Conversation unavailable" = "대화를 사용할 수 없음";
 
 /* No comment provided by engineer. */
 "Conversations" = "대화";
@@ -747,12 +750,6 @@
 
 /* No comment provided by engineer. */
 "Couldn't Finish That" = "완료할 수 없음";
-
-/* No comment provided by engineer. */
-"Couldn't load %@" = "%@을(를) 불러올 수 없음";
-
-/* No comment provided by engineer. */
-"Couldn't load Drafts" = "임시 저장 메일을 불러올 수 없음";
 
 /* No comment provided by engineer. */
 "Couldn't load the full message." = "전체 메시지를 불러올 수 없습니다.";
@@ -1613,7 +1610,7 @@
 "No Attachments" = "첨부 파일 없음";
 
 /* No comment provided by engineer. */
-"No conversation selected" = "선택된 대화 없음";
+"No conversations found" = "대화를 찾을 수 없음";
 
 /* No comment provided by engineer. */
 "No mail here" = "여기에 메일이 없음";
@@ -1628,16 +1625,10 @@
 "No new people." = "새 사람이 없습니다.";
 
 /* No comment provided by engineer. */
-"No new senders" = "새 보낸 사람 없음";
-
-/* No comment provided by engineer. */
 "No new senders waiting." = "기다리는 새 보낸 사람이 없습니다.";
 
 /* No comment provided by engineer. */
 "No number on the icon." = "아이콘에 숫자를 표시하지 않습니다.";
-
-/* No comment provided by engineer. */
-"No Purchases" = "구매 내역 없음";
 
 /* No comment provided by engineer. */
 "No read receipts, ever" = "읽음 확인을 보내지 않음";
@@ -1724,12 +1715,6 @@
 "Nothing in your mail matched “%@”. Try a name, a company, or fewer words." = "메일에서 '%@'와(과) 일치하는 항목이 없습니다. 이름, 회사 또는 더 적은 단어로 시도해 보세요.";
 
 /* No comment provided by engineer. */
-"Nothing Matches" = "일치하는 항목 없음";
-
-/* No comment provided by engineer. */
-"Nothing Muted" = "알림을 끈 대화 없음";
-
-/* No comment provided by engineer. */
 "Nothing needs you right now." = "지금은 나에게 필요한 것이 없습니다.";
 
 /* No comment provided by engineer. */
@@ -1788,9 +1773,6 @@
 
 /* No comment provided by engineer. */
 "One conversation needs you." = "대화 1개가 나를 기다립니다.";
-
-/* No comment provided by engineer. */
-"One moment" = "잠시만 기다려 주세요";
 
 /* No comment provided by engineer. */
 "One payment of %@. No subscription." = "%@ 1회 결제. 구독이 아닙니다.";

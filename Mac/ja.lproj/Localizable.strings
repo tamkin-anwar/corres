@@ -71,9 +71,6 @@
 "%lld conversations need you." = "%lld件の会話が要対応です。";
 
 /* No comment provided by engineer. */
-"%lld conversations selected" = "%lld件の会話を選択中";
-
-/* No comment provided by engineer. */
 "%lld conversations, %lld unread" = "%lld件の会話、未読%lld件";
 
 /* No comment provided by engineer. */
@@ -248,6 +245,9 @@
 "Automatic" = "自動";
 
 /* No comment provided by engineer. */
+"Beside companies' mail, the logo they publish for email, checked by its certificate. Corres's server fetches it, so the company never sees you, and is sent only the company's web address." = "企業からのメールの横に、その企業がメール用に公開し証明書で確認されたロゴを表示します。ロゴはCorresのサーバーが取得するので、企業にあなたが見えることはなく、送られるのは企業のWebアドレスだけです。";
+
+/* No comment provided by engineer. */
 "Block" = "ブロック";
 
 /* No comment provided by engineer. */
@@ -329,6 +329,9 @@
 "codes" = "コード";
 
 /* No comment provided by engineer. */
+"Company logos" = "企業のロゴ";
+
+/* No comment provided by engineer. */
 "Complete it" = "完了する";
 
 /* No comment provided by engineer. */
@@ -393,9 +396,6 @@
 
 /* No comment provided by engineer. */
 "Couldn't find an answer in your mail." = "メールの中に答えが見つかりませんでした。";
-
-/* No comment provided by engineer. */
-"Couldn't load %@" = "%@を読み込めませんでした";
 
 /* No comment provided by engineer. */
 "Couldn't load the full message." = "メッセージ全体を読み込めませんでした。";
@@ -911,9 +911,6 @@
 "No number on the icon." = "アイコンに数字を表示しません。";
 
 /* No comment provided by engineer. */
-"No Purchases" = "購入はありません";
-
-/* No comment provided by engineer. */
 "No recipients" = "宛先なし";
 
 /* No comment provided by engineer. */
@@ -926,13 +923,7 @@
 "No reply in 1 day" = "1日間返信なし";
 
 /* No comment provided by engineer. */
-"No signature selected" = "署名が選択されていません";
-
-/* No comment provided by engineer. */
 "No subject" = "件名なし";
-
-/* No comment provided by engineer. */
-"No unread mail" = "未読メールはありません";
 
 /* No comment provided by engineer. */
 "Nothing for you to do" = "することはありません";
@@ -954,9 +945,6 @@
 
 /* No comment provided by engineer. */
 "Nothing needs you right now." = "今、要対応のものはありません。";
-
-/* No comment provided by engineer. */
-"Nothing scheduled" = "予約はありません";
 
 /* No comment provided by engineer. */
 "Nothing unread in %@." = "%@に未読はありません。";

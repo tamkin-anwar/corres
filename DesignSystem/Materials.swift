@@ -45,9 +45,10 @@ struct CorresGlassGroup<Content: View>: View {
     }
 }
 
-/// A round monogram, or the person's photo from your Contacts once you've
-/// allowed them (read on this iPhone, never fetched from a server: no
-/// Gravatar, no tracking pixel of a logo). Initials are set in SF at a
+/// A round monogram, the person's photo from your Contacts once you've
+/// allowed them (read on this iPhone), or a company's own verified logo,
+/// fetched privately through Corres's relay (BrandLogos), never from the
+/// sender directly. Initials are set in SF at a
 /// fixed ratio of the circle so they stay optically centered at any size.
 struct CorrespondentAvatar: View {
     let initials: String
@@ -72,6 +73,11 @@ struct CorrespondentAvatar: View {
                 if let email, let photo = people?.photo(for: email) {
                     Image(platformImage: photo).resizable().scaledToFill()
                         .frame(width: side, height: side).clipShape(Circle())
+                } else if let email, let logo = BrandLogos.shared.logo(for: email) {
+                    // The company's own verified mark (BrandLogos).
+                    Image(platformImage: logo).resizable().interpolation(.high).scaledToFill()
+                        .frame(width: side, height: side).clipShape(Circle())
+                        .transition(.opacity)
                 }
             }
             .overlay(Circle().strokeBorder(CorresPalette.line, lineWidth: 1 / displayScale))

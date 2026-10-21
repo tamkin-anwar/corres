@@ -1418,8 +1418,21 @@ private struct NotificationSettingsView: View {
 // MARK: - Privacy
 
 private struct PrivacyView: View {
+    @AppStorage(BrandLogos.enabledKey) private var companyLogos = true
+
     var body: some View {
         Form {
+            Section {
+                Toggle(isOn: $companyLogos) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Company logos").font(.body.weight(.medium))
+                        Text("Beside companies' mail, the logo they publish for email, checked by its certificate. Corres's server fetches it, so the company never sees you, and is sent only the company's web address.")
+                            .font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .onChange(of: companyLogos) { _, on in if !on { BrandLogos.shared.forgetAll() } }
+            }
             Section {
                 row("Corres never sees your account password", "key",
                     "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this \(Device.name)'s Keychain.")

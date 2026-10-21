@@ -71,9 +71,6 @@
 "%lld conversations need you." = "%lld conversations vous attendent.";
 
 /* No comment provided by engineer. */
-"%lld conversations selected" = "%lld conversations sélectionnées";
-
-/* No comment provided by engineer. */
 "%lld conversations, %lld unread" = "%lld conversations, %lld non lues";
 
 /* No comment provided by engineer. */
@@ -248,6 +245,9 @@
 "Automatic" = "Automatique";
 
 /* No comment provided by engineer. */
+"Beside companies' mail, the logo they publish for email, checked by its certificate. Corres's server fetches it, so the company never sees you, and is sent only the company's web address." = "À côté des e-mails d'entreprises, le logo qu'elles publient pour l'e-mail, vérifié par son certificat. Le serveur de Corres le récupère : l'entreprise ne vous voit jamais, et le serveur ne reçoit que l'adresse web de l'entreprise.";
+
+/* No comment provided by engineer. */
 "Block" = "Bloquer";
 
 /* No comment provided by engineer. */
@@ -329,6 +329,9 @@
 "codes" = "codes";
 
 /* No comment provided by engineer. */
+"Company logos" = "Logos des entreprises";
+
+/* No comment provided by engineer. */
 "Complete it" = "Le compléter";
 
 /* No comment provided by engineer. */
@@ -393,9 +396,6 @@
 
 /* No comment provided by engineer. */
 "Couldn't find an answer in your mail." = "Aucune réponse trouvée dans vos e-mails.";
-
-/* No comment provided by engineer. */
-"Couldn't load %@" = "Impossible de charger %@";
 
 /* No comment provided by engineer. */
 "Couldn't load the full message." = "Impossible de charger le message complet.";
@@ -911,9 +911,6 @@
 "No number on the icon." = "Aucun chiffre sur l’icône.";
 
 /* No comment provided by engineer. */
-"No Purchases" = "Aucun achat";
-
-/* No comment provided by engineer. */
 "No recipients" = "Aucun destinataire";
 
 /* No comment provided by engineer. */
@@ -926,13 +923,7 @@
 "No reply in 1 day" = "Sans réponse depuis 1 jour";
 
 /* No comment provided by engineer. */
-"No signature selected" = "Aucune signature sélectionnée";
-
-/* No comment provided by engineer. */
 "No subject" = "Sans objet";
-
-/* No comment provided by engineer. */
-"No unread mail" = "Aucun e-mail non lu";
 
 /* No comment provided by engineer. */
 "Nothing for you to do" = "Rien à faire pour vous";
@@ -954,9 +945,6 @@
 
 /* No comment provided by engineer. */
 "Nothing needs you right now." = "Rien ne vous attend pour l’instant.";
-
-/* No comment provided by engineer. */
-"Nothing scheduled" = "Rien de programmé";
 
 /* No comment provided by engineer. */
 "Nothing unread in %@." = "Rien de non lu dans %@.";
