@@ -47,3 +47,16 @@ Please try
 - Unread Only on different tabs, and searching for a person or a company.
 
 If anything feels slow or goes wrong, send it from Settings > Send Diagnostics.
+
+## Build 23 (iPhone and iPad) and Mac build 24
+
+New
+- Corres now speaks Bengali (বাংলা). Pick it for Corres alone in Settings > Corres > Language.
+- A new app icon, made for the glass look of iOS 26, with Clear, Tinted and Dark versions.
+- Company logos beside companies' mail, from the logo each company publishes for email and checks with a certificate. Corres's server fetches them, so companies never see you. Turn them off in Settings > Private by Design.
+
+Fixed
+- The Mac app no longer freezes when it starts.
+- Corres no longer quits when you leave it while iCloud mail is being checked.
+- When Gmail asks apps to slow down, Corres waits and catches up instead of showing a sync error.
+- Words fit everywhere: "All Inboxes" at the top, labels and empty screens no longer end in "…". Select is now a checkmark button.
