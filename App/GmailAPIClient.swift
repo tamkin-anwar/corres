@@ -846,8 +846,29 @@ struct GmailAPIClient {
     private func authorizedRequest(url: URL, token: String) async throws -> (Data, URLResponse) {
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        // Gmail's per-user limit is shared by every device on the account
+        // (an iPhone and a Mac both catching up on a year of mail can reach
+        // it), and it answers 403 or 429 "rateLimitExceeded" for a minute.
+        // Reads wait as long as it asks and try again, as changes do; if it
+        // still says no, the refusal carries its reason, so sync treats it
+        // as a pause, not as mail that can't be read.
+        for (attempt, delay) in Self.readRetryDelays.enumerated() {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            guard status == 403 || status == 429 else { return (data, response) }
+            let refusal = Self.refusal(from: data)
+            guard status == 429 || Self.rateLimitReasons.contains(refusal.reason ?? "") else { return (data, response) }
+            guard attempt < Self.readRetryDelays.count - 1 else {
+                throw ClientError.refused(statusCode: status, reason: refusal.reason ?? "rateLimitExceeded", message: refusal.message)
+            }
+            let asked = Self.retryAfter(response: response, message: refusal.message) ?? 0
+            try await Task.sleep(for: .seconds(min(max(delay, asked), 30)))
+        }
         return try await URLSession.shared.data(for: request)
     }
+
+    /// Waits between reads Gmail turned down for rate, then one last try.
+    static let readRetryDelays: [Double] = [2, 6, 15, 0]
 
     private func validate(_ response: URLResponse) throws {
         guard let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode else {

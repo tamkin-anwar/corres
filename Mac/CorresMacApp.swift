@@ -45,7 +45,13 @@ struct CorresMacApp: App {
             TextFormattingCommands()
         }
 
-        MenuBarExtra(isInserted: $inMenuBar) {
+        // Written only when it really changes. macOS reports the item as
+        // shown each time SwiftUI updates it; bound straight to the setting,
+        // that report saved the same value again, the save redrew every
+        // window and the menu bar item, and the update reported again: a
+        // loop at full speed from launch (the Mac freezing at start, builds
+        // 20 to 22).
+        MenuBarExtra(isInserted: Binding(get: { inMenuBar }, set: { if $0 != inMenuBar { inMenuBar = $0 } })) {
             MacMenuBarContent(services: services)
         } label: {
             MacMenuBarLabel(services: services)

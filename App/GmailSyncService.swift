@@ -315,6 +315,11 @@ final class GmailSyncService {
                MailAccounts.provider(for: account) == .google {
                 await GoogleTokenProvider.shared.invalidateAccessToken(for: account)
             }
+            // Gmail asking for a pause (its per-user limit, shared by every
+            // device) is no problem of yours: the next pass catches up.
+            if case GmailAPIClient.ClientError.refused(_, let reason?, _) = error, GmailAPIClient.rateLimitReasons.contains(reason) {
+                return false
+            }
             errorMessage = "Couldn't sync your mail. Check your connection and try again."
             health[account, default: AccountHealth()].problem = Self.describe(error, account: account)
             return false
