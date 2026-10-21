@@ -203,6 +203,7 @@ struct CorrespondenceList: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     /// Remembered: Mail opens where you left it, Primary at first.
     @AppStorage("corres.mailFilter") private var mailFilter = MailFilter.needsYou
+    @AppStorage(MailFilter.unreadOnlyKey) private var unreadOnly = false
     /// Needs You is part of Pro: without it the split shows what it does.
     var needsYouLocked = false
     var onUnlockPro: (() -> Void)?
@@ -269,6 +270,7 @@ struct CorrespondenceList: View {
             let destination: Destination
             let search: String
             let filter: MailFilter
+            let unreadOnly: Bool
             /// What the providers' search found, as more of it arrives.
             let serverMatches: Int
         }
@@ -300,11 +302,17 @@ struct CorrespondenceList: View {
         if !isActive, cache.key != nil { return cache }
         let key = RowsCache.Key(revision: store.contentRevision, minute: Int(Date.now.timeIntervalSince1970 / 60),
                                 account: accountFilter, accounts: accountsRevision, destination: kind,
-                                search: appliedSearch, filter: mailFilter, serverMatches: serverMatches.count)
+                                search: appliedSearch, filter: mailFilter, unreadOnly: filtersUnread,
+                                serverMatches: serverMatches.count)
         let hidden = store.hiddenIDs
         if cache.key == key, cache.hidden == hidden { return cache }
         if cache.key != key {
-            cache.full = buildResults()
+            // Unread Only keeps what it already showed, until you change
+            // split, account or the filter itself.
+            let old = cache.key
+            let sameView = old.map { $0.filter == key.filter && $0.destination == key.destination
+                && $0.account == key.account && $0.unreadOnly && key.unreadOnly && $0.search == key.search } ?? false
+            cache.full = buildResults(keeping: sameView ? Set(cache.full.map(\.id)) : [])
             cache.key = key
             if kind == .needsYou {
                 let waiting = MailQuery.prioritized(scopedThreads, attention: .waiting)
@@ -345,7 +353,18 @@ struct CorrespondenceList: View {
         return sync.serverMatches
     }
 
-    private func buildResults() -> [Correspondence] {
+    /// Unread Only applies to Mail's splits, and not while searching:
+    /// search looks through everything.
+    private var filtersUnread: Bool {
+        unreadOnly && destination == .mail && appliedSearch.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private func buildResults(keeping kept: Set<ThreadID> = []) -> [Correspondence] {
+        let results = buildSplit()
+        return filtersUnread ? MailFilter.unreadOnly(results, keeping: kept) : results
+    }
+
+    private func buildSplit() -> [Correspondence] {
         let all: [Correspondence]
         let search = appliedSearch
         if let attention = kind.attention, search.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -696,6 +715,10 @@ struct CorrespondenceList: View {
                     ProgressView().controlSize(.mini)
                     Text("Searching your mail…").font(.subheadline).foregroundStyle(CorresPalette.secondary)
                 }
+                if destination == .mail, search.trimmingCharacters(in: .whitespaces).isEmpty {
+                    Spacer(minLength: 8)
+                    unreadOnlyButton
+                }
             }
             .padding(.horizontal, CorresSpace.page)
             askSection
@@ -785,6 +808,10 @@ struct CorrespondenceList: View {
     private var summaryLine: String {
         let count = results.count
         let sample = (auth?.accounts.isEmpty ?? true) && !EntitlementStore.isScreenshotMode ? String(localized: " · Sample mail") : ""
+        if filtersUnread {
+            let unread = rows.unread
+            return String(localized: "Unread only") + (unread > 0 ? String(localized: " · \(unread) unread") : "") + sample
+        }
         switch kind {
         case .needsYou:
             let due = dueSoonIDs.count
@@ -797,13 +824,32 @@ struct CorrespondenceList: View {
         }
     }
 
+    /// Mail's filter button: the split you're on, unread only. One tap on,
+    /// one tap off; it stays as you move between splits.
+    private var unreadOnlyButton: some View {
+        Button {
+            unreadOnly.toggle()
+        } label: {
+            Image(systemName: unreadOnly ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                .font(.title3)
+                .foregroundStyle(unreadOnly ? CorresPalette.accent : CorresPalette.secondary)
+                .frame(minWidth: 44, minHeight: 32)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Unread Only")
+        .accessibilityAddTraits(unreadOnly ? .isSelected : [])
+        .accessibilityHint("Shows only unread mail in this list")
+        .sensoryFeedback(.selection, trigger: unreadOnly)
+    }
+
     /// Underlined text tabs, not chips: they read as views of one list,
     /// which is what they are.
     private var filterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 18) {
                 // On iPad the sidebar has Needs You; Mail's splits start at Primary.
-                ForEach(MailFilter.allCases.filter { sizeClass != .regular || $0 != .needsYou }) { filter in
+                ForEach(MailFilter.tabs.filter { sizeClass != .regular || $0 != .needsYou }) { filter in
                     Button {
                         mailFilter = filter
                     } label: {
@@ -902,7 +948,10 @@ struct CorrespondenceList: View {
     }
 
     private var emptyTitle: String {
-        switch kind {
+        if filtersUnread {
+            return mailFilter == .everything ? String(localized: "No unread mail") : String(localized: "Nothing unread in \(mailFilter.title)")
+        }
+        return switch kind {
         case .needsYou: String(localized: "Nothing in Needs You")
         case .waiting: String(localized: "Nothing in Waiting")
         default: mailFilter == .everything ? String(localized: "No mail here") : String(localized: "Nothing in \(mailFilter.title)")
@@ -910,7 +959,8 @@ struct CorrespondenceList: View {
     }
 
     private var emptyDetail: String {
-        switch kind {
+        if filtersUnread { return String(localized: "Turn off Unread Only to see everything here.") }
+        return switch kind {
         case .needsYou: String(localized: "When an email asks something of you, it shows here. The rest of your mail is in Primary.")
         case .waiting: String(localized: "When you reply to someone, or move a conversation here, it waits here until they answer.")
         default: String(localized: "Pull down to check for new mail.")
@@ -933,6 +983,11 @@ struct CorrespondenceList: View {
             Label(search.isEmpty ? emptyTitle : "No conversations found", systemImage: search.isEmpty ? "checkmark.circle" : "magnifyingglass")
         } description: {
             Text(search.isEmpty ? emptyDetail : String(localized: "Try a name, subject, or organization."))
+        } actions: {
+            if filtersUnread {
+                Button("Show All") { unreadOnly = false }
+                    .buttonStyle(.borderless)
+            }
         }
         .padding(.horizontal, CorresSpace.page)
     }

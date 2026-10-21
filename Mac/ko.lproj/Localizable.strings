@@ -398,6 +398,9 @@
 "Couldn't load %@" = "%@을(를) 불러올 수 없음";
 
 /* No comment provided by engineer. */
+"Couldn't load the full message." = "전체 메시지를 불러올 수 없습니다.";
+
+/* No comment provided by engineer. */
 "Couldn't Save" = "저장할 수 없음";
 
 /* No comment provided by engineer. */
@@ -926,6 +929,9 @@
 "No subject" = "제목 없음";
 
 /* No comment provided by engineer. */
+"No unread mail" = "읽지 않은 메일 없음";
+
+/* No comment provided by engineer. */
 "Nothing for you to do" = "할 일이 없음";
 
 /* No comment provided by engineer. */
@@ -948,6 +954,9 @@
 
 /* No comment provided by engineer. */
 "Nothing scheduled" = "예약된 메일 없음";
+
+/* No comment provided by engineer. */
+"Nothing unread in %@." = "%@에 읽지 않은 메일이 없습니다.";
 
 /* No comment provided by engineer. */
 "notifications" = "알림";
@@ -1298,6 +1307,9 @@
 "Shorter" = "더 짧게";
 
 /* No comment provided by engineer. */
+"Show All" = "모두 보기";
+
+/* No comment provided by engineer. */
 "Show Images" = "이미지 보기";
 
 /* No comment provided by engineer. */
@@ -1308,6 +1320,9 @@
 
 /* No comment provided by engineer. */
 "Show One Account" = "하나의 계정 보기";
+
+/* No comment provided by engineer. */
+"Show only unread mail in this list (⌘L)" = "이 목록에서 읽지 않은 메일만 보기 (⌘L)";
 
 /* No comment provided by engineer. */
 "Show your mail with %@" = "%@와(과)의 메일 보기";
@@ -1457,6 +1472,9 @@
 "Trash" = "휴지통";
 
 /* No comment provided by engineer. */
+"Try Again" = "다시 시도";
+
+/* No comment provided by engineer. */
 "Try another name." = "다른 이름으로 시도해 보세요.";
 
 /* No comment provided by engineer. */
@@ -1488,6 +1506,9 @@
 
 /* No comment provided by engineer. */
 "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "사람이 보낸 읽지 않은 메일과 긴급한 메일. 프로모션, 소셜, 업데이트는 세지 않습니다.";
+
+/* No comment provided by engineer. */
+"Unread Only" = "읽지 않은 메일만";
 
 /* No comment provided by engineer. */
 "Unread, from a person." = "읽지 않음, 사람이 보냈습니다.";

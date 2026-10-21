@@ -28,8 +28,12 @@ final class ThreadActionService {
         // conversation comes back, and you're told why.
         ActionQueue.shared.onRefused = { [weak self] action, error in
             guard let self else { return }
+            HangReporter.failure("a waiting change", error)
             if let snapshot = action.snapshot { await self.store.putBack(snapshot) }
-            await self.report(error, failureMessage: "A change you made while offline couldn't be saved.", account: action.account)
+            // A read or a flag that didn't take settles with the next sync;
+            // only a conversation coming back needs saying.
+            await self.report(error, failureMessage: "A change you made while offline couldn't be saved.", account: action.account,
+                              quietly: action.snapshot == nil)
         }
     }
 
@@ -402,7 +406,10 @@ final class ThreadActionService {
     /// row into a screen the person has already navigated away from.
     func setUnread(_ isUnread: Bool, for thread: Correspondence) async {
         let failureMessage = "Couldn't mark this conversation as \(isUnread ? "unread" : "read"). Try again."
-        await performOptimistic(thread, failureMessage: failureMessage,
+        // Read state is never worth an alert, as in Mail and Gmail: a
+        // failure is retried or settles with the next sync. Only a login
+        // that can't change mail at all is said, since Reconnect fixes it.
+        await performOptimistic(thread, failureMessage: failureMessage, quietly: true,
                                 change: isUnread ? .modify(add: ["UNREAD"], remove: []) : .modify(add: [], remove: ["UNREAD"]),
                                 local: { await self.store.setUnread(isUnread, for: thread.id) },
            revert: { await self.store.setUnread(!isUnread, for: thread.id) })
@@ -416,16 +423,56 @@ final class ThreadActionService {
         await toggleLabel("STARRED", isOn: isFlagged, for: thread)
     }
 
+    /// Conversations whose full message couldn't be loaded when opened:
+    /// the conversation says so and offers Try Again, instead of
+    /// "Loading the full message…" for good.
+    private(set) var contentFailures: Set<ThreadID> = []
+
     /// Fetches the full message for a thread synced metadata-first, the
     /// moment it's opened, rather than waiting for background backfill to
-    /// reach it. Silent on failure: the snippet is already showing, and
-    /// the next open or backfill pass simply tries again.
+    /// reach it. When the message alone doesn't come back, the whole
+    /// conversation is asked for instead; when neither does in time, the
+    /// thread joins `contentFailures`.
     func loadContent(for thread: Correspondence) async {
         guard !thread.isBodyLoaded, thread.id.account != Self.sampleAccount,
-              let messageID = thread.latestMessageID,
-              let fetched = try? await client.fetchFull(ids: [messageID], account: thread.id.account) else { return }
-        await store.applyLoadedContent(fetched.items)
+              let messageID = thread.latestMessageID else { return }
+        contentFailures.remove(thread.id)
+        let account = thread.id.account, threadID = thread.id.providerID
+        let client = client
+        // Its own task: leaving the conversation shouldn't throw away a
+        // message that's nearly here, and the next open finds it loaded.
+        let work = Task { () throws -> [Correspondence] in
+            var failure: Error?
+            do {
+                let fetched = try await client.fetchFull(ids: [messageID], account: account)
+                if !fetched.items.isEmpty { return fetched.items }
+            } catch { failure = error }
+            // A message the batch kept failing on (a very large one, or
+            // Gmail busy) usually comes back with its conversation.
+            do {
+                let messages = try await client.fetchThreadMessages(threadId: threadID, account: account)
+                if let latest = messages.last(where: { $0.latestMessageID == messageID }), latest.isBodyLoaded {
+                    return [latest]
+                }
+            } catch { failure = error }
+            throw failure ?? MessageNotLoaded()
+        }
+        let timeout = Task {
+            try await Task.sleep(for: .seconds(45))
+            work.cancel()
+        }
+        defer { timeout.cancel() }
+        do {
+            let items = try await work.value
+            await store.applyLoadedContent(items)
+        } catch {
+            guard !Task.isCancelled else { return }
+            HangReporter.failure("load a message", error)
+            if store.thread(thread.id)?.isBodyLoaded != true { contentFailures.insert(thread.id) }
+        }
     }
+
+    private struct MessageNotLoaded: Error {}
 
     /// Every message in a conversation, oldest first, keyed by thread and
     /// refreshed whenever a new message lands in it. In memory only: the
@@ -549,21 +596,26 @@ final class ThreadActionService {
     /// already uses. Only used where undoing the optimistic change is a
     /// trivial, non-destructive correction (`setUnread`/`toggleLabel`), never
     /// for Archive/Trash.
-    private func performOptimistic(_ thread: Correspondence, failureMessage: String,
+    private func performOptimistic(_ thread: Correspondence, failureMessage: String, quietly: Bool = false,
                                    change: ActionQueue.Action.Kind, local: () async -> Void,
                                    revert: () async -> Void) async {
         await local()
         guard thread.id.account != Self.sampleAccount else { return }
         guard auth.isConnected(thread.id.account) else {
-            errorMessage = failureMessage
-            await revert()
+            // Still signing in (just launched, or opened from a
+            // notification): the change waits for it rather than failing.
+            ActionQueue.shared.enqueue(ActionQueue.Action(account: thread.id.account, threadID: thread.id.providerID, kind: change))
             return
         }
         do {
             try await guardModifyPermission(for: thread.id.account)
-            try await send(change, for: thread)
+            // Its own task, so leaving the conversation doesn't cut it off:
+            // a mark-as-read cancelled halfway used to come back as an
+            // error and put the unread dot back.
+            try await Task { try await self.send(change, for: thread) }.value
         } catch {
-            await report(error, failureMessage: failureMessage, account: thread.id.account)
+            HangReporter.failure(failureMessage, error)
+            await report(error, failureMessage: failureMessage, account: thread.id.account, quietly: quietly)
             await revert()
         }
     }
@@ -591,7 +643,12 @@ final class ThreadActionService {
     /// permission unless the login is known to have it (Gmail also uses
     /// 403 for rate limits); anything else keeps the plain message plus
     /// Gmail's status code, so the next unexplained failure is diagnosable.
-    private func report(_ error: Error, failureMessage: String, account: String) async {
+    private func report(_ error: Error, failureMessage: String, account: String, quietly: Bool = false) async {
+        // Quiet: only a login that needs reconnecting is said.
+        var errorMessage: String? {
+            get { self.errorMessage }
+            set { if !quietly { self.errorMessage = newValue } }
+        }
         let scopes = await GoogleTokenProvider.shared.grantedScopes(for: account)
         let hasModify = scopes?.contains(GoogleAuthService.modifyScope)
         switch error {
@@ -601,6 +658,8 @@ final class ThreadActionService {
             if let reason, GmailAPIClient.permissionReasons.contains(reason) {
                 askToReconnect(account)
             } else if status == 403 && reason == nil && hasModify != true {
+                askToReconnect(account)
+            } else if status == 403 && quietly {
                 askToReconnect(account)
             } else if let reason, GmailAPIClient.rateLimitReasons.contains(reason) {
                 errorMessage = "\(MailAccounts.provider(for: account).title) is limiting how fast changes can be made right now. Give it a moment and try again."
@@ -614,7 +673,7 @@ final class ThreadActionService {
         case GmailAPIClient.ClientError.badResponse(let status) where status == 403 && hasModify != true:
             askToReconnect(account)
         case GmailAPIClient.ClientError.notSignedIn:
-            reconnectAccount = account
+            if !quietly { reconnectAccount = account }
             errorMessage = "\(account) needs to sign in again before Corres can change its mail."
         case GmailAPIClient.ClientError.badResponse(let status):
             errorMessage = "\(failureMessage) (\(MailAccounts.provider(for: account).title) error \(status))"

@@ -544,7 +544,11 @@ final class MailStore {
             do {
                 try await repository.remove(id)
                 gone.insert(id)
+            } catch RepositoryError.threadNotFound {
+                // A sync got there first and already removed it: done.
+                gone.insert(id)
             } catch {
+                HangReporter.failure("remove a conversation", error)
                 errorMessage = "Couldn't update this conversation. Try again."
             }
         }
@@ -564,7 +568,10 @@ final class MailStore {
         do {
             try await repository.remove(id)
             allThreads.removeAll { $0.id == id }
+        } catch RepositoryError.threadNotFound {
+            allThreads.removeAll { $0.id == id }
         } catch {
+            HangReporter.failure("remove a conversation", error)
             errorMessage = "Couldn't update this conversation. Try again."
         }
     }
@@ -613,7 +620,12 @@ final class MailStore {
             if let index = allThreads.firstIndex(where: { $0.id == updated.id }) {
                 allThreads[index] = updated
             }
+        } catch RepositoryError.threadNotFound {
+            // Removed by a sync while the change was on its way: nothing
+            // left to change, and nothing to tell anyone.
+            allThreads.removeAll { $0.id == id }
         } catch {
+            HangReporter.failure("save a change", error)
             errorMessage = "The change couldn't be saved. Your conversation is unchanged. Try again."
         }
     }

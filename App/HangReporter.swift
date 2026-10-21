@@ -177,6 +177,26 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         }
     }
 
+    // MARK: Failures
+
+    /// Something that went wrong without a freeze: a change the server
+    /// refused, a message that wouldn't load. The last 40, each with the
+    /// error as it came back, so "Couldn't mark as read" has a cause to
+    /// look at. The error only, never the email.
+    static func failure(_ what: String, _ error: Error) {
+        let entry = "\(Date().formatted(.iso8601)) \(what): \(String(describing: error))"
+        log.error("\(entry, privacy: .public)")
+        note("failed: \(what)")
+        shared.queue.async {
+            guard let directory else { return }
+            let url = directory.appendingPathComponent("failures.json")
+            var entries = (try? Data(contentsOf: url)).flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? []
+            entries.append(entry)
+            if entries.count > 40 { entries.removeFirst(entries.count - 40) }
+            try? JSONEncoder().encode(entries).write(to: url, options: .atomic)
+        }
+    }
+
     // MARK: Files
 
     private static func write(_ object: [String: Any], prefix: String) {

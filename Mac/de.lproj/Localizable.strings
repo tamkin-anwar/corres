@@ -398,6 +398,9 @@
 "Couldn't load %@" = "%@ konnte nicht geladen werden";
 
 /* No comment provided by engineer. */
+"Couldn't load the full message." = "Die vollständige Nachricht konnte nicht geladen werden.";
+
+/* No comment provided by engineer. */
 "Couldn't Save" = "Konnte nicht gesichert werden";
 
 /* No comment provided by engineer. */
@@ -926,6 +929,9 @@
 "No subject" = "Kein Betreff";
 
 /* No comment provided by engineer. */
+"No unread mail" = "Keine ungelesenen E-Mails";
+
+/* No comment provided by engineer. */
 "Nothing for you to do" = "Für dich gibt es nichts zu tun";
 
 /* No comment provided by engineer. */
@@ -948,6 +954,9 @@
 
 /* No comment provided by engineer. */
 "Nothing scheduled" = "Nichts geplant";
+
+/* No comment provided by engineer. */
+"Nothing unread in %@." = "Nichts Ungelesenes in %@.";
 
 /* No comment provided by engineer. */
 "notifications" = "Mitteilungen";
@@ -1298,6 +1307,9 @@
 "Shorter" = "Kürzer";
 
 /* No comment provided by engineer. */
+"Show All" = "Alle anzeigen";
+
+/* No comment provided by engineer. */
 "Show Images" = "Bilder zeigen";
 
 /* No comment provided by engineer. */
@@ -1308,6 +1320,9 @@
 
 /* No comment provided by engineer. */
 "Show One Account" = "Einen Account zeigen";
+
+/* No comment provided by engineer. */
+"Show only unread mail in this list (⌘L)" = "Nur ungelesene E-Mails in dieser Liste zeigen (⌘L)";
 
 /* No comment provided by engineer. */
 "Show your mail with %@" = "Deine E-Mails mit %@ zeigen";
@@ -1457,6 +1472,9 @@
 "Trash" = "Papierkorb";
 
 /* No comment provided by engineer. */
+"Try Again" = "Erneut versuchen";
+
+/* No comment provided by engineer. */
 "Try another name." = "Versuche einen anderen Namen.";
 
 /* No comment provided by engineer. */
@@ -1488,6 +1506,9 @@
 
 /* No comment provided by engineer. */
 "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "Ungelesene E-Mails von Personen und alles Dringende. Werbung, Soziale Netzwerke und Updates zählen nicht.";
+
+/* No comment provided by engineer. */
+"Unread Only" = "Nur ungelesen";
 
 /* No comment provided by engineer. */
 "Unread, from a person." = "Ungelesen, von einer Person.";

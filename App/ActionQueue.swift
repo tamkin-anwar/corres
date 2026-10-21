@@ -96,7 +96,7 @@ final class ActionQueue {
                 // change wanted is true. Putting it back would undo that.
                 actions.remove(at: index)
                 save()
-            } catch where Self.isTransient(error) {
+            } catch where Self.isTransient(error) && action.attempts < Self.maxAttempts {
                 actions[index].attempts += 1
                 save()
                 waitingAccounts.insert(action.account)
@@ -111,6 +111,10 @@ final class ActionQueue {
         }
         if let nextRetry { scheduleRetry(after: nextRetry) }
     }
+
+    /// About a day of tries at the longest wait; a change still not taken
+    /// then is treated as refused rather than kept forever.
+    static let maxAttempts = 300
 
     /// The conversation no longer exists on the server.
     static func isGone(_ error: Error) -> Bool {
@@ -133,15 +137,22 @@ final class ActionQueue {
     /// No connection, a dropped one, the server busy or briefly failing,
     /// or a sign-in that needs renewing: worth waiting for, not a refusal.
     static func isTransient(_ error: Error) -> Bool {
+        // Cut off before an answer came back: whether it went through is
+        // unknown, and sending it again does no harm.
+        if error is CancellationError { return true }
         if let urlError = error as? URLError {
             return [.notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost, .cannotFindHost,
-                    .dnsLookupFailed, .internationalRoamingOff, .dataNotAllowed, .secureConnectionFailed].contains(urlError.code)
+                    .dnsLookupFailed, .internationalRoamingOff, .dataNotAllowed, .secureConnectionFailed,
+                    .cancelled].contains(urlError.code)
         }
         switch error {
         case GmailAPIClient.ClientError.badResponse(let status):
             return status == 0 || status == 429 || status >= 500 || status == -1
         case GmailAPIClient.ClientError.refused(let status, let reason, _):
+            // Status 0 with no reason is an iCloud server answering NO to a
+            // command, most often while it's busy.
             return status == 429 || status >= 500 || reason.map(GmailAPIClient.rateLimitReasons.contains) == true
+                || (status == 0 && reason == nil)
         case GmailAPIClient.ClientError.notSignedIn:
             // Kept for after you sign in again; the app asks you to.
             return true

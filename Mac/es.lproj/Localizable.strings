@@ -398,6 +398,9 @@
 "Couldn't load %@" = "No se pudo cargar %@";
 
 /* No comment provided by engineer. */
+"Couldn't load the full message." = "No se pudo cargar el mensaje completo.";
+
+/* No comment provided by engineer. */
 "Couldn't Save" = "No se pudo guardar";
 
 /* No comment provided by engineer. */
@@ -926,6 +929,9 @@
 "No subject" = "Sin asunto";
 
 /* No comment provided by engineer. */
+"No unread mail" = "No hay correos sin leer";
+
+/* No comment provided by engineer. */
 "Nothing for you to do" = "No tienes nada que hacer";
 
 /* No comment provided by engineer. */
@@ -948,6 +954,9 @@
 
 /* No comment provided by engineer. */
 "Nothing scheduled" = "Nada programado";
+
+/* No comment provided by engineer. */
+"Nothing unread in %@." = "Nada sin leer en %@.";
 
 /* No comment provided by engineer. */
 "notifications" = "notificaciones";
@@ -1298,6 +1307,9 @@
 "Shorter" = "Más corto";
 
 /* No comment provided by engineer. */
+"Show All" = "Mostrar todo";
+
+/* No comment provided by engineer. */
 "Show Images" = "Mostrar imágenes";
 
 /* No comment provided by engineer. */
@@ -1308,6 +1320,9 @@
 
 /* No comment provided by engineer. */
 "Show One Account" = "Mostrar una cuenta";
+
+/* No comment provided by engineer. */
+"Show only unread mail in this list (⌘L)" = "Mostrar solo los correos sin leer de esta lista (⌘L)";
 
 /* No comment provided by engineer. */
 "Show your mail with %@" = "Mostrar tu correo con %@";
@@ -1457,6 +1472,9 @@
 "Trash" = "Papelera";
 
 /* No comment provided by engineer. */
+"Try Again" = "Volver a intentar";
+
+/* No comment provided by engineer. */
 "Try another name." = "Prueba con otro nombre.";
 
 /* No comment provided by engineer. */
@@ -1488,6 +1506,9 @@
 
 /* No comment provided by engineer. */
 "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "Correo sin leer de personas y todo lo urgente. Promociones, Social y Novedades no cuentan.";
+
+/* No comment provided by engineer. */
+"Unread Only" = "Solo no leídos";
 
 /* No comment provided by engineer. */
 "Unread, from a person." = "Sin leer, de una persona.";

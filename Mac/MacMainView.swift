@@ -13,6 +13,10 @@ struct MacMainView: View {
     @State private var showingShortcuts = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("corres.mac.welcomed") private var welcomed = false
+    @AppStorage(MailFilter.unreadOnlyKey) private var unreadOnly = false
+    /// Read while Unread Only was on: kept in the list until you change
+    /// mailbox, so the message you're reading doesn't vanish, as in Mail.
+    @State private var keptRead: Set<ThreadID> = []
     @State private var showingWelcome = false
     @FocusState private var searchFocused: Bool
 
@@ -25,7 +29,7 @@ struct MacMainView: View {
     private var accounts: [String] { services.auth.accounts.map(\.email) }
 
     var body: some View {
-        let rows = model.rows(store: store, accounts: accounts, remote: services.remote, serverMatches: serverMatches)
+        let rows = visibleRows()
         NavigationSplitView(columnVisibility: $columns) {
             MacSidebar(services: services, model: model, onDrop: drop)
                 .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 300)
@@ -64,6 +68,9 @@ struct MacMainView: View {
             }
         }
         .focusedSceneValue(\.macActions, MacActions(perform: { perform($0) }))
+        .onChange(of: model.selection) { _, selection in if filtersUnread { keptRead.formUnion(selection) } }
+        .onChange(of: model.mailbox) { keptRead = [] }
+        .onChange(of: unreadOnly) { keptRead = [] }
         // What needs you, on the Dock icon.
         .onChange(of: dockCount, initial: true) { _, count in
             NSApplication.shared.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
@@ -137,6 +144,25 @@ struct MacMainView: View {
 
     // MARK: List
 
+    /// Unread Only, on every list but Unread itself, and not while
+    /// searching: search looks through everything.
+    private var filtersUnread: Bool {
+        unreadOnly && model.search.isEmpty && model.mailbox != .filter(MailFilter.unread.rawValue)
+    }
+
+    private func visibleRows() -> [MacRow] {
+        let rows = model.rows(store: store, accounts: accounts, remote: services.remote, serverMatches: serverMatches)
+        guard filtersUnread else { return rows }
+        let kept = rows.filter { row in
+            guard let thread = row.thread else { return true }
+            return thread.isUnread || keptRead.contains(thread.id) || model.selection.contains(thread.id)
+        }
+        // A heading ("Due soon") with nothing under it goes too.
+        return kept.enumerated().filter { index, row in
+            row.thread != nil || (index + 1 < kept.count && kept[index + 1].thread != nil)
+        }.map(\.element)
+    }
+
     private func listColumn(_ rows: [MacRow]) -> some View {
         VStack(spacing: 0) {
             if services.ask.phase != .idle, !model.search.isEmpty {
@@ -205,6 +231,14 @@ struct MacMainView: View {
             Color.clear
         } else if !model.search.isEmpty {
             ContentUnavailableView.search(text: model.search)
+        } else if filtersUnread {
+            ContentUnavailableView {
+                Label("No unread mail", systemImage: "line.3.horizontal.decrease.circle")
+            } description: {
+                Text("Nothing unread in \(model.mailbox.title).")
+            } actions: {
+                Button("Show All") { unreadOnly = false }
+            }
         } else if model.mailbox == .needsYou {
             ContentUnavailableView("Nothing needs you",
                                    systemImage: "checkmark.circle",
@@ -296,6 +330,12 @@ struct MacMainView: View {
             ToolbarItem(id: "getMail", placement: .primaryAction, showsByDefault: false) {
                 Button { perform(.getMail) } label: { Label("Get Mail", systemImage: "arrow.clockwise") }
                     .help("Get New Mail (⇧⌘N)")
+            }
+            ToolbarItem(id: "unreadOnly", placement: .primaryAction) {
+                Toggle(isOn: $unreadOnly) {
+                    Label("Unread Only", systemImage: unreadOnly ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                }
+                .help("Show only unread mail in this list (⌘L)")
             }
             ToolbarItem(id: "archive", placement: .primaryAction) {
                 Button { perform(.archive) } label: { Label("Archive", systemImage: "archivebox") }
@@ -487,8 +527,10 @@ struct MacMainView: View {
             Task { await services.checkForMail() }
         case .show(let mailbox):
             model.mailbox = mailbox
+        case .toggleUnreadOnly:
+            unreadOnly.toggle()
         case .next, .previous:
-            let threads = model.rows(store: store, accounts: accounts, remote: services.remote, serverMatches: serverMatches).compactMap(\.thread)
+            let threads = visibleRows().compactMap(\.thread)
             guard !threads.isEmpty else { return }
             let current = threads.firstIndex { model.selection.contains($0.id) }
             let index = switch (action, current) {

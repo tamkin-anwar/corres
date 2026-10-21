@@ -126,13 +126,25 @@ struct ConversationView: View {
                                 .frame(height: htmlHeight)
                         }
                         if !thread.isBodyLoaded {
-                            // Synced metadata-first: the preview is showing
-                            // while the full message loads (see `.task` below).
-                            HStack(spacing: 8) {
-                                ProgressView().controlSize(.small)
-                                Text("Loading the full message…").font(.footnote).foregroundStyle(CorresPalette.secondary)
+                            if threadActions.contentFailures.contains(thread.id) {
+                                // Said, with a way to try again, rather
+                                // than loading forever.
+                                HStack(spacing: 8) {
+                                    Image(systemName: "exclamationmark.circle").foregroundStyle(CorresPalette.secondary)
+                                    Text("Couldn't load the full message.").font(.footnote).foregroundStyle(CorresPalette.secondary)
+                                    Button("Try Again") { Task { await threadActions.loadContent(for: thread) } }
+                                        .font(.footnote.weight(.semibold))
+                                }
+                                .padding(.horizontal, CorresSpace.page)
+                            } else {
+                                // Synced metadata-first: the preview is showing
+                                // while the full message loads (see `.task` below).
+                                HStack(spacing: 8) {
+                                    ProgressView().controlSize(.small)
+                                    Text("Loading the full message…").font(.footnote).foregroundStyle(CorresPalette.secondary)
+                                }
+                                .padding(.horizontal, CorresSpace.page)
                             }
-                            .padding(.horizontal, CorresSpace.page)
                         }
                         if !thread.attachments.isEmpty, let messageID = thread.latestMessageID {
                             attachmentsList(thread.attachments, messageID: messageID, account: thread.id.account)

@@ -755,6 +755,9 @@
 "Couldn't load Drafts" = "下書きを読み込めませんでした";
 
 /* No comment provided by engineer. */
+"Couldn't load the full message." = "メッセージ全体を読み込めませんでした。";
+
+/* No comment provided by engineer. */
 "Couldn't Open Draft" = "下書きを開けませんでした";
 
 /* No comment provided by engineer. */
@@ -1670,6 +1673,9 @@
 "No subscriptions yet." = "購読はまだありません。";
 
 /* No comment provided by engineer. */
+"No unread mail" = "未読メールはありません";
+
+/* No comment provided by engineer. */
 "No VIPs yet" = "VIPはまだいません";
 
 /* No comment provided by engineer. */
@@ -1728,6 +1734,9 @@
 
 /* No comment provided by engineer. */
 "Nothing scheduled. Press and hold Send to send an email later." = "予約はありません。送信ボタンを長押しすると、あとで送信できます。";
+
+/* No comment provided by engineer. */
+"Nothing unread in %@" = "%@に未読はありません";
 
 /* No comment provided by engineer. */
 "Nothing yet. Corres learns as you correct it." = "まだありません。修正するたびにCorresは学びます。";
@@ -2312,6 +2321,9 @@
 "Show" = "表示";
 
 /* No comment provided by engineer. */
+"Show All" = "すべて表示";
+
+/* No comment provided by engineer. */
 "Show Images" = "画像を表示";
 
 /* No comment provided by engineer. */
@@ -2334,6 +2346,9 @@
 
 /* No comment provided by engineer. */
 "Shows all mail with them" = "この人とのメールをすべて表示します";
+
+/* No comment provided by engineer. */
+"Shows only unread mail in this list" = "このリストの未読メールだけを表示します";
 
 /* No comment provided by engineer. */
 "Shows options for this recipient" = "この宛先のオプションを表示します";
@@ -2672,6 +2687,9 @@
 "Try it free, then %@ a month or %@ a year." = "無料で試したあと、月額%@または年額%@。";
 
 /* No comment provided by engineer. */
+"Turn off Unread Only to see everything here." = "すべて表示するには「未読のみ」をオフにしてください。";
+
+/* No comment provided by engineer. */
 "Turn on Apple Intelligence in the Settings app for summaries, suggested replies and rewrites. Needs You still sorts your mail without it." = "概要、返信の候補、書き直しを使うには、設定アプリでApple Intelligenceをオンにしてください。オフでも「要対応」はメールを振り分けます。";
 
 /* No comment provided by engineer. */
@@ -2718,6 +2736,12 @@
 
 /* No comment provided by engineer. */
 "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "人からの未読メールと緊急のもの。プロモーション、ソーシャル、更新は数えません。";
+
+/* No comment provided by engineer. */
+"Unread only" = "未読のみ";
+
+/* No comment provided by engineer. */
+"Unread Only" = "未読のみ";
 
 /* No comment provided by engineer. */
 "Unread, from a person." = "未開封、人からのメールです。";

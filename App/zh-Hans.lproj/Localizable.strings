@@ -755,6 +755,9 @@
 "Couldn't load Drafts" = "无法载入草稿";
 
 /* No comment provided by engineer. */
+"Couldn't load the full message." = "无法载入完整邮件。";
+
+/* No comment provided by engineer. */
 "Couldn't Open Draft" = "无法打开草稿";
 
 /* No comment provided by engineer. */
@@ -1670,6 +1673,9 @@
 "No subscriptions yet." = "还没有订阅。";
 
 /* No comment provided by engineer. */
+"No unread mail" = "没有未读邮件";
+
+/* No comment provided by engineer. */
 "No VIPs yet" = "还没有 VIP";
 
 /* No comment provided by engineer. */
@@ -1728,6 +1734,9 @@
 
 /* No comment provided by engineer. */
 "Nothing scheduled. Press and hold Send to send an email later." = "没有已安排的邮件。按住“发送”即可稍后发送邮件。";
+
+/* No comment provided by engineer. */
+"Nothing unread in %@" = "%@中没有未读邮件";
 
 /* No comment provided by engineer. */
 "Nothing yet. Corres learns as you correct it." = "还没有内容。你每次更正，Corres 都会学习。";
@@ -2312,6 +2321,9 @@
 "Show" = "显示";
 
 /* No comment provided by engineer. */
+"Show All" = "显示全部";
+
+/* No comment provided by engineer. */
 "Show Images" = "显示图片";
 
 /* No comment provided by engineer. */
@@ -2334,6 +2346,9 @@
 
 /* No comment provided by engineer. */
 "Shows all mail with them" = "显示与此人的所有邮件";
+
+/* No comment provided by engineer. */
+"Shows only unread mail in this list" = "只显示此列表中的未读邮件";
 
 /* No comment provided by engineer. */
 "Shows options for this recipient" = "显示此收件人的选项";
@@ -2672,6 +2687,9 @@
 "Try it free, then %@ a month or %@ a year." = "免费试用，之后每月 %@ 或每年 %@。";
 
 /* No comment provided by engineer. */
+"Turn off Unread Only to see everything here." = "关闭“仅未读”即可查看全部。";
+
+/* No comment provided by engineer. */
 "Turn on Apple Intelligence in the Settings app for summaries, suggested replies and rewrites. Needs You still sorts your mail without it." = "在“设置”App 中打开 Apple 智能，即可使用摘要、建议回复和改写。没有它，“需要你”仍会为你的邮件分类。";
 
 /* No comment provided by engineer. */
@@ -2718,6 +2736,12 @@
 
 /* No comment provided by engineer. */
 "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "来自个人的未读邮件以及任何紧急邮件。不计入促销、社交和动态。";
+
+/* No comment provided by engineer. */
+"Unread only" = "仅未读";
+
+/* No comment provided by engineer. */
+"Unread Only" = "仅未读";
 
 /* No comment provided by engineer. */
 "Unread, from a person." = "未读，来自个人。";

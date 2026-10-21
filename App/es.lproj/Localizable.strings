@@ -755,6 +755,9 @@
 "Couldn't load Drafts" = "No se pudieron cargar los borradores";
 
 /* No comment provided by engineer. */
+"Couldn't load the full message." = "No se pudo cargar el mensaje completo.";
+
+/* No comment provided by engineer. */
 "Couldn't Open Draft" = "No se pudo abrir el borrador";
 
 /* No comment provided by engineer. */
@@ -1670,6 +1673,9 @@
 "No subscriptions yet." = "Aún no hay suscripciones.";
 
 /* No comment provided by engineer. */
+"No unread mail" = "No hay correos sin leer";
+
+/* No comment provided by engineer. */
 "No VIPs yet" = "Aún no hay VIP";
 
 /* No comment provided by engineer. */
@@ -1728,6 +1734,9 @@
 
 /* No comment provided by engineer. */
 "Nothing scheduled. Press and hold Send to send an email later." = "Nada programado. Mantén pulsado Enviar para enviar un correo más tarde.";
+
+/* No comment provided by engineer. */
+"Nothing unread in %@" = "Nada sin leer en %@";
 
 /* No comment provided by engineer. */
 "Nothing yet. Corres learns as you correct it." = "Nada aún. Corres aprende a medida que lo corriges.";
@@ -2312,6 +2321,9 @@
 "Show" = "Mostrar";
 
 /* No comment provided by engineer. */
+"Show All" = "Mostrar todo";
+
+/* No comment provided by engineer. */
 "Show Images" = "Mostrar imágenes";
 
 /* No comment provided by engineer. */
@@ -2334,6 +2346,9 @@
 
 /* No comment provided by engineer. */
 "Shows all mail with them" = "Muestra todo el correo con esta persona";
+
+/* No comment provided by engineer. */
+"Shows only unread mail in this list" = "Muestra solo los correos sin leer de esta lista";
 
 /* No comment provided by engineer. */
 "Shows options for this recipient" = "Muestra opciones para este destinatario";
@@ -2672,6 +2687,9 @@
 "Try it free, then %@ a month or %@ a year." = "Pruébalo gratis, luego %@ al mes o %@ al año.";
 
 /* No comment provided by engineer. */
+"Turn off Unread Only to see everything here." = "Desactiva Solo no leídos para verlo todo.";
+
+/* No comment provided by engineer. */
 "Turn on Apple Intelligence in the Settings app for summaries, suggested replies and rewrites. Needs You still sorts your mail without it." = "Activa Apple Intelligence en la app Ajustes para resúmenes, respuestas sugeridas y reescrituras. Te necesita sigue clasificando tu correo sin ella.";
 
 /* No comment provided by engineer. */
@@ -2718,6 +2736,12 @@
 
 /* No comment provided by engineer. */
 "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "Correo sin leer de personas y todo lo urgente. Promociones, Social y Novedades no cuentan.";
+
+/* No comment provided by engineer. */
+"Unread only" = "Solo no leídos";
+
+/* No comment provided by engineer. */
+"Unread Only" = "Solo no leídos";
 
 /* No comment provided by engineer. */
 "Unread, from a person." = "Sin leer, de una persona.";

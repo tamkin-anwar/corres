@@ -398,6 +398,9 @@
 "Couldn't load %@" = "%@を読み込めませんでした";
 
 /* No comment provided by engineer. */
+"Couldn't load the full message." = "メッセージ全体を読み込めませんでした。";
+
+/* No comment provided by engineer. */
 "Couldn't Save" = "保存できませんでした";
 
 /* No comment provided by engineer. */
@@ -926,6 +929,9 @@
 "No subject" = "件名なし";
 
 /* No comment provided by engineer. */
+"No unread mail" = "未読メールはありません";
+
+/* No comment provided by engineer. */
 "Nothing for you to do" = "することはありません";
 
 /* No comment provided by engineer. */
@@ -948,6 +954,9 @@
 
 /* No comment provided by engineer. */
 "Nothing scheduled" = "予約はありません";
+
+/* No comment provided by engineer. */
+"Nothing unread in %@." = "%@に未読はありません。";
 
 /* No comment provided by engineer. */
 "notifications" = "通知";
@@ -1298,6 +1307,9 @@
 "Shorter" = "短く";
 
 /* No comment provided by engineer. */
+"Show All" = "すべて表示";
+
+/* No comment provided by engineer. */
 "Show Images" = "画像を表示";
 
 /* No comment provided by engineer. */
@@ -1308,6 +1320,9 @@
 
 /* No comment provided by engineer. */
 "Show One Account" = "1つのアカウントを表示";
+
+/* No comment provided by engineer. */
+"Show only unread mail in this list (⌘L)" = "このリストの未読メールだけを表示 (⌘L)";
 
 /* No comment provided by engineer. */
 "Show your mail with %@" = "%@とのメールを表示";
@@ -1457,6 +1472,9 @@
 "Trash" = "ゴミ箱";
 
 /* No comment provided by engineer. */
+"Try Again" = "もう一度試す";
+
+/* No comment provided by engineer. */
 "Try another name." = "別の名前をお試しください。";
 
 /* No comment provided by engineer. */
@@ -1488,6 +1506,9 @@
 
 /* No comment provided by engineer. */
 "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "人からの未読メールと緊急のもの。プロモーション、ソーシャル、更新は数えません。";
+
+/* No comment provided by engineer. */
+"Unread Only" = "未読のみ";
 
 /* No comment provided by engineer. */
 "Unread, from a person." = "未開封、人からのメールです。";

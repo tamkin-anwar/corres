@@ -398,6 +398,9 @@
 "Couldn't load %@" = "无法载入 %@";
 
 /* No comment provided by engineer. */
+"Couldn't load the full message." = "无法载入完整邮件。";
+
+/* No comment provided by engineer. */
 "Couldn't Save" = "无法存储";
 
 /* No comment provided by engineer. */
@@ -926,6 +929,9 @@
 "No subject" = "无主题";
 
 /* No comment provided by engineer. */
+"No unread mail" = "没有未读邮件";
+
+/* No comment provided by engineer. */
 "Nothing for you to do" = "你无需做什么";
 
 /* No comment provided by engineer. */
@@ -948,6 +954,9 @@
 
 /* No comment provided by engineer. */
 "Nothing scheduled" = "没有已安排的邮件";
+
+/* No comment provided by engineer. */
+"Nothing unread in %@." = "%@中没有未读邮件。";
 
 /* No comment provided by engineer. */
 "notifications" = "通知";
@@ -1298,6 +1307,9 @@
 "Shorter" = "更简短";
 
 /* No comment provided by engineer. */
+"Show All" = "显示全部";
+
+/* No comment provided by engineer. */
 "Show Images" = "显示图片";
 
 /* No comment provided by engineer. */
@@ -1308,6 +1320,9 @@
 
 /* No comment provided by engineer. */
 "Show One Account" = "显示单个账户";
+
+/* No comment provided by engineer. */
+"Show only unread mail in this list (⌘L)" = "只显示此列表中的未读邮件 (⌘L)";
 
 /* No comment provided by engineer. */
 "Show your mail with %@" = "显示与 %@ 的邮件";
@@ -1457,6 +1472,9 @@
 "Trash" = "废纸篓";
 
 /* No comment provided by engineer. */
+"Try Again" = "再试一次";
+
+/* No comment provided by engineer. */
 "Try another name." = "试试别的名称。";
 
 /* No comment provided by engineer. */
@@ -1488,6 +1506,9 @@
 
 /* No comment provided by engineer. */
 "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "来自个人的未读邮件以及任何紧急邮件。不计入促销、社交和动态。";
+
+/* No comment provided by engineer. */
+"Unread Only" = "仅未读";
 
 /* No comment provided by engineer. */
 "Unread, from a person." = "未读，来自个人。";

@@ -65,6 +65,18 @@ struct ReadingPane: View {
                     .frame(height: bodyHeight)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
+                if !thread.isBodyLoaded, services.threadActions.contentFailures.contains(thread.id) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.circle")
+                        Text("Couldn't load the full message.")
+                        Button("Try Again") { Task { await services.threadActions.loadContent(for: thread) } }
+                            .buttonStyle(.link)
+                    }
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 28)
+                    .padding(.bottom, 10)
+                }
                 if !thread.attachments.isEmpty {
                     attachments
                         .padding(.horizontal, 28)

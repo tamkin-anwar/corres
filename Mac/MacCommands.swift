@@ -6,6 +6,7 @@ enum MacAction: Equatable {
     case compose, reply, replyAll, forward
     case archive, trash, move(Attention), toggleFlag, toggleUnread, snooze(Date?), askSnooze
     case getMail, show(MacMailbox), next, previous, openInWindow, undo, commandPalette, print, shortcuts, search
+    case toggleUnreadOnly
 }
 
 /// The front window's actions, for the menu bar.
@@ -23,7 +24,7 @@ extension FocusedValues {
 }
 
 /// The menu bar, with Mail's own shortcuts, so muscle memory works on day
-/// one: ⌘N, ⌘R, ⇧⌘R, ⇧⌘F, ⌃⌘A, ⌘⌫, ⇧⌘L, ⇧⌘U, ⇧⌘N, ⌘1 to ⌘4.
+/// one: ⌘N, ⌘R, ⇧⌘R, ⇧⌘F, ⌃⌘A, ⌘⌫, ⇧⌘L, ⇧⌘U, ⇧⌘N, ⌘L, ⌘1 to ⌘4.
 struct MacCommands: Commands {
     @FocusedValue(\.macActions) private var actions
 
@@ -52,6 +53,10 @@ struct MacCommands: Commands {
             Button("Primary") { actions?.perform(.show(.primary)) }.keyboardShortcut("3", modifiers: .command)
             Button("Everything") { actions?.perform(.show(.filter(MailFilter.everything.rawValue))) }
                 .keyboardShortcut("4", modifiers: .command)
+            Divider()
+            // Mail's message filter, and its shortcut.
+            Button("Unread Only") { actions?.perform(.toggleUnreadOnly) }
+                .keyboardShortcut("l", modifiers: .command)
         }
         CommandMenu("Message") {
             Button("Reply") { actions?.perform(.reply) }.keyboardShortcut("r", modifiers: .command)

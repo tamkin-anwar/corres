@@ -755,6 +755,9 @@
 "Couldn't load Drafts" = "임시 저장 메일을 불러올 수 없음";
 
 /* No comment provided by engineer. */
+"Couldn't load the full message." = "전체 메시지를 불러올 수 없습니다.";
+
+/* No comment provided by engineer. */
 "Couldn't Open Draft" = "임시 저장 메일을 열 수 없음";
 
 /* No comment provided by engineer. */
@@ -1670,6 +1673,9 @@
 "No subscriptions yet." = "아직 구독이 없습니다.";
 
 /* No comment provided by engineer. */
+"No unread mail" = "읽지 않은 메일 없음";
+
+/* No comment provided by engineer. */
 "No VIPs yet" = "아직 VIP가 없음";
 
 /* No comment provided by engineer. */
@@ -1728,6 +1734,9 @@
 
 /* No comment provided by engineer. */
 "Nothing scheduled. Press and hold Send to send an email later." = "예약된 메일이 없습니다. 보내기를 길게 누르면 나중에 보낼 수 있습니다.";
+
+/* No comment provided by engineer. */
+"Nothing unread in %@" = "%@에 읽지 않은 메일 없음";
 
 /* No comment provided by engineer. */
 "Nothing yet. Corres learns as you correct it." = "아직 없습니다. 수정할수록 Corres가 배웁니다.";
@@ -2312,6 +2321,9 @@
 "Show" = "보기";
 
 /* No comment provided by engineer. */
+"Show All" = "모두 보기";
+
+/* No comment provided by engineer. */
 "Show Images" = "이미지 보기";
 
 /* No comment provided by engineer. */
@@ -2334,6 +2346,9 @@
 
 /* No comment provided by engineer. */
 "Shows all mail with them" = "이 사람과 주고받은 모든 메일을 표시합니다";
+
+/* No comment provided by engineer. */
+"Shows only unread mail in this list" = "이 목록에서 읽지 않은 메일만 표시합니다";
 
 /* No comment provided by engineer. */
 "Shows options for this recipient" = "이 받는 사람의 옵션을 표시합니다";
@@ -2672,6 +2687,9 @@
 "Try it free, then %@ a month or %@ a year." = "무료로 사용한 후 월 %@ 또는 연 %@.";
 
 /* No comment provided by engineer. */
+"Turn off Unread Only to see everything here." = "모두 보려면 '읽지 않은 메일만'을 끄세요.";
+
+/* No comment provided by engineer. */
 "Turn on Apple Intelligence in the Settings app for summaries, suggested replies and rewrites. Needs You still sorts your mail without it." = "요약, 추천 답장, 다시 쓰기를 사용하려면 설정 앱에서 Apple Intelligence를 켜세요. 꺼져 있어도 '나에게 필요'는 메일을 분류합니다.";
 
 /* No comment provided by engineer. */
@@ -2718,6 +2736,12 @@
 
 /* No comment provided by engineer. */
 "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "사람이 보낸 읽지 않은 메일과 긴급한 메일. 프로모션, 소셜, 업데이트는 세지 않습니다.";
+
+/* No comment provided by engineer. */
+"Unread only" = "읽지 않은 메일만";
+
+/* No comment provided by engineer. */
+"Unread Only" = "읽지 않은 메일만";
 
 /* No comment provided by engineer. */
 "Unread, from a person." = "읽지 않음, 사람이 보냈습니다.";

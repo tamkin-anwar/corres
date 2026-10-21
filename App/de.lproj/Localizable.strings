@@ -755,6 +755,9 @@
 "Couldn't load Drafts" = "Entwürfe konnten nicht geladen werden";
 
 /* No comment provided by engineer. */
+"Couldn't load the full message." = "Die vollständige Nachricht konnte nicht geladen werden.";
+
+/* No comment provided by engineer. */
 "Couldn't Open Draft" = "Entwurf konnte nicht geöffnet werden";
 
 /* No comment provided by engineer. */
@@ -1670,6 +1673,9 @@
 "No subscriptions yet." = "Noch keine Abos.";
 
 /* No comment provided by engineer. */
+"No unread mail" = "Keine ungelesenen E-Mails";
+
+/* No comment provided by engineer. */
 "No VIPs yet" = "Noch keine VIPs";
 
 /* No comment provided by engineer. */
@@ -1728,6 +1734,9 @@
 
 /* No comment provided by engineer. */
 "Nothing scheduled. Press and hold Send to send an email later." = "Nichts geplant. Drücke lange auf „Senden“, um eine E-Mail später zu senden.";
+
+/* No comment provided by engineer. */
+"Nothing unread in %@" = "Nichts Ungelesenes in %@";
 
 /* No comment provided by engineer. */
 "Nothing yet. Corres learns as you correct it." = "Noch nichts. Corres lernt, während du korrigierst.";
@@ -2312,6 +2321,9 @@
 "Show" = "Zeigen";
 
 /* No comment provided by engineer. */
+"Show All" = "Alle anzeigen";
+
+/* No comment provided by engineer. */
 "Show Images" = "Bilder zeigen";
 
 /* No comment provided by engineer. */
@@ -2334,6 +2346,9 @@
 
 /* No comment provided by engineer. */
 "Shows all mail with them" = "Zeigt alle E-Mails mit dieser Person";
+
+/* No comment provided by engineer. */
+"Shows only unread mail in this list" = "Zeigt nur ungelesene E-Mails in dieser Liste";
 
 /* No comment provided by engineer. */
 "Shows options for this recipient" = "Zeigt Optionen für diesen Empfänger";
@@ -2672,6 +2687,9 @@
 "Try it free, then %@ a month or %@ a year." = "Kostenlos testen, dann %@ im Monat oder %@ im Jahr.";
 
 /* No comment provided by engineer. */
+"Turn off Unread Only to see everything here." = "Schalte „Nur ungelesen“ aus, um alles zu sehen.";
+
+/* No comment provided by engineer. */
 "Turn on Apple Intelligence in the Settings app for summaries, suggested replies and rewrites. Needs You still sorts your mail without it." = "Aktiviere Apple Intelligence in der App „Einstellungen“ für Zusammenfassungen, Antwortvorschläge und Umformulierungen. „Braucht dich“ sortiert deine E-Mails auch ohne.";
 
 /* No comment provided by engineer. */
@@ -2718,6 +2736,12 @@
 
 /* No comment provided by engineer. */
 "Unread mail from people and anything urgent. Promotions, Social and Updates aren't counted." = "Ungelesene E-Mails von Personen und alles Dringende. Werbung, Soziale Netzwerke und Updates zählen nicht.";
+
+/* No comment provided by engineer. */
+"Unread only" = "Nur ungelesen";
+
+/* No comment provided by engineer. */
+"Unread Only" = "Nur ungelesen";
 
 /* No comment provided by engineer. */
 "Unread, from a person." = "Ungelesen, von einer Person.";

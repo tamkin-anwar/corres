@@ -68,6 +68,22 @@ enum MailFilter: String, CaseIterable, Identifiable {
 
     var isCategory: Bool { [.primary, .promotions, .social, .updates].contains(self) }
 
+    /// Unread Only: narrows whichever split is showing to its unread mail,
+    /// as Mail's filter button and Gmail's Unread chip do. Remembered, and
+    /// shared by every split, so it stays on as you move between them.
+    static let unreadOnlyKey = "corres.unreadOnly"
+
+    /// The splits shown as tabs on iPhone and iPad. Unread there is the
+    /// Unread Only filter, on any split, rather than a split of its own.
+    static var tabs: [MailFilter] { allCases.filter { $0 != .unread } }
+
+    /// With Unread Only on: what's unread, plus what was already showing
+    /// (`kept`), so an email you open doesn't vanish from under you, as
+    /// in Mail. It goes when you change split or turn the filter off.
+    static func unreadOnly(_ threads: [Correspondence], keeping kept: Set<ThreadID>) -> [Correspondence] {
+        threads.filter { $0.isUnread || kept.contains($0.id) }
+    }
+
     @MainActor private func category(_ thread: Correspondence, _ context: InboxCategory.Context?) -> InboxCategory {
         InboxCategory.of(thread, override: SenderLessons.category(for: thread), context: context ?? CategoryContextCache.latest)
     }

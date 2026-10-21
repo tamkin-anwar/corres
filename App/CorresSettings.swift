@@ -164,6 +164,12 @@ enum CorresSettings {
             defaults.set("Needs You", forKey: "corres.mailFilter")
             defaults.set(true, forKey: "corres.migration.home.v1")
         }
+        // The Unread tab became Unread Only, a filter on any split: someone
+        // who was on Unread sees the same mail.
+        if defaults.string(forKey: "corres.mailFilter") == MailFilter.unread.rawValue {
+            defaults.set(MailFilter.everything.rawValue, forKey: "corres.mailFilter")
+            defaults.set(true, forKey: MailFilter.unreadOnlyKey)
+        }
         MailQuery.holdsNewSenders = screensNewSenders
         InboxClassifier.vipAddresses = vips
         InboxClassifier.domainDecisions = domainRules
