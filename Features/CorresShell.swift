@@ -838,5 +838,9 @@ private struct FeedbackPills: View {
             // Premium apps confirm what just happened in the hand, not only on screen.
             .sensoryFeedback(.success, trigger: outbox.pending?.id) { _, new in new != nil }
             .sensoryFeedback(.impact(weight: .medium), trigger: threadActions.pendingRemoval?.id) { _, new in new != nil }
+            // Snoozed, Handled, moved: a lighter tap than a removal.
+            .sensoryFeedback(.impact(weight: .light), trigger: threadActions.lastChange?.id) { _, new in new != nil }
+            // Undo, felt as undone.
+            .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.7), trigger: threadActions.undoCount)
     }
 }

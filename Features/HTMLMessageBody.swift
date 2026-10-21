@@ -19,6 +19,12 @@ import WebKit
 struct HTMLMessageBody: PlatformViewRepresentable {
     let html: String
     @Binding var height: CGFloat
+    /// Which message this is (`MessageHeights.key`): its drawn height is
+    /// remembered, and an email opened again starts at it.
+    var heightKey: String?
+    /// Where to start before the email has measured itself, so what's below
+    /// it doesn't jump when it does.
+    var expectedHeight: CGFloat?
     var blockRemoteImages = true
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
@@ -119,6 +125,13 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         // Coordinator.loadGeneration.
         coordinator.loadGeneration = Coordinator.nextLoad()
         coordinator.hasSize = false
+        // The height it had last time, or a fair guess, until it measures.
+        if let start = heightKey.flatMap(MessageHeights.known) ?? expectedHeight {
+            let generation = coordinator.loadGeneration
+            DispatchQueue.main.async { [binding = $height] in
+                if !coordinator.hasSize, coordinator.loadGeneration == generation { binding.wrappedValue = start }
+            }
+        }
         #if canImport(UIKit)
         coordinator.resetZoom(webView)
         #endif
@@ -1021,6 +1034,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
             let zoomed = height
             #endif
             if abs(parent.height - zoomed) >= 1 { parent.height = zoomed }
+            if let key = parent.heightKey { MessageHeights.remember(height, for: key) }
 
         }
 
@@ -1193,5 +1207,33 @@ extension WKWebView {
             alphaValue = shown ? 1 : 0
         }
         #endif
+    }
+}
+
+/// Each email's drawn height, remembered for the session, and a fair guess
+/// for one not yet drawn: opening an email used to lay out at 200 points
+/// and jump to its real height, carrying everything below it along.
+@MainActor
+enum MessageHeights {
+    private static var known: [String: CGFloat] = [:]
+
+    static func key(_ thread: Correspondence) -> String {
+        "\(thread.id.account)|\(thread.latestMessageID ?? thread.id.providerID)"
+    }
+
+    static func known(_ key: String) -> CGFloat? { known[key] }
+
+    static func remember(_ height: CGFloat, for key: String) {
+        if known.count > 500 { known.removeAll() }
+        known[key] = height
+    }
+
+    /// Designed mail is long; a letter is about as tall as its text.
+    static func expected(for thread: Correspondence) -> CGFloat {
+        if let html = thread.htmlBody, HTMLMessageBody.analysis(of: html).isDesigned { return 900 }
+        let text = thread.body
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+            .reduce(0) { $0 + max(1, ($1.count + 41) / 42) }
+        return min(900, max(120, CGFloat(lines) * 23 + 40))
     }
 }

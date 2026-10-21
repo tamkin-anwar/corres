@@ -61,7 +61,8 @@ struct ReadingPane: View {
                         .padding(.bottom, 10)
                 }
                 Divider().padding(.horizontal, 28)
-                HTMLMessageBody(html: html, height: $bodyHeight, blockRemoteImages: !imagesAllowed)
+                HTMLMessageBody(html: html, height: $bodyHeight, heightKey: MessageHeights.key(thread),
+                                expectedHeight: MessageHeights.expected(for: thread), blockRemoteImages: !imagesAllowed)
                     .frame(height: bodyHeight)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)

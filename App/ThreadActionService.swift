@@ -94,10 +94,14 @@ final class ThreadActionService {
         }
     }
 
+    /// Counts each Undo, for the tap felt in the hand (`CorresShell`).
+    private(set) var undoCount = 0
+
     func undoLastChange() {
         guard let change = lastChange else { return }
         changeTask?.cancel()
         lastChange = nil
+        undoCount &+= 1
         Task { await change.undo() }
     }
 
@@ -241,6 +245,7 @@ final class ThreadActionService {
         HangReporter.note("undo \(pending.kind)")
         removalTask?.cancel()
         pendingRemoval = nil
+        undoCount &+= 1
         withAnimation(.snappy(duration: 0.3)) { for thread in pending.threads { store.unhide(thread.id) } }
     }
 

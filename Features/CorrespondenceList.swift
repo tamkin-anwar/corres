@@ -31,6 +31,8 @@ struct CorrespondenceRow: View {
             Circle()
                 .fill(thread.isUnread ? CorresPalette.accent : .clear)
                 .frame(width: 7, height: 7)
+                .scaleEffect(thread.isUnread ? 1 : 0.4)
+                .animation(.snappy(duration: 0.25), value: thread.isUnread)
                 .padding(.top, 17)
                 .accessibilityHidden(true)
             if showAvatars {
@@ -714,6 +716,9 @@ struct CorrespondenceList: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Text(summaryLine).font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                    // Counts tick over rather than swap.
+                    .contentTransition(.numericText())
+                    .animation(.snappy, value: summaryLine)
                 // Visible feedback that a search is genuinely reaching past
                 // what's already synced, not just quietly finding nothing:
                 // see GmailSyncService.search's doc comment.

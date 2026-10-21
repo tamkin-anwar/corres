@@ -118,7 +118,8 @@ struct ConversationView: View {
                             // is what made images/text run off-screen before
                             // (see Docs/Verification.md). Mail and Spark both
                             // render the body edge to edge for this reason.
-                            HTMLMessageBody(html: html, height: $htmlHeight,
+                            HTMLMessageBody(html: html, height: $htmlHeight, heightKey: MessageHeights.key(thread),
+                                            expectedHeight: MessageHeights.expected(for: thread),
                                             blockRemoteImages: !(showRemoteImages || thread.imagesTrusted || loadsImages))
                                 .frame(height: htmlHeight)
                         } else {
@@ -126,6 +127,7 @@ struct ConversationView: View {
                             // links and addresses, Dark mode, zoom, and
                             // its quoted history folded.
                             HTMLMessageBody(html: HTMLMessageBody.page(forPlainText: thread.body), height: $htmlHeight,
+                                            heightKey: MessageHeights.key(thread), expectedHeight: MessageHeights.expected(for: thread),
                                             blockRemoteImages: false)
                                 .frame(height: htmlHeight)
                         }
@@ -1323,6 +1325,9 @@ struct ConversationView: View {
             Image(systemName: systemImage)
                 .font(.body.weight(.medium))
                 .foregroundStyle(tint ?? CorresPalette.ink)
+                // Flag to Unflag, Read to Unread: the icon turns into the
+                // other, as the system's do.
+                .contentTransition(.symbolEffect(.replace))
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .contentShape(Rectangle())
         }
