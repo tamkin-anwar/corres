@@ -161,7 +161,13 @@ final class MacMailboxModel {
         let threads = store.threads
         // Searching looks through everything, in every list, as Mail does.
         if !query.isEmpty {
-            return MailQuery.filter(store.searchableThreads, search: query, serverMatches: serverMatches).map(MacRow.thread)
+            let matches = MailQuery.filter(store.searchableThreads, search: query, serverMatches: serverMatches)
+            // The best few first, as Mail's Top Results, then the rest.
+            let top = MailQuery.topResults(matches, search: query)
+            guard !top.isEmpty else { return matches.map(MacRow.thread) }
+            let topIDs = Set(top.map(\.id))
+            return [.group(String(localized: "Top Results"))] + top.map(MacRow.thread)
+                + [.group(String(localized: "Everything Else"))] + matches.filter { !topIDs.contains($0.id) }.map(MacRow.thread)
         }
         switch mailbox {
         case .needsYou:

@@ -509,6 +509,9 @@
 "Everything" = "すべて";
 
 /* No comment provided by engineer. */
+"Everything Else" = "その他すべて";
+
+/* No comment provided by engineer. */
 "Explore Sample Mail" = "サンプルのメールを見る";
 
 /* No comment provided by engineer. */
@@ -1461,6 +1464,9 @@
 
 /* No comment provided by engineer. */
 "tomorrow at %@" = "明日 %@";
+
+/* No comment provided by engineer. */
+"Top Results" = "トップヒット";
 
 /* No comment provided by engineer. */
 "Track package" = "荷物を追跡";

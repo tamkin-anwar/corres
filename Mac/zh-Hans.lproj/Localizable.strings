@@ -509,6 +509,9 @@
 "Everything" = "全部";
 
 /* No comment provided by engineer. */
+"Everything Else" = "其他所有邮件";
+
+/* No comment provided by engineer. */
 "Explore Sample Mail" = "探索示例邮件";
 
 /* No comment provided by engineer. */
@@ -1461,6 +1464,9 @@
 
 /* No comment provided by engineer. */
 "tomorrow at %@" = "明天 %@";
+
+/* No comment provided by engineer. */
+"Top Results" = "最佳结果";
 
 /* No comment provided by engineer. */
 "Track package" = "追踪包裹";

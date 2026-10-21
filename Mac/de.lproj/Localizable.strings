@@ -509,6 +509,9 @@
 "Everything" = "Alles";
 
 /* No comment provided by engineer. */
+"Everything Else" = "Alles andere";
+
+/* No comment provided by engineer. */
 "Explore Sample Mail" = "Beispiel-E-Mails entdecken";
 
 /* No comment provided by engineer. */
@@ -1461,6 +1464,9 @@
 
 /* No comment provided by engineer. */
 "tomorrow at %@" = "morgen um %@";
+
+/* No comment provided by engineer. */
+"Top Results" = "Top-Treffer";
 
 /* No comment provided by engineer. */
 "Track package" = "Sendung verfolgen";

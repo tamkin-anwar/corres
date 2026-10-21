@@ -287,6 +287,8 @@ struct CorrespondenceList: View {
         var waitingCount = 0
         var longestWait: String?
         var pendingSenders = 0
+        /// Searching: the best few matches, shown above the rest.
+        var top: [Correspondence] = []
         /// Built with hidden rows still in; `rows` leaves out `hidden`.
         var full: [Correspondence] = []
         var hidden: Set<ThreadID> = []
@@ -341,6 +343,8 @@ struct CorrespondenceList: View {
             cache.dueSoon = []
         }
         cache.unread = built.reduce(0) { $0 + ($1.isUnread ? 1 : 0) }
+        let searching = appliedSearch.trimmingCharacters(in: .whitespaces)
+        cache.top = searching.isEmpty ? [] : MailQuery.topResults(built, search: searching)
         let accounts = auth?.accounts.map(\.email) ?? []
         cache.tags = showsAccountTags ? Dictionary(uniqueKeysWithValues: accounts.map { ($0, AccountTag.make(for: $0, among: accounts)) }) : [:]
         return cache
@@ -461,6 +465,14 @@ struct CorrespondenceList: View {
                         if destination == .mail, kind == .needsYou { needsYouShortcuts }
                         if results.isEmpty {
                             emptyState
+                        } else if !rows.top.isEmpty {
+                            // As Mail's search: the best matches, then
+                            // everything else, newest first.
+                            let topIDs = Set(rows.top.map(\.id))
+                            groupLabel("Top Results")
+                            conversationRows(rows.top)
+                            groupLabel("Everything Else")
+                            conversationRows(results.filter { !topIDs.contains($0.id) })
                         } else if !dueSoonIDs.isEmpty && dueSoonIDs.count < results.count {
                             groupLabel("Due soon")
                             conversationRows(results.filter { dueSoonIDs.contains($0.id) })

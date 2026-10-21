@@ -509,6 +509,9 @@
 "Everything" = "모두";
 
 /* No comment provided by engineer. */
+"Everything Else" = "그 외 모두";
+
+/* No comment provided by engineer. */
 "Explore Sample Mail" = "샘플 메일 둘러보기";
 
 /* No comment provided by engineer. */
@@ -1461,6 +1464,9 @@
 
 /* No comment provided by engineer. */
 "tomorrow at %@" = "내일 %@";
+
+/* No comment provided by engineer. */
+"Top Results" = "상위 결과";
 
 /* No comment provided by engineer. */
 "Track package" = "택배 추적";

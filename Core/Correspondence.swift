@@ -1134,6 +1134,32 @@ public enum MailQuery {
             return Self.searchWords(words).allSatisfy { word in fields.contains { $0.localizedStandardContains(word) } }
         }
 
+        /// How well a match fits, for Top Results: the words in who it's
+        /// from count most, then the subject, then the text; newer, flagged,
+        /// unread and Needs You mail a little more.
+        public func relevance(of item: Correspondence, now: Date) -> Double {
+            var score = 0.0
+            let sender = [item.sender, item.organization, item.senderEmail ?? ""].joined(separator: " ").lowercased()
+            let subject = item.subject.lowercased()
+            let preview = item.excerpt.lowercased()
+            func startsWord(_ word: String, in text: String) -> Bool {
+                text.hasPrefix(word) || text.contains(" " + word) || text.contains("@" + word) || text.contains("." + word)
+            }
+            for word in Self.searchWords(words).map({ $0.lowercased() }) where !word.isEmpty {
+                if sender.contains(word) { score += startsWord(word, in: sender) ? 6 : 4 }
+                if subject.contains(word) { score += startsWord(word, in: subject) ? 4 : 3 }
+                if preview.contains(word) { score += 1.5 } else if item.body.localizedStandardContains(word) { score += 1 }
+            }
+            if !from.isEmpty { score += 3 }
+            let days = max(0, now.timeIntervalSince(item.receivedAt) / 86_400)
+            score += 4 * exp(-days / 30)
+            if item.isFlagged || item.isPinned { score += 1.5 }
+            if item.attention == .needsYou { score += 1 }
+            if item.isUnread { score += 0.5 }
+            if item.isArchivedCopy { score -= 0.5 }
+            return score
+        }
+
         /// Words to look for: each on its own, a "quoted phrase" together.
         static func searchWords(_ text: String) -> [String] {
             var result: [String] = []
@@ -1149,6 +1175,18 @@ public enum MailQuery {
             }
             return result.isEmpty ? [text] : result
         }
+    }
+
+    /// The few best matches for a search, shown above the rest (which stay
+    /// newest first), as Mail's Top Results do. None for a handful of
+    /// results, where the list is already short enough to scan.
+    public static func topResults(_ matches: [Correspondence], search: String, limit: Int = 5,
+                                  now: Date = .now) -> [Correspondence] {
+        let terms = SearchTerms(search)
+        guard matches.count > limit + 3, !terms.words.isEmpty || !terms.from.isEmpty else { return [] }
+        return matches.map { (item: $0, score: terms.relevance(of: $0, now: now)) }
+            .sorted { $0.score != $1.score ? $0.score > $1.score : $0.item.receivedAt > $1.item.receivedAt }
+            .prefix(limit).map(\.item)
     }
 
     /// Pinned first, then newest. Sorts positions and small keys rather
