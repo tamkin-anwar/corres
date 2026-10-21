@@ -6,8 +6,44 @@ struct CorresWidgets: WidgetBundle {
     var body: some Widget {
         NeedsYouWidget()
         WaitingWidget()
+        #if os(iOS)
+        if #available(iOS 18.0, *) {
+            ComposeControl()
+            NeedsYouControl()
+        }
+        #endif
     }
 }
+
+#if os(iOS)
+/// Control Center, the Lock Screen and the Action button: a new email.
+@available(iOS 18.0, *)
+struct ComposeControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "studio.anwarcreative.corres.control.compose") {
+            ControlWidgetButton(action: ComposeControlIntent()) {
+                Label("New Email", systemImage: "square.and.pencil")
+            }
+        }
+        .displayName("New Email")
+        .description("Start a new email in Corres.")
+    }
+}
+
+/// Control Center: straight to what needs you.
+@available(iOS 18.0, *)
+struct NeedsYouControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "studio.anwarcreative.corres.control.needsYou") {
+            ControlWidgetButton(action: OpenNeedsYouControlIntent()) {
+                Label("Needs You", systemImage: "exclamationmark.circle")
+            }
+        }
+        .displayName("Needs You")
+        .description("Open Needs You in Corres.")
+    }
+}
+#endif
 
 // MARK: - Timeline
 
@@ -208,7 +244,19 @@ struct ListWidgetView: View {
                 Spacer()
             } else {
                 ForEach(Array(items.prefix(limit).enumerated()), id: \.element.id) { index, item in
-                    Link(destination: item.url) { row(item) }
+                    HStack(alignment: .top, spacing: 6) {
+                        Link(destination: item.url) { row(item) }
+                        // Done with it, without opening Corres.
+                        if showsReason, !item.account.isEmpty {
+                            Button(intent: MarkHandledFromWidgetIntent(conversation: item.id)) {
+                                Image(systemName: "checkmark.circle")
+                                    .font(.body)
+                                    .foregroundStyle(WidgetPalette.accent)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Mark as Handled")
+                        }
+                    }
                     if index < min(limit, items.count) - 1 {
                         Rectangle().fill(WidgetPalette.line).frame(height: 0.5)
                     }

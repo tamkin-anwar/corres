@@ -128,6 +128,18 @@ struct CorresApp: App {
                     WidgetBridge.update(from: appDelegate.store.threads)
                 }
         }
+        // iPad's menu bar and ⌘ shortcuts list: where to go. A
+        // conversation's own commands (Reply, Archive, Next) come from it.
+        .commands {
+            CommandMenu("Go") {
+                Button("Needs You") { appDelegate.router.pending = .destination(.needsYou) }
+                    .keyboardShortcut("1", modifiers: .command)
+                Button("Waiting") { appDelegate.router.pending = .destination(.waiting) }
+                    .keyboardShortcut("2", modifiers: .command)
+                Button("Mail") { appDelegate.router.pending = .destination(.mail) }
+                    .keyboardShortcut("3", modifiers: .command)
+            }
+        }
     }
 }
 

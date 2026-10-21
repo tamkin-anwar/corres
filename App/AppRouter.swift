@@ -13,6 +13,8 @@ final class AppRouter {
         /// A `mailto:` link, tapped inside an email or anywhere on the
         /// iPhone once Corres is the default mail app.
         case composeTo(to: String, subject: String, body: String)
+        /// A reply or forward Siri prepared, to read and send.
+        case draft(Draft)
     }
 
     static let shared = AppRouter()

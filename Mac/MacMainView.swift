@@ -104,6 +104,10 @@ struct MacMainView: View {
                 perform(.compose)
             case .composeTo(let to, let subject, let body):
                 openWindow(value: ComposeRequest(kind: .new, to: to, subject: subject, body: body))
+            case .draft(let draft):
+                let handoff = UUID()
+                MacComposeHandoff.drafts[handoff] = draft
+                openWindow(value: ComposeRequest(kind: draft.kind, handoff: handoff))
             default:
                 break
             }

@@ -27,8 +27,9 @@ final class Organizer {
     /// "account|id" → when it was muted.
     private(set) var muted: [String: Date] = [:]
     @ObservationIgnored private var seen: [String: String] = [:]
-    @ObservationIgnored private weak var store: MailStore?
-    @ObservationIgnored private weak var actions: ThreadActionService?
+    /// The app's mail and actions, for Siri and Shortcuts as well.
+    @ObservationIgnored private(set) weak var store: MailStore?
+    @ObservationIgnored private(set) weak var actions: ThreadActionService?
     @ObservationIgnored private var isOrganizing = false
 
     private init() {
@@ -45,9 +46,27 @@ final class Organizer {
     func attach(store: MailStore, actions: ThreadActionService) {
         self.store = store
         self.actions = actions
+        WidgetHandoff.open = { destination in
+            if let url = URL(string: "\(WidgetSnapshot.urlScheme)://\(destination)") { _ = AppRouter.shared.open(url) }
+        }
         store.afterRefresh = { [weak self] in
             Task { await self?.organizeNow() }
         }
+    }
+
+    /// What a widget or a Control Center button left for the app: a place
+    /// to open, and conversations marked Handled.
+    func applyWidgetHandoffs() {
+        if let route = WidgetHandoff.takePendingRoute(), let url = URL(string: "\(WidgetSnapshot.urlScheme)://\(route)") {
+            _ = AppRouter.shared.open(url)
+        }
+        let handled = WidgetHandoff.takeHandled()
+        guard !handled.isEmpty, let store, let actions else { return }
+        let threads = handled.compactMap { id -> Correspondence? in
+            let parts = id.split(separator: "|", maxSplits: 1).map(String.init)
+            return parts.count == 2 ? store.thread(ThreadID(account: parts[0], providerID: parts[1])) : nil
+        }
+        Task { await actions.setAttention(.handled, for: threads) }
     }
 
     private func organizeNow() async {

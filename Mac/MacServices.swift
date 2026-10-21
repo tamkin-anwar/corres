@@ -50,6 +50,10 @@ final class MacServices {
         outbox = OutboxService(store: store, auth: auth, repository: repository)
         threadActions = ThreadActionService(store: store, auth: auth)
         Organizer.shared.attach(store: store, actions: threadActions)
+        // Handled from a desktop widget, applied when Corres comes forward.
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
+            Task { @MainActor in Organizer.shared.applyWidgetHandoffs() }
+        }
         labelDirectory = LabelDirectory()
         pushService = PushNotificationService()
         unsubscribeService = UnsubscribeService()

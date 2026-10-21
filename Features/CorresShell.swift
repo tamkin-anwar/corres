@@ -127,6 +127,8 @@ struct CorresShell: View {
             composeDraft = Draft(kind: .new, to: "", subject: "")
         case .composeTo(let to, let subject, let body):
             composeDraft = Draft(kind: .new, to: to, subject: subject, body: body)
+        case .draft(let draft):
+            composeDraft = draft
         case .thread(let id):
             // Archived mail too: Search finds it, so it opens.
             guard let thread = store.thread(id) else {
@@ -177,6 +179,8 @@ struct CorresShell: View {
         .onAppear { applyFocusFilter(); watchICloud() }
         .onChange(of: auth.accounts) { watchICloud() }
         .onChange(of: scenePhase) { _, phase in
+            // Back from a Control Center button or a widget's Handled.
+            if phase == .active { Organizer.shared.applyWidgetHandoffs() }
             // Leaving Corres. Not on a glance at Notification Center or
             // Control Center (`.inactive`), which used to end Undo early.
             if phase == .background {
