@@ -144,6 +144,21 @@ draw windows on another Space or a full-screen one. The Mac description is
 the iOS one with Mac wording, an "A real Mac app" section, and no claim of
 instant alerts until they're verified on the Mac.
 
+## Other languages
+
+Set in App Store Connect on 2026-10-20 for iOS 1.0 and macOS 1.0: Japanese,
+Simplified Chinese, German, Korean, French (France and Canada), Spanish
+(Spain and Mexico) and Brazilian Portuguese, the same languages the app
+speaks. Each has its own subtitle, description, keywords and promotional
+text. The source is `Docs/AppStore/localized/listing.py`; run it to rebuild
+`listing.json`, which checks Apple's limits. These descriptions name no
+prices, because prices differ by storefront and the App Store shows its own.
+Screenshots are the English ones in every language.
+
+The Brazilian Portuguese name is **Corres E-mail**: App Store Connect
+refused "Corres" in that locale because another developer's app already
+uses it there.
+
 ## App Review notes
 
 > Corres is an email client. It works without signing in: on first launch, tap "Explore Corres" to see every screen with sample data.
