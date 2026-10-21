@@ -382,15 +382,18 @@ struct MailboxView: View {
             if rows.isEmpty && (loadedOnce || mailbox.isLocal) && !isLoading {
                 if loadFailed {
                     ContentUnavailableView {
-                        Label("Couldn't load \(mailbox.title)", systemImage: "wifi.exclamationmark")
+                        EmptyTitle("Couldn't load \(mailbox.title)", systemImage: "wifi.exclamationmark")
                     } description: {
                         Text("Check your connection and try again.")
                     } actions: {
                         Button("Try Again") { Task { await reload() } }
                     }
                 } else {
-                    ContentUnavailableView(mailbox.title, systemImage: mailbox.systemImage,
-                                           description: Text(mailbox.emptyMessage))
+                    ContentUnavailableView {
+                        EmptyTitle(mailbox.title, systemImage: mailbox.systemImage)
+                    } description: {
+                        Text(mailbox.emptyMessage)
+                    }
                 }
             } else if rows.isEmpty && isLoading {
                 ProgressView()
@@ -602,14 +605,18 @@ struct DraftsView: View {
             if drafts.isEmpty && loadedOnce && !isLoading {
                 if loadFailed {
                     ContentUnavailableView {
-                        Label("Couldn't load Drafts", systemImage: "wifi.exclamationmark")
+                        EmptyTitle("Couldn't load Drafts", systemImage: "wifi.exclamationmark")
                     } description: {
                         Text("Check your connection and try again.")
                     } actions: {
                         Button("Try Again") { Task { await load() } }
                     }
                 } else {
-                    ContentUnavailableView("Drafts", systemImage: "doc", description: Text(Mailbox.drafts.emptyMessage))
+                    ContentUnavailableView {
+                        EmptyTitle("Drafts", systemImage: "doc")
+                    } description: {
+                        Text(Mailbox.drafts.emptyMessage)
+                    }
                 }
             } else if drafts.isEmpty && isLoading {
                 ProgressView()

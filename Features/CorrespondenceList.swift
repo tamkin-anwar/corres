@@ -637,7 +637,10 @@ struct CorrespondenceList: View {
                     selected = selected.count == results.count ? [] : Set(results.map(\.id))
                 }
             } else if !results.isEmpty {
-                Button("Select") { isSelecting = true }
+                // An icon, so the title between the buttons ("All Inboxes")
+                // always has room to show whole.
+                Button { isSelecting = true } label: { Label("Select", systemImage: "checkmark.circle") }
+                    .labelStyle(.iconOnly)
             }
         }
         if isSelecting {
@@ -940,9 +943,22 @@ struct CorrespondenceList: View {
                 }
                 Spacer(minLength: 8)
             } else {
-                Text(title).foregroundStyle(CorresPalette.ink).lineLimit(1).layoutPriority(1)
-                Spacer(minLength: 8)
-                if let detail { Text(detail).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(1) }
+                // Side by side when both fit whole; otherwise the wait goes
+                // under the count. Neither is ever cut short ("Longest 4…").
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        Text(title).foregroundStyle(CorresPalette.ink).fixedSize()
+                        Spacer(minLength: 8)
+                        if let detail { Text(detail).font(.subheadline).foregroundStyle(CorresPalette.secondary).fixedSize() }
+                    }
+                    HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(title).foregroundStyle(CorresPalette.ink)
+                            if let detail { Text(detail).font(.subheadline).foregroundStyle(CorresPalette.secondary) }
+                        }
+                        Spacer(minLength: 8)
+                    }
+                }
             }
             Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(CorresPalette.tertiary)
         }
@@ -1003,7 +1019,7 @@ struct CorrespondenceList: View {
 
     private var plainEmptyState: some View {
         ContentUnavailableView {
-            Label(search.isEmpty ? emptyTitle : "No conversations found", systemImage: search.isEmpty ? "checkmark.circle" : "magnifyingglass")
+            EmptyTitle(search.isEmpty ? emptyTitle : String(localized: "No conversations found"), systemImage: search.isEmpty ? "checkmark.circle" : "magnifyingglass")
         } description: {
             Text(search.isEmpty ? emptyDetail : String(localized: "Try a name, subject, or organization."))
         } actions: {

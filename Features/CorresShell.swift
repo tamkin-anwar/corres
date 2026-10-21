@@ -544,7 +544,7 @@ struct CorresShell: View {
                 .accessibilityLabel("Preparing your space")
         case .failed:
             ContentUnavailableView {
-                Label("One moment", systemImage: "arrow.clockwise")
+                EmptyTitle("One moment", systemImage: "arrow.clockwise")
             } description: {
                 Text("Your sample conversations couldn't be opened.")
             } actions: {
@@ -667,7 +667,7 @@ struct CorresShell: View {
                         .id(splitRoute)
                 } else {
                     ContentUnavailableView {
-                        Label("No conversation selected", systemImage: "envelope.open")
+                        EmptyTitle("No conversation selected", systemImage: "envelope.open")
                     } description: {
                         Text("Choose one from the list.")
                     }

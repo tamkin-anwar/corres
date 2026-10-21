@@ -85,9 +85,11 @@ struct AttachmentsView: View {
         .navigationTitle("Attachments")
         .overlay {
             if items.isEmpty {
-                ContentUnavailableView(search.isEmpty ? String(localized: "No Attachments") : String(localized: "No Matches"),
-                                       systemImage: "paperclip",
-                                       description: Text(search.isEmpty ? "Files sent to you or by you show here." : "Try another name."))
+                ContentUnavailableView {
+                    EmptyTitle(search.isEmpty ? String(localized: "No Attachments") : String(localized: "No Matches"), systemImage: "paperclip")
+                } description: {
+                    Text(search.isEmpty ? "Files sent to you or by you show here." : "Try another name.")
+                }
             }
         }
     }

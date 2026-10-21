@@ -232,8 +232,11 @@ struct MacMainView: View {
         if let source = model.mailbox.remoteSource, model.search.isEmpty, !services.remote.hasLoaded(source) || services.remote.loading.contains(source) {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let source = model.mailbox.remoteSource, model.search.isEmpty, services.remote.failed(source) {
-            ContentUnavailableView("Couldn't load \(model.mailbox.title)", systemImage: "wifi.exclamationmark",
-                                   description: Text("Check your connection, then choose it again."))
+            ContentUnavailableView {
+                EmptyTitle("Couldn't load \(model.mailbox.title)", systemImage: "wifi.exclamationmark")
+            } description: {
+                Text("Check your connection, then choose it again.")
+            }
         } else if !model.search.isEmpty, services.ask.phase != .idle {
             // A question is answered above; no "No Results" under the answer.
             Color.clear
@@ -241,19 +244,24 @@ struct MacMainView: View {
             ContentUnavailableView.search(text: model.search)
         } else if filtersUnread {
             ContentUnavailableView {
-                Label("No unread mail", systemImage: "line.3.horizontal.decrease.circle")
+                EmptyTitle("No unread mail", systemImage: "line.3.horizontal.decrease.circle")
             } description: {
                 Text("Nothing unread in \(model.mailbox.title).")
             } actions: {
                 Button("Show All") { unreadOnly = false }
             }
         } else if model.mailbox == .needsYou {
-            ContentUnavailableView("Nothing needs you",
-                                   systemImage: "checkmark.circle",
-                                   description: Text("Email that asks something of you lands here, with the reason why."))
+            ContentUnavailableView {
+                EmptyTitle("Nothing needs you", systemImage: "checkmark.circle")
+            } description: {
+                Text("Email that asks something of you lands here, with the reason why.")
+            }
         } else {
-            ContentUnavailableView(model.mailbox.title, systemImage: model.mailbox.systemImage,
-                                   description: Text("No conversations here."))
+            ContentUnavailableView {
+                EmptyTitle(model.mailbox.title, systemImage: model.mailbox.systemImage)
+            } description: {
+                Text("No conversations here.")
+            }
         }
     }
 
@@ -296,8 +304,11 @@ struct MacMainView: View {
                     openWindow(value: ComposeRequest(kind: draft.kind, handoff: handoff))
                 }
             } else {
-                ContentUnavailableView("Send Later", systemImage: "clock.arrow.circlepath",
-                                       description: Text("Choose a scheduled email to read it, send it now, or change its time."))
+                ContentUnavailableView {
+                    EmptyTitle("Send Later", systemImage: "clock.arrow.circlepath")
+                } description: {
+                    Text("Choose a scheduled email to read it, send it now, or change its time.")
+                }
             }
         } else {
             conversationDetail
@@ -314,11 +325,14 @@ struct MacMainView: View {
             // From the store, which adds the HTML once it's read.
             ReadingPane(thread: store.thread(thread.id) ?? thread, services: services) { kind in compose(kind, thread) }
         } else if selected.count > 1 {
-            ContentUnavailableView("\(selected.count) conversations selected", systemImage: "square.stack",
-                                   description: Text("Archive, delete, move or flag them together."))
+            ContentUnavailableView {
+                EmptyTitle("\(selected.count) conversations selected", systemImage: "square.stack")
+            } description: {
+                Text("Archive, delete, move or flag them together.")
+            }
         } else {
             ContentUnavailableView {
-                Label("Corres", systemImage: "envelope.open")
+                EmptyTitle("Corres", systemImage: "envelope.open")
             } description: {
                 Text("Choose a conversation to read it.")
             }

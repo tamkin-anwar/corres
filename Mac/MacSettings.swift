@@ -302,8 +302,11 @@ private struct MacSignaturesSettings: View {
                 .formStyle(.grouped)
                 .id(revision)
             } else {
-                ContentUnavailableView("No signature selected", systemImage: "signature",
-                                       description: Text("Add one with +, like a full one for new mail and a short one for replies."))
+                ContentUnavailableView {
+                    EmptyTitle("No signature selected", systemImage: "signature")
+                } description: {
+                    Text("Add one with +, like a full one for new mail and a short one for replies.")
+                }
                     .frame(maxWidth: .infinity)
             }
         }

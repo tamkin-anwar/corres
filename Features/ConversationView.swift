@@ -246,7 +246,9 @@ struct ConversationView: View {
                     Button("OK", role: .cancel) { unsubscribeService.errorMessage = nil }
                 } message: { Text(unsubscribeService.errorMessage ?? "Try again.") }
             } else {
-                ContentUnavailableView("Conversation unavailable", systemImage: "text.bubble")
+                ContentUnavailableView {
+                    EmptyTitle("Conversation unavailable", systemImage: "text.bubble")
+                }
             }
         }
         .background(CorresPalette.readingPage(colorSchemeForPage))
@@ -515,7 +517,7 @@ struct ConversationView: View {
                         Text(blocked.trackers > 0
                              ? (blocked.trackers == 1 ? "1 tracker blocked" : "\(blocked.trackers) trackers blocked")
                              : "Images off")
-                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
                         Button("Show Images") {
                             showRemoteImages = true
                             if let senderEmail = thread.senderEmail {
@@ -527,7 +529,7 @@ struct ConversationView: View {
                         .fixedSize()
                     } else {
                         Image(systemName: "envelope.badge.shield.half.filled").font(.caption)
-                        Text("Mailing list").lineLimit(1)
+                        Text("Mailing list").fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer(minLength: 8)
                     if canUnsubscribe {
@@ -1025,13 +1027,11 @@ struct ConversationView: View {
     /// A first email from someone: one line with the choice, not a card in
     /// front of the message. The address is right below, by the sender.
     private func newSenderCard(thread: Correspondence, email: String) -> some View {
-        HStack(spacing: 10) {
-            Label("First email from them", systemImage: "checkmark.shield")
-                .labelStyle(TightLabelStyle())
-                .font(.subheadline)
-                .foregroundStyle(CorresPalette.secondary)
-                .lineLimit(1)
-            Spacer(minLength: 8)
+        let label = Label("First email from them", systemImage: "checkmark.shield")
+            .labelStyle(TightLabelStyle())
+            .font(.subheadline)
+            .foregroundStyle(CorresPalette.secondary)
+        let choices = HStack(spacing: 10) {
             // Same pair and styles as the New Senders screen, smaller.
             Button("Block") {
                 Task {
@@ -1046,6 +1046,19 @@ struct ConversationView: View {
             }
             .buttonStyle(CorresMetalCapsuleStyle(minHeight: 34))
             .fixedSize()
+        }
+        // One line when the words fit whole beside the buttons (and in
+        // every language); otherwise the buttons go underneath.
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                label.fixedSize()
+                Spacer(minLength: 8)
+                choices
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                label.fixedSize(horizontal: false, vertical: true)
+                choices
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("First email from \(email)")

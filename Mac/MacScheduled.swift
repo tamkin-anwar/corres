@@ -9,8 +9,11 @@ struct MacScheduledList: View {
 
     var body: some View {
         if scheduled.items.isEmpty {
-            ContentUnavailableView("Nothing scheduled", systemImage: "clock.arrow.circlepath",
-                                   description: Text("Choose Send Later in a new message to send it at a time you pick."))
+            ContentUnavailableView {
+                EmptyTitle("Nothing scheduled", systemImage: "clock.arrow.circlepath")
+            } description: {
+                Text("Choose Send Later in a new message to send it at a time you pick.")
+            }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             List(scheduled.items, selection: $selection) { item in

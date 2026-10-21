@@ -38,8 +38,11 @@ struct MutedView: View {
         .navigationTitle("Muted")
         .overlay {
             if rows.isEmpty {
-                ContentUnavailableView("Nothing Muted", systemImage: "bell.slash",
-                                       description: Text("Mute a conversation from its ⋯ menu. New replies stay out of your lists and silent, unless one is written to you alone."))
+                ContentUnavailableView {
+                    EmptyTitle("Nothing Muted", systemImage: "bell.slash")
+                } description: {
+                    Text("Mute a conversation from its ⋯ menu. New replies stay out of your lists and silent, unless one is written to you alone.")
+                }
             }
         }
     }
@@ -95,8 +98,11 @@ struct SavedSearchView: View {
         }
         .overlay {
             if rows.isEmpty {
-                ContentUnavailableView("Nothing Matches", systemImage: "magnifyingglass",
-                                       description: Text("Mail matching \u{201C}\(search.query)\u{201D} shows here as it arrives."))
+                ContentUnavailableView {
+                    EmptyTitle("Nothing Matches", systemImage: "magnifyingglass")
+                } description: {
+                    Text("Mail matching \u{201C}\(search.query)\u{201D} shows here as it arrives.")
+                }
             }
         }
     }

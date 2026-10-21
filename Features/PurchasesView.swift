@@ -42,8 +42,11 @@ struct PurchasesView: View {
         .navigationTitle("Purchases")
         .overlay {
             if loaded && items.isEmpty {
-                ContentUnavailableView("No Purchases", systemImage: "bag",
-                                       description: Text("Receipts and delivery updates from the last four months show here."))
+                ContentUnavailableView {
+                    EmptyTitle("No Purchases", systemImage: "bag")
+                } description: {
+                    Text("Receipts and delivery updates from the last four months show here.")
+                }
             } else if !loaded {
                 ProgressView()
             }

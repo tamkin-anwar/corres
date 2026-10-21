@@ -194,3 +194,29 @@ extension View {
         }
     }
 }
+
+/// An empty screen's headline, whole on as many lines as it needs.
+/// ContentUnavailableView keeps its title to one line, which cut
+/// "Nichts Ungelesenes in Braucht dich" short in German.
+struct EmptyTitle: View {
+    private let title: Text
+    private let systemImage: String
+
+    init(_ key: LocalizedStringKey, systemImage: String) {
+        title = Text(key)
+        self.systemImage = systemImage
+    }
+
+    init<S: StringProtocol>(_ string: S, systemImage: String) {
+        title = Text(string)
+        self.systemImage = systemImage
+    }
+
+    var body: some View {
+        Label {
+            title.lineLimit(4).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: systemImage)
+        }
+    }
+}

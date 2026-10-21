@@ -78,7 +78,7 @@ struct ScreenerView: View {
             Group {
                 if all.isEmpty {
                     ContentUnavailableView {
-                        Label("No new senders", systemImage: "checkmark.shield")
+                        EmptyTitle("No new senders", systemImage: "checkmark.shield")
                     } description: {
                         Text("Everyone who's reached you so far has already been reviewed.")
                     }
