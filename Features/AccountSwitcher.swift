@@ -17,8 +17,7 @@ struct AccountSwitcher: View {
     /// Unread in Primary, as Gmail's switcher counts and the inbox's own
     /// "· 9 unread" reads: not every newsletter ever left unread.
     private func unread(_ account: String?) -> Int {
-        let scoped = AccountPreferences.scope(store.threads, account: account, all: emails, by: \.id.account)
-        return MailQuery.filter(scoped).reduce(0) { $0 + ($1.isUnread && MailFilter.primary.includes($1) ? 1 : 0) }
+        store.overview(account: account, all: emails).primaryUnread
     }
 
     var body: some View {

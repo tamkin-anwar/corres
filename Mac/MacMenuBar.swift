@@ -8,7 +8,7 @@ struct MacMenuBarContent: View {
     @Environment(\.openWindow) private var openWindow
 
     private var needsYou: [Correspondence] {
-        MailQuery.prioritized(services.store.threads, attention: .needsYou)
+        services.store.overview().needsYou
     }
 
     var body: some View {
@@ -48,7 +48,7 @@ struct MacMenuBarLabel: View {
     let services: MacServices
 
     var body: some View {
-        let count = MailQuery.prioritized(services.store.threads, attention: .needsYou).count
+        let count = services.store.overview().needsYou.count
         if count > 0 {
             Label("\(count)", systemImage: "tray.full")
                 .accessibilityLabel(count == 1 ? "Corres: 1 email needs you" : "Corres: \(count) emails need you")

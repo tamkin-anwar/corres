@@ -23,7 +23,7 @@ struct MacMainView: View {
     private var store: MailStore { services.store }
     private var dockCount: Int {
         guard services.entitlements.isPro || accounts.isEmpty else { return 0 }
-        return MailQuery.prioritized(store.threads, attention: .needsYou).count
+        return store.overview().needsYou.count
     }
     private var actions: ThreadActionService { services.threadActions }
     private var accounts: [String] { services.auth.accounts.map(\.email) }

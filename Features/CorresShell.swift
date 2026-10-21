@@ -681,11 +681,11 @@ struct CorresShell: View {
     }
 
     private func sidebarCount(for destination: Destination) -> Int? {
-        let scoped = AccountPreferences.scope(store.threads, account: accountFilter, all: auth.accounts.map(\.email), by: \.id.account)
+        let overview = store.overview(account: accountFilter, all: auth.accounts.map(\.email))
         switch destination {
-        case .needsYou: return MailQuery.filter(scoped, attention: .needsYou).count
-        case .waiting: return MailQuery.filter(scoped, attention: .waiting).count
-        case .mail: return MailQuery.filter(scoped).filter(\.isUnread).count
+        case .needsYou: return overview.needsYou.count
+        case .waiting: return overview.waitingCount
+        case .mail: return overview.unreadCount
         case .brief, .ask: return nil
         }
     }

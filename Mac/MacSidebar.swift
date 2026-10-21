@@ -119,13 +119,10 @@ struct MacSidebar: View {
             .listRowBackground(dropTarget == mailbox ? RoundedRectangle(cornerRadius: 6).fill(CorresPalette.accent.opacity(0.25)) : nil)
     }
 
-    private var needsYouCount: Int { MailQuery.prioritized(store.threads, attention: .needsYou).count }
-    private var waitingCount: Int { MailQuery.prioritized(store.threads, attention: .waiting).count }
+    private var needsYouCount: Int { store.overview().needsYou.count }
+    private var waitingCount: Int { store.overview().waitingCount }
     private var newSendersCount: Int { Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count }
-    private var primaryUnread: Int {
-        let context = CategoryContextCache.context(store)
-        return MailQuery.filter(store.threads).lazy.filter { $0.isUnread && MailFilter.primary.includes($0, context: context) }.count
-    }
+    private var primaryUnread: Int { store.overview().primaryUnread }
 
     private var footer: some View {
         HStack(spacing: 8) {

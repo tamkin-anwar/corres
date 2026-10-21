@@ -124,6 +124,37 @@ final class MailStore {
         return browsed[id]
     }
 
+    /// The counts the sidebars, Dock, menu bar and account switcher show,
+    /// worked out once per change to the mail (and each minute, as snoozes
+    /// wake) and shared. Each used to sort or filter the whole mailbox on
+    /// every redraw; the Mac, with five of them, froze for seconds at
+    /// launch while sync changed the mail again and again.
+    struct Overview {
+        var needsYou: [Correspondence] = []
+        var waitingCount = 0
+        var unreadCount = 0
+        var primaryUnread = 0
+    }
+
+    /// `account` nil is All Inboxes (`AccountPreferences.scope`).
+    func overview(account: String? = nil, all accounts: [String] = []) -> Overview {
+        let minute = Int(Date.now.timeIntervalSince1970 / 60)
+        let key = "\(account ?? "*")|\(accounts.joined(separator: ","))|\(UserDefaults.standard.integer(forKey: AccountPreferences.revisionKey))"
+        if let cached = overviews[key], cached.revision == revision, cached.minute == minute { return cached.value }
+        let scoped = AccountPreferences.scope(threads, account: account, all: accounts, by: \.id.account)
+        let inbox = MailQuery.filter(scoped)
+        let context = CategoryContextCache.context(self)
+        let value = Overview(
+            needsYou: MailQuery.prioritized(scoped, attention: .needsYou),
+            waitingCount: MailQuery.filter(scoped, attention: .waiting).count,
+            unreadCount: inbox.reduce(0) { $0 + ($1.isUnread ? 1 : 0) },
+            primaryUnread: inbox.reduce(0) { $0 + ($1.isUnread && MailFilter.primary.includes($1, context: context) ? 1 : 0) })
+        if overviews.count > 12 { overviews.removeAll() }
+        overviews[key] = (revision, minute, value)
+        return value
+    }
+    @ObservationIgnored private var overviews: [String: (revision: Int, minute: Int, value: Overview)] = [:]
+
     /// Address → the name its owner writes under, worked out once per
     /// change to the mail: rows ask it for every sent email on screen.
     var knownSenderNames: [String: String] {

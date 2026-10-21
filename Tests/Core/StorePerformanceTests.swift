@@ -54,6 +54,14 @@ struct StorePerformanceTests {
         let movedFirst = try await clock.measure { _ = try await repository.recentThreads(limit: 300) }
         print("PERF after moving: load \(movedLoad), first screen \(movedFirst)")
 
+        let accounts = Set(threads.map { $0.id.account.lowercased() })
+        let people = clock.measure { _ = PeopleIndex.from(threads, accounts: accounts) }
+        let needsYou = clock.measure { _ = MailQuery.prioritized(threads, attention: .needsYou) }
+        let inbox = clock.measure { _ = MailQuery.filter(threads) }
+        let categories = clock.measure { _ = InboxCategory.context(for: threads) }
+        let names = clock.measure { _ = Correspondence.knownSenderNames(threads) }
+        print("PERF per-change passes: people \(people), needs you \(needsYou), inbox \(inbox), categories \(categories), names \(names)")
+
         let html = threads.reduce(0) { $0 + ($1.htmlBody?.utf8.count ?? 0) }
         print("""
         PERF \(threads.count) conversations, \(html / 1_048_576) MB HTML held in the list
