@@ -1,3 +1,4 @@
+import AppIntents
 import CoreSpotlight
 import Foundation
 import UniformTypeIdentifiers
@@ -138,6 +139,9 @@ final class SpotlightIndex {
         let item = CSSearchableItem(uniqueIdentifier: key(thread.id), domainIdentifier: thread.id.account.lowercased(),
                                     attributeSet: attributes)
         item.expirationDate = .distantFuture
+        // The same email as Siri knows it, so a question about your mail
+        // can find it by meaning and act on it.
+        if #available(iOS 18.0, macOS 15.0, *) { attributes.associateAppEntity(CorresMailMessage(thread)) }
         return item
     }
 

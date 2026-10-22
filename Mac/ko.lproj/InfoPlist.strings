@@ -16,3 +16,6 @@
 /* Copyright (human-readable) */
 "NSHumanReadableCopyright" = "© 2026 Anwar Creative Studio";
 
+/* Privacy - Reminders Full Access Usage Description */
+"NSRemindersFullAccessUsageDescription" = "요청하면 Corres가 이메일을 미리 알림에 추가하고, 그 이메일로 돌아가는 링크를 붙입니다. 미리 알림을 읽지는 않습니다.";
+

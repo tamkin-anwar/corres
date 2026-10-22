@@ -19,6 +19,7 @@ struct PersonView: View {
     /// Starts a new email to them.
     let write: (String) -> Void
     @State private var confirmingBlock = false
+    @State private var confirmingTrashAll = false
     @Environment(\.dismiss) private var dismiss
 
     private var email: String { person.email.lowercased() }
@@ -32,6 +33,14 @@ struct PersonView: View {
         }
         .sorted { $0.receivedAt > $1.receivedAt }
     }
+
+    /// What they sent you that's still in an inbox, for Archive All; and
+    /// everything they sent, for Move All to Trash.
+    private var fromThem: [Correspondence] {
+        store.searchableThreads.filter { $0.senderEmail?.lowercased() == email && !$0.isFromAccountOwner && !$0.labelIds.contains("TRASH") }
+    }
+
+    private var shortName: String { person.name.isEmpty ? person.email : (person.name.split(separator: " ").first.map(String.init) ?? person.name) }
 
     private var isVIP: Bool { InboxClassifier.isVIP(email) }
     private var decision: SenderDecision? {
@@ -138,6 +147,33 @@ struct PersonView: View {
                     }
                 }
 
+                let theirs = fromThem
+                let inInbox = theirs.filter { $0.labelIds.contains("INBOX") }
+                if !theirs.isEmpty {
+                    Section {
+                        if !inInbox.isEmpty {
+                            Button {
+                                Task { await Organizer.shared.actions?.archive(inInbox) }
+                            } label: {
+                                LabeledContent {
+                                    Text(inInbox.count, format: .number)
+                                } label: {
+                                    Label("Archive All from \(shortName)", systemImage: "archivebox")
+                                }
+                            }
+                        }
+                        Button(role: .destructive) { confirmingTrashAll = true } label: {
+                            LabeledContent {
+                                Text(theirs.count, format: .number)
+                            } label: {
+                                Label("Move All from \(shortName) to Trash", systemImage: "trash")
+                            }
+                        }
+                    } footer: {
+                        Text("Archived email is still in Search.")
+                    }
+                }
+
                 Section {
                     if decision == .blocked {
                         Button("Allow \(person.name.isEmpty ? person.email : person.name)") {
@@ -158,6 +194,13 @@ struct PersonView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+            .confirmationDialog("Move \(fromThem.count) emails from \(shortName) to Trash?", isPresented: $confirmingTrashAll,
+                                titleVisibility: .visible) {
+                Button("Move to Trash", role: .destructive) {
+                    let theirs = fromThem
+                    Task { await Organizer.shared.actions?.trash(theirs) }
+                }
             }
             .confirmationDialog("Block \(person.name.isEmpty ? person.email : person.name)?", isPresented: $confirmingBlock,
                                 titleVisibility: .visible) {

@@ -16,6 +16,9 @@
 /* Privacy - Microphone Usage Description */
 "NSMicrophoneUsageDescription" = "O Corres usa o microfone apenas enquanto você dita um e-mail. A fala é transcrita neste dispositivo.";
 
+/* Privacy - Reminders Full Access Usage Description */
+"NSRemindersFullAccessUsageDescription" = "Quando você pede, o Corres adiciona um e-mail aos Lembretes, com um link de volta para o e-mail. Ele nunca lê seus lembretes.";
+
 /* Privacy - Speech Recognition Usage Description */
 "NSSpeechRecognitionUsageDescription" = "O Corres transforma seu ditado em texto neste dispositivo. Sua voz nunca é enviada a um servidor.";
 

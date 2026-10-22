@@ -104,6 +104,9 @@
 "A name, address or company, like amazon.com" = "名前、アドレス、会社名(例：amazon.com)";
 
 /* No comment provided by engineer. */
+"About %lld words" = "約%lld語";
+
+/* No comment provided by engineer. */
 "Accept" = "承諾";
 
 /* No comment provided by engineer. */
@@ -135,6 +138,20 @@
 
 /* No comment provided by engineer. */
 "Add to Calendar" = "カレンダーに追加";
+
+/* No comment provided by engineer. */
+"Add to Reminders" = "リマインダーに追加";
+
+
+/* No comment provided by engineer. */
+"Added to Reminders" = "リマインダーに追加しました";
+
+
+/* No comment provided by engineer. */
+"Added to Reminders." = "リマインダーに追加しました。";
+
+/* No comment provided by engineer. */
+"Adds the email to Reminders, with a link that opens it in Corres." = "メールをリマインダーに追加し、Corresで開くリンクを付けます。";
 
 /* No comment provided by engineer. */
 "All" = "すべて";
@@ -200,6 +217,9 @@
 "Archive (⌃⌘A, or E)" = "アーカイブ（⌃⌘AまたはE）";
 
 /* No comment provided by engineer. */
+"Archive All from %@" = "%@からのメールをすべてアーカイブ";
+
+/* No comment provided by engineer. */
 "Archive, delete, move or flag them together." = "まとめてアーカイブ、削除、移動、フラグ付けができます。";
 
 /* No comment provided by engineer. */
@@ -207,6 +227,9 @@
 
 /* No comment provided by engineer. */
 "Archived %lld" = "%lld件をアーカイブしました";
+
+/* No comment provided by engineer. */
+"Archived email is still in Search." = "アーカイブしたメールも検索で見つかります。";
 
 /* No comment provided by engineer. */
 "Archived mail leaves Needs You, so it won't be seen there." = "アーカイブしたメールは「要対応」から外れるため、そこには表示されません。";
@@ -326,6 +349,9 @@
 "Choose Send Later in a new message to send it at a time you pick." = "新規メッセージで「あとで送信」を選ぶと、指定した時刻に送信できます。";
 
 /* No comment provided by engineer. */
+"Click the link in the reminder to come back to this email." = "リマインダーのリンクをクリックすると、このメールに戻れます。";
+
+/* No comment provided by engineer. */
 "codes" = "コード";
 
 /* No comment provided by engineer. */
@@ -356,7 +382,16 @@
 "Corres" = "Corres";
 
 /* No comment provided by engineer. */
+"Corres can't add to Reminders. You can allow it in Settings." = "Corresはリマインダーに追加できません。設定で許可できます。";
+
+/* No comment provided by engineer. */
 "Corres decides" = "Corresが判断";
+
+/* No comment provided by engineer. */
+"Corres doesn't have access to Reminders. You can allow it in System Settings > Privacy & Security > Reminders." = "Corresはリマインダーにアクセスできません。「システム設定」>「プライバシーとセキュリティ」>「リマインダー」で許可できます。";
+
+/* No comment provided by engineer. */
+"Corres learns your greeting, sign-off and length once you've sent a few more emails." = "あと数通メールを送ると、Corresはあなたの挨拶、結び、長さを覚えます。";
 
 /* No comment provided by engineer. */
 "Corres Pro" = "Corres Pro";
@@ -384,6 +419,9 @@
 
 /* No comment provided by engineer. */
 "Corres: nothing needs you" = "Corres：要対応のものはありません";
+
+/* No comment provided by engineer. */
+"Couldn't Add to Reminders" = "リマインダーに追加できませんでした";
 
 /* No comment provided by engineer. */
 "Couldn't Attach" = "添付できませんでした";
@@ -482,6 +520,9 @@
 "Email" = "メール";
 
 /* No comment provided by engineer. */
+"Email from %@" = "%@からのメール";
+
+/* No comment provided by engineer. */
 "Email links in other apps open in Corres." = "ほかのアプリのメールリンクがCorresで開きます。";
 
 /* No comment provided by engineer. */
@@ -551,6 +592,9 @@
 "From “%@”" = "差出人「%@」";
 
 /* No comment provided by engineer. */
+"From %@" = "差出人: %@";
+
+/* No comment provided by engineer. */
 "From a person, nothing asked." = "人からのメールで、質問はありません。";
 
 /* No comment provided by engineer. */
@@ -567,6 +611,9 @@
 
 /* No comment provided by engineer. */
 "From your other account. Kept out of Needs You." = "あなたの別のアカウントからです。「要対応」には入れません。";
+
+/* No comment provided by engineer. */
+"From: %@" = "差出人: %@";
 
 /* No comment provided by engineer. */
 "General" = "一般";
@@ -597,6 +644,9 @@
 
 /* No comment provided by engineer. */
 "Go To or Do…" = "移動または実行…";
+
+/* No comment provided by engineer. */
+"Greeting" = "挨拶";
 
 /* No comment provided by engineer. */
 "Handled" = "対応済み";
@@ -663,6 +713,9 @@
 
 /* No comment provided by engineer. */
 "It won't be sent, and it isn't kept in Drafts." = "送信されず、下書きにも残りません。";
+
+/* No comment provided by engineer. */
+"It'll go out %@." = "%@に送信されます。";
 
 /* No comment provided by engineer. */
 "It's removed from Corres on all your devices. Nothing is deleted from the account itself." = "すべてのデバイスのCorresから削除されます。アカウント自体からは何も削除されません。";
@@ -800,6 +853,12 @@
 "Move" = "移動";
 
 /* No comment provided by engineer. */
+"Move %lld emails from %@ to Trash?" = "%2$@からの%1$lld通のメールをゴミ箱に移動しますか？";
+
+/* No comment provided by engineer. */
+"Move All from %@ to Trash" = "%@からのメールをすべてゴミ箱に移動";
+
+/* No comment provided by engineer. */
 "Move to" = "移動";
 
 /* No comment provided by engineer. */
@@ -810,6 +869,9 @@
 
 /* No comment provided by engineer. */
 "Move to Needs You" = "「要対応」に移動";
+
+/* No comment provided by engineer. */
+"Move to Trash" = "ゴミ箱に移動";
 
 /* No comment provided by engineer. */
 "Move to Waiting" = "「返信待ち」に移動";
@@ -905,6 +967,9 @@
 "No conversations here." = "ここに会話はありません。";
 
 /* No comment provided by engineer. */
+"No Date" = "日付なし";
+
+/* No comment provided by engineer. */
 "No Matches" = "一致するものはありません";
 
 /* No comment provided by engineer. */
@@ -924,6 +989,9 @@
 
 /* No comment provided by engineer. */
 "No subject" = "件名なし";
+
+/* No comment provided by engineer. */
+"None, straight in" = "なし、すぐ本題";
 
 /* No comment provided by engineer. */
 "Nothing for you to do" = "することはありません";
@@ -1151,6 +1219,16 @@
 "Register" = "登録";
 
 /* No comment provided by engineer. */
+"Remind me about ${target}" = "${target}について通知";
+
+/* No comment provided by engineer. */
+"Remind Me About an Email" = "メールについて通知";
+
+
+/* No comment provided by engineer. */
+"Reminders didn't save it. Try again." = "リマインダーに保存できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
 "Remove" = "削除";
 
 /* No comment provided by engineer. */
@@ -1277,6 +1355,12 @@
 "Send Now" = "今すぐ送信";
 
 /* No comment provided by engineer. */
+"Send this email to %@ on %@?" = "このメールを%1$@に%2$@に送信しますか？";
+
+/* No comment provided by engineer. */
+"Send this email to %@?" = "このメールを%@に送信しますか？";
+
+/* No comment provided by engineer. */
 "Send without a subject?" = "件名なしで送信しますか？";
 
 /* No comment provided by engineer. */
@@ -1290,6 +1374,9 @@
 
 /* No comment provided by engineer. */
 "Sent today" = "今日送信";
+
+/* No comment provided by engineer. */
+"Sent." = "送信しました。";
 
 /* No comment provided by engineer. */
 "Share" = "共有";
@@ -1326,6 +1413,9 @@
 
 /* No comment provided by engineer. */
 "Sign In" = "サインイン";
+
+/* No comment provided by engineer. */
+"Sign-Off" = "結び";
 
 /* No comment provided by engineer. */
 "Signatures" = "署名";
@@ -1385,6 +1475,9 @@
 "Subject has “%@”" = "件名に「%@」";
 
 /* No comment provided by engineer. */
+"Subject: %@" = "件名: %@";
+
+/* No comment provided by engineer. */
 "Suggest Times from Your Calendar" = "カレンダーから時間を提案";
 
 /* No comment provided by engineer. */
@@ -1395,6 +1488,12 @@
 
 /* No comment provided by engineer. */
 "Text" = "本文";
+
+/* No comment provided by engineer. */
+"That email isn't in Corres anymore." = "そのメールはもうCorresにありません。";
+
+/* No comment provided by engineer. */
+"That email isn't open in Corres anymore." = "そのメールはもうCorresで開いていません。";
 
 /* No comment provided by engineer. */
 "The few conversations that ask something of you, with the reason for each." = "あなたに何かを求める会話と、それぞれの理由。";
@@ -1418,6 +1517,9 @@
 "This email is from a mailing list." = "このメールはメーリングリストからのものです。";
 
 /* No comment provided by engineer. */
+"This Evening" = "今晩";
+
+/* No comment provided by engineer. */
 "This Weekend" = "今週末";
 
 /* No comment provided by engineer. */
@@ -1436,6 +1538,9 @@
 "To “%@”" = "宛先「%@」";
 
 /* No comment provided by engineer. */
+"To %@" = "宛先: %@";
+
+/* No comment provided by engineer. */
 "To: %@" = "宛先：%@";
 
 /* No comment provided by engineer. */
@@ -1452,6 +1557,9 @@
 
 /* No comment provided by engineer. */
 "tomorrow at %@" = "明日 %@";
+
+/* No comment provided by engineer. */
+"Tomorrow Morning" = "明日の朝";
 
 /* No comment provided by engineer. */
 "Top Results" = "トップヒット";
@@ -1550,6 +1658,9 @@
 "Used only when the email has no subject yet." = "メールにまだ件名がない場合にだけ使われます。";
 
 /* No comment provided by engineer. */
+"Usual Length" = "いつもの長さ";
+
+/* No comment provided by engineer. */
 "Verify" = "確認する";
 
 /* No comment provided by engineer. */
@@ -1586,7 +1697,13 @@
 "When an email" = "メールの";
 
 /* No comment provided by engineer. */
+"When It's Due, %@" = "期限の日、%@";
+
+/* No comment provided by engineer. */
 "When you can" = "時間のあるときに";
+
+/* No comment provided by engineer. */
+"Who should it go to? Add someone first." = "宛先がありません。先に宛先を追加してください。";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "今後%@に印を付けません";
@@ -1599,6 +1716,9 @@
 
 /* No comment provided by engineer. */
 "Write" = "作成";
+
+/* No comment provided by engineer. */
+"Write Replies Like Me" = "自分らしく返信を書く";
 
 /* No comment provided by engineer. */
 "Yahoo, AOL, Fastmail, Zoho or a work server. Corres finds the server settings for you." = "Yahoo、AOL、Fastmail、Zoho、または職場のサーバ。Corresがサーバ設定を見つけます。";

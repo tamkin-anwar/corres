@@ -1,3 +1,4 @@
+import AppIntents
 import Foundation
 
 /// Handoff: the conversation open on your iPhone is a click away on your
@@ -10,6 +11,10 @@ enum Handoff {
         activity.userInfo = ["account": thread.id.account, "thread": thread.id.providerID]
         activity.isEligibleForHandoff = thread.id.account != "sample"
         activity.isEligibleForSearch = false
+        // The email on screen, for Siri: "summarize this", "remind me about this".
+        if #available(iOS 18.2, macOS 15.2, *), thread.id.account != "sample" {
+            activity.appEntityIdentifier = EntityIdentifier(for: CorresMailMessage.self, identifier: thread.id.entityKey)
+        }
     }
 
     static func threadID(_ activity: NSUserActivity) -> ThreadID? {

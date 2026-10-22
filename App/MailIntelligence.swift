@@ -454,9 +454,10 @@ final class MailIntelligence {
     // MARK: - Writing help
 
     /// A complete reply body for `intent` ("Count me in"), in a plain,
-    /// natural voice, signed with `signOff`. Nil if the model is unavailable
-    /// or declines.
-    func draftReply(to thread: Correspondence, intent: String, signOff: String?) async -> String? {
+    /// natural voice, signed with `signOff`, written the way the person
+    /// writes when `style` says how (see `WritingStyle.instructions`). Nil
+    /// if the model is unavailable or declines.
+    func draftReply(to thread: Correspondence, intent: String, signOff: String?, style: String? = nil) async -> String? {
         guard isAvailable, #available(iOS 26.0, macOS 26.0, *) else { return nil }
         let prompt = """
         Write the body of a reply email.
@@ -468,6 +469,7 @@ final class MailIntelligence {
         I am the recipient, replying in first person. My answer, in short: \(intent)
         Write my reply so it gives that answer directly. Do not ask the sender to decide something I was asked to decide.
         \(signOff.map { "Sign it: \($0)" } ?? "Do not add a signature.")
+        \(style.map { "How I write:\n\($0)" } ?? "")
         """
         do {
             let session = LanguageModelSession(instructions: Self.writingInstructions)

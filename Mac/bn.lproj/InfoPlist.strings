@@ -16,3 +16,6 @@
 /* Copyright (human-readable) */
 "NSHumanReadableCopyright" = "© 2026 Anwar Creative Studio";
 
+/* Privacy - Reminders Full Access Usage Description */
+"NSRemindersFullAccessUsageDescription" = "আপনি চাইলে Corres একটি ইমেইল রিমাইন্ডারে যোগ করে, সাথে সেই ইমেইলে ফেরার লিংক দেয়। এটি কখনো আপনার রিমাইন্ডার পড়ে না।";
+

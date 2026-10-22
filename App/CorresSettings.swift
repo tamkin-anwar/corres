@@ -187,7 +187,8 @@ enum CorresSettings {
              unread = "Mark Unread", pin = "Pin", replyAll = "Reply All", forward = "Forward",
              moveTo = "Move to", labels = "Labels", spam = "Report Spam", block = "Block Sender",
              unsubscribe = "Unsubscribe", vip = "VIP", calendar = "Add to Calendar",
-             share = "Share", print = "Print", translate = "Translate", mute = "Mute"
+             share = "Share", print = "Print", translate = "Translate", mute = "Mute",
+             reminder = "Add to Reminders"
         var id: String { rawValue }
         var systemImage: String {
             switch self {
@@ -210,6 +211,7 @@ enum CorresSettings {
             case .print: "printer"
             case .translate: "translate"
             case .mute: "bell.slash"
+            case .reminder: "checklist"
             }
         }
 
@@ -235,6 +237,7 @@ enum CorresSettings {
             case .print: String(localized: "Print")
             case .translate: String(localized: "Translate")
             case .mute: String(localized: "Mute")
+            case .reminder: String(localized: "Add to Reminders")
             }
         }
 
@@ -243,7 +246,7 @@ enum CorresSettings {
             switch self {
             case .archive, .trash, .flag, .snooze, .unread, .pin: String(localized: "Everyday")
             case .replyAll, .forward, .share, .print: String(localized: "Send and Share")
-            case .moveTo, .labels, .vip, .calendar, .translate, .mute: String(localized: "Organize")
+            case .moveTo, .labels, .vip, .calendar, .translate, .mute, .reminder: String(localized: "Organize")
             case .spam, .block, .unsubscribe: String(localized: "Unwanted Mail")
             }
         }

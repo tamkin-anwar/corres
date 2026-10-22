@@ -30,6 +30,8 @@ final class Organizer {
     /// The app's mail and actions, for Siri and Shortcuts as well.
     @ObservationIgnored private(set) weak var store: MailStore?
     @ObservationIgnored private(set) weak var actions: ThreadActionService?
+    /// Sending and Drafts, for an email Siri writes.
+    @ObservationIgnored private(set) weak var outbox: OutboxService?
     @ObservationIgnored private var isOrganizing = false
 
     private init() {
@@ -43,9 +45,10 @@ final class Organizer {
 
     /// Called once at launch: after each reload of the mail, what's new is
     /// organized.
-    func attach(store: MailStore, actions: ThreadActionService) {
+    func attach(store: MailStore, actions: ThreadActionService, outbox: OutboxService) {
         self.store = store
         self.actions = actions
+        self.outbox = outbox
         WidgetHandoff.open = { destination in
             if let url = URL(string: "\(WidgetSnapshot.urlScheme)://\(destination)") { _ = AppRouter.shared.open(url) }
         }

@@ -16,3 +16,6 @@
 /* Copyright (human-readable) */
 "NSHumanReadableCopyright" = "© 2026 Anwar Creative Studio";
 
+/* Privacy - Reminders Full Access Usage Description */
+"NSRemindersFullAccessUsageDescription" = "在你要求时，Corres 会把邮件添加到提醒事项，并附上返回该邮件的链接。它从不读取你的提醒事项。";
+

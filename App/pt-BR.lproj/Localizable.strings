@@ -221,6 +221,9 @@
 "Aa" = "Aa";
 
 /* No comment provided by engineer. */
+"About %lld words" = "Cerca de %lld palavras";
+
+/* No comment provided by engineer. */
 "Accept" = "Aceitar";
 
 /* No comment provided by engineer. */
@@ -278,10 +281,20 @@
 "Add to Calendar" = "Adicionar ao calendário";
 
 /* No comment provided by engineer. */
+"Add to Reminders" = "Adicionar aos Lembretes";
+
+/* No comment provided by engineer. */
 "Added" = "Adicionado";
 
 /* No comment provided by engineer. */
 "Added below what you write, above the email you're replying to." = "Adicionada abaixo do que você escreve, acima do e-mail que você está respondendo.";
+
+/* No comment provided by engineer. */
+"Added to Reminders" = "Adicionado aos Lembretes";
+
+
+/* No comment provided by engineer. */
+"Added to Reminders." = "Adicionado aos Lembretes.";
 
 /* No comment provided by engineer. */
 "Adding attachments to the forward" = "Adicionando anexos ao encaminhamento";
@@ -294,6 +307,9 @@
 
 /* No comment provided by engineer. */
 "Adds a Bcc field: people copied without the others seeing" = "Adiciona um campo Cco: pessoas em cópia sem que as outras vejam";
+
+/* No comment provided by engineer. */
+"Adds the email to Reminders, with a link that opens it in Corres." = "Adiciona o e-mail aos Lembretes, com um link que o abre no Corres.";
 
 /* No comment provided by engineer. */
 "Adds them to %@" = "Adiciona a %@";
@@ -434,10 +450,16 @@
 "Archive" = "Arquivar";
 
 /* No comment provided by engineer. */
+"Archive All from %@" = "Arquivar tudo de %@";
+
+/* No comment provided by engineer. */
 "Archived" = "Arquivado";
 
 /* No comment provided by engineer. */
 "Archived %lld" = "%lld arquivados";
+
+/* No comment provided by engineer. */
+"Archived email is still in Search." = "E-mails arquivados continuam na busca.";
 
 /* No comment provided by engineer. */
 "Archived mail leaves Needs You, so it won't be seen there." = "E-mails arquivados saem de Precisa de Você, então não aparecerão lá.";
@@ -707,10 +729,19 @@
 "Corres asks them to stop, the way their own unsubscribe link does. Block also hides anything they still send." = "O Corres pede que parem, como o próprio link de descadastro deles faz. Bloquear também oculta tudo o que ainda enviarem.";
 
 /* No comment provided by engineer. */
+"Corres can't add to Reminders. You can allow it in Settings." = "O Corres não pode adicionar aos Lembretes. Você pode permitir nos Ajustes.";
+
+/* No comment provided by engineer. */
 "Corres decides" = "O Corres decide";
 
 /* No comment provided by engineer. */
+"Corres doesn't have access to Reminders. You can allow it in Settings > Apps > Corres." = "O Corres não tem acesso aos Lembretes. Você pode permitir em Ajustes > Apps > Corres.";
+
+/* No comment provided by engineer. */
 "Corres learns from your corrections, on this %@. Every lesson is listed there, and you can make it forget any of them." = "O Corres aprende com suas correções, neste %@. Cada lição aparece ali, e você pode fazê-lo esquecer qualquer uma.";
+
+/* No comment provided by engineer. */
+"Corres learns your greeting, sign-off and length once you've sent a few more emails." = "O Corres aprende sua saudação, sua despedida e seu tamanho de texto depois que você enviar mais alguns e-mails.";
 
 /* No comment provided by engineer. */
 "Corres never sees your account password" = "O Corres nunca vê a senha da sua conta";
@@ -735,6 +766,9 @@
 
 /* No comment provided by engineer. */
 "Corres sends it from this %@ at that time, or the moment it can if your %@ is off or offline." = "O Corres envia deste %@ nesse horário, ou assim que puder se o seu %@ estiver desligado ou offline.";
+
+/* No comment provided by engineer. */
+"Couldn't Add to Reminders" = "Não foi possível adicionar aos Lembretes";
 
 /* No comment provided by engineer. */
 "Couldn't Attach File" = "Não foi possível anexar o arquivo";
@@ -896,6 +930,9 @@
 "Email Account" = "Conta de e-mail";
 
 /* No comment provided by engineer. */
+"Email from %@" = "E-mail de %@";
+
+/* No comment provided by engineer. */
 "Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "E-mails que pedem algo a você, classificados neste %@. Terminou com um? Deslize ou toque em Resolvido: ele sai desta lista, continua em E-mail e espera em Caixas → Resolvido. Classificou errado? Mantenha pressionado para mover.";
 
 /* No comment provided by engineer. */
@@ -1046,6 +1083,9 @@
 "From “%@”" = "De “%@”";
 
 /* No comment provided by engineer. */
+"From %@" = "De %@";
+
+/* No comment provided by engineer. */
 "From a Person" = "De uma pessoa";
 
 /* No comment provided by engineer. */
@@ -1073,6 +1113,9 @@
 "From your other account. Kept out of Needs You." = "Da sua outra conta. Fora de Precisa de Você.";
 
 /* No comment provided by engineer. */
+"From: %@" = "De: %@";
+
+/* No comment provided by engineer. */
 "Gmail" = "Gmail";
 
 /* No comment provided by engineer. */
@@ -1083,6 +1126,9 @@
 
 /* No comment provided by engineer. */
 "Go" = "Ir";
+
+/* No comment provided by engineer. */
+"Greeting" = "Saudação";
 
 /* No comment provided by engineer. */
 "Handled" = "Resolvido";
@@ -1212,6 +1258,9 @@
 
 /* No comment provided by engineer. */
 "It shows in Mailboxes, run again each time you open it." = "Ela aparece em Caixas e é refeita toda vez que você a abre.";
+
+/* No comment provided by engineer. */
+"It'll go out %@." = "Ele sairá em %@.";
 
 /* No comment provided by engineer. */
 "Italic" = "Itálico";
@@ -1433,6 +1482,12 @@
 "Move %lld conversations to Trash?" = "Mover %lld conversas para o Lixo?";
 
 /* No comment provided by engineer. */
+"Move %lld emails from %@ to Trash?" = "Mover %1$lld e-mails de %2$@ para o Lixo?";
+
+/* No comment provided by engineer. */
+"Move All from %@ to Trash" = "Mover tudo de %@ para o Lixo";
+
+/* No comment provided by engineer. */
 "Move All to Bcc" = "Mover todos para Cco";
 
 /* No comment provided by engineer. */
@@ -1613,6 +1668,9 @@
 "No conversations found" = "Nenhuma conversa encontrada";
 
 /* No comment provided by engineer. */
+"No Date" = "Sem data";
+
+/* No comment provided by engineer. */
 "No mail here" = "Nenhum e-mail aqui";
 
 /* No comment provided by engineer. */
@@ -1674,6 +1732,9 @@
 
 /* No comment provided by engineer. */
 "None" = "Nenhuma";
+
+/* No comment provided by engineer. */
+"None, straight in" = "Nenhuma, direto ao ponto";
 
 /* No comment provided by engineer. */
 "Not available" = "Indisponível";
@@ -2069,6 +2130,16 @@
 "Register" = "Cadastrar-se";
 
 /* No comment provided by engineer. */
+"Remind me about ${target}" = "Lembrar de ${target}";
+
+/* No comment provided by engineer. */
+"Remind Me About an Email" = "Lembrar de um e-mail";
+
+
+/* No comment provided by engineer. */
+"Reminders didn't save it. Try again." = "Os Lembretes não salvaram. Tente de novo.";
+
+/* No comment provided by engineer. */
 "Remote Images" = "Imagens remotas";
 
 /* No comment provided by engineer. */
@@ -2258,6 +2329,12 @@
 "Send Now" = "Enviar agora";
 
 /* No comment provided by engineer. */
+"Send this email to %@ on %@?" = "Enviar este e-mail para %1$@ em %2$@?";
+
+/* No comment provided by engineer. */
+"Send this email to %@?" = "Enviar este e-mail para %@?";
+
+/* No comment provided by engineer. */
 "Send without a subject?" = "Enviar sem assunto?";
 
 /* No comment provided by engineer. */
@@ -2280,6 +2357,9 @@
 
 /* No comment provided by engineer. */
 "Sent today" = "Enviado hoje";
+
+/* No comment provided by engineer. */
+"Sent." = "Enviado.";
 
 /* No comment provided by engineer. */
 "Server Settings" = "Ajustes do servidor";
@@ -2358,6 +2438,9 @@
 
 /* No comment provided by engineer. */
 "Sign In Again" = "Iniciar sessão novamente";
+
+/* No comment provided by engineer. */
+"Sign-Off" = "Despedida";
 
 /* No comment provided by engineer. */
 "Signature" = "Assinatura";
@@ -2471,6 +2554,9 @@
 "Subject has “%@”" = "O assunto contém “%@”";
 
 /* No comment provided by engineer. */
+"Subject: %@" = "Assunto: %@";
+
+/* No comment provided by engineer. */
 "Subscribe · %@" = "Assinar · %@";
 
 /* No comment provided by engineer. */
@@ -2484,6 +2570,9 @@
 
 /* No comment provided by engineer. */
 "Suggested" = "Sugerido";
+
+/* No comment provided by engineer. */
+"Suggested replies use the greeting, sign-off and length you use in email you've sent, for each person you write to often. Learned on this %@ from your sent mail, and never sent anywhere." = "As respostas sugeridas usam a saudação, a despedida e o tamanho dos seus e-mails enviados, para cada pessoa com quem você fala com frequência. Aprendido neste %@ com seus e-mails enviados, e nunca enviado a lugar nenhum.";
 
 /* No comment provided by engineer. */
 "Suggestions" = "Sugestões";
@@ -2522,6 +2611,9 @@
 "Takes this out of Needs You. It stays in Mail." = "Tira de Precisa de Você. Continua em E-mail.";
 
 /* No comment provided by engineer. */
+"Tap the link in the reminder to come back to this email." = "Toque no link do lembrete para voltar a este e-mail.";
+
+/* No comment provided by engineer. */
 "Templates" = "Modelos";
 
 /* No comment provided by engineer. */
@@ -2529,6 +2621,12 @@
 
 /* No comment provided by engineer. */
 "Text" = "Texto";
+
+/* No comment provided by engineer. */
+"That email isn't in Corres anymore." = "Esse e-mail não está mais no Corres.";
+
+/* No comment provided by engineer. */
+"That email isn't open in Corres anymore." = "Esse e-mail não está mais aberto no Corres.";
 
 /* No comment provided by engineer. */
 "The app password" = "A senha de app";
@@ -2582,6 +2680,9 @@
 "This address uses %@. Corres signs in to %@ directly, which is quicker and safer than a password." = "Este endereço usa %@. O Corres inicia sessão em %@ diretamente, o que é mais rápido e seguro que uma senha.";
 
 /* No comment provided by engineer. */
+"This Evening" = "Hoje à noite";
+
+/* No comment provided by engineer. */
 "This Evening, 6 PM" = "Hoje à noite, 18:00";
 
 /* No comment provided by engineer. */
@@ -2609,6 +2710,9 @@
 "To “%@”" = "Para “%@”";
 
 /* No comment provided by engineer. */
+"To %@" = "Para %@";
+
+/* No comment provided by engineer. */
 "To you" = "Para você";
 
 /* No comment provided by engineer. */
@@ -2628,6 +2732,9 @@
 
 /* No comment provided by engineer. */
 "tomorrow at %@" = "amanhã às %@";
+
+/* No comment provided by engineer. */
+"Tomorrow Morning" = "Amanhã de manhã";
 
 /* No comment provided by engineer. */
 "Tomorrow, %@" = "Amanhã, %@";
@@ -2771,6 +2878,9 @@
 "Used only when the email has no subject yet." = "Usado só quando o e-mail ainda não tem assunto.";
 
 /* No comment provided by engineer. */
+"Usual Length" = "Tamanho habitual";
+
+/* No comment provided by engineer. */
 "Verify" = "Verificar";
 
 /* No comment provided by engineer. */
@@ -2825,6 +2935,9 @@
 "When an email asks something of you, it shows here. The rest of your mail is in Primary." = "Quando um e-mail pede algo a você, ele aparece aqui. O resto dos seus e-mails está em Principal.";
 
 /* No comment provided by engineer. */
+"When It's Due, %@" = "No prazo, %@";
+
+/* No comment provided by engineer. */
 "When you can" = "Quando puder";
 
 /* No comment provided by engineer. */
@@ -2841,6 +2954,9 @@
 
 /* No comment provided by engineer. */
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "Enquanto estiver ativada, %@ responde aos e-mails novos com sua mensagem e envia mesmo com este %@ desligado.";
+
+/* No comment provided by engineer. */
+"Who should it go to? Add someone first." = "Para quem vai? Adicione alguém primeiro.";
 
 /* No comment provided by engineer. */
 "Widgets, Siri and iPad" = "Widgets, Siri e iPad";
@@ -2862,6 +2978,9 @@
 
 /* No comment provided by engineer. */
 "Write" = "Escrever";
+
+/* No comment provided by engineer. */
+"Write Replies Like Me" = "Escrever respostas do meu jeito";
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "Escreva a mensagem que %@ deve enviar.";

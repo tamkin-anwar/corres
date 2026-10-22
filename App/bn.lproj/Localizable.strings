@@ -221,6 +221,9 @@
 "Aa" = "Aa";
 
 /* No comment provided by engineer. */
+"About %lld words" = "প্রায় %lldটি শব্দ";
+
+/* No comment provided by engineer. */
 "Accept" = "গ্রহণ করুন";
 
 /* No comment provided by engineer. */
@@ -278,10 +281,20 @@
 "Add to Calendar" = "ক্যালেন্ডারে যোগ করুন";
 
 /* No comment provided by engineer. */
+"Add to Reminders" = "রিমাইন্ডারে যোগ করুন";
+
+/* No comment provided by engineer. */
 "Added" = "যোগ হয়েছে";
 
 /* No comment provided by engineer. */
 "Added below what you write, above the email you're replying to." = "আপনি যা লেখেন তার নিচে, আর যে ইমেইলের উত্তর দিচ্ছেন তার ওপরে যোগ হয়।";
+
+/* No comment provided by engineer. */
+"Added to Reminders" = "রিমাইন্ডারে যোগ হয়েছে";
+
+
+/* No comment provided by engineer. */
+"Added to Reminders." = "রিমাইন্ডারে যোগ হয়েছে।";
 
 /* No comment provided by engineer. */
 "Adding attachments to the forward" = "ফরোয়ার্ডে অ্যাটাচমেন্ট যোগ হচ্ছে";
@@ -294,6 +307,9 @@
 
 /* No comment provided by engineer. */
 "Adds a Bcc field: people copied without the others seeing" = "একটি Bcc ঘর যোগ করে: যাদের কপি করা হয়, অন্যরা তা দেখে না";
+
+/* No comment provided by engineer. */
+"Adds the email to Reminders, with a link that opens it in Corres." = "ইমেইলটি রিমাইন্ডারে যোগ করে, সাথে Corres-এ খোলার লিংক দেয়।";
 
 /* No comment provided by engineer. */
 "Adds them to %@" = "তাদের %@-এ যোগ করে";
@@ -434,10 +450,16 @@
 "Archive" = "আর্কাইভ";
 
 /* No comment provided by engineer. */
+"Archive All from %@" = "%@ থেকে আসা সব আর্কাইভ করুন";
+
+/* No comment provided by engineer. */
 "Archived" = "আর্কাইভ হয়েছে";
 
 /* No comment provided by engineer. */
 "Archived %lld" = "%lldটি আর্কাইভ হয়েছে";
+
+/* No comment provided by engineer. */
+"Archived email is still in Search." = "আর্কাইভ করা ইমেইল সার্চে থেকে যায়।";
 
 /* No comment provided by engineer. */
 "Archived mail leaves Needs You, so it won't be seen there." = "আর্কাইভ করা মেইল আপনার করণীয় থেকে সরে যায়, তাই সেখানে দেখা যাবে না।";
@@ -707,10 +729,19 @@
 "Corres asks them to stop, the way their own unsubscribe link does. Block also hides anything they still send." = "Corres তাদের থামতে বলে, ঠিক যেভাবে তাদের নিজেদের আনসাবস্ক্রাইব লিংক বলে। ব্লক করলে তারা যা পাঠাতে থাকে তা-ও লুকিয়ে রাখে।";
 
 /* No comment provided by engineer. */
+"Corres can't add to Reminders. You can allow it in Settings." = "Corres রিমাইন্ডারে যোগ করতে পারছে না। সেটিংসে অনুমতি দিতে পারেন।";
+
+/* No comment provided by engineer. */
 "Corres decides" = "Corres ঠিক করবে";
 
 /* No comment provided by engineer. */
+"Corres doesn't have access to Reminders. You can allow it in Settings > Apps > Corres." = "Corres-এর রিমাইন্ডারে অ্যাক্সেস নেই। সেটিংস > অ্যাপ > Corres-এ অনুমতি দিতে পারেন।";
+
+/* No comment provided by engineer. */
 "Corres learns from your corrections, on this %@. Every lesson is listed there, and you can make it forget any of them." = "Corres আপনার সংশোধন থেকে শেখে, এই %@-এ। প্রতিটি শেখা সেখানে তালিকায় আছে, আর যেকোনোটি আপনি ভুলিয়ে দিতে পারেন।";
+
+/* No comment provided by engineer. */
+"Corres learns your greeting, sign-off and length once you've sent a few more emails." = "আরও কয়েকটি ইমেইল পাঠালে Corres আপনার সম্ভাষণ, বিদায় সম্ভাষণ আর দৈর্ঘ্য শিখে নেবে।";
 
 /* No comment provided by engineer. */
 "Corres never sees your account password" = "Corres কখনো আপনার অ্যাকাউন্টের পাসওয়ার্ড দেখে না";
@@ -735,6 +766,9 @@
 
 /* No comment provided by engineer. */
 "Corres sends it from this %@ at that time, or the moment it can if your %@ is off or offline." = "Corres সেই সময়ে এই %@ থেকে এটি পাঠায়, অথবা আপনার %@ বন্ধ বা অফলাইন থাকলে যখনই পারে তখন।";
+
+/* No comment provided by engineer. */
+"Couldn't Add to Reminders" = "রিমাইন্ডারে যোগ করা যায়নি";
 
 /* No comment provided by engineer. */
 "Couldn't Attach File" = "ফাইল যুক্ত করা যায়নি";
@@ -896,6 +930,9 @@
 "Email Account" = "ইমেইল অ্যাকাউন্ট";
 
 /* No comment provided by engineer. */
+"Email from %@" = "%@-এর ইমেইল";
+
+/* No comment provided by engineer. */
 "Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "যেসব ইমেইল আপনার কাছে কিছু চায়, এই %@-এ সাজানো। কোনোটি শেষ হলে সোয়াইপ করুন বা সম্পন্ন-এ ট্যাপ করুন: এটি এই তালিকা থেকে সরে যায়, মেইলে থাকে, আর মেইলবক্স → সম্পন্ন-এ অপেক্ষা করে। ভুল জায়গায় গেছে? সরাতে চেপে ধরে রাখুন।";
 
 /* No comment provided by engineer. */
@@ -1046,6 +1083,9 @@
 "From “%@”" = "“%@” থেকে";
 
 /* No comment provided by engineer. */
+"From %@" = "প্রেরক %@";
+
+/* No comment provided by engineer. */
 "From a Person" = "কোনো মানুষের কাছ থেকে";
 
 /* No comment provided by engineer. */
@@ -1073,6 +1113,9 @@
 "From your other account. Kept out of Needs You." = "আপনার অন্য অ্যাকাউন্ট থেকে। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
 
 /* No comment provided by engineer. */
+"From: %@" = "প্রেরক: %@";
+
+/* No comment provided by engineer. */
 "Gmail" = "Gmail";
 
 /* No comment provided by engineer. */
@@ -1083,6 +1126,9 @@
 
 /* No comment provided by engineer. */
 "Go" = "যান";
+
+/* No comment provided by engineer. */
+"Greeting" = "সম্ভাষণ";
 
 /* No comment provided by engineer. */
 "Handled" = "সম্পন্ন";
@@ -1212,6 +1258,9 @@
 
 /* No comment provided by engineer. */
 "It shows in Mailboxes, run again each time you open it." = "এটি মেইলবক্সে দেখা যায়, প্রতিবার খুললে নতুন করে চলে।";
+
+/* No comment provided by engineer. */
+"It'll go out %@." = "এটি %@ যাবে।";
 
 /* No comment provided by engineer. */
 "Italic" = "ইটালিক";
@@ -1433,6 +1482,12 @@
 "Move %lld conversations to Trash?" = "%lldটি কথোপকথন ট্র্যাশে সরাবেন?";
 
 /* No comment provided by engineer. */
+"Move %lld emails from %@ to Trash?" = "%2$@-এর %1$lldটি ইমেইল ট্র্যাশে সরাবেন?";
+
+/* No comment provided by engineer. */
+"Move All from %@ to Trash" = "%@-এর সব ইমেইল ট্র্যাশে সরান";
+
+/* No comment provided by engineer. */
 "Move All to Bcc" = "সবাইকে Bcc-তে সরান";
 
 /* No comment provided by engineer. */
@@ -1613,6 +1668,9 @@
 "No conversations found" = "কোনো কথোপকথন পাওয়া যায়নি";
 
 /* No comment provided by engineer. */
+"No Date" = "তারিখ নেই";
+
+/* No comment provided by engineer. */
 "No mail here" = "এখানে কোনো মেইল নেই";
 
 /* No comment provided by engineer. */
@@ -1674,6 +1732,9 @@
 
 /* No comment provided by engineer. */
 "None" = "কোনোটি নয়";
+
+/* No comment provided by engineer. */
+"None, straight in" = "নেই, সরাসরি মূল কথা";
 
 /* No comment provided by engineer. */
 "Not available" = "পাওয়া যাচ্ছে না";
@@ -2069,6 +2130,16 @@
 "Register" = "নিবন্ধন করুন";
 
 /* No comment provided by engineer. */
+"Remind me about ${target}" = "${target}-এর কথা মনে করিয়ে দিন";
+
+/* No comment provided by engineer. */
+"Remind Me About an Email" = "একটি ইমেইলের কথা মনে করিয়ে দিন";
+
+
+/* No comment provided by engineer. */
+"Reminders didn't save it. Try again." = "রিমাইন্ডার এটি সেভ করেনি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
 "Remote Images" = "দূরের ছবি";
 
 /* No comment provided by engineer. */
@@ -2258,6 +2329,12 @@
 "Send Now" = "এখনই পাঠান";
 
 /* No comment provided by engineer. */
+"Send this email to %@ on %@?" = "এই ইমেইলটি %2$@ সময়ে %1$@-কে পাঠাবেন?";
+
+/* No comment provided by engineer. */
+"Send this email to %@?" = "এই ইমেইলটি %@-কে পাঠাবেন?";
+
+/* No comment provided by engineer. */
 "Send without a subject?" = "বিষয় ছাড়া পাঠাবেন?";
 
 /* No comment provided by engineer. */
@@ -2280,6 +2357,9 @@
 
 /* No comment provided by engineer. */
 "Sent today" = "আজ পাঠানো";
+
+/* No comment provided by engineer. */
+"Sent." = "পাঠানো হয়েছে।";
 
 /* No comment provided by engineer. */
 "Server Settings" = "সার্ভার সেটিংস";
@@ -2358,6 +2438,9 @@
 
 /* No comment provided by engineer. */
 "Sign In Again" = "আবার সাইন ইন করুন";
+
+/* No comment provided by engineer. */
+"Sign-Off" = "বিদায় সম্ভাষণ";
 
 /* No comment provided by engineer. */
 "Signature" = "স্বাক্ষর";
@@ -2471,6 +2554,9 @@
 "Subject has “%@”" = "বিষয়ে “%@” আছে";
 
 /* No comment provided by engineer. */
+"Subject: %@" = "বিষয়: %@";
+
+/* No comment provided by engineer. */
 "Subscribe · %@" = "সাবস্ক্রাইব করুন · %@";
 
 /* No comment provided by engineer. */
@@ -2484,6 +2570,9 @@
 
 /* No comment provided by engineer. */
 "Suggested" = "প্রস্তাবিত";
+
+/* No comment provided by engineer. */
+"Suggested replies use the greeting, sign-off and length you use in email you've sent, for each person you write to often. Learned on this %@ from your sent mail, and never sent anywhere." = "প্রস্তাবিত উত্তরে আপনার পাঠানো ইমেইলের সম্ভাষণ, বিদায় সম্ভাষণ আর দৈর্ঘ্য ব্যবহার হয়, যাদের সাথে আপনি প্রায়ই লেখেন তাদের প্রত্যেকের জন্য আলাদাভাবে। এই %@-এ আপনার পাঠানো ইমেইল থেকে শেখা, কখনো কোথাও পাঠানো হয় না।";
 
 /* No comment provided by engineer. */
 "Suggestions" = "প্রস্তাব";
@@ -2522,6 +2611,9 @@
 "Takes this out of Needs You. It stays in Mail." = "এটি আপনার করণীয় থেকে সরিয়ে দেয়। মেইলে থাকে।";
 
 /* No comment provided by engineer. */
+"Tap the link in the reminder to come back to this email." = "এই ইমেইলে ফিরতে রিমাইন্ডারের লিংকে ট্যাপ করুন।";
+
+/* No comment provided by engineer. */
 "Templates" = "টেমপ্লেট";
 
 /* No comment provided by engineer. */
@@ -2529,6 +2621,12 @@
 
 /* No comment provided by engineer. */
 "Text" = "লেখা";
+
+/* No comment provided by engineer. */
+"That email isn't in Corres anymore." = "সেই ইমেইল আর Corres-এ নেই।";
+
+/* No comment provided by engineer. */
+"That email isn't open in Corres anymore." = "সেই ইমেইল আর Corres-এ খোলা নেই।";
 
 /* No comment provided by engineer. */
 "The app password" = "অ্যাপ পাসওয়ার্ড";
@@ -2582,6 +2680,9 @@
 "This address uses %@. Corres signs in to %@ directly, which is quicker and safer than a password." = "এই ঠিকানা %@ ব্যবহার করে। Corres সরাসরি %@-এ সাইন ইন করে, যা পাসওয়ার্ডের চেয়ে দ্রুত আর নিরাপদ।";
 
 /* No comment provided by engineer. */
+"This Evening" = "আজ সন্ধ্যায়";
+
+/* No comment provided by engineer. */
 "This Evening, 6 PM" = "আজ সন্ধ্যা, 6টা";
 
 /* No comment provided by engineer. */
@@ -2609,6 +2710,9 @@
 "To “%@”" = "“%@”-কে";
 
 /* No comment provided by engineer. */
+"To %@" = "প্রাপক %@";
+
+/* No comment provided by engineer. */
 "To you" = "আপনাকে";
 
 /* No comment provided by engineer. */
@@ -2628,6 +2732,9 @@
 
 /* No comment provided by engineer. */
 "tomorrow at %@" = "আগামীকাল %@-এ";
+
+/* No comment provided by engineer. */
+"Tomorrow Morning" = "আগামীকাল সকালে";
 
 /* No comment provided by engineer. */
 "Tomorrow, %@" = "আগামীকাল, %@";
@@ -2771,6 +2878,9 @@
 "Used only when the email has no subject yet." = "শুধু তখনই ব্যবহৃত হয় যখন ইমেইলে এখনো বিষয় নেই।";
 
 /* No comment provided by engineer. */
+"Usual Length" = "সাধারণ দৈর্ঘ্য";
+
+/* No comment provided by engineer. */
 "Verify" = "যাচাই করুন";
 
 /* No comment provided by engineer. */
@@ -2825,6 +2935,9 @@
 "When an email asks something of you, it shows here. The rest of your mail is in Primary." = "কোনো ইমেইল আপনার কাছে কিছু চাইলে এখানে দেখা যায়। আপনার বাকি মেইল প্রধান-এ আছে।";
 
 /* No comment provided by engineer. */
+"When It's Due, %@" = "শেষ তারিখে, %@";
+
+/* No comment provided by engineer. */
 "When you can" = "সময় পেলে";
 
 /* No comment provided by engineer. */
@@ -2841,6 +2954,9 @@
 
 /* No comment provided by engineer. */
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "এটি চালু থাকলে %@ নতুন ইমেইলের উত্তরে আপনার বার্তা পাঠায়, এই %@ বন্ধ থাকলেও।";
+
+/* No comment provided by engineer. */
+"Who should it go to? Add someone first." = "কাকে পাঠাবেন? আগে কাউকে যোগ করুন।";
 
 /* No comment provided by engineer. */
 "Widgets, Siri and iPad" = "উইজেট, Siri আর iPad";
@@ -2862,6 +2978,9 @@
 
 /* No comment provided by engineer. */
 "Write" = "লিখুন";
+
+/* No comment provided by engineer. */
+"Write Replies Like Me" = "আমার মতো করে উত্তর লিখুন";
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "%@ যে বার্তা পাঠাবে তা লিখুন।";

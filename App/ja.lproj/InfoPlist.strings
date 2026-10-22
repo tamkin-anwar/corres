@@ -16,6 +16,9 @@
 /* Privacy - Microphone Usage Description */
 "NSMicrophoneUsageDescription" = "Corresがマイクを使うのは、メールを音声入力している間だけです。音声はこのデバイス上で文字に変換されます。";
 
+/* Privacy - Reminders Full Access Usage Description */
+"NSRemindersFullAccessUsageDescription" = "頼んだときに、Corresはメールをリマインダーに追加し、そのメールへのリンクを付けます。リマインダーを読むことはありません。";
+
 /* Privacy - Speech Recognition Usage Description */
 "NSSpeechRecognitionUsageDescription" = "Corresは音声入力をこのデバイス上で文字に変換します。音声がサーバに送られることはありません。";
 

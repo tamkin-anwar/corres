@@ -16,3 +16,6 @@
 /* Copyright (human-readable) */
 "NSHumanReadableCopyright" = "© 2026 Anwar Creative Studio";
 
+/* Privacy - Reminders Full Access Usage Description */
+"NSRemindersFullAccessUsageDescription" = "Wenn du es möchtest, fügt Corres eine E-Mail zu Erinnerungen hinzu, mit einem Link zurück zur E-Mail. Corres liest deine Erinnerungen nie.";
+

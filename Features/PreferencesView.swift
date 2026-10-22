@@ -922,6 +922,11 @@ private struct ComposingSettingsView: View {
                 Text("Keep several, like a full one for new email and a short one for replies, and choose each account's.")
             }
             Section {
+                WritingStyleRows()
+            } footer: {
+                Text("Suggested replies use the greeting, sign-off and length you use in email you've sent, for each person you write to often. Learned on this \(Device.name) from your sent mail, and never sent anywhere.")
+            }
+            Section {
                 Picker("Undo Send", selection: $undoSeconds) {
                     ForEach(CorresSettings.undoSendChoices, id: \.self) { seconds in
                         Text(seconds == 0 ? "Off" : "\(seconds) seconds").tag(seconds)

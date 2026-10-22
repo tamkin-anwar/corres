@@ -219,6 +219,17 @@ struct ConversationView: View {
                     PersonView(person: person, store: store, open: { currentID = $0 },
                                write: { address in router.pending = .composeTo(to: address, subject: "", body: "") })
                 }
+                .alert(reminderOutcome == .added ? "Added to Reminders" : "Couldn't Add to Reminders",
+                       isPresented: Binding(get: { reminderOutcome != nil }, set: { if !$0 { reminderOutcome = nil } })) {
+                    Button("OK", role: .cancel) { reminderOutcome = nil }
+                } message: {
+                    switch reminderOutcome {
+                    case .notAllowed: Text("Corres doesn't have access to Reminders. You can allow it in Settings > Apps > Corres.")
+                    case .failed: Text("Reminders didn't save it. Try again.")
+                    default: Text("Tap the link in the reminder to come back to this email.")
+                    }
+                }
+                .sensoryFeedback(.success, trigger: reminderOutcome) { _, new in new == .added }
                 .sheet(isPresented: $addingEvent) {
                     if let calendarEvent {
                         NewEventSheet(event: calendarEvent, sender: thread.sender) { _ in }
@@ -954,8 +965,12 @@ struct ConversationView: View {
         Task {
             if !thread.isBodyLoaded { await threadActions.loadContent(for: thread) }
             let source = store.thread(thread.id) ?? thread
+            // In your own words: your greeting, sign-off and length, from mail you've sent.
+            let style = WritingStyleBook.shared.style(for: source.id.account, recipient: source.senderEmail)?
+                .instructions(recipientName: source.sender, replyLanguage: WritingStyleBook.language(of: source.body))
             let drafted = await intelligence.draftReply(to: source, intent: intent,
-                                                        signOff: givenName.isEmpty || !CorresSettings.signature(for: source.id.account, reply: true).isEmpty ? nil : givenName)
+                                                        signOff: givenName.isEmpty || !CorresSettings.signature(for: source.id.account, reply: true).isEmpty ? nil : givenName,
+                                                        style: style)
             draftingIntent = nil
             compose(.reply, from: source, prefill: drafted ?? "")
         }
@@ -1210,13 +1225,19 @@ struct ConversationView: View {
             } else {
                 Organizer.shared.mute(thread)
             }
-        case .moveTo, .labels: break // menus; see `menuContent`
+        case .moveTo, .labels, .reminder: break // menus; see `menuContent`
         }
     }
 
     /// Move to and Labels open a menu wherever they are.
     @ViewBuilder
     private func menuContent(_ action: CorresSettings.ReadingAction, for thread: Correspondence) -> some View {
+        // When to be reminded, as Mail's Remind Me offers.
+        if action == .reminder {
+            ForEach(Array(MailReminders.choices(for: thread).enumerated()), id: \.offset) { _, choice in
+                Button(choice.title) { Task { reminderOutcome = await MailReminders.add(thread, due: choice.date) } }
+            }
+        }
         if action == .moveTo {
             // Where Mail and Gmail move mail: out of the Inbox, into a
             // label. Corres's own sorting is a section of its own below; on
@@ -1270,6 +1291,8 @@ struct ConversationView: View {
     @State private var confirmingBlock: Correspondence?
     @State private var personCard: PersonRef?
     @State private var addingEvent = false
+    /// Add to Reminders: what happened.
+    @State private var reminderOutcome: MailReminders.Outcome?
     @State private var showingTranslation = false
 
     /// The email as plain text, for Share and Translate.
@@ -1317,7 +1340,7 @@ struct ConversationView: View {
     private func barButton(_ action: CorresSettings.ReadingAction, for thread: Correspondence) -> some View {
         let look = appearance(of: action, for: thread)
         let available = isAvailable(action, for: thread)
-        if action == .moveTo || action == .labels {
+        if action == .moveTo || action == .labels || action == .reminder {
             Menu { menuContent(action, for: thread) } label: {
                 Image(systemName: look.icon)
                     .font(.body.weight(.medium))
@@ -1362,8 +1385,10 @@ struct ConversationView: View {
             // Corres-only "keep at top"; Flag syncs with iOS Mail and Gmail.
             ForEach(CorresSettings.ReadingAction.allCases.filter { !readingBar.contains($0) && isAvailable($0, for: thread) }) { action in
                 let look = appearance(of: action, for: thread)
-                if action == .moveTo || action == .labels {
+                if action == .moveTo || action == .labels || action == .reminder {
                     Menu { menuContent(action, for: thread) } label: { Label(look.title, systemImage: look.icon) }
+                        // Soonest first, as written, even when the menu opens upward.
+                        .menuOrder(.fixed)
                 } else {
                     Button(role: [.trash, .spam, .block].contains(action) ? .destructive : nil) { perform(action, on: thread) } label: {
                         Label(look.title, systemImage: look.icon)

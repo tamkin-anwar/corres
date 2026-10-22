@@ -1,3 +1,4 @@
+import AppIntents
 import AppKit
 import SwiftUI
 
@@ -148,6 +149,10 @@ struct MessageList: NSViewRepresentable {
             case .thread(let thread):
                 let view = tableView.makeView(withIdentifier: ThreadCellView.identifier, owner: nil) as? ThreadCellView ?? ThreadCellView()
                 view.configure(thread, showsReason: parent.showsReasons, accountColor: parent.accountColors[thread.id.account])
+                // Which email this row is, for Siri ("archive this one").
+                if #available(macOS 15.4, *) {
+                    view.appEntityIdentifier = EntityIdentifier(for: CorresMailMessage.self, identifier: thread.id.entityKey)
+                }
                 return view
             }
         }

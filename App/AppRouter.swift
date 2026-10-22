@@ -15,10 +15,14 @@ final class AppRouter {
         case composeTo(to: String, subject: String, body: String)
         /// A reply or forward Siri prepared, to read and send.
         case draft(Draft)
+        /// Siri's "search my email for…".
+        case search(String)
     }
 
     static let shared = AppRouter()
     var pending: Target?
+    /// Words for the list's search field, from Siri; the list takes them.
+    var pendingSearch: String?
     /// The row a list should bring back into view when you return to it
     /// from a conversation: the one you were reading, or, if it was just
     /// archived, its neighbour, so you land where you left off instead of

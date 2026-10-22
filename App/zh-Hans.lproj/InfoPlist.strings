@@ -16,6 +16,9 @@
 /* Privacy - Microphone Usage Description */
 "NSMicrophoneUsageDescription" = "Corres 仅在你听写邮件时使用麦克风。语音在这台设备上转写。";
 
+/* Privacy - Reminders Full Access Usage Description */
+"NSRemindersFullAccessUsageDescription" = "在你要求时，Corres 会把邮件添加到提醒事项，并附上返回该邮件的链接。它从不读取你的提醒事项。";
+
 /* Privacy - Speech Recognition Usage Description */
 "NSSpeechRecognitionUsageDescription" = "Corres 在这台设备上将你的听写转为文字。你的语音绝不会发送到服务器。";
 

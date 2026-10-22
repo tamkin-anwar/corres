@@ -16,3 +16,6 @@
 /* Copyright (human-readable) */
 "NSHumanReadableCopyright" = "© 2026 Anwar Creative Studio";
 
+/* Privacy - Reminders Full Access Usage Description */
+"NSRemindersFullAccessUsageDescription" = "頼んだときに、Corresはメールをリマインダーに追加し、そのメールへのリンクを付けます。リマインダーを読むことはありません。";
+

@@ -16,6 +16,9 @@
 /* Privacy - Microphone Usage Description */
 "NSMicrophoneUsageDescription" = "আপনি ইমেইল বলে লেখানোর সময়ই কেবল Corres মাইক্রোফোন ব্যবহার করে। কথা এই ডিভাইসেই লেখায় রূপান্তরিত হয়।";
 
+/* Privacy - Reminders Full Access Usage Description */
+"NSRemindersFullAccessUsageDescription" = "আপনি চাইলে Corres একটি ইমেইল রিমাইন্ডারে যোগ করে, সাথে সেই ইমেইলে ফেরার লিংক দেয়। এটি কখনো আপনার রিমাইন্ডার পড়ে না।";
+
 /* Privacy - Speech Recognition Usage Description */
 "NSSpeechRecognitionUsageDescription" = "Corres আপনার বলা কথা এই ডিভাইসেই লেখায় রূপান্তর করে। আপনার কণ্ঠস্বর কখনো কোনো সার্ভারে পাঠানো হয় না।";
 

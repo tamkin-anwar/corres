@@ -6,7 +6,7 @@ enum MacAction: Equatable {
     case compose, reply, replyAll, forward
     case archive, trash, move(Attention), toggleFlag, toggleUnread, snooze(Date?), askSnooze
     case getMail, show(MacMailbox), next, previous, openInWindow, undo, commandPalette, print, shortcuts, search
-    case toggleUnreadOnly
+    case toggleUnreadOnly, remind(Date?)
 }
 
 /// The front window's actions, for the menu bar.
@@ -83,6 +83,10 @@ struct MacCommands: Commands {
             Button("Flag") { actions?.perform(.toggleFlag) }.keyboardShortcut("l", modifiers: [.command, .shift])
             Button("Mark as Read or Unread") { actions?.perform(.toggleUnread) }.keyboardShortcut("u", modifiers: [.command, .shift])
             Divider()
+            Menu("Add to Reminders") {
+                Button("Tomorrow Morning") { actions?.perform(.remind(MailReminders.tomorrowMorning())) }
+                Button("No Date") { actions?.perform(.remind(nil)) }
+            }
             Button("Open in New Window") { actions?.perform(.openInWindow) }.keyboardShortcut("o", modifiers: .command)
         }
     }

@@ -148,6 +148,7 @@ struct CorrespondenceRow: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityValue(thread.isUnread ? "Unread" : "")
+        .mailEntity(thread.id)
     }
 
     /// Today shows the time, this week the weekday, older the date, the
@@ -197,6 +198,7 @@ struct CorrespondenceList: View {
     /// all stay alive), and catches up the moment it's shown again.
     var isActive = true
     @State private var search = ""
+    @State private var searchPresented = false
     /// What the rows are filtered by: `search` once typing pauses. Every
     /// keystroke filtered the whole mailbox on the main thread.
     @State private var appliedSearch = ""
@@ -540,7 +542,14 @@ struct CorrespondenceList: View {
                 SnoozeSheet(kind: thread.mailKind) { date in Task { await store.snooze(thread.id, until: date) } }
             }
             .categoryMoveDialog($categoryChoice, threadActions: threadActions)
-            .searchable(text: $search, prompt: "Search, or ask a question")
+            .searchable(text: $search, isPresented: $searchPresented, prompt: "Search, or ask a question")
+            // Siri's "search my email for…".
+            .onChange(of: router.pendingSearch, initial: true) { _, words in
+                guard let words else { return }
+                router.pendingSearch = nil
+                searchPresented = true
+                search = words
+            }
             .searchSuggestions {
                 if search.isEmpty {
                     // Questions asked before, one tap to ask again.

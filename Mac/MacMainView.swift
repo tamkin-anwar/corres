@@ -8,6 +8,8 @@ struct MacMainView: View {
     @Environment(\.openWindow) private var openWindow
     @State private var columns = NavigationSplitViewVisibility.all
     @State private var snoozing: [Correspondence] = []
+    /// Add to Reminders: what happened.
+    @State private var reminderOutcome: MailReminders.Outcome?
     @State private var showingPalette = false
     @State private var scheduledSelection: UUID?
     @State private var showingShortcuts = false
@@ -59,6 +61,16 @@ struct MacMainView: View {
             if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly") { return }
             #endif
             if !welcomed, accounts.isEmpty { showingWelcome = true } else { welcomed = true }
+        }
+        .alert(reminderOutcome == .added ? "Added to Reminders" : "Couldn't Add to Reminders",
+               isPresented: Binding(get: { reminderOutcome != nil }, set: { if !$0 { reminderOutcome = nil } })) {
+            Button("OK", role: .cancel) { reminderOutcome = nil }
+        } message: {
+            switch reminderOutcome {
+            case .notAllowed: Text("Corres doesn't have access to Reminders. You can allow it in System Settings > Privacy & Security > Reminders.")
+            case .failed: Text("Reminders didn't save it. Try again.")
+            default: Text("Click the link in the reminder to come back to this email.")
+            }
         }
         .sheet(isPresented: Binding(get: { !snoozing.isEmpty }, set: { if !$0 { snoozing = [] } })) {
             MacSnoozeSheet { date in
@@ -123,6 +135,9 @@ struct MacMainView: View {
                 let handoff = UUID()
                 MacComposeHandoff.drafts[handoff] = draft
                 openWindow(value: ComposeRequest(kind: draft.kind, handoff: handoff))
+            case .search(let words):
+                model.search = words
+                submitSearch()
             default:
                 break
             }
@@ -544,6 +559,9 @@ struct MacMainView: View {
             Task { for thread in selected { await store.snooze(thread.id, until: date) } }
         case .askSnooze:
             snoozing = selected
+        case .remind(let due):
+            guard let thread = selected.first else { return }
+            Task { reminderOutcome = await MailReminders.add(thread, due: due) }
         case .getMail:
             Task { await services.checkForMail() }
         case .show(let mailbox):
@@ -723,6 +741,15 @@ struct MacMainView: View {
         }
         mute.image = NSImage(systemSymbolName: isMuted ? "bell" : "bell.slash", accessibilityDescription: nil)
         menu.addItem(mute)
+        // When to be reminded, as Mail's Remind Me offers.
+        let remind = NSMenuItem(title: String(localized: "Add to Reminders"), action: nil, keyEquivalent: "")
+        remind.image = NSImage(systemSymbolName: "checklist", accessibilityDescription: nil)
+        let times = NSMenu()
+        for choice in MailReminders.choices(for: thread) {
+            times.addItem(ClosureMenuItem(title: choice.title) { perform(.remind(choice.date), on: [thread]) })
+        }
+        remind.submenu = times
+        menu.addItem(remind)
         menu.addItem(.separator())
         item(String(localized: "Open in New Window"), "macwindow", .openInWindow)
         return menu

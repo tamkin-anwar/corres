@@ -129,6 +129,9 @@ struct CorresShell: View {
             composeDraft = Draft(kind: .new, to: to, subject: subject, body: body)
         case .draft(let draft):
             composeDraft = draft
+        case .search(let words):
+            show(.mail)
+            router.pendingSearch = words
         case .thread(let id):
             // Archived mail too: Search finds it, so it opens.
             guard let thread = store.thread(id) else {

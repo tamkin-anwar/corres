@@ -16,6 +16,9 @@
 /* Privacy - Microphone Usage Description */
 "NSMicrophoneUsageDescription" = "Corres는 이메일을 받아쓰는 동안에만 마이크를 사용합니다. 음성은 이 기기에서 텍스트로 변환됩니다.";
 
+/* Privacy - Reminders Full Access Usage Description */
+"NSRemindersFullAccessUsageDescription" = "요청하면 Corres가 이메일을 미리 알림에 추가하고, 그 이메일로 돌아가는 링크를 붙입니다. 미리 알림을 읽지는 않습니다.";
+
 /* Privacy - Speech Recognition Usage Description */
 "NSSpeechRecognitionUsageDescription" = "Corres는 받아쓰기를 이 기기에서 텍스트로 변환합니다. 음성은 서버로 전송되지 않습니다.";
 

@@ -221,6 +221,9 @@
 "Aa" = "Aa";
 
 /* No comment provided by engineer. */
+"About %lld words" = "约 %lld 个字";
+
+/* No comment provided by engineer. */
 "Accept" = "接受";
 
 /* No comment provided by engineer. */
@@ -278,10 +281,20 @@
 "Add to Calendar" = "添加到日历";
 
 /* No comment provided by engineer. */
+"Add to Reminders" = "添加到提醒事项";
+
+/* No comment provided by engineer. */
 "Added" = "已添加";
 
 /* No comment provided by engineer. */
 "Added below what you write, above the email you're replying to." = "添加在你所写内容的下方、所回复邮件的上方。";
+
+/* No comment provided by engineer. */
+"Added to Reminders" = "已添加到提醒事项";
+
+
+/* No comment provided by engineer. */
+"Added to Reminders." = "已添加到提醒事项。";
 
 /* No comment provided by engineer. */
 "Adding attachments to the forward" = "正在将附件添加到转发邮件";
@@ -294,6 +307,9 @@
 
 /* No comment provided by engineer. */
 "Adds a Bcc field: people copied without the others seeing" = "添加密送栏：抄送的人互相看不到";
+
+/* No comment provided by engineer. */
+"Adds the email to Reminders, with a link that opens it in Corres." = "将邮件添加到提醒事项，并附上在 Corres 中打开它的链接。";
 
 /* No comment provided by engineer. */
 "Adds them to %@" = "将其添加到%@";
@@ -434,10 +450,16 @@
 "Archive" = "归档";
 
 /* No comment provided by engineer. */
+"Archive All from %@" = "归档来自%@的全部邮件";
+
+/* No comment provided by engineer. */
 "Archived" = "已归档";
 
 /* No comment provided by engineer. */
 "Archived %lld" = "已归档 %lld 个";
+
+/* No comment provided by engineer. */
+"Archived email is still in Search." = "归档的邮件仍可在搜索中找到。";
 
 /* No comment provided by engineer. */
 "Archived mail leaves Needs You, so it won't be seen there." = "归档的邮件会离开“需要你”，所以不会出现在那里。";
@@ -707,10 +729,19 @@
 "Corres asks them to stop, the way their own unsubscribe link does. Block also hides anything they still send." = "Corres 会像对方自己的退订链接那样请求停止发送。屏蔽还会隐藏对方之后发来的任何邮件。";
 
 /* No comment provided by engineer. */
+"Corres can't add to Reminders. You can allow it in Settings." = "Corres 无法添加到提醒事项。你可以在设置中允许。";
+
+/* No comment provided by engineer. */
 "Corres decides" = "由 Corres 决定";
 
 /* No comment provided by engineer. */
+"Corres doesn't have access to Reminders. You can allow it in Settings > Apps > Corres." = "Corres 无权访问提醒事项。你可以在“设置”>“App”>“Corres”中允许。";
+
+/* No comment provided by engineer. */
 "Corres learns from your corrections, on this %@. Every lesson is listed there, and you can make it forget any of them." = "Corres 在这台%@上从你的更正中学习。每一条学到的内容都列在那里，你可以让它忘记其中任何一条。";
+
+/* No comment provided by engineer. */
+"Corres learns your greeting, sign-off and length once you've sent a few more emails." = "再发送几封邮件后，Corres 就会学会你的问候语、结束语和篇幅。";
 
 /* No comment provided by engineer. */
 "Corres never sees your account password" = "Corres 从不接触你的账户密码";
@@ -735,6 +766,9 @@
 
 /* No comment provided by engineer. */
 "Corres sends it from this %@ at that time, or the moment it can if your %@ is off or offline." = "Corres 会在那个时间从这台%@发送；如果你的%@已关机或离线，会在可以发送时立即发送。";
+
+/* No comment provided by engineer. */
+"Couldn't Add to Reminders" = "无法添加到提醒事项";
 
 /* No comment provided by engineer. */
 "Couldn't Attach File" = "无法附加文件";
@@ -896,6 +930,9 @@
 "Email Account" = "邮件账户";
 
 /* No comment provided by engineer. */
+"Email from %@" = "来自%@的邮件";
+
+/* No comment provided by engineer. */
 "Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "需要你回应的邮件，在这台%@上分类。处理完了？轻扫或轻点“已处理”：它会离开此列表，仍保留在“邮件”中，并在“邮箱”→“已处理”里等着。分错了？按住即可移动。";
 
 /* No comment provided by engineer. */
@@ -1046,6 +1083,9 @@
 "From “%@”" = "来自“%@”";
 
 /* No comment provided by engineer. */
+"From %@" = "发件人：%@";
+
+/* No comment provided by engineer. */
 "From a Person" = "来自个人";
 
 /* No comment provided by engineer. */
@@ -1073,6 +1113,9 @@
 "From your other account. Kept out of Needs You." = "来自你的另一个账户。未放入“需要你”。";
 
 /* No comment provided by engineer. */
+"From: %@" = "发件人：%@";
+
+/* No comment provided by engineer. */
 "Gmail" = "Gmail";
 
 /* No comment provided by engineer. */
@@ -1083,6 +1126,9 @@
 
 /* No comment provided by engineer. */
 "Go" = "前往";
+
+/* No comment provided by engineer. */
+"Greeting" = "问候语";
 
 /* No comment provided by engineer. */
 "Handled" = "已处理";
@@ -1212,6 +1258,9 @@
 
 /* No comment provided by engineer. */
 "It shows in Mailboxes, run again each time you open it." = "它会显示在“邮箱”中，每次打开时重新搜索。";
+
+/* No comment provided by engineer. */
+"It'll go out %@." = "将于%@发出。";
 
 /* No comment provided by engineer. */
 "Italic" = "斜体";
@@ -1433,6 +1482,12 @@
 "Move %lld conversations to Trash?" = "将 %lld 个对话移到废纸篓？";
 
 /* No comment provided by engineer. */
+"Move %lld emails from %@ to Trash?" = "将来自%2$@的 %1$lld 封邮件移到废纸篓？";
+
+/* No comment provided by engineer. */
+"Move All from %@ to Trash" = "将来自%@的全部邮件移到废纸篓";
+
+/* No comment provided by engineer. */
 "Move All to Bcc" = "全部移到密送";
 
 /* No comment provided by engineer. */
@@ -1613,6 +1668,9 @@
 "No conversations found" = "未找到对话";
 
 /* No comment provided by engineer. */
+"No Date" = "无日期";
+
+/* No comment provided by engineer. */
 "No mail here" = "这里没有邮件";
 
 /* No comment provided by engineer. */
@@ -1674,6 +1732,9 @@
 
 /* No comment provided by engineer. */
 "None" = "无";
+
+/* No comment provided by engineer. */
+"None, straight in" = "无，直接进入正文";
 
 /* No comment provided by engineer. */
 "Not available" = "不可用";
@@ -2069,6 +2130,16 @@
 "Register" = "注册";
 
 /* No comment provided by engineer. */
+"Remind me about ${target}" = "提醒我${target}";
+
+/* No comment provided by engineer. */
+"Remind Me About an Email" = "提醒我某封邮件";
+
+
+/* No comment provided by engineer. */
+"Reminders didn't save it. Try again." = "提醒事项未能保存。请再试一次。";
+
+/* No comment provided by engineer. */
 "Remote Images" = "远程图片";
 
 /* No comment provided by engineer. */
@@ -2258,6 +2329,12 @@
 "Send Now" = "立即发送";
 
 /* No comment provided by engineer. */
+"Send this email to %@ on %@?" = "于%2$@将这封邮件发送给%1$@？";
+
+/* No comment provided by engineer. */
+"Send this email to %@?" = "将这封邮件发送给%@？";
+
+/* No comment provided by engineer. */
 "Send without a subject?" = "不带主题发送？";
 
 /* No comment provided by engineer. */
@@ -2280,6 +2357,9 @@
 
 /* No comment provided by engineer. */
 "Sent today" = "今天已发送";
+
+/* No comment provided by engineer. */
+"Sent." = "已发送。";
 
 /* No comment provided by engineer. */
 "Server Settings" = "服务器设置";
@@ -2358,6 +2438,9 @@
 
 /* No comment provided by engineer. */
 "Sign In Again" = "重新登录";
+
+/* No comment provided by engineer. */
+"Sign-Off" = "结束语";
 
 /* No comment provided by engineer. */
 "Signature" = "签名";
@@ -2471,6 +2554,9 @@
 "Subject has “%@”" = "主题包含“%@”";
 
 /* No comment provided by engineer. */
+"Subject: %@" = "主题：%@";
+
+/* No comment provided by engineer. */
 "Subscribe · %@" = "订阅 · %@";
 
 /* No comment provided by engineer. */
@@ -2484,6 +2570,9 @@
 
 /* No comment provided by engineer. */
 "Suggested" = "建议";
+
+/* No comment provided by engineer. */
+"Suggested replies use the greeting, sign-off and length you use in email you've sent, for each person you write to often. Learned on this %@ from your sent mail, and never sent anywhere." = "建议的回复会采用你在已发送邮件中的问候语、结束语和篇幅，并针对你常联系的每个人。在这台%@上从你的已发送邮件中学习，绝不发送到任何地方。";
 
 /* No comment provided by engineer. */
 "Suggestions" = "建议";
@@ -2522,6 +2611,9 @@
 "Takes this out of Needs You. It stays in Mail." = "将其移出“需要你”。仍保留在“邮件”中。";
 
 /* No comment provided by engineer. */
+"Tap the link in the reminder to come back to this email." = "轻点提醒事项中的链接即可回到这封邮件。";
+
+/* No comment provided by engineer. */
 "Templates" = "模板";
 
 /* No comment provided by engineer. */
@@ -2529,6 +2621,12 @@
 
 /* No comment provided by engineer. */
 "Text" = "正文";
+
+/* No comment provided by engineer. */
+"That email isn't in Corres anymore." = "这封邮件已不在 Corres 中。";
+
+/* No comment provided by engineer. */
+"That email isn't open in Corres anymore." = "这封邮件已不再在 Corres 中打开。";
 
 /* No comment provided by engineer. */
 "The app password" = "App 专用密码";
@@ -2582,6 +2680,9 @@
 "This address uses %@. Corres signs in to %@ directly, which is quicker and safer than a password." = "此地址使用 %@。Corres 直接登录 %@，比使用密码更快、更安全。";
 
 /* No comment provided by engineer. */
+"This Evening" = "今晚";
+
+/* No comment provided by engineer. */
 "This Evening, 6 PM" = "今晚 18:00";
 
 /* No comment provided by engineer. */
@@ -2609,6 +2710,9 @@
 "To “%@”" = "发给“%@”";
 
 /* No comment provided by engineer. */
+"To %@" = "收件人：%@";
+
+/* No comment provided by engineer. */
 "To you" = "发给你";
 
 /* No comment provided by engineer. */
@@ -2628,6 +2732,9 @@
 
 /* No comment provided by engineer. */
 "tomorrow at %@" = "明天 %@";
+
+/* No comment provided by engineer. */
+"Tomorrow Morning" = "明天上午";
 
 /* No comment provided by engineer. */
 "Tomorrow, %@" = "明天 %@";
@@ -2771,6 +2878,9 @@
 "Used only when the email has no subject yet." = "仅在邮件还没有主题时使用。";
 
 /* No comment provided by engineer. */
+"Usual Length" = "通常篇幅";
+
+/* No comment provided by engineer. */
 "Verify" = "验证";
 
 /* No comment provided by engineer. */
@@ -2825,6 +2935,9 @@
 "When an email asks something of you, it shows here. The rest of your mail is in Primary." = "当邮件向你提出请求时，会显示在这里。其余邮件在“主要”中。";
 
 /* No comment provided by engineer. */
+"When It's Due, %@" = "截止当天，%@";
+
+/* No comment provided by engineer. */
 "When you can" = "有空再看";
 
 /* No comment provided by engineer. */
@@ -2841,6 +2954,9 @@
 
 /* No comment provided by engineer. */
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "开启期间，%@ 会用你的消息回复新邮件，即使这台%@关机也会发送。";
+
+/* No comment provided by engineer. */
+"Who should it go to? Add someone first." = "要发给谁？请先添加收件人。";
 
 /* No comment provided by engineer. */
 "Widgets, Siri and iPad" = "小组件、Siri 和 iPad";
@@ -2862,6 +2978,9 @@
 
 /* No comment provided by engineer. */
 "Write" = "写邮件";
+
+/* No comment provided by engineer. */
+"Write Replies Like Me" = "按我的方式写回复";
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "输入 %@ 应发送的消息。";

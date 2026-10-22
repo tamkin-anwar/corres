@@ -1,5 +1,8 @@
 import AppIntents
+import CoreTransferable
 import Foundation
+import SwiftUI
+import UniformTypeIdentifiers
 
 /// Your mail, as Siri and Apple Intelligence understand mail: messages they
 /// can find, open, archive or delete in Corres by name ("archive the email
@@ -114,17 +117,16 @@ struct CorresMailMessage: AppEntity {
     var isRead: Bool
     private let senderName: String
 
-    @MainActor
     init(_ thread: Correspondence) {
-        id = thread.id.account + "|" + thread.id.providerID
+        id = thread.id.entityKey
         senderName = thread.sender
         subject = thread.subject
         body = thread.body.isEmpty ? thread.excerpt : thread.body
         account = CorresMailAccount(email: thread.id.account)
         mailbox = CorresMailbox(id: thread.id.account + "|" + (thread.attention == .needsYou ? "needsYou" : thread.attention == .waiting ? "waiting" : "mail"))
-        sender = Self.person(name: thread.sender, email: thread.senderEmail ?? "", isMe: thread.isFromAccountOwner)
-        to = thread.toRecipients.map { Self.person(entry: $0) }
-        cc = thread.ccRecipients.map { Self.person(entry: $0) }
+        sender = IntentPeople.person(name: thread.sender, email: thread.senderEmail ?? "", isMe: thread.isFromAccountOwner)
+        to = thread.toRecipients.flatMap { IntentPeople.people(in: $0) }
+        cc = thread.ccRecipients.flatMap { IntentPeople.people(in: $0) }
         bcc = []
         attachments = []
         let placed = InboxCategory.allCases.first { thread.labelIds.contains($0.gmailLabel) } ?? .primary
@@ -146,19 +148,33 @@ struct CorresMailMessage: AppEntity {
         return parts.count == 2 ? ThreadID(account: parts[0], providerID: parts[1]) : nil
     }
 
-    private static func person(name: String, email: String, isMe: Bool = false) -> IntentPerson {
-        IntentPerson(identifier: .applicationDefined(email.lowercased()), name: .displayName(name.isEmpty ? email : name),
-                     handle: email.isEmpty ? nil : IntentPerson.Handle(emailAddress: email), isMe: isMe)
-    }
-
-    private static func person(entry: String) -> IntentPerson {
-        let parsed = PeopleIndex.parse(entry)
-        return person(name: parsed?.name ?? entry, email: parsed?.email ?? entry)
-    }
-
     var displayRepresentation: DisplayRepresentation {
         DisplayRepresentation(title: "\(subject ?? "")", subtitle: "\(senderName)")
     }
+}
+
+/// In the system's own index, so Siri and Spotlight can find an email by
+/// what it's about, not only by its words (see `SpotlightIndex`).
+@available(iOS 18.0, macOS 15.0, *)
+extension CorresMailMessage: IndexedEntity {}
+
+/// What Siri reads, or hands to another app, when you ask about the email
+/// on screen: who it's from, the subject and the words.
+@available(iOS 18.0, macOS 15.0, *)
+extension CorresMailMessage: Transferable {
+    static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(exportedContentType: .plainText) { message in Data(message.plainText.utf8) }
+    }
+
+    var plainText: String {
+        let from = sender.displayName
+        return [String(localized: "From: \(from)"), String(localized: "Subject: \(subject ?? "")"), "", body ?? ""].joined(separator: "\n")
+    }
+}
+
+extension ThreadID {
+    /// How Siri knows a conversation: "account|thread id".
+    var entityKey: String { account + "|" + providerID }
 }
 
 @available(iOS 18.0, macOS 15.0, *)
@@ -312,5 +328,60 @@ struct OpenMailMessageIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         if let id = target.threadID { AppRouter.shared.pending = .thread(id) }
         return .result()
+    }
+}
+
+/// "Search my email for the Lisbon trip": Corres's own search, opened with
+/// those words.
+@available(iOS 27.0, macOS 27.0, *)
+@AppIntent(schema: .system.searchInApp)
+struct SearchMailIntent: AppIntent {
+    static let openAppWhenRun = true
+    @Parameter var criteria: StringSearchCriteria
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        AppRouter.shared.pending = .search(criteria.term)
+        return .result()
+    }
+}
+
+/// "Remind me about this email tomorrow": added to Reminders, with a link
+/// back to it (see `MailReminders`).
+@available(iOS 18.0, macOS 15.0, *)
+struct RemindAboutMailIntent: AppIntent {
+    static let title: LocalizedStringResource = "Remind Me About an Email"
+    static let description = IntentDescription("Adds the email to Reminders, with a link that opens it in Corres.")
+
+    @Parameter(title: "Email") var target: CorresMailMessage
+    @Parameter(title: "When") var date: Date?
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Remind me about \(\.$target)") { \.$date }
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        guard let id = target.threadID, let thread = Organizer.shared.store?.thread(id) else {
+            return .result(dialog: IntentDialog(stringLiteral: String(localized: "That email isn't in Corres anymore.")))
+        }
+        switch await MailReminders.add(thread, due: date ?? thread.dueAt) {
+        case .added: return .result(dialog: IntentDialog(stringLiteral: String(localized: "Added to Reminders.")))
+        case .notAllowed: return .result(dialog: IntentDialog(stringLiteral: String(localized: "Corres can't add to Reminders. You can allow it in Settings.")))
+        case .failed: return .result(dialog: IntentDialog(stringLiteral: String(localized: "Reminders didn't save it. Try again.")))
+        }
+    }
+}
+
+extension View {
+    /// Tells Siri which email a row shows, so "archive this one" or "the
+    /// second email" means what's on screen.
+    @ViewBuilder
+    func mailEntity(_ id: ThreadID) -> some View {
+        if #available(iOS 18.4, macOS 15.4, *), id.account != "sample" {
+            appEntityIdentifier(EntityIdentifier(for: CorresMailMessage.self, identifier: id.entityKey))
+        } else {
+            self
+        }
     }
 }
