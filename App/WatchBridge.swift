@@ -1,0 +1,128 @@
+#if os(iOS)
+import Foundation
+import WatchConnectivity
+import os
+
+/// The iPhone's side of Corres for Apple Watch (see `WatchLink`): sends
+/// Needs You and Waiting whenever they change, and carries out what you
+/// choose on your wrist: Handled, Archive, Mark as Read, or a reply, sent
+/// from this iPhone the way every email from Corres is.
+@MainActor
+final class WatchBridge: NSObject {
+    static let shared = WatchBridge()
+    private var lastSent: WatchLink.Snapshot?
+    private var pendingUpdate: Task<Void, Never>?
+    private static let log = Logger(subsystem: "studio.anwarcreative.corres", category: "watch")
+
+    func start() {
+        guard WCSession.isSupported() else { return }
+        WCSession.default.delegate = self
+        WCSession.default.activate()
+    }
+
+    /// After the mail changes; a burst of changes sends once.
+    func scheduleUpdate(_ threads: @escaping @MainActor () -> [Correspondence]) {
+        guard WCSession.isSupported(), WCSession.default.activationState == .activated,
+              WCSession.default.isPaired, WCSession.default.isWatchAppInstalled else {
+            Self.log.debug("Watch not ready: activated \(WCSession.default.activationState == .activated), paired \(WCSession.default.isPaired), installed \(WCSession.default.isWatchAppInstalled)")
+            return
+        }
+        pendingUpdate?.cancel()
+        pendingUpdate = Task {
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            send(Self.snapshot(from: threads()))
+        }
+    }
+
+    private func send(_ snapshot: WatchLink.Snapshot) {
+        guard snapshot.needsYou != lastSent?.needsYou || snapshot.waiting != lastSent?.waiting,
+              let data = WatchLink.encode(snapshot) else { return }
+        do {
+            try WCSession.default.updateApplicationContext([WatchLink.snapshotKey: data])
+            lastSent = snapshot
+            Self.log.info("Sent the Watch \(snapshot.needsYou.count) in Needs You")
+        } catch {
+            // Not reachable yet; the next change tries again.
+            Self.log.error("Couldn't update the Watch: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    static func snapshot(from threads: [Correspondence], now: Date = .now) -> WatchLink.Snapshot {
+        func mail(_ thread: Correspondence) -> WatchLink.Mail {
+            let words = WritingStyle.ownWords(in: thread.body.isEmpty ? thread.excerpt : thread.body)
+            return WatchLink.Mail(key: thread.id.entityKey, sender: thread.isFromAccountOwner ? thread.counterpartName() : thread.sender,
+                                  subject: thread.subject, reason: thread.displayReason,
+                                  preview: String(words.prefix(600)), receivedAt: thread.receivedAt, isUnread: thread.isUnread)
+        }
+        let needsYou = MailQuery.prioritized(threads, attention: .needsYou).prefix(25).map(mail)
+        let waiting = MailQuery.prioritized(threads, attention: .waiting).prefix(10).map(mail)
+        return WatchLink.Snapshot(needsYou: Array(needsYou), waiting: Array(waiting),
+                                  isSample: threads.allSatisfy { $0.id.account == "sample" }, updatedAt: now)
+    }
+
+    /// What the Watch asked for.
+    func perform(_ command: WatchLink.Command) async {
+        let parts = command.key.split(separator: "|", maxSplits: 1).map(String.init)
+        guard parts.count == 2, let store = Organizer.shared.store, let actions = Organizer.shared.actions,
+              let thread = store.thread(ThreadID(account: parts[0], providerID: parts[1])) else { return }
+        switch command {
+        case .handled:
+            await actions.setAttention(.handled, for: thread)
+        case .archive:
+            await actions.archive(thread, animated: false)
+            await actions.commitPendingRemoval()
+        case .markRead:
+            await actions.setUnread(false, for: thread)
+        case .reply(_, let text):
+            guard let outbox = Organizer.shared.outbox, thread.id.account != "sample" else { return }
+            if !thread.isBodyLoaded { await actions.loadContent(for: thread) }
+            let source = store.thread(thread.id) ?? thread
+            var draft = source.draft(kind: .reply)
+            draft.body = Draft.adding(signature: CorresSettings.signature(for: source.id.account, reply: true), to: text + draft.body)
+            await outbox.sendNow(draft, replyingTo: source)
+        }
+        send(Self.snapshot(from: store.threads))
+    }
+}
+
+extension WatchBridge: WCSessionDelegate {
+    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        Task { @MainActor in
+            if let store = Organizer.shared.store { self.send(Self.snapshot(from: store.threads)) }
+        }
+    }
+
+    nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
+
+    /// Corres was just put on the Watch, or a Watch was paired.
+    nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
+        Task { @MainActor in
+            self.lastSent = nil
+            if let store = Organizer.shared.store { self.send(Self.snapshot(from: store.threads)) }
+        }
+    }
+
+    nonisolated func sessionDidDeactivate(_ session: WCSession) {
+        // Switched to another Watch: talk to that one.
+        WCSession.default.activate()
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
+        let command = WatchLink.decode(WatchLink.Command.self, from: message[WatchLink.commandKey] as? Data)
+        // Received; the Watch has already shown it done.
+        replyHandler(["received": command != nil])
+        Task { @MainActor in
+            if let command { await self.perform(command) }
+        }
+    }
+
+    /// Queued while the iPhone was out of reach.
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        let command = WatchLink.decode(WatchLink.Command.self, from: userInfo[WatchLink.commandKey] as? Data)
+        Task { @MainActor in
+            if let command { await self.perform(command) }
+        }
+    }
+}
+#endif

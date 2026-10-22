@@ -44,6 +44,7 @@
 		12BB40311AA087D77E392252 /* Features/SaveSearchButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C65DF85BBE04C06EFDD8ADC /* Features/SaveSearchButton.swift */; };
 		13833113045924F950AB71C7 /* App/GmailMessageComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44B8B11C43712F4DF6C6A4B0 /* App/GmailMessageComposer.swift */; };
 		151DB8FE3FC948E0B81DC776 /* App/GmailMessageComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44B8B11C43712F4DF6C6A4B0 /* App/GmailMessageComposer.swift */; };
+		1591472EDE3C416E0591E244 /* CorresWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 8650108A74A2ADDF24766A00 /* CorresWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		16C7EBC2DC8C95E06B0458F5 /* Core/Scheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7997DE468C6064C1C38A21DC /* Core/Scheduling.swift */; };
 		1729D2B584AB0024ED1C9BB4 /* Core/CorresSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3188DDEA4B4112FCE079024F /* Core/CorresSchema.swift */; };
 		180DDC0F37852583386242F8 /* Features/ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B711AF08239E828BF9969F3 /* Features/ConversationView.swift */; };
@@ -53,6 +54,7 @@
 		198AA1E8786592DABC5E015E /* DesignSystem/Materials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AEABBF5B1C933392981114 /* DesignSystem/Materials.swift */; };
 		1AE6F52F8FE249259920E4C4 /* App/Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B03773975FDB401CA02B5F15 /* App/Keychain.swift */; };
 		1B3766733C22497596301550 /* Features/MultiSelectGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC8AB17E1D7432A8CFCE409 /* Features/MultiSelectGesture.swift */; };
+		1B57D3F834BD79554BA16339 /* Watch/CorresWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3BA615534E482D9717EAC65 /* Watch/CorresWatchApp.swift */; };
 		1B6F3C1F82F3C5B21D32C8BA /* App/OutboxService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0B80EE1611396DB315C571 /* App/OutboxService.swift */; };
 		1B85E43E74F044538FB531E7 /* Core/MailDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */; };
 		1BA03B99003749AABDD410CB /* App/MailIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCE33A1D946429F9220EDC4 /* App/MailIntelligence.swift */; };
@@ -95,6 +97,7 @@
 		34D5598D60A585844E50FFE9 /* App/MailServerDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F001 /* App/MailServerDiscovery.swift */; };
 		35EA1A1F4CF641F987B45D47 /* ShareExtension/ShareComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F439174FD9544F64BCE4708A /* ShareExtension/ShareComposer.swift */; };
 		35EF1AE6ABD2488C953C0213 /* Features/SnoozeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D88F20EF7A545638AB0EE70 /* Features/SnoozeSheet.swift */; };
+		36B445C2BC07BA0634194E7B /* Widgets/CorresLiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14718E7599AA2D88A66E9A7F /* Widgets/CorresLiveActivities.swift */; };
 		36F3238E768946198C834D5D /* ShareExtension/SharedContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8E3DCAFB6D4991A321D3FC /* ShareExtension/SharedContent.swift */; };
 		376D38C3A34F9B57B7E6216B /* Shared/WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1849C76282E24A39BF9435ED /* Shared/WidgetSnapshot.swift */; };
 		38185E83F6BF4FCDBF51442D /* DesignSystem/CorrespondenceMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */; };
@@ -105,6 +108,7 @@
 		3A16A2272C5E0513B52F8189 /* Features/ScreenerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C56F5DE2502E92807210146E /* Features/ScreenerView.swift */; };
 		3A7AE669F243C38109B7A20B /* App/MailClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4EE9AD8F80B43F692ADA7B7 /* App/MailClient.swift */; };
 		3AB364011D19E749493FAE90 /* Mac/MessageList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E46B8D894BCDA57E5E072FF7 /* Mac/MessageList.swift */; };
+		3AB98F99DE24947E662B1DD9 /* Watch/WatchViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C73314D400E147DD236B7EB /* Watch/WatchViews.swift */; };
 		3AF320BEE8594EA484BF95FB /* Features/ScheduledView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7EB64324064A458EA7E9B2 /* Features/ScheduledView.swift */; };
 		3B3706D3797F404AB536FA7C /* App/SenderLessons.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED71C59F2E034AE0B103EE98 /* App/SenderLessons.swift */; };
 		3B47738C7F21473DB5948605 /* Core/TimePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */; };
@@ -204,9 +208,11 @@
 		7CA0DE65E711446FB5998B3D /* App/GoogleTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2251A710575244BEBBE7402E /* App/GoogleTokenProvider.swift */; };
 		7DAEC24B32C646ADB1214C4E /* Core/RichBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69625E99E49B4770B184FC5C /* Core/RichBody.swift */; };
 		7DD97E14AA61600A65E236A3 /* Features/HTMLMessageBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FCDDD1329818B12922D64E /* Features/HTMLMessageBody.swift */; };
+		80795E78DAEC2958FEFE1AAE /* Shared/LiveActivityKinds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E64D8C9F82151B0067F7961 /* Shared/LiveActivityKinds.swift */; };
 		8088289DE26E42F346EED9A3 /* App/CorresApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03285F34837864AED181DA0 /* App/CorresApp.swift */; };
 		81962B22B15B4C5CA3957CD5 /* Features/SwipePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CABE04674E546E4B8928799 /* Features/SwipePreferences.swift */; };
 		8274F6B40AD59691521A988F /* Core/PeopleIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = D323E07BF00243989B4E0A2A /* Core/PeopleIndex.swift */; };
+		83BFC3B1AE2B918D8E04003D /* App/AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = A346C74BB0ABE02CE9E9D201 /* App/AppIcon.icon */; };
 		843E875A92BF298C246A82D0 /* DesignSystem/CorrespondenceMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */; };
 		84828CC35E92F0A5A9B61F0D /* Core/PersistedCorrespondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E1024E1A490FF94991E3AF /* Core/PersistedCorrespondence.swift */; };
 		8545FC3E29B14389D51A7B9B /* App/ThreadActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89705DCC26384892BF488BA2 /* App/ThreadActionService.swift */; };
@@ -224,13 +230,18 @@
 		8684F3D230874C44001A21F2 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8684F3CE30874C44001A21F2 /* Localizable.strings */; };
 		8684F3D330874C44001A21F2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8684F3CD30874C44001A21F2 /* InfoPlist.strings */; };
 		8684F3D430874C44001A21F2 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8684F3CE30874C44001A21F2 /* Localizable.strings */; };
+		869BDABE3089BF5400135A85 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 869BDABB3089BF5400135A85 /* Localizable.strings */; };
+		869BDABF3089BF5400135A85 /* CorresWatch-InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 869BDABA3089BF5400135A85 /* CorresWatch-InfoPlist.strings */; };
 		86EB7EF43087528F0097B233 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 86EB7EF23087528F0097B233 /* Localizable.strings */; };
+		88EFE5B9A56303E84729232D /* Watch/WatchMailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593E4FBE9E5972FD14AB5709 /* Watch/WatchMailStore.swift */; };
 		896ABC29D193F2031450A89B /* DesignSystem/CorrespondenceMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */; };
 		8AB4EBD19E339767B602DA9B /* Shared/WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFAF33CCF393FE69829736D5 /* Shared/WidgetIntents.swift */; };
+		8BA9B0C0E84B8E2FAF74C376 /* Features/DragAndDrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6904C9BE4A12C7DA0C3514C9 /* Features/DragAndDrop.swift */; };
 		8C08DE391CFC44B4967829AB /* App/SendAsDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A37F181693E458183898A1A /* App/SendAsDirectory.swift */; };
 		8C796CE96DAA4E3E86189A8A /* Core/SenderHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0420D138F474423E84B6A00A /* Core/SenderHabits.swift */; };
 		8E475FAA950B4831816A869C /* Core/MailSignals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */; };
 		8EFE7A4258A57167DB2D4714 /* Core/GmailAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68DA0977ACFA46A1C9952B4 /* Core/GmailAccount.swift */; };
+		8FBD34867F8E3FE75A3183B0 /* App/LiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04EEE3F49F97D13D54987F8C /* App/LiveActivities.swift */; };
 		8FF87169249D3F9520C44ECE /* App/OutlookTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */; };
 		90E8415E00594F7984BB076F /* DesignSystem/Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FDAA185499F66241648B25 /* DesignSystem/Tokens.swift */; };
 		915836714C5888A247DFC316 /* Features/CorrespondenceList.swift in Sources */ = {isa = PBXBuildFile; fileRef = A84A2742DF9E08880CF52E5D /* Features/CorrespondenceList.swift */; };
@@ -278,6 +289,7 @@
 		A83C8F8240A443FEB8A0BF04 /* App/GmailMessageComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44B8B11C43712F4DF6C6A4B0 /* App/GmailMessageComposer.swift */; };
 		A8C0FFB11FBFA606F4096211 /* Core/RichBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69625E99E49B4770B184FC5C /* Core/RichBody.swift */; };
 		A91255EF9E5B49D40BD5579F /* App/AskService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A52B6D67E5444081ECC866 /* App/AskService.swift */; };
+		A95EE1BAD77F9778177A72AA /* Shared/LiveActivityKinds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E64D8C9F82151B0067F7961 /* Shared/LiveActivityKinds.swift */; };
 		AB85251149024F87A1E51C4F /* Core/NextStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BAC03E502D413F95A6F129 /* Core/NextStep.swift */; };
 		ABC796611ECB4D8FBC3469D5 /* Features/AccountSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11C4F91D2B48CB902EBE32 /* Features/AccountSwitcher.swift */; };
 		AC57B9FF8D85450BAEC4B66A /* Features/PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */; };
@@ -321,6 +333,7 @@
 		C3C0DE00000000000000A003 /* App/HangReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F003 /* App/HangReporter.swift */; };
 		C3C0DE00000000000000A004 /* App/ActionQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F004 /* App/ActionQueue.swift */; };
 		C3C0DE00000000000000A005 /* App/CloudSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0DE00000000000000F005 /* App/CloudSync.swift */; };
+		C42CFFCCFE03454BF7DEC92C /* Shared/WatchLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2233518DF8281DA23BD458 /* Shared/WatchLink.swift */; };
 		C52FD075B77C883914802B59 /* App/SnoozeOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECC0D99FFA56C833E8D8F70 /* App/SnoozeOption.swift */; };
 		C53BD35A6735DE6CB5722A7F /* App/WritingStyleBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77C1D610F9874DE047B8168 /* App/WritingStyleBook.swift */; };
 		C5FD4D482EA945EA9AE3AE5E /* App/CorresIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFCC1D119594C1DB1614B48 /* App/CorresIntents.swift */; };
@@ -349,6 +362,7 @@
 		D54912356E7DBC0FE25C621C /* Mac/CorresMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B5AB95D42257CED39A42AB3 /* Mac/CorresMacApp.swift */; };
 		D68F295023C24C09A7D79E2E /* ShareExtension/ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84768D78CFBA430CAD90DA64 /* ShareExtension/ShareViewController.swift */; };
 		D7566CE9F91C43BDA0B554C9 /* Core/DetectedItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F6E3D3ED4A43908B1C100E /* Core/DetectedItems.swift */; };
+		D7BE3A19807175B5E1030C52 /* App/WatchBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5137D5DBB3277914A186BA0 /* App/WatchBridge.swift */; };
 		D7BECB303F4045769E09C091 /* Core/TimePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F67D6646612414E9669A4A5 /* Core/TimePhrase.swift */; };
 		D8779F4C9329B419FF7FD755 /* App/GmailAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682EC77E42F944FED8F83C02 /* App/GmailAPIClient.swift */; };
 		D9223792E11E4C8D810F7333 /* Core/SampleCorrespondence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF963A48F35EECBABCEAC67 /* Core/SampleCorrespondence.swift */; };
@@ -380,6 +394,7 @@
 		F431A0400D699B9401B8F407 /* Mac/MacScheduled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD88A262431B14EF675E902 /* Mac/MacScheduled.swift */; };
 		F49FFE661F3648DDA88BF0C2 /* Features/MailboxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA525D09D143D9B146A949 /* Features/MailboxesView.swift */; };
 		F4C18104D0A1EFC6116E1DFD /* Mac/MacCompose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2934A396581F31D9333E8F53 /* Mac/MacCompose.swift */; };
+		F54426D07CE1B70DBA8B55FF /* Shared/WatchLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2233518DF8281DA23BD458 /* Shared/WatchLink.swift */; };
 		F5549536FB40605E471C863D /* App/MailIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC29ECFC5579458575BB8D76 /* App/MailIndexer.swift */; };
 		F690AF91B2D34966F2378403 /* App/PeopleDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977F121DCAF14706A5639E69 /* App/PeopleDirectory.swift */; };
 		F8446A6FFA8346F69DA3BE61 /* Core/SenderDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8779CEB27F41BCB50AEF84 /* Core/SenderDirectory.swift */; };
@@ -389,11 +404,6 @@
 		FEC673ED5C6144C6BA28927C /* App/OutlookClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC8BE109A8184BD9AF037CDA /* App/OutlookClient.swift */; };
 		FF572D1C19FF97BEC7A56363 /* Core/SenderDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8779CEB27F41BCB50AEF84 /* Core/SenderDirectory.swift */; };
 		FFC128B29B5871A5CD7F63A1 /* Features/TemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF8F8FDE9B25F0C732FEC97 /* Features/TemplatesView.swift */; };
-		8BA9B0C0E84B8E2FAF74C376 /* Features/DragAndDrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6904C9BE4A12C7DA0C3514C9 /* Features/DragAndDrop.swift */; };
-		80795E78DAEC2958FEFE1AAE /* Shared/LiveActivityKinds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E64D8C9F82151B0067F7961 /* Shared/LiveActivityKinds.swift */; };
-		8FBD34867F8E3FE75A3183B0 /* App/LiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04EEE3F49F97D13D54987F8C /* App/LiveActivities.swift */; };
-		A95EE1BAD77F9778177A72AA /* Shared/LiveActivityKinds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E64D8C9F82151B0067F7961 /* Shared/LiveActivityKinds.swift */; };
-		36B445C2BC07BA0634194E7B /* Widgets/CorresLiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14718E7599AA2D88A66E9A7F /* Widgets/CorresLiveActivities.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -418,6 +428,13 @@
 			remoteGlobalIDString = C0D6A807ACDA44B5BE049D1B;
 			remoteInfo = CorresShare;
 		};
+		9ABAB18D0F684E9315F0678D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 244210E48437B6556980A702 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5D8CD4F111264C93664AFD91;
+			remoteInfo = CorresWatch;
+		};
 		C6D6EAF7EF6045029CE4F7BC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 244210E48437B6556980A702 /* Project object */;
@@ -428,6 +445,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		8EAE7F22D6E0FF794D4332F4 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				1591472EDE3C416E0591E244 /* CorresWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E327868891D340BF93EFB082 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -456,18 +484,22 @@
 
 /* Begin PBXFileReference section */
 		0420D138F474423E84B6A00A /* Core/SenderHabits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/SenderHabits.swift; sourceTree = SOURCE_ROOT; };
+		04EEE3F49F97D13D54987F8C /* App/LiveActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/LiveActivities.swift; sourceTree = SOURCE_ROOT; };
 		07A282FD1D57C93CB1ADB871 /* Mac/MacServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacServices.swift; sourceTree = SOURCE_ROOT; };
 		082593A9B45B6EEF19E705AD /* Features/RulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RulesView.swift; sourceTree = SOURCE_ROOT; };
 		087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/OutlookTokenProvider.swift; sourceTree = SOURCE_ROOT; };
 		09185C5DABE3431684F5BB68 /* Shared/MailAccounts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/MailAccounts.swift; sourceTree = SOURCE_ROOT; };
 		095C3F5B70B931C3C26330A8 /* Corres.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Corres.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0C2233518DF8281DA23BD458 /* Shared/WatchLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/WatchLink.swift; sourceTree = SOURCE_ROOT; };
 		0CB72D373C9C4A0A956F4172 /* CorresShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CorresShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E2711B5F417758711A30B4D /* Core/PersistedOutboxEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PersistedOutboxEntry.swift; sourceTree = SOURCE_ROOT; };
+		0E64D8C9F82151B0067F7961 /* Shared/LiveActivityKinds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/LiveActivityKinds.swift; sourceTree = SOURCE_ROOT; };
 		0F85ED2497CB7E128BD8B4B1 /* Mac/MacCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacCommands.swift; sourceTree = SOURCE_ROOT; };
 		0FCACBB1F48A4E5FB5689F5F /* Core/Invitation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Invitation.swift; sourceTree = SOURCE_ROOT; };
 		11D41A2038764132BB1178C6 /* Features/OutOfOfficeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/OutOfOfficeView.swift; sourceTree = SOURCE_ROOT; };
 		11F6E3D3ED4A43908B1C100E /* Core/DetectedItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DetectedItems.swift; sourceTree = SOURCE_ROOT; };
 		13615D80EFCC4152B5A62CA7 /* Features/CategoryMove.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CategoryMove.swift; sourceTree = SOURCE_ROOT; };
+		14718E7599AA2D88A66E9A7F /* Widgets/CorresLiveActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Widgets/CorresLiveActivities.swift; sourceTree = SOURCE_ROOT; };
 		16FDAA185499F66241648B25 /* DesignSystem/Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/Tokens.swift; sourceTree = SOURCE_ROOT; };
 		179BAB365AF54DB8878244EB /* Features/EarlierMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/EarlierMessages.swift; sourceTree = SOURCE_ROOT; };
 		17EC2216CF5E6F988F527EB5 /* Features/ComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ComposeView.swift; sourceTree = SOURCE_ROOT; };
@@ -497,6 +529,7 @@
 		3B14B012AD1CBC721B2708D1 /* App/Organizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/Organizer.swift; sourceTree = SOURCE_ROOT; };
 		3C156C6C15894D15B4E2FC35 /* App/AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppRouter.swift; sourceTree = SOURCE_ROOT; };
 		3C16B27D69CB4F8FA44B529D /* Core/AttachmentKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/AttachmentKind.swift; sourceTree = SOURCE_ROOT; };
+		3C73314D400E147DD236B7EB /* Watch/WatchViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Watch/WatchViews.swift; sourceTree = SOURCE_ROOT; };
 		3CBD527CBC57BC423404D845 /* DesignSystem/CorrespondenceMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/CorrespondenceMark.swift; sourceTree = SOURCE_ROOT; };
 		3DA1F4206C9042F9ABD3AA8C /* Core/MailSignals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/MailSignals.swift; sourceTree = SOURCE_ROOT; };
 		447B0387783A4EE385008A6B /* App/AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppDelegate.swift; sourceTree = SOURCE_ROOT; };
@@ -513,6 +546,7 @@
 		5657FD79441A48ACB789585C /* Core/AskQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/AskQuery.swift; sourceTree = SOURCE_ROOT; };
 		5693DA5033D44DA89E7172B7 /* Core/MailDigest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/MailDigest.swift; sourceTree = SOURCE_ROOT; };
 		5714C136B1C144BA9986F7BD /* App/FollowUps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/FollowUps.swift; sourceTree = SOURCE_ROOT; };
+		593E4FBE9E5972FD14AB5709 /* Watch/WatchMailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Watch/WatchMailStore.swift; sourceTree = SOURCE_ROOT; };
 		5A37F181693E458183898A1A /* App/SendAsDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SendAsDirectory.swift; sourceTree = SOURCE_ROOT; };
 		5B676FBAD72F4613B0B8D1E5 /* Core/InboxCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/InboxCategory.swift; sourceTree = SOURCE_ROOT; };
 		5C37CCAC51699FE217D1E434 /* Mac/MacRichEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacRichEditor.swift; sourceTree = SOURCE_ROOT; };
@@ -525,6 +559,7 @@
 		66C5828E01284E533B0ADF48 /* Features/WritingStyleRows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/WritingStyleRows.swift; sourceTree = SOURCE_ROOT; };
 		67FCDDD1329818B12922D64E /* Features/HTMLMessageBody.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/HTMLMessageBody.swift; sourceTree = SOURCE_ROOT; };
 		682EC77E42F944FED8F83C02 /* App/GmailAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GmailAPIClient.swift; sourceTree = SOURCE_ROOT; };
+		6904C9BE4A12C7DA0C3514C9 /* Features/DragAndDrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/DragAndDrop.swift; sourceTree = SOURCE_ROOT; };
 		69625E99E49B4770B184FC5C /* Core/RichBody.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/RichBody.swift; sourceTree = SOURCE_ROOT; };
 		6A7F4BF79C84469C8CDDCF6C /* Features/AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/AskView.swift; sourceTree = SOURCE_ROOT; };
 		6AF963A48F35EECBABCEAC67 /* Core/SampleCorrespondence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/SampleCorrespondence.swift; sourceTree = SOURCE_ROOT; };
@@ -556,9 +591,14 @@
 		862D874230874FF5004BE495 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
 		862D874330874FF5004BE495 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		862D874430874FF5004BE495 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
+		8634EAD13089BF6F00DF4EC9 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "Watch/zh-Hans.lproj/CorresWatch-InfoPlist.strings"; sourceTree = "<group>"; };
+		8634EAD23089BF6F00DF4EC9 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "Watch/zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		8639C78F3087531200413EB6 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		864359E5308752A500514B0A /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
 		864A36D1308752D300D1338B /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		8650108A74A2ADDF24766A00 /* CorresWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CorresWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8662FCCF3089BFC30022BEC9 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = "Watch/fr.lproj/CorresWatch-InfoPlist.strings"; sourceTree = "<group>"; };
+		8662FCD03089BFC30022BEC9 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = "Watch/fr.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		8669BE76308750210097DDE2 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/AppShortcuts.strings"; sourceTree = "<group>"; };
 		8669BE77308750210097DDE2 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		8669BE78308750210097DDE2 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
@@ -570,6 +610,8 @@
 		8669BE7E308750210097DDE2 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		8669BE7F308750210097DDE2 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		8669BE80308750210097DDE2 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		8677D81C3089C01A002A1B70 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = "Watch/bn.lproj/CorresWatch-InfoPlist.strings"; sourceTree = "<group>"; };
+		8677D81D3089C01A002A1B70 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = "Watch/bn.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		8679CB1E308752FD006179DD /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		867C55D130874FE0007D0796 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
 		867C55D230874FE0007D0796 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -582,6 +624,8 @@
 		867C55D930874FE0007D0796 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 		867C55DA30874FE0007D0796 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		867C55DB30874FE0007D0796 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		867DF1F53089BFFE00003A79 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "Watch/pt-BR.lproj/CorresWatch-InfoPlist.strings"; sourceTree = "<group>"; };
+		867DF1F63089BFFE00003A79 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "Watch/pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		868054F930874FB800DDF0C7 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
 		868054FA30874FB800DDF0C7 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		868054FB30874FB800DDF0C7 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -604,6 +648,12 @@
 		8684F3C330874C44001A21F2 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
 		8684F3CF30874C44001A21F2 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		8684F3D030874C44001A21F2 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		86895A3B3089BFE2001EFAD1 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = "Watch/es.lproj/CorresWatch-InfoPlist.strings"; sourceTree = "<group>"; };
+		86895A3C3089BFE2001EFAD1 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = "Watch/es.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		869963FE3089BFA6007FDAD1 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = "Watch/ko.lproj/CorresWatch-InfoPlist.strings"; sourceTree = "<group>"; };
+		869963FF3089BFA6007FDAD1 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = "Watch/ko.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		869BDABC3089BF5400135A85 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = "Watch/ja.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		869BDABD3089BF5400135A85 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = "Watch/ja.lproj/CorresWatch-InfoPlist.strings"; sourceTree = "<group>"; };
 		86C036053088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
 		86C036063088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		86C036073088BC8D0070CF22 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -628,6 +678,8 @@
 		86CA17B23087500B00BEB200 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		86CA17B33087500B00BEB200 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		86CA17B43087500B00BEB200 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		86E683E33089BF8A00BDABE6 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = "Watch/de.lproj/CorresWatch-InfoPlist.strings"; sourceTree = "<group>"; };
+		86E683E43089BF8A00BDABE6 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = "Watch/de.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		86EB7EF33087528F0097B233 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		86EDCC6E30874FCD00FCA596 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/AppShortcuts.strings"; sourceTree = "<group>"; };
 		86EDCC6F30874FCD00FCA596 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
@@ -718,10 +770,12 @@
 		E0C016EFB98E0B54E8514802 /* Features/OrganizeMailboxes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/OrganizeMailboxes.swift; sourceTree = SOURCE_ROOT; };
 		E46B8D894BCDA57E5E072FF7 /* Mac/MessageList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MessageList.swift; sourceTree = SOURCE_ROOT; };
 		E4E8BC7DF77D4F9290306C20 /* ShareExtension/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = ShareExtension/Info.plist; sourceTree = SOURCE_ROOT; };
+		E5137D5DBB3277914A186BA0 /* App/WatchBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/WatchBridge.swift; sourceTree = SOURCE_ROOT; };
 		E62FF2CAB366437C92797761 /* App/SemanticTriageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SemanticTriageService.swift; sourceTree = SOURCE_ROOT; };
 		E7EE12AAF7B0E74D7F89AC5A /* CorresMacWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CorresMacWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED71C59F2E034AE0B103EE98 /* App/SenderLessons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SenderLessons.swift; sourceTree = SOURCE_ROOT; };
 		F048BFA7B57836F484F1B9C1 /* App/PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = App/PrivacyInfo.xcprivacy; sourceTree = SOURCE_ROOT; };
+		F3BA615534E482D9717EAC65 /* Watch/CorresWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Watch/CorresWatchApp.swift; sourceTree = SOURCE_ROOT; };
 		F439174FD9544F64BCE4708A /* ShareExtension/ShareComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtension/ShareComposer.swift; sourceTree = SOURCE_ROOT; };
 		F51B8D675D233C5037674AD4 /* Mac/CorresMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Mac/CorresMac.entitlements; sourceTree = SOURCE_ROOT; };
 		F774204AB22EFCF7D3FF3595 /* Mac/MacCommandPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacCommandPalette.swift; sourceTree = SOURCE_ROOT; };
@@ -732,10 +786,6 @@
 		FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GmailQuotaGate.swift; sourceTree = SOURCE_ROOT; };
 		FEB5C4BF79C6432CA56B4E65 /* Widgets/CorresWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Widgets/CorresWidgets.entitlements; sourceTree = SOURCE_ROOT; };
 		FF7F38BF13EFB132AE0D4DAD /* App/ICloudSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ICloudSignIn.swift; sourceTree = SOURCE_ROOT; };
-		6904C9BE4A12C7DA0C3514C9 /* Features/DragAndDrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/DragAndDrop.swift; sourceTree = SOURCE_ROOT; };
-		0E64D8C9F82151B0067F7961 /* Shared/LiveActivityKinds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/LiveActivityKinds.swift; sourceTree = SOURCE_ROOT; };
-		04EEE3F49F97D13D54987F8C /* App/LiveActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/LiveActivities.swift; sourceTree = SOURCE_ROOT; };
-		14718E7599AA2D88A66E9A7F /* Widgets/CorresLiveActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Widgets/CorresLiveActivities.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -780,6 +830,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E3CC5E96C42FD0EC741B02A5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E657AF6647DB48E4834AEC71 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -800,6 +857,7 @@
 				51036E354994481EB7E9A6FD /* CorresNotify.appex */,
 				095C3F5B70B931C3C26330A8 /* Corres.app */,
 				E7EE12AAF7B0E74D7F89AC5A /* CorresMacWidgets.appex */,
+				8650108A74A2ADDF24766A00 /* CorresWatch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -807,6 +865,8 @@
 		0D6E4079E36703EBD37C0072 = {
 			isa = PBXGroup;
 			children = (
+				869BDABA3089BF5400135A85 /* CorresWatch-InfoPlist.strings */,
+				869BDABB3089BF5400135A85 /* Localizable.strings */,
 				8684F3B830874C44001A21F2 /* AppShortcuts.strings */,
 				8684F3B930874C44001A21F2 /* AppShortcuts.strings */,
 				8684F3BA30874C44001A21F2 /* InfoPlist.strings */,
@@ -984,6 +1044,11 @@
 				0E64D8C9F82151B0067F7961 /* Shared/LiveActivityKinds.swift */,
 				04EEE3F49F97D13D54987F8C /* App/LiveActivities.swift */,
 				14718E7599AA2D88A66E9A7F /* Widgets/CorresLiveActivities.swift */,
+				F3BA615534E482D9717EAC65 /* Watch/CorresWatchApp.swift */,
+				593E4FBE9E5972FD14AB5709 /* Watch/WatchMailStore.swift */,
+				3C73314D400E147DD236B7EB /* Watch/WatchViews.swift */,
+				0C2233518DF8281DA23BD458 /* Shared/WatchLink.swift */,
+				E5137D5DBB3277914A186BA0 /* App/WatchBridge.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1074,6 +1139,7 @@
 				E2AA269EB967A8853A258BFA /* Frameworks */,
 				41D311A605520FC7B8B9A980 /* Resources */,
 				E327868891D340BF93EFB082 /* Embed Foundation Extensions */,
+				8EAE7F22D6E0FF794D4332F4 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
@@ -1081,6 +1147,7 @@
 				3FD96208F882409B8ABF585F /* PBXTargetDependency */,
 				082B1DBE695044168BE6890B /* PBXTargetDependency */,
 				DBF9D3E009FC408796277EA6 /* PBXTargetDependency */,
+				C1943AFF6E43D963F5F11680 /* PBXTargetDependency */,
 			);
 			name = Corres;
 			packageProductDependencies = (
@@ -1090,6 +1157,23 @@
 			);
 			productName = Corres;
 			productReference = A8792157CB4F27FB949C035F /* Corres.app */;
+			productType = "com.apple.product-type.application";
+		};
+		5D8CD4F111264C93664AFD91 /* CorresWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2FE5D381ED8D667923053B77 /* Build configuration list for PBXNativeTarget "CorresWatch" */;
+			buildPhases = (
+				B75EB0A6448D02BCE2C58714 /* Sources */,
+				E3CC5E96C42FD0EC741B02A5 /* Frameworks */,
+				48F1DA55AF583AEA2D8EF6D4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CorresWatch;
+			productName = CorresWatch;
+			productReference = 8650108A74A2ADDF24766A00 /* CorresWatch.app */;
 			productType = "com.apple.product-type.application";
 		};
 		C0D6A807ACDA44B5BE049D1B /* CorresShare */ = {
@@ -1191,6 +1275,7 @@
 				1D8B72C297E64DAA9CC754BC /* CorresNotify */,
 				FD378C42220E184091A4CF8F /* CorresMac */,
 				1A2EB6BF3910FEC212CAC528 /* CorresMacWidgets */,
+				5D8CD4F111264C93664AFD91 /* CorresWatch */,
 			);
 		};
 /* End PBXProject section */
@@ -1206,6 +1291,16 @@
 				8684F3C730874C44001A21F2 /* AppShortcuts.strings in Resources */,
 				8684F3C930874C44001A21F2 /* Localizable.strings in Resources */,
 				C894E424DB9E018EC3224C24 /* App/AppIcon.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		48F1DA55AF583AEA2D8EF6D4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				869BDABE3089BF5400135A85 /* Localizable.strings in Resources */,
+				869BDABF3089BF5400135A85 /* CorresWatch-InfoPlist.strings in Resources */,
+				83BFC3B1AE2B918D8E04003D /* App/AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1539,6 +1634,8 @@
 				8BA9B0C0E84B8E2FAF74C376 /* Features/DragAndDrop.swift in Sources */,
 				80795E78DAEC2958FEFE1AAE /* Shared/LiveActivityKinds.swift in Sources */,
 				8FBD34867F8E3FE75A3183B0 /* App/LiveActivities.swift in Sources */,
+				C42CFFCCFE03454BF7DEC92C /* Shared/WatchLink.swift in Sources */,
+				D7BE3A19807175B5E1030C52 /* App/WatchBridge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1646,6 +1743,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B75EB0A6448D02BCE2C58714 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1B57D3F834BD79554BA16339 /* Watch/CorresWatchApp.swift in Sources */,
+				88EFE5B9A56303E84729232D /* Watch/WatchMailStore.swift in Sources */,
+				3AB98F99DE24947E662B1DD9 /* Watch/WatchViews.swift in Sources */,
+				F54426D07CE1B70DBA8B55FF /* Shared/WatchLink.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F2D39D8A400547B392271E91 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1671,6 +1779,11 @@
 			isa = PBXTargetDependency;
 			target = C69DF3B7A0A94507982CAA18 /* CorresWidgets */;
 			targetProxy = 747FA3D082A74C558FAC6065 /* PBXContainerItemProxy */;
+		};
+		C1943AFF6E43D963F5F11680 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5D8CD4F111264C93664AFD91 /* CorresWatch */;
+			targetProxy = 9ABAB18D0F684E9315F0678D /* PBXContainerItemProxy */;
 		};
 		DBF9D3E009FC408796277EA6 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1859,6 +1972,36 @@
 			);
 			name = Localizable.strings;
 			path = Widgets;
+			sourceTree = "<group>";
+		};
+		869BDABA3089BF5400135A85 /* CorresWatch-InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				869BDABD3089BF5400135A85 /* ja */,
+				8634EAD13089BF6F00DF4EC9 /* zh-Hans */,
+				86E683E33089BF8A00BDABE6 /* de */,
+				869963FE3089BFA6007FDAD1 /* ko */,
+				8662FCCF3089BFC30022BEC9 /* fr */,
+				86895A3B3089BFE2001EFAD1 /* es */,
+				867DF1F53089BFFE00003A79 /* pt-BR */,
+				8677D81C3089C01A002A1B70 /* bn */,
+			);
+			name = "CorresWatch-InfoPlist.strings";
+			sourceTree = "<group>";
+		};
+		869BDABB3089BF5400135A85 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				869BDABC3089BF5400135A85 /* ja */,
+				8634EAD23089BF6F00DF4EC9 /* zh-Hans */,
+				86E683E43089BF8A00BDABE6 /* de */,
+				869963FF3089BFA6007FDAD1 /* ko */,
+				8662FCD03089BFC30022BEC9 /* fr */,
+				86895A3C3089BFE2001EFAD1 /* es */,
+				867DF1F63089BFFE00003A79 /* pt-BR */,
+				8677D81D3089C01A002A1B70 /* bn */,
+			);
+			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
 		86EB7EF23087528F0097B233 /* Localizable.strings */ = {
@@ -2062,6 +2205,35 @@
 			};
 			name = Debug;
 		};
+		5DBFC7016795C0E52BA6E8CB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 24;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = studio.anwarcreative.corres;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.watchkitapp;
+				PRODUCT_NAME = CorresWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
 		6B0FE7EFD9AA469794EDC920 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2110,10 +2282,10 @@
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Corres uses the microphone only while you dictate an email. Speech is transcribed on this device.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Corres adds an email to Reminders when you ask it to, with a link back to the email. It never reads your reminders.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Corres turns your dictation into text on this device. Your voice is never sent to a server.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres;
 				PRODUCT_NAME = Corres;
@@ -2201,6 +2373,37 @@
 			};
 			name = Debug;
 		};
+		C6B4E23BA16F5B05B475A888 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 24;
+				DEVELOPMENT_TEAM = 7GGTC43CG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Corres;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = studio.anwarcreative.corres;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.2.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.watchkitapp;
+				PRODUCT_NAME = CorresWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
 		DD75E2CB1C510A828AC72D96 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2222,10 +2425,10 @@
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Corres uses the microphone only while you dictate an email. Speech is transcribed on this device.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Corres adds an email to Reminders when you ask it to, with a link back to the email. It never reads your reminders.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Corres turns your dictation into text on this device. Your voice is never sent to a server.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres;
 				PRODUCT_NAME = Corres;
@@ -2281,6 +2484,15 @@
 			buildConfigurations = (
 				6C7EFF6369083C8E1F2B1994 /* Debug */,
 				DD75E2CB1C510A828AC72D96 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2FE5D381ED8D667923053B77 /* Build configuration list for PBXNativeTarget "CorresWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C6B4E23BA16F5B05B475A888 /* Debug */,
+				5DBFC7016795C0E52BA6E8CB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -2,6 +2,9 @@
 "%lld %@" = "%lld %@";
 
 /* No comment provided by engineer. */
+"At %@" = "%@에";
+
+/* No comment provided by engineer. */
 "Conversation" = "대화";
 
 /* No comment provided by engineer. */
@@ -9,6 +12,9 @@
 
 /* No comment provided by engineer. */
 "Corres Pro" = "Corres Pro";
+
+/* No comment provided by engineer. */
+"Delivered" = "배달됨";
 
 /* No comment provided by engineer. */
 "Mark as Handled" = "처리됨으로 표시";
@@ -29,13 +35,25 @@
 "Open Needs You in Corres." = "Corres에서 '나에게 필요'를 엽니다.";
 
 /* No comment provided by engineer. */
+"Out for delivery today" = "오늘 배송 중";
+
+/* No comment provided by engineer. */
 "SAMPLE" = "샘플";
+
+/* No comment provided by engineer. */
+"Send Later" = "나중에 보내기";
+
+/* No comment provided by engineer. */
+"Sending to %@" = "%@에게 보내는 중";
 
 /* No comment provided by engineer. */
 "Start a new email in Corres." = "Corres에서 새로운 이메일을 시작합니다.";
 
 /* No comment provided by engineer. */
 "The conversations that ask something of you, with the reason for each." = "나에게 무언가를 요청하는 대화와 각각의 이유.";
+
+/* No comment provided by engineer. */
+"To %@ at %@" = "%2$@에 %1$@에게";
 
 /* No comment provided by engineer. */
 "Waiting" = "대기 중";

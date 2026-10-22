@@ -854,6 +854,9 @@
 "Delivered" = "Entregado";
 
 /* No comment provided by engineer. */
+"Deliveries on the Lock Screen" = "Entregas en la pantalla bloqueada";
+
+/* No comment provided by engineer. */
 "Delivery problem" = "Problema de entrega";
 
 /* No comment provided by engineer. */
@@ -1905,6 +1908,9 @@
 
 /* No comment provided by engineer. */
 "Open iCloud Mail Settings" = "Abrir ajustes de iCloud Mail";
+
+/* No comment provided by engineer. */
+"Open in New Window" = "Abrir en una ventana nueva";
 
 /* No comment provided by engineer. */
 "Open Links" = "Abrir enlaces";
@@ -2966,6 +2972,9 @@
 "When" = "Cuándo";
 
 /* No comment provided by engineer. */
+"When a store emails that a package is out for delivery, Corres shows it on the Lock Screen until it arrives. An email waiting in Send Later shows there in its last hours too." = "Cuando una tienda avisa de que un paquete está en reparto, Corres lo muestra en la pantalla bloqueada hasta que llega. Un correo en Enviar más tarde también aparece allí en sus últimas horas.";
+
+/* No comment provided by engineer. */
 "When an email" = "Cuando un correo";
 
 /* No comment provided by engineer. */
@@ -3141,6 +3150,9 @@
 
 /* No comment provided by engineer. */
 "Your password stays in this %@'s Keychain. Your mail goes from your provider straight to this %@." = "Tu contraseña se queda en el llavero de este %@. Tu correo va de tu proveedor directo a este %@.";
+
+/* No comment provided by engineer. */
+"your recipient" = "tu destinatario";
 
 /* No comment provided by engineer. */
 "Your sample conversations couldn't be opened." = "No se pudieron abrir tus conversaciones de ejemplo.";

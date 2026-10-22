@@ -854,6 +854,9 @@
 "Delivered" = "已送达";
 
 /* No comment provided by engineer. */
+"Deliveries on the Lock Screen" = "在锁定屏幕上显示派送";
+
+/* No comment provided by engineer. */
 "Delivery problem" = "配送问题";
 
 /* No comment provided by engineer. */
@@ -1905,6 +1908,9 @@
 
 /* No comment provided by engineer. */
 "Open iCloud Mail Settings" = "打开 iCloud 邮件设置";
+
+/* No comment provided by engineer. */
+"Open in New Window" = "在新窗口中打开";
 
 /* No comment provided by engineer. */
 "Open Links" = "打开链接";
@@ -2966,6 +2972,9 @@
 "When" = "时间";
 
 /* No comment provided by engineer. */
+"When a store emails that a package is out for delivery, Corres shows it on the Lock Screen until it arrives. An email waiting in Send Later shows there in its last hours too." = "当商家发邮件说包裹正在派送时，Corres 会在锁定屏幕上显示，直到送达。稍后发送的邮件在发送前的几个小时也会显示在那里。";
+
+/* No comment provided by engineer. */
 "When an email" = "当邮件的";
 
 /* No comment provided by engineer. */
@@ -3141,6 +3150,9 @@
 
 /* No comment provided by engineer. */
 "Your password stays in this %@'s Keychain. Your mail goes from your provider straight to this %@." = "你的密码保存在这台%@的钥匙串中。你的邮件从服务商直接传到这台%@。";
+
+/* No comment provided by engineer. */
+"your recipient" = "收件人";
 
 /* No comment provided by engineer. */
 "Your sample conversations couldn't be opened." = "无法打开你的示例对话。";

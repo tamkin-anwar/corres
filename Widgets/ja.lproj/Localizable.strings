@@ -2,6 +2,9 @@
 "%lld %@" = "%lld %@";
 
 /* No comment provided by engineer. */
+"At %@" = "%@に送信";
+
+/* No comment provided by engineer. */
 "Conversation" = "会話";
 
 /* No comment provided by engineer. */
@@ -9,6 +12,9 @@
 
 /* No comment provided by engineer. */
 "Corres Pro" = "Corres Pro";
+
+/* No comment provided by engineer. */
+"Delivered" = "配達済み";
 
 /* No comment provided by engineer. */
 "Mark as Handled" = "対応済みにする";
@@ -29,13 +35,25 @@
 "Open Needs You in Corres." = "Corresで「要対応」を開きます。";
 
 /* No comment provided by engineer. */
+"Out for delivery today" = "本日お届け予定";
+
+/* No comment provided by engineer. */
 "SAMPLE" = "サンプル";
+
+/* No comment provided by engineer. */
+"Send Later" = "あとで送信";
+
+/* No comment provided by engineer. */
+"Sending to %@" = "%@に送信予定";
 
 /* No comment provided by engineer. */
 "Start a new email in Corres." = "Corresで新規メールを書きます。";
 
 /* No comment provided by engineer. */
 "The conversations that ask something of you, with the reason for each." = "あなたに何かを求める会話と、それぞれの理由。";
+
+/* No comment provided by engineer. */
+"To %@ at %@" = "%1$@へ %2$@に送信";
 
 /* No comment provided by engineer. */
 "Waiting" = "返信待ち";

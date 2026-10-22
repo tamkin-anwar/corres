@@ -2,6 +2,9 @@
 "%lld %@" = "%lld %@";
 
 /* No comment provided by engineer. */
+"At %@" = "%@发送";
+
+/* No comment provided by engineer. */
 "Conversation" = "对话";
 
 /* No comment provided by engineer. */
@@ -9,6 +12,9 @@
 
 /* No comment provided by engineer. */
 "Corres Pro" = "Corres Pro";
+
+/* No comment provided by engineer. */
+"Delivered" = "已送达";
 
 /* No comment provided by engineer. */
 "Mark as Handled" = "标记为已处理";
@@ -29,13 +35,25 @@
 "Open Needs You in Corres." = "在 Corres 中打开“需要你”。";
 
 /* No comment provided by engineer. */
+"Out for delivery today" = "今日派送中";
+
+/* No comment provided by engineer. */
 "SAMPLE" = "示例";
+
+/* No comment provided by engineer. */
+"Send Later" = "稍后发送";
+
+/* No comment provided by engineer. */
+"Sending to %@" = "即将发送给%@";
 
 /* No comment provided by engineer. */
 "Start a new email in Corres." = "在 Corres 中新建邮件。";
 
 /* No comment provided by engineer. */
 "The conversations that ask something of you, with the reason for each." = "需要你回应的对话，以及各自的原因。";
+
+/* No comment provided by engineer. */
+"To %@ at %@" = "%2$@发送给%1$@";
 
 /* No comment provided by engineer. */
 "Waiting" = "等待中";

@@ -2,6 +2,9 @@
 "%lld %@" = "%lld %@";
 
 /* No comment provided by engineer. */
+"At %@" = "À %@";
+
+/* No comment provided by engineer. */
 "Conversation" = "Conversation";
 
 /* No comment provided by engineer. */
@@ -9,6 +12,9 @@
 
 /* No comment provided by engineer. */
 "Corres Pro" = "Corres Pro";
+
+/* No comment provided by engineer. */
+"Delivered" = "Livré";
 
 /* No comment provided by engineer. */
 "Mark as Handled" = "Marquer comme traité";
@@ -29,13 +35,25 @@
 "Open Needs You in Corres." = "Ouvrir Pour vous dans Corres.";
 
 /* No comment provided by engineer. */
+"Out for delivery today" = "En livraison aujourd’hui";
+
+/* No comment provided by engineer. */
 "SAMPLE" = "EXEMPLE";
+
+/* No comment provided by engineer. */
+"Send Later" = "Envoyer plus tard";
+
+/* No comment provided by engineer. */
+"Sending to %@" = "Envoi à %@";
 
 /* No comment provided by engineer. */
 "Start a new email in Corres." = "Commencer un nouvel e-mail dans Corres.";
 
 /* No comment provided by engineer. */
 "The conversations that ask something of you, with the reason for each." = "Les conversations qui vous demandent quelque chose, avec la raison pour chacune.";
+
+/* No comment provided by engineer. */
+"To %@ at %@" = "À %1$@ à %2$@";
 
 /* No comment provided by engineer. */
 "Waiting" = "En attente";

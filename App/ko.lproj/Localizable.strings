@@ -854,6 +854,9 @@
 "Delivered" = "배달됨";
 
 /* No comment provided by engineer. */
+"Deliveries on the Lock Screen" = "잠금 화면에 배송 표시";
+
+/* No comment provided by engineer. */
 "Delivery problem" = "배송 문제";
 
 /* No comment provided by engineer. */
@@ -1905,6 +1908,9 @@
 
 /* No comment provided by engineer. */
 "Open iCloud Mail Settings" = "iCloud 메일 설정 열기";
+
+/* No comment provided by engineer. */
+"Open in New Window" = "새로운 윈도우에서 열기";
 
 /* No comment provided by engineer. */
 "Open Links" = "링크 열기";
@@ -2966,6 +2972,9 @@
 "When" = "시간";
 
 /* No comment provided by engineer. */
+"When a store emails that a package is out for delivery, Corres shows it on the Lock Screen until it arrives. An email waiting in Send Later shows there in its last hours too." = "매장에서 택배가 배송 중이라는 이메일이 오면, 도착할 때까지 잠금 화면에 표시합니다. 나중에 보내기 이메일도 보내기 전 몇 시간 동안 표시됩니다.";
+
+/* No comment provided by engineer. */
 "When an email" = "메일의";
 
 /* No comment provided by engineer. */
@@ -3141,6 +3150,9 @@
 
 /* No comment provided by engineer. */
 "Your password stays in this %@'s Keychain. Your mail goes from your provider straight to this %@." = "암호는 이 %@의 키체인에 보관됩니다. 메일은 제공업체에서 이 %@로 바로 전달됩니다.";
+
+/* No comment provided by engineer. */
+"your recipient" = "받는 사람";
 
 /* No comment provided by engineer. */
 "Your sample conversations couldn't be opened." = "샘플 대화를 열 수 없습니다.";

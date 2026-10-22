@@ -854,6 +854,9 @@
 "Delivered" = "পৌঁছেছে";
 
 /* No comment provided by engineer. */
+"Deliveries on the Lock Screen" = "লক স্ক্রিনে ডেলিভারি";
+
+/* No comment provided by engineer. */
 "Delivery problem" = "ডেলিভারিতে সমস্যা";
 
 /* No comment provided by engineer. */
@@ -1905,6 +1908,9 @@
 
 /* No comment provided by engineer. */
 "Open iCloud Mail Settings" = "iCloud মেইলের সেটিংস খুলুন";
+
+/* No comment provided by engineer. */
+"Open in New Window" = "নতুন উইন্ডোতে খুলুন";
 
 /* No comment provided by engineer. */
 "Open Links" = "লিংক খোলা";
@@ -2966,6 +2972,9 @@
 "When" = "কখন";
 
 /* No comment provided by engineer. */
+"When a store emails that a package is out for delivery, Corres shows it on the Lock Screen until it arrives. An email waiting in Send Later shows there in its last hours too." = "কোনো দোকান যখন জানায় প্যাকেজ ডেলিভারির পথে, Corres তা পৌঁছানো পর্যন্ত লক স্ক্রিনে দেখায়। পরে পাঠানোর ইমেইলও পাঠানোর আগের কয়েক ঘণ্টা সেখানে দেখায়।";
+
+/* No comment provided by engineer. */
 "When an email" = "যখন কোনো ইমেইল";
 
 /* No comment provided by engineer. */
@@ -3141,6 +3150,9 @@
 
 /* No comment provided by engineer. */
 "Your password stays in this %@'s Keychain. Your mail goes from your provider straight to this %@." = "আপনার পাসওয়ার্ড এই %@-এর কিচেইনে থাকে। আপনার মেইল আপনার সেবা থেকে সরাসরি এই %@-এ আসে।";
+
+/* No comment provided by engineer. */
+"your recipient" = "আপনার প্রাপক";
 
 /* No comment provided by engineer. */
 "Your sample conversations couldn't be opened." = "আপনার নমুনা কথোপকথন খোলা যায়নি।";

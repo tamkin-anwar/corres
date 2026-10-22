@@ -119,6 +119,7 @@ struct CorresApp: App {
                     SpotlightIndex.shared.scheduleUpdate { [store = appDelegate.store] in store.searchableThreads }
                     WidgetBridge.scheduleUpdate { [store = appDelegate.store] in store.threads }
                     LiveActivities.syncDeliveries(appDelegate.store.threads)
+                    WatchBridge.shared.scheduleUpdate { [store = appDelegate.store] in store.threads }
                 }
                 // Live Activities can only start while Corres is open.
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in

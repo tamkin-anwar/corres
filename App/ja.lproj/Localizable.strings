@@ -854,6 +854,9 @@
 "Delivered" = "配達済み";
 
 /* No comment provided by engineer. */
+"Deliveries on the Lock Screen" = "ロック画面に配達状況を表示";
+
+/* No comment provided by engineer. */
 "Delivery problem" = "配達の問題";
 
 /* No comment provided by engineer. */
@@ -1905,6 +1908,9 @@
 
 /* No comment provided by engineer. */
 "Open iCloud Mail Settings" = "iCloudメールの設定を開く";
+
+/* No comment provided by engineer. */
+"Open in New Window" = "新規ウインドウで開く";
 
 /* No comment provided by engineer. */
 "Open Links" = "リンクの開き方";
@@ -2966,6 +2972,9 @@
 "When" = "日時";
 
 /* No comment provided by engineer. */
+"When a store emails that a package is out for delivery, Corres shows it on the Lock Screen until it arrives. An email waiting in Send Later shows there in its last hours too." = "お店から荷物が配達中というメールが届くと、届くまでロック画面に表示します。あとで送信のメールも、送信前の数時間はロック画面に表示されます。";
+
+/* No comment provided by engineer. */
 "When an email" = "メールの";
 
 /* No comment provided by engineer. */
@@ -3141,6 +3150,9 @@
 
 /* No comment provided by engineer. */
 "Your password stays in this %@'s Keychain. Your mail goes from your provider straight to this %@." = "パスワードはこの%@のキーチェーンに保存されます。メールはプロバイダからこの%@に直接届きます。";
+
+/* No comment provided by engineer. */
+"your recipient" = "宛先の相手";
 
 /* No comment provided by engineer. */
 "Your sample conversations couldn't be opened." = "サンプルの会話を開けませんでした。";

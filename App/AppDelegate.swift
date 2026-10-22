@@ -96,6 +96,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         CorresTips.start()
+        WatchBridge.shared.start()
         HangReporter.shared.start()
         HangReporter.step("app started")
         CloudSync.shared.start(store: store)

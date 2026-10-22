@@ -3,6 +3,7 @@
 target don't have to go through Xcode's UI.
 
     Scripts/pbxtool.py add-mac-target
+    Scripts/pbxtool.py add-watch-app
     Scripts/pbxtool.py add-sources <TargetName> <path> [<path> ...]
     Scripts/pbxtool.py remove-sources <TargetName> <path> [<path> ...]
     Scripts/pbxtool.py add-resources <TargetName> <path> [<path> ...]
@@ -291,6 +292,88 @@ def add_mac_widgets(text: str) -> str:
     return text
 
 
+def add_watch_app(text: str) -> str:
+    """Corres for Apple Watch: a watchOS app embedded in the iPhone app,
+    talking to it through WatchConnectivity."""
+    name = "CorresWatch"
+    if f"/* {name} */ = {{\n\t\t\tisa = PBXNativeTarget;" in text:
+        return text
+    phone = target_id(text, "Corres")
+    target, product = uid("target", name), uid("product", name)
+    sources, frameworks, resources = uid("sources", name), uid("frameworks", name), uid("resources", name)
+    config_list, debug, release = uid("configlist", name), uid("debug", name), uid("release", name)
+    embed_phase, embed_file = uid("embed", name), uid("embedfile", name)
+    proxy, dependency = uid("proxy", name), uid("dependency", name)
+
+    text = insert_in_section(text, "PBXFileReference",
+        f"\t\t{product} /* {name}.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = {name}.app; sourceTree = BUILT_PRODUCTS_DIR; }};\n")
+    text = append_to_list(text, "0A3E27B8CA818264D75C8D81 /* Products */ =", "children", f"{product} /* {name}.app */")
+    for phase, isa, label in [(sources, "PBXSourcesBuildPhase", "Sources"), (frameworks, "PBXFrameworksBuildPhase", "Frameworks"),
+                              (resources, "PBXResourcesBuildPhase", "Resources")]:
+        text = insert_in_section(text, isa,
+            f"\t\t{phase} /* {label} */ = {{\n\t\t\tisa = {isa};\n\t\t\tbuildActionMask = 2147483647;\n"
+            f"\t\t\tfiles = (\n\t\t\t);\n\t\t\trunOnlyForDeploymentPostprocessing = 0;\n\t\t}};\n")
+    text = insert_in_section(text, "PBXNativeTarget",
+        f"\t\t{target} /* {name} */ = {{\n\t\t\tisa = PBXNativeTarget;\n"
+        f"\t\t\tbuildConfigurationList = {config_list} /* Build configuration list for PBXNativeTarget \"{name}\" */;\n"
+        f"\t\t\tbuildPhases = (\n\t\t\t\t{sources} /* Sources */,\n\t\t\t\t{frameworks} /* Frameworks */,\n\t\t\t\t{resources} /* Resources */,\n\t\t\t);\n"
+        f"\t\t\tbuildRules = (\n\t\t\t);\n\t\t\tdependencies = (\n\t\t\t);\n\t\t\tname = {name};\n"
+        f"\t\t\tproductName = {name};\n\t\t\tproductReference = {product} /* {name}.app */;\n"
+        f"\t\t\tproductType = \"com.apple.product-type.application\";\n\t\t}};\n")
+    text = append_to_list(text, "244210E48437B6556980A702 /* Project object */ =", "targets", f"{target} /* {name} */")
+
+    # Built before, and embedded in, the iPhone app.
+    text = insert_in_section(text, "PBXContainerItemProxy",
+        f"\t\t{proxy} /* PBXContainerItemProxy */ = {{\n\t\t\tisa = PBXContainerItemProxy;\n"
+        f"\t\t\tcontainerPortal = 244210E48437B6556980A702 /* Project object */;\n\t\t\tproxyType = 1;\n"
+        f"\t\t\tremoteGlobalIDString = {target};\n\t\t\tremoteInfo = {name};\n\t\t}};\n")
+    text = insert_in_section(text, "PBXTargetDependency",
+        f"\t\t{dependency} /* PBXTargetDependency */ = {{\n\t\t\tisa = PBXTargetDependency;\n"
+        f"\t\t\ttarget = {target} /* {name} */;\n\t\t\ttargetProxy = {proxy} /* PBXContainerItemProxy */;\n\t\t}};\n")
+    text = append_to_list(text, f"{phone} /* Corres */ =", "dependencies", f"{dependency} /* PBXTargetDependency */")
+    text = insert_in_section(text, "PBXBuildFile",
+        f"\t\t{embed_file} /* {name}.app in Embed Watch Content */ = {{isa = PBXBuildFile; fileRef = {product} /* {name}.app */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};\n")
+    text = insert_in_section(text, "PBXCopyFilesBuildPhase",
+        f"\t\t{embed_phase} /* Embed Watch Content */ = {{\n\t\t\tisa = PBXCopyFilesBuildPhase;\n\t\t\tbuildActionMask = 2147483647;\n"
+        f"\t\t\tdstPath = \"$(CONTENTS_FOLDER_PATH)/Watch\";\n\t\t\tdstSubfolderSpec = 16;\n"
+        f"\t\t\tfiles = (\n\t\t\t\t{embed_file} /* {name}.app in Embed Watch Content */,\n\t\t\t);\n"
+        f"\t\t\tname = \"Embed Watch Content\";\n\t\t\trunOnlyForDeploymentPostprocessing = 0;\n\t\t}};\n")
+    text = append_to_list(text, f"{phone} /* Corres */ =", "buildPhases", f"{embed_phase} /* Embed Watch Content */")
+
+    current = re.search(r"CURRENT_PROJECT_VERSION = (\d+);", text).group(1)
+    common = {
+        "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
+        "CODE_SIGN_STYLE": "Automatic",
+        "CURRENT_PROJECT_VERSION": current,
+        "DEVELOPMENT_TEAM": TEAM,
+        "GENERATE_INFOPLIST_FILE": "YES",
+        "INFOPLIST_KEY_CFBundleDisplayName": "Corres",
+        "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption": "NO",
+        "INFOPLIST_KEY_UISupportedInterfaceOrientations": '"UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"',
+        "INFOPLIST_KEY_WKCompanionAppBundleIdentifier": "studio.anwarcreative.corres",
+        "INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp": "NO",
+        "LD_RUNPATH_SEARCH_PATHS": ['"$(inherited)"', '"@executable_path/Frameworks"'],
+        "MARKETING_VERSION": "0.2.0",
+        "PRODUCT_BUNDLE_IDENTIFIER": "studio.anwarcreative.corres.watchkitapp",
+        "PRODUCT_NAME": name,
+        "SDKROOT": "watchos",
+        "SKIP_INSTALL": "YES",
+        "SWIFT_EMIT_LOC_STRINGS": "YES",
+        "TARGETED_DEVICE_FAMILY": "4",
+        "WATCHOS_DEPLOYMENT_TARGET": "10.0",
+    }
+    debug_settings = dict(common, ONLY_ACTIVE_ARCH="YES", SWIFT_ACTIVE_COMPILATION_CONDITIONS='"DEBUG $(inherited)"', SWIFT_OPTIMIZATION_LEVEL='"-Onone"')
+    release_settings = dict(common, SWIFT_OPTIMIZATION_LEVEL='"-O"')
+    text = insert_in_section(text, "XCBuildConfiguration",
+        f"\t\t{debug} /* Debug */ = {{\n\t\t\tisa = XCBuildConfiguration;\n\t\t\tbuildSettings = {{\n{settings(debug_settings)}\n\t\t\t}};\n\t\t\tname = Debug;\n\t\t}};\n"
+        f"\t\t{release} /* Release */ = {{\n\t\t\tisa = XCBuildConfiguration;\n\t\t\tbuildSettings = {{\n{settings(release_settings)}\n\t\t\t}};\n\t\t\tname = Release;\n\t\t}};\n")
+    text = insert_in_section(text, "XCConfigurationList",
+        f"\t\t{config_list} /* Build configuration list for PBXNativeTarget \"{name}\" */ = {{\n\t\t\tisa = XCConfigurationList;\n"
+        f"\t\t\tbuildConfigurations = (\n\t\t\t\t{debug} /* Debug */,\n\t\t\t\t{release} /* Release */,\n\t\t\t);\n"
+        f"\t\t\tdefaultConfigurationIsVisible = 0;\n\t\t\tdefaultConfigurationName = Release;\n\t\t}};\n")
+    return text
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         sys.exit(__doc__)
@@ -300,6 +383,8 @@ def main() -> None:
         text = add_mac_target(text)
     elif command == "add-mac-widgets":
         text = add_mac_widgets(text)
+    elif command == "add-watch-app":
+        text = add_watch_app(text)
     elif command == "add-sources":
         text = add_sources(text, args[0], args[1:])
     elif command == "add-resources":

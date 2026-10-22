@@ -2,6 +2,9 @@
 "%lld %@" = "%lld %@";
 
 /* No comment provided by engineer. */
+"At %@" = "%@-এ";
+
+/* No comment provided by engineer. */
 "Conversation" = "কথোপকথন";
 
 /* No comment provided by engineer. */
@@ -9,6 +12,9 @@
 
 /* No comment provided by engineer. */
 "Corres Pro" = "Corres Pro";
+
+/* No comment provided by engineer. */
+"Delivered" = "পৌঁছেছে";
 
 /* No comment provided by engineer. */
 "Mark as Handled" = "সম্পন্ন চিহ্নিত করুন";
@@ -29,13 +35,25 @@
 "Open Needs You in Corres." = "Corres-এ আপনার করণীয় খুলুন।";
 
 /* No comment provided by engineer. */
+"Out for delivery today" = "আজ ডেলিভারির পথে";
+
+/* No comment provided by engineer. */
 "SAMPLE" = "নমুনা";
+
+/* No comment provided by engineer. */
+"Send Later" = "পরে পাঠান";
+
+/* No comment provided by engineer. */
+"Sending to %@" = "%@-কে পাঠানো হচ্ছে";
 
 /* No comment provided by engineer. */
 "Start a new email in Corres." = "Corres-এ নতুন ইমেইল শুরু করুন।";
 
 /* No comment provided by engineer. */
 "The conversations that ask something of you, with the reason for each." = "যেসব কথোপকথন আপনার কাছে কিছু চায়, প্রতিটির কারণসহ।";
+
+/* No comment provided by engineer. */
+"To %@ at %@" = "%2$@-এ %1$@-কে";
 
 /* No comment provided by engineer. */
 "Waiting" = "অপেক্ষায়";
