@@ -60,3 +60,27 @@ Fixed
 - Corres no longer quits when you leave it while iCloud mail is being checked.
 - When Gmail asks apps to slow down, Corres waits and catches up instead of showing a sync error.
 - Words fit everywhere: "All Inboxes" at the top, labels and empty screens no longer end in "…". Select is now a checkmark button.
+
+## Mac build 24, for Early Access (their first Mac build)
+
+Corres for Mac
+
+This is the first Mac build for Early Access. It uses the same accounts as your iPhone, and your choices follow you through iCloud.
+
+What's in it
+- Labels and folders in the sidebar. Drag conversations onto one to file them.
+- Send Later, with its own mailbox to change the time, send now or edit.
+- Unread Only in the toolbar, or press Command-L. Search shows the best matches first.
+- Rules, templates, muted conversations, Purchases and Attachments mailboxes, and saved searches.
+- Press Command-K to go anywhere or do anything. Press ? to see every shortcut.
+- Notifications with Archive, Mark as Read and Reply. Needs You in the menu bar, and Needs You and Waiting widgets for the desktop.
+- Attachments open in Quick Look. Print with Command-P. Handoff with your iPhone.
+- Nine languages, now including Bengali.
+- A new glass app icon, and company logos beside companies' mail, fetched by Corres's server so companies never see you. Turn them off in Settings > General.
+
+Please try
+- Opening Corres and how quickly your mail appears.
+- Filing mail by dragging it to a label, and Command-K.
+- A notification for new mail, and replying from it.
+
+If anything goes wrong, send feedback from the TestFlight app.
