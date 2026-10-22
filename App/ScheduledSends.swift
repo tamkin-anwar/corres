@@ -178,6 +178,10 @@ final class ScheduledSends {
     }
 
     private func save() {
+        #if os(iOS)
+        // Its last eight hours, on the Lock Screen (see LiveActivities).
+        LiveActivities.syncSendLater(items)
+        #endif
         guard let data = try? JSONEncoder().encode(items) else { return }
         try? FileManager.default.createDirectory(at: URL.applicationSupportDirectory, withIntermediateDirectories: true)
         try? data.write(to: Self.fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])

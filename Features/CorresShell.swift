@@ -115,7 +115,8 @@ struct CorresShell: View {
 
     /// Acts on a widget tap, Siri/Shortcuts action or `corres://` link.
     private func handle(_ target: AppRouter.Target?) {
-        guard let target else { return }
+        // With two windows open, the first to take a request acts on it.
+        guard let target, router.pending == target else { return }
         // Opened cold (from Search or a notification): the mail isn't
         // loaded yet, so the conversation waits until it is.
         if case .thread = target, store.state == .idle || store.state == .loading { return }

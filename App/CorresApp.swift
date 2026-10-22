@@ -118,6 +118,15 @@ struct CorresApp: App {
                 .onChange(of: appDelegate.store.revision) {
                     SpotlightIndex.shared.scheduleUpdate { [store = appDelegate.store] in store.searchableThreads }
                     WidgetBridge.scheduleUpdate { [store = appDelegate.store] in store.threads }
+                    LiveActivities.syncDeliveries(appDelegate.store.threads)
+                }
+                // Live Activities can only start while Corres is open.
+                .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                    LiveActivities.syncSendLater(ScheduledSends.shared.items)
+                    LiveActivities.syncDeliveries(appDelegate.store.threads)
+                    #if DEBUG
+                    LiveActivities.demo()
+                    #endif
                 }
                 // Removing the last account forgets who you correspond with.
                 .onChange(of: appDelegate.auth.accounts.isEmpty) { _, isEmpty in
@@ -127,6 +136,15 @@ struct CorresApp: App {
                     WidgetBridge.isLocked = !isPro
                     WidgetBridge.update(from: appDelegate.store.threads)
                 }
+        }
+        // iPad: a conversation in a window of its own, beside your mail
+        // (press and hold a conversation, then Open in New Window).
+        WindowGroup("Conversation", id: ConversationWindow.id, for: ThreadID.self) { $id in
+            if let id {
+                ConversationWindow(id: id, appDelegate: appDelegate)
+                    .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
+                    .tint(CorresPalette.accent)
+            }
         }
         // iPad's menu bar and ⌘ shortcuts list: where to go. A
         // conversation's own commands (Reply, Archive, Next) come from it.
@@ -166,5 +184,29 @@ enum Appearance: String, CaseIterable, Identifiable {
     }
     var colorScheme: ColorScheme? {
         switch self { case .system: nil; case .light: .light; case .dark: .dark }
+    }
+}
+
+/// One conversation in its own iPad window, with everything the main
+/// window gives a conversation.
+struct ConversationWindow: View {
+    static let id = "conversation"
+    let id: ThreadID
+    let appDelegate: AppDelegate
+
+    var body: some View {
+        let delegate = appDelegate
+        let connected = !delegate.auth.accounts.isEmpty || delegate.store.threads.contains { $0.id.account != "sample" }
+        NavigationStack {
+            ConversationView(store: delegate.store, outbox: delegate.outbox, threadActions: delegate.threadActions,
+                             labelDirectory: delegate.labelDirectory, unsubscribeService: delegate.unsubscribeService,
+                             route: ConversationRoute(id: id, orderedIDs: [id]))
+        }
+        .environment(delegate.mailIntelligence)
+        .environment(delegate.router)
+        .environment(delegate.askService)
+        .environment(delegate.entitlements)
+        .environment(delegate.people)
+        .environment(\.proUnlocked, !connected || delegate.entitlements.isProForDisplay)
     }
 }

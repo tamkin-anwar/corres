@@ -7,6 +7,8 @@ struct CorresWidgets: WidgetBundle {
         NeedsYouWidget()
         WaitingWidget()
         #if os(iOS)
+        SendLaterLiveActivity()
+        DeliveryLiveActivity()
         if #available(iOS 18.0, *) {
             ComposeControl()
             NeedsYouControl()

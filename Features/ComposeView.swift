@@ -346,6 +346,11 @@ struct ComposeView: View {
             .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
                 if case .success(let urls) = result { addFiles(urls) }
             }
+            // iPad: drop files or photos anywhere on the email to attach them.
+            .dropDestination(for: DroppedFile.self) { files, _ in
+                for file in files { addAttachment(filename: file.filename, mimeType: file.mimeType, data: file.data) }
+                return !files.isEmpty
+            }
             .alert("Couldn't Attach File", isPresented: Binding(
                 get: { attachmentError != nil },
                 set: { if !$0 { attachmentError = nil } }

@@ -113,7 +113,8 @@ struct MacMainView: View {
         .task { await showForScreenshot() }
         #endif
         .onChange(of: services.router.pending, initial: true) { _, target in
-            guard let target else { return }
+            // With two windows open, the first to take a request acts on it.
+            guard let target, services.router.pending == target else { return }
             services.router.pending = nil
             switch target {
             case .thread(let id):

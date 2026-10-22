@@ -417,6 +417,8 @@ struct CorrespondenceList: View {
     }
 
     @Environment(AppRouter.self) private var router
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
     @AppStorage(CorresSettings.confirmTrashKey) private var confirmTrash = false
     @State private var confirmingTrash: Correspondence?
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatarsInList = true
@@ -1154,6 +1156,8 @@ struct CorrespondenceList: View {
                 }
             }
             .contextMenu { if !isSelecting { rowMenu(for: thread) } }
+            // iPad: drag a conversation into Notes, Reminders or a message.
+            .modifier(ConversationDragging(thread: thread, enabled: sizeClass == .regular && !isSelecting))
             .disabled(store.pending.contains(thread.id))
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.visible)
@@ -1207,6 +1211,14 @@ struct CorrespondenceList: View {
     /// automatic passes never move it back (see ADR 002).
     @ViewBuilder
     private func rowMenu(for thread: Correspondence) -> some View {
+        // iPad: beside your mail, in a window of its own.
+        if supportsMultipleWindows && sizeClass == .regular {
+            Button {
+                openWindow(id: ConversationWindow.id, value: thread.id)
+            } label: {
+                Label("Open in New Window", systemImage: "macwindow.badge.plus")
+            }
+        }
         // Mail's "Select": starts Select with this conversation checked.
         Button {
             isSelecting = true
@@ -1386,5 +1398,20 @@ private struct BannerRoom: View {
     let threadActions: ThreadActionService
     var body: some View {
         Color.clear.frame(height: threadActions.pendingRemoval == nil && threadActions.lastChange == nil ? 0 : 56)
+    }
+}
+
+/// On iPad, a row can be dragged out as a link to the conversation. Off on
+/// iPhone, where a long press is for the menu and swipes come first.
+private struct ConversationDragging: ViewModifier {
+    let thread: Correspondence
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        if enabled, let link = MailReminders.link(to: thread.id) {
+            content.draggable(ConversationDrag(sender: thread.sender, subject: thread.subject, link: link))
+        } else {
+            content
+        }
     }
 }

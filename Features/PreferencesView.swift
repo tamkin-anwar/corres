@@ -1319,6 +1319,7 @@ private struct SwipeSettingsView: View {
 // MARK: - Notifications
 
 private struct NotificationSettingsView: View {
+    @AppStorage(LiveActivities.deliveriesKey) private var deliveryActivities = true
     var auth: GoogleAuthService
     @Bindable var pushService: PushNotificationService
     @AppStorage(PushNotificationService.Level.key) private var level = PushNotificationService.Level.current.rawValue
@@ -1394,6 +1395,11 @@ private struct NotificationSettingsView: View {
                     Text("Someone's first email waits in New Senders until you allow them. These still notify, marked \u{201C}New sender\u{201D}, and you can allow or block them right from the email. Blocked senders never notify.")
                 }
                 }
+            }
+            Section {
+                Toggle("Deliveries on the Lock Screen", isOn: $deliveryActivities)
+            } footer: {
+                Text("When a store emails that a package is out for delivery, Corres shows it on the Lock Screen until it arrives. An email waiting in Send Later shows there in its last hours too.")
             }
             Section {
                 Picker("App Icon Badge", selection: $badge) {
