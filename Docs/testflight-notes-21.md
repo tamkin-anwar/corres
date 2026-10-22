@@ -87,35 +87,39 @@ If anything goes wrong, send feedback from the TestFlight app.
 
 ## Build 25 (iPhone and iPad)
 
-New
-- Suggested replies now sound like you: your usual greeting, sign-off and length, learned from email you've sent, for each person you write to often. See what it learned, or turn it off, in Settings > Composing.
-- Siri can write, change, save and send emails in Corres, and search your mail. Try "Write an email to Maya in Corres", then "Send it". Sending always asks first.
-- Add to Reminders: in an email's ⋯ menu, choose This Evening, Tomorrow Morning, when it's due, or no date. The reminder links back to the email.
-- On someone's card (tap their name in an email): Archive All or Move All to Trash from them.
-- Live Activities: an email in Send Later counts down on the Lock Screen and in the Dynamic Island in its last hours, and a package a store says is out for delivery today shows until it arrives. Turn deliveries off in Settings > Notifications.
-- Corres on Apple Watch: Needs You and Waiting, the start of each email, and Reply by voice, Scribble or a ready answer, plus Handled and Archive. If it isn't on your Watch, install it from the Watch app on your iPhone.
-- iPad: press and hold a conversation and choose Open in New Window. Drop files or photos onto an email to attach them, and drag a conversation into Notes or Reminders.
-- VoiceOver now hears Archive, Undo and Sending as they happen, Undo stays up longer while it's on, and the rotor has Unread, Flagged and Messages. Voice Control understands "Tap Delete" and "Tap Compose". Better layouts at the largest text sizes.
+The big ones
+- Corres is on Apple Watch. See what needs you, read the start of each email, and reply by voice, Scribble or a quick answer. Handled and Archive are there too. Not on your Watch yet? Open the Watch app on your iPhone and install it.
+- Siri writes for you. Say "Write an email to Maya in Corres", change it by voice, then "Send it". Corres always asks before sending. Siri can search your mail in Corres too.
+- Replies that sound like you. Suggested replies now use your own greeting, sign-off and length, learned on your iPhone from email you've sent. See what it learned in Settings > Composing.
+
+Also new
+- Remind Me: tap ⋯ on any email, then Add to Reminders, for this evening, tomorrow morning, when it's due, or no date. The reminder opens the email.
+- On the Lock Screen: an email in Send Later counts down in its last hours, and a package out for delivery today stays until it arrives. Turn deliveries off in Settings > Notifications.
+- Tap a sender's name to Archive All or Move All to Trash from them.
+- iPad: press and hold a conversation, then Open in New Window. Drop files or photos onto an email to attach them.
+- VoiceOver says what just happened, and Undo waits longer for you. The rotor jumps to Unread, Flagged and each message. Voice Control knows "Tap Delete" and "Tap Compose".
 
 Fixed
 - Previews no longer show "&zwnj;", "[cid:image…]" or rows of dashes.
-- Corres opens faster: your mail starts loading while the screen is drawn.
+- Corres opens faster.
 - A rare crash when Corres stopped checking iCloud mail.
 
 Please try
-- Siri: "Write an email to [someone] in Corres", then "Send it".
-- Replying from your Watch.
-- Add to Reminders on an email.
+1. Siri: "Write an email to [someone] in Corres", then "Send it".
+2. Reply to something from your Watch.
+3. Add an email to Reminders, then tap the link in the reminder.
 
-If anything goes wrong, send it from Settings > Send Diagnostics.
+Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
 
 ## Mac build 26
 
-New
-- Get New Mail is in the toolbar, and at the bottom of the sidebar next to "Updated". That spot also says when you're offline, or when an account can't sync, with Try Again.
-- After your Mac wakes or comes back online, Corres reconnects and checks for mail at once.
-- Add to Reminders: right-click an email, or Message > Add to Reminders.
-- On someone's card (click their name in an email): Archive All or Move All to Trash from them.
+The big ones
+- Get New Mail is in the toolbar, and at the bottom of the sidebar next to "Updated". That spot also tells you when you're offline, or when an account can't sync, with Try Again.
+- Your Mac reconnects and checks for mail the moment it wakes or gets back online.
+
+Also new
+- Remind Me: right-click an email, or Message > Add to Reminders.
+- Click a sender's name to Archive All or Move All to Trash from them.
 - Siri and Shortcuts can write and send email in Corres.
 - Help > Send Diagnostics shares what Corres recorded if something goes wrong. Never your mail.
 
@@ -125,6 +129,7 @@ Fixed
 - Corres opens faster.
 
 Please try
-- Get New Mail, and leaving your Mac asleep for a while, then waking it.
+1. Get New Mail from the toolbar or the sidebar.
+2. Leave your Mac asleep for a while, then wake it: new mail should arrive within seconds.
 
-If anything goes wrong, send it from Help > Send Diagnostics.
+Something off? Help > Send Diagnostics, or send feedback through TestFlight.
