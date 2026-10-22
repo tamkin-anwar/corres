@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+" · %lld unread" = " · %lld 封未读";
+
+/* No comment provided by engineer. */
 " Due %@." = " 截止%@。";
 
 /* No comment provided by engineer. */
 "·" = "·";
+
+/* No comment provided by engineer. */
+"“%@”" = "“%@”";
 
 /* No comment provided by engineer. */
 "%@" = "%@";
@@ -59,6 +65,9 @@
 "%@’s %@" = "%1$@的%2$@";
 
 /* No comment provided by engineer. */
+"%@%@ · last %@" = "%@%@ · 最近 %@";
+
+/* No comment provided by engineer. */
 "%lld" = "%lld";
 
 /* No comment provided by engineer. */
@@ -77,7 +86,13 @@
 "%lld conversations, %lld unread" = "%lld 个对话，%lld 封未读";
 
 /* No comment provided by engineer. */
+"%lld days" = "%lld 天";
+
+/* No comment provided by engineer. */
 "%lld earlier messages" = "%lld 封更早的邮件";
+
+/* No comment provided by engineer. */
+"%lld emails" = "%lld 封邮件";
 
 /* No comment provided by engineer. */
 "%lld emails need you" = "%lld 封邮件需要你";
@@ -89,13 +104,22 @@
 "%lld new messages" = "%lld 封新邮件";
 
 /* No comment provided by engineer. */
+"%lld seconds" = "%lld 秒";
+
+/* No comment provided by engineer. */
 "%lldd" = "%lld天";
 
 /* No comment provided by engineer. */
 "1 attachment" = "1 个附件";
 
 /* No comment provided by engineer. */
+"1 day" = "1 天";
+
+/* No comment provided by engineer. */
 "1 earlier message" = "1 封更早的邮件";
+
+/* No comment provided by engineer. */
+"1 email" = "1 封邮件";
 
 /* No comment provided by engineer. */
 "1 email needs you" = "1 封邮件需要你";
@@ -105,6 +129,12 @@
 
 /* No comment provided by engineer. */
 "A name, address or company, like amazon.com" = "名字、地址或公司，比如 amazon.com";
+
+/* No comment provided by engineer. */
+"A receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email." = "收据或账单的状态和金额、快递的送达日期，以及长邮件对你的要求，直接从邮件中读取。";
+
+/* No comment provided by engineer. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone by right-clicking their email in a list. Right-click a VIP here to remove them." = "VIP 的邮件总会进入“需要你”并始终通知你，即使你只是被抄送。在列表中右键点按其邮件即可添加。在这里右键点按 VIP 即可移除。";
 
 /* No comment provided by engineer. */
 "About %lld words" = "约 %lld 个字";
@@ -122,6 +152,9 @@
 "Accounts you add on your iPhone or iPad appear here on their own, through iCloud Keychain. Corres reads your mail straight from your provider on this Mac; our servers never receive it." = "你在 iPhone 或 iPad 上添加的账户会通过 iCloud 钥匙串自动出现在这里。Corres 在这台 Mac 上直接从你的服务商读取邮件；我们的服务器从不接收你的邮件。";
 
 /* No comment provided by engineer. */
+"Actual Size" = "实际大小";
+
+/* No comment provided by engineer. */
 "Add a signature" = "添加签名";
 
 /* No comment provided by engineer. */
@@ -129,6 +162,9 @@
 
 /* No comment provided by engineer. */
 "Add an Email Account" = "添加邮件账户";
+
+/* No comment provided by engineer. */
+"Add Cc and Bcc" = "添加抄送和密送";
 
 /* No comment provided by engineer. */
 "Add iCloud Mail" = "添加 iCloud 邮件";
@@ -167,10 +203,49 @@
 "All Unread" = "所有未读";
 
 /* No comment provided by engineer. */
+"Allow" = "允许";
+
+/* No comment provided by engineer. */
 "Allow %@" = "允许 %@";
 
 /* No comment provided by engineer. */
+"Allow %lld" = "允许 %lld 个";
+
+/* No comment provided by engineer. */
+"Allow %lld Senders" = "允许 %lld 位发件人";
+
+/* No comment provided by engineer. */
+"Allow 1 company?" = "允许 1 家公司？";
+
+/* No comment provided by engineer. */
+"Allow 1 person?" = "允许 1 个人？";
+
+/* No comment provided by engineer. */
+"Allow All" = "全部允许";
+
+/* No comment provided by engineer. */
+"Allow all %lld companies?" = "允许全部 %lld 家公司？";
+
+/* No comment provided by engineer. */
+"Allow all %lld people?" = "允许全部 %lld 个人？";
+
+/* No comment provided by engineer. */
+"Allow Corres to Change Out of Office" = "允许 Corres 更改自动回复";
+
+/* No comment provided by engineer. */
+"Allow Everyone from %@" = "允许来自 %@ 的所有人";
+
+/* No comment provided by engineer. */
+"Allow Sender" = "允许发件人";
+
+/* No comment provided by engineer. */
+"Allowed" = "已允许";
+
+/* No comment provided by engineer. */
 "Already read." = "已读。";
+
+/* No comment provided by engineer. */
+"Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "同时忘记 Corres 注意到的习惯：你会打开哪些列表、先读谁的邮件，以及你常用的稍后提醒时间。";
 
 /* No comment provided by engineer. */
 "Always from %@" = "始终来自 %@";
@@ -188,6 +263,9 @@
 "An address you receive at" = "你收信使用的地址";
 
 /* No comment provided by engineer. */
+"An automatic reply while you're away, sent by your email provider even with this Mac off." = "你不在时的自动回复，由你的邮件服务商发送，即使这台 Mac 已关机。";
+
+/* No comment provided by engineer. */
 "Answer" = "回答";
 
 /* No comment provided by engineer. */
@@ -201,6 +279,9 @@
 
 /* No comment provided by engineer. */
 "Appearance" = "外观";
+
+/* No comment provided by engineer. */
+"Apple doesn't let other mail apps change iCloud's automatic reply. Set it at icloud.com/mail, under Settings, then Vacation." = "Apple 不允许其他邮件 App 更改 iCloud 的自动回复。请在 icloud.com/mail 的“设置”中的“休假”里设置。";
 
 /* No comment provided by engineer. */
 "Applied to %lld conversations." = "已应用到 %lld 个对话。";
@@ -245,10 +326,19 @@
 "Asks something of you" = "向你提出了请求";
 
 /* No comment provided by engineer. */
+"Asks you" = "向你提问";
+
+/* No comment provided by engineer. */
 "Asks you something." = "向你提了问题。";
 
 /* No comment provided by engineer. */
 "Asks you to pay." = "要求你付款。";
+
+/* No comment provided by engineer. */
+"At a glance" = "一目了然";
+
+/* No comment provided by engineer. */
+"At the top of each email" = "每封邮件顶部";
 
 /* No comment provided by engineer. */
 "Attach" = "附加";
@@ -269,7 +359,19 @@
 "Automatic" = "自动";
 
 /* No comment provided by engineer. */
+"Balanced" = "均衡";
+
+/* No comment provided by engineer. */
+"Balanced: email written to you by a person; mail you're only copied on stays in Mail." = "均衡：有人写给你的邮件；你只是被抄送的邮件留在“邮件”中。";
+
+/* No comment provided by engineer. */
+"Bcc" = "密送";
+
+/* No comment provided by engineer. */
 "Beside companies' mail, the logo they publish for email, checked by its certificate. Corres's server fetches it, so the company never sees you, and is sent only the company's web address." = "在公司的邮件旁显示其为邮件发布、并经证书验证的标志。标志由 Corres 的服务器获取，公司永远看不到你，服务器也只会收到公司的网址。";
+
+/* No comment provided by engineer. */
+"Bigger" = "放大";
 
 /* No comment provided by engineer. */
 "Block" = "屏蔽";
@@ -281,7 +383,37 @@
 "Block %@?" = "屏蔽 %@？";
 
 /* No comment provided by engineer. */
+"Block %lld" = "屏蔽 %lld 个";
+
+/* No comment provided by engineer. */
+"Block %lld Senders" = "屏蔽 %lld 位发件人";
+
+/* No comment provided by engineer. */
+"Block 1 company?" = "屏蔽 1 家公司？";
+
+/* No comment provided by engineer. */
+"Block 1 person?" = "屏蔽 1 个人？";
+
+/* No comment provided by engineer. */
+"Block All" = "全部屏蔽";
+
+/* No comment provided by engineer. */
+"Block all %lld companies?" = "屏蔽全部 %lld 家公司？";
+
+/* No comment provided by engineer. */
+"Block all %lld people?" = "屏蔽全部 %lld 个人？";
+
+/* No comment provided by engineer. */
+"Block Everyone from %@" = "屏蔽来自 %@ 的所有人";
+
+/* No comment provided by engineer. */
 "Block Sender" = "屏蔽发件人";
+
+/* No comment provided by engineer. */
+"Blocked" = "已屏蔽";
+
+/* No comment provided by engineer. */
+"Blocked senders' mail stays out of every list on this Mac, and they're never told. Right-click one to allow them again." = "已屏蔽发件人的邮件不会出现在这台 Mac 的任何列表中，对方也不会收到通知。右键点按即可重新允许。";
 
 /* No comment provided by engineer. */
 "Book" = "预订";
@@ -312,6 +444,9 @@
 
 /* No comment provided by engineer. */
 "Cc %lld" = "抄送 %lld";
+
+/* No comment provided by engineer. */
+"Cc/Bcc" = "抄送/密送";
 
 /* No comment provided by engineer. */
 "Change" = "更改";
@@ -356,10 +491,19 @@
 "codes" = "验证码";
 
 /* No comment provided by engineer. */
+"Companies · %lld" = "公司 · %lld";
+
+/* No comment provided by engineer. */
 "Company logos" = "公司标志";
 
 /* No comment provided by engineer. */
+"Company Rules" = "公司规则";
+
+/* No comment provided by engineer. */
 "Complete it" = "完成";
+
+/* No comment provided by engineer. */
+"Composing" = "撰写";
 
 /* No comment provided by engineer. */
 "Confirm" = "确认";
@@ -377,10 +521,16 @@
 "Conversations" = "对话";
 
 /* No comment provided by engineer. */
+"Copy Address" = "拷贝地址";
+
+/* No comment provided by engineer. */
 "corres" = "corres";
 
 /* No comment provided by engineer. */
 "Corres" = "Corres";
+
+/* No comment provided by engineer. */
+"Corres asks them to stop, the way their own unsubscribe link does. Block also hides anything they still send." = "Corres 会像对方自己的退订链接那样请求停止发送。屏蔽还会隐藏对方之后发来的任何邮件。";
 
 /* No comment provided by engineer. */
 "Corres can't add to Reminders. You can allow it in Settings." = "Corres 无法添加到提醒事项。你可以在设置中允许。";
@@ -390,6 +540,9 @@
 
 /* No comment provided by engineer. */
 "Corres doesn't have access to Reminders. You can allow it in System Settings > Privacy & Security > Reminders." = "Corres 无权访问提醒事项。你可以在“系统设置”>“隐私与安全性”>“提醒事项”中允许。";
+
+/* No comment provided by engineer. */
+"Corres learns from your corrections, on this %@. Every lesson is listed there, and you can make it forget any of them." = "Corres 在这台%@上从你的更正中学习。每一条学到的内容都列在那里，你可以让它忘记其中任何一条。";
 
 /* No comment provided by engineer. */
 "Corres learns your greeting, sign-off and length once you've sent a few more emails." = "再发送几封邮件后，Corres 就会学会你的问候语、结束语和篇幅。";
@@ -438,6 +591,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't load the full message." = "无法载入完整邮件。";
+
+/* No comment provided by engineer. */
+"Couldn't reach %@. Check your connection." = "无法连接 %@。请检查网络连接。";
 
 /* No comment provided by engineer. */
 "Couldn't Save" = "无法存储";
@@ -518,6 +674,9 @@
 "Edit Rule" = "编辑规则";
 
 /* No comment provided by engineer. */
+"Edit Signatures…" = "编辑签名…";
+
+/* No comment provided by engineer. */
 "Edit Template" = "编辑模板";
 
 /* No comment provided by engineer. */
@@ -539,6 +698,9 @@
 "emails" = "邮件";
 
 /* No comment provided by engineer. */
+"Ends" = "结束";
+
+/* No comment provided by engineer. */
 "Every account, one inbox" = "所有账户，一个收件箱";
 
 /* No comment provided by engineer. */
@@ -551,10 +713,22 @@
 "Everyday" = "常用";
 
 /* No comment provided by engineer. */
+"Everyone who has emailed you, from mail on this Mac. Right-click a sender to block, allow, unsubscribe or make them a VIP." = "给你发过邮件的所有人，来自这台 Mac 上的邮件。右键点按发件人即可屏蔽、允许、退订或设为 VIP。";
+
+/* No comment provided by engineer. */
+"Everyone who's reached you so far has already been reviewed." = "目前联系过你的人都已审核完毕。";
+
+/* No comment provided by engineer. */
 "Everything" = "全部";
 
 /* No comment provided by engineer. */
 "Everything Else" = "其他所有邮件";
+
+/* No comment provided by engineer. */
+"Everything from People" = "来自个人的所有邮件";
+
+/* No comment provided by engineer. */
+"Everything from people: every email from a person, including ones you're copied on." = "来自个人的所有邮件：每封来自真人的邮件，包括你被抄送的邮件。";
 
 /* No comment provided by engineer. */
 "Explore Sample Mail" = "探索示例邮件";
@@ -569,6 +743,15 @@
 "Finds this event on your calendar so you can remove it. Your calendar stays on this device." = "在你的日历中找到此日程，以便你将其移除。你的日历只保留在这台设备上。";
 
 /* No comment provided by engineer. */
+"First email from %@" = "%@ 的第一封邮件";
+
+/* No comment provided by engineer. */
+"First email from them. Allow them into your inbox?" = "这是对方的第一封邮件。允许其进入你的收件箱吗？";
+
+/* No comment provided by engineer. */
+"First emails from people you haven't allowed or blocked yet." = "你还没有允许或屏蔽的人发来的第一封邮件。";
+
+/* No comment provided by engineer. */
 "Flag" = "旗标";
 
 /* No comment provided by engineer. */
@@ -578,7 +761,19 @@
 "Flagged" = "已加旗标";
 
 /* No comment provided by engineer. */
+"Focused" = "专注";
+
+/* No comment provided by engineer. */
+"Focused: only email that asks something of you, has a deadline, or is from a VIP or someone you write to." = "专注：只有向你提出请求、有截止日期，或来自 VIP 或你常联系的人的邮件。";
+
+/* No comment provided by engineer. */
 "Follow up" = "跟进";
+
+/* No comment provided by engineer. */
+"Follow up after" = "跟进时间";
+
+/* No comment provided by engineer. */
+"Forget Everything" = "全部忘记";
 
 /* No comment provided by engineer. */
 "Forward" = "转发";
@@ -606,6 +801,9 @@
 
 /* No comment provided by engineer. */
 "From a VIP." = "来自 VIP。";
+
+/* No comment provided by engineer. */
+"From how you treat each sender's mail, counted on this %@." = "根据你如何处理每位发件人的邮件，在这台%@上统计。";
 
 /* No comment provided by engineer. */
 "From your mail on this %@. Nothing about them is looked up anywhere else." = "来自你在这台%@上的邮件。不会在其他地方查询关于此人的信息。";
@@ -674,13 +872,22 @@
 "Here are a few times that work for me:\n\n%@\n\nDo any of these suit you?" = "以下时间我都可以：\n\n%@\n\n其中有你方便的时间吗？";
 
 /* No comment provided by engineer. */
+"Holds a message for a moment so you can take it back." = "将邮件暂缓片刻，让你可以撤回。";
+
+/* No comment provided by engineer. */
 "How many emails need you, and the first few, from the menu bar." = "在菜单栏中显示有多少封邮件需要你，以及前几封。";
+
+/* No comment provided by engineer. */
+"I'm away until…" = "我外出至…";
 
 /* No comment provided by engineer. */
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
 "If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "如果 Corres 卡住、关闭或出现异常，这个文件会说明发生在哪里：版本号、macOS 版本、耗时和崩溃报告。从不包含你的邮件。";
+
+/* No comment provided by engineer. */
+"Images from the web stay off until you click Show Images, so senders can't tell when you opened their email." = "在你点按“显示图片”之前，网络图片不会加载，因此发件人无法知道你何时打开了邮件。";
 
 /* No comment provided by engineer. */
 "Images hidden to protect your privacy" = "已隐藏图片以保护你的隐私";
@@ -693,6 +900,12 @@
 
 /* No comment provided by engineer. */
 "Images in email" = "邮件中的图片";
+
+/* No comment provided by engineer. */
+"Images load as soon as you open an email. Senders using tracking images can see when you opened it." = "打开邮件时会立即载入图片。使用追踪图片的发件人可以得知你何时打开了邮件。";
+
+/* No comment provided by engineer. */
+"In 3 Hours" = "3 小时后";
 
 /* No comment provided by engineer. */
 "In Corres" = "在 Corres 中";
@@ -740,6 +953,9 @@
 "Join %@" = "加入 %@";
 
 /* No comment provided by engineer. */
+"Key Details" = "关键信息";
+
+/* No comment provided by engineer. */
 "Keyboard Shortcuts" = "键盘快捷键";
 
 /* No comment provided by engineer. */
@@ -755,7 +971,16 @@
 "Later" = "稍后";
 
 /* No comment provided by engineer. */
+"Later today" = "今天稍后";
+
+/* No comment provided by engineer. */
 "Later Today" = "今天晚些时候";
+
+/* No comment provided by engineer. */
+"Learn from My Changes" = "从我的更改中学习";
+
+/* No comment provided by engineer. */
+"Lessons" = "学到的内容";
 
 /* No comment provided by engineer. */
 "Light" = "浅色";
@@ -857,7 +1082,19 @@
 "Message" = "邮件";
 
 /* No comment provided by engineer. */
+"More" = "更多";
+
+/* No comment provided by engineer. */
+"More for %@" = "%@的更多选项";
+
+/* No comment provided by engineer. */
 "More Formal" = "更正式";
+
+/* No comment provided by engineer. */
+"Most Email" = "大部分邮件";
+
+/* No comment provided by engineer. */
+"Most Recent" = "最新";
 
 /* No comment provided by engineer. */
 "Move" = "移动";
@@ -908,10 +1145,16 @@
 "Name" = "名称";
 
 /* No comment provided by engineer. */
+"Name or address" = "名字或地址";
+
+/* No comment provided by engineer. */
 "Name, like Directions or Thanks" = "名称，比如“路线”或“感谢”";
 
 /* No comment provided by engineer. */
 "Name, sender or subject" = "名称、发件人或主题";
+
+/* No comment provided by engineer. */
+"Need Apple Intelligence, and are part of Corres Pro." = "需要 Apple Intelligence，包含在 Corres Pro 中。";
 
 /* No comment provided by engineer. */
 "Needs Attention" = "需要留意";
@@ -926,7 +1169,13 @@
 "Needs You, Waiting or Handled" = "需要你、等待中或已处理";
 
 /* No comment provided by engineer. */
+"Never for This Sender" = "对此发件人从不使用";
+
+/* No comment provided by engineer. */
 "Never Needs You" = "从不“需要你”";
+
+/* No comment provided by engineer. */
+"New" = "新";
 
 /* No comment provided by engineer. */
 "New Email" = "新邮件";
@@ -959,6 +1208,15 @@
 "newsletters" = "简报";
 
 /* No comment provided by engineer. */
+"Newsletters, stores and services: anyone who sends with an unsubscribe link. Right-click one to unsubscribe." = "新闻通讯、商店和服务：所有附带退订链接发送邮件的人。右键点按即可退订。";
+
+/* No comment provided by engineer. */
+"Next step" = "下一步";
+
+/* No comment provided by engineer. */
+"Next step: %@" = "下一步：%@";
+
+/* No comment provided by engineer. */
 "Next Week" = "下周";
 
 /* No comment provided by engineer. */
@@ -983,6 +1241,15 @@
 "No Matches" = "没有匹配项";
 
 /* No comment provided by engineer. */
+"No new companies." = "没有新公司。";
+
+/* No comment provided by engineer. */
+"No new people." = "没有新联系人。";
+
+/* No comment provided by engineer. */
+"No new senders waiting." = "没有等待中的新发件人。";
+
+/* No comment provided by engineer. */
 "No number on the icon." = "图标上不显示数字。";
 
 /* No comment provided by engineer. */
@@ -998,10 +1265,31 @@
 "No reply in 1 day" = "1 天未回复";
 
 /* No comment provided by engineer. */
+"No senders match “%@”." = "没有与“%@”匹配的发件人。";
+
+/* No comment provided by engineer. */
+"No senders yet." = "还没有发件人。";
+
+/* No comment provided by engineer. */
+"No Signature" = "无签名";
+
+/* No comment provided by engineer. */
 "No subject" = "无主题";
 
 /* No comment provided by engineer. */
+"No subscriptions yet." = "还没有订阅。";
+
+/* No comment provided by engineer. */
+"No VIPs yet" = "还没有 VIP";
+
+/* No comment provided by engineer. */
+"Nobody blocked." = "没有屏蔽任何人。";
+
+/* No comment provided by engineer. */
 "None, straight in" = "无，直接进入正文";
+
+/* No comment provided by engineer. */
+"Not Now" = "以后再说";
 
 /* No comment provided by engineer. */
 "Nothing for you to do" = "你无需做什么";
@@ -1026,6 +1314,9 @@
 
 /* No comment provided by engineer. */
 "Nothing unread in %@." = "%@中没有未读邮件。";
+
+/* No comment provided by engineer. */
+"Nothing yet. Corres learns as you correct it." = "还没有内容。你每次更正，Corres 都会学习。";
 
 /* No comment provided by engineer. */
 "notifications" = "通知";
@@ -1061,6 +1352,9 @@
 "Only %@" = "仅 %@";
 
 /* No comment provided by engineer. */
+"Only Reply to My Contacts" = "仅回复我的联系人";
+
+/* No comment provided by engineer. */
 "Only what asks something of you, so the number means something." = "只统计向你提出请求的邮件，让数字有意义。";
 
 /* No comment provided by engineer. */
@@ -1085,6 +1379,9 @@
 "Open Corres once so it can sort your mail." = "请打开一次 Corres，以便它为你的邮件分类。";
 
 /* No comment provided by engineer. */
+"Open iCloud Mail Settings" = "打开 iCloud 邮件设置";
+
+/* No comment provided by engineer. */
 "Open in New Window" = "在新窗口中打开";
 
 /* No comment provided by engineer. */
@@ -1098,6 +1395,9 @@
 
 /* No comment provided by engineer. */
 "Open Needs You, Waiting or Mail in Corres." = "在 Corres 中打开“需要你”、“等待中”或“邮件”。";
+
+/* No comment provided by engineer. */
+"Opens %@" = "打开 %@";
 
 /* No comment provided by engineer. */
 "Opens its conversation" = "打开所在对话";
@@ -1121,7 +1421,13 @@
 "Other Email" = "其他邮箱";
 
 /* No comment provided by engineer. */
+"Other mail apps can't change this service's automatic reply. Set it on your email provider's website, usually under Settings, then Vacation or Auto Reply." = "其他邮件 App 无法更改此服务的自动回复。请在你的邮件服务商网站上设置，通常在“设置”中的“休假”或“自动回复”里。";
+
+/* No comment provided by engineer. */
 "Out for delivery" = "正在派送";
+
+/* No comment provided by engineer. */
+"Out of Office" = "外出";
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
@@ -1149,6 +1455,9 @@
 
 /* No comment provided by engineer. */
 "Payment failed" = "付款失败";
+
+/* No comment provided by engineer. */
+"People · %lld" = "个人 · %lld";
 
 /* No comment provided by engineer. */
 "People and Time-Sensitive" = "个人与时效性";
@@ -1211,6 +1520,9 @@
 "Read/Unread" = "已读/未读";
 
 /* No comment provided by engineer. */
+"Reading" = "阅读";
+
+/* No comment provided by engineer. */
 "Reads like it needs something from you." = "看起来需要你做些什么。";
 
 /* No comment provided by engineer. */
@@ -1265,6 +1577,9 @@
 "Remove from Calendar" = "从日历中移除";
 
 /* No comment provided by engineer. */
+"Remove from VIPs" = "从 VIP 中移除";
+
+/* No comment provided by engineer. */
 "Remove Saved Search" = "移除已存储的搜索";
 
 /* No comment provided by engineer. */
@@ -1307,6 +1622,9 @@
 "Review" = "查看";
 
 /* No comment provided by engineer. */
+"Review New Senders" = "查看新发件人";
+
+/* No comment provided by engineer. */
 "RSVP" = "回复邀请";
 
 /* No comment provided by engineer. */
@@ -1346,7 +1664,13 @@
 "Saved Searches" = "已存储的搜索";
 
 /* No comment provided by engineer. */
+"Saving…" = "正在存储…";
+
+/* No comment provided by engineer. */
 "Schedule" = "安排";
+
+/* No comment provided by engineer. */
+"Screen New Senders" = "筛选新发件人";
 
 /* No comment provided by engineer. */
 "Search" = "搜索";
@@ -1379,6 +1703,9 @@
 "Send Later" = "稍后发送";
 
 /* No comment provided by engineer. */
+"Send new mail from" = "新邮件发件账户";
+
+/* No comment provided by engineer. */
 "Send Now" = "立即发送";
 
 /* No comment provided by engineer. */
@@ -1389,6 +1716,9 @@
 
 /* No comment provided by engineer. */
 "Send without a subject?" = "不带主题发送？";
+
+/* No comment provided by engineer. */
+"Senders" = "发件人";
 
 /* No comment provided by engineer. */
 "Sending. Undo available." = "正在发送。可以撤销。";
@@ -1409,6 +1739,9 @@
 "Sent." = "已发送。";
 
 /* No comment provided by engineer. */
+"Set Up…" = "设置…";
+
+/* No comment provided by engineer. */
 "Share" = "共享";
 
 /* No comment provided by engineer. */
@@ -1416,6 +1749,9 @@
 
 /* No comment provided by engineer. */
 "Shorter" = "更简短";
+
+/* No comment provided by engineer. */
+"Show" = "显示";
 
 /* No comment provided by engineer. */
 "Show All" = "显示全部";
@@ -1454,6 +1790,9 @@
 "Sign-Off" = "结束语";
 
 /* No comment provided by engineer. */
+"Signature" = "签名";
+
+/* No comment provided by engineer. */
 "Signatures" = "签名";
 
 /* No comment provided by engineer. */
@@ -1461,6 +1800,9 @@
 
 /* No comment provided by engineer. */
 "Signing In…" = "正在登录…";
+
+/* No comment provided by engineer. */
+"Smaller" = "缩小";
 
 /* No comment provided by engineer. */
 "Snooze" = "稍后提醒";
@@ -1487,10 +1829,22 @@
 "Social notification. Kept out of Needs You." = "社交通知。未放入“需要你”。";
 
 /* No comment provided by engineer. */
+"Someone's first email shows like anyone else's, marked New, and you can allow or block them right from the email. Blocked senders stay hidden." = "某人的第一封邮件会像其他邮件一样显示，并标为“新”，你可以直接在邮件中允许或屏蔽对方。被屏蔽的发件人保持隐藏。";
+
+/* No comment provided by engineer. */
+"Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden." = "某人的第一封邮件会在“新发件人”中等待，直到你允许，因此你只会看到你放行的人的邮件。被屏蔽的发件人保持隐藏。";
+
+/* No comment provided by engineer. */
 "Something failed that only you can fix." = "出现了只有你能解决的问题。";
 
 /* No comment provided by engineer. */
 "Something Went Wrong" = "出了点问题";
+
+/* No comment provided by engineer. */
+"Sort By" = "排序方式";
+
+/* No comment provided by engineer. */
+"Sorting" = "分类";
 
 /* No comment provided by engineer. */
 "Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service." = "分类、摘要和草稿都在这台 Mac 上完成。你的邮件绝不会发送到我们的服务器或 AI 服务。";
@@ -1500,6 +1854,12 @@
 
 /* No comment provided by engineer. */
 "Start a new email in Corres." = "在 Corres 中新建邮件。";
+
+/* No comment provided by engineer. */
+"Start of day" = "一天开始时间";
+
+/* No comment provided by engineer. */
+"Starts" = "开始";
 
 /* No comment provided by engineer. */
 "Subject" = "主题";
@@ -1514,10 +1874,25 @@
 "Subject: %@" = "主题：%@";
 
 /* No comment provided by engineer. */
+"Subscriptions" = "订阅";
+
+/* No comment provided by engineer. */
 "Suggest Times from Your Calendar" = "从日历建议时间";
 
 /* No comment provided by engineer. */
-"Summaries (Apple Intelligence, on this Mac)" = "摘要（Apple 智能，在这台 Mac 上）";
+"Suggested replies" = "建议回复";
+
+/* No comment provided by engineer. */
+"Suggested replies use the greeting, sign-off and length you use in email you've sent, for each person you write to often. Learned on this Mac from your sent mail, and never sent anywhere." = "建议回复会采用你在已发送邮件中对每位常联系人使用的问候语、结束语和篇幅。在这台 Mac 上从你的已发送邮件中学习，绝不会发送到任何地方。";
+
+/* No comment provided by engineer. */
+"Suggestions" = "建议";
+
+/* No comment provided by engineer. */
+"Summaries and suggested replies" = "摘要和建议回复";
+
+/* No comment provided by engineer. */
+"Swipe a lesson to forget it." = "轻扫一条学到的内容即可让它忘记。";
 
 /* No comment provided by engineer. */
 "Templates" = "模板";
@@ -1547,13 +1922,40 @@
 "The organizer changed this event. You'd said maybe to the earlier version." = "组织者更改了此日程。你之前回复了“待定”。";
 
 /* No comment provided by engineer. */
+"Their mail already shows in Corres. Allow marks them as known; Block hides them quietly, for good. Neither changes your email account." = "对方的邮件已显示在 Corres 中。“允许”会将其标为认识的人；“屏蔽”会永久地悄悄隐藏。两者都不会更改你的邮件账户。";
+
+/* No comment provided by engineer. */
+"Their mail comes to your inbox from now on." = "从现在起，对方的邮件会进入你的收件箱。";
+
+/* No comment provided by engineer. */
 "Their mail is hidden in Corres from now on, with no notice to them. Your email account isn't changed." = "从现在起，对方的邮件会在 Corres 中隐藏，且不会通知对方。你的邮件账户不会更改。";
+
+/* No comment provided by engineer. */
+"Their mail reaches Corres only once you allow them. Blocking hides them quietly, for good. Neither changes your email account." = "只有你允许后，对方的邮件才会进入 Corres。屏蔽会永久地悄悄隐藏。两者都不会更改你的邮件账户。";
+
+/* No comment provided by engineer. */
+"Their mail stays out of every list, and they're never told." = "对方的邮件不会出现在任何列表中，对方也不会收到通知。";
+
+/* No comment provided by engineer. */
+"Their mail will be hidden quietly. You can undo this right after." = "对方的邮件将被悄悄隐藏。你可以随即撤销。";
+
+/* No comment provided by engineer. */
+"Their mail will show in Corres. You can undo this right after." = "对方的邮件将显示在 Corres 中。你可以随即撤销。";
 
 /* No comment provided by engineer. */
 "This email is from a mailing list." = "这封邮件来自邮件列表。";
 
 /* No comment provided by engineer. */
+"This email is in %@." = "这封邮件是%@。";
+
+/* No comment provided by engineer. */
+"This email is in another language." = "这封邮件是另一种语言。";
+
+/* No comment provided by engineer. */
 "This Evening" = "今晚";
+
+/* No comment provided by engineer. */
+"This Evening, 6 PM" = "今晚 18:00";
 
 /* No comment provided by engineer. */
 "This Weekend" = "本周末";
@@ -1592,6 +1994,9 @@
 "Tomorrow 8am, next friday, in 3 days" = "Tomorrow 8am, next friday, in 3 days";
 
 /* No comment provided by engineer. */
+"Tomorrow and Next Week come back then; This Weekend an hour later, on Saturday." = "“明天”和“下周”会在那时回来；“本周末”则在周六晚一小时。";
+
+/* No comment provided by engineer. */
 "tomorrow at %@" = "明天 %@";
 
 /* No comment provided by engineer. */
@@ -1607,6 +2012,9 @@
 "Translate" = "翻译";
 
 /* No comment provided by engineer. */
+"Translates it on this Mac with Apple's Translate" = "在这台 Mac 上使用 Apple 翻译进行翻译";
+
+/* No comment provided by engineer. */
 "Trash" = "废纸篓";
 
 /* No comment provided by engineer. */
@@ -1620,6 +2028,9 @@
 
 /* No comment provided by engineer. */
 "Undo" = "撤销";
+
+/* No comment provided by engineer. */
+"Undo Send" = "撤销发送";
 
 /* No comment provided by engineer. */
 "Unflag" = "取消旗标";
@@ -1667,6 +2078,12 @@
 "Unsubscribe" = "退订";
 
 /* No comment provided by engineer. */
+"Unsubscribe and Block" = "退订并屏蔽";
+
+/* No comment provided by engineer. */
+"Unsubscribe from %@?" = "退订 %@？";
+
+/* No comment provided by engineer. */
 "Unsubscribed. You won't get more from this list." = "已退订。你不会再收到此列表的邮件。";
 
 /* No comment provided by engineer. */
@@ -1709,10 +2126,16 @@
 "VIP" = "VIP";
 
 /* No comment provided by engineer. */
+"VIPs" = "VIP";
+
+/* No comment provided by engineer. */
 "Waiting" = "等待中";
 
 /* No comment provided by engineer. */
 "Waiting on a reply" = "等待回复";
+
+/* No comment provided by engineer. */
+"Waiting turns into Follow up once someone hasn't replied in that long." = "对方在这段时间内未回复时，“等待中”会变为“跟进”。";
 
 /* No comment provided by engineer. */
 "Waiting: " = "等待中：";
@@ -1722,6 +2145,9 @@
 
 /* No comment provided by engineer. */
 "Was %@" = "截止%@";
+
+/* No comment provided by engineer. */
+"What Corres Has Learned" = "Corres 学到的内容";
 
 /* No comment provided by engineer. */
 "What Needs Me" = "需要我处理的";
@@ -1742,6 +2168,12 @@
 "When you can" = "有空再看";
 
 /* No comment provided by engineer. */
+"When you say an email Apple Intelligence flagged needs no action, Corres stops flagging that kind of email from that sender; their other mail is untouched. When you move a sender's automated email into Needs You, it keeps that kind there. Corres also notices habits, like lists you never open or people you always read at once, and suggests a change, at most once a day. Everything stays on this %@." = "当你表示 Apple 智能标记的某封邮件无需处理时，Corres 不再标记该发件人同类邮件；对方的其他邮件不受影响。当你把某位发件人的自动邮件移到“需要你”时，这类邮件会保留在那里。Corres 还会注意你的习惯，比如从不打开的列表或总是马上阅读的人，并建议更改，每天最多一次。一切都保留在这台%@上。";
+
+/* No comment provided by engineer. */
+"While it's on, %@ answers new email with your message and sends it even with this %@ off." = "开启期间，%@ 会用你的消息回复新邮件，即使这台%@关机也会发送。";
+
+/* No comment provided by engineer. */
 "Who should it go to? Add someone first." = "要发给谁？请先添加收件人。";
 
 /* No comment provided by engineer. */
@@ -1758,6 +2190,15 @@
 
 /* No comment provided by engineer. */
 "Write Replies Like Me" = "按我的方式写回复";
+
+/* No comment provided by engineer. */
+"Write the message %@ should send." = "输入 %@ 应发送的消息。";
+
+/* No comment provided by engineer. */
+"Writes this reply for you to read and change" = "为你写好这封回复，供你查看和修改";
+
+/* No comment provided by engineer. */
+"Written by Apple Intelligence on this Mac and checked against the email: every name, number and date has to be in it. Part of Corres Pro." = "由这台 Mac 上的 Apple Intelligence 撰写，并与邮件核对：每个名字、数字和日期都必须出自邮件。包含在 Corres Pro 中。";
 
 /* No comment provided by engineer. */
 "Yahoo, AOL, Fastmail, Zoho or a work server. Corres finds the server settings for you." = "Yahoo、AOL、Fastmail、Zoho 或工作服务器。Corres 会帮你找到服务器设置。";

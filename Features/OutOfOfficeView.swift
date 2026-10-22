@@ -101,7 +101,7 @@ struct OutOfOfficeView: View {
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
         .navigationTitle("Out of Office")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineTitle()
         .task {
             if account.isEmpty { account = auth.primaryAccount?.email ?? "" }
             await load()

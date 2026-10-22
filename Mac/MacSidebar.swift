@@ -20,7 +20,7 @@ struct MacSidebar: View {
                 if newSendersCount > 0 { row(.newSenders, count: newSendersCount) }
             }
             Section("Mail") {
-                ForEach([MailFilter.primary, .everything, .unread, .promotions, .social, .updates]) { filter in
+                ForEach([MailFilter.primary, .everything, .promotions, .social, .updates]) { filter in
                     row(.filter(filter.rawValue), count: filter == .primary ? primaryUnread : nil)
                 }
             }

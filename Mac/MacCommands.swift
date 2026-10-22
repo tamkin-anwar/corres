@@ -23,10 +23,32 @@ extension FocusedValues {
     }
 }
 
+/// View › Bigger and Smaller: one step along `CorresSettings.textScales`.
+@MainActor
+enum MacTextSize {
+    static func step(_ direction: Int) {
+        let scales = CorresSettings.textScales
+        let current = CorresSettings.textScale
+        let next = direction > 0 ? scales.first { $0 > current + 0.001 } : scales.last { $0 < current - 0.001 }
+        if let next { CorresSettings.textScale = next }
+    }
+
+    /// ⌘= is ⌘+ without Shift on most keyboards, as in Safari.
+    static func installEqualsShortcut() {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+                  event.charactersIgnoringModifiers == "=" else { return event }
+            step(+1)
+            return nil
+        }
+    }
+}
+
 /// The menu bar, with Mail's own shortcuts, so muscle memory works on day
 /// one: ⌘N, ⌘R, ⇧⌘R, ⇧⌘F, ⌃⌘A, ⌘⌫, ⇧⌘L, ⇧⌘U, ⇧⌘N, ⌘L, ⌘1 to ⌘4.
 struct MacCommands: Commands {
     @FocusedValue(\.macActions) private var actions
+    @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -37,6 +59,20 @@ struct MacCommands: Commands {
             Button("Keyboard Shortcuts") { actions?.perform(.shortcuts) }
                 .keyboardShortcut("/", modifiers: .command)
             Button("Send Diagnostics…") { actions?.perform(.sendDiagnostics) }
+        }
+        // Mail's and Safari's Bigger and Smaller, for the email you're reading.
+        CommandGroup(after: .toolbar) {
+            Divider()
+            Button("Bigger") { MacTextSize.step(+1) }
+                .keyboardShortcut("+", modifiers: .command)
+                .disabled(textScale >= CorresSettings.textScales.last!)
+            Button("Smaller") { MacTextSize.step(-1) }
+                .keyboardShortcut("-", modifiers: .command)
+                .disabled(textScale <= CorresSettings.textScales[0])
+            Button("Actual Size") { CorresSettings.textScale = 1 }
+                .keyboardShortcut("0", modifiers: .command)
+                .disabled(textScale == 1)
+            Divider()
         }
         CommandGroup(replacing: .printItem) {
             Button("Print…") { actions?.perform(.print) }

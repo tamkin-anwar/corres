@@ -227,6 +227,13 @@ final class MailIntelligence {
         scheduleSave()
     }
 
+    #if DEBUG
+    /// Screenshots of sample mail: what Apple Intelligence would show.
+    func showForScreenshots(_ insight: Insight, on thread: Correspondence) {
+        store(insight, for: Self.key(for: thread))
+    }
+    #endif
+
     private func store(_ insight: Insight, for key: String) {
         insights[key] = insight
         scheduleSave()

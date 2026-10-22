@@ -89,4 +89,34 @@ final class MacTextInserter {
         textView.window?.makeFirstResponder(textView)
         textView.insertText(text, replacementRange: at)
     }
+
+    /// Swaps `old` for `new` where it is in the body (a signature), as one
+    /// undoable change. False if `old` isn't there.
+    @discardableResult
+    func replace(_ old: String, with new: String) -> Bool {
+        guard let textView, !old.isEmpty else { return false }
+        let range = (textView.string as NSString).range(of: old)
+        guard range.location != NSNotFound else { return false }
+        var target = range
+        // Taking a signature out takes the blank line above it too.
+        if new.isEmpty, range.location >= 2,
+           (textView.string as NSString).substring(with: NSRange(location: range.location - 2, length: 2)) == "\n\n" {
+            target = NSRange(location: range.location - 2, length: range.length + 2)
+        }
+        guard textView.shouldChangeText(in: target, replacementString: new) else { return false }
+        textView.textStorage?.replaceCharacters(in: target, with: NSAttributedString(string: new, attributes: textView.typingAttributes))
+        textView.didChangeText()
+        return true
+    }
+
+    /// Adds `text` at `offset` characters from the start (a signature
+    /// above the quoted email), undoably.
+    func insert(_ text: String, at offset: Int) {
+        guard let textView else { return }
+        let location = min(max(0, offset), (textView.string as NSString).length)
+        let target = NSRange(location: location, length: 0)
+        guard textView.shouldChangeText(in: target, replacementString: text) else { return }
+        textView.textStorage?.replaceCharacters(in: target, with: NSAttributedString(string: text, attributes: textView.typingAttributes))
+        textView.didChangeText()
+    }
 }

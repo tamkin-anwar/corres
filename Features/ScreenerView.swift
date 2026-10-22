@@ -120,7 +120,7 @@ struct ScreenerView: View {
             .overlay(alignment: .bottom) { undoBar }
             .animation(.easeOut(duration: 0.2), value: undo)
             .navigationTitle("New Senders")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
@@ -173,6 +173,14 @@ struct ScreenerView: View {
         }
     }
 
+    private static func timestamp(_ date: Date) -> String {
+        #if os(iOS)
+        CorrespondenceRow.timestamp(date)
+        #else
+        MacDates.short(date)
+        #endif
+    }
+
     private func card(for group: SenderGroup) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
@@ -181,7 +189,7 @@ struct ScreenerView: View {
                     HStack(alignment: .firstTextBaseline) {
                         Text(group.sender).font(.body.weight(.semibold)).lineLimit(1)
                         Spacer(minLength: 8)
-                        Text(CorrespondenceRow.timestamp(group.latestDate))
+                        Text(Self.timestamp(group.latestDate))
                             .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                     }
                     Text(group.senderEmail).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(1)

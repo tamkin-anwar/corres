@@ -57,6 +57,16 @@ enum Platform {
     }
 
     /// "iOS 27.0" or "macOS 27.0", for diagnostics.
+    /// Puts text on the clipboard.
+    static func copy(_ text: String) {
+        #if canImport(UIKit)
+        UIPasteboard.general.string = text
+        #else
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        #endif
+    }
+
     static var systemDescription: String {
         #if canImport(UIKit)
         "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)"
@@ -96,6 +106,18 @@ extension Image {
         self.init(uiImage: platformImage)
         #else
         self.init(nsImage: platformImage)
+        #endif
+    }
+}
+
+extension View {
+    /// A small title in the bar on iPhone and iPad. The Mac's settings and
+    /// sheets have no such bar, so nothing changes there.
+    func inlineTitle() -> some View {
+        #if os(iOS)
+        navigationBarTitleDisplayMode(.inline)
+        #else
+        self
         #endif
     }
 }

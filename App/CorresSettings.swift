@@ -78,6 +78,14 @@ enum CorresSettings {
     /// figures, and what a long email asks of you, read from the email
     /// itself (no Apple Intelligence needed).
     static let keyDetailsKey = "corres.keyDetails"
+    /// The Mac's View › Bigger and Smaller (⌘+, ⌘−): email text this much
+    /// larger than usual. macOS gives apps no system text size to follow.
+    static let textScaleKey = "corres.textScale"
+    static let textScales: [Double] = [0.85, 1, 1.15, 1.3, 1.5, 1.75, 2]
+    static var textScale: Double {
+        get { (defaults.object(forKey: textScaleKey) as? Double).map { min(max($0, textScales[0]), textScales.last!) } ?? 1 }
+        set { defaults.set(newValue, forKey: textScaleKey) }
+    }
 
     // MARK: Lists
 

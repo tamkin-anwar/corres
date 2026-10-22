@@ -30,6 +30,10 @@ struct HTMLMessageBody: PlatformViewRepresentable {
     @Environment(\.scenePhase) private var scenePhase
     /// Read so a change of text size in Settings redraws the email.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    #if os(macOS)
+    /// View › Bigger and Smaller.
+    @AppStorage(CorresSettings.textScaleKey) private var macTextScale = 1.0
+    #endif
 
     #if canImport(UIKit)
     func makeUIView(context: Context) -> WKWebView {
@@ -104,7 +108,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         webView.overrideUserInterfaceStyle = designed && !analysis.hasOwnDarkMode ? .light : (dark ? .dark : .light)
         #else
         // A touch larger than the Mac's 13pt body: mail is read, not scanned.
-        let textSize = NSFont.preferredFont(forTextStyle: .body).pointSize + 2
+        let textSize = (NSFont.preferredFont(forTextStyle: .body).pointSize + 2) * CGFloat(CorresSettings.textScale)
         webView.appearance = NSAppearance(named: designed && !analysis.hasOwnDarkMode ? .aqua : (dark ? .darkAqua : .aqua))
         #endif
         // Checked against the raw inputs, not the processed/wrapped output:

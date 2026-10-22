@@ -46,7 +46,6 @@ struct ConversationView: View {
     @Environment(\.proUnlocked) private var proUnlocked
     @Environment(MailIntelligence.self) private var intelligence
     @Environment(\.displayScale) private var displayScale
-    @AppStorage(GoogleAuthService.givenNameKey) private var givenName = ""
 
     init(store: MailStore, outbox: OutboxService, threadActions: ThreadActionService,
         labelDirectory: LabelDirectory, unsubscribeService: UnsubscribeService, route: ConversationRoute) {
@@ -347,7 +346,7 @@ struct ConversationView: View {
             if let current = store.thread(currentID) {
                 calendarEvent = await Self.findEvent(in: current)
                 invitation = await InvitationCard.find(in: current)
-                let aids = await Self.readingAids(in: current)
+                let aids = await ReadingAids.find(in: current)
                 nextStep = aids.nextStep
                 glance = aids.glance
                 buriedAsk = aids.ask
@@ -853,28 +852,6 @@ struct ConversationView: View {
         .accessibilityHint("Opens \(step.host)")
     }
 
-    /// Off the main thread: reading a designed email's links is a full pass
-    /// over its HTML.
-    private static func readingAids(in thread: Correspondence) async -> (nextStep: NextStep?, glance: Glance?, ask: String?) {
-        guard thread.isBodyLoaded else { return (nil, nil, nil) }
-        let isBulk = InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) != nil
-        let isPromotion = InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == .promotions
-        let body = thread.body, html = thread.htmlBody, subject = thread.subject, sender = thread.senderEmail
-        let automated = thread.looksAutomated, labelIds = thread.labelIds
-        return await Task.detached(priority: .utility) {
-            // The whole text, not the cleaned one: cleaning drops what
-            // follows a sign-off, which is often exactly where the link is.
-            let whole = MailDigest.readableText(body: body, html: html)
-            let kind = isPromotion ? .newsletter
-                : MailDigest.kind(subject: subject, text: MailDigest.clean(whole), senderEmail: sender, isBulk: isBulk,
-                                  looksAutomated: automated, hasEvent: false, labelIds: labelIds)
-            let cleaned = MailDigest.clean(whole)
-            return (MailDigest.nextStep(text: whole, html: html, kind: kind),
-                    MailDigest.glance(text: cleaned, subject: subject, kind: kind),
-                    kind == .personal ? MailDigest.buriedAsk(text: cleaned) : nil)
-        }.value
-    }
-
     private func labelChips(_ labels: [GmailUserLabel]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
@@ -970,11 +947,7 @@ struct ConversationView: View {
             if !thread.isBodyLoaded { await threadActions.loadContent(for: thread) }
             let source = store.thread(thread.id) ?? thread
             // In your own words: your greeting, sign-off and length, from mail you've sent.
-            let style = WritingStyleBook.shared.style(for: source.id.account, recipient: source.senderEmail)?
-                .instructions(recipientName: source.sender, replyLanguage: WritingStyleBook.language(of: source.body))
-            let drafted = await intelligence.draftReply(to: source, intent: intent,
-                                                        signOff: givenName.isEmpty || !CorresSettings.signature(for: source.id.account, reply: true).isEmpty ? nil : givenName,
-                                                        style: style)
+            let drafted = await ReplyDrafting.draft(intent, replyingTo: source, with: intelligence)
             draftingIntent = nil
             compose(.reply, from: source, prefill: drafted ?? "")
         }
@@ -998,10 +971,7 @@ struct ConversationView: View {
         return EventFinder.fromWording(thread.body, subject: thread.subject, receivedAt: thread.receivedAt)
     }
 
-    private func hasAnswered(_ thread: Correspondence) -> Bool {
-        thread.attention == .waiting || thread.isFromAccountOwner
-            || (thread.lastSentAt.map { $0 >= thread.receivedAt } ?? false)
-    }
+    private func hasAnswered(_ thread: Correspondence) -> Bool { ReplyDrafting.hasAnswered(thread) }
 
     private func bottomChrome(for thread: Correspondence) -> some View {
         CorresGlassGroup {

@@ -1,5 +1,7 @@
+import NaturalLanguage
 import QuickLook
 import SwiftUI
+import Translation
 
 /// The open conversation: subject in New York, who it's from and to, why
 /// it's where it is (with one click to change that), the summary when
@@ -15,6 +17,12 @@ struct ReadingPane: View {
     @State private var showEarlier = false
     @State private var invitation: Invitation?
     @State private var personCard: PersonRef?
+    @State private var aids = ReadingAids()
+    @State private var draftingIntent: String?
+    /// The email's language, when it isn't one you read (Mail's Translate banner).
+    @State private var foreignLanguage: Locale.Language?
+    @State private var showingTranslation = false
+    @AppStorage(CorresSettings.keyDetailsKey) private var keyDetailsOn = true
     @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
 
@@ -28,9 +36,19 @@ struct ReadingPane: View {
                     .padding(.top, 22)
                     .padding(.bottom, 14)
                     .sheet(item: $personCard) { personSheet($0) }
+                if thread.senderDecision == .pending, let email = thread.senderEmail {
+                    newSenderBar(email: email)
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 14)
+                }
                 statusCard
                     .padding(.horizontal, 28)
                     .padding(.bottom, 14)
+                if let intents = replyIntents {
+                    replyChips(intents)
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 14)
+                }
                 if !thread.isFromAccountOwner, thread.attention != .handled, Scheduling.asksForTime(thread.body) {
                     suggestTimes
                         .padding(.horizontal, 28)
@@ -52,6 +70,11 @@ struct ReadingPane: View {
                 }
                 if blockedImages > 0 && !imagesAllowed {
                     imagesNotice
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 10)
+                }
+                if let foreignLanguage {
+                    translateLine(foreignLanguage)
                         .padding(.horizontal, 28)
                         .padding(.bottom, 10)
                 }
@@ -88,6 +111,8 @@ struct ReadingPane: View {
             .frame(maxWidth: .infinity)
         }
         .background(CorresPalette.canvas)
+        .translationPresentation(isPresented: $showingTranslation,
+                                 text: showingTranslation ? MailDigest.readableText(body: thread.body, html: thread.htmlBody) : "")
         .id(thread.id)
         .task(id: thread.id) { await opened() }
         .userActivity(Handoff.conversation) { activity in Handoff.describe(activity, thread) }
@@ -109,11 +134,7 @@ struct ReadingPane: View {
                 let times = slots.map {
                     "• " + $0.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().hour().minute().timeZone(.specificName(.short)))
                 }.joined(separator: "\n")
-                var draft = thread.draft(kind: .reply)
-                draft.body = String(localized: "Here are a few times that work for me:\n\n\(times)\n\nDo any of these suit you?") + "\n\n" + draft.body
-                let handoff = UUID()
-                MacComposeHandoff.drafts[handoff] = draft
-                openWindow(value: ComposeRequest(kind: .reply, handoff: handoff))
+                openReply(prefill: String(localized: "Here are a few times that work for me:\n\n\(times)\n\nDo any of these suit you?"))
             }
         } label: {
             Label("Suggest Times from Your Calendar", systemImage: "calendar.badge.clock")
@@ -207,6 +228,18 @@ struct ReadingPane: View {
                 }
                 Divider()
             }
+            if keyDetailsOn, let glance = aids.glance {
+                glanceBlock(glance)
+                Divider()
+            } else if keyDetailsOn, insight?.summary == nil, !preparing, let ask = aids.ask, !thread.isFromAccountOwner {
+                // A written summary already leads with the ask.
+                askBlock(ask)
+                Divider()
+            }
+            if let step = aids.nextStep, !thread.isFromAccountOwner {
+                nextStepRow(step)
+                Divider()
+            }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(statusLine).font(.callout).foregroundStyle(CorresPalette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -236,6 +269,149 @@ struct ReadingPane: View {
         .padding(14)
         .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(CorresPalette.line))
+    }
+
+    /// A receipt's, delivery's or bill's status and key figures, the way
+    /// Wallet lays out a pass.
+    private func glanceBlock(_ glance: Glance) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let status = glance.status {
+                Label(Glance.display(status), systemImage: glance.isAlert ? "exclamationmark.circle.fill" : "checkmark.circle")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(glance.isAlert ? CorresPalette.alert : CorresPalette.ink)
+            } else {
+                Label("At a glance", systemImage: "list.bullet.rectangle")
+                    .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+            }
+            FlowRow(spacing: 22) {
+                ForEach(glance.facts, id: \.self) { fact in
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(Glance.display(fact.label)).font(.caption).foregroundStyle(CorresPalette.secondary)
+                        Text(fact.value).font(.body.weight(.semibold)).monospacedDigit().foregroundStyle(CorresPalette.ink)
+                            .textSelection(.enabled)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// What a long email asks of you, in the sender's words, so it isn't
+    /// missed halfway down.
+    private func askBlock(_ ask: String) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 8) {
+                Label("Asks you", systemImage: "questionmark.bubble")
+                    .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                Spacer(minLength: 8)
+                if thread.attention == .needsYou, let due = thread.dueAt { DueChip(date: due) }
+            }
+            Text("\u{201C}\(ask)\u{201D}").font(.body).foregroundStyle(CorresPalette.ink)
+                .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// The email's one call to action, opened where links open.
+    private func nextStepRow(_ step: NextStep) -> some View {
+        Button { LinkOpener.open(step.url) } label: {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Label("Next step", systemImage: "arrow.turn.down.right")
+                        .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(Glance.display(step.label)).font(.body.weight(.semibold)).foregroundStyle(CorresPalette.ink)
+                        if !step.host.isEmpty {
+                            Text(step.host).font(.callout).foregroundStyle(CorresPalette.secondary).lineLimit(1)
+                        }
+                    }
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "arrow.up.right").font(.callout.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(step.host.isEmpty ? Glance.display(step.label) : String(localized: "Opens \(step.host)"))
+        .accessibilityLabel("Next step: \(Glance.display(step.label))")
+    }
+
+    // MARK: New senders and suggested replies
+
+    /// A first email from someone, as on the iPhone: Allow or Block it
+    /// here instead of hunting for them in New Senders.
+    private func newSenderBar(email: String) -> some View {
+        HStack(spacing: 10) {
+            Label("First email from them. Allow them into your inbox?", systemImage: "checkmark.shield")
+                .font(.callout).foregroundStyle(CorresPalette.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            Button("Block") { Task { await services.store.blockSender(email, account: thread.id.account) } }
+                .help("Their mail stays out of every list, and they're never told.")
+            Button("Allow") { Task { await services.store.approveSender(email, account: thread.id.account) } }
+                .buttonStyle(.borderedProminent)
+                .help("Their mail comes to your inbox from now on.")
+        }
+        .padding(12)
+        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(CorresPalette.line))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("First email from \(email)")
+    }
+
+    /// Apple Intelligence's suggested answers, once it has read the email,
+    /// and only until you've answered.
+    private var replyIntents: [String]? {
+        guard summariesOn, !ReplyDrafting.hasAnswered(thread),
+              let intents = intelligence.insight(for: thread)?.replyIntents, !intents.isEmpty else { return nil }
+        return intents
+    }
+
+    /// Clicking one writes the whole reply in your own words, then opens it
+    /// to read and change. Nothing sends without you.
+    private func replyChips(_ intents: [String]) -> some View {
+        FlowRow(spacing: 8) {
+            ForEach(intents, id: \.self) { intent in
+                Button {
+                    draftReply(intent)
+                } label: {
+                    HStack(spacing: 6) {
+                        if draftingIntent == intent { ProgressView().controlSize(.small) }
+                        Text(intent)
+                    }
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .disabled(draftingIntent != nil)
+                .help("Writes this reply for you to read and change")
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Suggested replies")
+    }
+
+    private func draftReply(_ intent: String) {
+        guard draftingIntent == nil else { return }
+        draftingIntent = intent
+        let id = thread.id
+        Task {
+            let source = services.store.thread(id) ?? thread
+            let drafted = await ReplyDrafting.draft(intent, replyingTo: source, with: intelligence)
+            draftingIntent = nil
+            guard thread.id == id else { return }
+            openReply(prefill: drafted ?? "")
+        }
+    }
+
+    /// A reply that starts with `prefill`, above your signature and the
+    /// quoted email.
+    private func openReply(prefill: String) {
+        let source = services.store.thread(thread.id) ?? thread
+        var draft = source.draft(kind: .reply)
+        draft.body = Draft.adding(signature: CorresSettings.signature(for: source.id.account, reply: true), to: prefill + draft.body)
+        let handoff = UUID()
+        MacComposeHandoff.drafts[handoff] = draft
+        openWindow(value: ComposeRequest(kind: .reply, handoff: handoff))
     }
 
     private var statusLine: String {
@@ -322,6 +498,39 @@ struct ReadingPane: View {
         .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 8))
     }
 
+    /// "This email is in Japanese. Translate", as Mail and Safari offer.
+    private func translateLine(_ language: Locale.Language) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "translate").foregroundStyle(CorresPalette.secondary)
+            let name = Locale.current.localizedString(forLanguageCode: language.languageCode?.identifier ?? "") ?? ""
+            Text(name.isEmpty ? String(localized: "This email is in another language.") : String(localized: "This email is in \(name)."))
+                .font(.callout).foregroundStyle(CorresPalette.secondary)
+            Spacer()
+            Button("Translate") { showingTranslation = true }
+                .controlSize(.small)
+                .help("Translates it on this Mac with Apple's Translate")
+        }
+        .padding(10)
+        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    /// The email's language when you don't read it: none of your preferred
+    /// languages, and clear enough to say.
+    nonisolated private static func foreignLanguage(of thread: Correspondence) async -> Locale.Language? {
+        guard thread.isBodyLoaded else { return nil }
+        let body = thread.body, html = thread.htmlBody, subject = thread.subject
+        return await Task.detached(priority: .utility) {
+            let text = subject + "\n" + MailDigest.readableText(body: body, html: html)
+            let recognizer = NLLanguageRecognizer()
+            recognizer.processString(String(text.prefix(2_000)))
+            guard let (language, confidence) = recognizer.languageHypotheses(withMaximum: 1).first,
+                  confidence > 0.8, language != .undetermined else { return nil }
+            let found = Locale.Language(identifier: language.rawValue)
+            let yours = Locale.preferredLanguages.map { Locale.Language(identifier: $0).languageCode }
+            return yours.contains(found.languageCode) ? nil : found
+        }.value
+    }
+
     private var imagesNotice: some View {
         HStack(spacing: 10) {
             Image(systemName: "photo").foregroundStyle(CorresPalette.secondary)
@@ -371,6 +580,10 @@ struct ReadingPane: View {
         showImages = false
         showEarlier = false
         invitation = nil
+        aids = ReadingAids()
+        foreignLanguage = nil
+        showingTranslation = false
+        draftingIntent = nil
         bodyHeight = 1
         if thread.isUnread && CorresSettings.markReadOnOpen {
             // A beat later, so arrowing quickly through the list doesn't
@@ -382,7 +595,10 @@ struct ReadingPane: View {
         async let content: Void = services.threadActions.loadContent(for: thread)
         async let history: Void = services.threadActions.loadHistory(for: thread)
         _ = await (content, history)
-        invitation = await InvitationCard.find(in: services.store.thread(thread.id) ?? thread)
+        let current = services.store.thread(thread.id) ?? thread
+        invitation = await InvitationCard.find(in: current)
+        aids = await ReadingAids.find(in: current)
+        foreignLanguage = await Self.foreignLanguage(of: current)
         if summariesOn {
             await intelligence.prepareInsight(for: thread, conversation: services.threadActions.messages(in: thread))
         }

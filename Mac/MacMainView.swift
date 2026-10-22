@@ -6,6 +6,7 @@ struct MacMainView: View {
     let services: MacServices
     @Bindable var model: MacMailboxModel
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
     @State private var columns = NavigationSplitViewVisibility.all
     @State private var snoozing: [Correspondence] = []
     /// Help › Send Diagnostics: the file to share.
@@ -161,10 +162,10 @@ struct MacMainView: View {
 
     // MARK: List
 
-    /// Unread Only, on every list but Unread itself, and not while
+    /// Unread Only, on every list, and not while
     /// searching: search looks through everything.
     private var filtersUnread: Bool {
-        unreadOnly && model.search.isEmpty && model.mailbox != .filter(MailFilter.unread.rawValue)
+        unreadOnly && model.search.isEmpty
     }
 
     private func visibleRows() -> [MacRow] {
@@ -475,6 +476,14 @@ struct MacMainView: View {
             model.search = search
             submitSearch()
         }
+        // A summary and replies on Maya's email, as Apple Intelligence shows them.
+        if args.contains("-SampleReplies"), let maya = services.store.thread(ThreadID(account: "sample", providerID: "sample-0")) {
+            services.intelligence.showForScreenshots(
+                .init(summary: "Maya needs your approval on the final creative direction before tomorrow's review.",
+                      replyIntents: ["Approve the direction", "Ask for one more round"]), on: maya)
+        }
+        if args.contains("-SettingsTab") { openSettings() }
+        if let to = value("-ComposeTo") { openWindow(value: ComposeRequest(kind: .new, to: to)) }
         if let thread = value("-SelectThread") {
             try? await Task.sleep(for: .milliseconds(300))
             model.selection = [ThreadID(account: "sample", providerID: thread)]
@@ -635,7 +644,7 @@ struct MacMainView: View {
             }
         }
         var places: [MacMailbox] = [.needsYou, .waiting]
-        places += [MailFilter.primary, .everything, .unread, .promotions, .social, .updates].map { MacMailbox.filter($0.rawValue) }
+        places += [MailFilter.primary, .everything, .promotions, .social, .updates].map { MacMailbox.filter($0.rawValue) }
         places += [.flagged, .snoozed, .handled]
         if !ScheduledSends.shared.items.isEmpty { places.append(.scheduled) }
         places += MacRemoteMailboxes.Kind.allCases.map { MacMailbox.server($0.rawValue) }
@@ -710,6 +719,26 @@ struct MacMainView: View {
             entry.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
             menu.addItem(entry)
         }
+        // A first email from someone: let them in, or not, for every
+        // selected sender at once.
+        if thread.senderDecision == .pending {
+            let chosen = model.selection.contains(thread.id)
+                ? model.selection.compactMap { services.store.thread($0) } : [thread]
+            var seen = Set<String>()
+            let senders = chosen.filter { $0.senderDecision == .pending }.compactMap { pending -> (email: String, account: String)? in
+                guard let email = pending.senderEmail, seen.insert("\(pending.id.account)|\(email)").inserted else { return nil }
+                return (email, pending.id.account)
+            }
+            for (decision, title, symbol) in [(SenderDecision.approved, senders.count > 1 ? String(localized: "Allow \(senders.count) Senders") : String(localized: "Allow Sender"), "checkmark.circle"),
+                                              (SenderDecision.blocked, senders.count > 1 ? String(localized: "Block \(senders.count) Senders") : String(localized: "Block Sender"), "hand.raised")] {
+                let entry = ClosureMenuItem(title: title) {
+                    Task { await services.store.setSenderDecision(decision, senders: senders) }
+                }
+                entry.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+                menu.addItem(entry)
+            }
+            menu.addItem(.separator())
+        }
         item(String(localized: "Reply"), "arrowshape.turn.up.left", .reply)
         item(String(localized: "Reply All"), "arrowshape.turn.up.left.2", .replyAll)
         item(String(localized: "Forward"), "arrowshape.turn.up.right", .forward)
@@ -737,6 +766,15 @@ struct MacMainView: View {
         }
         mute.image = NSImage(systemSymbolName: isMuted ? "bell" : "bell.slash", accessibilityDescription: nil)
         menu.addItem(mute)
+        // A VIP's mail always lands in Needs You and always notifies.
+        if let email = thread.senderEmail, !thread.isFromAccountOwner {
+            let isVIP = InboxClassifier.isVIP(email)
+            let vip = ClosureMenuItem(title: isVIP ? String(localized: "Remove from VIPs") : String(localized: "Make VIP")) {
+                Task { await services.store.setVIP(email, account: thread.id.account, isVIP: !isVIP) }
+            }
+            vip.image = NSImage(systemSymbolName: isVIP ? "star.slash" : "star", accessibilityDescription: nil)
+            menu.addItem(vip)
+        }
         // When to be reminded, as Mail's Remind Me offers.
         let remind = NSMenuItem(title: String(localized: "Add to Reminders"), action: nil, keyEquivalent: "")
         remind.image = NSImage(systemSymbolName: "checklist", accessibilityDescription: nil)

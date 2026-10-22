@@ -25,7 +25,13 @@ struct SendersView: View {
     var body: some View {
         let senders = all
         let shown = SenderDirectory.filtered(senders, filter, search: search, order: order)
-        List {
+        container {
+            #if os(macOS)
+            // A settings window has no toolbar search, so it's a field here.
+            Section {
+                TextField("Search", text: $search, prompt: Text("Name or address"))
+            }
+            #endif
             if search.isEmpty {
                 suggestionSection
                 newSendersSection
@@ -38,6 +44,7 @@ struct SendersView: View {
                     }
                 } footer: {
                     Text("Corres learns from your corrections, on this \(Device.name). Every lesson is listed there, and you can make it forget any of them.")
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             Section {
@@ -54,7 +61,7 @@ struct SendersView: View {
                 }
                 .pickerStyle(.menu)
             } footer: {
-                Text(footer)
+                Text(footer).fixedSize(horizontal: false, vertical: true)
             }
             Section {
                 if shown.isEmpty {
@@ -79,11 +86,13 @@ struct SendersView: View {
                 }
             }
         }
+        #if os(iOS)
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
         .searchable(text: $search, prompt: "Name or address")
+        #endif
         .navigationTitle("Senders")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineTitle()
         .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
         .onAppear { suggestions = HabitWatcher.shared.suggestions(in: store.threads) }
         .overlay(alignment: .bottom) {
@@ -106,6 +115,16 @@ struct SendersView: View {
         } message: {
             Text("Corres asks them to stop, the way their own unsubscribe link does. Block also hides anything they still send.")
         }
+    }
+
+    /// A list on iPhone and iPad; the Mac's grouped settings form.
+    @ViewBuilder
+    private func container<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        #if os(macOS)
+        Form { content() }.formStyle(.grouped)
+        #else
+        List { content() }
+        #endif
     }
 
     // MARK: Suggestions, new senders, VIPs
@@ -173,6 +192,7 @@ struct SendersView: View {
             Text(screenNewSenders
                  ? "Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden."
                  : "Someone's first email shows like anyone else's, marked New, and you can allow or block them right from the email. Blocked senders stay hidden.")
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -183,22 +203,31 @@ struct SendersView: View {
             } else {
                 ForEach(vips, id: \.self) { email in
                     Label(vipName(for: email), systemImage: "star.fill")
-                }
-                .onDelete { offsets in
-                    let removed = offsets.map { vips[$0] }
-                    vips.remove(atOffsets: offsets)
-                    Task {
-                        for email in removed {
-                            let account = store.threads.first { $0.senderEmail?.lowercased() == email }?.id.account ?? ""
-                            await store.setVIP(email, account: account, isVIP: false)
+                        .contextMenu {
+                            Button { removeVIPs([email]) } label: { Label("Remove from VIPs", systemImage: "star.slash") }
                         }
-                    }
                 }
+                .onDelete { offsets in removeVIPs(offsets.map { vips[$0] }) }
             }
         } header: {
             Text("VIPs")
         } footer: {
+            #if os(macOS)
+            Text("A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone by right-clicking their email in a list. Right-click a VIP here to remove them.")
+                .fixedSize(horizontal: false, vertical: true)
+            #else
             Text("A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove.")
+            #endif
+        }
+    }
+
+    private func removeVIPs(_ removed: [String]) {
+        vips.removeAll { removed.contains($0) }
+        Task {
+            for email in removed {
+                let account = store.threads.first { $0.senderEmail?.lowercased() == email }?.id.account ?? ""
+                await store.setVIP(email, account: account, isVIP: false)
+            }
         }
     }
 
@@ -249,7 +278,7 @@ struct SendersView: View {
             Button {
                 Task { await store.setVIP(sender.email, account: sender.account, isVIP: !isVIP) }
             } label: { Label(isVIP ? "Remove from VIPs" : "Make VIP", systemImage: isVIP ? "star.slash" : "star") }
-            Button { UIPasteboard.general.string = sender.email } label: { Label("Copy Address", systemImage: "doc.on.doc") }
+            Button { Platform.copy(sender.email) } label: { Label("Copy Address", systemImage: "doc.on.doc") }
         }
     }
 
@@ -303,12 +332,21 @@ struct SendersView: View {
     }
 
     private var footer: String {
+        #if os(macOS)
+        switch filter {
+        case .subscriptions: return String(localized: "Newsletters, stores and services: anyone who sends with an unsubscribe link. Right-click one to unsubscribe.")
+        case .blocked: return String(localized: "Blocked senders' mail stays out of every list on this Mac, and they're never told. Right-click one to allow them again.")
+        case .new: return String(localized: "First emails from people you haven't allowed or blocked yet.")
+        default: return String(localized: "Everyone who has emailed you, from mail on this Mac. Right-click a sender to block, allow, unsubscribe or make them a VIP.")
+        }
+        #else
         switch filter {
         case .subscriptions: String(localized: "Newsletters, stores and services: anyone who sends with an unsubscribe link. Swipe right to unsubscribe.")
         case .blocked: String(localized: "Blocked senders' mail stays out of every list on this \(Device.name), and they're never told. Swipe to allow one again.")
         case .new: String(localized: "First emails from people you haven't allowed or blocked yet.")
         default: String(localized: "Everyone who has emailed you, from mail on this \(Device.name). Swipe left to block or allow, right to unsubscribe, or press and hold for more.")
         }
+        #endif
     }
 
     private var emptyText: String {

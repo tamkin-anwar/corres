@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+" · %lld unread" = " · 읽지 않음 %lld개";
+
+/* No comment provided by engineer. */
 " Due %@." = " 마감 %@.";
 
 /* No comment provided by engineer. */
 "·" = "·";
+
+/* No comment provided by engineer. */
+"“%@”" = "'%@'";
 
 /* No comment provided by engineer. */
 "%@" = "%@";
@@ -59,6 +65,9 @@
 "%@’s %@" = "%1$@의 %2$@";
 
 /* No comment provided by engineer. */
+"%@%@ · last %@" = "%@%@ · 마지막 %@";
+
+/* No comment provided by engineer. */
 "%lld" = "%lld";
 
 /* No comment provided by engineer. */
@@ -77,7 +86,13 @@
 "%lld conversations, %lld unread" = "대화 %lld개, 읽지 않음 %lld개";
 
 /* No comment provided by engineer. */
+"%lld days" = "%lld일";
+
+/* No comment provided by engineer. */
 "%lld earlier messages" = "이전 메시지 %lld개";
+
+/* No comment provided by engineer. */
+"%lld emails" = "이메일 %lld개";
 
 /* No comment provided by engineer. */
 "%lld emails need you" = "이메일 %lld개가 나를 기다림";
@@ -89,13 +104,22 @@
 "%lld new messages" = "새로운 메시지 %lld개";
 
 /* No comment provided by engineer. */
+"%lld seconds" = "%lld초";
+
+/* No comment provided by engineer. */
 "%lldd" = "%lld일";
 
 /* No comment provided by engineer. */
 "1 attachment" = "첨부 파일 1개";
 
 /* No comment provided by engineer. */
+"1 day" = "1일";
+
+/* No comment provided by engineer. */
 "1 earlier message" = "이전 메시지 1개";
+
+/* No comment provided by engineer. */
+"1 email" = "이메일 1개";
 
 /* No comment provided by engineer. */
 "1 email needs you" = "이메일 1개가 나를 기다림";
@@ -105,6 +129,12 @@
 
 /* No comment provided by engineer. */
 "A name, address or company, like amazon.com" = "이름, 주소 또는 회사(예: amazon.com)";
+
+/* No comment provided by engineer. */
+"A receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email." = "영수증이나 청구서의 상태와 금액, 배송 날짜, 긴 이메일이 요청하는 내용을 이메일에서 바로 읽어 옵니다.";
+
+/* No comment provided by engineer. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone by right-clicking their email in a list. Right-click a VIP here to remove them." = "VIP의 이메일은 참조로만 받아도 항상 ‘나에게 필요’에 들어가고 항상 알림이 옵니다. 목록에서 이메일을 오른쪽 클릭해 추가하세요. 여기서 VIP를 오른쪽 클릭하면 제거됩니다.";
 
 /* No comment provided by engineer. */
 "About %lld words" = "약 %lld단어";
@@ -122,6 +152,9 @@
 "Accounts you add on your iPhone or iPad appear here on their own, through iCloud Keychain. Corres reads your mail straight from your provider on this Mac; our servers never receive it." = "iPhone이나 iPad에서 추가한 계정은 iCloud 키체인을 통해 자동으로 여기에 나타납니다. Corres는 이 Mac에서 제공업체로부터 메일을 직접 읽으며, 저희 서버는 메일을 받지 않습니다.";
 
 /* No comment provided by engineer. */
+"Actual Size" = "실제 크기";
+
+/* No comment provided by engineer. */
 "Add a signature" = "서명 추가";
 
 /* No comment provided by engineer. */
@@ -129,6 +162,9 @@
 
 /* No comment provided by engineer. */
 "Add an Email Account" = "이메일 계정 추가";
+
+/* No comment provided by engineer. */
+"Add Cc and Bcc" = "참조 및 숨은 참조 추가";
 
 /* No comment provided by engineer. */
 "Add iCloud Mail" = "iCloud 메일 추가";
@@ -167,10 +203,49 @@
 "All Unread" = "모든 읽지 않은 메일";
 
 /* No comment provided by engineer. */
+"Allow" = "허용";
+
+/* No comment provided by engineer. */
 "Allow %@" = "%@ 허용";
 
 /* No comment provided by engineer. */
+"Allow %lld" = "%lld개 허용";
+
+/* No comment provided by engineer. */
+"Allow %lld Senders" = "보낸 사람 %lld명 허용";
+
+/* No comment provided by engineer. */
+"Allow 1 company?" = "회사 1곳을 허용하겠습니까?";
+
+/* No comment provided by engineer. */
+"Allow 1 person?" = "1명을 허용하겠습니까?";
+
+/* No comment provided by engineer. */
+"Allow All" = "모두 허용";
+
+/* No comment provided by engineer. */
+"Allow all %lld companies?" = "회사 %lld곳을 모두 허용하겠습니까?";
+
+/* No comment provided by engineer. */
+"Allow all %lld people?" = "%lld명을 모두 허용하겠습니까?";
+
+/* No comment provided by engineer. */
+"Allow Corres to Change Out of Office" = "Corres가 부재중 자동 응답을 변경하도록 허용";
+
+/* No comment provided by engineer. */
+"Allow Everyone from %@" = "%@의 모든 사람 허용";
+
+/* No comment provided by engineer. */
+"Allow Sender" = "보낸 사람 허용";
+
+/* No comment provided by engineer. */
+"Allowed" = "허용됨";
+
+/* No comment provided by engineer. */
 "Already read." = "이미 읽었습니다.";
+
+/* No comment provided by engineer. */
+"Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "Corres가 파악한 습관도 잊습니다. 어떤 목록을 여는지, 누구를 먼저 읽는지, 평소 다시 알림 시간 등입니다.";
 
 /* No comment provided by engineer. */
 "Always from %@" = "항상 %@에서";
@@ -188,6 +263,9 @@
 "An address you receive at" = "메일을 받는 주소";
 
 /* No comment provided by engineer. */
+"An automatic reply while you're away, sent by your email provider even with this Mac off." = "부재 중 자동 답장입니다. 이 Mac이 꺼져 있어도 이메일 서비스가 보냅니다.";
+
+/* No comment provided by engineer. */
 "Answer" = "답변";
 
 /* No comment provided by engineer. */
@@ -201,6 +279,9 @@
 
 /* No comment provided by engineer. */
 "Appearance" = "화면 모드";
+
+/* No comment provided by engineer. */
+"Apple doesn't let other mail apps change iCloud's automatic reply. Set it at icloud.com/mail, under Settings, then Vacation." = "Apple은 다른 메일 앱이 iCloud의 자동 응답을 변경하도록 허용하지 않습니다. icloud.com/mail의 설정에서 휴가로 이동해 설정하세요.";
 
 /* No comment provided by engineer. */
 "Applied to %lld conversations." = "대화 %lld개에 적용했습니다.";
@@ -245,10 +326,19 @@
 "Asks something of you" = "나에게 무언가를 요청함";
 
 /* No comment provided by engineer. */
+"Asks you" = "나에게 묻는 메일";
+
+/* No comment provided by engineer. */
 "Asks you something." = "질문하고 있습니다.";
 
 /* No comment provided by engineer. */
 "Asks you to pay." = "결제를 요청합니다.";
+
+/* No comment provided by engineer. */
+"At a glance" = "한눈에 보기";
+
+/* No comment provided by engineer. */
+"At the top of each email" = "각 이메일 맨 위";
 
 /* No comment provided by engineer. */
 "Attach" = "첨부";
@@ -269,7 +359,19 @@
 "Automatic" = "자동";
 
 /* No comment provided by engineer. */
+"Balanced" = "균형";
+
+/* No comment provided by engineer. */
+"Balanced: email written to you by a person; mail you're only copied on stays in Mail." = "균형: 사람이 나에게 직접 쓴 메일. 참조로만 받은 메일은 메일에 남습니다.";
+
+/* No comment provided by engineer. */
+"Bcc" = "숨은 참조";
+
+/* No comment provided by engineer. */
 "Beside companies' mail, the logo they publish for email, checked by its certificate. Corres's server fetches it, so the company never sees you, and is sent only the company's web address." = "회사 메일 옆에 회사가 이메일용으로 게시하고 인증서로 확인된 로고를 표시합니다. 로고는 Corres 서버가 가져오므로 회사는 사용자를 볼 수 없으며, 서버에는 회사의 웹 주소만 전달됩니다.";
+
+/* No comment provided by engineer. */
+"Bigger" = "크게";
 
 /* No comment provided by engineer. */
 "Block" = "차단";
@@ -281,7 +383,37 @@
 "Block %@?" = "%@ 님을 차단하겠습니까?";
 
 /* No comment provided by engineer. */
+"Block %lld" = "%lld개 차단";
+
+/* No comment provided by engineer. */
+"Block %lld Senders" = "보낸 사람 %lld명 차단";
+
+/* No comment provided by engineer. */
+"Block 1 company?" = "회사 1곳을 차단하겠습니까?";
+
+/* No comment provided by engineer. */
+"Block 1 person?" = "1명을 차단하겠습니까?";
+
+/* No comment provided by engineer. */
+"Block All" = "모두 차단";
+
+/* No comment provided by engineer. */
+"Block all %lld companies?" = "회사 %lld곳을 모두 차단하겠습니까?";
+
+/* No comment provided by engineer. */
+"Block all %lld people?" = "%lld명을 모두 차단하겠습니까?";
+
+/* No comment provided by engineer. */
+"Block Everyone from %@" = "%@의 모든 사람 차단";
+
+/* No comment provided by engineer. */
 "Block Sender" = "보낸 사람 차단";
+
+/* No comment provided by engineer. */
+"Blocked" = "차단됨";
+
+/* No comment provided by engineer. */
+"Blocked senders' mail stays out of every list on this Mac, and they're never told. Right-click one to allow them again." = "차단한 보낸 사람의 이메일은 이 Mac의 어떤 목록에도 나타나지 않으며, 상대방에게 알리지도 않습니다. 오른쪽 클릭하면 다시 허용할 수 있습니다.";
 
 /* No comment provided by engineer. */
 "Book" = "예약";
@@ -312,6 +444,9 @@
 
 /* No comment provided by engineer. */
 "Cc %lld" = "참조 %lld";
+
+/* No comment provided by engineer. */
+"Cc/Bcc" = "참조/숨은 참조";
 
 /* No comment provided by engineer. */
 "Change" = "변경";
@@ -356,10 +491,19 @@
 "codes" = "코드";
 
 /* No comment provided by engineer. */
+"Companies · %lld" = "회사 · %lld";
+
+/* No comment provided by engineer. */
 "Company logos" = "회사 로고";
 
 /* No comment provided by engineer. */
+"Company Rules" = "회사 규칙";
+
+/* No comment provided by engineer. */
 "Complete it" = "완료하기";
+
+/* No comment provided by engineer. */
+"Composing" = "작성";
 
 /* No comment provided by engineer. */
 "Confirm" = "확인";
@@ -377,10 +521,16 @@
 "Conversations" = "대화";
 
 /* No comment provided by engineer. */
+"Copy Address" = "주소 복사";
+
+/* No comment provided by engineer. */
 "corres" = "corres";
 
 /* No comment provided by engineer. */
 "Corres" = "Corres";
+
+/* No comment provided by engineer. */
+"Corres asks them to stop, the way their own unsubscribe link does. Block also hides anything they still send." = "Corres는 상대방의 수신 거부 링크와 같은 방식으로 발송 중단을 요청합니다. 차단하면 그 후에 보내는 메일도 가려집니다.";
 
 /* No comment provided by engineer. */
 "Corres can't add to Reminders. You can allow it in Settings." = "Corres가 미리 알림에 추가할 수 없습니다. 설정에서 허용할 수 있습니다.";
@@ -390,6 +540,9 @@
 
 /* No comment provided by engineer. */
 "Corres doesn't have access to Reminders. You can allow it in System Settings > Privacy & Security > Reminders." = "Corres가 미리 알림에 접근할 수 없습니다. 시스템 설정 > 개인정보 보호 및 보안 > 미리 알림에서 허용할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"Corres learns from your corrections, on this %@. Every lesson is listed there, and you can make it forget any of them." = "Corres는 이 %@에서 사용자의 수정으로부터 배웁니다. 배운 내용은 모두 그곳에 나열되며, 어떤 것이든 잊게 할 수 있습니다.";
 
 /* No comment provided by engineer. */
 "Corres learns your greeting, sign-off and length once you've sent a few more emails." = "이메일을 몇 통 더 보내면 Corres가 인사말, 맺음말, 길이를 익힙니다.";
@@ -438,6 +591,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't load the full message." = "전체 메시지를 불러올 수 없습니다.";
+
+/* No comment provided by engineer. */
+"Couldn't reach %@. Check your connection." = "%@에 연결할 수 없습니다. 연결을 확인하세요.";
 
 /* No comment provided by engineer. */
 "Couldn't Save" = "저장할 수 없음";
@@ -518,6 +674,9 @@
 "Edit Rule" = "규칙 편집";
 
 /* No comment provided by engineer. */
+"Edit Signatures…" = "서명 편집…";
+
+/* No comment provided by engineer. */
 "Edit Template" = "템플릿 편집";
 
 /* No comment provided by engineer. */
@@ -539,6 +698,9 @@
 "emails" = "이메일";
 
 /* No comment provided by engineer. */
+"Ends" = "종료";
+
+/* No comment provided by engineer. */
 "Every account, one inbox" = "모든 계정, 하나의 받은 편지함";
 
 /* No comment provided by engineer. */
@@ -551,10 +713,22 @@
 "Everyday" = "자주 사용";
 
 /* No comment provided by engineer. */
+"Everyone who has emailed you, from mail on this Mac. Right-click a sender to block, allow, unsubscribe or make them a VIP." = "이 Mac에 있는 메일 기준으로 나에게 이메일을 보낸 모든 사람입니다. 보낸 사람을 오른쪽 클릭하면 차단, 허용, 구독 취소, VIP 지정을 할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"Everyone who's reached you so far has already been reviewed." = "지금까지 연락한 사람은 모두 검토를 마쳤습니다.";
+
+/* No comment provided by engineer. */
 "Everything" = "모두";
 
 /* No comment provided by engineer. */
 "Everything Else" = "그 외 모두";
+
+/* No comment provided by engineer. */
+"Everything from People" = "사람에게서 온 모든 메일";
+
+/* No comment provided by engineer. */
+"Everything from people: every email from a person, including ones you're copied on." = "사람에게서 온 모든 메일: 참조로 받은 메일을 포함해 사람이 보낸 모든 이메일.";
 
 /* No comment provided by engineer. */
 "Explore Sample Mail" = "샘플 메일 둘러보기";
@@ -569,6 +743,15 @@
 "Finds this event on your calendar so you can remove it. Your calendar stays on this device." = "캘린더에서 이 일정을 찾아 삭제할 수 있게 합니다. 캘린더는 이 기기에만 머뭅니다.";
 
 /* No comment provided by engineer. */
+"First email from %@" = "%@의 첫 이메일";
+
+/* No comment provided by engineer. */
+"First email from them. Allow them into your inbox?" = "이 사람이 보낸 첫 이메일입니다. 받은 편지함에 허용할까요?";
+
+/* No comment provided by engineer. */
+"First emails from people you haven't allowed or blocked yet." = "아직 허용하거나 차단하지 않은 사람의 첫 이메일.";
+
+/* No comment provided by engineer. */
 "Flag" = "깃발";
 
 /* No comment provided by engineer. */
@@ -578,7 +761,19 @@
 "Flagged" = "깃발 표시됨";
 
 /* No comment provided by engineer. */
+"Focused" = "집중";
+
+/* No comment provided by engineer. */
+"Focused: only email that asks something of you, has a deadline, or is from a VIP or someone you write to." = "집중: 나에게 무언가를 요청하거나, 마감이 있거나, VIP 또는 내가 메일을 보내는 사람의 메일만.";
+
+/* No comment provided by engineer. */
 "Follow up" = "후속 조치";
+
+/* No comment provided by engineer. */
+"Follow up after" = "후속 조치까지";
+
+/* No comment provided by engineer. */
+"Forget Everything" = "모두 잊기";
 
 /* No comment provided by engineer. */
 "Forward" = "전달";
@@ -606,6 +801,9 @@
 
 /* No comment provided by engineer. */
 "From a VIP." = "VIP가 보냈습니다.";
+
+/* No comment provided by engineer. */
+"From how you treat each sender's mail, counted on this %@." = "보낸 사람별로 메일을 어떻게 다루는지를 이 %@에서 집계합니다.";
 
 /* No comment provided by engineer. */
 "From your mail on this %@. Nothing about them is looked up anywhere else." = "이 %@에 있는 내 메일에서 가져왔습니다. 다른 곳에서 정보를 찾지 않습니다.";
@@ -674,13 +872,22 @@
 "Here are a few times that work for me:\n\n%@\n\nDo any of these suit you?" = "다음 시간이 가능합니다:\n\n%@\n\n이 중 편하신 시간이 있을까요?";
 
 /* No comment provided by engineer. */
+"Holds a message for a moment so you can take it back." = "메시지를 잠시 보류해 취소할 수 있게 합니다.";
+
+/* No comment provided by engineer. */
 "How many emails need you, and the first few, from the menu bar." = "나를 기다리는 이메일 수와 처음 몇 개를 메뉴 막대에서 보여줍니다.";
+
+/* No comment provided by engineer. */
+"I'm away until…" = "부재 기간 종료일…";
 
 /* No comment provided by engineer. */
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
 "If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "Corres가 멈추거나 닫히거나 이상하게 동작하면, 이 파일이 어디서 그랬는지 알려 줍니다. 빌드, macOS 버전, 소요 시간, 충돌 보고서이며 메일은 포함되지 않습니다.";
+
+/* No comment provided by engineer. */
+"Images from the web stay off until you click Show Images, so senders can't tell when you opened their email." = "‘이미지 보기’를 클릭하기 전까지 웹 이미지는 꺼져 있어, 보낸 사람이 내가 언제 이메일을 열었는지 알 수 없습니다.";
 
 /* No comment provided by engineer. */
 "Images hidden to protect your privacy" = "개인정보 보호를 위해 이미지를 숨김";
@@ -693,6 +900,12 @@
 
 /* No comment provided by engineer. */
 "Images in email" = "이메일의 이미지";
+
+/* No comment provided by engineer. */
+"Images load as soon as you open an email. Senders using tracking images can see when you opened it." = "이메일을 열자마자 이미지를 불러옵니다. 추적 이미지를 사용하는 보낸 사람은 언제 열었는지 알 수 있습니다.";
+
+/* No comment provided by engineer. */
+"In 3 Hours" = "3시간 후";
 
 /* No comment provided by engineer. */
 "In Corres" = "Corres에서";
@@ -740,6 +953,9 @@
 "Join %@" = "%@ 참가";
 
 /* No comment provided by engineer. */
+"Key Details" = "주요 정보";
+
+/* No comment provided by engineer. */
 "Keyboard Shortcuts" = "키보드 단축키";
 
 /* No comment provided by engineer. */
@@ -755,7 +971,16 @@
 "Later" = "나중에";
 
 /* No comment provided by engineer. */
+"Later today" = "오늘 나중에";
+
+/* No comment provided by engineer. */
 "Later Today" = "오늘 늦게";
+
+/* No comment provided by engineer. */
+"Learn from My Changes" = "내 변경 사항에서 학습";
+
+/* No comment provided by engineer. */
+"Lessons" = "배운 것";
 
 /* No comment provided by engineer. */
 "Light" = "라이트";
@@ -857,7 +1082,19 @@
 "Message" = "메시지";
 
 /* No comment provided by engineer. */
+"More" = "더 보기";
+
+/* No comment provided by engineer. */
+"More for %@" = "%@ 더 보기";
+
+/* No comment provided by engineer. */
 "More Formal" = "더 격식 있게";
+
+/* No comment provided by engineer. */
+"Most Email" = "대부분의 이메일";
+
+/* No comment provided by engineer. */
+"Most Recent" = "최신 순";
 
 /* No comment provided by engineer. */
 "Move" = "이동";
@@ -908,10 +1145,16 @@
 "Name" = "이름";
 
 /* No comment provided by engineer. */
+"Name or address" = "이름 또는 주소";
+
+/* No comment provided by engineer. */
 "Name, like Directions or Thanks" = "이름(예: 길 안내, 감사 인사)";
 
 /* No comment provided by engineer. */
 "Name, sender or subject" = "이름, 보낸 사람 또는 제목";
+
+/* No comment provided by engineer. */
+"Need Apple Intelligence, and are part of Corres Pro." = "Apple Intelligence가 필요하며 Corres Pro에 포함됩니다.";
 
 /* No comment provided by engineer. */
 "Needs Attention" = "확인 필요";
@@ -926,7 +1169,13 @@
 "Needs You, Waiting or Handled" = "나에게 필요, 대기 중 또는 처리됨";
 
 /* No comment provided by engineer. */
+"Never for This Sender" = "이 보낸 사람에게는 사용 안 함";
+
+/* No comment provided by engineer. */
 "Never Needs You" = "'나에게 필요'에 넣지 않음";
+
+/* No comment provided by engineer. */
+"New" = "신규";
 
 /* No comment provided by engineer. */
 "New Email" = "새로운 이메일";
@@ -959,6 +1208,15 @@
 "newsletters" = "뉴스레터";
 
 /* No comment provided by engineer. */
+"Newsletters, stores and services: anyone who sends with an unsubscribe link. Right-click one to unsubscribe." = "뉴스레터, 상점, 서비스 등 구독 취소 링크와 함께 보내는 모든 곳입니다. 오른쪽 클릭하면 구독을 취소할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"Next step" = "다음 단계";
+
+/* No comment provided by engineer. */
+"Next step: %@" = "다음 단계: %@";
+
+/* No comment provided by engineer. */
 "Next Week" = "다음 주";
 
 /* No comment provided by engineer. */
@@ -983,6 +1241,15 @@
 "No Matches" = "일치 항목 없음";
 
 /* No comment provided by engineer. */
+"No new companies." = "새 회사가 없습니다.";
+
+/* No comment provided by engineer. */
+"No new people." = "새 사람이 없습니다.";
+
+/* No comment provided by engineer. */
+"No new senders waiting." = "기다리는 새 보낸 사람이 없습니다.";
+
+/* No comment provided by engineer. */
 "No number on the icon." = "아이콘에 숫자를 표시하지 않습니다.";
 
 /* No comment provided by engineer. */
@@ -998,10 +1265,31 @@
 "No reply in 1 day" = "1일째 답장 없음";
 
 /* No comment provided by engineer. */
+"No senders match “%@”." = "'%@'와(과) 일치하는 보낸 사람이 없습니다.";
+
+/* No comment provided by engineer. */
+"No senders yet." = "아직 보낸 사람이 없습니다.";
+
+/* No comment provided by engineer. */
+"No Signature" = "서명 없음";
+
+/* No comment provided by engineer. */
 "No subject" = "제목 없음";
 
 /* No comment provided by engineer. */
+"No subscriptions yet." = "아직 구독이 없습니다.";
+
+/* No comment provided by engineer. */
+"No VIPs yet" = "아직 VIP가 없음";
+
+/* No comment provided by engineer. */
+"Nobody blocked." = "차단한 사람이 없습니다.";
+
+/* No comment provided by engineer. */
 "None, straight in" = "없음, 바로 본론";
+
+/* No comment provided by engineer. */
+"Not Now" = "나중에";
 
 /* No comment provided by engineer. */
 "Nothing for you to do" = "할 일이 없음";
@@ -1026,6 +1314,9 @@
 
 /* No comment provided by engineer. */
 "Nothing unread in %@." = "%@에 읽지 않은 메일이 없습니다.";
+
+/* No comment provided by engineer. */
+"Nothing yet. Corres learns as you correct it." = "아직 없습니다. 수정할수록 Corres가 배웁니다.";
 
 /* No comment provided by engineer. */
 "notifications" = "알림";
@@ -1061,6 +1352,9 @@
 "Only %@" = "%@만";
 
 /* No comment provided by engineer. */
+"Only Reply to My Contacts" = "내 연락처에만 응답";
+
+/* No comment provided by engineer. */
 "Only what asks something of you, so the number means something." = "나에게 무언가를 요청하는 것만 세어 숫자에 의미가 있도록 합니다.";
 
 /* No comment provided by engineer. */
@@ -1085,6 +1379,9 @@
 "Open Corres once so it can sort your mail." = "메일을 분류할 수 있도록 Corres를 한 번 여세요.";
 
 /* No comment provided by engineer. */
+"Open iCloud Mail Settings" = "iCloud 메일 설정 열기";
+
+/* No comment provided by engineer. */
 "Open in New Window" = "새로운 윈도우에서 열기";
 
 /* No comment provided by engineer. */
@@ -1098,6 +1395,9 @@
 
 /* No comment provided by engineer. */
 "Open Needs You, Waiting or Mail in Corres." = "Corres에서 '나에게 필요', '대기 중' 또는 메일을 엽니다.";
+
+/* No comment provided by engineer. */
+"Opens %@" = "%@을(를) 엽니다";
 
 /* No comment provided by engineer. */
 "Opens its conversation" = "대화를 엽니다";
@@ -1121,7 +1421,13 @@
 "Other Email" = "기타 이메일";
 
 /* No comment provided by engineer. */
+"Other mail apps can't change this service's automatic reply. Set it on your email provider's website, usually under Settings, then Vacation or Auto Reply." = "다른 메일 앱은 이 서비스의 자동 응답을 변경할 수 없습니다. 이메일 제공업체의 웹사이트에서, 보통 설정의 휴가 또는 자동 응답에서 설정하세요.";
+
+/* No comment provided by engineer. */
 "Out for delivery" = "배달 중";
+
+/* No comment provided by engineer. */
+"Out of Office" = "부재중";
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
@@ -1149,6 +1455,9 @@
 
 /* No comment provided by engineer. */
 "Payment failed" = "결제 실패";
+
+/* No comment provided by engineer. */
+"People · %lld" = "사람 · %lld";
 
 /* No comment provided by engineer. */
 "People and Time-Sensitive" = "사람 및 시간 민감";
@@ -1211,6 +1520,9 @@
 "Read/Unread" = "읽음/읽지 않음";
 
 /* No comment provided by engineer. */
+"Reading" = "읽기";
+
+/* No comment provided by engineer. */
 "Reads like it needs something from you." = "나에게 무언가가 필요한 것 같습니다.";
 
 /* No comment provided by engineer. */
@@ -1265,6 +1577,9 @@
 "Remove from Calendar" = "캘린더에서 제거";
 
 /* No comment provided by engineer. */
+"Remove from VIPs" = "VIP에서 제거";
+
+/* No comment provided by engineer. */
 "Remove Saved Search" = "저장한 검색 제거";
 
 /* No comment provided by engineer. */
@@ -1307,6 +1622,9 @@
 "Review" = "검토";
 
 /* No comment provided by engineer. */
+"Review New Senders" = "새 보낸 사람 검토";
+
+/* No comment provided by engineer. */
 "RSVP" = "참석 여부 회신";
 
 /* No comment provided by engineer. */
@@ -1346,7 +1664,13 @@
 "Saved Searches" = "저장한 검색";
 
 /* No comment provided by engineer. */
+"Saving…" = "저장 중…";
+
+/* No comment provided by engineer. */
 "Schedule" = "예약";
+
+/* No comment provided by engineer. */
+"Screen New Senders" = "새 보낸 사람 선별";
 
 /* No comment provided by engineer. */
 "Search" = "검색";
@@ -1379,6 +1703,9 @@
 "Send Later" = "나중에 보내기";
 
 /* No comment provided by engineer. */
+"Send new mail from" = "새 메일 보낼 계정";
+
+/* No comment provided by engineer. */
 "Send Now" = "지금 보내기";
 
 /* No comment provided by engineer. */
@@ -1389,6 +1716,9 @@
 
 /* No comment provided by engineer. */
 "Send without a subject?" = "제목 없이 보내겠습니까?";
+
+/* No comment provided by engineer. */
+"Senders" = "보낸 사람";
 
 /* No comment provided by engineer. */
 "Sending. Undo available." = "보내는 중. 실행 취소할 수 있습니다.";
@@ -1409,6 +1739,9 @@
 "Sent." = "보냈습니다.";
 
 /* No comment provided by engineer. */
+"Set Up…" = "설정…";
+
+/* No comment provided by engineer. */
 "Share" = "공유";
 
 /* No comment provided by engineer. */
@@ -1416,6 +1749,9 @@
 
 /* No comment provided by engineer. */
 "Shorter" = "더 짧게";
+
+/* No comment provided by engineer. */
+"Show" = "보기";
 
 /* No comment provided by engineer. */
 "Show All" = "모두 보기";
@@ -1454,6 +1790,9 @@
 "Sign-Off" = "맺음말";
 
 /* No comment provided by engineer. */
+"Signature" = "서명";
+
+/* No comment provided by engineer. */
 "Signatures" = "서명";
 
 /* No comment provided by engineer. */
@@ -1461,6 +1800,9 @@
 
 /* No comment provided by engineer. */
 "Signing In…" = "로그인 중…";
+
+/* No comment provided by engineer. */
+"Smaller" = "작게";
 
 /* No comment provided by engineer. */
 "Snooze" = "다시 알림";
@@ -1487,10 +1829,22 @@
 "Social notification. Kept out of Needs You." = "소셜 알림입니다. '나에게 필요'에 넣지 않았습니다.";
 
 /* No comment provided by engineer. */
+"Someone's first email shows like anyone else's, marked New, and you can allow or block them right from the email. Blocked senders stay hidden." = "누군가의 첫 이메일도 다른 메일처럼 '신규'로 표시되어 나타나며, 이메일에서 바로 허용하거나 차단할 수 있습니다. 차단한 보낸 사람은 계속 숨겨집니다.";
+
+/* No comment provided by engineer. */
+"Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden." = "누군가의 첫 이메일은 허용할 때까지 '새 보낸 사람'에서 기다리므로, 허용한 사람의 메일만 보게 됩니다. 차단한 보낸 사람은 계속 숨겨집니다.";
+
+/* No comment provided by engineer. */
 "Something failed that only you can fix." = "나만 해결할 수 있는 문제가 발생했습니다.";
 
 /* No comment provided by engineer. */
 "Something Went Wrong" = "문제가 발생했습니다";
+
+/* No comment provided by engineer. */
+"Sort By" = "정렬 기준";
+
+/* No comment provided by engineer. */
+"Sorting" = "분류";
 
 /* No comment provided by engineer. */
 "Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service." = "분류, 요약, 초안은 이 Mac에서 실행됩니다. 메일은 저희 서버나 AI 서비스로 가지 않습니다.";
@@ -1500,6 +1854,12 @@
 
 /* No comment provided by engineer. */
 "Start a new email in Corres." = "Corres에서 새로운 이메일을 시작합니다.";
+
+/* No comment provided by engineer. */
+"Start of day" = "하루 시작";
+
+/* No comment provided by engineer. */
+"Starts" = "시작";
 
 /* No comment provided by engineer. */
 "Subject" = "제목";
@@ -1514,10 +1874,25 @@
 "Subject: %@" = "제목: %@";
 
 /* No comment provided by engineer. */
+"Subscriptions" = "구독";
+
+/* No comment provided by engineer. */
 "Suggest Times from Your Calendar" = "캘린더에서 시간 제안";
 
 /* No comment provided by engineer. */
-"Summaries (Apple Intelligence, on this Mac)" = "요약(Apple Intelligence, 이 Mac에서)";
+"Suggested replies" = "추천 답장";
+
+/* No comment provided by engineer. */
+"Suggested replies use the greeting, sign-off and length you use in email you've sent, for each person you write to often. Learned on this Mac from your sent mail, and never sent anywhere." = "추천 답장은 자주 연락하는 사람마다 보낸 이메일에서 쓰는 인사말, 맺음말, 길이를 따릅니다. 이 Mac에서 보낸 메일로 학습하며, 어디에도 전송되지 않습니다.";
+
+/* No comment provided by engineer. */
+"Suggestions" = "제안";
+
+/* No comment provided by engineer. */
+"Summaries and suggested replies" = "요약 및 추천 답장";
+
+/* No comment provided by engineer. */
+"Swipe a lesson to forget it." = "배운 것을 쓸어넘기면 잊게 됩니다.";
 
 /* No comment provided by engineer. */
 "Templates" = "템플릿";
@@ -1547,13 +1922,40 @@
 "The organizer changed this event. You'd said maybe to the earlier version." = "주최자가 이 일정을 변경했습니다. 이전 버전에는 '미정'으로 응답했었습니다.";
 
 /* No comment provided by engineer. */
+"Their mail already shows in Corres. Allow marks them as known; Block hides them quietly, for good. Neither changes your email account." = "이 사람의 메일은 이미 Corres에 표시됩니다. '허용'은 아는 사람으로 표시하고, '차단'은 영구적으로 조용히 숨깁니다. 어느 쪽도 이메일 계정은 변경하지 않습니다.";
+
+/* No comment provided by engineer. */
+"Their mail comes to your inbox from now on." = "이제부터 이 사람의 메일이 받은 편지함에 들어옵니다.";
+
+/* No comment provided by engineer. */
 "Their mail is hidden in Corres from now on, with no notice to them. Your email account isn't changed." = "이제부터 이 사람의 메일은 Corres에서 숨겨지며, 상대방에게 알리지 않습니다. 이메일 계정은 변경되지 않습니다.";
+
+/* No comment provided by engineer. */
+"Their mail reaches Corres only once you allow them. Blocking hides them quietly, for good. Neither changes your email account." = "이 사람의 메일은 허용한 후에만 Corres에 도착합니다. 차단하면 영구적으로 조용히 숨깁니다. 어느 쪽도 이메일 계정은 변경하지 않습니다.";
+
+/* No comment provided by engineer. */
+"Their mail stays out of every list, and they're never told." = "이 사람의 메일은 어떤 목록에도 나타나지 않으며, 상대방에게 알리지도 않습니다.";
+
+/* No comment provided by engineer. */
+"Their mail will be hidden quietly. You can undo this right after." = "이 사람의 메일이 조용히 숨겨집니다. 바로 취소할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"Their mail will show in Corres. You can undo this right after." = "이 사람의 메일이 Corres에 표시됩니다. 바로 취소할 수 있습니다.";
 
 /* No comment provided by engineer. */
 "This email is from a mailing list." = "이 이메일은 메일링 리스트에서 왔습니다.";
 
 /* No comment provided by engineer. */
+"This email is in %@." = "이 이메일은 %@로 쓰여 있습니다.";
+
+/* No comment provided by engineer. */
+"This email is in another language." = "이 이메일은 다른 언어로 쓰여 있습니다.";
+
+/* No comment provided by engineer. */
 "This Evening" = "오늘 저녁";
+
+/* No comment provided by engineer. */
+"This Evening, 6 PM" = "오늘 저녁 오후 6시";
 
 /* No comment provided by engineer. */
 "This Weekend" = "이번 주말";
@@ -1592,6 +1994,9 @@
 "Tomorrow 8am, next friday, in 3 days" = "Tomorrow 8am, next friday, in 3 days";
 
 /* No comment provided by engineer. */
+"Tomorrow and Next Week come back then; This Weekend an hour later, on Saturday." = "‘내일’과 ‘다음 주’는 그 시각에, ‘이번 주말’은 토요일 한 시간 뒤에 돌아옵니다.";
+
+/* No comment provided by engineer. */
 "tomorrow at %@" = "내일 %@";
 
 /* No comment provided by engineer. */
@@ -1607,6 +2012,9 @@
 "Translate" = "번역";
 
 /* No comment provided by engineer. */
+"Translates it on this Mac with Apple's Translate" = "이 Mac에서 Apple 번역으로 번역합니다";
+
+/* No comment provided by engineer. */
 "Trash" = "휴지통";
 
 /* No comment provided by engineer. */
@@ -1620,6 +2028,9 @@
 
 /* No comment provided by engineer. */
 "Undo" = "실행 취소";
+
+/* No comment provided by engineer. */
+"Undo Send" = "보내기 취소";
 
 /* No comment provided by engineer. */
 "Unflag" = "깃발 제거";
@@ -1667,6 +2078,12 @@
 "Unsubscribe" = "수신 거부";
 
 /* No comment provided by engineer. */
+"Unsubscribe and Block" = "수신 거부 및 차단";
+
+/* No comment provided by engineer. */
+"Unsubscribe from %@?" = "%@ 수신을 거부하겠습니까?";
+
+/* No comment provided by engineer. */
 "Unsubscribed. You won't get more from this list." = "수신 거부했습니다. 이 목록에서 더 이상 메일을 받지 않습니다.";
 
 /* No comment provided by engineer. */
@@ -1709,10 +2126,16 @@
 "VIP" = "VIP";
 
 /* No comment provided by engineer. */
+"VIPs" = "VIP";
+
+/* No comment provided by engineer. */
 "Waiting" = "대기 중";
 
 /* No comment provided by engineer. */
 "Waiting on a reply" = "답장 대기 중";
+
+/* No comment provided by engineer. */
+"Waiting turns into Follow up once someone hasn't replied in that long." = "그 기간 동안 답이 없으면 ‘대기 중’이 ‘후속 조치’로 바뀝니다.";
 
 /* No comment provided by engineer. */
 "Waiting: " = "대기 중:";
@@ -1722,6 +2145,9 @@
 
 /* No comment provided by engineer. */
 "Was %@" = "%@까지였음";
+
+/* No comment provided by engineer. */
+"What Corres Has Learned" = "Corres가 배운 것";
 
 /* No comment provided by engineer. */
 "What Needs Me" = "나에게 필요한 것";
@@ -1742,6 +2168,12 @@
 "When you can" = "여유 있을 때";
 
 /* No comment provided by engineer. */
+"When you say an email Apple Intelligence flagged needs no action, Corres stops flagging that kind of email from that sender; their other mail is untouched. When you move a sender's automated email into Needs You, it keeps that kind there. Corres also notices habits, like lists you never open or people you always read at once, and suggests a change, at most once a day. Everything stays on this %@." = "Apple Intelligence가 표시한 이메일이 조치가 필요 없다고 하면, Corres는 그 보낸 사람의 같은 종류 메일을 더 이상 표시하지 않으며, 다른 메일은 그대로 둡니다. 보낸 사람의 자동 발송 메일을 '나에게 필요'로 옮기면 그 종류는 계속 그곳에 들어옵니다. Corres는 열지 않는 목록이나 항상 바로 읽는 사람 같은 습관도 알아차리고, 하루에 한 번까지 변경을 제안합니다. 모두 이 %@에만 머뭅니다.";
+
+/* No comment provided by engineer. */
+"While it's on, %@ answers new email with your message and sends it even with this %@ off." = "켜져 있는 동안 %@이(가) 새로운 이메일에 내 메시지로 답장하며, 이 %@이(가) 꺼져 있어도 보냅니다.";
+
+/* No comment provided by engineer. */
 "Who should it go to? Add someone first." = "누구에게 보낼까요? 먼저 받는 사람을 추가하세요.";
 
 /* No comment provided by engineer. */
@@ -1758,6 +2190,15 @@
 
 /* No comment provided by engineer. */
 "Write Replies Like Me" = "내 말투로 답장 쓰기";
+
+/* No comment provided by engineer. */
+"Write the message %@ should send." = "%@이(가) 보낼 메시지를 작성하세요.";
+
+/* No comment provided by engineer. */
+"Writes this reply for you to read and change" = "이 답장을 작성해 확인하고 수정할 수 있게 합니다";
+
+/* No comment provided by engineer. */
+"Written by Apple Intelligence on this Mac and checked against the email: every name, number and date has to be in it. Part of Corres Pro." = "이 Mac의 Apple Intelligence가 작성하고 이메일과 대조합니다. 모든 이름, 숫자, 날짜는 이메일에 있어야 합니다. Corres Pro에 포함됩니다.";
 
 /* No comment provided by engineer. */
 "Yahoo, AOL, Fastmail, Zoho or a work server. Corres finds the server settings for you." = "Yahoo, AOL, Fastmail, Zoho 또는 회사 서버. Corres가 서버 설정을 찾아줍니다.";

@@ -4,23 +4,39 @@ import SwiftUI
 /// tabbed Settings window.
 struct MacSettingsView: View {
     let services: MacServices
+    @State private var tab = Self.firstTab
 
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             MacAccountsSettings(services: services)
-                .tabItem { Label("Accounts", systemImage: "at") }
+                .tabItem { Label("Accounts", systemImage: "at") }.tag(0)
             MacGeneralSettings(store: services.store)
-                .tabItem { Label("General", systemImage: "gearshape") }
+                .tabItem { Label("General", systemImage: "gearshape") }.tag(1)
+            MacReadingSettings(intelligence: services.intelligence)
+                .tabItem { Label("Reading", systemImage: "text.book.closed") }.tag(2)
+            MacComposingSettings(auth: services.auth)
+                .tabItem { Label("Composing", systemImage: "square.and.pencil") }.tag(3)
             MacSignaturesSettings(accounts: services.auth.accounts.map(\.email))
-                .tabItem { Label("Signatures", systemImage: "signature") }
+                .tabItem { Label("Signatures", systemImage: "signature") }.tag(4)
             NavigationStack { TemplatesView() }
-                .tabItem { Label("Templates", systemImage: "text.badge.plus") }
+                .tabItem { Label("Templates", systemImage: "text.badge.plus") }.tag(5)
+            NavigationStack { SendersView(store: services.store, unsubscriber: services.unsubscribeService) }
+                .tabItem { Label("Senders", systemImage: "person.2") }.tag(6)
             NavigationStack { RulesView() }
-                .tabItem { Label("Rules", systemImage: "line.3.horizontal.decrease") }
+                .tabItem { Label("Rules", systemImage: "line.3.horizontal.decrease") }.tag(7)
             MacPlanSettings(entitlements: services.entitlements)
-                .tabItem { Label("Corres Pro", systemImage: "sparkle") }
+                .tabItem { Label("Corres Pro", systemImage: "sparkle") }.tag(8)
         }
-        .frame(width: 600, height: 460)
+        .frame(width: 680, height: 520)
+    }
+
+    /// Debug builds: -SettingsTab N opens on that tab, for screenshots.
+    private static var firstTab: Int {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if let index = args.firstIndex(of: "-SettingsTab"), args.indices.contains(index + 1) { return Int(args[index + 1]) ?? 0 }
+        #endif
+        return 0
     }
 }
 
@@ -28,6 +44,7 @@ private struct MacAccountsSettings: View {
     let services: MacServices
     @State private var addingIMAP: IMAPKind?
     @State private var removing: String?
+    @State private var showingOutOfOffice = false
 
     enum IMAPKind: String, Identifiable { case icloud, other; var id: String { rawValue } }
 
@@ -72,10 +89,29 @@ private struct MacAccountsSettings: View {
                     Button("Other Email") { addingIMAP = .other }
                 }
             }
+            if !auth.accounts.isEmpty {
+                Section {
+                    LabeledContent {
+                        Button("Set Up…") { showingOutOfOffice = true }
+                    } label: {
+                        Text("Out of Office")
+                        Text("An automatic reply while you're away, sent by your email provider even with this Mac off.")
+                    }
+                }
+            }
         }
         .formStyle(.grouped)
         .sheet(item: $addingIMAP) { kind in
             MacIMAPSignIn(kind: kind, services: services)
+        }
+        .sheet(isPresented: $showingOutOfOffice) {
+            NavigationStack {
+                OutOfOfficeView(auth: auth)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) { Button("Done") { showingOutOfOffice = false } }
+                    }
+            }
+            .frame(width: 520, height: 520)
         }
         .confirmationDialog("Remove \(removing ?? "")?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } })) {
             Button("Remove", role: .destructive) {
@@ -166,10 +202,11 @@ private struct MacIMAPSignIn: View {
 
 private struct MacGeneralSettings: View {
     @AppStorage("corres.appearance") private var appearance = "system"
-    @AppStorage(CorresSettings.summariesKey) private var summaries = true
-    @AppStorage(CorresSettings.markReadOnOpenKey) private var markRead = true
-    @AppStorage(CorresSettings.remoteImagesKey) private var remoteImages = CorresSettings.RemoteImages.ask.rawValue
     @AppStorage(SpotlightIndex.enabledKey) private var inSpotlight = true
+    @AppStorage(CorresSettings.sensitivityKey) private var sensitivity = InboxClassifier.Sensitivity.balanced.rawValue
+    @AppStorage(CorresSettings.followUpDaysKey) private var followUpDays = 3
+    @AppStorage(CorresSettings.morningHourKey) private var morningHour = 8
+    @AppStorage(CorresSettings.laterTodayEveningKey) private var laterTodayEvening = false
     @AppStorage(MacMenuBarSetting.key) private var inMenuBar = true
     @AppStorage(BrandLogos.enabledKey) private var companyLogos = true
     let store: MailStore
@@ -195,11 +232,6 @@ private struct MacGeneralSettings: View {
                 Text("Light").tag("light")
                 Text("Dark").tag("dark")
             }
-            Toggle("Mark as read when opened", isOn: $markRead)
-            Picker("Images in email", selection: $remoteImages) {
-                ForEach(CorresSettings.RemoteImages.allCases) { Text($0.title).tag($0.rawValue) }
-            }
-            Toggle("Summaries (Apple Intelligence, on this Mac)", isOn: $summaries)
             Toggle(isOn: $inMenuBar) {
                 Text("Show in menu bar")
                 Text("How many emails need you, and the first few, from the menu bar.")
@@ -219,8 +251,123 @@ private struct MacGeneralSettings: View {
                     else { await SpotlightIndex.shared.removeAll() }
                 }
             }
+            Section("Sorting") {
+                Picker(selection: $sensitivity) {
+                    Text("Focused").tag(InboxClassifier.Sensitivity.focused.rawValue)
+                    Text("Balanced").tag(InboxClassifier.Sensitivity.balanced.rawValue)
+                    Text("Everything from People").tag(InboxClassifier.Sensitivity.inclusive.rawValue)
+                } label: {
+                    Text("Needs You")
+                    Text(sensitivityDetail)
+                }
+                Picker(selection: $followUpDays) {
+                    ForEach(CorresSettings.followUpChoices, id: \.self) { Text($0 == 1 ? "1 day" : "\($0) days").tag($0) }
+                } label: {
+                    Text("Follow up after")
+                    Text("Waiting turns into Follow up once someone hasn't replied in that long.")
+                }
+            }
+            Section("Snooze") {
+                Picker(selection: $morningHour) {
+                    ForEach(6...10, id: \.self) { hour in
+                        Text(Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: .now)!
+                                .formatted(date: .omitted, time: .shortened)).tag(hour)
+                    }
+                } label: {
+                    Text("Start of day")
+                    Text("Tomorrow and Next Week come back then; This Weekend an hour later, on Saturday.")
+                }
+                Picker("Later today", selection: $laterTodayEvening) {
+                    Text("In 3 Hours").tag(false)
+                    Text("This Evening, 6 PM").tag(true)
+                }
+            }
         }
         .formStyle(.grouped)
+        .onChange(of: sensitivity) { CorresSettings.applyToCore(); Task { await store.reapplyRules() } }
+        .onChange(of: morningHour) { CorresSettings.applyToCore() }
+        .onChange(of: laterTodayEvening) { CorresSettings.applyToCore() }
+    }
+
+    private var sensitivityDetail: String {
+        switch InboxClassifier.Sensitivity(rawValue: sensitivity) ?? .balanced {
+        case .focused: String(localized: "Focused: only email that asks something of you, has a deadline, or is from a VIP or someone you write to.")
+        case .balanced: String(localized: "Balanced: email written to you by a person; mail you're only copied on stays in Mail.")
+        case .inclusive: String(localized: "Everything from people: every email from a person, including ones you're copied on.")
+        }
+    }
+}
+
+private struct MacReadingSettings: View {
+    let intelligence: MailIntelligence
+    @AppStorage(CorresSettings.keyDetailsKey) private var keyDetails = true
+    @AppStorage(CorresSettings.summariesKey) private var summaries = true
+    @AppStorage(CorresSettings.markReadOnOpenKey) private var markRead = true
+    @AppStorage(CorresSettings.remoteImagesKey) private var remoteImages = CorresSettings.RemoteImages.ask.rawValue
+
+    var body: some View {
+        Form {
+            Section("At the top of each email") {
+                Toggle(isOn: $keyDetails) {
+                    Text("Key Details")
+                    Text("A receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email.")
+                }
+                Toggle(isOn: $summaries) {
+                    Text("Summaries and suggested replies")
+                    Text(intelligence.isAvailable
+                         ? "Written by Apple Intelligence on this Mac and checked against the email: every name, number and date has to be in it. Part of Corres Pro."
+                         : "Need Apple Intelligence, and are part of Corres Pro.")
+                }
+            }
+            Section {
+                Picker(selection: $remoteImages) {
+                    ForEach(CorresSettings.RemoteImages.allCases) { Text($0.title).tag($0.rawValue) }
+                } label: {
+                    Text("Images in email")
+                    Text(remoteImages == CorresSettings.RemoteImages.ask.rawValue
+                         ? "Images from the web stay off until you click Show Images, so senders can't tell when you opened their email."
+                         : "Images load as soon as you open an email. Senders using tracking images can see when you opened it.")
+                }
+                Toggle("Mark as read when opened", isOn: $markRead)
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct MacComposingSettings: View {
+    let auth: GoogleAuthService
+    @AppStorage(CorresSettings.undoSendKey) private var undoSeconds = 5
+    @AppStorage(CorresSettings.defaultFromKey) private var defaultFrom = ""
+
+    var body: some View {
+        Form {
+            Section {
+                Picker(selection: $undoSeconds) {
+                    ForEach(CorresSettings.undoSendChoices, id: \.self) { seconds in
+                        Text(seconds == 0 ? "Off" : "\(seconds) seconds").tag(seconds)
+                    }
+                } label: {
+                    Text("Undo Send")
+                    Text("Holds a message for a moment so you can take it back.")
+                }
+                if auth.accounts.count > 1 {
+                    Picker("Send new mail from", selection: $defaultFrom) {
+                        ForEach(auth.accounts) { Text($0.email).tag($0.email) }
+                    }
+                }
+            }
+            Section {
+                WritingStyleRows()
+            } footer: {
+                Text("Suggested replies use the greeting, sign-off and length you use in email you've sent, for each person you write to often. Learned on this Mac from your sent mail, and never sent anywhere.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .onAppear {
+            if defaultFrom.isEmpty, let first = auth.accounts.first { defaultFrom = first.email }
+        }
     }
 }
 

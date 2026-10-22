@@ -122,7 +122,13 @@ final class MacMailboxModel {
     init() {
         if let data = UserDefaults.standard.data(forKey: Self.mailboxKey),
            let saved = try? JSONDecoder().decode(MacMailbox.self, from: data) {
-            mailbox = saved
+            // The Unread mailbox became Unread Only (⌘L), as on the iPhone.
+            if saved == .filter(MailFilter.unread.rawValue) {
+                mailbox = .filter(MailFilter.everything.rawValue)
+                UserDefaults.standard.set(true, forKey: MailFilter.unreadOnlyKey)
+            } else {
+                mailbox = saved
+            }
         }
     }
 
