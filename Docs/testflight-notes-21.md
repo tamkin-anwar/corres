@@ -137,3 +137,40 @@ Please try
 2. Leave your Mac asleep for a while, then wake it: new mail should arrive within seconds.
 
 Something off? Help > Send Diagnostics, or send feedback through TestFlight.
+
+## Build 27 (iPhone and iPad)
+
+Corres 0.2.0 (27) for iPhone, iPad and Apple Watch
+
+A small update. Key Details and suggested replies are now made by the same code on your iPhone and your Mac, so both read an email the same way. Nothing should look different on your iPhone.
+
+Please try
+1. Open a receipt or a delivery email: the order total and number should show at the top, as before.
+2. Tap a suggested reply under an email from a person, then check the reply sounds like you.
+3. If you haven't yet: "Write an email to [someone] in Corres" with Siri, and a reply from your Watch.
+
+Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
+
+## Mac build 28
+
+Corres for Mac 0.2.0 (28)
+
+The big ones
+- Suggested replies on the Mac. Under an email from a person, click one and Corres writes the whole reply in your own greeting, sign-off and length, then opens it for you to read and change.
+- New senders: allow or block someone's first email right where you read it, or right-click several in the list to decide them at once.
+- Compose suggests people as you type a name. Use the arrow keys, then Return or Tab. Cc/Bcc, your other addresses in From, and a Signature menu are there too.
+
+Also new
+- Key Details at the top of an email: a receipt's total, a delivery's date, and what a long email asks of you.
+- Translate: when an email isn't in one of your languages, one click translates it on your Mac.
+- View > Bigger and Smaller (Command-plus and Command-minus) for email text.
+- Settings has new Reading, Composing and Senders tabs: VIPs, blocked senders, subscriptions and what Corres has learned. Out of Office is under Accounts. Needs You and snooze times are under General.
+- Right-click an email to Make VIP.
+- The Unread mailbox is now Unread Only (Command-L), as on the iPhone.
+
+Please try
+1. Click a suggested reply and read what it wrote.
+2. Write a new email and type the first few letters of someone's name in To.
+3. Command-plus on a long email.
+
+Something off? Help > Send Diagnostics, or send feedback through TestFlight.
