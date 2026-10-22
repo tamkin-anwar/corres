@@ -368,6 +368,9 @@
 "Allow all %lld people?" = "%lld명을 모두 허용하겠습니까?";
 
 /* No comment provided by engineer. */
+"Allow Corres to Add Gmail Filters" = "Corres가 Gmail 필터를 추가하도록 허용";
+
+/* No comment provided by engineer. */
 "Allow Corres to Change Out of Office" = "Corres가 부재중 자동 응답을 변경하도록 허용";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,9 @@
 
 /* No comment provided by engineer. */
 "Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "Corres가 파악한 습관도 잊습니다. 어떤 목록을 여는지, 누구를 먼저 읽는지, 평소 다시 알림 시간 등입니다.";
+
+/* No comment provided by engineer. */
+"Also in %@" = "%@에서도 실행";
 
 /* No comment provided by engineer. */
 "Also Sends As" = "다른 보내는 주소";
@@ -821,6 +827,9 @@
 "Couldn't Unsubscribe" = "수신 거부할 수 없음";
 
 /* No comment provided by engineer. */
+"Couldn't update the rules in %@. They still run in Corres." = "%@의 규칙을 업데이트하지 못했습니다. Corres에서는 계속 실행됩니다.";
+
+/* No comment provided by engineer. */
 "Customize" = "사용자화";
 
 /* No comment provided by engineer. */
@@ -1134,6 +1143,9 @@
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail and Outlook" = "Gmail 및 Outlook";
 
 /* No comment provided by engineer. */
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail과 Outlook은 Google과 Microsoft의 페이지에서 로그인하며, Corres는 언제든지 철회할 수 있는 권한을 받습니다. iCloud는 account.apple.com에서 언제든지 끌 수 있는 앱 전용 암호를 사용합니다. 둘 다 이 %@의 키체인에 보관됩니다.";
@@ -1601,6 +1613,9 @@
 "Needs You on your Home Screen and Lock Screen." = "홈 화면과 잠금 화면에 '나에게 필요' 표시.";
 
 /* No comment provided by engineer. */
+"Needs You stays in Corres." = "‘나에게 필요’는 Corres 안에서만 작동합니다.";
+
+/* No comment provided by engineer. */
 "Needs You, Primary, Everything and the rest sit above your mail and scroll away with it, for more room. Scroll back to the top to switch." = "‘나에게 필요’, ‘기본’, ‘모두’ 등의 탭이 메일 위에 있으며, 스크롤하면 함께 사라져 공간이 넓어집니다. 전환하려면 맨 위로 돌아가세요.";
 
 /* No comment provided by engineer. */
@@ -1808,6 +1823,9 @@
 "Nothing in Needs You" = "'나에게 필요'에 아무것도 없음";
 
 /* No comment provided by engineer. */
+"Nothing in this rule can run in %@: Needs You is Corres's own." = "이 규칙에는 %@에서 실행할 수 있는 항목이 없습니다. ‘나에게 필요’는 Corres만의 기능입니다.";
+
+/* No comment provided by engineer. */
 "Nothing in Waiting" = "'대기 중'에 아무것도 없음";
 
 /* No comment provided by engineer. */
@@ -1992,6 +2010,9 @@
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Outlook can mark as read and archive, not flag or choose a tab." = "Outlook은 읽음으로 표시하고 보관할 수 있지만, 깃발을 달거나 탭을 고를 수는 없습니다.";
 
 /* No comment provided by engineer. */
 "Overdue" = "기한 지남";
@@ -2744,6 +2765,9 @@
 "This Evening, 6 PM" = "오늘 저녁 오후 6시";
 
 /* No comment provided by engineer. */
+"This runs in %@ too, even with Corres closed and on the web. Deleting the rule here removes it there." = "Corres를 닫아도, 웹에서도 %@에서 이 규칙이 실행됩니다. 여기서 규칙을 삭제하면 그곳에서도 삭제됩니다.";
+
+/* No comment provided by engineer. */
 "This Weekend" = "이번 주말";
 
 /* No comment provided by engineer. */
@@ -3174,6 +3198,9 @@
 
 /* No comment provided by engineer. */
 "your recipient" = "받는 사람";
+
+/* No comment provided by engineer. */
+"Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "규칙이 지금은 Corres에서 실행됩니다. 허용하면 Corres를 닫아도 Gmail에서도 실행됩니다: %@.";
 
 /* No comment provided by engineer. */
 "Your sample conversations couldn't be opened." = "샘플 대화를 열 수 없습니다.";

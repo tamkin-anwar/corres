@@ -368,6 +368,9 @@
 "Allow all %lld people?" = "%lld人すべてを許可しますか？";
 
 /* No comment provided by engineer. */
+"Allow Corres to Add Gmail Filters" = "CorresにGmailフィルタの追加を許可";
+
+/* No comment provided by engineer. */
 "Allow Corres to Change Out of Office" = "Corresに自動応答の変更を許可";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,9 @@
 
 /* No comment provided by engineer. */
 "Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "Corresが覚えた習慣も消去します。開くリスト、先に読む相手、よく使うスヌーズなどです。";
+
+/* No comment provided by engineer. */
+"Also in %@" = "%@でも実行";
 
 /* No comment provided by engineer. */
 "Also Sends As" = "ほかの送信アドレス";
@@ -821,6 +827,9 @@
 "Couldn't Unsubscribe" = "配信停止できませんでした";
 
 /* No comment provided by engineer. */
+"Couldn't update the rules in %@. They still run in Corres." = "%@のルールを更新できませんでした。Corresでは引き続き実行されます。";
+
+/* No comment provided by engineer. */
 "Customize" = "カスタマイズ";
 
 /* No comment provided by engineer. */
@@ -1134,6 +1143,9 @@
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail and Outlook" = "GmailとOutlook";
 
 /* No comment provided by engineer. */
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "GmailとOutlookはGoogleとMicrosoftのページでサインインし、Corresはいつでも取り消せる許可を受け取ります。iCloudはaccount.apple.comでいつでも無効にできるApp用パスワードを使います。どちらもこの%@のキーチェーンに保存されます。";
@@ -1601,6 +1613,9 @@
 "Needs You on your Home Screen and Lock Screen." = "ホーム画面とロック画面に「要対応」を表示。";
 
 /* No comment provided by engineer. */
+"Needs You stays in Corres." = "「要対応」はCorresの中だけで動きます。";
+
+/* No comment provided by engineer. */
 "Needs You, Primary, Everything and the rest sit above your mail and scroll away with it, for more room. Scroll back to the top to switch." = "「要対応」「メイン」「すべて」などのタブはメールの上にあり、スクロールすると一緒に隠れるので、より広く表示できます。切り替えるには一番上に戻ります。";
 
 /* No comment provided by engineer. */
@@ -1808,6 +1823,9 @@
 "Nothing in Needs You" = "「要対応」には何もありません";
 
 /* No comment provided by engineer. */
+"Nothing in this rule can run in %@: Needs You is Corres's own." = "このルールには%@で実行できるものがありません。「要対応」はCorres独自のものです。";
+
+/* No comment provided by engineer. */
 "Nothing in Waiting" = "「返信待ち」には何もありません";
 
 /* No comment provided by engineer. */
@@ -1992,6 +2010,9 @@
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Outlook can mark as read and archive, not flag or choose a tab." = "Outlookでは既読にすることとアーカイブはできますが、フラグやタブの指定はできません。";
 
 /* No comment provided by engineer. */
 "Overdue" = "期限切れ";
@@ -2744,6 +2765,9 @@
 "This Evening, 6 PM" = "今晩18:00";
 
 /* No comment provided by engineer. */
+"This runs in %@ too, even with Corres closed and on the web. Deleting the rule here removes it there." = "Corresを閉じていても、Webでも、%@でこのルールが実行されます。ここでルールを削除すると、そちらからも削除されます。";
+
+/* No comment provided by engineer. */
 "This Weekend" = "今週末";
 
 /* No comment provided by engineer. */
@@ -3174,6 +3198,9 @@
 
 /* No comment provided by engineer. */
 "your recipient" = "宛先の相手";
+
+/* No comment provided by engineer. */
+"Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "ルールは今Corresで実行されています。許可すると、Corresを閉じていてもGmailでも実行されます：%@。";
 
 /* No comment provided by engineer. */
 "Your sample conversations couldn't be opened." = "サンプルの会話を開けませんでした。";

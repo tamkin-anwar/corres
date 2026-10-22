@@ -368,6 +368,9 @@
 "Allow all %lld people?" = "সব %lld জনকে অনুমতি দেবেন?";
 
 /* No comment provided by engineer. */
+"Allow Corres to Add Gmail Filters" = "Corres-কে Gmail ফিল্টার যোগ করার অনুমতি দিন";
+
+/* No comment provided by engineer. */
 "Allow Corres to Change Out of Office" = "Corres-কে অফিসের বাইরে থাকার উত্তর বদলাতে দিন";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,9 @@
 
 /* No comment provided by engineer. */
 "Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "Corres আপনার যেসব অভ্যাস লক্ষ করেছে সেগুলোও ভুলে যায়: কোন তালিকা আপনি খোলেন, কার ইমেইল আগে পড়েন, আর আপনার সাধারণ স্নুজগুলো।";
+
+/* No comment provided by engineer. */
+"Also in %@" = "%@-এও চলবে";
 
 /* No comment provided by engineer. */
 "Also Sends As" = "যেসব ঠিকানা থেকেও পাঠায়";
@@ -821,6 +827,9 @@
 "Couldn't Unsubscribe" = "আনসাবস্ক্রাইব করা যায়নি";
 
 /* No comment provided by engineer. */
+"Couldn't update the rules in %@. They still run in Corres." = "%@-এ নিয়মগুলো আপডেট করা যায়নি। Corres-এ এগুলো চলতেই থাকবে।";
+
+/* No comment provided by engineer. */
 "Customize" = "নিজের মতো সাজান";
 
 /* No comment provided by engineer. */
@@ -1134,6 +1143,9 @@
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail and Outlook" = "Gmail ও Outlook";
 
 /* No comment provided by engineer. */
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail আর Outlook সাইন ইন করে Google ও Microsoft-এর নিজস্ব পেজে, আর Corres এমন একটি অনুমতি পায় যা আপনি যেকোনো সময় ফিরিয়ে নিতে পারেন। iCloud অ্যাপের জন্য আলাদা একটি পাসওয়ার্ড ব্যবহার করে, যা account.apple.com-এ বন্ধ করতে পারেন। দুটোই এই %@-এর কিচেইনে থাকে।";
@@ -1601,6 +1613,9 @@
 "Needs You on your Home Screen and Lock Screen." = "হোম স্ক্রিন আর লক স্ক্রিনে আপনার করণীয়।";
 
 /* No comment provided by engineer. */
+"Needs You stays in Corres." = "«আপনার করণীয়» শুধু Corres-এ থাকে।";
+
+/* No comment provided by engineer. */
 "Needs You, Primary, Everything and the rest sit above your mail and scroll away with it, for more room. Scroll back to the top to switch." = "«আপনার করণীয়», «প্রধান», «সবকিছু» ও অন্য ট্যাবগুলো মেইলের ওপরে থাকে আর স্ক্রল করলে সাথে সরে যায়, তাতে জায়গা বাড়ে। বদলাতে ওপরে ফিরে যান।";
 
 /* No comment provided by engineer. */
@@ -1808,6 +1823,9 @@
 "Nothing in Needs You" = "আপনার করণীয়-তে কিছু নেই";
 
 /* No comment provided by engineer. */
+"Nothing in this rule can run in %@: Needs You is Corres's own." = "এই নিয়মের কিছুই %@-এ চলতে পারে না: «আপনার করণীয়» Corres-এর নিজস্ব।";
+
+/* No comment provided by engineer. */
 "Nothing in Waiting" = "অপেক্ষায় কিছু নেই";
 
 /* No comment provided by engineer. */
@@ -1992,6 +2010,9 @@
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Outlook can mark as read and archive, not flag or choose a tab." = "Outlook পড়া হিসেবে চিহ্নিত ও আর্কাইভ করতে পারে, কিন্তু ফ্ল্যাগ বা ট্যাব বাছাই করতে পারে না।";
 
 /* No comment provided by engineer. */
 "Overdue" = "সময় পেরিয়ে গেছে";
@@ -2744,6 +2765,9 @@
 "This Evening, 6 PM" = "আজ সন্ধ্যা, 6টা";
 
 /* No comment provided by engineer. */
+"This runs in %@ too, even with Corres closed and on the web. Deleting the rule here removes it there." = "Corres বন্ধ থাকলেও, ওয়েবেও, এটি %@-এ চলবে। এখানে নিয়মটি মুছলে সেখান থেকেও মুছে যাবে।";
+
+/* No comment provided by engineer. */
 "This Weekend" = "এই সপ্তাহান্তে";
 
 /* No comment provided by engineer. */
@@ -3174,6 +3198,9 @@
 
 /* No comment provided by engineer. */
 "your recipient" = "আপনার প্রাপক";
+
+/* No comment provided by engineer. */
+"Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "আপনার নিয়মগুলো এখন Corres-এ চলে। অনুমতি দিলে Corres বন্ধ থাকলেও Gmail-এ চলবে: %@।";
 
 /* No comment provided by engineer. */
 "Your sample conversations couldn't be opened." = "আপনার নমুনা কথোপকথন খোলা যায়নি।";

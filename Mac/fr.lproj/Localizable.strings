@@ -230,6 +230,9 @@
 "Allow all %lld people?" = "Autoriser les %lld personnes ?";
 
 /* No comment provided by engineer. */
+"Allow Corres to Add Gmail Filters" = "Autoriser Corres à ajouter des filtres Gmail";
+
+/* No comment provided by engineer. */
 "Allow Corres to Change Out of Office" = "Autoriser Corres à modifier la réponse d’absence";
 
 /* No comment provided by engineer. */
@@ -246,6 +249,9 @@
 
 /* No comment provided by engineer. */
 "Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "Oublie aussi les habitudes que Corres a remarquées : les listes que vous ouvrez, qui vous lisez en premier et vos rappels habituels.";
+
+/* No comment provided by engineer. */
+"Also in %@" = "Aussi dans %@";
 
 /* No comment provided by engineer. */
 "Always from %@" = "Toujours depuis %@";
@@ -602,6 +608,9 @@
 "Couldn't send “%@”. Retry or Discard." = "Impossible d’envoyer « %@ ». Réessayez ou supprimez.";
 
 /* No comment provided by engineer. */
+"Couldn't update the rules in %@. They still run in Corres." = "Impossible de mettre à jour les règles dans %@. Elles s’appliquent toujours dans Corres.";
+
+/* No comment provided by engineer. */
 "Dark" = "Sombre";
 
 /* No comment provided by engineer. */
@@ -831,6 +840,9 @@
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail and Outlook" = "Gmail et Outlook";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud and more. Accounts you added on your iPhone or iPad appear here on their own." = "Gmail, Outlook, iCloud et plus. Les comptes ajoutés sur votre iPhone ou iPad apparaissent ici d’eux-mêmes.";
@@ -1166,6 +1178,9 @@
 "Needs You is part of Corres Pro. Open Corres to start your free trial." = "Pour vous fait partie de Corres Pro. Ouvrez Corres pour commencer votre essai gratuit.";
 
 /* No comment provided by engineer. */
+"Needs You stays in Corres." = "« Pour vous » reste dans Corres.";
+
+/* No comment provided by engineer. */
 "Needs You, Waiting or Handled" = "Pour vous, En attente ou Traité";
 
 /* No comment provided by engineer. */
@@ -1304,6 +1319,9 @@
 "Nothing here yet. Save replies you write often, like directions, a thank-you or a meeting link, and add one from Templates while you write." = "Rien pour l’instant. Enregistrez les réponses que vous écrivez souvent, comme un itinéraire, un remerciement ou un lien de réunion, et ajoutez-les depuis Modèles en écrivant.";
 
 /* No comment provided by engineer. */
+"Nothing in this rule can run in %@: Needs You is Corres's own." = "Rien dans cette règle ne peut s’appliquer dans %@ : « Pour vous » est propre à Corres.";
+
+/* No comment provided by engineer. */
 "Nothing matches “%@”." = "Rien ne correspond à « %@ ».";
 
 /* No comment provided by engineer. */
@@ -1431,6 +1449,9 @@
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Outlook can mark as read and archive, not flag or choose a tab." = "Outlook peut marquer comme lu et archiver, mais pas signaler ni choisir un onglet.";
 
 /* No comment provided by engineer. */
 "Overdue" = "En retard";
@@ -1958,6 +1979,9 @@
 "This Evening, 6 PM" = "Ce soir, 18 h";
 
 /* No comment provided by engineer. */
+"This runs in %@ too, even with Corres closed and on the web. Deleting the rule here removes it there." = "Cela s’applique aussi dans %@, même avec Corres fermé, et sur le Web. Supprimer la règle ici la supprime là-bas.";
+
+/* No comment provided by engineer. */
 "This Weekend" = "Ce week-end";
 
 /* No comment provided by engineer. */
@@ -2268,4 +2292,7 @@
 
 /* No comment provided by engineer. */
 "You've replied to %@ %lld times lately." = "Vous avez répondu %2$lld fois à %1$@ ces derniers temps.";
+
+/* No comment provided by engineer. */
+"Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "Vos règles s’appliquent maintenant dans Corres. Autorisez ceci et Gmail les appliquera aussi, même avec Corres fermé : %@.";
 

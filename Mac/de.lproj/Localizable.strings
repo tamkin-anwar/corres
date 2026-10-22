@@ -230,6 +230,9 @@
 "Allow all %lld people?" = "Alle %lld Personen erlauben?";
 
 /* No comment provided by engineer. */
+"Allow Corres to Add Gmail Filters" = "Corres erlauben, Gmail-Filter anzulegen";
+
+/* No comment provided by engineer. */
 "Allow Corres to Change Out of Office" = "Corres erlauben, die Abwesenheitsnotiz zu ändern";
 
 /* No comment provided by engineer. */
@@ -246,6 +249,9 @@
 
 /* No comment provided by engineer. */
 "Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "Vergisst auch die Gewohnheiten, die Corres bemerkt hat: welche Listen du öffnest, wen du zuerst liest und wie lange du meist erinnern lässt.";
+
+/* No comment provided by engineer. */
+"Also in %@" = "Auch in %@";
 
 /* No comment provided by engineer. */
 "Always from %@" = "Immer von %@";
@@ -602,6 +608,9 @@
 "Couldn't send “%@”. Retry or Discard." = "„%@“ konnte nicht gesendet werden. Erneut versuchen oder verwerfen.";
 
 /* No comment provided by engineer. */
+"Couldn't update the rules in %@. They still run in Corres." = "Die Regeln in %@ konnten nicht aktualisiert werden. In Corres laufen sie weiter.";
+
+/* No comment provided by engineer. */
 "Dark" = "Dunkel";
 
 /* No comment provided by engineer. */
@@ -831,6 +840,9 @@
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail and Outlook" = "Gmail und Outlook";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud and more. Accounts you added on your iPhone or iPad appear here on their own." = "Gmail, Outlook, iCloud und mehr. Accounts, die du auf deinem iPhone oder iPad hinzugefügt hast, erscheinen hier von selbst.";
@@ -1166,6 +1178,9 @@
 "Needs You is part of Corres Pro. Open Corres to start your free trial." = "„Braucht dich“ ist Teil von Corres Pro. Öffne Corres, um deinen kostenlosen Test zu starten.";
 
 /* No comment provided by engineer. */
+"Needs You stays in Corres." = "„Braucht dich“ bleibt in Corres.";
+
+/* No comment provided by engineer. */
 "Needs You, Waiting or Handled" = "Braucht dich, Wartet oder Erledigt";
 
 /* No comment provided by engineer. */
@@ -1304,6 +1319,9 @@
 "Nothing here yet. Save replies you write often, like directions, a thank-you or a meeting link, and add one from Templates while you write." = "Noch nichts hier. Speichere Antworten, die du oft schreibst, etwa eine Wegbeschreibung, ein Dankeschön oder einen Meeting-Link, und füge sie beim Schreiben über „Vorlagen“ ein.";
 
 /* No comment provided by engineer. */
+"Nothing in this rule can run in %@: Needs You is Corres's own." = "Nichts an dieser Regel kann in %@ laufen: „Braucht dich“ gibt es nur in Corres.";
+
+/* No comment provided by engineer. */
 "Nothing matches “%@”." = "Nichts passt zu „%@“.";
 
 /* No comment provided by engineer. */
@@ -1431,6 +1449,9 @@
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Outlook can mark as read and archive, not flag or choose a tab." = "Outlook kann als gelesen markieren und archivieren, aber nicht markieren oder einen Tab wählen.";
 
 /* No comment provided by engineer. */
 "Overdue" = "Überfällig";
@@ -1958,6 +1979,9 @@
 "This Evening, 6 PM" = "Heute Abend, 18:00";
 
 /* No comment provided by engineer. */
+"This runs in %@ too, even with Corres closed and on the web. Deleting the rule here removes it there." = "Das läuft auch in %@, selbst wenn Corres geschlossen ist, und im Web. Löschst du die Regel hier, verschwindet sie auch dort.";
+
+/* No comment provided by engineer. */
 "This Weekend" = "Dieses Wochenende";
 
 /* No comment provided by engineer. */
@@ -2268,4 +2292,7 @@
 
 /* No comment provided by engineer. */
 "You've replied to %@ %lld times lately." = "Du hast %@ in letzter Zeit %lld-mal geantwortet.";
+
+/* No comment provided by engineer. */
+"Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "Deine Regeln laufen jetzt in Corres. Erlaubst du das, laufen sie auch in Gmail, selbst wenn Corres geschlossen ist: %@.";
 

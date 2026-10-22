@@ -230,6 +230,9 @@
 "Allow all %lld people?" = "%lld人すべてを許可しますか？";
 
 /* No comment provided by engineer. */
+"Allow Corres to Add Gmail Filters" = "CorresにGmailフィルタの追加を許可";
+
+/* No comment provided by engineer. */
 "Allow Corres to Change Out of Office" = "Corresに自動応答の変更を許可";
 
 /* No comment provided by engineer. */
@@ -246,6 +249,9 @@
 
 /* No comment provided by engineer. */
 "Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "Corresが覚えた習慣も消去します。開くリスト、先に読む相手、よく使うスヌーズなどです。";
+
+/* No comment provided by engineer. */
+"Also in %@" = "%@でも実行";
 
 /* No comment provided by engineer. */
 "Always from %@" = "常に%@から";
@@ -602,6 +608,9 @@
 "Couldn't send “%@”. Retry or Discard." = "「%@」を送信できませんでした。再試行するか破棄してください。";
 
 /* No comment provided by engineer. */
+"Couldn't update the rules in %@. They still run in Corres." = "%@のルールを更新できませんでした。Corresでは引き続き実行されます。";
+
+/* No comment provided by engineer. */
 "Dark" = "ダーク";
 
 /* No comment provided by engineer. */
@@ -831,6 +840,9 @@
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail and Outlook" = "GmailとOutlook";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud and more. Accounts you added on your iPhone or iPad appear here on their own." = "Gmail、Outlook、iCloudなど。iPhoneやiPadで追加したアカウントは自動的にここに表示されます。";
@@ -1166,6 +1178,9 @@
 "Needs You is part of Corres Pro. Open Corres to start your free trial." = "「要対応」はCorres Proの機能です。Corresを開いて無料トライアルを始めてください。";
 
 /* No comment provided by engineer. */
+"Needs You stays in Corres." = "「要対応」はCorresの中だけで動きます。";
+
+/* No comment provided by engineer. */
 "Needs You, Waiting or Handled" = "要対応、返信待ち、対応済み";
 
 /* No comment provided by engineer. */
@@ -1304,6 +1319,9 @@
 "Nothing here yet. Save replies you write often, like directions, a thank-you or a meeting link, and add one from Templates while you write." = "まだありません。道案内、お礼、会議のリンクなど、よく書く返信を保存して、作成中に「テンプレート」から追加できます。";
 
 /* No comment provided by engineer. */
+"Nothing in this rule can run in %@: Needs You is Corres's own." = "このルールには%@で実行できるものがありません。「要対応」はCorres独自のものです。";
+
+/* No comment provided by engineer. */
 "Nothing matches “%@”." = "「%@」に一致するものはありません。";
 
 /* No comment provided by engineer. */
@@ -1431,6 +1449,9 @@
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Outlook can mark as read and archive, not flag or choose a tab." = "Outlookでは既読にすることとアーカイブはできますが、フラグやタブの指定はできません。";
 
 /* No comment provided by engineer. */
 "Overdue" = "期限切れ";
@@ -1958,6 +1979,9 @@
 "This Evening, 6 PM" = "今晩18:00";
 
 /* No comment provided by engineer. */
+"This runs in %@ too, even with Corres closed and on the web. Deleting the rule here removes it there." = "Corresを閉じていても、Webでも、%@でこのルールが実行されます。ここでルールを削除すると、そちらからも削除されます。";
+
+/* No comment provided by engineer. */
 "This Weekend" = "今週末";
 
 /* No comment provided by engineer. */
@@ -2268,4 +2292,7 @@
 
 /* No comment provided by engineer. */
 "You've replied to %@ %lld times lately." = "最近%@に%lld回返信しています。";
+
+/* No comment provided by engineer. */
+"Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "ルールは今Corresで実行されています。許可すると、Corresを閉じていてもGmailでも実行されます：%@。";
 

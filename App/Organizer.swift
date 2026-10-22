@@ -89,7 +89,10 @@ final class Organizer {
     private func reloadIfChanged() {
         let fresh = (Self.decode([MailRule].self, Self.rulesKey) ?? [], Self.decode([MailTemplate].self, Self.templatesKey) ?? [],
                      Self.decode([SavedSearch].self, Self.searchesKey) ?? [], Self.decode([String: Date].self, Self.mutedKey) ?? [:])
-        if fresh.0 != rules { rules = fresh.0 }
+        if fresh.0 != rules {
+            rules = fresh.0
+            ServerRules.shared.schedule()
+        }
         if fresh.1 != templates { templates = fresh.1 }
         if fresh.2 != savedSearches { savedSearches = fresh.2 }
         if fresh.3 != muted { muted = fresh.3 }
@@ -108,11 +111,13 @@ final class Organizer {
     func save(_ rule: MailRule) {
         if let index = rules.firstIndex(where: { $0.id == rule.id }) { rules[index] = rule } else { rules.append(rule) }
         Self.store(rules, Self.rulesKey)
+        ServerRules.shared.schedule()
     }
 
     func delete(rule id: UUID) {
         rules.removeAll { $0.id == id }
         Self.store(rules, Self.rulesKey)
+        ServerRules.shared.schedule()
     }
 
     func moveRules(from: IndexSet, to: Int) {

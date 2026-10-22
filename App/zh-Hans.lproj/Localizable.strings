@@ -368,6 +368,9 @@
 "Allow all %lld people?" = "允许全部 %lld 个人？";
 
 /* No comment provided by engineer. */
+"Allow Corres to Add Gmail Filters" = "允许 Corres 添加 Gmail 过滤器";
+
+/* No comment provided by engineer. */
 "Allow Corres to Change Out of Office" = "允许 Corres 更改自动回复";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,9 @@
 
 /* No comment provided by engineer. */
 "Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "同时忘记 Corres 注意到的习惯：你会打开哪些列表、先读谁的邮件，以及你常用的稍后提醒时间。";
+
+/* No comment provided by engineer. */
+"Also in %@" = "在 %@ 中同样生效";
 
 /* No comment provided by engineer. */
 "Also Sends As" = "其他发件地址";
@@ -821,6 +827,9 @@
 "Couldn't Unsubscribe" = "无法退订";
 
 /* No comment provided by engineer. */
+"Couldn't update the rules in %@. They still run in Corres." = "无法更新 %@ 中的规则。它们仍会在 Corres 中运行。";
+
+/* No comment provided by engineer. */
 "Customize" = "自定";
 
 /* No comment provided by engineer. */
@@ -1134,6 +1143,9 @@
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail and Outlook" = "Gmail 和 Outlook";
 
 /* No comment provided by engineer. */
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail 和 Outlook 在 Google 和 Microsoft 自己的页面登录，Corres 获得的权限你随时可以收回。iCloud 使用 App 专用密码，你可以随时在 account.apple.com 停用。两者都保存在这台%@的钥匙串中。";
@@ -1601,6 +1613,9 @@
 "Needs You on your Home Screen and Lock Screen." = "在主屏幕和锁定屏幕上显示“需要你”。";
 
 /* No comment provided by engineer. */
+"Needs You stays in Corres." = "“需要你”只在 Corres 中生效。";
+
+/* No comment provided by engineer. */
 "Needs You, Primary, Everything and the rest sit above your mail and scroll away with it, for more room. Scroll back to the top to switch." = "“需要你”“主要”“全部”等标签位于邮件上方，滚动时随之移走，腾出更多空间。滚动回顶部即可切换。";
 
 /* No comment provided by engineer. */
@@ -1808,6 +1823,9 @@
 "Nothing in Needs You" = "“需要你”中没有内容";
 
 /* No comment provided by engineer. */
+"Nothing in this rule can run in %@: Needs You is Corres's own." = "此规则中没有可在 %@ 中运行的内容：“需要你”是 Corres 独有的。";
+
+/* No comment provided by engineer. */
 "Nothing in Waiting" = "“等待中”没有内容";
 
 /* No comment provided by engineer. */
@@ -1992,6 +2010,9 @@
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Outlook can mark as read and archive, not flag or choose a tab." = "Outlook 可以标为已读和归档，但不能加旗标或选择标签。";
 
 /* No comment provided by engineer. */
 "Overdue" = "已逾期";
@@ -2744,6 +2765,9 @@
 "This Evening, 6 PM" = "今晚 18:00";
 
 /* No comment provided by engineer. */
+"This runs in %@ too, even with Corres closed and on the web. Deleting the rule here removes it there." = "即使关闭 Corres，这条规则也会在 %@ 中运行，网页版也一样。在这里删除规则，那边也会删除。";
+
+/* No comment provided by engineer. */
 "This Weekend" = "本周末";
 
 /* No comment provided by engineer. */
@@ -3174,6 +3198,9 @@
 
 /* No comment provided by engineer. */
 "your recipient" = "收件人";
+
+/* No comment provided by engineer. */
+"Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "你的规则现在在 Corres 中运行。允许后，即使关闭 Corres，Gmail 也会运行它们：%@。";
 
 /* No comment provided by engineer. */
 "Your sample conversations couldn't be opened." = "无法打开你的示例对话。";

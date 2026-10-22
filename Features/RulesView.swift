@@ -6,9 +6,11 @@ import SwiftUI
 struct RulesView: View {
     @State private var editing: MailRule?
     private var organizer: Organizer { .shared }
+    private var server: ServerRules { .shared }
 
     var body: some View {
         List {
+            accountsNotice
             if organizer.rules.isEmpty {
                 Section {
                     Text("Nothing here yet. A rule acts on mail as it arrives, on every account: into Promotions, out of Needs You, marked read, archived.")
@@ -29,6 +31,7 @@ struct RulesView: View {
                     .onMove { organizer.moveRules(from: $0, to: $1) }
                 } footer: {
                     Text("Rules act on mail that arrives after you make them. They run in order, and on this device and your others through iCloud.")
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -37,11 +40,46 @@ struct RulesView: View {
         .navigationTitle("Rules")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button { editing = MailRule() } label: { Label("New Rule", systemImage: "plus") }
+                // New rules also run in Gmail and Outlook when there's one to run in.
+                Button { editing = MailRule(inAccounts: server.hasCapableAccount ? true : nil) } label: {
+                    Label("New Rule", systemImage: "plus")
+                }
             }
         }
         .sheet(item: $editing) { rule in
             RuleEditor(rule: rule, isNew: !organizer.rules.contains { $0.id == rule.id })
+        }
+    }
+}
+
+extension RulesView {
+    /// Gmail still needs to allow filters, or an account couldn't be
+    /// reached: said once, above the rules, with the fix.
+    @ViewBuilder
+    private var accountsNotice: some View {
+        let usesAccounts = organizer.rules.contains { $0.inAccounts == true }
+        if usesAccounts, !server.needsPermission.isEmpty {
+            Section {
+                Button {
+                    Task { await server.allowGmail() }
+                } label: {
+                    Label("Allow Corres to Add Gmail Filters", systemImage: "checkmark.shield")
+                }
+            } footer: {
+                Text("Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: \(server.needsPermission.sorted().joined(separator: ", ")).")
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        } else if usesAccounts, !server.failedAccounts.isEmpty {
+            Section {
+                Button {
+                    Task { await server.update() }
+                } label: {
+                    Label("Try Again", systemImage: "arrow.clockwise")
+                }
+            } footer: {
+                Text("Couldn't update the rules in \(server.failedAccounts.sorted().joined(separator: ", ")). They still run in Corres.")
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }
@@ -57,6 +95,11 @@ private struct RuleRow: View {
             Text(rule.summaryActions)
                 .font(.subheadline)
                 .foregroundStyle(CorresPalette.secondary)
+            if rule.inAccounts == true, rule.isEnabled, rule.runsInService {
+                Label(String(localized: "Also in \(ServerRules.serviceNames)"), systemImage: "cloud")
+                    .font(.caption)
+                    .foregroundStyle(CorresPalette.tertiary)
+            }
             if !rule.isEnabled { Text("Off").font(.caption).foregroundStyle(CorresPalette.tertiary) }
         }
         .padding(.vertical, 2)
@@ -108,6 +151,16 @@ struct RuleEditor: View {
                     Toggle("Mark as Read", isOn: $rule.markRead)
                     Toggle("Flag", isOn: $rule.flag)
                     Toggle("Archive", isOn: $rule.archive)
+                }
+                if ServerRules.shared.hasCapableAccount {
+                    Section {
+                        Toggle(String(localized: "Also in \(ServerRules.serviceNames)"), isOn: Binding(
+                            get: { rule.inAccounts == true && rule.runsInService },
+                            set: { rule.inAccounts = $0 }))
+                            .disabled(!rule.runsInService)
+                    } footer: {
+                        Text(serviceFooter).fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 if rule.archive && rule.attention == .needsYou {
                     Section {
@@ -167,6 +220,31 @@ struct RuleEditor: View {
         #if os(macOS)
         .frame(minWidth: 460, minHeight: 520)
         #endif
+    }
+}
+
+extension RuleEditor {
+    /// What the service does with this rule, and what stays in Corres.
+    private var serviceFooter: String {
+        let names = ServerRules.serviceNames
+        guard rule.runsInService else {
+            return String(localized: "Nothing in this rule can run in \(names): Needs You is Corres's own.")
+        }
+        var parts = [String(localized: "This runs in \(names) too, even with Corres closed and on the web. Deleting the rule here removes it there.")]
+        if rule.attention != nil { parts.append(String(localized: "Needs You stays in Corres.")) }
+        if ServerRules.hasOutlook, rule.flag || rule.category != nil {
+            parts.append(String(localized: "Outlook can mark as read and archive, not flag or choose a tab."))
+        }
+        return parts.joined(separator: " ")
+    }
+}
+
+extension MailRule {
+    /// Whether any part of the rule is something Gmail or Outlook can do.
+    var runsInService: Bool {
+        var probe = self
+        probe.isEnabled = true
+        return ServerRuleSpec.gmail(for: probe) != nil || ServerRuleSpec.outlook(for: probe) != nil
     }
 }
 

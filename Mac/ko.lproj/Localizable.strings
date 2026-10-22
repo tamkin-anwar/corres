@@ -230,6 +230,9 @@
 "Allow all %lld people?" = "%lld명을 모두 허용하겠습니까?";
 
 /* No comment provided by engineer. */
+"Allow Corres to Add Gmail Filters" = "Corres가 Gmail 필터를 추가하도록 허용";
+
+/* No comment provided by engineer. */
 "Allow Corres to Change Out of Office" = "Corres가 부재중 자동 응답을 변경하도록 허용";
 
 /* No comment provided by engineer. */
@@ -246,6 +249,9 @@
 
 /* No comment provided by engineer. */
 "Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "Corres가 파악한 습관도 잊습니다. 어떤 목록을 여는지, 누구를 먼저 읽는지, 평소 다시 알림 시간 등입니다.";
+
+/* No comment provided by engineer. */
+"Also in %@" = "%@에서도 실행";
 
 /* No comment provided by engineer. */
 "Always from %@" = "항상 %@에서";
@@ -602,6 +608,9 @@
 "Couldn't send “%@”. Retry or Discard." = "“%@”을(를) 보내지 못했습니다. 다시 시도하거나 삭제하세요.";
 
 /* No comment provided by engineer. */
+"Couldn't update the rules in %@. They still run in Corres." = "%@의 규칙을 업데이트하지 못했습니다. Corres에서는 계속 실행됩니다.";
+
+/* No comment provided by engineer. */
 "Dark" = "다크";
 
 /* No comment provided by engineer. */
@@ -831,6 +840,9 @@
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail and Outlook" = "Gmail 및 Outlook";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud and more. Accounts you added on your iPhone or iPad appear here on their own." = "Gmail, Outlook, iCloud 등. iPhone이나 iPad에서 추가한 계정이 자동으로 여기에 나타납니다.";
@@ -1166,6 +1178,9 @@
 "Needs You is part of Corres Pro. Open Corres to start your free trial." = "'나에게 필요'는 Corres Pro의 기능입니다. Corres를 열어 무료 체험을 시작하세요.";
 
 /* No comment provided by engineer. */
+"Needs You stays in Corres." = "‘나에게 필요’는 Corres 안에서만 작동합니다.";
+
+/* No comment provided by engineer. */
 "Needs You, Waiting or Handled" = "나에게 필요, 대기 중 또는 처리됨";
 
 /* No comment provided by engineer. */
@@ -1304,6 +1319,9 @@
 "Nothing here yet. Save replies you write often, like directions, a thank-you or a meeting link, and add one from Templates while you write." = "아직 없습니다. 길 안내, 감사 인사, 회의 링크처럼 자주 쓰는 답장을 저장하고, 작성 중에 '템플릿'에서 추가하세요.";
 
 /* No comment provided by engineer. */
+"Nothing in this rule can run in %@: Needs You is Corres's own." = "이 규칙에는 %@에서 실행할 수 있는 항목이 없습니다. ‘나에게 필요’는 Corres만의 기능입니다.";
+
+/* No comment provided by engineer. */
 "Nothing matches “%@”." = "'%@'와(과) 일치하는 항목이 없습니다.";
 
 /* No comment provided by engineer. */
@@ -1431,6 +1449,9 @@
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Outlook can mark as read and archive, not flag or choose a tab." = "Outlook은 읽음으로 표시하고 보관할 수 있지만, 깃발을 달거나 탭을 고를 수는 없습니다.";
 
 /* No comment provided by engineer. */
 "Overdue" = "기한 지남";
@@ -1958,6 +1979,9 @@
 "This Evening, 6 PM" = "오늘 저녁 오후 6시";
 
 /* No comment provided by engineer. */
+"This runs in %@ too, even with Corres closed and on the web. Deleting the rule here removes it there." = "Corres를 닫아도, 웹에서도 %@에서 이 규칙이 실행됩니다. 여기서 규칙을 삭제하면 그곳에서도 삭제됩니다.";
+
+/* No comment provided by engineer. */
 "This Weekend" = "이번 주말";
 
 /* No comment provided by engineer. */
@@ -2268,4 +2292,7 @@
 
 /* No comment provided by engineer. */
 "You've replied to %@ %lld times lately." = "최근 %@에게 %lld번 답장했습니다.";
+
+/* No comment provided by engineer. */
+"Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "규칙이 지금은 Corres에서 실행됩니다. 허용하면 Corres를 닫아도 Gmail에서도 실행됩니다: %@.";
 

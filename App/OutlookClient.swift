@@ -1024,6 +1024,53 @@ actor OutlookFolders {
 extension OutlookClient {
     fileprivate struct Folder: Decodable { let id: String }
 
+    /// An Outlook inbox rule, as much of it as Corres reads back.
+    struct MessageRule: Decodable, Sendable {
+        let id: String
+        let displayName: String?
+    }
+
+    /// The account's inbox rules (Settings › Mail › Rules in Outlook).
+    func messageRules(account: String) async throws -> [MessageRule] {
+        let page: GraphPage<MessageRule> = try await getJSON("\(Self.base)/me/mailFolders/inbox/messageRules?$select=id,displayName", account: account)
+        return page.value
+    }
+
+    /// Creates an inbox rule after any already there, so the person's own
+    /// rules run first. Returns its id.
+    func createMessageRule(displayName: String, condition: String, phrase: String, markAsRead: Bool, archive: Bool,
+                           sequence: Int, account: String) async throws -> String {
+        var actions: [String: Any] = ["stopProcessingRules": false]
+        if markAsRead { actions["markAsRead"] = true }
+        if archive {
+            guard let archive = try await wellKnownFolders(account: account).archive else { throw ClientError.decodingFailed }
+            actions["moveToFolder"] = archive
+        }
+        let body: [String: Any] = [
+            "displayName": displayName, "sequence": sequence, "isEnabled": true,
+            "conditions": [condition: [phrase]], "actions": actions,
+        ]
+        guard let url = URL(string: "\(Self.base)/me/mailFolders/inbox/messageRules") else { throw ClientError.decodingFailed }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(try await token(account))", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, status) = try await perform(request, account: account)
+        try Self.check(status, data)
+        guard let rule = try? JSONDecoder().decode(MessageRule.self, from: data) else { throw ClientError.decodingFailed }
+        return rule.id
+    }
+
+    /// Removes an inbox rule. Already gone counts as done.
+    func deleteMessageRule(id: String, account: String) async throws {
+        do {
+            try await change("DELETE", "\(Self.base)/me/mailFolders/inbox/messageRules/\(id)", body: nil, account: account)
+        } catch let ClientError.refused(statusCode, _, _) where statusCode == 404 {
+            return
+        }
+    }
+
     func wellKnownFolders(account: String) async throws -> OutlookFolders.IDs {
         async let inbox: Folder = getJSON("\(Self.base)/me/mailFolders/inbox?$select=id", account: account)
         async let sent: Folder = getJSON("\(Self.base)/me/mailFolders/sentitems?$select=id", account: account)

@@ -368,6 +368,9 @@
 "Allow all %lld people?" = "Alle %lld Personen erlauben?";
 
 /* No comment provided by engineer. */
+"Allow Corres to Add Gmail Filters" = "Corres erlauben, Gmail-Filter anzulegen";
+
+/* No comment provided by engineer. */
 "Allow Corres to Change Out of Office" = "Corres erlauben, die Abwesenheitsnotiz zu ändern";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,9 @@
 
 /* No comment provided by engineer. */
 "Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "Vergisst auch die Gewohnheiten, die Corres bemerkt hat: welche Listen du öffnest, wen du zuerst liest und wie lange du meist erinnern lässt.";
+
+/* No comment provided by engineer. */
+"Also in %@" = "Auch in %@";
 
 /* No comment provided by engineer. */
 "Also Sends As" = "Sendet auch als";
@@ -821,6 +827,9 @@
 "Couldn't Unsubscribe" = "Abmelden fehlgeschlagen";
 
 /* No comment provided by engineer. */
+"Couldn't update the rules in %@. They still run in Corres." = "Die Regeln in %@ konnten nicht aktualisiert werden. In Corres laufen sie weiter.";
+
+/* No comment provided by engineer. */
 "Customize" = "Anpassen";
 
 /* No comment provided by engineer. */
@@ -1134,6 +1143,9 @@
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail and Outlook" = "Gmail und Outlook";
 
 /* No comment provided by engineer. */
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail und Outlook melden sich auf den Seiten von Google und Microsoft an, und Corres erhält eine Berechtigung, die du jederzeit zurücknehmen kannst. iCloud nutzt ein App-spezifisches Passwort, das du auf account.apple.com jederzeit deaktivieren kannst. Beides bleibt im Schlüsselbund auf diesem %@.";
@@ -1601,6 +1613,9 @@
 "Needs You on your Home Screen and Lock Screen." = "„Braucht dich“ auf dem Home-Bildschirm und Sperrbildschirm.";
 
 /* No comment provided by engineer. */
+"Needs You stays in Corres." = "„Braucht dich“ bleibt in Corres.";
+
+/* No comment provided by engineer. */
 "Needs You, Primary, Everything and the rest sit above your mail and scroll away with it, for more room. Scroll back to the top to switch." = "„Braucht dich“, „Allgemein“, „Alles“ und die anderen Tabs stehen über deinen E-Mails und scrollen mit, damit mehr Platz bleibt. Zum Wechseln scrollst du wieder nach oben.";
 
 /* No comment provided by engineer. */
@@ -1808,6 +1823,9 @@
 "Nothing in Needs You" = "Nichts in „Braucht dich“";
 
 /* No comment provided by engineer. */
+"Nothing in this rule can run in %@: Needs You is Corres's own." = "Nichts an dieser Regel kann in %@ laufen: „Braucht dich“ gibt es nur in Corres.";
+
+/* No comment provided by engineer. */
 "Nothing in Waiting" = "Nichts in „Wartet“";
 
 /* No comment provided by engineer. */
@@ -1992,6 +2010,9 @@
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Outlook can mark as read and archive, not flag or choose a tab." = "Outlook kann als gelesen markieren und archivieren, aber nicht markieren oder einen Tab wählen.";
 
 /* No comment provided by engineer. */
 "Overdue" = "Überfällig";
@@ -2744,6 +2765,9 @@
 "This Evening, 6 PM" = "Heute Abend, 18:00";
 
 /* No comment provided by engineer. */
+"This runs in %@ too, even with Corres closed and on the web. Deleting the rule here removes it there." = "Das läuft auch in %@, selbst wenn Corres geschlossen ist, und im Web. Löschst du die Regel hier, verschwindet sie auch dort.";
+
+/* No comment provided by engineer. */
 "This Weekend" = "Dieses Wochenende";
 
 /* No comment provided by engineer. */
@@ -3174,6 +3198,9 @@
 
 /* No comment provided by engineer. */
 "your recipient" = "deinen Empfänger";
+
+/* No comment provided by engineer. */
+"Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "Deine Regeln laufen jetzt in Corres. Erlaubst du das, laufen sie auch in Gmail, selbst wenn Corres geschlossen ist: %@.";
 
 /* No comment provided by engineer. */
 "Your sample conversations couldn't be opened." = "Deine Beispielkonversationen konnten nicht geöffnet werden.";

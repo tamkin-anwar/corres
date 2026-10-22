@@ -30,13 +30,19 @@ public struct MailRule: Codable, Hashable, Identifiable, Sendable {
     public var archive: Bool
     public var flag: Bool
     public var createdAt: Date
+    /// Also kept as a filter in Gmail and a rule in Outlook, so it works
+    /// with Corres closed and on their websites. Optional so older rules
+    /// decode; nil is off.
+    public var inAccounts: Bool?
 
     public init(id: UUID = UUID(), field: Field = .from, text: String = "", isEnabled: Bool = true,
                 attention: Attention? = nil, category: InboxCategory? = nil,
-                markRead: Bool = false, archive: Bool = false, flag: Bool = false, createdAt: Date = .now) {
+                markRead: Bool = false, archive: Bool = false, flag: Bool = false, createdAt: Date = .now,
+                inAccounts: Bool? = nil) {
         self.id = id; self.field = field; self.text = text; self.isEnabled = isEnabled
         self.attention = attention; self.category = category
         self.markRead = markRead; self.archive = archive; self.flag = flag; self.createdAt = createdAt
+        self.inAccounts = inAccounts
     }
 
     /// Something to do, and something to look for.

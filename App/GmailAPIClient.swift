@@ -624,6 +624,56 @@ struct GmailAPIClient {
         try validate(response)
     }
 
+    // MARK: Filters
+
+    /// A Gmail filter as the API describes it.
+    struct Filter: Codable, Sendable {
+        struct Criteria: Codable, Sendable { var query: String? }
+        struct Action: Codable, Sendable { var addLabelIds: [String]?; var removeLabelIds: [String]? }
+        var id: String?
+        var criteria: Criteria
+        var action: Action
+    }
+
+    /// The account's filters (Settings › Filters in Gmail).
+    func filters(account: String) async throws -> [Filter] {
+        struct Page: Decodable { let filter: [Filter]? }
+        let token = try await accessToken(for: account)
+        let (data, response) = try await authorizedRequest(
+            url: URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/settings/filters")!, token: token)
+        try validate(response)
+        return (try JSONDecoder().decode(Page.self, from: data)).filter ?? []
+    }
+
+    /// Creates a filter; returns its id. Gmail only acts on mail that
+    /// arrives after, as Corres's rules do.
+    func createFilter(query: String, addLabelIds: [String], removeLabelIds: [String], account: String) async throws -> String {
+        let token = try await accessToken(for: account)
+        var request = URLRequest(url: URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/settings/filters")!)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let filter = Filter(criteria: .init(query: query),
+                            action: .init(addLabelIds: addLabelIds.isEmpty ? nil : addLabelIds,
+                                          removeLabelIds: removeLabelIds.isEmpty ? nil : removeLabelIds))
+        request.httpBody = try JSONEncoder().encode(filter)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response)
+        guard let id = try JSONDecoder().decode(Filter.self, from: data).id else { throw ClientError.decodingFailed }
+        return id
+    }
+
+    /// Removes a filter. Already gone counts as done.
+    func deleteFilter(id: String, account: String) async throws {
+        let token = try await accessToken(for: account)
+        var request = URLRequest(url: URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/settings/filters/\(id)")!)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if (response as? HTTPURLResponse)?.statusCode == 404 { return }
+        try validate(response)
+    }
+
     /// Saves a draft in Gmail's Drafts, so it's there on every device:
     /// creates one, or updates `existingID` in place. Returns the draft's id.
     func saveDraft(raw: String, threadId: String?, existingID: String?, account: String) async throws -> String {

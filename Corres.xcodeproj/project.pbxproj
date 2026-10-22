@@ -47,6 +47,7 @@
 		1591472EDE3C416E0591E244 /* CorresWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 8650108A74A2ADDF24766A00 /* CorresWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		16C7EBC2DC8C95E06B0458F5 /* Core/Scheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7997DE468C6064C1C38A21DC /* Core/Scheduling.swift */; };
 		1729D2B584AB0024ED1C9BB4 /* Core/CorresSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3188DDEA4B4112FCE079024F /* Core/CorresSchema.swift */; };
+		17A0EBF8FC077AD6E69777FC /* Core/ServerRuleSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06BA52F9E1DFB962149B1A6A /* Core/ServerRuleSpec.swift */; };
 		180DDC0F37852583386242F8 /* Features/ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B711AF08239E828BF9969F3 /* Features/ConversationView.swift */; };
 		18C5607147894B2D8F160B2F /* ShareExtension/ShareComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64E976E153F34E71B15BBEA3 /* ShareExtension/ShareComposeView.swift */; };
 		18FE6D74BF95E5BB95278633 /* App/ICloudSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7F38BF13EFB132AE0D4DAD /* App/ICloudSignIn.swift */; };
@@ -149,6 +150,8 @@
 		59AD67635FA0CC88CCC319C1 /* DesignSystem/Assistive.swift in Sources */ = {isa = PBXBuildFile; fileRef = B46D64A18603634851591577 /* DesignSystem/Assistive.swift */; };
 		5B0DBF797CEEFC17DE04B195 /* App/GmailMessageComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44B8B11C43712F4DF6C6A4B0 /* App/GmailMessageComposer.swift */; };
 		5B55F7DF9308406034F6D3C1 /* App/GmailSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2107F2DE31F9ED9AE7F9E54C /* App/GmailSyncService.swift */; };
+		5C5E50CD78A49B6070FCE3CF /* App/ServerRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC5D8F1FD82212AAD8C89F8 /* App/ServerRules.swift */; };
+		5D41291AA27609DD5C5357DE /* App/ServerRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC5D8F1FD82212AAD8C89F8 /* App/ServerRules.swift */; };
 		5E242F57492A40E0990052D1 /* App/OutlookTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */; };
 		5F52078F01F443F1BAD3394E /* App/OutlookClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC8BE109A8184BD9AF037CDA /* App/OutlookClient.swift */; };
 		5F5C0DAB10350183FC969F0F /* Core/SwiftDataMailRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F9C55B0E3533C78CF4C4F6 /* Core/SwiftDataMailRepository.swift */; };
@@ -204,6 +207,7 @@
 		76DD1C32FFEF9F9F4AFE8AD3 /* App/MailEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 320C86445DFDD5C917EB2C40 /* App/MailEntities.swift */; };
 		77371C6C9A8242249DE0C135 /* Core/AttachmentKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C16B27D69CB4F8FA44B529D /* Core/AttachmentKind.swift */; };
 		77485366CDAE444C800848E3 /* App/GmailQuotaGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */; };
+		7759688ECB7078E704F00ED3 /* Core/ServerRuleSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06BA52F9E1DFB962149B1A6A /* Core/ServerRuleSpec.swift */; };
 		78CD841CF0B0431FACF39989 /* App/GmailAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682EC77E42F944FED8F83C02 /* App/GmailAPIClient.swift */; };
 		79B36328F16C647DCB480863 /* Features/SendersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7693B2C3144069BD928F74 /* Features/SendersView.swift */; };
 		7ADE31691A6CE5F5F6B4E8F0 /* App/OutboxService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0B80EE1611396DB315C571 /* App/OutboxService.swift */; };
@@ -495,6 +499,7 @@
 /* Begin PBXFileReference section */
 		0420D138F474423E84B6A00A /* Core/SenderHabits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/SenderHabits.swift; sourceTree = SOURCE_ROOT; };
 		04EEE3F49F97D13D54987F8C /* App/LiveActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/LiveActivities.swift; sourceTree = SOURCE_ROOT; };
+		06BA52F9E1DFB962149B1A6A /* Core/ServerRuleSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ServerRuleSpec.swift; sourceTree = SOURCE_ROOT; };
 		07A282FD1D57C93CB1ADB871 /* Mac/MacServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacServices.swift; sourceTree = SOURCE_ROOT; };
 		082593A9B45B6EEF19E705AD /* Features/RulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RulesView.swift; sourceTree = SOURCE_ROOT; };
 		087AED741B8A45BD8381CBA8 /* App/OutlookTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/OutlookTokenProvider.swift; sourceTree = SOURCE_ROOT; };
@@ -795,6 +800,7 @@
 		F774204AB22EFCF7D3FF3595 /* Mac/MacCommandPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/MacCommandPalette.swift; sourceTree = SOURCE_ROOT; };
 		F87B8DB17F1F3706C1461F47 /* App/GoogleAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GoogleAuthService.swift; sourceTree = SOURCE_ROOT; };
 		FA57480437BE46588460ED61 /* Features/PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PreferencesView.swift; sourceTree = SOURCE_ROOT; };
+		FBC5D8F1FD82212AAD8C89F8 /* App/ServerRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ServerRules.swift; sourceTree = SOURCE_ROOT; };
 		FC40DAFA3F6E39336F0BFE6B /* Mac/ReadingPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/ReadingPane.swift; sourceTree = SOURCE_ROOT; };
 		FCC8AB17E1D7432A8CFCE409 /* Features/MultiSelectGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/MultiSelectGesture.swift; sourceTree = SOURCE_ROOT; };
 		FD109337AE364188ACB47E21 /* App/GmailQuotaGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/GmailQuotaGate.swift; sourceTree = SOURCE_ROOT; };
@@ -1067,6 +1073,8 @@
 				2560BD7AC43557050C14FC8D /* App/CrashCollector.swift */,
 				E47D2A9B8BF84B338C2C5BBB /* App/ReadingAids.swift */,
 				AE004173230AF0E3013B2600 /* Features/LessonsView.swift */,
+				06BA52F9E1DFB962149B1A6A /* Core/ServerRuleSpec.swift */,
+				FBC5D8F1FD82212AAD8C89F8 /* App/ServerRules.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1511,6 +1519,8 @@
 				79B36328F16C647DCB480863 /* Features/SendersView.swift in Sources */,
 				959C5C90F67EFB269005EE68 /* Features/ScreenerView.swift in Sources */,
 				642F9B7B1A3173F811017476 /* Features/OutOfOfficeView.swift in Sources */,
+				7759688ECB7078E704F00ED3 /* Core/ServerRuleSpec.swift in Sources */,
+				5D41291AA27609DD5C5357DE /* App/ServerRules.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1664,6 +1674,8 @@
 				6CAD4472690BBA319612AA9D /* App/CrashCollector.swift in Sources */,
 				F4E106ECA0E360542E0F8A9D /* App/ReadingAids.swift in Sources */,
 				E37C2978E4D9AD0BF5D11178 /* Features/LessonsView.swift in Sources */,
+				17A0EBF8FC077AD6E69777FC /* Core/ServerRuleSpec.swift in Sources */,
+				5C5E50CD78A49B6070FCE3CF /* App/ServerRules.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

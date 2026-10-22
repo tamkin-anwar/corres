@@ -368,6 +368,9 @@
 "Allow all %lld people?" = "¿Permitir a las %lld personas?";
 
 /* No comment provided by engineer. */
+"Allow Corres to Add Gmail Filters" = "Permitir que Corres añada filtros de Gmail";
+
+/* No comment provided by engineer. */
 "Allow Corres to Change Out of Office" = "Permitir que Corres cambie la respuesta automática";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,9 @@
 
 /* No comment provided by engineer. */
 "Also forgets the habits Corres has noticed: which lists you open, who you read first, and your usual snoozes." = "También olvida los hábitos que Corres ha notado: qué listas abres, a quién lees primero y cuándo sueles posponer.";
+
+/* No comment provided by engineer. */
+"Also in %@" = "También en %@";
 
 /* No comment provided by engineer. */
 "Also Sends As" = "También envía como";
@@ -821,6 +827,9 @@
 "Couldn't Unsubscribe" = "No se pudo dar de baja";
 
 /* No comment provided by engineer. */
+"Couldn't update the rules in %@. They still run in Corres." = "No se pudieron actualizar las reglas en %@. Siguen funcionando en Corres.";
+
+/* No comment provided by engineer. */
 "Customize" = "Personalizar";
 
 /* No comment provided by engineer. */
@@ -1134,6 +1143,9 @@
 
 /* No comment provided by engineer. */
 "Gmail" = "Gmail";
+
+/* No comment provided by engineer. */
+"Gmail and Outlook" = "Gmail y Outlook";
 
 /* No comment provided by engineer. */
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail y Outlook inician sesión en las páginas de Google y Microsoft, y Corres recibe un permiso que puedes retirar cuando quieras. iCloud usa una contraseña específica de app que puedes desactivar en account.apple.com. Ambas se quedan en el llavero de este %@.";
@@ -1601,6 +1613,9 @@
 "Needs You on your Home Screen and Lock Screen." = "Te necesita en la pantalla de inicio y la pantalla bloqueada.";
 
 /* No comment provided by engineer. */
+"Needs You stays in Corres." = "«Te necesita» se queda en Corres.";
+
+/* No comment provided by engineer. */
 "Needs You, Primary, Everything and the rest sit above your mail and scroll away with it, for more room. Scroll back to the top to switch." = "«Te necesita», «Principal», «Todo» y las demás pestañas están sobre tu correo y se desplazan con él, para dejar más espacio. Vuelve arriba para cambiar.";
 
 /* No comment provided by engineer. */
@@ -1808,6 +1823,9 @@
 "Nothing in Needs You" = "Nada en Te necesita";
 
 /* No comment provided by engineer. */
+"Nothing in this rule can run in %@: Needs You is Corres's own." = "Nada de esta regla puede funcionar en %@: «Te necesita» es propio de Corres.";
+
+/* No comment provided by engineer. */
 "Nothing in Waiting" = "Nada en En espera";
 
 /* No comment provided by engineer. */
@@ -1992,6 +2010,9 @@
 
 /* No comment provided by engineer. */
 "Outlook" = "Outlook";
+
+/* No comment provided by engineer. */
+"Outlook can mark as read and archive, not flag or choose a tab." = "Outlook puede marcar como leído y archivar, pero no marcar con bandera ni elegir una pestaña.";
 
 /* No comment provided by engineer. */
 "Overdue" = "Vencido";
@@ -2744,6 +2765,9 @@
 "This Evening, 6 PM" = "Esta tarde, 18:00";
 
 /* No comment provided by engineer. */
+"This runs in %@ too, even with Corres closed and on the web. Deleting the rule here removes it there." = "Esto también funciona en %@, incluso con Corres cerrado y en la web. Si eliminas la regla aquí, se elimina allí.";
+
+/* No comment provided by engineer. */
 "This Weekend" = "Este fin de semana";
 
 /* No comment provided by engineer. */
@@ -3174,6 +3198,9 @@
 
 /* No comment provided by engineer. */
 "your recipient" = "tu destinatario";
+
+/* No comment provided by engineer. */
+"Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "Tus reglas funcionan ahora en Corres. Permítelo y Gmail también las aplicará, incluso con Corres cerrado: %@.";
 
 /* No comment provided by engineer. */
 "Your sample conversations couldn't be opened." = "No se pudieron abrir tus conversaciones de ejemplo.";
