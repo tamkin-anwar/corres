@@ -1,0 +1,22 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+		04E5DDB5F597EAD240950033 = {isa = PBXBuildFile; fileRef = 25A6634263C1B1F6FC4697A0; };
+		25A6634263C1B1F6FC4697A0 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuditTests.swift; sourceTree = "<group>"; };
+		6754AF9632A2745E85C293E5 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AuditTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		11086BCB7703604481A2CE06 = {isa = PBXGroup; children = (6754AF9632A2745E85C293E5, ); name = Products; sourceTree = "<group>"; };
+		AD936FCBED631FA67E05C3EA = {isa = PBXGroup; children = (25A6634263C1B1F6FC4697A0, 11086BCB7703604481A2CE06, ); sourceTree = "<group>"; };
+		5DF2276927A3343F7BFF3114 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (04E5DDB5F597EAD240950033, ); runOnlyForDeploymentPostprocessing = 0; };
+		38E0F25BE186060D966FCC43 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		34A04005BCAF206EEC990BD9 = {isa = PBXNativeTarget; buildConfigurationList = 667AE99A22D281E83EFDE10B; buildPhases = (5DF2276927A3343F7BFF3114, 38E0F25BE186060D966FCC43, ); buildRules = (); dependencies = (); name = AuditTests; productName = AuditTests; productReference = 6754AF9632A2745E85C293E5; productType = "com.apple.product-type.bundle.ui-testing"; };
+		E73C023A2E8E90349BB4D853 = {isa = PBXProject; buildConfigurationList = 0CB6A51C7043809547A3B1BD; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base, ); mainGroup = AD936FCBED631FA67E05C3EA; productRefGroup = 11086BCB7703604481A2CE06; projectDirPath = ""; projectRoot = ""; targets = (34A04005BCAF206EEC990BD9, ); };
+		653E813098A28CCDF23D8431 = {isa = XCBuildConfiguration; buildSettings = { SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 5.0; }; name = Debug; };
+		D38EF375B131480258491797 = {isa = XCBuildConfiguration; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = studio.anwarcreative.corres.audit; PRODUCT_NAME = "$(TARGET_NAME)"; GENERATE_INFOPLIST_FILE = YES; CODE_SIGN_STYLE = Automatic; CODE_SIGN_IDENTITY = "-"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
+		0CB6A51C7043809547A3B1BD = {isa = XCConfigurationList; buildConfigurations = (653E813098A28CCDF23D8431, ); defaultConfigurationName = Debug; };
+		667AE99A22D281E83EFDE10B = {isa = XCConfigurationList; buildConfigurations = (D38EF375B131480258491797, ); defaultConfigurationName = Debug; };
+	};
+	rootObject = E73C023A2E8E90349BB4D853;
+}

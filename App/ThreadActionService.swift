@@ -86,9 +86,10 @@ final class ThreadActionService {
     func offerUndo(_ title: String, systemImage: String, undo: @escaping @MainActor () async -> Void) {
         let change = UndoableChange(title: title, systemImage: systemImage, undo: undo)
         lastChange = change
+        Assistive.announce(String(localized: "\(title). Undo available."))
         changeTask?.cancel()
         changeTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(Self.undoSeconds))
+            try? await Task.sleep(for: .seconds(Assistive.undoSeconds(Self.undoSeconds)))
             guard !Task.isCancelled, let self, self.lastChange?.id == change.id else { return }
             self.lastChange = nil
         }
@@ -281,11 +282,12 @@ final class ThreadActionService {
         let pending = PendingRemoval(threads: threads, kind: kind)
         dismissLastChange()
         pendingRemoval = pending
+        Assistive.announce(String(localized: "\(pending.title). Undo available."))
         // One sleep, not a per-second countdown: the pill shows no timer,
         // and ticking `pendingRemoval` every second redrew the list and the
         // whole shell every second while you were triaging.
         removalTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(Self.undoSeconds))
+            try? await Task.sleep(for: .seconds(Assistive.undoSeconds(Self.undoSeconds)))
             guard !Task.isCancelled, let self, self.pendingRemoval?.id == pending.id else { return }
             self.pendingRemoval = nil
             self.enqueue(pending)

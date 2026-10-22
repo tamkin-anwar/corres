@@ -53,6 +53,9 @@
 "%@: %@" = "%@：%@";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@。取り消せます。";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "%1$@の%2$@";
 
 /* No comment provided by engineer. */
@@ -142,10 +145,8 @@
 /* No comment provided by engineer. */
 "Add to Reminders" = "リマインダーに追加";
 
-
 /* No comment provided by engineer. */
 "Added to Reminders" = "リマインダーに追加しました";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "リマインダーに追加しました。";
@@ -440,6 +441,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't Save" = "保存できませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "「%@」を送信できませんでした。再試行するか破棄してください。";
 
 /* No comment provided by engineer. */
 "Dark" = "ダーク";
@@ -743,6 +747,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "最後に届いたメール";
+
+/* No comment provided by engineer. */
+"Later" = "あとで";
 
 /* No comment provided by engineer. */
 "Later Today" = "今日このあと";
@@ -1192,6 +1199,9 @@
 "Quick Look %@" = "%@をクイックルック";
 
 /* No comment provided by engineer. */
+"Read" = "既読";
+
+/* No comment provided by engineer. */
 "Read/Unread" = "開封済み／未開封";
 
 /* No comment provided by engineer. */
@@ -1219,11 +1229,16 @@
 "Register" = "登録";
 
 /* No comment provided by engineer. */
+"Remind Me" = "リマインド";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "${target}について通知";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "メールについて通知";
 
+/* No comment provided by engineer. */
+"Reminder" = "リマインダー";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "リマインダーに保存できませんでした。もう一度お試しください。";
@@ -1362,6 +1377,9 @@
 
 /* No comment provided by engineer. */
 "Send without a subject?" = "件名なしで送信しますか？";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "送信中。取り消せます。";
 
 /* No comment provided by engineer. */
 "Sends %@" = "%@に送信";

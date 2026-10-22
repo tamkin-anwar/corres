@@ -70,6 +70,13 @@ struct ComposeView: View {
     @State private var addingLink = false
     @State private var linkText = ""
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// At the accessibility text sizes a field's name sits above it, so
+    /// neither "Subject" nor what you type is broken mid-word.
+    @Environment(\.dynamicTypeSize) private var typeSize
+    private var fieldLayout: AnyLayout {
+        typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+    }
+    private var fieldNameWidth: CGFloat? { typeSize.isAccessibilitySize ? nil : 64 }
     /// Fields and suggestions appearing: brief, no bounce (Apple's "brief
     /// and precise"), a plain fade with Reduce Motion.
     private var reveal: Animation { reduceMotion ? .easeOut(duration: 0.15) : .snappy(duration: 0.3, extraBounce: 0) }
@@ -892,9 +899,9 @@ struct ComposeView: View {
                     setAddresses(field, finished: current, typing: value)
                 }
             })
-        return HStack(alignment: .top, spacing: 12) {
+        return fieldLayout {
             Text(field.title).font(.subheadline).foregroundStyle(CorresPalette.secondary)
-                .frame(width: 64, alignment: .leading).frame(minHeight: 44)
+                .frame(width: fieldNameWidth, alignment: .leading).frame(minHeight: typeSize.isAccessibilitySize ? nil : 44)
             FlowLayout(spacing: 6, lineSpacing: 6) {
                 ForEach(Array(finished.enumerated()), id: \.offset) { index, entry in
                     recipientChip(entry, at: index, in: field)
@@ -919,13 +926,15 @@ struct ComposeView: View {
             }
             .padding(.vertical, 6)
             if field == .cc, !showsBcc, (draft.bcc ?? "").isEmpty {
-                Button("Bcc") {
+                Button {
                     withAnimation(reveal) { showsBcc = true }
                     focus(.bcc)
+                } label: {
+                    // The whole 44-point square takes the tap, not just the word.
+                    Text("Bcc").frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
                 }
                 .transition(.opacity)
                 .font(.subheadline).foregroundStyle(CorresPalette.accent)
-                .frame(minWidth: 44, minHeight: 44)
                 .accessibilityHint("Adds a Bcc field: people copied without the others seeing")
             }
         }
@@ -1077,7 +1086,7 @@ struct ComposeView: View {
                     }
                     .padding(.leading, 6).padding(.trailing, 4).padding(.vertical, 6)
                     .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .transition(.scale(scale: 0.9).combined(with: .opacity))
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.9).combined(with: .opacity))
                 }
             }
             .padding(.horizontal, CorresSpace.page).padding(.vertical, 8)
@@ -1203,8 +1212,8 @@ struct ComposeView: View {
     }
 
     private func subjectField(text: Binding<String>) -> some View {
-        HStack(spacing: 12) {
-            Text("Subject").font(.subheadline).foregroundStyle(CorresPalette.secondary).frame(width: 64, alignment: .leading)
+        fieldLayout {
+            Text("Subject").font(.subheadline).foregroundStyle(CorresPalette.secondary).frame(width: fieldNameWidth, alignment: .leading)
             TextField("Subject", text: text)
                 .textInputAutocapitalization(.sentences)
         }

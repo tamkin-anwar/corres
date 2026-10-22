@@ -241,6 +241,21 @@ enum CorresSettings {
             }
         }
 
+        /// What Voice Control answers to: the name shown, and the other
+        /// words people say for it ("Delete" for Trash).
+        func spokenNames(_ shown: String) -> [String] {
+            let more: [String] = switch self {
+            case .trash: [String(localized: "Trash"), String(localized: "Delete")]
+            case .unread: [String(localized: "Unread"), String(localized: "Read")]
+            case .snooze: [String(localized: "Snooze"), String(localized: "Later")]
+            case .moveTo: [String(localized: "Move")]
+            case .reminder: [String(localized: "Remind Me"), String(localized: "Reminder")]
+            case .flag: [String(localized: "Flag")]
+            default: []
+            }
+            return [shown] + more.filter { $0 != shown }
+        }
+
         /// Grouped in Settings so the long list reads as kinds of action.
         var group: String {
             switch self {

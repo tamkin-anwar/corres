@@ -311,9 +311,10 @@ struct PreferencesView: View {
                     }
                     .buttonStyle(CorresButtonStyle())
                     .disabled(auth.isSigningIn || sync.isSyncing)
-                    Button("Other Email Account") { connect(.imap) }
+                    Button { connect(.imap) } label: {
+                        Text("Other Email Account").frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
+                    }
                         .font(.subheadline.weight(.medium))
-                        .frame(maxWidth: .infinity)
                         .disabled(auth.isSigningIn || sync.isSyncing)
                     Text("Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this \(Device.name).")
                         .font(.footnote).foregroundStyle(CorresPalette.tertiary)

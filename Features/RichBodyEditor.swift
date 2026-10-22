@@ -245,6 +245,8 @@ struct RichBodyEditor: UIViewRepresentable {
         // The text menu's own Bold, Italic and Underline work too.
         view.allowsEditingTextAttributes = true
         view.dataDetectorTypes = []
+        // What VoiceOver and Voice Control call it ("Tap Message").
+        view.accessibilityLabel = String(localized: "Message")
         view.textContainerInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         view.text = text

@@ -243,6 +243,7 @@ final class OutboxService {
         queuedDraft = draft
         queuedThread = thread
         pending = Pending(id: id, subjectPreview: draft.subject, secondsRemaining: Self.undoWindowSeconds)
+        Assistive.announce(String(localized: "Sending. Undo available."))
         Task { try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .pending)) }
         task = Task { [weak self] in
             guard let self else { return }
@@ -304,6 +305,7 @@ final class OutboxService {
                 Logger(subsystem: "studio.anwarcreative.corres", category: "outbox")
                     .error("Send failed: \(String(describing: error), privacy: .public)")
                 failed = FailedSend(id: id, draft: draft)
+                Assistive.announce(String(localized: "Couldn't send \u{201C}\(draft.subject)\u{201D}. Retry or Discard."))
                 try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .failed))
                 return
             }

@@ -95,6 +95,9 @@
 "%@, not a valid address" = "%@, সঠিক ঠিকানা নয়";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@। পূর্বাবস্থায় ফেরানো যাবে।";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "%@-এর %@";
 
 /* No comment provided by engineer. */
@@ -291,7 +294,6 @@
 
 /* No comment provided by engineer. */
 "Added to Reminders" = "রিমাইন্ডারে যোগ হয়েছে";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "রিমাইন্ডারে যোগ হয়েছে।";
@@ -672,6 +674,9 @@
 "Complete it" = "সম্পূর্ণ করুন";
 
 /* No comment provided by engineer. */
+"Compose" = "লিখুন";
+
+/* No comment provided by engineer. */
 "Composing" = "লেখা";
 
 /* No comment provided by engineer. */
@@ -799,6 +804,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't send “%@”" = "“%@” পাঠানো যায়নি";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "“%@” পাঠানো যায়নি। আবার চেষ্টা করুন বা বাদ দিন।";
 
 /* No comment provided by engineer. */
 "Couldn't Sync" = "সিঙ্ক করা যায়নি";
@@ -1009,6 +1017,9 @@
 
 /* No comment provided by engineer. */
 "Files sent to you or by you show here." = "আপনাকে পাঠানো বা আপনার পাঠানো ফাইল এখানে দেখা যায়।";
+
+/* No comment provided by engineer. */
+"Filter" = "ফিল্টার";
 
 /* No comment provided by engineer. */
 "Find your conversations from Search on the Home Screen, by who sent them, the subject or what they say. The index stays on this %@." = "হোম স্ক্রিনের সার্চ থেকে আপনার কথোপকথন খুঁজুন, প্রেরক, বিষয় বা লেখা দিয়ে। সূচিটি এই %@-এই থাকে।";
@@ -1287,6 +1298,9 @@
 "Just This Email" = "শুধু এই ইমেইল";
 
 /* No comment provided by engineer. */
+"Just What's Unread" = "শুধু না পড়া";
+
+/* No comment provided by engineer. */
 "Keep Editing" = "সম্পাদনা চালিয়ে যান";
 
 /* No comment provided by engineer. */
@@ -1309,6 +1323,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "তাদের শেষ ইমেইল";
+
+/* No comment provided by engineer. */
+"Later" = "পরে";
 
 /* No comment provided by engineer. */
 "Later Today" = "আজ পরে";
@@ -1452,6 +1469,9 @@
 "Message" = "বার্তা";
 
 /* No comment provided by engineer. */
+"Messages" = "বার্তা";
+
+/* No comment provided by engineer. */
 "month" = "মাস";
 
 /* No comment provided by engineer. */
@@ -1477,6 +1497,9 @@
 
 /* No comment provided by engineer. */
 "Most Recent" = "সাম্প্রতিকতম";
+
+/* No comment provided by engineer. */
+"Move" = "সরান";
 
 /* No comment provided by engineer. */
 "Move %lld conversations to Trash?" = "%lldটি কথোপকথন ট্র্যাশে সরাবেন?";
@@ -2085,6 +2108,9 @@
 "Put away. It stays in Drafts." = "সরিয়ে রাখা হয়েছে। এটি খসড়ায় থাকে।";
 
 /* No comment provided by engineer. */
+"Read" = "পড়া";
+
+/* No comment provided by engineer. */
 "Read on this %@" = "এই %@-এ পড়া হয়";
 
 /* No comment provided by engineer. */
@@ -2130,11 +2156,16 @@
 "Register" = "নিবন্ধন করুন";
 
 /* No comment provided by engineer. */
+"Remind Me" = "মনে করিয়ে দিন";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "${target}-এর কথা মনে করিয়ে দিন";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "একটি ইমেইলের কথা মনে করিয়ে দিন";
 
+/* No comment provided by engineer. */
+"Reminder" = "রিমাইন্ডার";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "রিমাইন্ডার এটি সেভ করেনি। আবার চেষ্টা করুন।";
@@ -2348,6 +2379,9 @@
 
 /* No comment provided by engineer. */
 "Sending to %lld people? In Bcc, they won't see each other's addresses." = "%lld জনকে পাঠাচ্ছেন? Bcc-তে তারা একে অপরের ঠিকানা দেখবে না।";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "পাঠানো হচ্ছে। পূর্বাবস্থায় ফেরানো যাবে।";
 
 /* No comment provided by engineer. */
 "Sends %@" = "%@ পাঠায়";
@@ -2609,6 +2643,9 @@
 
 /* No comment provided by engineer. */
 "Takes this out of Needs You. It stays in Mail." = "এটি আপনার করণীয় থেকে সরিয়ে দেয়। মেইলে থাকে।";
+
+/* No comment provided by engineer. */
+"Tap here to see only unread mail in this list. Tap again to see it all." = "এই তালিকায় শুধু না পড়া ইমেইল দেখতে এখানে ট্যাপ করুন। সব দেখতে আবার ট্যাপ করুন।";
 
 /* No comment provided by engineer. */
 "Tap the link in the reminder to come back to this email." = "এই ইমেইলে ফিরতে রিমাইন্ডারের লিংকে ট্যাপ করুন।";

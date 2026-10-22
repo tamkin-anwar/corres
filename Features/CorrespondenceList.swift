@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 
 /// Which account an email in All Inboxes came from: the account's name,
 /// and its colour when colour coding is on (Settings → the account).
@@ -17,6 +18,7 @@ struct CorrespondenceRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @AppStorage(CorresSettings.previewLinesKey) private var previewLines = 2
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// "Tina K. Rotolo +2" → "TK": letters from the first two words of a
     /// name, leaving off the count of others.
@@ -31,7 +33,7 @@ struct CorrespondenceRow: View {
             Circle()
                 .fill(thread.isUnread ? CorresPalette.accent : .clear)
                 .frame(width: 7, height: 7)
-                .scaleEffect(thread.isUnread ? 1 : 0.4)
+                .scaleEffect(thread.isUnread || reduceMotion ? 1 : 0.4)
                 .animation(.snappy(duration: 0.25), value: thread.isUnread)
                 .padding(.top, 17)
                 .accessibilityHidden(true)
@@ -496,6 +498,17 @@ struct CorrespondenceList: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .background(CorresPalette.canvas)
+            // VoiceOver's rotor: straight to the next unread or flagged email.
+            .accessibilityRotor("Unread") {
+                ForEach(results.filter(\.isUnread)) { thread in
+                    AccessibilityRotorEntry(Text(verbatim: "\(thread.sender), \(thread.subject)"), id: thread.id)
+                }
+            }
+            .accessibilityRotor("Flagged") {
+                ForEach(results.filter(\.isFlagged)) { thread in
+                    AccessibilityRotorEntry(Text(verbatim: "\(thread.sender), \(thread.subject)"), id: thread.id)
+                }
+            }
             // No scrollPosition here: a List keeps its place by itself as a row
             // leaves. Re-anchoring it by id inside the removal's animation
             // made it measure every row above the anchor on every frame;
@@ -873,7 +886,9 @@ struct CorrespondenceList: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Unread Only")
+        .accessibilityInputLabels([Text("Unread Only"), Text("Unread"), Text("Filter")])
         .accessibilityAddTraits(unreadOnly ? .isSelected : [])
+        .popoverTip(UnreadOnlyTip())
         .accessibilityHint("Shows only unread mail in this list")
         .sensoryFeedback(.selection, trigger: unreadOnly)
     }
@@ -892,6 +907,9 @@ struct CorrespondenceList: View {
                             .font(.subheadline.weight(mailFilter == filter ? .semibold : .medium))
                             .foregroundStyle(mailFilter == filter ? CorresPalette.ink : CorresPalette.secondary)
                             .padding(.vertical, 10)
+                            // A full 44-point target, as Apple asks, with the underline at its foot.
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
                             .overlay(alignment: .bottom) {
                                 if mailFilter == filter {
                                     Capsule().fill(CorresPalette.accent).frame(height: 2)

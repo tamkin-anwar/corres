@@ -339,6 +339,10 @@ final class ThreadCellView: NSTableCellView {
             ? String(localized: "To: \(thread.counterpartName())") : thread.sender
         subject.stringValue = thread.subject.isEmpty ? String(localized: "No subject") : thread.subject
         time.stringValue = MacDates.short(thread.receivedAt)
+        // Differentiate Without Color: the account by name, not only its dot.
+        if accountColor != nil, NSWorkspace.shared.accessibilityDisplayShouldDifferentiateWithoutColor {
+            time.stringValue = AccountPreferences.nickname(for: thread.id.account) + " · " + time.stringValue
+        }
         symbols = []
         if thread.isSnoozed(at: .now) { symbols.append(("moon.zzz.fill", .secondaryLabelColor)) }
         if thread.isPinned { symbols.append(("pin.fill", NSColor(CorresPalette.pin))) }

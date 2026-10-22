@@ -53,6 +53,9 @@
 "%@: %@" = "%@: %@";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@. É possível desfazer.";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "%2$@ de %1$@";
 
 /* No comment provided by engineer. */
@@ -142,10 +145,8 @@
 /* No comment provided by engineer. */
 "Add to Reminders" = "Adicionar aos Lembretes";
 
-
 /* No comment provided by engineer. */
 "Added to Reminders" = "Adicionado aos Lembretes";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "Adicionado aos Lembretes.";
@@ -440,6 +441,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't Save" = "Não foi possível salvar";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "Não foi possível enviar “%@”. Tente de novo ou descarte.";
 
 /* No comment provided by engineer. */
 "Dark" = "Escuro";
@@ -743,6 +747,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "Último e-mail dessa pessoa";
+
+/* No comment provided by engineer. */
+"Later" = "Mais tarde";
 
 /* No comment provided by engineer. */
 "Later Today" = "Mais tarde hoje";
@@ -1192,6 +1199,9 @@
 "Quick Look %@" = "Visualização Rápida de %@";
 
 /* No comment provided by engineer. */
+"Read" = "Lido";
+
+/* No comment provided by engineer. */
 "Read/Unread" = "Lido/Não lido";
 
 /* No comment provided by engineer. */
@@ -1219,11 +1229,16 @@
 "Register" = "Cadastrar-se";
 
 /* No comment provided by engineer. */
+"Remind Me" = "Lembrar";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "Lembrar de ${target}";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "Lembrar de um e-mail";
 
+/* No comment provided by engineer. */
+"Reminder" = "Lembrete";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "Os Lembretes não salvaram. Tente de novo.";
@@ -1362,6 +1377,9 @@
 
 /* No comment provided by engineer. */
 "Send without a subject?" = "Enviar sem assunto?";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "Enviando. É possível desfazer.";
 
 /* No comment provided by engineer. */
 "Sends %@" = "Envia %@";

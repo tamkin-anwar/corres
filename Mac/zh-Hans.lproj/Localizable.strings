@@ -53,6 +53,9 @@
 "%@: %@" = "%@：%@";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@。可以撤销。";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "%1$@的%2$@";
 
 /* No comment provided by engineer. */
@@ -142,10 +145,8 @@
 /* No comment provided by engineer. */
 "Add to Reminders" = "添加到提醒事项";
 
-
 /* No comment provided by engineer. */
 "Added to Reminders" = "已添加到提醒事项";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "已添加到提醒事项。";
@@ -440,6 +441,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't Save" = "无法存储";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "无法发送“%@”。请重试或放弃。";
 
 /* No comment provided by engineer. */
 "Dark" = "深色";
@@ -743,6 +747,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "最近一封来自对方的邮件";
+
+/* No comment provided by engineer. */
+"Later" = "稍后";
 
 /* No comment provided by engineer. */
 "Later Today" = "今天晚些时候";
@@ -1192,6 +1199,9 @@
 "Quick Look %@" = "快速查看 %@";
 
 /* No comment provided by engineer. */
+"Read" = "已读";
+
+/* No comment provided by engineer. */
 "Read/Unread" = "已读/未读";
 
 /* No comment provided by engineer. */
@@ -1219,11 +1229,16 @@
 "Register" = "注册";
 
 /* No comment provided by engineer. */
+"Remind Me" = "提醒我";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "提醒我${target}";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "提醒我某封邮件";
 
+/* No comment provided by engineer. */
+"Reminder" = "提醒";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "提醒事项未能保存。请再试一次。";
@@ -1362,6 +1377,9 @@
 
 /* No comment provided by engineer. */
 "Send without a subject?" = "不带主题发送？";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "正在发送。可以撤销。";
 
 /* No comment provided by engineer. */
 "Sends %@" = "%@发送";

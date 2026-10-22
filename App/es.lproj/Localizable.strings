@@ -95,6 +95,9 @@
 "%@, not a valid address" = "%@, no es una dirección válida";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@. Se puede deshacer.";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "Los %2$@ de %1$@";
 
 /* No comment provided by engineer. */
@@ -291,7 +294,6 @@
 
 /* No comment provided by engineer. */
 "Added to Reminders" = "Añadido a Recordatorios";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "Añadido a Recordatorios.";
@@ -672,6 +674,9 @@
 "Complete it" = "Completarlo";
 
 /* No comment provided by engineer. */
+"Compose" = "Redactar";
+
+/* No comment provided by engineer. */
 "Composing" = "Redacción";
 
 /* No comment provided by engineer. */
@@ -799,6 +804,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't send “%@”" = "No se pudo enviar «%@»";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "No se pudo enviar «%@». Reintenta o descarta.";
 
 /* No comment provided by engineer. */
 "Couldn't Sync" = "No se pudo sincronizar";
@@ -1009,6 +1017,9 @@
 
 /* No comment provided by engineer. */
 "Files sent to you or by you show here." = "Aquí aparecen los archivos que recibes o envías.";
+
+/* No comment provided by engineer. */
+"Filter" = "Filtro";
 
 /* No comment provided by engineer. */
 "Find your conversations from Search on the Home Screen, by who sent them, the subject or what they say. The index stays on this %@." = "Encuentra tus conversaciones desde la búsqueda de la pantalla de inicio, por quién las envió, el asunto o lo que dicen. El índice se queda en este %@.";
@@ -1287,6 +1298,9 @@
 "Just This Email" = "Solo este correo";
 
 /* No comment provided by engineer. */
+"Just What's Unread" = "Solo lo no leído";
+
+/* No comment provided by engineer. */
 "Keep Editing" = "Seguir editando";
 
 /* No comment provided by engineer. */
@@ -1309,6 +1323,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "Último correo suyo";
+
+/* No comment provided by engineer. */
+"Later" = "Más tarde";
 
 /* No comment provided by engineer. */
 "Later Today" = "Más tarde hoy";
@@ -1452,6 +1469,9 @@
 "Message" = "Mensaje";
 
 /* No comment provided by engineer. */
+"Messages" = "Mensajes";
+
+/* No comment provided by engineer. */
 "month" = "mes";
 
 /* No comment provided by engineer. */
@@ -1477,6 +1497,9 @@
 
 /* No comment provided by engineer. */
 "Most Recent" = "Más reciente";
+
+/* No comment provided by engineer. */
+"Move" = "Mover";
 
 /* No comment provided by engineer. */
 "Move %lld conversations to Trash?" = "¿Mover %lld conversaciones a la papelera?";
@@ -2085,6 +2108,9 @@
 "Put away. It stays in Drafts." = "Guardado. Sigue en Borradores.";
 
 /* No comment provided by engineer. */
+"Read" = "Leído";
+
+/* No comment provided by engineer. */
 "Read on this %@" = "Leído en este %@";
 
 /* No comment provided by engineer. */
@@ -2130,11 +2156,16 @@
 "Register" = "Registrarse";
 
 /* No comment provided by engineer. */
+"Remind Me" = "Recordarme";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "Recordarme ${target}";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "Recordarme un correo";
 
+/* No comment provided by engineer. */
+"Reminder" = "Recordatorio";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "Recordatorios no lo guardó. Vuelve a intentarlo.";
@@ -2348,6 +2379,9 @@
 
 /* No comment provided by engineer. */
 "Sending to %lld people? In Bcc, they won't see each other's addresses." = "¿Enviar a %lld personas? En Cco, no verán las direcciones de los demás.";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "Enviando. Se puede deshacer.";
 
 /* No comment provided by engineer. */
 "Sends %@" = "Se envía %@";
@@ -2609,6 +2643,9 @@
 
 /* No comment provided by engineer. */
 "Takes this out of Needs You. It stays in Mail." = "Lo saca de Te necesita. Sigue en Correo.";
+
+/* No comment provided by engineer. */
+"Tap here to see only unread mail in this list. Tap again to see it all." = "Toca aquí para ver solo el correo no leído de esta lista. Vuelve a tocar para verlo todo.";
 
 /* No comment provided by engineer. */
 "Tap the link in the reminder to come back to this email." = "Toca el enlace del recordatorio para volver a este correo.";

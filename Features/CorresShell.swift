@@ -657,6 +657,7 @@ struct CorresShell: View {
                             }
                             .keyboardShortcut("n", modifiers: .command)
                             .accessibilityLabel("New message")
+            .accessibilityInputLabels([Text("New Message"), Text("Compose"), Text("New Email")])
                         }
                     }
             }
@@ -785,6 +786,7 @@ struct CorresShell: View {
                     .frame(minWidth: 44, minHeight: 44)
             }
             .accessibilityLabel("New message")
+            .accessibilityInputLabels([Text("New Message"), Text("Compose"), Text("New Email")])
         }
         // Its own circle, outside the glass group the system gives other
         // toolbar items on iOS 26, the way Apple's apps show an account.

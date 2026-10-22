@@ -10,6 +10,7 @@ struct EarlierMessages: View {
     @State private var expanded: Set<String> = []
     @State private var showsAll = false
     @Environment(\.displayScale) private var displayScale
+    @Namespace private var rotor
 
     private var visible: [Correspondence] {
         guard !showsAll, messages.count > 4 else { return messages }
@@ -38,12 +39,20 @@ struct EarlierMessages: View {
                     Hairline(leading: 14)
                 }
                 row(message)
+                    .accessibilityRotorEntry(id: key(message), in: rotor)
                 if index < visible.count - 1 { Hairline(leading: 14) }
             }
         }
         .corresCardFill(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(CorresPalette.line, lineWidth: 1 / displayScale))
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        // VoiceOver's rotor: from message to message in the conversation.
+        .accessibilityRotor("Messages") {
+            ForEach(Array(visible.enumerated()), id: \.offset) { _, message in
+                AccessibilityRotorEntry(Text(verbatim: "\(message.sender), \(CorrespondenceRow.timestamp(message.receivedAt))"),
+                                        id: key(message), in: rotor)
+            }
+        }
     }
 
     private func key(_ message: Correspondence) -> String { message.latestMessageID ?? message.id.providerID }

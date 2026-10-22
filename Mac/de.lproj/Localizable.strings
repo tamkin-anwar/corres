@@ -53,6 +53,9 @@
 "%@: %@" = "%@: %@";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@. Widerrufen möglich.";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "%2$@ von %1$@";
 
 /* No comment provided by engineer. */
@@ -142,10 +145,8 @@
 /* No comment provided by engineer. */
 "Add to Reminders" = "Zu Erinnerungen hinzufügen";
 
-
 /* No comment provided by engineer. */
 "Added to Reminders" = "Zu Erinnerungen hinzugefügt";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "Zu Erinnerungen hinzugefügt.";
@@ -440,6 +441,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't Save" = "Konnte nicht gesichert werden";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "„%@“ konnte nicht gesendet werden. Erneut versuchen oder verwerfen.";
 
 /* No comment provided by engineer. */
 "Dark" = "Dunkel";
@@ -743,6 +747,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "Letzte E-Mail von der Person";
+
+/* No comment provided by engineer. */
+"Later" = "Später";
 
 /* No comment provided by engineer. */
 "Later Today" = "Später heute";
@@ -1192,6 +1199,9 @@
 "Quick Look %@" = "Übersicht von %@";
 
 /* No comment provided by engineer. */
+"Read" = "Gelesen";
+
+/* No comment provided by engineer. */
 "Read/Unread" = "Gelesen/Ungelesen";
 
 /* No comment provided by engineer. */
@@ -1219,11 +1229,16 @@
 "Register" = "Registrieren";
 
 /* No comment provided by engineer. */
+"Remind Me" = "Erinnere mich";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "An ${target} erinnern";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "An eine E-Mail erinnern";
 
+/* No comment provided by engineer. */
+"Reminder" = "Erinnerung";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "Erinnerungen hat sie nicht gesichert. Versuche es erneut.";
@@ -1362,6 +1377,9 @@
 
 /* No comment provided by engineer. */
 "Send without a subject?" = "Ohne Betreff senden?";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "Wird gesendet. Widerrufen möglich.";
 
 /* No comment provided by engineer. */
 "Sends %@" = "Wird %@ gesendet";

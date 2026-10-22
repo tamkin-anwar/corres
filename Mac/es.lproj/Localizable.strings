@@ -53,6 +53,9 @@
 "%@: %@" = "%@: %@";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@. Se puede deshacer.";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "Los %2$@ de %1$@";
 
 /* No comment provided by engineer. */
@@ -142,10 +145,8 @@
 /* No comment provided by engineer. */
 "Add to Reminders" = "Añadir a Recordatorios";
 
-
 /* No comment provided by engineer. */
 "Added to Reminders" = "Añadido a Recordatorios";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "Añadido a Recordatorios.";
@@ -440,6 +441,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't Save" = "No se pudo guardar";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "No se pudo enviar «%@». Reintenta o descarta.";
 
 /* No comment provided by engineer. */
 "Dark" = "Oscuro";
@@ -743,6 +747,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "Último correo suyo";
+
+/* No comment provided by engineer. */
+"Later" = "Más tarde";
 
 /* No comment provided by engineer. */
 "Later Today" = "Más tarde hoy";
@@ -1192,6 +1199,9 @@
 "Quick Look %@" = "Vista rápida de %@";
 
 /* No comment provided by engineer. */
+"Read" = "Leído";
+
+/* No comment provided by engineer. */
 "Read/Unread" = "Leído/no leído";
 
 /* No comment provided by engineer. */
@@ -1219,11 +1229,16 @@
 "Register" = "Registrarse";
 
 /* No comment provided by engineer. */
+"Remind Me" = "Recordarme";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "Recordarme ${target}";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "Recordarme un correo";
 
+/* No comment provided by engineer. */
+"Reminder" = "Recordatorio";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "Recordatorios no lo guardó. Vuelve a intentarlo.";
@@ -1362,6 +1377,9 @@
 
 /* No comment provided by engineer. */
 "Send without a subject?" = "¿Enviar sin asunto?";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "Enviando. Se puede deshacer.";
 
 /* No comment provided by engineer. */
 "Sends %@" = "Se envía %@";

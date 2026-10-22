@@ -53,6 +53,9 @@
 "%@: %@" = "%@ : %@";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@. Annulation possible.";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "Les %2$@ de %1$@";
 
 /* No comment provided by engineer. */
@@ -142,10 +145,8 @@
 /* No comment provided by engineer. */
 "Add to Reminders" = "Ajouter à Rappels";
 
-
 /* No comment provided by engineer. */
 "Added to Reminders" = "Ajouté à Rappels";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "Ajouté à Rappels.";
@@ -440,6 +441,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't Save" = "Enregistrement impossible";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "Impossible d’envoyer « %@ ». Réessayez ou supprimez.";
 
 /* No comment provided by engineer. */
 "Dark" = "Sombre";
@@ -743,6 +747,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "Dernier e-mail reçu de cette personne";
+
+/* No comment provided by engineer. */
+"Later" = "Plus tard";
 
 /* No comment provided by engineer. */
 "Later Today" = "Plus tard aujourd’hui";
@@ -1192,6 +1199,9 @@
 "Quick Look %@" = "Coup d’œil sur %@";
 
 /* No comment provided by engineer. */
+"Read" = "Lu";
+
+/* No comment provided by engineer. */
 "Read/Unread" = "Lu/Non lu";
 
 /* No comment provided by engineer. */
@@ -1219,11 +1229,16 @@
 "Register" = "S’inscrire";
 
 /* No comment provided by engineer. */
+"Remind Me" = "Me rappeler";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "Me rappeler ${target}";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "Me rappeler un e-mail";
 
+/* No comment provided by engineer. */
+"Reminder" = "Rappel";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "Rappels ne l’a pas enregistré. Réessayez.";
@@ -1362,6 +1377,9 @@
 
 /* No comment provided by engineer. */
 "Send without a subject?" = "Envoyer sans objet ?";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "Envoi en cours. Annulation possible.";
 
 /* No comment provided by engineer. */
 "Sends %@" = "Envoi %@";

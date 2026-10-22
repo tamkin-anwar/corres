@@ -53,6 +53,9 @@
 "%@: %@" = "%@: %@";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@। পূর্বাবস্থায় ফেরানো যাবে।";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "%@-এর %@";
 
 /* No comment provided by engineer. */
@@ -142,10 +145,8 @@
 /* No comment provided by engineer. */
 "Add to Reminders" = "রিমাইন্ডারে যোগ করুন";
 
-
 /* No comment provided by engineer. */
 "Added to Reminders" = "রিমাইন্ডারে যোগ হয়েছে";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "রিমাইন্ডারে যোগ হয়েছে।";
@@ -440,6 +441,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't Save" = "সংরক্ষণ করা যায়নি";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "“%@” পাঠানো যায়নি। আবার চেষ্টা করুন বা বাদ দিন।";
 
 /* No comment provided by engineer. */
 "Dark" = "গাঢ়";
@@ -743,6 +747,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "তাদের শেষ ইমেইল";
+
+/* No comment provided by engineer. */
+"Later" = "পরে";
 
 /* No comment provided by engineer. */
 "Later Today" = "আজ পরে";
@@ -1192,6 +1199,9 @@
 "Quick Look %@" = "%@ কুইক লুক";
 
 /* No comment provided by engineer. */
+"Read" = "পড়া";
+
+/* No comment provided by engineer. */
 "Read/Unread" = "পঠিত/অপঠিত";
 
 /* No comment provided by engineer. */
@@ -1219,11 +1229,16 @@
 "Register" = "নিবন্ধন করুন";
 
 /* No comment provided by engineer. */
+"Remind Me" = "মনে করিয়ে দিন";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "${target}-এর কথা মনে করিয়ে দিন";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "একটি ইমেইলের কথা মনে করিয়ে দিন";
 
+/* No comment provided by engineer. */
+"Reminder" = "রিমাইন্ডার";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "রিমাইন্ডার এটি সেভ করেনি। আবার চেষ্টা করুন।";
@@ -1362,6 +1377,9 @@
 
 /* No comment provided by engineer. */
 "Send without a subject?" = "বিষয় ছাড়া পাঠাবেন?";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "পাঠানো হচ্ছে। পূর্বাবস্থায় ফেরানো যাবে।";
 
 /* No comment provided by engineer. */
 "Sends %@" = "%@ পাঠায়";

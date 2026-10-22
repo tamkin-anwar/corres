@@ -95,6 +95,9 @@
 "%@, not a valid address" = "%@、有効なアドレスではありません";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@。取り消せます。";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "%1$@の%2$@";
 
 /* No comment provided by engineer. */
@@ -291,7 +294,6 @@
 
 /* No comment provided by engineer. */
 "Added to Reminders" = "リマインダーに追加しました";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "リマインダーに追加しました。";
@@ -672,6 +674,9 @@
 "Complete it" = "完了する";
 
 /* No comment provided by engineer. */
+"Compose" = "作成";
+
+/* No comment provided by engineer. */
 "Composing" = "作成";
 
 /* No comment provided by engineer. */
@@ -799,6 +804,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't send “%@”" = "「%@」を送信できませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "「%@」を送信できませんでした。再試行するか破棄してください。";
 
 /* No comment provided by engineer. */
 "Couldn't Sync" = "同期できませんでした";
@@ -1009,6 +1017,9 @@
 
 /* No comment provided by engineer. */
 "Files sent to you or by you show here." = "送受信したファイルがここに表示されます。";
+
+/* No comment provided by engineer. */
+"Filter" = "フィルタ";
 
 /* No comment provided by engineer. */
 "Find your conversations from Search on the Home Screen, by who sent them, the subject or what they say. The index stays on this %@." = "ホーム画面の検索から、差出人、件名、内容で会話を探せます。インデックスはこの%@から出ません。";
@@ -1287,6 +1298,9 @@
 "Just This Email" = "このメールだけ";
 
 /* No comment provided by engineer. */
+"Just What's Unread" = "未読だけを表示";
+
+/* No comment provided by engineer. */
 "Keep Editing" = "編集を続ける";
 
 /* No comment provided by engineer. */
@@ -1309,6 +1323,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "最後に届いたメール";
+
+/* No comment provided by engineer. */
+"Later" = "あとで";
 
 /* No comment provided by engineer. */
 "Later Today" = "今日このあと";
@@ -1452,6 +1469,9 @@
 "Message" = "メッセージ";
 
 /* No comment provided by engineer. */
+"Messages" = "メッセージ";
+
+/* No comment provided by engineer. */
 "month" = "月";
 
 /* No comment provided by engineer. */
@@ -1477,6 +1497,9 @@
 
 /* No comment provided by engineer. */
 "Most Recent" = "新しい順";
+
+/* No comment provided by engineer. */
+"Move" = "移動";
 
 /* No comment provided by engineer. */
 "Move %lld conversations to Trash?" = "%lld件の会話をゴミ箱に入れますか？";
@@ -2085,6 +2108,9 @@
 "Put away. It stays in Drafts." = "しまいました。下書きに残っています。";
 
 /* No comment provided by engineer. */
+"Read" = "既読";
+
+/* No comment provided by engineer. */
 "Read on this %@" = "この%@上で読み取り";
 
 /* No comment provided by engineer. */
@@ -2130,11 +2156,16 @@
 "Register" = "登録";
 
 /* No comment provided by engineer. */
+"Remind Me" = "リマインド";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "${target}について通知";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "メールについて通知";
 
+/* No comment provided by engineer. */
+"Reminder" = "リマインダー";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "リマインダーに保存できませんでした。もう一度お試しください。";
@@ -2348,6 +2379,9 @@
 
 /* No comment provided by engineer. */
 "Sending to %lld people? In Bcc, they won't see each other's addresses." = "%lld人に送信しますか？BCCにすると、互いのアドレスは見えません。";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "送信中。取り消せます。";
 
 /* No comment provided by engineer. */
 "Sends %@" = "%@に送信";
@@ -2609,6 +2643,9 @@
 
 /* No comment provided by engineer. */
 "Takes this out of Needs You. It stays in Mail." = "「要対応」から外します。メールには残ります。";
+
+/* No comment provided by engineer. */
+"Tap here to see only unread mail in this list. Tap again to see it all." = "ここをタップすると、このリストの未読メールだけを表示します。もう一度タップするとすべて表示します。";
 
 /* No comment provided by engineer. */
 "Tap the link in the reminder to come back to this email." = "リマインダーのリンクをタップすると、このメールに戻れます。";

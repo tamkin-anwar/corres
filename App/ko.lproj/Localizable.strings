@@ -95,6 +95,9 @@
 "%@, not a valid address" = "%@, 유효한 주소가 아님";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@. 실행 취소할 수 있습니다.";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "%1$@의 %2$@";
 
 /* No comment provided by engineer. */
@@ -291,7 +294,6 @@
 
 /* No comment provided by engineer. */
 "Added to Reminders" = "미리 알림에 추가됨";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "미리 알림에 추가했습니다.";
@@ -672,6 +674,9 @@
 "Complete it" = "완료하기";
 
 /* No comment provided by engineer. */
+"Compose" = "작성";
+
+/* No comment provided by engineer. */
 "Composing" = "작성";
 
 /* No comment provided by engineer. */
@@ -799,6 +804,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't send “%@”" = "'%@'을(를) 보낼 수 없음";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "“%@”을(를) 보내지 못했습니다. 다시 시도하거나 삭제하세요.";
 
 /* No comment provided by engineer. */
 "Couldn't Sync" = "동기화할 수 없음";
@@ -1009,6 +1017,9 @@
 
 /* No comment provided by engineer. */
 "Files sent to you or by you show here." = "주고받은 파일이 여기에 표시됩니다.";
+
+/* No comment provided by engineer. */
+"Filter" = "필터";
 
 /* No comment provided by engineer. */
 "Find your conversations from Search on the Home Screen, by who sent them, the subject or what they say. The index stays on this %@." = "홈 화면의 검색에서 보낸 사람, 제목, 내용으로 대화를 찾을 수 있습니다. 색인은 이 %@에만 머뭅니다.";
@@ -1287,6 +1298,9 @@
 "Just This Email" = "이 이메일만";
 
 /* No comment provided by engineer. */
+"Just What's Unread" = "읽지 않은 메일만";
+
+/* No comment provided by engineer. */
 "Keep Editing" = "계속 편집";
 
 /* No comment provided by engineer. */
@@ -1309,6 +1323,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "마지막으로 받은 메일";
+
+/* No comment provided by engineer. */
+"Later" = "나중에";
 
 /* No comment provided by engineer. */
 "Later Today" = "오늘 늦게";
@@ -1452,6 +1469,9 @@
 "Message" = "메시지";
 
 /* No comment provided by engineer. */
+"Messages" = "메시지";
+
+/* No comment provided by engineer. */
 "month" = "월";
 
 /* No comment provided by engineer. */
@@ -1477,6 +1497,9 @@
 
 /* No comment provided by engineer. */
 "Most Recent" = "최신 순";
+
+/* No comment provided by engineer. */
+"Move" = "이동";
 
 /* No comment provided by engineer. */
 "Move %lld conversations to Trash?" = "대화 %lld개를 휴지통으로 이동하겠습니까?";
@@ -2085,6 +2108,9 @@
 "Put away. It stays in Drafts." = "치워두었습니다. 임시 저장에 남아 있습니다.";
 
 /* No comment provided by engineer. */
+"Read" = "읽음";
+
+/* No comment provided by engineer. */
 "Read on this %@" = "이 %@에서 읽음";
 
 /* No comment provided by engineer. */
@@ -2130,11 +2156,16 @@
 "Register" = "등록";
 
 /* No comment provided by engineer. */
+"Remind Me" = "리마인드";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "${target} 미리 알림";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "이메일 미리 알림";
 
+/* No comment provided by engineer. */
+"Reminder" = "미리 알림";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "미리 알림에 저장되지 않았습니다. 다시 시도하세요.";
@@ -2348,6 +2379,9 @@
 
 /* No comment provided by engineer. */
 "Sending to %lld people? In Bcc, they won't see each other's addresses." = "%lld명에게 보내시겠습니까? 숨은 참조로 보내면 서로의 주소를 볼 수 없습니다.";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "보내는 중. 실행 취소할 수 있습니다.";
 
 /* No comment provided by engineer. */
 "Sends %@" = "%@ 보냄";
@@ -2609,6 +2643,9 @@
 
 /* No comment provided by engineer. */
 "Takes this out of Needs You. It stays in Mail." = "'나에게 필요'에서 뺍니다. 메일에는 남아 있습니다.";
+
+/* No comment provided by engineer. */
+"Tap here to see only unread mail in this list. Tap again to see it all." = "여기를 탭하면 이 목록에서 읽지 않은 메일만 봅니다. 다시 탭하면 모두 봅니다.";
 
 /* No comment provided by engineer. */
 "Tap the link in the reminder to come back to this email." = "미리 알림의 링크를 탭하면 이 이메일로 돌아옵니다.";

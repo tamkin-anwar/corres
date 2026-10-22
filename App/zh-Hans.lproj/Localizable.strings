@@ -95,6 +95,9 @@
 "%@, not a valid address" = "%@，不是有效的地址";
 
 /* No comment provided by engineer. */
+"%@. Undo available." = "%@。可以撤销。";
+
+/* No comment provided by engineer. */
 "%@’s %@" = "%1$@的%2$@";
 
 /* No comment provided by engineer. */
@@ -291,7 +294,6 @@
 
 /* No comment provided by engineer. */
 "Added to Reminders" = "已添加到提醒事项";
-
 
 /* No comment provided by engineer. */
 "Added to Reminders." = "已添加到提醒事项。";
@@ -672,6 +674,9 @@
 "Complete it" = "完成";
 
 /* No comment provided by engineer. */
+"Compose" = "撰写";
+
+/* No comment provided by engineer. */
 "Composing" = "撰写";
 
 /* No comment provided by engineer. */
@@ -799,6 +804,9 @@
 
 /* No comment provided by engineer. */
 "Couldn't send “%@”" = "无法发送“%@”";
+
+/* No comment provided by engineer. */
+"Couldn't send “%@”. Retry or Discard." = "无法发送“%@”。请重试或放弃。";
 
 /* No comment provided by engineer. */
 "Couldn't Sync" = "无法同步";
@@ -1009,6 +1017,9 @@
 
 /* No comment provided by engineer. */
 "Files sent to you or by you show here." = "你收发的文件会显示在这里。";
+
+/* No comment provided by engineer. */
+"Filter" = "过滤";
 
 /* No comment provided by engineer. */
 "Find your conversations from Search on the Home Screen, by who sent them, the subject or what they say. The index stays on this %@." = "在主屏幕的搜索中，按发件人、主题或内容查找你的对话。索引只保留在这台%@上。";
@@ -1287,6 +1298,9 @@
 "Just This Email" = "仅这封邮件";
 
 /* No comment provided by engineer. */
+"Just What's Unread" = "只看未读";
+
+/* No comment provided by engineer. */
 "Keep Editing" = "继续编辑";
 
 /* No comment provided by engineer. */
@@ -1309,6 +1323,9 @@
 
 /* No comment provided by engineer. */
 "Last email from them" = "最近一封来自对方的邮件";
+
+/* No comment provided by engineer. */
+"Later" = "稍后";
 
 /* No comment provided by engineer. */
 "Later Today" = "今天晚些时候";
@@ -1452,6 +1469,9 @@
 "Message" = "邮件";
 
 /* No comment provided by engineer. */
+"Messages" = "邮件";
+
+/* No comment provided by engineer. */
 "month" = "月";
 
 /* No comment provided by engineer. */
@@ -1477,6 +1497,9 @@
 
 /* No comment provided by engineer. */
 "Most Recent" = "最新";
+
+/* No comment provided by engineer. */
+"Move" = "移动";
 
 /* No comment provided by engineer. */
 "Move %lld conversations to Trash?" = "将 %lld 个对话移到废纸篓？";
@@ -2085,6 +2108,9 @@
 "Put away. It stays in Drafts." = "已收起，仍在草稿中。";
 
 /* No comment provided by engineer. */
+"Read" = "已读";
+
+/* No comment provided by engineer. */
 "Read on this %@" = "在这台%@上读取";
 
 /* No comment provided by engineer. */
@@ -2130,11 +2156,16 @@
 "Register" = "注册";
 
 /* No comment provided by engineer. */
+"Remind Me" = "提醒我";
+
+/* No comment provided by engineer. */
 "Remind me about ${target}" = "提醒我${target}";
 
 /* No comment provided by engineer. */
 "Remind Me About an Email" = "提醒我某封邮件";
 
+/* No comment provided by engineer. */
+"Reminder" = "提醒";
 
 /* No comment provided by engineer. */
 "Reminders didn't save it. Try again." = "提醒事项未能保存。请再试一次。";
@@ -2348,6 +2379,9 @@
 
 /* No comment provided by engineer. */
 "Sending to %lld people? In Bcc, they won't see each other's addresses." = "要发送给 %lld 个人吗？使用密送，他们看不到彼此的地址。";
+
+/* No comment provided by engineer. */
+"Sending. Undo available." = "正在发送。可以撤销。";
 
 /* No comment provided by engineer. */
 "Sends %@" = "%@发送";
@@ -2609,6 +2643,9 @@
 
 /* No comment provided by engineer. */
 "Takes this out of Needs You. It stays in Mail." = "将其移出“需要你”。仍保留在“邮件”中。";
+
+/* No comment provided by engineer. */
+"Tap here to see only unread mail in this list. Tap again to see it all." = "轻点这里，只显示此列表中的未读邮件。再次轻点即可显示全部。";
 
 /* No comment provided by engineer. */
 "Tap the link in the reminder to come back to this email." = "轻点提醒事项中的链接即可回到这封邮件。";

@@ -3,6 +3,7 @@ import QuickLookThumbnailing
 import QuickLook
 import Translation
 import SwiftUI
+import TipKit
 
 /// A conversation plus the ordered list of ids it was opened from (a Brief
 /// card, a filtered Mail list, a search result), so paging to the next/
@@ -335,6 +336,7 @@ struct ConversationView: View {
             async let loaded: Void = threadActions.loadContent(for: thread)
             async let conversation: Void = threadActions.loadHistory(for: thread)
             HabitWatcher.shared.opened(thread)
+            Task { await UnreadOnlyTip.opened.donate() }
             // Settings → Reading → Mark as read when opened.
             if thread.isUnread && markReadOnOpen {
                 await threadActions.setUnread(false, for: thread)
@@ -462,9 +464,11 @@ struct ConversationView: View {
                                 email: thread.isFromAccountOwner ? nil : thread.senderEmail, size: CGSize(width: 44, height: 44))
             VStack(alignment: .leading, spacing: 2) {
                 Text(thread.isFromAccountOwner ? String(localized: "You") : thread.sender).font(.body.weight(.semibold))
+                // Wraps rather than cutting off the date or their address.
                 Text(recipientLine(for: thread))
                     .font(.subheadline).foregroundStyle(CorresPalette.secondary)
-                    .lineLimit(1)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 8)
         }
@@ -1351,8 +1355,10 @@ struct ConversationView: View {
             .disabled(!available)
             .opacity(available ? 1 : 0.35)
             .accessibilityLabel(look.title)
+            .accessibilityInputLabels(action.spokenNames(look.title).map { Text($0) })
         } else {
             barButton(look.icon, look.title, tint: look.tint) { perform(action, on: thread) }
+                .accessibilityInputLabels(action.spokenNames(look.title).map { Text($0) })
                 .disabled(!available)
                 .opacity(available ? 1 : 0.35)
         }
@@ -1403,6 +1409,7 @@ struct ConversationView: View {
                 .contentShape(Rectangle())
         }
         .accessibilityLabel("More actions")
+        .accessibilityInputLabels([Text("More actions"), Text("More")])
     }
 }
 
