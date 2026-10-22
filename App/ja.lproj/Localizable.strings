@@ -578,6 +578,9 @@
 "Book" = "予約";
 
 /* No comment provided by engineer. */
+"Bottom" = "下";
+
+/* No comment provided by engineer. */
 "Brief" = "ブリーフ";
 
 /* No comment provided by engineer. */
@@ -1178,9 +1181,6 @@
 "How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits." = "メール一覧で各メールをどれだけ表示するか。「要対応」と「返信待ち」は理由が収まるよう1行です。";
 
 /* No comment provided by engineer. */
-"How your lists look, what each swipe does, and the actions under an email." = "リストの見た目、スワイプの動作、メールの下に並ぶ操作。";
-
-/* No comment provided by engineer. */
 "https://" = "https://";
 
 /* No comment provided by engineer. */
@@ -1308,6 +1308,9 @@
 
 /* No comment provided by engineer. */
 "Keep several, like a full one for new email and a short one for replies, and choose each account's." = "新規メール用の長い署名と返信用の短い署名など、複数作ってアカウントごとに選べます。";
+
+/* No comment provided by engineer. */
+"Keep Tabs in View" = "タブを常に表示";
 
 /* No comment provided by engineer. */
 "Kept on this %@" = "この%@に保存";
@@ -1596,6 +1599,15 @@
 
 /* No comment provided by engineer. */
 "Needs You on your Home Screen and Lock Screen." = "ホーム画面とロック画面に「要対応」を表示。";
+
+/* No comment provided by engineer. */
+"Needs You, Primary, Everything and the rest sit above your mail and scroll away with it, for more room. Scroll back to the top to switch." = "「要対応」「メイン」「すべて」などのタブはメールの上にあり、スクロールすると一緒に隠れるので、より広く表示できます。切り替えるには一番上に戻ります。";
+
+/* No comment provided by engineer. */
+"Needs You, Primary, Everything and the rest sit above your mail and stay there as you scroll." = "「要対応」「メイン」「すべて」などのタブはメールの上にあり、スクロールしても表示されたままです。";
+
+/* No comment provided by engineer. */
+"Needs You, Primary, Everything and the rest sit at the bottom, within reach of your thumb, with Search beside them." = "「要対応」「メイン」「すべて」などのタブは画面の下、親指が届く位置にあり、検索がその隣にあります。";
 
 /* No comment provided by engineer. */
 "Never for This Sender" = "この差出人では使わない";
@@ -2645,6 +2657,9 @@
 "System" = "システム";
 
 /* No comment provided by engineer. */
+"Tabs" = "タブ";
+
+/* No comment provided by engineer. */
 "Take Photo" = "写真を撮る";
 
 /* No comment provided by engineer. */
@@ -2781,6 +2796,9 @@
 
 /* No comment provided by engineer. */
 "Tomorrow, %@" = "明日 %@";
+
+/* No comment provided by engineer. */
+"Top" = "上";
 
 /* No comment provided by engineer. */
 "Top Results" = "トップヒット";
@@ -2994,6 +3012,9 @@
 
 /* No comment provided by engineer. */
 "When you're done with something in Needs You or Waiting, mark it Handled. It leaves those lists, stays in Mail, and is kept here." = "「要対応」や「返信待ち」の用件が済んだら、対応済みにしましょう。そのリストから外れ、「メール」に残り、ここに保管されます。";
+
+/* No comment provided by engineer. */
+"Where the tabs sit, how your lists look, what each swipe does, and the actions under an email." = "タブの位置、リストの見た目、各スワイプの動作、メールの下に並ぶアクション。";
 
 /* No comment provided by engineer. */
 "Where you asked someone something, from Corres or any other app, or moved it here yourself. Longest wait first; after three days it's time to follow up. No tracking pixels, no read receipts." = "Corresやほかのアプリで誰かに何かを頼んだメール、または自分でここに移したもの。待ち時間の長い順です。3日たったらフォローアップの目安。トラッキングピクセルも開封確認も使いません。";

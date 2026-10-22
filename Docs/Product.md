@@ -33,7 +33,7 @@ AI is explicitly part of this, not opposed to it. The boundary ADR 004 already a
 
 1. Needs You, where Corres opens, collects explicit decisions, replies, confirmations, and commitments, each with its reason. (Until Build 16 a Brief screen came first; its summary now arrives as the Morning Brief notification.)
 2. Waiting tracks an outstanding response from another person.
-3. Mail remains a complete, predictable path to correspondence, one swipe along.
+3. Mail remains a complete, predictable path to correspondence, one tap away.
 
 Read/unread and attention are separate concepts. Reading a message never means a commitment is complete. A conversation can always be reclassified. Future inferred states must expose evidence and allow correction. A generated summary must link to the source conversation and show freshness. Uncertainty must remain visible; no inference may hide ordinary mail.
 

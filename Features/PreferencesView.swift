@@ -1107,7 +1107,7 @@ private struct CustomizeSettingsView: View {
                 NavigationLink { SwipeSettingsView() } label: { Label("Swipes", systemImage: "hand.draw") }
                 NavigationLink { ReadingBarSettingsView() } label: { Label("Email Toolbar", systemImage: "ellipsis.rectangle") }
             } footer: {
-                Text("How your lists look, what each swipe does, and the actions under an email.")
+                Text("Where the tabs sit, how your lists look, what each swipe does, and the actions under an email.")
             }
         }
         .scrollContentBackground(.hidden)
@@ -1123,9 +1123,26 @@ private struct ListSettingsView: View {
     let store: MailStore
     @AppStorage(CorresSettings.previewLinesKey) private var previewLines = 2
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatars = true
+    @AppStorage(CorresSettings.tabsAtBottomKey) private var tabsAtBottom = false
+    @AppStorage(CorresSettings.tabsPinnedKey) private var tabsPinned = true
 
     var body: some View {
         Form {
+            Section {
+                Picker("Tabs", selection: $tabsAtBottom) {
+                    Text("Top").tag(false)
+                    Text("Bottom").tag(true)
+                }
+                if !tabsAtBottom {
+                    Toggle("Keep Tabs in View", isOn: $tabsPinned)
+                }
+            } footer: {
+                Text(tabsAtBottom
+                     ? "Needs You, Primary, Everything and the rest sit at the bottom, within reach of your thumb, with Search beside them."
+                     : tabsPinned
+                        ? "Needs You, Primary, Everything and the rest sit above your mail and stay there as you scroll."
+                        : "Needs You, Primary, Everything and the rest sit above your mail and scroll away with it, for more room. Scroll back to the top to switch.")
+            }
             Section {
                 Picker("Preview", selection: $previewLines) {
                     Text("None").tag(0)

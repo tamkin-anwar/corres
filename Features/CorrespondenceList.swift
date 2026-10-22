@@ -210,6 +210,10 @@ struct CorrespondenceList: View {
     /// Remembered: Mail opens where you left it, Primary at first.
     @AppStorage("corres.mailFilter") private var mailFilter = MailFilter.needsYou
     @AppStorage(MailFilter.unreadOnlyKey) private var unreadOnly = false
+    /// Settings › Customize › Lists › Tabs.
+    @AppStorage(CorresSettings.tabsAtBottomKey) private var tabsAtBottom = false
+    @AppStorage(CorresSettings.tabsPinnedKey) private var tabsPinned = true
+    @State private var listWidth: CGFloat = 0
     /// Needs You is part of Pro: without it the split shows what it does.
     var needsYouLocked = false
     var onUnlockPro: (() -> Void)?
@@ -440,6 +444,16 @@ struct CorrespondenceList: View {
                     // the list picks up where you left off, not at the top.
                     .onAppear { restorePosition(proxy) }
                     .onChange(of: router.returnAnchor) { restorePosition(proxy) }
+                    #if DEBUG
+                    // Screenshots: -ScrollToRow N shows the list scrolled.
+                    .task(id: rows.ids.count) {
+                        let args = ProcessInfo.processInfo.arguments
+                        guard isActive, let flag = args.firstIndex(of: "-ScrollToRow"), flag + 1 < args.count,
+                              let row = Int(args[flag + 1]), rows.ids.count > row else { return }
+                        try? await Task.sleep(for: .seconds(1))
+                        proxy.scrollTo(rows.ids[row], anchor: .top)
+                    }
+                    #endif
             }
         } else {
             nonScrollingBody
@@ -463,6 +477,11 @@ struct CorrespondenceList: View {
             listContainer {
                 Section {
                     header
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                Section {
                     if destination == .mail, kind == .needsYou, needsYouLocked {
                         ProLockView(destination: .needsYou, onUnlock: { onUnlockPro?() },
                                     onOpenMail: { mailFilter = .primary }, openMailTitle: "Show Primary")
@@ -492,12 +511,28 @@ struct CorrespondenceList: View {
                         saveSearchFooter
                         listFooter
                     }
+                } header: {
+                    // Pinned: the tabs stay above the mail as it scrolls,
+                    // instead of leaving with the first rows.
+                    if tabsOnTop, tabsPinned {
+                        filterBar
+                            .readableWidth()
+                            // Frosted like the bar above, so the two read as
+                            // one piece when mail scrolls beneath them.
+                            .frame(maxWidth: .infinity)
+                            .background { Rectangle().fill(CorresPalette.canvas.opacity(0.82)).background(.ultraThinMaterial) }
+                            .listRowInsets(EdgeInsets())
+                    }
                 }
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
             }
             .listStyle(.plain)
+            // No gap above the pinned tabs: they follow the summary line.
+            .listSectionSpacing(0)
+            .environment(\.defaultMinListHeaderHeight, 0)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { listWidth = $0 }
             .scrollContentBackground(.hidden)
             .background(CorresPalette.canvas)
             // VoiceOver's rotor: straight to the next unread or flagged email.
@@ -527,18 +562,16 @@ struct CorrespondenceList: View {
             .onChange(of: results.isEmpty) { _, empty in if !empty, !HangReporter.launchMeasured { HangReporter.finish("launch") } }
             // Room below the last rows while the Undo pill shows, so any row
             // can be scrolled clear of it; while selecting, the action bar.
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if isSelecting {
-                    selectionBar
-                } else if let threadActions {
-                    BannerRoom(threadActions: threadActions)
-                }
-            }
+            .safeAreaInset(edge: .bottom, spacing: 0) { bottomInset }
             .modifier(TwoFingerSelect(isSelecting: isSelecting, onChange: handleTwoFingerSelect))
             // A light tick per row as a drag selects it, as in Mail.
             .sensoryFeedback(.selection, trigger: selected.count) { _, _ in dragAnchor != nil }
             .toolbar(isSelecting ? .hidden : .automatic, for: .tabBar)
-            .toolbar { selectionToolbar }
+            .toolbar {
+                selectionToolbar
+                bottomTabsToolbar
+            }
+            .modifier(MinimizedSearch(isOn: tabsOnBottom && Self.hasBottomSearch))
             .animation(.snappy(duration: 0.25), value: isSelecting)
             .onChange(of: isSelecting) { _, value in router.isSelecting = value }
             .onDisappear { if isSelecting { endSelection() }; router.isSelecting = false }
@@ -773,7 +806,8 @@ struct CorrespondenceList: View {
             .padding(.horizontal, CorresSpace.page)
             askSection
             peopleMatches
-            if destination == .mail { filterBar }
+            // Or with the mail, scrolling away (Keep Tabs in View off).
+            if tabsOnTop, !tabsPinned { filterBar }
         }
         .padding(.bottom, 6)
         .readableWidth()
@@ -895,13 +929,97 @@ struct CorrespondenceList: View {
         .sensoryFeedback(.selection, trigger: unreadOnly)
     }
 
+    /// Room below the last rows while the Undo pill shows; while selecting,
+    /// the action bar; before iOS 26, the bottom tabs.
+    @ViewBuilder
+    private var bottomInset: some View {
+        if isSelecting {
+            selectionBar
+        } else {
+            VStack(spacing: 0) {
+                if let threadActions { BannerRoom(threadActions: threadActions) }
+                // Before iOS 26 there's no bottom search to sit beside.
+                if tabsOnBottom, !searchPresented, !Self.hasBottomSearch {
+                    bottomTabs.padding(.vertical, 6).frame(maxWidth: .infinity).background(.bar)
+                }
+            }
+        }
+    }
+
+    /// Tabs along the bottom are an iPhone choice; iPad has its sidebar.
+    private var tabsOnBottom: Bool { destination == .mail && tabsAtBottom && sizeClass != .regular }
+    private var tabsOnTop: Bool { destination == .mail && !tabsOnBottom }
+
+    private var tabFilters: [MailFilter] {
+        // On iPad the sidebar has Needs You; Mail's splits start at Primary.
+        MailFilter.tabs.filter { sizeClass != .regular || $0 != .needsYou }
+    }
+
+    /// iOS 26 puts Search at the bottom, where it can shrink to a button
+    /// beside the tabs.
+    private static var hasBottomSearch: Bool {
+        if #available(iOS 26.0, *) { return true }
+        return false
+    }
+
+    /// The tabs at the bottom, sharing the bar with Search, as Mail's
+    /// bottom bar does on iOS 26. Hidden while selecting (the action bar
+    /// takes the bottom) and while searching.
+    @ToolbarContentBuilder
+    private var bottomTabsToolbar: some ToolbarContent {
+        if #available(iOS 26.0, *), tabsOnBottom, !isSelecting, !searchPresented {
+            ToolbarItem(placement: .bottomBar) {
+                // Room for the search button and the bar's margins.
+                bottomTabs.frame(width: max(160, listWidth - 120))
+            }
+            ToolbarSpacer(.flexible, placement: .bottomBar)
+            DefaultToolbarItem(kind: .search, placement: .bottomBar)
+        }
+    }
+
+    /// The same tabs, as a strip of pills: an underline floats oddly on
+    /// glass. The chosen tab scrolls into view.
+    private var bottomTabs: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 2) {
+                    ForEach(tabFilters) { filter in
+                        let chosen = mailFilter == filter
+                        Button {
+                            mailFilter = filter
+                        } label: {
+                            Text(filter.title)
+                                .font(.subheadline.weight(chosen ? .semibold : .medium))
+                                .foregroundStyle(chosen ? CorresPalette.ink : CorresPalette.secondary)
+                                .padding(.horizontal, 12)
+                                .frame(minHeight: 44)
+                                .background {
+                                    if chosen { Capsule().fill(CorresPalette.accent.opacity(0.18)).padding(.vertical, 5) }
+                                }
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .id(filter)
+                        .accessibilityAddTraits(chosen ? .isSelected : [])
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+            .trailingFade()
+            .onAppear { proxy.scrollTo(mailFilter, anchor: .center) }
+            .onChange(of: mailFilter) { _, filter in withAnimation(.snappy) { proxy.scrollTo(filter, anchor: .center) } }
+        }
+        .sensoryFeedback(.selection, trigger: mailFilter)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Tabs")
+    }
+
     /// Underlined text tabs, not chips: they read as views of one list,
     /// which is what they are.
     private var filterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 18) {
-                // On iPad the sidebar has Needs You; Mail's splits start at Primary.
-                ForEach(MailFilter.tabs.filter { sizeClass != .regular || $0 != .needsYou }) { filter in
+                ForEach(tabFilters) { filter in
                     Button {
                         mailFilter = filter
                     } label: {
@@ -1341,6 +1459,7 @@ struct CorrespondenceList: View {
     private var staticContent: some View {
         VStack(alignment: .leading, spacing: 24) {
             header
+            if destination == .mail { filterBar }
             if results.isEmpty {
                 emptyState
             } else {
@@ -1410,6 +1529,20 @@ private struct ConversationDragging: ViewModifier {
     func body(content: Content) -> some View {
         if enabled, let link = MailReminders.link(to: thread.id) {
             content.draggable(ConversationDrag(sender: thread.sender, subject: thread.subject, link: link))
+        } else {
+            content
+        }
+    }
+}
+
+/// Search as a button beside the bottom tabs (iOS 26), opening to the full
+/// field when tapped.
+private struct MinimizedSearch: ViewModifier {
+    let isOn: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *), isOn {
+            content.searchToolbarBehavior(.minimize)
         } else {
             content
         }

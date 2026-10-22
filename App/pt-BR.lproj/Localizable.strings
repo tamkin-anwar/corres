@@ -578,6 +578,9 @@
 "Book" = "Reservar";
 
 /* No comment provided by engineer. */
+"Bottom" = "Embaixo";
+
+/* No comment provided by engineer. */
 "Brief" = "Resumo";
 
 /* No comment provided by engineer. */
@@ -1178,9 +1181,6 @@
 "How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits." = "Quanto de cada e-mail aparece em E-mail. Precisa de Você e Aguardando mantêm uma linha, para caber o motivo.";
 
 /* No comment provided by engineer. */
-"How your lists look, what each swipe does, and the actions under an email." = "A aparência das listas, o que cada deslize faz e as ações abaixo de um e-mail.";
-
-/* No comment provided by engineer. */
 "https://" = "https://";
 
 /* No comment provided by engineer. */
@@ -1308,6 +1308,9 @@
 
 /* No comment provided by engineer. */
 "Keep several, like a full one for new email and a short one for replies, and choose each account's." = "Tenha várias, como uma completa para e-mails novos e uma curta para respostas, e escolha a de cada conta.";
+
+/* No comment provided by engineer. */
+"Keep Tabs in View" = "Manter as abas visíveis";
 
 /* No comment provided by engineer. */
 "Kept on this %@" = "Guardado neste %@";
@@ -1596,6 +1599,15 @@
 
 /* No comment provided by engineer. */
 "Needs You on your Home Screen and Lock Screen." = "Precisa de Você na Tela de Início e na Tela Bloqueada.";
+
+/* No comment provided by engineer. */
+"Needs You, Primary, Everything and the rest sit above your mail and scroll away with it, for more room. Scroll back to the top to switch." = "“Precisa de Você”, “Principal”, “Tudo” e as outras abas ficam acima dos seus e-mails e rolam junto com eles, para sobrar mais espaço. Volte ao topo para trocar.";
+
+/* No comment provided by engineer. */
+"Needs You, Primary, Everything and the rest sit above your mail and stay there as you scroll." = "“Precisa de Você”, “Principal”, “Tudo” e as outras abas ficam acima dos seus e-mails e continuam visíveis enquanto você rola.";
+
+/* No comment provided by engineer. */
+"Needs You, Primary, Everything and the rest sit at the bottom, within reach of your thumb, with Search beside them." = "“Precisa de Você”, “Principal”, “Tudo” e as outras abas ficam embaixo, ao alcance do polegar, com a busca ao lado.";
 
 /* No comment provided by engineer. */
 "Never for This Sender" = "Nunca para este remetente";
@@ -2645,6 +2657,9 @@
 "System" = "Sistema";
 
 /* No comment provided by engineer. */
+"Tabs" = "Abas";
+
+/* No comment provided by engineer. */
 "Take Photo" = "Tirar foto";
 
 /* No comment provided by engineer. */
@@ -2781,6 +2796,9 @@
 
 /* No comment provided by engineer. */
 "Tomorrow, %@" = "Amanhã, %@";
+
+/* No comment provided by engineer. */
+"Top" = "No topo";
 
 /* No comment provided by engineer. */
 "Top Results" = "Principais resultados";
@@ -2994,6 +3012,9 @@
 
 /* No comment provided by engineer. */
 "When you're done with something in Needs You or Waiting, mark it Handled. It leaves those lists, stays in Mail, and is kept here." = "Quando terminar algo em Precisa de Você ou Aguardando, marque como Resolvido. Sai dessas listas, fica em E-mail e é guardado aqui.";
+
+/* No comment provided by engineer. */
+"Where the tabs sit, how your lists look, what each swipe does, and the actions under an email." = "Onde ficam as abas, como suas listas aparecem, o que cada deslize faz e as ações abaixo de um e-mail.";
 
 /* No comment provided by engineer. */
 "Where you asked someone something, from Corres or any other app, or moved it here yourself. Longest wait first; after three days it's time to follow up. No tracking pixels, no read receipts." = "Onde você pediu algo a alguém, pelo Corres ou por qualquer outro app, ou que você mesmo moveu para cá. A espera mais longa primeiro; depois de três dias, é hora de acompanhar. Sem pixels de rastreamento, sem confirmações de leitura.";

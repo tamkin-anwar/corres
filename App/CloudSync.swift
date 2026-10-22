@@ -43,7 +43,7 @@ final class CloudSync {
         CorresSettings.laterTodayEveningKey, CorresSettings.readingBarKey, CorresSettings.undoSendKey,
         CorresSettings.defaultReplyKey, CorresSettings.remoteImagesKey, CorresSettings.confirmTrashKey,
         CorresSettings.markReadOnOpenKey, CorresSettings.openLinksKey, CorresSettings.summariesKey,
-        CorresSettings.keyDetailsKey, CorresSettings.previewLinesKey, CorresSettings.showAvatarsKey,
+        CorresSettings.keyDetailsKey, CorresSettings.previewLinesKey, CorresSettings.tabsAtBottomKey, CorresSettings.tabsPinnedKey, CorresSettings.showAvatarsKey,
         CorresSettings.badgeKey, "corres.lessons", "corres.signatures",
         "corres.trailingShortSwipeAction", "corres.trailingLongSwipeAction",
         "corres.leadingShortSwipeAction", "corres.leadingLongSwipeAction",

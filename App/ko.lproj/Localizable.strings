@@ -578,6 +578,9 @@
 "Book" = "예약";
 
 /* No comment provided by engineer. */
+"Bottom" = "아래";
+
+/* No comment provided by engineer. */
 "Brief" = "브리핑";
 
 /* No comment provided by engineer. */
@@ -1178,9 +1181,6 @@
 "How much of each email shows in Mail. Needs You and Waiting keep one line, so the reason fits." = "메일에서 각 이메일이 얼마나 보이는지. '나에게 필요'와 '대기 중'은 이유가 들어가도록 한 줄로 유지됩니다.";
 
 /* No comment provided by engineer. */
-"How your lists look, what each swipe does, and the actions under an email." = "목록의 모양, 쓸어넘기기 동작, 이메일 아래의 동작.";
-
-/* No comment provided by engineer. */
 "https://" = "https://";
 
 /* No comment provided by engineer. */
@@ -1308,6 +1308,9 @@
 
 /* No comment provided by engineer. */
 "Keep several, like a full one for new email and a short one for replies, and choose each account's." = "새 이메일용 긴 서명과 답장용 짧은 서명처럼 여러 개를 두고, 계정마다 선택하세요.";
+
+/* No comment provided by engineer. */
+"Keep Tabs in View" = "탭 항상 표시";
 
 /* No comment provided by engineer. */
 "Kept on this %@" = "이 %@에 보관됨";
@@ -1596,6 +1599,15 @@
 
 /* No comment provided by engineer. */
 "Needs You on your Home Screen and Lock Screen." = "홈 화면과 잠금 화면에 '나에게 필요' 표시.";
+
+/* No comment provided by engineer. */
+"Needs You, Primary, Everything and the rest sit above your mail and scroll away with it, for more room. Scroll back to the top to switch." = "‘나에게 필요’, ‘기본’, ‘모두’ 등의 탭이 메일 위에 있으며, 스크롤하면 함께 사라져 공간이 넓어집니다. 전환하려면 맨 위로 돌아가세요.";
+
+/* No comment provided by engineer. */
+"Needs You, Primary, Everything and the rest sit above your mail and stay there as you scroll." = "‘나에게 필요’, ‘기본’, ‘모두’ 등의 탭이 메일 위에 있으며, 스크롤해도 그대로 보입니다.";
+
+/* No comment provided by engineer. */
+"Needs You, Primary, Everything and the rest sit at the bottom, within reach of your thumb, with Search beside them." = "‘나에게 필요’, ‘기본’, ‘모두’ 등의 탭이 엄지가 닿는 아래쪽에 있고, 바로 옆에 검색이 있습니다.";
 
 /* No comment provided by engineer. */
 "Never for This Sender" = "이 보낸 사람에게는 사용 안 함";
@@ -2645,6 +2657,9 @@
 "System" = "시스템";
 
 /* No comment provided by engineer. */
+"Tabs" = "탭";
+
+/* No comment provided by engineer. */
 "Take Photo" = "사진 찍기";
 
 /* No comment provided by engineer. */
@@ -2781,6 +2796,9 @@
 
 /* No comment provided by engineer. */
 "Tomorrow, %@" = "내일 %@";
+
+/* No comment provided by engineer. */
+"Top" = "위";
 
 /* No comment provided by engineer. */
 "Top Results" = "상위 결과";
@@ -2994,6 +3012,9 @@
 
 /* No comment provided by engineer. */
 "When you're done with something in Needs You or Waiting, mark it Handled. It leaves those lists, stays in Mail, and is kept here." = "'나에게 필요'나 '대기 중'의 일을 마쳤다면 처리됨으로 표시하세요. 해당 목록에서 빠지고, 메일에 남으며, 여기에 보관됩니다.";
+
+/* No comment provided by engineer. */
+"Where the tabs sit, how your lists look, what each swipe does, and the actions under an email." = "탭의 위치, 목록의 모양, 각 스와이프의 동작, 이메일 아래의 동작.";
 
 /* No comment provided by engineer. */
 "Where you asked someone something, from Corres or any other app, or moved it here yourself. Longest wait first; after three days it's time to follow up. No tracking pixels, no read receipts." = "Corres나 다른 앱에서 누군가에게 무언가를 물어본 메일, 또는 직접 여기로 옮긴 메일. 가장 오래 기다린 순서이며, 3일이 지나면 후속 조치할 때입니다. 추적 픽셀도, 읽음 확인도 없습니다.";

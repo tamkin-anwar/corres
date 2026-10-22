@@ -90,6 +90,13 @@ enum CorresSettings {
     // MARK: Lists
 
     static let previewLinesKey = "corres.previewLines"
+    /// Settings › Customize › Lists › Tabs: Needs You, Primary, Everything
+    /// and the rest above the mail (pinned while it scrolls), or along the
+    /// bottom within thumb reach. Top by default, as in Apple Mail.
+    static let tabsAtBottomKey = "corres.tabsAtBottom"
+    /// With the tabs on top: kept in view while the mail scrolls (the
+    /// default), or scrolled away with it for more room.
+    static let tabsPinnedKey = "corres.tabsPinned"
     static var previewLines: Int { defaults.object(forKey: previewLinesKey) as? Int ?? 2 }
 
     static let showAvatarsKey = "corres.showAvatars"
