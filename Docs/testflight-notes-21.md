@@ -87,6 +87,8 @@ If anything goes wrong, send feedback from the TestFlight app.
 
 ## Build 25 (iPhone and iPad)
 
+Corres 0.2.0 (25) for iPhone, iPad and Apple Watch
+
 The big ones
 - Corres is on Apple Watch. See what needs you, read the start of each email, and reply by voice, Scribble or a quick answer. Handled and Archive are there too. Not on your Watch yet? Open the Watch app on your iPhone and install it.
 - Siri writes for you. Say "Write an email to Maya in Corres", change it by voice, then "Send it". Corres always asks before sending. Siri can search your mail in Corres too.
@@ -112,6 +114,8 @@ Please try
 Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
 
 ## Mac build 26
+
+Corres for Mac 0.2.0 (26)
 
 The big ones
 - Get New Mail is in the toolbar, and at the bottom of the sidebar next to "Updated". That spot also tells you when you're offline, or when an account can't sync, with Try Again.
