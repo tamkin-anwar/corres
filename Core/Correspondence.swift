@@ -242,6 +242,9 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         // "- Official - ITW…": a protective marking isn't the email.
         // Only a marking: set off by dashes or brackets ("- Official -",
         // "[OFFICIAL]") or in capitals; "Official results are in" stays.
+        // Every preview the same: whatever the service sent, or what was
+        // stored before this cleanup existed.
+        let excerpt = excerpt.previewText
         self.excerpt = excerpt.patternRange(#"^\s*(?:(?i:[\[\-–—]\s*(official(-sensitive)?|unclassified)\s*[\]\-–—])|(OFFICIAL(-SENSITIVE)?|UNCLASSIFIED)(?=\s))\s*"#).map { String(excerpt[$0.upperBound...]) } ?? excerpt
         self.body = body
         self.htmlBody = htmlBody
@@ -979,21 +982,43 @@ public enum InboxClassifier {
 public extension String {
     /// A row's preview line: entities decoded, and any markup a sender left
     /// in their preview text (`<a href="…">`) taken out.
-    /// Inline images' placeholders (`[cid:image001.png@01DD…]`) too.
+    /// Inline images' placeholders (`[cid:image001.png@01DD…]`) too, the
+    /// invisible padding newsletters put after their preview (`&zwnj;`,
+    /// zero-width spaces, soft hyphens) so a row doesn't read "‌ ‌ ‌", and
+    /// rules drawn with dashes or underscores.
     var previewText: String {
-        let decoded = decodingHTMLEntities
-        guard decoded.contains("<") || decoded.contains("[cid:") else { return decoded }
-        return decoded.replacingOccurrences(of: #"<[A-Za-z/!][^<>]{0,400}>"#, with: " ", options: .regularExpression)
-            .replacingOccurrences(of: #"\[cid:[^\]]{0,200}\]"#, with: " ", options: .regularExpression)
+        guard unicodeScalars.contains(where: { $0 == "&" || $0 == "<" || $0 == "[" || Self.isPreviewNoise($0) })
+                || contains("---") || contains("___") || contains("===") else { return self }
+        var text = decodingHTMLEntities
+        if text.contains("<") || text.contains("[cid:") {
+            text = text.replacingOccurrences(of: #"<[A-Za-z/!][^<>]{0,400}>"#, with: " ", options: .regularExpression)
+                .replacingOccurrences(of: #"\[cid:[^\]]{0,200}\]"#, with: " ", options: .regularExpression)
+        }
+        text.unicodeScalars.removeAll(where: Self.isPreviewNoise)
+        return text.replacingOccurrences(of: #"[-_=*~]{3,}"#, with: " ", options: .regularExpression)
             .replacingOccurrences(of: #"\s{2,}"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Characters that take no space: zero-width space, non-joiner, joiner,
+    /// word joiner, byte-order mark, soft hyphen, combining grapheme joiner,
+    /// Mongolian vowel separator, and the Braille blank some senders use.
+    private static func isPreviewNoise(_ scalar: Unicode.Scalar) -> Bool {
+        switch scalar.value {
+        case 0x200B...0x200F, 0x2060...0x2064, 0xFEFF, 0x00AD, 0x034F, 0x180E, 0x2800, 0x061C: true
+        default: false
+        }
     }
 
     /// Gmail's `snippet` field is HTML-escaped (`Don&#39;t`, `&amp;`), and
     /// was being shown verbatim in every row preview and notification.
     var decodingHTMLEntities: String {
         guard contains("&") else { return self }
-        let named: [String: String] = ["amp": "&", "lt": "<", "gt": ">", "quot": "\"", "apos": "'", "nbsp": " "]
+        let named: [String: String] = [
+            "amp": "&", "lt": "<", "gt": ">", "quot": "\"", "apos": "'", "nbsp": " ", "zwnj": "\u{200C}", "zwj": "\u{200D}",
+            "shy": "\u{00AD}", "ensp": " ", "emsp": " ", "thinsp": " ", "hellip": "…", "mdash": "—", "ndash": "–",
+            "lsquo": "‘", "rsquo": "’", "ldquo": "“", "rdquo": "”", "copy": "©", "reg": "®", "trade": "™", "bull": "•",
+        ]
         var result = ""
         var index = startIndex
         while index < endIndex {

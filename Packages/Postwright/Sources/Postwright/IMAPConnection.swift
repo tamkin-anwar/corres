@@ -302,8 +302,10 @@ public actor IMAPConnection {
         guard let channel, let responses else { throw ConnectionError.notConnected }
         tagCounter += 1
         let tag = "C\(tagCounter)"
-        try await channel.writeAndFlush(IMAPClientHandler.Message.part(.tagged(TaggedCommand(tag: tag, command: .idleStart))))
+        // Marked before it's sent: a cancel during the send must still
+        // keep LOGOUT (or anything else) from following IDLE.
         inIdle = true
+        try await channel.writeAndFlush(IMAPClientHandler.Message.part(.tagged(TaggedCommand(tag: tag, command: .idleStart))))
         var changes: [Change] = []
         var idling = false
         var done = false

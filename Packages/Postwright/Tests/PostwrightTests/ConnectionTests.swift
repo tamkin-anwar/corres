@@ -396,4 +396,28 @@ struct ActionTests {
         await c.logout()
         await #expect(throws: (any Error).self) { try await c.setFlags(["\\Seen"], uids: [3], add: true) }
     }
+
+    @Test func cancellingAsIdleStartsThenLoggingOutDoesNotCrash() async throws {
+        let s = server(capabilities: "IMAP4rev1 IDLE")
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        // Cancelled before IDLE has even been sent: the race the Mac's
+        // crash reports came from.
+        let wait = Task { try await c.waitForChanges(wait: .seconds(30)) }
+        wait.cancel()
+        _ = try? await wait.value
+        await c.logout()
+    }
+
+    @Test func aCommandDuringIdleIsRefusedNotSent() async throws {
+        let s = server(capabilities: "IMAP4rev1 IDLE")
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        let wait = Task { try await c.waitForChanges(wait: .seconds(30)) }
+        try await Task.sleep(for: .milliseconds(100))
+        await #expect(throws: (any Error).self) { try await c.setFlags(["\\Seen"], uids: [3], add: true) }
+        wait.cancel()
+        _ = try? await wait.value
+        await c.logout()
+    }
 }

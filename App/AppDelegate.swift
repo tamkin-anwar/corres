@@ -65,6 +65,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         let authService = GoogleAuthService()
         HangReporter.step("accounts ready")
         store = mailStore
+        mailStore.readEarly()
         // A real, silent-until-now failure mode, found in a review sweep:
         // this used to fall back to an in-memory store with nothing telling
         // the person their mail had stopped actually being saved. Reusing
@@ -96,6 +97,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         CorresTips.start()
+        CrashCollector.shared.start()
         WatchBridge.shared.start()
         HangReporter.shared.start()
         HangReporter.step("app started")

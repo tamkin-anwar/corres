@@ -35,12 +35,19 @@ final class MacServices {
     private static let checkInterval: Duration = .seconds(20)
 
     init() {
+        HangReporter.step("setup began")
         let (container, inMemory) = Self.makeModelContainer()
+        HangReporter.step("storage opened")
         let repository = Self.makeRepository(container)
         CorresSettings.applyToCore()
         let store = MailStore(repository: repository)
         store.contentReader = MessageContentReader(modelContainer: container)
-        store.seedsSampleMail = { !GoogleAuthService.hasSavedAccounts }
+        store.seedsSampleMail = {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-MeasureLaunch") { return false }
+            #endif
+            return !GoogleAuthService.hasSavedAccounts
+        }
         let auth = GoogleAuthService()
         self.store = store
         if inMemory {
@@ -65,6 +72,10 @@ final class MacServices {
         ask = AskService(store: store, sync: sync, auth: auth)
         entitlements = EntitlementStore()
         people = PeopleDirectory()
+        HangReporter.step("services ready")
+        // Reading your mail starts now, in the background, not once the
+        // window is up.
+        store.readEarly()
     }
 
     /// The buttons on a new-mail notification, as on the iPhone.
@@ -98,17 +109,27 @@ final class MacServices {
         guard !launched else { return }
         launched = true
         HangReporter.shared.start()
+        HangReporter.step("window up")
+        CrashCollector.shared.start()
         CloudSync.shared.start(store: store)
+        HangReporter.step("iCloud settings ready")
         PushNotificationService.registerNotificationActions()
         MacAppDelegate.handleAction = { [weak self] action, id, typed in await self?.notificationAction(action, id: id, typed: typed) }
         MacAppDelegate.didRegister = { [weak self] token in
             guard let self else { return }
             Task { await self.pushService.didRegister(deviceToken: token, accounts: self.auth.accounts.map(\.email)) }
         }
-        MacAppDelegate.didWake = { [weak self] in Task { await self?.checkForMail() } }
-        async let loaded: Void = store.load()
+        // Waking from sleep or back online: the old connections are gone,
+        // so open new ones and check now.
+        MacAppDelegate.didWake = { [weak self] in self?.reconnect() }
+        NetworkWatch.shared.cameBack = { [weak self] in self?.reconnect() }
+        NetworkWatch.shared.start()
+        // The mail first, then the accounts: the list doesn't wait on the
+        // keychain.
+        let loading = Task { await store.load() }
         await auth.restoreConnectedAccounts()
-        await loaded
+        HangReporter.step("accounts restored")
+        await loading.value
         HangReporter.finish("launch")
         // Web views ready before the first email is opened, as on iPhone.
         Task {
@@ -148,10 +169,23 @@ final class MacServices {
         }
     }
 
-    /// Get New Mail (⇧⌘N), and the once-a-minute check.
+    /// Get New Mail (⇧⌘N, the toolbar or the sidebar's footer): a fresh
+    /// connection to iCloud's live updates too, in case it went quiet.
+    func getNewMail() {
+        reconnect()
+    }
+
+    private func reconnect() {
+        guard NetworkWatch.shared.isOnline else { return }
+        IMAPWatcher.shared.stopAll()
+        watchIMAP()
+        Task { await checkForMail() }
+    }
+
+    /// The regular check (every 20 seconds while open).
     func checkForMail() async {
         let accounts = auth.accounts.map(\.email)
-        guard !accounts.isEmpty else { return }
+        guard !accounts.isEmpty, NetworkWatch.shared.isOnline else { return }
         let before = Dictionary(store.threads.map { ($0.id, $0.isUnread) }, uniquingKeysWith: { first, _ in first })
         guard await sync.syncAll(accounts: accounts) else { return }
         await store.load()
@@ -240,9 +274,18 @@ final class MacServices {
             return (sample, false)
         }
         #endif
+        #if DEBUG
+        // A test build keeps its own mailbox, so it can never move the one
+        // the TestFlight Corres on this Mac uses to a newer layout.
+        let directory = URL.applicationSupportDirectory.appending(path: "Corres Debug", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let configuration = ModelConfiguration(schema: schema, url: directory.appending(path: "default.store"))
+        #else
+        let configuration = ModelConfiguration(schema: schema)
+        #endif
         do {
             let container = try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self,
-                                               configurations: [ModelConfiguration(schema: schema)])
+                                               configurations: [configuration])
             return (container, false)
         } catch {
             let memory = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)

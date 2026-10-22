@@ -69,7 +69,9 @@ final class GoogleAuthService {
         watchICloudPasswords()
         var storedEmails = defaults.stringArray(forKey: Self.connectedAccountsKey) ?? []
         // Added on your other devices (iCloud Keychain): signed in here too.
-        storedEmails += AccountSync.adopt(into: storedEmails)
+        // Read in the background: the query held up the first screen.
+        let roster = await Task.detached(priority: .userInitiated) { AccountSync.roster() }.value
+        storedEmails += AccountSync.adopt(roster, into: storedEmails)
         var restored: [GmailAccount] = []
         for email in storedEmails {
             let signedIn = switch MailAccounts.provider(for: email) {

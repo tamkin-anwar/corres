@@ -34,7 +34,7 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         var breadcrumbs: [String] = []
     }
 
-    private static var directory: URL? {
+    static var directory: URL? {
         guard let library = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first else { return nil }
         let url = library.appendingPathComponent("Diagnostics", isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

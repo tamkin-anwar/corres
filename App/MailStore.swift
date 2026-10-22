@@ -270,6 +270,27 @@ final class MailStore {
     }
     private static let firstScreen = 300
 
+    /// The mailbox, read in the background while the window is still being
+    /// built (which keeps the main thread busy for a second or more on a
+    /// Mac): by the time the lists can show, the mail is already here.
+    private var earlyRead: (first: Task<[Correspondence], Error>, all: Task<[Correspondence], Error>)?
+
+    func readEarly() {
+        var sample = seedsSampleMail()
+        #if DEBUG
+        // Timing launches on a copy of a real mailbox, with no account.
+        if ProcessInfo.processInfo.arguments.contains("-MeasureLaunch") { sample = false }
+        #endif
+        guard earlyRead == nil, state == .idle, !sample else { return }
+        let repository = self.repository
+        let first = Task.detached(priority: .userInitiated) { try await repository.recentThreads(limit: MailStore.firstScreen) }
+        let all = Task.detached(priority: .userInitiated) {
+            _ = try? await first.value
+            return try await repository.threads()
+        }
+        earlyRead = (first, all)
+    }
+
     /// What the screen shows: the lists as soon as the newest mail is
     /// read, before the rest of the mailbox follows.
     var displayState: LoadState { state == .loading && !allThreads.isEmpty ? .loaded : state }
@@ -282,9 +303,15 @@ final class MailStore {
             // everything (thousands of conversations take a few seconds on
             // a phone). Lists show as soon as the first part is here.
             HangReporter.step("reading mail")
-            allThreads = try await repository.recentThreads(limit: Self.firstScreen)
+            let early = earlyRead
+            earlyRead = nil
+            if let early, let first = try? await early.first.value { allThreads = first } else {
+                allThreads = try await repository.recentThreads(limit: Self.firstScreen)
+            }
             HangReporter.step("newest \(allThreads.count) read")
-            allThreads = try await repository.threads()
+            if let early, let all = try? await early.all.value { allThreads = all } else {
+                allThreads = try await repository.threads()
+            }
             HangReporter.step("all \(allThreads.count) read")
             #if DEBUG
             await padForStressTest()

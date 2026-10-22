@@ -680,6 +680,9 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
+"If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "Se o Corres travou, fechou ou agiu de forma estranha, este arquivo diz onde: o build, a versão do macOS, os tempos e os relatórios de falha. Nunca seus e-mails.";
+
+/* No comment provided by engineer. */
 "Images hidden to protect your privacy" = "Imagens ocultas para proteger sua privacidade";
 
 /* No comment provided by engineer. */
@@ -1031,6 +1034,9 @@
 "Off" = "Desativado";
 
 /* No comment provided by engineer. */
+"Offline. Mail will check when you're back." = "Sem conexão. O Corres verifica os e-mails quando você voltar.";
+
+/* No comment provided by engineer. */
 "OK" = "OK";
 
 /* No comment provided by engineer. */
@@ -1364,6 +1370,12 @@
 "Send at" = "Enviar em";
 
 /* No comment provided by engineer. */
+"Send Diagnostics" = "Enviar Diagnósticos";
+
+/* No comment provided by engineer. */
+"Send Diagnostics…" = "Enviar Diagnósticos…";
+
+/* No comment provided by engineer. */
 "Send Later" = "Enviar depois";
 
 /* No comment provided by engineer. */
@@ -1400,6 +1412,9 @@
 "Share" = "Compartilhar";
 
 /* No comment provided by engineer. */
+"Share…" = "Compartilhar…";
+
+/* No comment provided by engineer. */
 "Shorter" = "Mais curto";
 
 /* No comment provided by engineer. */
@@ -1407,6 +1422,9 @@
 
 /* No comment provided by engineer. */
 "Show Images" = "Mostrar imagens";
+
+/* No comment provided by engineer. */
+"Show in Finder" = "Mostrar no Finder";
 
 /* No comment provided by engineer. */
 "Show in menu bar" = "Mostrar na barra de menus";
@@ -1593,6 +1611,9 @@
 
 /* No comment provided by engineer. */
 "Try Again" = "Tentar novamente";
+
+/* No comment provided by engineer. */
+"Try Again (⇧⌘N)" = "Tentar de Novo (⇧⌘N)";
 
 /* No comment provided by engineer. */
 "Try another name." = "Tente outro nome.";

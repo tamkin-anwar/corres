@@ -124,17 +124,33 @@ struct MacSidebar: View {
     private var newSendersCount: Int { Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count }
     private var primaryUnread: Int { store.overview().primaryUnread }
 
+    /// What's happening with your mail, and Get New Mail one click away.
     private var footer: some View {
-        HStack(spacing: 8) {
-            if services.sync.isSyncing {
+        let problem = accounts.lazy.compactMap { services.sync.health[$0]?.problem }.first
+        return HStack(spacing: 8) {
+            if !NetworkWatch.shared.isOnline {
+                Image(systemName: "wifi.slash")
+                Text("Offline. Mail will check when you're back.")
+            } else if services.sync.isSyncing {
                 ProgressView().controlSize(.small)
                 Text("Checking for mail…")
+            } else if let problem {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                Text(problem).lineLimit(2).help(problem)
             } else if let last = services.sync.lastCompletedSync {
                 Text("Updated \(last.formatted(.relative(presentation: .named)))")
             } else if accounts.isEmpty {
                 Text("Sample mail · add an account in Settings")
             }
-            Spacer()
+            Spacer(minLength: 4)
+            if !accounts.isEmpty, NetworkWatch.shared.isOnline, !services.sync.isSyncing {
+                Button { services.getNewMail() } label: {
+                    Image(systemName: problem == nil ? "arrow.clockwise" : "arrow.clockwise.circle.fill")
+                }
+                .buttonStyle(.borderless)
+                .help(problem == nil ? "Get New Mail (⇧⌘N)" : "Try Again (⇧⌘N)")
+                .accessibilityLabel(problem == nil ? "Get New Mail" : "Try Again")
+            }
         }
         .font(.caption)
         .foregroundStyle(CorresPalette.secondary)

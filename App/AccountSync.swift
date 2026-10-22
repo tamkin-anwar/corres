@@ -6,7 +6,7 @@ import Foundation
 /// address, its service, and for other email its server names travel;
 /// the sign-in itself is the Keychain entry next to it.
 enum AccountSync {
-    struct Entry: Codable, Equatable {
+    struct Entry: Codable, Equatable, Sendable {
         let email: String
         let provider: MailProvider
         var server: IMAPServer?
@@ -48,9 +48,15 @@ enum AccountSync {
     /// Accounts from your other devices that this one doesn't have yet,
     /// with what's needed to reach them recorded here first.
     static func adopt(into known: [String]) -> [String] {
+        adopt(roster(), into: known)
+    }
+
+    /// The same, with the roster already read (it's an iCloud Keychain
+    /// query, slow enough to read off the main thread at launch).
+    static func adopt(_ roster: [Entry], into known: [String]) -> [String] {
         let have = Set(known.map { $0.lowercased() })
         var added: [String] = []
-        for entry in roster() where !have.contains(entry.email.lowercased()) {
+        for entry in roster where !have.contains(entry.email.lowercased()) {
             MailAccounts.setProvider(entry.provider, for: entry.email)
             if let server = entry.server { IMAPServer.save(server, for: entry.email) }
             added.append(entry.email)

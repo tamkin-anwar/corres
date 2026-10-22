@@ -6,7 +6,7 @@ enum MacAction: Equatable {
     case compose, reply, replyAll, forward
     case archive, trash, move(Attention), toggleFlag, toggleUnread, snooze(Date?), askSnooze
     case getMail, show(MacMailbox), next, previous, openInWindow, undo, commandPalette, print, shortcuts, search
-    case toggleUnreadOnly, remind(Date?)
+    case toggleUnreadOnly, remind(Date?), sendDiagnostics
 }
 
 /// The front window's actions, for the menu bar.
@@ -36,6 +36,7 @@ struct MacCommands: Commands {
         CommandGroup(after: .help) {
             Button("Keyboard Shortcuts") { actions?.perform(.shortcuts) }
                 .keyboardShortcut("/", modifiers: .command)
+            Button("Send Diagnostics…") { actions?.perform(.sendDiagnostics) }
         }
         CommandGroup(replacing: .printItem) {
             Button("Print…") { actions?.perform(.print) }

@@ -60,3 +60,21 @@ struct PlainTextEmailTests {
         #expect(lines == ["This line continues on the next one.", "", "-- ", "Alex"])
     }
 }
+
+struct PreviewNoiseTests {
+    @Test func newsletterPaddingLeavesThePreview() {
+        #expect("Introducing the PRX Skeleton &zwnj; &zwnj; &zwnj;&#847; &zwnj;".previewText == "Introducing the PRX Skeleton")
+        #expect("This week\u{200C} \u{200B}\u{00AD}\u{034F} in review".previewText == "This week in review")
+        #expect("[cid:image001.png@01DD5FDE.D10AB060] Your Amazon Offer".previewText == "Your Amazon Offer")
+        #expect("Hello TAMKIN NURUL, -------------------- Thank you".previewText == "Hello TAMKIN NURUL, Thank you")
+        #expect("Plain words stay just as they are.".previewText == "Plain words stay just as they are.")
+        #expect("It&rsquo;s here &mdash; finally".previewText == "It’s here — finally")
+    }
+
+    @Test func storedPreviewsComeOutClean() {
+        let thread = Correspondence(id: ThreadID(account: "a", providerID: "1"), sender: "Tissot", senderEmail: nil, organization: "",
+                                    subject: "S", excerpt: "Tissot &zwnj; &zwnj; &zwnj;", body: "", htmlBody: nil, latestMessageID: nil,
+                                    receivedAt: .now, dueAt: nil, reason: "", attention: .quiet)
+        #expect(thread.excerpt == "Tissot")
+    }
+}

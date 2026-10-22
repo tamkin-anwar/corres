@@ -680,6 +680,9 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
+"If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "Corres আটকে গেলে, বন্ধ হয়ে গেলে বা ঠিকমতো না চললে, এই ফাইলটি জানায় কোথায়: বিল্ড, macOS সংস্করণ, সময়ের হিসাব আর ক্র্যাশ রিপোর্ট। কখনো আপনার মেইল নয়।";
+
+/* No comment provided by engineer. */
 "Images hidden to protect your privacy" = "আপনার গোপনীয়তা রক্ষায় ছবি লুকানো";
 
 /* No comment provided by engineer. */
@@ -1031,6 +1034,9 @@
 "Off" = "বন্ধ";
 
 /* No comment provided by engineer. */
+"Offline. Mail will check when you're back." = "অফলাইন। ফিরে এলে মেইল দেখা হবে।";
+
+/* No comment provided by engineer. */
 "OK" = "ঠিক আছে";
 
 /* No comment provided by engineer. */
@@ -1364,6 +1370,12 @@
 "Send at" = "পাঠানোর সময়";
 
 /* No comment provided by engineer. */
+"Send Diagnostics" = "ডায়াগনস্টিকস পাঠান";
+
+/* No comment provided by engineer. */
+"Send Diagnostics…" = "ডায়াগনস্টিকস পাঠান…";
+
+/* No comment provided by engineer. */
 "Send Later" = "পরে পাঠান";
 
 /* No comment provided by engineer. */
@@ -1400,6 +1412,9 @@
 "Share" = "শেয়ার করুন";
 
 /* No comment provided by engineer. */
+"Share…" = "শেয়ার করুন…";
+
+/* No comment provided by engineer. */
 "Shorter" = "আরও ছোট";
 
 /* No comment provided by engineer. */
@@ -1407,6 +1422,9 @@
 
 /* No comment provided by engineer. */
 "Show Images" = "ছবি দেখান";
+
+/* No comment provided by engineer. */
+"Show in Finder" = "Finder-এ দেখান";
 
 /* No comment provided by engineer. */
 "Show in menu bar" = "মেনু বারে দেখান";
@@ -1593,6 +1611,9 @@
 
 /* No comment provided by engineer. */
 "Try Again" = "আবার চেষ্টা করুন";
+
+/* No comment provided by engineer. */
+"Try Again (⇧⌘N)" = "আবার চেষ্টা করুন (⇧⌘N)";
 
 /* No comment provided by engineer. */
 "Try another name." = "অন্য একটি নাম দিয়ে চেষ্টা করুন।";

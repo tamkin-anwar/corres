@@ -680,6 +680,9 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
+"If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "如果 Corres 卡住、关闭或出现异常，这个文件会说明发生在哪里：版本号、macOS 版本、耗时和崩溃报告。从不包含你的邮件。";
+
+/* No comment provided by engineer. */
 "Images hidden to protect your privacy" = "已隐藏图片以保护你的隐私";
 
 /* No comment provided by engineer. */
@@ -1031,6 +1034,9 @@
 "Off" = "关闭";
 
 /* No comment provided by engineer. */
+"Offline. Mail will check when you're back." = "已离线。恢复连接后会检查邮件。";
+
+/* No comment provided by engineer. */
 "OK" = "好";
 
 /* No comment provided by engineer. */
@@ -1364,6 +1370,12 @@
 "Send at" = "发送时间";
 
 /* No comment provided by engineer. */
+"Send Diagnostics" = "发送诊断信息";
+
+/* No comment provided by engineer. */
+"Send Diagnostics…" = "发送诊断信息…";
+
+/* No comment provided by engineer. */
 "Send Later" = "稍后发送";
 
 /* No comment provided by engineer. */
@@ -1400,6 +1412,9 @@
 "Share" = "共享";
 
 /* No comment provided by engineer. */
+"Share…" = "共享…";
+
+/* No comment provided by engineer. */
 "Shorter" = "更简短";
 
 /* No comment provided by engineer. */
@@ -1407,6 +1422,9 @@
 
 /* No comment provided by engineer. */
 "Show Images" = "显示图片";
+
+/* No comment provided by engineer. */
+"Show in Finder" = "在访达中显示";
 
 /* No comment provided by engineer. */
 "Show in menu bar" = "在菜单栏中显示";
@@ -1593,6 +1611,9 @@
 
 /* No comment provided by engineer. */
 "Try Again" = "再试一次";
+
+/* No comment provided by engineer. */
+"Try Again (⇧⌘N)" = "再试一次（⇧⌘N）";
 
 /* No comment provided by engineer. */
 "Try another name." = "试试别的名称。";

@@ -680,6 +680,9 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
+"If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "Corres가 멈추거나 닫히거나 이상하게 동작하면, 이 파일이 어디서 그랬는지 알려 줍니다. 빌드, macOS 버전, 소요 시간, 충돌 보고서이며 메일은 포함되지 않습니다.";
+
+/* No comment provided by engineer. */
 "Images hidden to protect your privacy" = "개인정보 보호를 위해 이미지를 숨김";
 
 /* No comment provided by engineer. */
@@ -1031,6 +1034,9 @@
 "Off" = "끔";
 
 /* No comment provided by engineer. */
+"Offline. Mail will check when you're back." = "오프라인입니다. 다시 연결되면 메일을 확인합니다.";
+
+/* No comment provided by engineer. */
 "OK" = "확인";
 
 /* No comment provided by engineer. */
@@ -1364,6 +1370,12 @@
 "Send at" = "보낼 시간";
 
 /* No comment provided by engineer. */
+"Send Diagnostics" = "진단 정보 보내기";
+
+/* No comment provided by engineer. */
+"Send Diagnostics…" = "진단 정보 보내기…";
+
+/* No comment provided by engineer. */
 "Send Later" = "나중에 보내기";
 
 /* No comment provided by engineer. */
@@ -1400,6 +1412,9 @@
 "Share" = "공유";
 
 /* No comment provided by engineer. */
+"Share…" = "공유…";
+
+/* No comment provided by engineer. */
 "Shorter" = "더 짧게";
 
 /* No comment provided by engineer. */
@@ -1407,6 +1422,9 @@
 
 /* No comment provided by engineer. */
 "Show Images" = "이미지 보기";
+
+/* No comment provided by engineer. */
+"Show in Finder" = "Finder에서 보기";
 
 /* No comment provided by engineer. */
 "Show in menu bar" = "메뉴 막대에 표시";
@@ -1593,6 +1611,9 @@
 
 /* No comment provided by engineer. */
 "Try Again" = "다시 시도";
+
+/* No comment provided by engineer. */
+"Try Again (⇧⌘N)" = "다시 시도(⇧⌘N)";
 
 /* No comment provided by engineer. */
 "Try another name." = "다른 이름으로 시도해 보세요.";

@@ -8,6 +8,8 @@ struct MacMainView: View {
     @Environment(\.openWindow) private var openWindow
     @State private var columns = NavigationSplitViewVisibility.all
     @State private var snoozing: [Correspondence] = []
+    /// Help › Send Diagnostics: the file to share.
+    @State private var diagnostics: URL?
     /// Add to Reminders: what happened.
     @State private var reminderOutcome: MailReminders.Outcome?
     @State private var showingPalette = false
@@ -62,16 +64,7 @@ struct MacMainView: View {
             #endif
             if !welcomed, accounts.isEmpty { showingWelcome = true } else { welcomed = true }
         }
-        .alert(reminderOutcome == .added ? "Added to Reminders" : "Couldn't Add to Reminders",
-               isPresented: Binding(get: { reminderOutcome != nil }, set: { if !$0 { reminderOutcome = nil } })) {
-            Button("OK", role: .cancel) { reminderOutcome = nil }
-        } message: {
-            switch reminderOutcome {
-            case .notAllowed: Text("Corres doesn't have access to Reminders. You can allow it in System Settings > Privacy & Security > Reminders.")
-            case .failed: Text("Reminders didn't save it. Try again.")
-            default: Text("Click the link in the reminder to come back to this email.")
-            }
-        }
+        .modifier(MacNotices(diagnostics: $diagnostics, reminderOutcome: $reminderOutcome))
         .sheet(isPresented: Binding(get: { !snoozing.isEmpty }, set: { if !$0 { snoozing = [] } })) {
             MacSnoozeSheet { date in
                 let threads = snoozing
@@ -366,7 +359,7 @@ struct MacMainView: View {
                 Button { perform(.compose) } label: { Label("New Message", systemImage: "square.and.pencil") }
                     .help("New Message (⌘N)")
             }
-            ToolbarItem(id: "getMail", placement: .primaryAction, showsByDefault: false) {
+            ToolbarItem(id: "getMail", placement: .primaryAction) {
                 Button { perform(.getMail) } label: { Label("Get Mail", systemImage: "arrow.clockwise") }
                     .help("Get New Mail (⇧⌘N)")
             }
@@ -560,11 +553,13 @@ struct MacMainView: View {
             Task { for thread in selected { await store.snooze(thread.id, until: date) } }
         case .askSnooze:
             snoozing = selected
+        case .sendDiagnostics:
+            diagnostics = HangReporter.diagnosticsFile()
         case .remind(let due):
             guard let thread = selected.first else { return }
             Task { reminderOutcome = await MailReminders.add(thread, due: due) }
         case .getMail:
-            Task { await services.checkForMail() }
+            services.getNewMail()
         case .show(let mailbox):
             model.mailbox = mailbox
         case .toggleUnreadOnly:
@@ -781,4 +776,54 @@ final class ClosureMenuItem: NSMenuItem {
     required init(coder: NSCoder) { fatalError() }
 
     @objc private func run() { handler() }
+}
+
+/// The diagnostics file, as a sheet item.
+private struct DiagnosticsFile: Identifiable {
+    let url: URL
+    var id: URL { url }
+}
+
+/// Send Diagnostics, and what happened with Add to Reminders: kept apart
+/// from the main view so its long chain of modifiers stays quick to build.
+private struct MacNotices: ViewModifier {
+    @Binding var diagnostics: URL?
+    @Binding var reminderOutcome: MailReminders.Outcome?
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(item: Binding(get: { diagnostics.map(DiagnosticsFile.init) }, set: { if $0 == nil { diagnostics = nil } })) { file in
+                diagnosticsSheet(file.url)
+            }
+            .alert(reminderOutcome == .added ? "Added to Reminders" : "Couldn't Add to Reminders",
+                   isPresented: Binding(get: { reminderOutcome != nil }, set: { if !$0 { reminderOutcome = nil } })) {
+                Button("OK", role: .cancel) { reminderOutcome = nil }
+            } message: {
+                reminderMessage
+            }
+    }
+
+    private func diagnosticsSheet(_ url: URL) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Send Diagnostics").font(.headline)
+            Text("If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail.")
+                .foregroundStyle(CorresPalette.secondary).fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                Spacer()
+                Button("Done") { diagnostics = nil }.keyboardShortcut(.cancelAction)
+                ShareLink(item: url) { Text("Share…") }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(20)
+        .frame(width: 420)
+    }
+
+    @ViewBuilder private var reminderMessage: some View {
+        switch reminderOutcome {
+        case .notAllowed: Text("Corres doesn't have access to Reminders. You can allow it in System Settings > Privacy & Security > Reminders.")
+        case .failed: Text("Reminders didn't save it. Try again.")
+        default: Text("Click the link in the reminder to come back to this email.")
+        }
+    }
 }
