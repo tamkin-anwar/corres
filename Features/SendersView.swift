@@ -93,7 +93,12 @@ struct SendersView: View {
         #endif
         .navigationTitle("Senders")
         .inlineTitle()
-        .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
+        .sheet(isPresented: $showingScreener) {
+            ScreenerView(store: store)
+                #if os(macOS)
+                .frame(minWidth: 480, idealWidth: 520, minHeight: 560, idealHeight: 640)
+                #endif
+        }
         .onAppear { suggestions = HabitWatcher.shared.suggestions(in: store.threads) }
         .overlay(alignment: .bottom) {
             if let note {

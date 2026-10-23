@@ -1128,6 +1128,8 @@ private struct ListSettingsView: View {
 
     var body: some View {
         Form {
+            // iPad keeps its sidebar, so where the tabs sit is an iPhone choice.
+            if UIDevice.current.userInterfaceIdiom == .phone {
             Section {
                 Picker("Tabs", selection: $tabsAtBottom) {
                     Text("Top").tag(false)
@@ -1142,6 +1144,7 @@ private struct ListSettingsView: View {
                      : tabsPinned
                         ? "Needs You, Primary, Everything and the rest sit above your mail and stay there as you scroll."
                         : "Needs You, Primary, Everything and the rest sit above your mail and scroll away with it, for more room. Scroll back to the top to switch.")
+            }
             }
             Section {
                 Picker("Preview", selection: $previewLines) {

@@ -571,7 +571,6 @@ struct CorrespondenceList: View {
                 selectionToolbar
                 bottomTabsToolbar
             }
-            .modifier(MinimizedSearch(isOn: tabsOnBottom && Self.hasBottomSearch))
             .animation(.snappy(duration: 0.25), value: isSelecting)
             .onChange(of: isSelecting) { _, value in router.isSelecting = value }
             .onDisappear { if isSelecting { endSelection() }; router.isSelecting = false }
@@ -591,6 +590,8 @@ struct CorrespondenceList: View {
             }
             .categoryMoveDialog($categoryChoice, threadActions: threadActions)
             .searchable(text: $search, isPresented: $searchPresented, prompt: "Search, or ask a question")
+            // Outside the search it shrinks to a button beside the bottom tabs.
+            .modifier(MinimizedSearch(isOn: tabsOnBottom && Self.hasBottomSearch))
             // Siri's "search my email for…".
             .onChange(of: router.pendingSearch, initial: true) { _, words in
                 guard let words else { return }
@@ -967,12 +968,16 @@ struct CorrespondenceList: View {
     /// takes the bottom) and while searching.
     @ToolbarContentBuilder
     private var bottomTabsToolbar: some ToolbarContent {
-        if #available(iOS 26.0, *), tabsOnBottom, !isSelecting, !searchPresented {
-            ToolbarItem(placement: .bottomBar) {
-                // Room for the search button and the bar's margins.
-                bottomTabs.frame(width: max(160, listWidth - 120))
+        if #available(iOS 26.0, *), tabsOnBottom {
+            // The search button stays put while searching: taking it away
+            // would close the search it just opened.
+            if !isSelecting, !searchPresented {
+                ToolbarItem(placement: .bottomBar) {
+                    // Room for the search button and the bar's margins.
+                    bottomTabs.frame(width: max(160, listWidth - 120))
+                }
+                ToolbarSpacer(.flexible, placement: .bottomBar)
             }
-            ToolbarSpacer(.flexible, placement: .bottomBar)
             DefaultToolbarItem(kind: .search, placement: .bottomBar)
         }
     }

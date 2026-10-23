@@ -424,6 +424,8 @@
 		FEC673ED5C6144C6BA28927C /* App/OutlookClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC8BE109A8184BD9AF037CDA /* App/OutlookClient.swift */; };
 		FF572D1C19FF97BEC7A56363 /* Core/SenderDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8779CEB27F41BCB50AEF84 /* Core/SenderDirectory.swift */; };
 		FFC128B29B5871A5CD7F63A1 /* Features/TemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF8F8FDE9B25F0C732FEC97 /* Features/TemplatesView.swift */; };
+		1C0466D913E9C223D1E3E167 /* Core/ServerRulePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B3A510394696D01748EA5 /* Core/ServerRulePlan.swift */; };
+		C421F237DC7B00751C88011F /* Core/ServerRulePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B3A510394696D01748EA5 /* Core/ServerRulePlan.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -852,6 +854,7 @@
 		FDB01C32D35EF81F17F3FCD6 /* Watch/WatchFace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Watch/WatchFace.swift; sourceTree = SOURCE_ROOT; };
 		FEB5C4BF79C6432CA56B4E65 /* Widgets/CorresWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Widgets/CorresWidgets.entitlements; sourceTree = SOURCE_ROOT; };
 		FF7F38BF13EFB132AE0D4DAD /* App/ICloudSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ICloudSignIn.swift; sourceTree = SOURCE_ROOT; };
+		BB0B3A510394696D01748EA5 /* Core/ServerRulePlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ServerRulePlan.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1136,6 +1139,7 @@
 				2F28B111D91F76A95DF9FA17 /* Watch/CorresWatch.entitlements */,
 				226E14BE11763C7EB69365E8 /* WatchWidgets/CorresWatchWidgets.swift */,
 				FDB01C32D35EF81F17F3FCD6 /* Watch/WatchFace.swift */,
+				BB0B3A510394696D01748EA5 /* Core/ServerRulePlan.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1611,6 +1615,7 @@
 				642F9B7B1A3173F811017476 /* Features/OutOfOfficeView.swift in Sources */,
 				7759688ECB7078E704F00ED3 /* Core/ServerRuleSpec.swift in Sources */,
 				5D41291AA27609DD5C5357DE /* App/ServerRules.swift in Sources */,
+				C421F237DC7B00751C88011F /* Core/ServerRulePlan.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1766,6 +1771,7 @@
 				E37C2978E4D9AD0BF5D11178 /* Features/LessonsView.swift in Sources */,
 				17A0EBF8FC077AD6E69777FC /* Core/ServerRuleSpec.swift in Sources */,
 				5C5E50CD78A49B6070FCE3CF /* App/ServerRules.swift in Sources */,
+				1C0466D913E9C223D1E3E167 /* Core/ServerRulePlan.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

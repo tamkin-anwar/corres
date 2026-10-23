@@ -20,10 +20,7 @@ final class ServerRules {
     private(set) var failedAccounts: Set<String> = []
     private(set) var isUpdating = false
 
-    struct Entry: Codable, Equatable {
-        var id: String
-        var signature: String
-    }
+    typealias Entry = ServerRulePlan.Entry
 
     private static let ledgerKey = "corres.serverRules"
     /// Rule id → account → the filter or rule kept for it.
@@ -118,12 +115,9 @@ final class ServerRules {
                 failed.insert(account)
             }
         }
-        // Forget accounts that were removed.
-        let connected = Set(auth.accounts.map(\.email))
-        for (rule, accounts) in ledger {
-            ledger[rule] = accounts.filter { connected.contains($0.key) }
-            if ledger[rule]?.isEmpty == true { ledger[rule] = nil }
-        }
+        // Entries for accounts not connected right now are kept: at launch
+        // the accounts may not be back yet, and forgetting would leave
+        // filters behind that nothing could remove later.
         save()
         needsPermission = lacking
         failedAccounts = failed
@@ -132,36 +126,40 @@ final class ServerRules {
     // MARK: Gmail
 
     private func updateGmail(_ account: String, rules: [MailRule]) async throws {
-        var desired: [String: ServerRuleSpec.Gmail] = [:]
-        for rule in rules { if let spec = ServerRuleSpec.gmail(for: rule) { desired[rule.id.uuidString] = spec } }
-        // Out of date or no longer wanted: removed.
-        for (ruleID, accounts) in ledger {
-            guard let entry = accounts[account] else { continue }
-            if let spec = desired[ruleID], ServerRuleSpec.signature(spec) == entry.signature { continue }
-            try await gmail.deleteFilter(id: entry.id, account: account)
+        var specs: [String: ServerRuleSpec.Gmail] = [:]
+        for rule in rules { if let spec = ServerRuleSpec.gmail(for: rule) { specs[rule.id.uuidString] = spec } }
+        let wanted = specs.sorted { $0.key < $1.key }.map { ruleID, spec in
+            ServerRulePlan.Wanted(ruleID: ruleID, signature: ServerRuleSpec.signature(spec),
+                                  keys: [Self.key(spec), Self.key(spec.withoutCategory)])
+        }
+        for case let .remove(ruleID, id) in ServerRulePlan.removals(wanted: wanted, kept: kept(account)) {
+            try await gmail.deleteFilter(id: id, account: account)
             ledger[ruleID]?[account] = nil
         }
-        let missing = desired.filter { ledger[$0.key]?[account] == nil }
-        guard !missing.isEmpty else { return }
-        // Made already, by another device: kept, not made twice.
-        var existing = try await gmail.filters(account: account)
-        for (ruleID, spec) in missing {
-            let signature = ServerRuleSpec.signature(spec)
-            if let match = existing.first(where: { Self.matches($0, spec) || Self.matches($0, spec.withoutCategory) }), let id = match.id {
+        guard !ServerRulePlan.additions(wanted: wanted, kept: kept(account), existing: []).isEmpty else { return }
+        let existing = try await gmail.filters(account: account).compactMap { filter in
+            filter.id.map { ServerRulePlan.Existing(id: $0, key: ServerRulePlan.gmailKey(
+                query: filter.criteria.query ?? "", add: filter.action.addLabelIds ?? [], remove: filter.action.removeLabelIds ?? [])) }
+        }
+        for step in ServerRulePlan.additions(wanted: wanted, kept: kept(account), existing: existing) {
+            switch step {
+            case .adopt(let ruleID, let id, let signature):
                 ledger[ruleID, default: [:]][account] = Entry(id: id, signature: signature)
-                existing.removeAll { $0.id == id }
-                continue
+            case .create(let ruleID, let signature):
+                guard let spec = specs[ruleID] else { continue }
+                let id: String
+                do {
+                    id = try await create(spec, account)
+                } catch {
+                    // Gmail may not let a filter choose a tab; the rest still goes.
+                    let fallback = spec.withoutCategory
+                    guard fallback != spec, fallback.hasAction else { throw error }
+                    id = try await create(fallback, account)
+                }
+                ledger[ruleID, default: [:]][account] = Entry(id: id, signature: signature)
+            case .remove:
+                break
             }
-            let id: String
-            do {
-                id = try await create(spec, account)
-            } catch {
-                // Gmail may not let a filter choose a tab; the rest still goes.
-                let fallback = spec.withoutCategory
-                guard fallback != spec, fallback.hasAction else { throw error }
-                id = try await create(fallback, account)
-            }
-            ledger[ruleID, default: [:]][account] = Entry(id: id, signature: signature)
         }
     }
 
@@ -169,39 +167,46 @@ final class ServerRules {
         try await gmail.createFilter(query: spec.query, addLabelIds: spec.addLabelIds, removeLabelIds: spec.removeLabelIds, account: account)
     }
 
-    private static func matches(_ filter: GmailAPIClient.Filter, _ spec: ServerRuleSpec.Gmail) -> Bool {
-        filter.criteria.query == spec.query
-            && Set(filter.action.addLabelIds ?? []) == Set(spec.addLabelIds)
-            && Set(filter.action.removeLabelIds ?? []) == Set(spec.removeLabelIds)
+    private static func key(_ spec: ServerRuleSpec.Gmail) -> String {
+        ServerRulePlan.gmailKey(query: spec.query, add: spec.addLabelIds, remove: spec.removeLabelIds)
     }
 
     // MARK: Outlook
 
     private func updateOutlook(_ account: String, rules: [MailRule]) async throws {
-        var desired: [String: ServerRuleSpec.Outlook] = [:]
-        for rule in rules { if let spec = ServerRuleSpec.outlook(for: rule) { desired[rule.id.uuidString] = spec } }
-        for (ruleID, accounts) in ledger {
-            guard let entry = accounts[account] else { continue }
-            if let spec = desired[ruleID], ServerRuleSpec.signature(spec) == entry.signature { continue }
-            try await outlook.deleteMessageRule(id: entry.id, account: account)
+        var specs: [String: ServerRuleSpec.Outlook] = [:]
+        for rule in rules { if let spec = ServerRuleSpec.outlook(for: rule) { specs[rule.id.uuidString] = spec } }
+        let wanted = specs.sorted { $0.key < $1.key }.map { ruleID, spec in
+            ServerRulePlan.Wanted(ruleID: ruleID, signature: ServerRuleSpec.signature(spec), keys: [spec.displayName])
+        }
+        for case let .remove(ruleID, id) in ServerRulePlan.removals(wanted: wanted, kept: kept(account)) {
+            try await outlook.deleteMessageRule(id: id, account: account)
             ledger[ruleID]?[account] = nil
         }
-        let missing = desired.filter { ledger[$0.key]?[account] == nil }
-        guard !missing.isEmpty else { return }
-        var existing = try await outlook.messageRules(account: account)
-        for (ruleID, spec) in missing {
-            let signature = ServerRuleSpec.signature(spec)
-            if let match = existing.first(where: { $0.displayName == spec.displayName }) {
-                ledger[ruleID, default: [:]][account] = Entry(id: match.id, signature: signature)
-                existing.removeAll { $0.id == match.id }
-                continue
+        guard !ServerRulePlan.additions(wanted: wanted, kept: kept(account), existing: []).isEmpty else { return }
+        let rulesThere = try await outlook.messageRules(account: account)
+        let existing = rulesThere.map { ServerRulePlan.Existing(id: $0.id, key: $0.displayName ?? "") }
+        var count = rulesThere.count
+        for step in ServerRulePlan.additions(wanted: wanted, kept: kept(account), existing: existing) {
+            switch step {
+            case .adopt(let ruleID, let id, let signature):
+                ledger[ruleID, default: [:]][account] = Entry(id: id, signature: signature)
+            case .create(let ruleID, let signature):
+                guard let spec = specs[ruleID] else { continue }
+                count += 1
+                let id = try await outlook.createMessageRule(displayName: spec.displayName, condition: spec.condition, phrase: spec.phrase,
+                                                             markAsRead: spec.markAsRead, archive: spec.archive,
+                                                             sequence: count, account: account)
+                ledger[ruleID, default: [:]][account] = Entry(id: id, signature: signature)
+            case .remove:
+                break
             }
-            let id = try await outlook.createMessageRule(displayName: spec.displayName, condition: spec.condition, phrase: spec.phrase,
-                                                         markAsRead: spec.markAsRead, archive: spec.archive,
-                                                         sequence: existing.count + 1, account: account)
-            existing.append(OutlookClient.MessageRule(id: id, displayName: spec.displayName))
-            ledger[ruleID, default: [:]][account] = Entry(id: id, signature: signature)
         }
+    }
+
+    /// What this device keeps for one account, by rule.
+    private func kept(_ account: String) -> [String: Entry] {
+        ledger.compactMapValues { $0[account] }
     }
 
     private func save() {
