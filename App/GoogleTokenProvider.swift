@@ -112,8 +112,8 @@ actor GoogleTokenProvider {
         cache[email] = nil
     }
 
-    func removeRefreshToken(for email: String) {
-        Keychain.delete(key: Self.keychainKey(for: email))
+    func removeRefreshToken(for email: String, everywhere: Bool = true) {
+        Keychain.delete(key: Self.keychainKey(for: email), everywhere: everywhere)
         cache[email] = nil
     }
 

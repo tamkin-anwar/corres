@@ -204,6 +204,10 @@ struct CorrespondenceList: View {
     /// What the rows are filtered by: `search` once typing pauses. Every
     /// keystroke filtered the whole mailbox on the main thread.
     @State private var appliedSearch = ""
+    /// Finds `appliedSearch`'s matches, away from the main thread in a
+    /// large mailbox; `searchFound` changes when they arrive.
+    @State private var searcher = MailSearch()
+    @State private var searchFound = 0
     @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
     @Environment(AskService.self) private var ask: AskService?
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -283,6 +287,8 @@ struct CorrespondenceList: View {
             let unreadOnly: Bool
             /// What the providers' search found, as more of it arrives.
             let serverMatches: Int
+            /// A search's matches arriving.
+            let searchFound: Int
         }
         var key: Key?
         var rows: [Correspondence] = []
@@ -315,7 +321,7 @@ struct CorrespondenceList: View {
         let key = RowsCache.Key(revision: store.contentRevision, minute: Int(Date.now.timeIntervalSince1970 / 60),
                                 account: accountFilter, accounts: accountsRevision, destination: kind,
                                 search: appliedSearch, filter: mailFilter, unreadOnly: filtersUnread,
-                                serverMatches: serverMatches.count)
+                                serverMatches: serverMatches.count, searchFound: searchFound)
         let hidden = store.hiddenIDs
         if cache.key == key, cache.hidden == hidden { return cache }
         if cache.key != key {
@@ -324,7 +330,9 @@ struct CorrespondenceList: View {
             let old = cache.key
             let sameView = old.map { $0.filter == key.filter && $0.destination == key.destination
                 && $0.account == key.account && $0.unreadOnly && key.unreadOnly && $0.search == key.search } ?? false
-            cache.full = buildResults(keeping: sameView ? Set(cache.full.map(\.id)) : [])
+            // Still searching: the rows stay as they were until the matches arrive.
+            guard let full = buildResults(keeping: sameView ? Set(cache.full.map(\.id)) : []) else { return cache }
+            cache.full = full
             cache.key = key
             if kind == .needsYou {
                 let waiting = MailQuery.prioritized(scopedThreads, attention: .waiting)
@@ -352,7 +360,7 @@ struct CorrespondenceList: View {
         }
         cache.unread = built.reduce(0) { $0 + ($1.isUnread ? 1 : 0) }
         let searching = appliedSearch.trimmingCharacters(in: .whitespaces)
-        cache.top = searching.isEmpty ? [] : MailQuery.topResults(built, search: searching)
+        cache.top = searching.isEmpty ? [] : searcher.topResults(built)
         let accounts = auth?.accounts.map(\.email) ?? []
         cache.tags = showsAccountTags ? Dictionary(uniqueKeysWithValues: accounts.map { ($0, AccountTag.make(for: $0, among: accounts)) }) : [:]
         return cache
@@ -373,18 +381,29 @@ struct CorrespondenceList: View {
         unreadOnly && destination == .mail && appliedSearch.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
-    private func buildResults(keeping kept: Set<ThreadID> = []) -> [Correspondence] {
-        let results = buildSplit()
+    /// nil while a search's matches are still being found.
+    private func buildResults(keeping kept: Set<ThreadID> = []) -> [Correspondence]? {
+        guard let results = buildSplit() else { return nil }
         return filtersUnread ? MailFilter.unreadOnly(results, keeping: kept) : results
     }
 
-    private func buildSplit() -> [Correspondence] {
+    private func buildSplit() -> [Correspondence]? {
         let all: [Correspondence]
         let search = appliedSearch
         if let attention = kind.attention, search.trimmingCharacters(in: .whitespaces).isEmpty {
             all = MailQuery.prioritized(scopedThreads, attention: attention)
+        } else if search.trimmingCharacters(in: .whitespaces).isEmpty {
+            all = MailQuery.filter(scopedThreads, attention: kind.attention, search: search)
         } else {
-            all = MailQuery.filter(scopedThreads, attention: kind.attention, search: search, serverMatches: serverMatches)
+            // Searched once per change to the mail or the search, off the
+            // main thread when the mailbox is large.
+            let source: [AnyHashable] = [store.contentRevision, Int(Date.now.timeIntervalSince1970 / 60),
+                                         accountFilter, accountsRevision, auth?.accounts.map(\.email) ?? []]
+            let request = MailSearch.Request(search: search, attention: kind.attention, serverMatches: serverMatches,
+                                             source: source)
+            guard let found = searcher.matches(for: request, in: { scopedThreads }, onFound: { searchFound &+= 1 })
+            else { return nil }
+            all = found
         }
         guard kind == .mail, mailFilter != .everything, mailFilter != .needsYou else { return all }
         // Search looks in every category, as Gmail's and Mail's do: an
@@ -589,7 +608,7 @@ struct CorrespondenceList: View {
                 SnoozeSheet(kind: thread.mailKind) { date in Task { await store.snooze(thread.id, until: date) } }
             }
             .categoryMoveDialog($categoryChoice, threadActions: threadActions)
-            .searchable(text: $search, isPresented: $searchPresented, prompt: "Search, or ask a question")
+            .searchable(text: $search, isPresented: searchOpening, prompt: "Search, or ask a question")
             // Outside the search it shrinks to a button beside the bottom tabs.
             .modifier(MinimizedSearch(isOn: tabsOnBottom && Self.hasBottomSearch))
             // Siri's "search my email for…".
@@ -641,6 +660,15 @@ struct CorrespondenceList: View {
                     await store.refresh()
                 }
             }
+    }
+
+    /// `searchPresented`, reading the mail's text ahead as Search opens
+    /// so the first results are quick.
+    private var searchOpening: Binding<Bool> {
+        Binding(get: { searchPresented }, set: { presented in
+            if presented, !searchPresented { MailSearch.prepare(store.threadsIncludingHidden) }
+            searchPresented = presented
+        })
     }
 
     private var nonScrollingBody: some View {

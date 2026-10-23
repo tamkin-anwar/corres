@@ -120,6 +120,7 @@ final class Organizer {
     }
 
     func delete(rule id: UUID) {
+        CloudSync.noteRemoved(id)
         rules.removeAll { $0.id == id }
         Self.store(rules, Self.rulesKey)
         ServerRules.shared.schedule()
@@ -152,6 +153,7 @@ final class Organizer {
     }
 
     func delete(template id: UUID) {
+        CloudSync.noteRemoved(id)
         templates.removeAll { $0.id == id }
         Self.store(templates, Self.templatesKey)
     }
@@ -169,6 +171,7 @@ final class Organizer {
     }
 
     func delete(search id: UUID) {
+        CloudSync.noteRemoved(id)
         savedSearches.removeAll { $0.id == id }
         Self.store(savedSearches, Self.searchesKey)
     }

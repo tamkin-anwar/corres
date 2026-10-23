@@ -31,12 +31,39 @@ struct IMAPMailClient: Sendable {
         var folders: [String: FolderSyncState]
         /// Folder path → UID (as text) → conversation id. Newest 500 per folder.
         var known: [String: [String: String]]
+        /// Folder path → UID (as text) → read and flagged as last seen
+        /// (`FlagChanges.code`), plus `Self.unsubscribeBit`, so a pass
+        /// reports only what changed. Nil in cursors saved before it was
+        /// kept: those report every known message once.
+        var flags: [String: [String: UInt8]]?
+        /// When a pass last reported every known message whatever its
+        /// flags, to put right anything that drifted from the server (a
+        /// change made here that the server refused).
+        var flagsReportedAt: Date?
     }
+
+    /// The last cursor each account's sync was handed back, this launch
+    /// (a hash: only compared). A pass starting from any other may have
+    /// reported changes its flags don't know about.
+    private actor IssuedCursors {
+        static let shared = IssuedCursors()
+        private var last: [String: Int] = [:]
+        func issue(_ cursor: String?, for account: String) { last[account] = cursor?.hashValue }
+        func isLatest(_ cursor: String, for account: String) -> Bool { last[account] == cursor.hashValue }
+    }
+
+    /// How often every known message is reported, changed or not.
+    static let flagReportInterval: TimeInterval = 30 * 60
+    /// Kept with the flags: the message has a List-Unsubscribe header, so
+    /// a change reported for it keeps it in Promotions.
+    static let unsubscribeBit: UInt8 = 4
 
     func planFullListing(account: String) async throws -> GmailAPIClient.SyncPlan {
         try await IMAPSessions.shared.with(account) { session in
             let folders = try await session.folders()
-            var cursor = Cursor(folders: [:], known: [:])
+            // Everything listed is stored with the flags it has now, so
+            // there's nothing older to report.
+            var cursor = Cursor(folders: [:], known: [:], flags: [:], flagsReportedAt: .now)
             var all: [MessageSummary] = []
             for (path, count) in [(folders.inbox, Self.firstInboxCount), (folders.sent, Self.firstSentCount)] {
                 guard let path else { continue }
@@ -45,13 +72,18 @@ struct IMAPMailClient: Sendable {
                 all += messages
                 cursor.folders[path] = FolderSyncState(uidValidity: selected.uidValidity, uidNext: selected.uidNext,
                                                        highestModSeq: selected.highestModSeq,
-                                                       oldestFetchedUID: messages.map(\.uid).min())
-                cursor.known[path] = Self.known(messages, keeping: [:])
+                                                       oldestFetchedUID: messages.map(\.uid).min(),
+                                                       exists: selected.exists)
+                let known = Self.known(messages, keeping: [:])
+                cursor.known[path] = known
+                cursor.flags?[path] = Self.flagCodes(messages, keeping: [:], known: known)
                 await IMAPCache.shared.keep(messages, uidValidity: selected.uidValidity, account: account)
             }
             all.sort { ($0.date ?? .distantPast) > ($1.date ?? .distantPast) }
             let ids = all.map { Self.key($0, uidValidity: cursor.folders[$0.folder]?.uidValidity ?? 0) }
-            return GmailAPIClient.SyncPlan(messageIDs: ids, historyId: try Self.encode(cursor),
+            let encoded = try Self.encode(cursor)
+            await IssuedCursors.shared.issue(encoded, for: account)
+            return GmailAPIClient.SyncPlan(messageIDs: ids, historyId: encoded,
                                            olderInboxPageToken: folders.inbox.map { "\($0)|\(max(0, (cursor.folders[$0]?.oldestFetchedUID ?? 1) - 1))" })
         }
     }
@@ -68,10 +100,22 @@ struct IMAPMailClient: Sendable {
             var cursor = start
             var newIDs: [String] = []
             var changes: [RemoteMessageChange] = []
+            // Every known message is reported whatever it has, and every
+            // folder looked at even if its counter says nothing moved:
+            // every half hour; for a cursor that kept no flags; and when
+            // this isn't the last cursor handed out (a new launch, or one
+            // that wasn't saved), since what was reported after it may
+            // be in the mailbox without being in its flags.
+            let latest = await IssuedCursors.shared.isLatest(cursorString, for: account)
+            let reportAll = !latest
+                || start.flagsReportedAt.map { Date.now.timeIntervalSince($0) >= Self.flagReportInterval } ?? true
+            if cursor.flags == nil { cursor.flags = [:] }
             for (path, stored) in cursor.folders {
                 let selected = try await session.connection.select(path)
                 let caps = await session.connection.capabilities
-                switch SyncPlanner.plan(stored: stored, selected: selected, capabilities: caps) {
+                var plan = SyncPlanner.plan(stored: stored, selected: selected, capabilities: caps)
+                if reportAll, plan == .upToDate { plan = .incremental(newFrom: nil, changedSince: nil, checkFlagsOfKnown: true) }
+                switch plan {
                 case .full:
                     // The folder was renumbered: start over from a full listing.
                     throw ClientError.historyExpired
@@ -79,38 +123,66 @@ struct IMAPMailClient: Sendable {
                     continue
                 case .incremental(let newFrom, _, _):
                     var known = cursor.known[path] ?? [:]
+                    var kept = cursor.flags?[path] ?? [:]
                     if let newFrom, newFrom <= selected.uidNext {
                         let fresh = try await session.connection.fetchSummaries(uids: newFrom...UInt32.max)
                             .filter { $0.uid >= newFrom }
                         await IMAPCache.shared.keep(fresh, uidValidity: selected.uidValidity, account: account)
                         newIDs += fresh.map { Self.key($0, uidValidity: selected.uidValidity) }
                         known = Self.known(fresh, keeping: known)
+                        // Stored just now with these flags: nothing to
+                        // report for them unless they change.
+                        kept = Self.flagCodes(fresh, keeping: kept, known: known)
                     }
-                    // Read, flagged or removed elsewhere: compare what's known.
+                    // Read, flagged or removed elsewhere: the flags of every
+                    // known message, compared with what was kept. Even with
+                    // CONDSTORE's CHANGEDSINCE on offer: without QRESYNC
+                    // only this shows what was removed, and the comparison
+                    // keeps the report to what changed.
                     let uids = known.keys.compactMap(UInt32.init)
                     if let low = uids.min(), let high = uids.max() {
                         let flags = try await session.connection.fetchFlags(uids: low...high)
-                        for uid in uids {
-                            guard let conversation = known[String(uid)] else { continue }
-                            let key = "\(selected.uidValidity):\(uid):\(path)"
-                            let thread = ThreadID(account: account, providerID: conversation)
-                            if let current = flags[uid] {
-                                changes.append(RemoteMessageChange(threadID: thread, messageID: key,
-                                                                   currentLabelIds: Self.labels(flags: current, folder: path, folders: session.cachedFolders),
-                                                                   removed: false))
-                            } else if path == session.cachedFolders.inbox {
-                                changes.append(RemoteMessageChange(threadID: thread, messageID: key, currentLabelIds: nil, removed: true))
-                                known[String(uid)] = nil
-                            }
+                        let previous = Dictionary(kept.compactMap { key, code in UInt32(key).map { ($0, code) } },
+                                                  uniquingKeysWith: { first, _ in first })
+                        let result = FlagChanges.compare(known: uids, previous: previous, current: flags)
+                        for uid in reportAll ? result.codes.keys.sorted() : result.changed {
+                            guard let conversation = known[String(uid)], let current = flags[uid] else { continue }
+                            let code = result.codes[uid] ?? 0
+                            changes.append(RemoteMessageChange(
+                                threadID: ThreadID(account: account, providerID: conversation),
+                                messageID: "\(selected.uidValidity):\(uid):\(path)",
+                                currentLabelIds: Self.labels(flags: current, folder: path, folders: session.cachedFolders,
+                                                             hasUnsubscribe: code & Self.unsubscribeBit != 0),
+                                removed: false))
                         }
+                        var codes = Dictionary(uniqueKeysWithValues: result.codes.map { (String($0.key), $0.value) })
+                        for uid in result.vanished {
+                            guard path == session.cachedFolders.inbox else {
+                                // Gone from another folder: still known, as
+                                // before, with what was last seen for it.
+                                codes[String(uid)] = kept[String(uid)]
+                                continue
+                            }
+                            guard let conversation = known[String(uid)] else { continue }
+                            changes.append(RemoteMessageChange(threadID: ThreadID(account: account, providerID: conversation),
+                                                               messageID: "\(selected.uidValidity):\(uid):\(path)",
+                                                               currentLabelIds: nil, removed: true))
+                            known[String(uid)] = nil
+                        }
+                        kept = codes
                     }
                     cursor.known[path] = known
+                    cursor.flags?[path] = kept.filter { known[$0.key] != nil }
                     cursor.folders[path] = FolderSyncState(uidValidity: selected.uidValidity, uidNext: selected.uidNext,
                                                            highestModSeq: selected.highestModSeq,
-                                                           oldestFetchedUID: stored.oldestFetchedUID)
+                                                           oldestFetchedUID: stored.oldestFetchedUID,
+                                                           exists: selected.exists)
                 }
             }
-            return GmailAPIClient.SyncPlan(messageIDs: newIDs, historyId: try Self.encode(cursor), remoteChanges: changes)
+            if reportAll { cursor.flagsReportedAt = .now }
+            let encoded = try Self.encode(cursor)
+            await IssuedCursors.shared.issue(encoded, for: account)
+            return GmailAPIClient.SyncPlan(messageIDs: newIDs, historyId: encoded, remoteChanges: changes)
         }
     }
 
@@ -706,13 +778,29 @@ struct IMAPMailClient: Sendable {
         return Dictionary(newest.compactMap { key in all[key].map { (key, $0) } }, uniquingKeysWith: { first, _ in first })
     }
 
+    /// `known`'s flags as kept in the cursor (see `Cursor.flags`): these
+    /// messages' read and flagged state as fetched, on top of `old`, for
+    /// the UIDs still in `known`.
+    static func flagCodes(_ messages: [MessageSummary], keeping old: [String: UInt8], known: [String: String]) -> [String: UInt8] {
+        var all = old
+        for m in messages {
+            let (mailto, url) = GmailAPIClient.parseListUnsubscribe(m.listUnsubscribe ?? "")
+            all[String(m.uid)] = FlagChanges.code(m.flags) | (mailto != nil || url != nil ? unsubscribeBit : 0)
+        }
+        return all.filter { known[$0.key] != nil }
+    }
+
     static func formatted(_ a: Address) -> String {
         guard let name = a.name, !name.isEmpty else { return a.email }
         return "\(name) <\(a.email)>"
     }
 
+    /// Keys in order, so a pass that changed nothing gives the same text
+    /// back and the cursor isn't saved again.
     static func encode(_ cursor: Cursor) throws -> String? {
-        String(data: try JSONEncoder().encode(cursor), encoding: .utf8)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        return String(data: try encoder.encode(cursor), encoding: .utf8)
     }
 
     /// Every recipient address (To, Cc, Bcc) and the message to send, with

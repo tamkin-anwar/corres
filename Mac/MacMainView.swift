@@ -100,7 +100,9 @@ struct MacMainView: View {
             WidgetBridge.isLocked = !isPro
             WidgetBridge.update(from: store.threads)
         }
-        .onChange(of: services.sync.syncProgress) { Task { await store.refresh() } }
+        // At most one reload each half second: a first sync saves a hundred
+        // batches, and each reload redraws the lists.
+        .onChange(of: services.sync.syncProgress) { SyncBatchRefresh.schedule(store) }
         // A notification, a widget or a corres:// link asking for a place.
         #if DEBUG
         // App Store screenshots: -ShowMailbox needsYou|waiting|everything,
@@ -435,7 +437,27 @@ struct MacMainView: View {
 
     @ViewBuilder
     private var undoBar: some View {
-        if let pending = actions.pendingRemoval {
+        // A send that didn't go comes first: until now the Mac never said.
+        if let failed = services.outbox.failed {
+            HStack(spacing: 12) {
+                Label {
+                    Text("Couldn't send \u{201C}\(failed.draft.subject)\u{201D}").lineLimit(1)
+                } icon: {
+                    Image(systemName: "exclamationmark.circle").foregroundStyle(CorresPalette.alert)
+                }
+                if services.outbox.failedSends.count > 1 {
+                    Text("and \(services.outbox.failedSends.count - 1) more").foregroundStyle(CorresPalette.secondary)
+                }
+                Button("Discard") { services.outbox.discardFailed() }.buttonStyle(.borderless)
+                Button("Retry") { services.outbox.retryFailed() }.buttonStyle(.borderless)
+                    .foregroundStyle(CorresPalette.accent)
+            }
+            .font(.callout)
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .corresGlass(in: Capsule())
+            .padding(.bottom, 18)
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+        } else if let pending = actions.pendingRemoval {
             undoPill(pending.title, systemImage: pending.kind.systemImage) { actions.undoRemoval() }
         } else if let change = actions.lastChange {
             undoPill(change.title, systemImage: change.systemImage) { actions.undoLastChange() }
@@ -861,6 +883,27 @@ private struct MacNotices: ViewModifier {
         case .notAllowed: Text("Corres doesn't have access to Reminders. You can allow it in System Settings > Privacy & Security > Reminders.")
         case .failed: Text("Reminders didn't save it. Try again.")
         default: Text("Click the link in the reminder to come back to this email.")
+        }
+    }
+}
+
+/// Shows each batch a sync saves, at most one reload each half second: the
+/// first batch at once, the last one always, the ones between folded
+/// together. Shared by every window.
+@MainActor
+private enum SyncBatchRefresh {
+    private static var running: Task<Void, Never>?
+    private static var again = false
+
+    static func schedule(_ store: MailStore) {
+        guard running == nil else { again = true; return }
+        running = Task {
+            repeat {
+                again = false
+                await store.refresh()
+                try? await Task.sleep(for: .milliseconds(500))
+            } while again
+            running = nil
         }
     }
 }

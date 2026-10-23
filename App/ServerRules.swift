@@ -1,4 +1,5 @@
 import Foundation
+import os
 import Observation
 
 /// Keeps a Gmail filter and an Outlook inbox rule for each Corres rule set
@@ -23,6 +24,7 @@ final class ServerRules {
     typealias Entry = ServerRulePlan.Entry
 
     private static let ledgerKey = "corres.serverRules"
+    private static let log = Logger(subsystem: "studio.anwarcreative.corres", category: "rules")
     /// Rule id → account → the filter or rule kept for it.
     @ObservationIgnored private var ledger: [String: [String: Entry]]
     @ObservationIgnored private weak var auth: GoogleAuthService?
@@ -59,6 +61,44 @@ final class ServerRules {
     /// failed (offline, or the service was busy).
     func retryIfFailed() {
         if !failedAccounts.isEmpty { schedule() }
+    }
+
+    /// How many filters or inbox rules this device made or found in the
+    /// account.
+    func keptCount(for account: String) -> Int {
+        ledger.values.filter { $0[account] != nil }.count
+    }
+
+    /// Removed from all your devices: Corres's filters or rules in it are
+    /// taken out, while it can still be reached.
+    func removeAll(for account: String) async {
+        for (ruleID, entries) in ledger {
+            guard let entry = entries[account] else { continue }
+            do {
+                if MailAccounts.provider(for: account) == .microsoft {
+                    try await outlook.deleteMessageRule(id: entry.id, account: account)
+                } else if MailAccounts.provider(for: account) == .google {
+                    try await gmail.deleteFilter(id: entry.id, account: account)
+                }
+            } catch {
+                Self.log.error("Couldn't remove a rule from a removed account: \(String(describing: error), privacy: .public)")
+            }
+            ledger[ruleID]?[account] = nil
+        }
+        save()
+    }
+
+    /// Removed from this device: what it kept for the account is forgotten
+    /// here; your other devices look after the filters themselves.
+    func forget(account: String) {
+        var changed = false
+        for ruleID in ledger.keys where ledger[ruleID]?[account] != nil {
+            ledger[ruleID]?[account] = nil
+            changed = true
+        }
+        if changed { save() }
+        needsPermission.remove(account)
+        failedAccounts.remove(account)
     }
 
     /// Whether any connected account can run rules itself.

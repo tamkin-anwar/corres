@@ -56,6 +56,23 @@ enum LiveActivities {
 
     // MARK: Deliveries
 
+    private static var pendingDeliveries: Task<Void, Never>?
+
+    /// After the mail changes: a burst of changes (a swipe, each batch of
+    /// a first sync) makes one pass.
+    static func scheduleDeliveries(_ threads: @escaping @MainActor () -> [Correspondence]) {
+        pendingDeliveries?.cancel()
+        pendingDeliveries = Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled else { return }
+            syncDeliveries(threads())
+        }
+    }
+
+    /// What each shipping email says, kept by message: reading its whole
+    /// body again on every change to the mail was most of the work here.
+    private static let statuses = Memo<String, String?>(limit: 2_000)
+
     /// From today's shipping emails: one Live Activity per store whose
     /// latest says out for delivery, marked delivered when its email comes.
     static func syncDeliveries(_ threads: [Correspondence], now: Date = .now, calendar: Calendar = .current) {
@@ -64,13 +81,19 @@ enum LiveActivities {
             for activity in Activity<DeliveryActivity>.activities { end(DeliveryActivity.self, id: activity.id) }
             return
         }
+        // Today's bounds worked out once, not once per conversation.
+        let startOfToday = calendar.startOfDay(for: now)
+        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? .distantFuture
         let today = threads
-            .filter { $0.id.account != "sample" && calendar.isDateInToday($0.receivedAt) && $0.mailKind == .shipping }
+            .filter { $0.receivedAt >= startOfToday && $0.receivedAt < startOfTomorrow && $0.id.account != "sample" && $0.mailKind == .shipping }
             .sorted { $0.receivedAt < $1.receivedAt }
         var latest: [String: (thread: Correspondence, delivered: Bool)] = [:]
         for thread in today {
-            let text = thread.body.isEmpty ? thread.excerpt : thread.body
-            let status = MailDigest.glance(text: text, subject: thread.subject, kind: .shipping)?.status
+            let key = "\(thread.id.entityKey)|\(thread.latestMessageID ?? thread.subject)|\(thread.body.utf8.count)|\(thread.excerpt.utf8.count)"
+            let status = statuses.value(key) {
+                let text = thread.body.isEmpty ? thread.excerpt : thread.body
+                return MailDigest.glance(text: text, subject: thread.subject, kind: .shipping)?.status
+            }
             let store = (thread.senderEmail.flatMap(BrandLogos.domain(of:)) ?? thread.sender).lowercased()
             if status == "Out for delivery" {
                 latest[store] = (thread, false)

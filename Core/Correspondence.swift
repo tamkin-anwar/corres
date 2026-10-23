@@ -1099,14 +1099,21 @@ public enum MailQuery {
         // findable if the person explicitly searches for it, never truly
         // hidden or deleted.
         let hideUnscreened = query.isEmpty
-        let terms = SearchTerms(query)
         let kept = threads.filter { item in
             (!hideSnoozed || !item.isSnoozed(at: now)) &&
             (!hideUnscreened || !item.isScreenedOut) &&
-            (attention == nil || item.attention(at: now) == attention) &&
-            (query.isEmpty || terms.matches(item, serverMatched: serverMatches.contains(item.id)))
+            (attention == nil || item.attention(at: now) == attention)
         }
-        return sortedNewestFirst(kept)
+        guard !query.isEmpty else { return sortedNewestFirst(kept) }
+        // The search read once, and each conversation's text from the
+        // index rather than lowercased and compared again every time.
+        let terms = SearchTerms(query)
+        let folded = terms.folded
+        let entries = SearchIndex.shared.entries(for: kept)
+        return sortedNewestFirst(kept.indices.compactMap { index in
+            terms.matches(kept[index], entry: entries[index], folded: folded,
+                          serverMatched: serverMatches.contains(kept[index].id)) ? kept[index] : nil
+        })
     }
 
     /// A search, read for Gmail's filters as well as words: `from:sam`,
@@ -1136,44 +1143,94 @@ public enum MailQuery {
         }
 
         public func matches(_ item: Correspondence, serverMatched: Bool = false) -> Bool {
+            matches(item, entry: SearchIndex.Entry(item), folded: folded, serverMatched: serverMatched)
+        }
+
+        /// `entry` is `item`'s text from `SearchIndex`, `folded` this
+        /// search's: both lowercased and without accents, so each word is
+        /// a plain byte search, as `localizedStandardContains` would find it.
+        func matches(_ item: Correspondence, entry: SearchIndex.Entry, folded: Folded, serverMatched: Bool) -> Bool {
             // Before its body loads a message's attachments aren't known;
             // the server's own search already checked for them.
             if hasAttachment && item.attachments.isEmpty && !(serverMatched && !item.isBodyLoaded) { return false }
             if unread && !item.isUnread { return false }
             if flagged && !item.isFlagged { return false }
             if serverMatched { return true }
-            for name in from where ![item.sender, item.senderEmail ?? "", item.organization].contains(where: { $0.localizedStandardContains(name) }) {
-                return false
-            }
-            for name in to where !(item.toRecipients + item.ccRecipients).contains(where: { $0.localizedStandardContains(name) }) {
-                return false
-            }
-            guard !words.isEmpty else { return true }
+            for name in folded.from where !entry.from.contains(name) { return false }
+            for name in folded.to where !entry.to.contains(name) { return false }
             // Addresses too, and who it went to: mail you sent someone is
             // found by their name or address like mail they sent you. Each
             // word can be anywhere, the body included ("invoice march"
             // finds March's invoice), as Gmail's search does; a quoted
             // phrase stays together.
-            let fields = [item.sender, item.organization, item.subject, item.excerpt, item.senderEmail ?? "", item.body]
-                + item.toRecipients + item.ccRecipients
-            return Self.searchWords(words).allSatisfy { word in fields.contains { $0.localizedStandardContains(word) } }
+            return folded.words.allSatisfy { entry.fields.contains($0) || entry.body.contains($0) }
+        }
+
+        /// This search's names and words, folded once for a whole mailbox.
+        struct Folded: Sendable {
+            let from: [SearchText]
+            let to: [SearchText]
+            let words: [SearchText]
+        }
+
+        var folded: Folded {
+            Folded(from: from.map(SearchText.init), to: to.map(SearchText.init),
+                   words: words.isEmpty ? [] : Self.searchWords(words).map(SearchText.init))
+        }
+
+        /// Whether everything this search finds, `previous` found too: the
+        /// same search typed further ("invoi", then "invoice", or another
+        /// word), so its matches can be looked through instead of the whole
+        /// mailbox. Each earlier word has to be inside one of the new ones.
+        public func narrows(_ previous: SearchTerms) -> Bool {
+            guard previous != SearchTerms(""), !previous.hasAttachment || hasAttachment,
+                  !previous.unread || unread, !previous.flagged || flagged else { return false }
+            func covered(_ old: [SearchText], by new: [SearchText]) -> Bool {
+                old.allSatisfy { word in new.contains { $0.contains(word) } }
+            }
+            let new = folded, old = previous.folded
+            return covered(old.from, by: new.from) && covered(old.to, by: new.to) && covered(old.words, by: new.words)
         }
 
         /// How well a match fits, for Top Results: the words in who it's
         /// from count most, then the subject, then the text; newer, flagged,
         /// unread and Needs You mail a little more.
         public func relevance(of item: Correspondence, now: Date) -> Double {
-            var score = 0.0
-            let sender = [item.sender, item.organization, item.senderEmail ?? ""].joined(separator: " ").lowercased()
-            let subject = item.subject.lowercased()
-            let preview = item.excerpt.lowercased()
-            func startsWord(_ word: String, in text: String) -> Bool {
-                text.hasPrefix(word) || text.contains(" " + word) || text.contains("@" + word) || text.contains("." + word)
+            relevance(of: item, entry: SearchIndex.Entry(item), ranking: ranking, now: now)
+        }
+
+        /// This search's words as Top Results compares them, read once for
+        /// every match rather than again for each.
+        struct Ranking: Sendable {
+            struct Word: Sendable {
+                let text: LowercasedText
+                let afterSpace: LowercasedText
+                let afterAt: LowercasedText
+                let afterDot: LowercasedText
+                let folded: SearchText
             }
-            for word in Self.searchWords(words).map({ $0.lowercased() }) where !word.isEmpty {
-                if sender.contains(word) { score += startsWord(word, in: sender) ? 6 : 4 }
-                if subject.contains(word) { score += startsWord(word, in: subject) ? 4 : 3 }
-                if preview.contains(word) { score += 1.5 } else if item.body.localizedStandardContains(word) { score += 1 }
+            let words: [Word]
+        }
+
+        var ranking: Ranking {
+            Ranking(words: Self.searchWords(words).map { $0.lowercased() }.filter { !$0.isEmpty }.map { word in
+                Ranking.Word(text: LowercasedText(word), afterSpace: LowercasedText(" " + word), afterAt: LowercasedText("@" + word),
+                             afterDot: LowercasedText("." + word), folded: SearchText(word))
+            })
+        }
+
+        func relevance(of item: Correspondence, entry: SearchIndex.Entry, ranking: Ranking, now: Date) -> Double {
+            var score = 0.0
+            let sender = entry.lowercasedSender
+            let subject = entry.lowercasedSubject
+            let preview = entry.lowercasedPreview
+            func startsWord(_ word: Ranking.Word, in text: LowercasedText) -> Bool {
+                text.hasPrefix(word.text) || text.contains(word.afterSpace) || text.contains(word.afterAt) || text.contains(word.afterDot)
+            }
+            for word in ranking.words {
+                if sender.contains(word.text) { score += startsWord(word, in: sender) ? 6 : 4 }
+                if subject.contains(word.text) { score += startsWord(word, in: subject) ? 4 : 3 }
+                if preview.contains(word.text) { score += 1.5 } else if entry.body.contains(word.folded) { score += 1 }
             }
             if !from.isEmpty { score += 3 }
             let days = max(0, now.timeIntervalSince(item.receivedAt) / 86_400)
@@ -1207,11 +1264,26 @@ public enum MailQuery {
     /// results, where the list is already short enough to scan.
     public static func topResults(_ matches: [Correspondence], search: String, limit: Int = 5,
                                   now: Date = .now) -> [Correspondence] {
+        guard matches.count > limit + 3 else { return [] }
+        return Array(ranked(matches, search: search, now: now).prefix(limit))
+    }
+
+    /// Every match, best first, as Top Results orders them; none for a
+    /// search with no words or names to rank by.
+    static func ranked(_ matches: [Correspondence], search: String, now: Date = .now) -> [Correspondence] {
         let terms = SearchTerms(search)
-        guard matches.count > limit + 3, !terms.words.isEmpty || !terms.from.isEmpty else { return [] }
-        return matches.map { (item: $0, score: terms.relevance(of: $0, now: now)) }
-            .sorted { $0.score != $1.score ? $0.score > $1.score : $0.item.receivedAt > $1.item.receivedAt }
-            .prefix(limit).map(\.item)
+        guard !terms.words.isEmpty || !terms.from.isEmpty else { return [] }
+        let entries = SearchIndex.shared.entries(for: matches)
+        let ranking = terms.ranking
+        // Positions and scores sorted, not the threads themselves (see
+        // `sortedNewestFirst`); equal ones stay in the order they came.
+        let scores = matches.indices.map { terms.relevance(of: matches[$0], entry: entries[$0], ranking: ranking, now: now) }
+        let dates = matches.map(\.receivedAt)
+        return matches.indices.sorted {
+            if scores[$0] != scores[$1] { return scores[$0] > scores[$1] }
+            if dates[$0] != dates[$1] { return dates[$0] > dates[$1] }
+            return $0 < $1
+        }.map { matches[$0] }
     }
 
     /// Pinned first, then newest. Sorts positions and small keys rather
@@ -1228,6 +1300,265 @@ public enum MailQuery {
         // which case there's nothing to move at all.
         if threads.indices.dropFirst().allSatisfy({ !before($0, $0 - 1) }) { return threads }
         return threads.indices.sorted(by: before).map { threads[$0] }
+    }
+}
+
+/// Text as `localizedStandardContains` compares it: lowercased and without
+/// accents, in this locale ("Café" and "CAFE" both read "cafe"). With both
+/// sides folded once, each comparison is a plain byte search.
+struct SearchText: Sendable {
+    private var text: String
+
+    init(_ text: String) {
+        self.text = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+        self.text.makeContiguousUTF8()
+    }
+
+    /// Several fields as one, each folded on its own and kept apart by a
+    /// character no search contains, so a word never runs across two.
+    init(_ parts: [String]) {
+        text = parts.map { $0.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current) }
+            .joined(separator: "\u{1F}")
+        text.makeContiguousUTF8()
+    }
+
+    /// Never true for nothing, as `localizedStandardContains("")` isn't.
+    func contains(_ other: SearchText) -> Bool {
+        !other.text.isEmpty && text.bytesContain(other.text)
+    }
+}
+
+/// Lowercased text as Top Results compares it, with `String.contains`.
+/// Where both sides are plain ASCII, nearly always, that's the same as
+/// comparing the bytes, which is much quicker.
+struct LowercasedText: Sendable {
+    private var text: String
+    private let isASCII: Bool
+
+    /// `text` already lowercased.
+    init(_ text: String) {
+        self.text = text
+        self.text.makeContiguousUTF8()
+        isASCII = text.utf8.allSatisfy { $0 < 0x80 }
+    }
+
+    func contains(_ other: LowercasedText) -> Bool {
+        isASCII && other.isASCII ? !other.text.isEmpty && text.bytesContain(other.text) : text.contains(other.text)
+    }
+
+    func hasPrefix(_ other: LowercasedText) -> Bool { text.hasPrefix(other.text) }
+}
+
+extension String {
+    /// Whether `other`'s UTF-8 appears in this string's, byte for byte.
+    fileprivate func bytesContain(_ other: String) -> Bool {
+        guard other.utf8.count <= utf8.count else { return false }
+        let found = utf8.withContiguousStorageIfAvailable { haystack in
+            other.utf8.withContiguousStorageIfAvailable { needle in
+                memmem(haystack.baseAddress, haystack.count, needle.baseAddress, needle.count) != nil
+            }
+        }
+        return (found ?? nil) ?? (utf8.firstRange(of: other.utf8) != nil)
+    }
+}
+
+extension MailQuery {
+    /// Each conversation's text ready for search (`SearchText`), worked out
+    /// once per message instead of on every search. Searching a whole
+    /// mailbox lowercased and compared every field of every conversation,
+    /// the body included, again for each word typed.
+    final class SearchIndex: @unchecked Sendable {
+        static let shared = SearchIndex()
+        private let lock = NSLock()
+        private var entries: [ThreadID: Entry] = [:]
+        /// Several accounts' worth; cleared past this, like `Memo`.
+        private static let limit = 60_000
+
+        /// Low on memory: built again on the next search.
+        func clear() {
+            lock.lock()
+            entries.removeAll()
+            lock.unlock()
+        }
+
+        struct Entry: Sendable {
+            /// What it was made from: a new message in the conversation, or
+            /// its body loading, makes a new one.
+            let message: String?
+            let isBodyLoaded: Bool
+            let subject: String
+            let excerpt: String
+            /// Only for conversations without a message id (samples, a
+            /// message just sent), where nothing else tells them apart.
+            let bodySize: Int?
+            /// Who it's from: name, address and company, for `from:`.
+            let from: SearchText
+            /// Who it went to, for `to:`.
+            let to: SearchText
+            /// Everything a word can be in but the body.
+            let fields: SearchText
+            let body: SearchText
+            /// For Top Results, which compares these lowercased as they are.
+            let lowercasedSender: LowercasedText
+            let lowercasedSubject: LowercasedText
+            let lowercasedPreview: LowercasedText
+
+            init(_ item: Correspondence) {
+                message = item.latestMessageID
+                isBodyLoaded = item.isBodyLoaded
+                subject = item.subject
+                excerpt = item.excerpt
+                bodySize = item.latestMessageID == nil ? item.body.utf8.count : nil
+                from = SearchText([item.sender, item.senderEmail ?? "", item.organization])
+                to = SearchText(item.toRecipients + item.ccRecipients)
+                fields = SearchText([item.sender, item.organization, item.subject, item.excerpt, item.senderEmail ?? ""]
+                                    + item.toRecipients + item.ccRecipients)
+                body = SearchText(item.body)
+                lowercasedSender = LowercasedText([item.sender, item.organization, item.senderEmail ?? ""].joined(separator: " ").lowercased())
+                lowercasedSubject = LowercasedText(item.subject.lowercased())
+                lowercasedPreview = LowercasedText(item.excerpt.lowercased())
+            }
+
+            func isCurrent(for item: Correspondence) -> Bool {
+                message == item.latestMessageID && isBodyLoaded == item.isBodyLoaded
+                    && subject == item.subject && excerpt == item.excerpt
+                    && (message != nil || bodySize == item.body.utf8.count)
+            }
+        }
+
+        /// One entry per thread, in the same order; the ones missing or out
+        /// of date are made on every core at once.
+        func entries(for threads: [Correspondence]) -> [Entry] {
+            var found = [Entry?](repeating: nil, count: threads.count)
+            var missing: [Int] = []
+            lock.lock()
+            for index in threads.indices {
+                if let entry = entries[threads[index].id], entry.isCurrent(for: threads[index]) {
+                    found[index] = entry
+                } else {
+                    missing.append(index)
+                }
+            }
+            lock.unlock()
+            guard !missing.isEmpty else { return found.compactMap { $0 } }
+            let made = Self.make(missing.map { threads[$0] })
+            lock.lock()
+            if entries.count + made.count > Self.limit { entries.removeAll(keepingCapacity: true) }
+            for (index, entry) in zip(missing, made) {
+                found[index] = entry
+                entries[threads[index].id] = entry
+            }
+            lock.unlock()
+            return found.compactMap { $0 }
+        }
+
+        private static func make(_ threads: [Correspondence]) -> [Entry] {
+            guard threads.count > 200 else { return threads.map(Entry.init) }
+            let chunk = 100
+            let made = Made(count: threads.count)
+            DispatchQueue.concurrentPerform(iterations: (threads.count + chunk - 1) / chunk) { part in
+                let range = (part * chunk)..<min(threads.count, (part + 1) * chunk)
+                made.set(range, threads[range].map(Entry.init))
+            }
+            return made.entries.compactMap { $0 }
+        }
+
+        /// Entries being made on several threads at once, each into its own slots.
+        private final class Made: @unchecked Sendable {
+            private let lock = NSLock()
+            private(set) var entries: [Entry?]
+            init(count: Int) { entries = Array(repeating: nil, count: count) }
+            func set(_ range: Range<Int>, _ made: [Entry]) {
+                lock.lock()
+                entries.replaceSubrange(range, with: made)
+                lock.unlock()
+            }
+        }
+    }
+}
+
+/// Search for a list: the matches for what's typed, found away from the
+/// main thread once the mailbox is large, so typing and scrolling never
+/// wait on it. The list keeps showing what it had until they're found.
+@MainActor
+public final class MailSearch {
+    public struct Request: Equatable {
+        public var search: String
+        public var attention: Attention?
+        public var serverMatches: Set<ThreadID>
+        /// What the conversations searched are: anything that changes when
+        /// they do (the store's revision, the account shown).
+        public var source: AnyHashable
+
+        public init(search: String, attention: Attention? = nil, serverMatches: Set<ThreadID> = [], source: AnyHashable) {
+            self.search = search.trimmingCharacters(in: .whitespacesAndNewlines)
+            self.attention = attention
+            self.serverMatches = serverMatches
+            self.source = source
+        }
+
+        /// Its matches are all among `previous`'s: the same conversations,
+        /// searched for more. The provider's own matches skip the words, so
+        /// they can't be new ones.
+        func narrows(_ previous: Request) -> Bool {
+            source == previous.source && attention == previous.attention
+                && serverMatches.isSubset(of: previous.serverMatches)
+                && MailQuery.SearchTerms(search).narrows(MailQuery.SearchTerms(previous.search))
+        }
+    }
+
+    /// Searched right away up to this many conversations; a few
+    /// milliseconds.
+    public static let inlineLimit = 2_000
+    private var found: (request: Request, matches: [Correspondence], ranked: [ThreadID])?
+    private var pending: Request?
+
+    public init() {}
+
+    /// The matches for `request` among `threads`, or nil while they're
+    /// still being found; `onFound` runs once they are, to show them.
+    /// Typing more of the same search looks through what the last one
+    /// found rather than the whole mailbox.
+    public func matches(for request: Request, in threads: () -> [Correspondence], now: Date = .now,
+                        onFound: @escaping @MainActor () -> Void) -> [Correspondence]? {
+        if let found, found.request == request { return found.matches }
+        let input = if let found, request.narrows(found.request) { found.matches } else { threads() }
+        let (search, attention, serverMatches) = (request.search, request.attention, request.serverMatches)
+        @Sendable func run() -> (matches: [Correspondence], ranked: [ThreadID]) {
+            let matches = MailQuery.filter(input, attention: attention, search: search, serverMatches: serverMatches, now: now)
+            return (matches, MailQuery.ranked(matches, search: search, now: now).map(\.id))
+        }
+        if input.count <= Self.inlineLimit {
+            let result = run()
+            found = (request, result.matches, result.ranked)
+            pending = nil
+            return result.matches
+        }
+        guard pending != request else { return nil }
+        pending = request
+        Task { [weak self] in
+            let result = await Task.detached(priority: .userInitiated) { run() }.value
+            guard let self, self.pending == request else { return }
+            self.found = (request, result.matches, result.ranked)
+            self.pending = nil
+            onFound()
+        }
+        return nil
+    }
+
+    /// Top Results (`MailQuery.topResults`) among `shown`, the last
+    /// matches as the list shows them (less any hidden), from the order
+    /// worked out with them rather than ranking them again here.
+    public func topResults(_ shown: [Correspondence], limit: Int = 5) -> [Correspondence] {
+        guard let found, shown.count > limit + 3 else { return [] }
+        let byID = Dictionary(shown.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return Array(found.ranked.lazy.compactMap { byID[$0] }.prefix(limit))
+    }
+
+    /// Reads the mailbox's text ahead of the first search (when Search
+    /// opens), away from the main thread, so the first results are quick.
+    public nonisolated static func prepare(_ threads: [Correspondence]) {
+        Task.detached(priority: .utility) { _ = MailQuery.SearchIndex.shared.entries(for: threads) }
     }
 }
 

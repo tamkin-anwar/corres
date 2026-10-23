@@ -2299,3 +2299,11 @@
 "Go to %@" = "%@を開く";
 "this conversation" = "この会話";
 "Its mail is removed from this Mac. It stays in %@." = "このアカウントのメールはこのMacから削除されます。%@には残ります。";
+"Remove from All Devices" = "すべてのデバイスから削除";
+"Your other devices keep it unless you remove it from all of them. Nothing is deleted from %@." = "すべてのデバイスから削除しない限り、ほかのデバイスには残ります。%@からは何も削除されません。";
+"Removing it from all devices also takes out the %lld rules Corres made in %@." = "すべてのデバイスから削除すると、Corresが%2$@に作成した%1$lld件のルールも削除されます。";
+"and %lld more" = "ほか%lld件";
+"Remove from This Mac" = "このMacから削除";
+"Discard" = "破棄";
+"Retry" = "再試行";
+"Couldn't send “%@”" = "「%@」を送信できませんでした";

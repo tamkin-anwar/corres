@@ -426,6 +426,10 @@
 		FFC128B29B5871A5CD7F63A1 /* Features/TemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF8F8FDE9B25F0C732FEC97 /* Features/TemplatesView.swift */; };
 		1C0466D913E9C223D1E3E167 /* Core/ServerRulePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B3A510394696D01748EA5 /* Core/ServerRulePlan.swift */; };
 		C421F237DC7B00751C88011F /* Core/ServerRulePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B3A510394696D01748EA5 /* Core/ServerRulePlan.swift */; };
+		68A860DEB501B152ABA9D577 /* App/AccountRemoval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5303211FDE8BF35A0D5948A7 /* App/AccountRemoval.swift */; };
+		30850E852349A80C3703F5C2 /* App/AccountRemoval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5303211FDE8BF35A0D5948A7 /* App/AccountRemoval.swift */; };
+		42B5A93E1788E971B393FA7D /* Core/SyncMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 892980973BC4037AE4D6B16B /* Core/SyncMerge.swift */; };
+		E4EA1E050D08A802787E6060 /* Core/SyncMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 892980973BC4037AE4D6B16B /* Core/SyncMerge.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -855,6 +859,8 @@
 		FEB5C4BF79C6432CA56B4E65 /* Widgets/CorresWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Widgets/CorresWidgets.entitlements; sourceTree = SOURCE_ROOT; };
 		FF7F38BF13EFB132AE0D4DAD /* App/ICloudSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ICloudSignIn.swift; sourceTree = SOURCE_ROOT; };
 		BB0B3A510394696D01748EA5 /* Core/ServerRulePlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ServerRulePlan.swift; sourceTree = SOURCE_ROOT; };
+		5303211FDE8BF35A0D5948A7 /* App/AccountRemoval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AccountRemoval.swift; sourceTree = SOURCE_ROOT; };
+		892980973BC4037AE4D6B16B /* Core/SyncMerge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/SyncMerge.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1140,6 +1146,8 @@
 				226E14BE11763C7EB69365E8 /* WatchWidgets/CorresWatchWidgets.swift */,
 				FDB01C32D35EF81F17F3FCD6 /* Watch/WatchFace.swift */,
 				BB0B3A510394696D01748EA5 /* Core/ServerRulePlan.swift */,
+				5303211FDE8BF35A0D5948A7 /* App/AccountRemoval.swift */,
+				892980973BC4037AE4D6B16B /* Core/SyncMerge.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1616,6 +1624,8 @@
 				7759688ECB7078E704F00ED3 /* Core/ServerRuleSpec.swift in Sources */,
 				5D41291AA27609DD5C5357DE /* App/ServerRules.swift in Sources */,
 				C421F237DC7B00751C88011F /* Core/ServerRulePlan.swift in Sources */,
+				30850E852349A80C3703F5C2 /* App/AccountRemoval.swift in Sources */,
+				E4EA1E050D08A802787E6060 /* Core/SyncMerge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1772,6 +1782,8 @@
 				17A0EBF8FC077AD6E69777FC /* Core/ServerRuleSpec.swift in Sources */,
 				5C5E50CD78A49B6070FCE3CF /* App/ServerRules.swift in Sources */,
 				1C0466D913E9C223D1E3E167 /* Core/ServerRulePlan.swift in Sources */,
+				68A860DEB501B152ABA9D577 /* App/AccountRemoval.swift in Sources */,
+				42B5A93E1788E971B393FA7D /* Core/SyncMerge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

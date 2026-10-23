@@ -102,18 +102,37 @@ struct MailboxesView: View {
     @AppStorage(CorresSettings.mailboxOrderKey) private var orderRaw = ""
     @AppStorage(CorresSettings.mailboxHiddenKey) private var hiddenRaw = ""
     @State private var isEditing = false
+    @State private var counts = Counts()
 
     private var order: [String] { orderRaw.isEmpty ? [] : orderRaw.components(separatedBy: "\n") }
     private var hidden: Set<String> { Set(hiddenRaw.isEmpty ? [] : hiddenRaw.components(separatedBy: "\n")) }
 
-    private var handledCount: Int {
-        store.threads.filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.attention == .handled }.count
+    /// Handled and Snoozed counted together, once per change to the mail
+    /// (or minute, for snoozes that end), not twice per row on each redraw.
+    private final class Counts {
+        var key: String?
+        var handled = 0
+        var snoozed = 0
     }
 
-    private var snoozedCount: Int {
+    private var currentCounts: Counts {
+        let counts = counts
+        let key = "\(store.revision)|\(Int(Date.now.timeIntervalSince1970 / 60))|\(accounts.joined(separator: ","))"
+        guard counts.key != key else { return counts }
         let now = Date.now
-        return store.threads.filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.isSnoozed(at: now) }.count
+        var handled = 0, snoozed = 0
+        for thread in store.threads where accounts.isEmpty || accounts.contains(thread.id.account) {
+            if thread.attention == .handled { handled += 1 }
+            if thread.isSnoozed(at: now) { snoozed += 1 }
+        }
+        counts.handled = handled
+        counts.snoozed = snoozed
+        counts.key = key
+        return counts
     }
+
+    private var handledCount: Int { currentCounts.handled }
+    private var snoozedCount: Int { currentCounts.snoozed }
 
     /// The built-in mailboxes there are to show: Gmail's only with Gmail.
     private var builtIns: [Mailbox] {
@@ -348,15 +367,30 @@ struct MailboxView: View {
             .prefix(40))
     }
 
+    /// Snoozed and Handled, kept until the mail changes (or a minute
+    /// passes, for snoozes that end), so selecting or loading doesn't go
+    /// through the whole mailbox again.
+    private final class LocalRows {
+        var key: String?
+        var rows: [Correspondence] = []
+    }
+    @State private var localRows = LocalRows()
+
     private var rows: [Correspondence] {
-        if mailbox == .snoozed {
-            let now = Date.now
-            return store.threads.filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.isSnoozed(at: now) }
-                .sorted { ($0.snoozedUntil ?? .distantFuture) < ($1.snoozedUntil ?? .distantFuture) }
-        }
-        if mailbox == .handled {
-            return store.threads.filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.attention == .handled }
-                .sorted { $0.receivedAt > $1.receivedAt }
+        if mailbox == .snoozed || mailbox == .handled {
+            let cache = localRows
+            let key = "\(store.revision)|\(Int(Date.now.timeIntervalSince1970 / 60))|\(mailbox.id)|\(accounts.joined(separator: ","))"
+            if cache.key == key { return cache.rows }
+            if mailbox == .snoozed {
+                let now = Date.now
+                cache.rows = store.threads.filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.isSnoozed(at: now) }
+                    .sorted { ($0.snoozedUntil ?? .distantFuture) < ($1.snoozedUntil ?? .distantFuture) }
+            } else {
+                cache.rows = store.threads.filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.attention == .handled }
+                    .sorted { $0.receivedAt > $1.receivedAt }
+            }
+            cache.key = key
+            return cache.rows
         }
         // Trashed here: out of sight while Undo is offered (the store hides
         // it), back if you undo, gone once it's done (the store lets it go).

@@ -35,7 +35,7 @@ final class SpotlightIndex {
     /// adds its full text.
     private var indexed: [String: Int] = [:]
     private var loadedIndexed = false
-    private var stateURL: URL? {
+    nonisolated private static var stateURL: URL? {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
             .appendingPathComponent("spotlight-index.json")
     }
@@ -55,10 +55,31 @@ final class SpotlightIndex {
         guard Self.isEnabled, !working else { return }
         working = true
         defer { working = false }
-        loadState()
+        // Sorting thousands of conversations, and reading and writing the
+        // record of what's indexed, all happen off the main thread.
+        let known: [String: Int]? = loadedIndexed ? indexed : nil
+        let limit = Self.limit
+        do {
+            let pass = try await Task.detached(priority: .utility) {
+                try await Self.pass(threads, known: known, limit: limit)
+            }.value
+            indexed = pass.indexed
+            loadedIndexed = true
+            if pass.changed > 0 || pass.removed > 0 {
+                Self.log.info("Spotlight: \(pass.changed) indexed, \(pass.removed) removed, \(pass.indexed.count) in all")
+            }
+        } catch {
+            Self.log.error("Spotlight indexing failed: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    /// What changed since the last pass, sent to the index and recorded.
+    nonisolated private static func pass(_ threads: [Correspondence], known: [String: Int]?,
+                                         limit: Int) async throws -> (indexed: [String: Int], changed: Int, removed: Int) {
+        let indexed = known ?? readState()
         let current = Array(threads.lazy.filter { thread in
             thread.id.account != "sample" && !thread.labelIds.contains("TRASH") && !thread.labelIds.contains("SPAM")
-        }.sorted { $0.receivedAt > $1.receivedAt }.prefix(Self.limit))
+        }.sorted { $0.receivedAt > $1.receivedAt }.prefix(limit))
         var wanted: [String: Int] = [:]
         var changed: [Correspondence] = []
         for thread in current {
@@ -68,16 +89,10 @@ final class SpotlightIndex {
             if indexed[key] != stamp { changed.append(thread) }
         }
         let gone = indexed.keys.filter { wanted[$0] == nil }
-        guard !changed.isEmpty || !gone.isEmpty else { return }
-        let removed = Array(gone)
-        do {
-            try await Task.detached(priority: .utility) { try await Self.send(changed, removing: removed) }.value
-            indexed = wanted
-            saveState()
-            Self.log.info("Spotlight: \(changed.count) indexed, \(removed.count) removed, \(wanted.count) in all")
-        } catch {
-            Self.log.error("Spotlight indexing failed: \(String(describing: error), privacy: .public)")
-        }
+        guard !changed.isEmpty || !gone.isEmpty else { return (indexed, 0, 0) }
+        try await send(changed, removing: Array(gone))
+        writeState(wanted)
+        return (wanted, changed.count, gone.count)
     }
 
     /// Off the main thread: building thousands of items is real work.
@@ -150,13 +165,18 @@ final class SpotlightIndex {
     private func loadState() {
         guard !loadedIndexed else { return }
         loadedIndexed = true
-        if let url = stateURL, let data = try? Data(contentsOf: url),
-           let saved = try? JSONDecoder().decode([String: Int].self, from: data) {
-            indexed = saved
-        }
+        indexed = Self.readState()
     }
 
-    private func saveState() {
+    private func saveState() { Self.writeState(indexed) }
+
+    nonisolated private static func readState() -> [String: Int] {
+        guard let url = stateURL, let data = try? Data(contentsOf: url),
+              let saved = try? JSONDecoder().decode([String: Int].self, from: data) else { return [:] }
+        return saved
+    }
+
+    nonisolated private static func writeState(_ indexed: [String: Int]) {
         guard let url = stateURL, let data = try? JSONEncoder().encode(indexed) else { return }
         try? data.write(to: url, options: .atomic)
     }

@@ -18,9 +18,31 @@ struct SyncPlannerTests {
     }
 
     @Test func condstoreSkipsAnUnchangedFolder() {
-        let stored = FolderSyncState(uidValidity: 7, uidNext: 100, highestModSeq: 50)
+        let stored = FolderSyncState(uidValidity: 7, uidNext: 100, highestModSeq: 50, exists: 99)
         let plan = SyncPlanner.plan(stored: stored, selected: .init(uidValidity: 7, uidNext: 100, exists: 99, highestModSeq: 50), capabilities: condstore)
         #expect(plan == .upToDate)
+    }
+
+    /// An expunge needn't move the counter without QRESYNC: a smaller
+    /// count still sends the sync looking.
+    @Test func condstoreLooksAgainWhenTheCountDrops() {
+        let stored = FolderSyncState(uidValidity: 7, uidNext: 100, highestModSeq: 50, exists: 99)
+        let plan = SyncPlanner.plan(stored: stored, selected: .init(uidValidity: 7, uidNext: 100, exists: 98, highestModSeq: 50), capabilities: condstore)
+        #expect(plan == .incremental(newFrom: nil, changedSince: nil, checkFlagsOfKnown: true))
+    }
+
+    /// State saved before the count was kept: looked at once, not trusted.
+    @Test func condstoreWithoutAStoredCountLooksOnce() {
+        let stored = FolderSyncState(uidValidity: 7, uidNext: 100, highestModSeq: 50)
+        let plan = SyncPlanner.plan(stored: stored, selected: .init(uidValidity: 7, uidNext: 100, exists: 99, highestModSeq: 50), capabilities: condstore)
+        #expect(plan != .upToDate)
+    }
+
+    /// Cursors written before `exists` still decode.
+    @Test func olderStateDecodesWithoutACount() throws {
+        let json = #"{"uidValidity":7,"uidNext":100,"highestModSeq":50}"#
+        let state = try JSONDecoder().decode(FolderSyncState.self, from: Data(json.utf8))
+        #expect(state == FolderSyncState(uidValidity: 7, uidNext: 100, highestModSeq: 50))
     }
 
     @Test func condstoreAsksOnlyForWhatChanged() {
@@ -33,6 +55,58 @@ struct SyncPlannerTests {
         let stored = FolderSyncState(uidValidity: 7, uidNext: 100)
         let plan = SyncPlanner.plan(stored: stored, selected: .init(uidValidity: 7, uidNext: 100, exists: 99, highestModSeq: nil), capabilities: plain)
         #expect(plan == .incremental(newFrom: nil, changedSince: nil, checkFlagsOfKnown: true))
+    }
+}
+
+struct FlagChangesTests {
+    let read: Set<String> = ["\\seen"]
+    let unread: Set<String> = []
+    let readFlagged: Set<String> = ["\\seen", "\\flagged"]
+
+    @Test func unchangedFlagsReportNothing() {
+        let previous: [UInt32: UInt8] = [1: 1, 2: 0, 3: 3]
+        let result = FlagChanges.compare(known: [1, 2, 3], previous: previous,
+                                         current: [1: read, 2: unread, 3: readFlagged.union(["\\recent", "$junk"])])
+        #expect(result.changed.isEmpty)
+        #expect(result.vanished.isEmpty)
+        #expect(result.codes == previous)
+    }
+
+    @Test func readOrFlaggedElsewhereIsReported() {
+        let result = FlagChanges.compare(known: [1, 2, 3], previous: [1: 0, 2: 1, 3: 1],
+                                         current: [1: read, 2: unread, 3: readFlagged])
+        #expect(result.changed == [1, 2, 3])
+        #expect(result.codes == [1: 1, 2: 0, 3: 3])
+    }
+
+    /// Gone from the folder: reported as vanished, and not kept.
+    @Test func vanishedMessageIsReported() {
+        let result = FlagChanges.compare(known: [1, 2], previous: [1: 1, 2: 1], current: [1: read])
+        #expect(result.changed.isEmpty)
+        #expect(result.vanished == [2])
+        #expect(result.codes == [1: 1])
+    }
+
+    /// A UID with nothing kept for it, or nothing kept at all, is always
+    /// reported: never assumed unchanged.
+    @Test func newOrUnrecordedMessagesAreReported() {
+        let one = FlagChanges.compare(known: [1, 2], previous: [1: 1], current: [1: read, 2: read])
+        #expect(one.changed == [2])
+        let all = FlagChanges.compare(known: [1, 2], previous: nil, current: [1: read, 2: unread])
+        #expect(all.changed == [1, 2])
+        #expect(all.codes == [1: 1, 2: 0])
+    }
+
+    /// The caller's own bits ride along untouched and never count as a change.
+    @Test func callerBitsAreCarriedOver() {
+        let result = FlagChanges.compare(known: [1, 2], previous: [1: 4 | 1, 2: 4], current: [1: read, 2: read])
+        #expect(result.changed == [2])
+        #expect(result.codes == [1: 5, 2: 5])
+    }
+
+    @Test func flagCaseDoesNotMatter() {
+        #expect(FlagChanges.code(["\\Seen", "\\FLAGGED"]) == 3)
+        #expect(FlagChanges.code(["\\draft"]) == 0)
     }
 }
 

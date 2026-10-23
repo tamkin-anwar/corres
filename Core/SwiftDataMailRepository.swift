@@ -253,23 +253,34 @@ public actor SwiftDataMailRepository: MailRepository {
     @discardableResult
     public func applyRemoteChanges(_ changes: [RemoteMessageChange]) throws -> Int {
         guard !changes.isEmpty else { return 0 }
+        // Every conversation named, in a few fetches instead of one per
+        // change: an iCloud pass can report hundreds at once.
+        let compositeIDs = Array(Set(changes.filter { !$0.threadID.providerID.isEmpty }.map {
+            PersistedCorrespondence.compositeID(account: $0.threadID.account, providerID: $0.threadID.providerID)
+        }))
+        var byID: [String: PersistedCorrespondence] = [:]
+        for start in stride(from: 0, to: compositeIDs.count, by: 500) {
+            let chunk = Array(compositeIDs[start..<min(start + 500, compositeIDs.count)])
+            let models = try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { chunk.contains($0.compositeID) }))
+            for model in models where byID[model.compositeID] == nil { byID[model.compositeID] = model }
+        }
         var changed = 0
         for change in changes {
-            var descriptor: FetchDescriptor<PersistedCorrespondence>
+            let found: PersistedCorrespondence?
             if change.threadID.providerID.isEmpty {
                 // Known only by the message: Outlook reports a removal
-                // with nothing but the message's id.
+                // with nothing but the message's id. Rare, so one fetch each.
                 let account = change.threadID.account
                 let messageID: String? = change.messageID
-                descriptor = FetchDescriptor(predicate: #Predicate { $0.account == account && $0.latestMessageID == messageID })
+                var descriptor = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.account == account && $0.latestMessageID == messageID })
+                descriptor.fetchLimit = 1
+                found = try modelContext.fetch(descriptor).first
             } else {
-                let compositeID = PersistedCorrespondence.compositeID(account: change.threadID.account,
-                                                                     providerID: change.threadID.providerID)
-                descriptor = FetchDescriptor(predicate: #Predicate { $0.compositeID == compositeID })
+                found = byID[PersistedCorrespondence.compositeID(account: change.threadID.account,
+                                                                 providerID: change.threadID.providerID)]
             }
-            descriptor.fetchLimit = 1
-            guard let model = try modelContext.fetch(descriptor).first,
-                  model.latestMessageID == change.messageID else { continue }
+            // Removed by an earlier change in this same batch: nothing left to do.
+            guard let model = found, !model.isDeleted, model.latestMessageID == change.messageID else { continue }
             if change.removed {
                 modelContext.delete(model)
                 changed += 1

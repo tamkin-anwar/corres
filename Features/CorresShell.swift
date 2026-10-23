@@ -191,6 +191,7 @@ struct CorresShell: View {
             if phase == .active {
                 Organizer.shared.applyWidgetHandoffs()
                 ServerRules.shared.retryIfFailed()
+                Task { await outbox.retryFailedQuietly() }
             }
             // Leaving Corres. Not on a glance at Notification Center or
             // Control Center (`.inactive`), which used to end Undo early.
@@ -472,7 +473,14 @@ struct CorresShell: View {
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         } else if let failed = outbox.failed {
             HStack(spacing: 12) {
-                Text("Couldn't send \u{201C}\(failed.draft.subject)\u{201D}").font(.subheadline).lineLimit(1)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Couldn't send \u{201C}\(failed.draft.subject)\u{201D}").font(.subheadline).lineLimit(1)
+                    // Each is kept until it goes or you discard it; the
+                    // rest follow this one.
+                    if outbox.failedSends.count > 1 {
+                        Text("and \(outbox.failedSends.count - 1) more").font(.caption).foregroundStyle(CorresPalette.secondary)
+                    }
+                }
                 Spacer(minLength: 8)
                 Button("Discard") { outbox.discardFailed() }.font(.subheadline)
                 Button("Retry") { outbox.retryFailed() }.font(.subheadline.weight(.semibold))

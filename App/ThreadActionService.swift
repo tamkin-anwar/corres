@@ -27,7 +27,8 @@ final class ThreadActionService {
         // A change saved while offline that the server then refused: the
         // conversation comes back, and you're told why.
         ActionQueue.shared.onRefused = { [weak self] action, error in
-            guard let self else { return }
+            // Its account was removed meanwhile: nothing to bring back.
+            guard let self, self.auth.isConnected(action.account) else { return }
             HangReporter.failure("a waiting change", error)
             if let snapshot = action.snapshot { await self.store.putBack(snapshot) }
             // A read or a flag that didn't take settles with the next sync;

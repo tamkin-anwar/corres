@@ -91,7 +91,16 @@ final class GoogleAuthService {
         var storedEmails = defaults.stringArray(forKey: Self.connectedAccountsKey) ?? []
         // Added on your other devices (iCloud Keychain): signed in here too.
         // Read in the background: the query held up the first screen.
-        let roster = await Task.detached(priority: .userInitiated) { AccountSync.roster() }.value
+        let (roster, removed) = await Task.detached(priority: .userInitiated) {
+            (AccountSync.roster(), AccountSync.removedEverywhere())
+        }.value
+        // Removed from all your devices on another one: signed out here too.
+        let removedElsewhere = storedEmails.filter { removed[$0.lowercased()] != nil }
+        storedEmails.removeAll { removed[$0.lowercased()] != nil }
+        for email in removedElsewhere {
+            await forgetSignIn(email, everywhere: true)
+            await onRemovedElsewhere?(email)
+        }
         storedEmails += AccountSync.adopt(roster, into: storedEmails)
         var restored: [GmailAccount] = []
         for email in storedEmails {
@@ -277,7 +286,7 @@ final class GoogleAuthService {
             await GoogleTokenProvider.shared.store(refreshToken: result.user.refreshToken.tokenString, for: email)
             if !accounts.contains(where: { $0.email == email }) {
                 accounts.append(GmailAccount(email: email))
-                persistAccountList()
+                persistAccountList(adding: email)
             }
         } catch {
             let nsError = error as NSError
@@ -307,7 +316,7 @@ final class GoogleAuthService {
             Task { await fillOutlookPhoto(for: result.email) }
             if !accounts.contains(where: { $0.email == result.email }) {
                 accounts.append(GmailAccount(email: result.email))
-                persistAccountList()
+                persistAccountList(adding: result.email)
             }
         } catch MicrosoftSignIn.SignInError.cancelled {
             // Changed their mind: nothing to say.
@@ -347,7 +356,7 @@ final class GoogleAuthService {
         await IMAPSessions.shared.forget(email)
         if !accounts.contains(where: { $0.email == email }) {
             accounts.append(GmailAccount(email: email))
-            persistAccountList()
+            persistAccountList(adding: email)
         }
         return nil
     }
@@ -394,7 +403,7 @@ final class GoogleAuthService {
         if icloudNeedsPassword == email { icloudNeedsPassword = nil }
         if !accounts.contains(where: { $0.email == email }) {
             accounts.append(GmailAccount(email: email))
-            persistAccountList()
+            persistAccountList(adding: email)
         }
         return nil
     }
@@ -429,24 +438,36 @@ final class GoogleAuthService {
 
     /// Disconnects exactly one account, leaving any others connected: the
     /// per-account equivalent of the old single-account `signOut()`.
-    func signOut(_ email: String) async {
+    /// Takes the account off this device, and with `everywhere` off all
+    /// your devices (each signs out of it when it next opens).
+    func signOut(_ email: String, everywhere: Bool) async {
         accounts.removeAll { $0.email == email }
-        persistAccountList(removing: email)
+        persistAccountList(removing: email, everywhere: everywhere)
+        await forgetSignIn(email, everywhere: everywhere)
+    }
+
+    /// Told when launching finds an account was removed from all your
+    /// devices on another one, so its mail and settings here go too.
+    @ObservationIgnored var onRemovedElsewhere: ((String) async -> Void)?
+
+    /// Its sign-in, profile and caches on this device; with `everywhere`
+    /// its iCloud Keychain copy too.
+    private func forgetSignIn(_ email: String, everywhere: Bool) async {
         MailIndexer.shared.forget(email)
         Task { await SpotlightIndex.shared.forget(account: email) }
         profiles[email] = nil
         if let data = try? JSONEncoder().encode(profiles) { defaults.set(data, forKey: Self.profilesKey) }
         if MailAccounts.provider(for: email).usesIMAP {
-            IMAPCredentials.remove(email)
+            IMAPCredentials.remove(email, everywhere: everywhere)
             // Re-adding it later starts with instant alerts off, as new.
             UserDefaults.standard.removeObject(forKey: AccountPreferences.icloudInstantKey(for: email))
             await IMAPSessions.shared.forget(email)
             await IMAPCache.shared.forgetAccount(email)
         } else if MailAccounts.provider(for: email) == .microsoft {
-            await OutlookTokenProvider.shared.remove(email)
+            await OutlookTokenProvider.shared.remove(email, everywhere: everywhere)
             await OutlookFolders.shared.forget(email)
         } else {
-            await GoogleTokenProvider.shared.removeRefreshToken(for: email)
+            await GoogleTokenProvider.shared.removeRefreshToken(for: email, everywhere: everywhere)
         }
         MailAccounts.forget(email)
         // GoogleSignIn's own session only ever tracks one account; clearing
@@ -461,12 +482,19 @@ final class GoogleAuthService {
         }
     }
 
-    /// The list your other devices use only grows here, except for the one
-    /// account you signed out of: an account this device can't open yet is
-    /// still yours on the others.
-    private func persistAccountList(removing signedOut: String? = nil) {
+    /// The list your other devices use only grows here, except for an
+    /// account removed from all of them: an account this device can't open
+    /// yet is still yours on the others.
+    private func persistAccountList(removing signedOut: String? = nil, everywhere: Bool = false, adding added: String? = nil) {
         defaults.set(accounts.map(\.email), forKey: Self.connectedAccountsKey)
-        if let signedOut { AccountSync.remove(signedOut) } else { AccountSync.include(accounts.map(\.email)) }
+        if let signedOut {
+            if everywhere { AccountSync.remove(signedOut) } else { AccountSync.removeHere(signedOut) }
+        } else if let added {
+            AccountSync.added(added)
+            AccountSync.include(accounts.map(\.email))
+        } else {
+            AccountSync.include(accounts.map(\.email))
+        }
         SendAsDirectory.publishOwnAddresses(accounts: accounts.map(\.email), aliases: SendAsDirectory.shared.allAddresses)
     }
 

@@ -100,15 +100,16 @@ enum Keychain {
         return getSynced(key: key).flatMap { String(data: $0, encoding: .utf8) }
     }
 
-    /// Removes the sign-in here and from your other devices: an account
-    /// removed in Corres is removed everywhere, as in Mail.
-    static func delete(key: String) {
+    /// Removes the sign-in here, and with `everywhere` from your other
+    /// devices too. Removed from this device only, the iCloud Keychain copy
+    /// stays for the devices still using it.
+    static func delete(key: String, everywhere: Bool = true) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key,
         ].merging(modern) { $1 }
         SecItemDelete(query as CFDictionary)
-        SecItemDelete(syncedQuery(key: key) as CFDictionary)
+        if everywhere { SecItemDelete(syncedQuery(key: key) as CFDictionary) }
     }
 
     // MARK: iCloud Keychain

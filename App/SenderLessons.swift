@@ -202,11 +202,19 @@ extension Correspondence {
     /// Read without Gmail's tab: moving an email to Primary mustn't turn
     /// its newsletters into "notifications" and slip past its own rule.
     var mailKind: MailDigest.Kind {
-        MailDigest.kind(subject: subject, text: excerpt, senderEmail: senderEmail,
-                        isBulk: listUnsubscribeMailto != nil || listUnsubscribeURL != nil,
-                        looksAutomated: looksAutomated, hasEvent: false,
-                        labelIds: labelIds.filter { !InboxCategory.gmailLabels.contains($0) })
+        // Asked of every conversation on each refresh, and each answer runs
+        // up to four patterns: kept per message, with everything the answer
+        // reads. The labels passed below never change it (Gmail's tabs are
+        // left out, and nothing else is looked at).
+        let isBulk = listUnsubscribeMailto != nil || listUnsubscribeURL != nil
+        let key = "\(id.account)|\(id.providerID)|\(latestMessageID ?? "")|\(isBodyLoaded)|\(isBulk)|\(htmlImageOnly == true)|\(senderEmail ?? "")|\(subject)|\(excerpt)"
+        return Self.mailKindMemo.value(key) {
+            MailDigest.kind(subject: subject, text: excerpt, senderEmail: senderEmail,
+                            isBulk: isBulk, looksAutomated: looksAutomated, hasEvent: false,
+                            labelIds: labelIds.filter { !InboxCategory.gmailLabels.contains($0) })
+        }
     }
+    private static let mailKindMemo = Memo<String, MailDigest.Kind>()
 
     /// In Needs You because the on-device model brought it in: automated
     /// mail, assessed at its latest message, with no rule of Corres's own

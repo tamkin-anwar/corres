@@ -3215,3 +3215,9 @@
 "The conversation so far" = "これまでのやり取り";
 "%lld messages" = "%lld件のメッセージ";
 "Scheduled email" = "予約済みのメール";
+"Remove it from this %@ only, or from all your devices. Nothing is deleted from %@." = "この%@からだけ、またはすべてのデバイスから削除できます。%@からは何も削除されません。";
+"Remove from This %@" = "この%@から削除";
+"Remove from All Devices" = "すべてのデバイスから削除";
+"Your other devices keep it unless you remove it from all of them. Nothing is deleted from %@." = "すべてのデバイスから削除しない限り、ほかのデバイスには残ります。%@からは何も削除されません。";
+"Removing it from all devices also takes out the %lld rules Corres made in %@." = "すべてのデバイスから削除すると、Corresが%2$@に作成した%1$lld件のルールも削除されます。";
+"and %lld more" = "ほか%lld件";

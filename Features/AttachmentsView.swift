@@ -39,8 +39,19 @@ struct AttachmentsView: View {
         var id: String { thread.id.account + thread.id.providerID + file.id }
     }
 
-    private var items: [Item] {
-        let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
+    /// Every file worth listing, newest first, worked out once per change
+    /// to the mail; a kind or a search only narrows it. Each redraw and
+    /// keystroke used to sort the whole mailbox and look at every file.
+    private final class Files {
+        var key: String?
+        var all: [Item] = []
+    }
+    @State private var files = Files()
+
+    private var allFiles: [Item] {
+        let cache = files
+        let key = "\(store.revision)|\(accounts.joined(separator: ","))"
+        if cache.key == key { return cache.all }
         let threads = store.searchableThreads
             .filter { (accounts.isEmpty || accounts.contains($0.id.account)) && !$0.attachments.isEmpty }
             .sorted { $0.receivedAt > $1.receivedAt }
@@ -51,15 +62,22 @@ struct AttachmentsView: View {
                 // Calendar invitations and signatures' little logos aren't
                 // what anyone is looking for here.
                 if fileKind == .calendar || (fileKind == .image && file.sizeBytes < 12_000) { continue }
-                guard kind.includes(fileKind) else { continue }
-                if !query.isEmpty {
-                    let fields = [file.filename, thread.sender, thread.subject]
-                    guard fields.contains(where: { $0.localizedStandardContains(query) }) else { continue }
-                }
                 result.append(Item(thread: thread, file: file, kind: fileKind))
             }
         }
+        cache.all = result
+        cache.key = key
         return result
+    }
+
+    private var items: [Item] {
+        let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        return allFiles.filter { item in
+            guard kind.includes(item.kind) else { return false }
+            guard !query.isEmpty else { return true }
+            let fields = [item.file.filename, item.thread.sender, item.thread.subject]
+            return fields.contains(where: { $0.localizedStandardContains(query) })
+        }
     }
 
     var body: some View {

@@ -2299,3 +2299,11 @@
 "Go to %@" = "前往 %@";
 "this conversation" = "此对话";
 "Its mail is removed from this Mac. It stays in %@." = "此账户的邮件将从这台Mac上移除，但仍保留在 %@ 中。";
+"Remove from All Devices" = "从所有设备移除";
+"Your other devices keep it unless you remove it from all of them. Nothing is deleted from %@." = "除非你从所有设备移除，否则你的其他设备会保留它。%@中的内容不会被删除。";
+"Removing it from all devices also takes out the %lld rules Corres made in %@." = "从所有设备移除时，Corres 在 %2$@ 中创建的 %1$lld 条规则也会一并删除。";
+"and %lld more" = "还有 %lld 封";
+"Remove from This Mac" = "从这台 Mac 移除";
+"Discard" = "放弃";
+"Retry" = "重试";
+"Couldn't send “%@”" = "无法发送“%@”";

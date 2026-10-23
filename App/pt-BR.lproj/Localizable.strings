@@ -3215,3 +3215,9 @@
 "The conversation so far" = "A conversa até agora";
 "%lld messages" = "%lld mensagens";
 "Scheduled email" = "E-mail agendado";
+"Remove it from this %@ only, or from all your devices. Nothing is deleted from %@." = "Remova somente deste %@ ou de todos os seus dispositivos. Nada é apagado do %@.";
+"Remove from This %@" = "Remover deste %@";
+"Remove from All Devices" = "Remover de todos os dispositivos";
+"Your other devices keep it unless you remove it from all of them. Nothing is deleted from %@." = "Seus outros dispositivos continuam com ela, a menos que você a remova de todos. Nada é apagado do %@.";
+"Removing it from all devices also takes out the %lld rules Corres made in %@." = "Remover de todos os dispositivos também apaga as %lld regras que o Corres criou no %@.";
+"and %lld more" = "e mais %lld";

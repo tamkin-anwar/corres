@@ -2299,3 +2299,11 @@
 "Go to %@" = "%@(으)로 이동하기";
 "this conversation" = "이 대화";
 "Its mail is removed from this Mac. It stays in %@." = "이 계정의 메일이 이 Mac에서 제거됩니다. %@에는 남아 있습니다.";
+"Remove from All Devices" = "모든 기기에서 제거";
+"Your other devices keep it unless you remove it from all of them. Nothing is deleted from %@." = "모든 기기에서 제거하지 않으면 다른 기기에는 남아 있습니다. %@에서는 아무것도 삭제되지 않습니다.";
+"Removing it from all devices also takes out the %lld rules Corres made in %@." = "모든 기기에서 제거하면 Corres가 %2$@에 만든 규칙 %1$lld개도 함께 삭제됩니다.";
+"and %lld more" = "외 %lld개";
+"Remove from This Mac" = "이 Mac에서 제거";
+"Discard" = "버리기";
+"Retry" = "재시도";
+"Couldn't send “%@”" = "'%@'을(를) 보낼 수 없음";

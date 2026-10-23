@@ -256,5 +256,5 @@ enum IMAPCredentials {
     private static func key(_ account: String) -> String { "corres.icloud.password.\(account.lowercased())" }
     static func password(for account: String) -> String? { Keychain.get(key: key(account)) }
     static func save(_ password: String, for account: String) { Keychain.set(password, key: key(account)) }
-    static func remove(_ account: String) { Keychain.delete(key: key(account)) }
+    static func remove(_ account: String, everywhere: Bool = true) { Keychain.delete(key: key(account), everywhere: everywhere) }
 }

@@ -107,6 +107,10 @@ final class MacMailboxModel {
 
     private var cacheKey: CacheKey?
     private var cachedRows: [MacRow] = []
+    /// Finds a search's matches, away from the main thread in a large
+    /// mailbox; `searchFound` changes when they arrive.
+    @ObservationIgnored private let searcher = MailSearch()
+    private var searchFound = 0
     private static let mailboxKey = "corres.mac.mailbox"
 
     private struct CacheKey: Equatable {
@@ -117,6 +121,7 @@ final class MacMailboxModel {
         let minute: Int
         let accounts: [String]
         let serverMatches: Set<ThreadID>
+        let searchFound: Int
     }
 
     init() {
@@ -143,9 +148,12 @@ final class MacMailboxModel {
             return cachedRows
         }
         let key = CacheKey(revision: store.contentRevision, hidden: store.hiddenIDs, mailbox: mailbox, search: query,
-                           minute: Int(Date.now.timeIntervalSince1970 / 60), accounts: accounts, serverMatches: serverMatches)
+                           minute: Int(Date.now.timeIntervalSince1970 / 60), accounts: accounts, serverMatches: serverMatches,
+                           searchFound: searchFound)
         if key == cacheKey { return cachedRows }
-        cachedRows = build(store: store, query: query, accounts: accounts, serverMatches: serverMatches)
+        // Still searching: the rows stay as they were until the matches arrive.
+        guard let rows = build(store: store, query: query, accounts: accounts, serverMatches: serverMatches) else { return cachedRows }
+        cachedRows = rows
         cacheKey = key
         return cachedRows
     }
@@ -163,13 +171,14 @@ final class MacMailboxModel {
         return threads[..<last].last(where: { !ids.contains($0.id) })?.id
     }
 
-    private func build(store: MailStore, query: String, accounts: [String], serverMatches: Set<ThreadID>) -> [MacRow] {
+    /// nil while a search's matches are still being found.
+    private func build(store: MailStore, query: String, accounts: [String], serverMatches: Set<ThreadID>) -> [MacRow]? {
         let threads = store.threads
         // Searching looks through everything, in every list, as Mail does.
         if !query.isEmpty {
-            let matches = MailQuery.filter(store.searchableThreads, search: query, serverMatches: serverMatches)
+            guard let matches = searchMatches(query, store: store, serverMatches: serverMatches) else { return nil }
             // The best few first, as Mail's Top Results, then the rest.
-            let top = MailQuery.topResults(matches, search: query)
+            let top = searcher.topResults(matches)
             guard !top.isEmpty else { return matches.map(MacRow.thread) }
             let topIDs = Set(top.map(\.id))
             return [.group(String(localized: "Top Results"))] + top.map(MacRow.thread)
@@ -210,10 +219,22 @@ final class MacMailboxModel {
                 .sorted { $0.receivedAt > $1.receivedAt }.map(MacRow.thread)
         case .saved(let id):
             guard let saved = Organizer.shared.savedSearches.first(where: { $0.id.uuidString == id }) else { return [] }
-            return MailQuery.filter(store.searchableThreads, search: saved.query).map(MacRow.thread)
+            return searchMatches(saved.query, store: store)?.map(MacRow.thread)
         case .server, .label, .scheduled, .purchases, .attachments:
             return []
         }
+    }
+
+    /// What `query` finds, or nil while that's still being worked out.
+    /// Hidden ones (waiting out Undo) are left out after, so a swipe
+    /// doesn't search again.
+    private func searchMatches(_ query: String, store: MailStore, serverMatches: Set<ThreadID> = []) -> [Correspondence]? {
+        let request = MailSearch.Request(search: query, serverMatches: serverMatches,
+                                         source: [store.contentRevision, Int(Date.now.timeIntervalSince1970 / 60)])
+        guard let found = searcher.matches(for: request, in: { store.threadsIncludingHidden },
+                                           onFound: { [weak self] in self?.searchFound &+= 1 }) else { return nil }
+        let hidden = store.hiddenIDs
+        return hidden.isEmpty ? found : found.filter { !hidden.contains($0.id) }
     }
 }
 

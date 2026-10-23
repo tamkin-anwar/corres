@@ -99,6 +99,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         CorresTips.start()
         CrashCollector.shared.start()
+        // The search copy of every body is the first thing to give back.
+        NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: .main) { _ in
+            MailQuery.SearchIndex.shared.clear()
+        }
         WatchBridge.shared.start()
         HangReporter.shared.start()
         HangReporter.step("app started")
@@ -147,6 +151,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     /// actually finish.
     private func performLaunchWork() async {
         async let storeLoaded: Void = store.load()
+        // Removed from all your devices on another one: its mail here goes.
+        auth.onRemovedElsewhere = { [unowned self] email in
+            await pushService.disable(account: email)
+            await AccountRemoval.forgetHere(email, sync: sync, store: store, intelligence: mailIntelligence)
+        }
         await auth.restoreConnectedAccounts()
         await storeLoaded
         await store.migrateAttentionRulesIfNeeded()

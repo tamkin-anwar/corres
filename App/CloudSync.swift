@@ -8,9 +8,12 @@ import os
 /// Mail stay the record); this is only Corres's own state, in your
 /// private iCloud key-value store, where no one else can read it.
 ///
-/// Last change wins. Kept well under iCloud's 1 MB: each value stays near
-/// 60 KB (larger ones have been seen to stop syncing), and marks older
-/// than three months drop off.
+/// Marks and sender decisions merge one by one, the newest of each
+/// winning; rules, templates and saved searches merge item by item, with
+/// a note of what was deleted so it isn't brought back. Other settings:
+/// the last change wins. Kept well under iCloud's 1 MB: each value stays
+/// near 60 KB (larger ones have been seen to stop syncing), and marks
+/// older than three months drop off.
 @MainActor
 final class CloudSync {
     static let shared = CloudSync()
@@ -48,7 +51,23 @@ final class CloudSync {
         "corres.trailingShortSwipeAction", "corres.trailingLongSwipeAction",
         "corres.leadingShortSwipeAction", "corres.leadingLongSwipeAction",
         Organizer.rulesKey, Organizer.templatesKey, Organizer.searchesKey, Organizer.mutedKey,
+        removedItemsKey,
     ]
+
+    /// Lists of things with an `id`, merged item by item: a rule added on
+    /// your iPad while it was offline isn't lost to one added on your
+    /// iPhone meanwhile.
+    static let mergedLists: Set<String> = [Organizer.rulesKey, Organizer.templatesKey, Organizer.searchesKey]
+    /// Ids of items deleted from those lists, and when, so a merge doesn't
+    /// bring one back from a device that still had it.
+    static let removedItemsKey = "corres.removedItems"
+
+    /// Called when a rule, template or saved search is deleted.
+    static func noteRemoved(_ id: UUID) {
+        var removed = UserDefaults.standard.dictionary(forKey: removedItemsKey) as? [String: Date] ?? [:]
+        removed[id.uuidString] = .now
+        UserDefaults.standard.set(removed.filter { $0.value > .now.addingTimeInterval(-keepFor) }, forKey: removedItemsKey)
+    }
 
     private let cloud = NSUbiquitousKeyValueStore.default
     private let defaults = UserDefaults.standard
@@ -61,6 +80,11 @@ final class CloudSync {
     private static let log = Logger(subsystem: "studio.anwarcreative.corres", category: "cloud")
     private static let markChunk = 600
     private static let keepFor: TimeInterval = 90 * 86_400
+    /// Until iCloud has delivered what your other devices saved, marks
+    /// aren't written: a new device would otherwise replace them all with
+    /// its own one or two.
+    private var hasRemote = false
+    private var marksWaiting = false
 
     func start(store: MailStore) {
         #if DEBUG
@@ -70,7 +94,17 @@ final class CloudSync {
         self.store = store
         NotificationCenter.default.addObserver(forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
                                                object: cloud, queue: .main) { _ in
-            Task { @MainActor in await CloudSync.shared.pull() }
+            Task { @MainActor in
+                CloudSync.shared.remoteArrived()
+                await CloudSync.shared.pull()
+            }
+        }
+        // Already synced on an earlier launch: what's here is what iCloud
+        // had. A first launch waits for iCloud, or a minute (offline).
+        if cloud.object(forKey: "marks.0") != nil || cloud.object(forKey: "decisions") != nil { hasRemote = true }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(60))
+            CloudSync.shared.remoteArrived()
         }
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
             Task { @MainActor in CloudSync.shared.pushSettings() }
@@ -102,6 +136,8 @@ final class CloudSync {
     func recordDecision(_ decision: SenderDecision, sender: String, account: String) {
         guard !isApplying, account != "sample" else { return }
         decisions[sender.lowercased()] = Decision(decision: decision.rawValue, account: account, at: .now)
+        let remote: [String: Decision] = load("decisions") ?? [:]
+        for (other, decision) in remote where (decisions[other]?.at ?? .distantPast) < decision.at { decisions[other] = decision }
         save("decisions", decisions)
     }
 
@@ -140,18 +176,36 @@ final class CloudSync {
     /// just arrived may have a mark waiting for it).
     func pull() async {
         isApplying = true
-        defer { isApplying = false }
-        for key in Self.syncedSettings {
+        var pushBack = false
+        // Deletions first, so the lists below merge without them.
+        let localRemoved = defaults.dictionary(forKey: Self.removedItemsKey) as? [String: Date] ?? [:]
+        let remoteRemoved = cloud.object(forKey: "setting." + Self.removedItemsKey) as? [String: Date] ?? [:]
+        let removed = localRemoved.merging(remoteRemoved) { max($0, $1) }
+        if removed != localRemoved { defaults.set(removed, forKey: Self.removedItemsKey) }
+        if removed != remoteRemoved { pushBack = true }
+        for key in Self.syncedSettings where key != Self.removedItemsKey {
             guard let remote = cloud.object(forKey: "setting." + key),
                   !Self.same(remote, defaults.object(forKey: key)) else { continue }
-            defaults.set(remote, forKey: key)
+            if Self.mergedLists.contains(key), let remoteData = remote as? Data,
+               let merged = SyncMerge.list(local: defaults.data(forKey: key), remote: remoteData, removed: Set(removed.keys)) {
+                defaults.set(merged, forKey: key)
+                if merged != remoteData { pushBack = true }
+            } else {
+                defaults.set(remote, forKey: key)
+            }
         }
         CorresSettings.applyToCore()
         let remoteMarks: [String: Mark] = loadMarks()
         for (key, mark) in remoteMarks where (marks[key]?.at ?? .distantPast) < mark.at { marks[key] = mark }
-        if let remote: [String: Decision] = load("decisions") {
-            for (sender, decision) in remote where (decisions[sender]?.at ?? .distantPast) < decision.at { decisions[sender] = decision }
-        }
+        // Newer here than in iCloud (a write that lost a race): sent again.
+        let marksNewerHere = marks.contains { key, mark in (remoteMarks[key]?.at ?? .distantPast) < mark.at }
+        let remoteDecisions: [String: Decision] = load("decisions") ?? [:]
+        for (sender, decision) in remoteDecisions where (decisions[sender]?.at ?? .distantPast) < decision.at { decisions[sender] = decision }
+        let decisionsNewerHere = decisions.contains { sender, decision in (remoteDecisions[sender]?.at ?? .distantPast) < decision.at }
+        isApplying = false
+        if pushBack { pushSettings() }
+        if marksNewerHere { saveMarks() }
+        if decisionsNewerHere, hasRemote { save("decisions", decisions) }
         await apply()
     }
 
@@ -191,7 +245,20 @@ final class CloudSync {
 
     private static func key(_ id: ThreadID) -> String { "\(id.account)|\(id.providerID)" }
 
+    /// iCloud has delivered (or a minute went by offline): marks held back
+    /// meanwhile go now, merged with what's there.
+    private func remoteArrived() {
+        guard !hasRemote else { return }
+        hasRemote = true
+        if marksWaiting { saveMarks() }
+    }
+
+    /// Merged with what's in iCloud before writing, the newest of each
+    /// winning, so this device never writes over another's marks.
     private func saveMarks() {
+        guard hasRemote else { marksWaiting = true; return }
+        marksWaiting = false
+        for (key, mark) in loadMarks() where (marks[key]?.at ?? .distantPast) < mark.at { marks[key] = mark }
         let cutoff = Date.now.addingTimeInterval(-Self.keepFor)
         marks = marks.filter { $0.value.at > cutoff }
         let sorted = marks.sorted { $0.value.at > $1.value.at }

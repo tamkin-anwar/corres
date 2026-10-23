@@ -56,8 +56,8 @@ actor OutlookTokenProvider {
 
     func invalidateAccessToken(for account: String) { cache[account] = nil }
 
-    func remove(_ account: String) {
-        Keychain.delete(key: Self.key(account))
+    func remove(_ account: String, everywhere: Bool = true) {
+        Keychain.delete(key: Self.key(account), everywhere: everywhere)
         cache[account] = nil
     }
 

@@ -66,6 +66,14 @@ final class ActionQueue {
         actions.contains { $0.account == account && $0.threadID == threadID }
     }
 
+    /// The account was removed: what waited for it is dropped, not sent
+    /// later (if it's added back) or put back on screen.
+    func forget(account: String) {
+        let before = actions.count
+        actions.removeAll { $0.account == account }
+        if actions.count != before { save() }
+    }
+
     func enqueue(_ action: Action) {
         actions.append(action)
         save()

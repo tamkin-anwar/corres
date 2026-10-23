@@ -56,15 +56,17 @@ struct PurchasesView: View {
 
     private func load() async {
         let cutoff = Date.now.addingTimeInterval(-120 * 86_400)
-        let threads = store.searchableThreads
+        let recent = store.searchableThreads
             .filter { (accounts.isEmpty || accounts.contains($0.id.account)) && $0.receivedAt > cutoff }
-            .map { ($0, $0.mailKind) }
-            .filter { [.receipt, .shipping].contains($0.1) }
-            .sorted { $0.0.receivedAt > $1.0.receivedAt }
-            .prefix(200)
-        let snapshot = Array(threads)
         let computed = await Task.detached(priority: .userInitiated) {
-            snapshot.map { thread, kind -> Item in
+            // What kind each one is, off the main thread too (and kept per
+            // message, see `mailKind`).
+            let snapshot = recent
+                .map { ($0, $0.mailKind) }
+                .filter { [.receipt, .shipping].contains($0.1) }
+                .sorted { $0.0.receivedAt > $1.0.receivedAt }
+                .prefix(200)
+            return snapshot.map { thread, kind -> Item in
                 let text = thread.body.isEmpty ? thread.excerpt : thread.body
                 let glance = MailDigest.glance(text: text, subject: thread.subject, kind: kind)
                 let amount = glance?.facts.first { fact in fact.value.contains(where: { "$£€¥₹৳".contains($0) }) || fact.label == "Amount" }?.value

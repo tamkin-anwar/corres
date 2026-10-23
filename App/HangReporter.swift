@@ -32,7 +32,12 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         var awaiting = false
         var stallStart: DispatchTime?
         var breadcrumbs: [String] = []
+        /// Not pinging: the app is in the background (iOS) or another app
+        /// is in front (Mac), where nobody is waiting on the main thread.
+        var paused = false
     }
+    /// Wakes the watch when the app comes back.
+    private let resumed = DispatchSemaphore(value: 0)
 
     static var directory: URL? {
         guard let library = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first else { return nil }
@@ -46,6 +51,27 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         MXMetricManager.shared.add(self)
         // Diagnostics iOS already had waiting from an earlier run.
         didReceive(MXMetricManager.shared.pastDiagnosticPayloads)
+        // Only while Corres is in use: pinging the main thread ten times a
+        // second in the background kept it awake for nothing.
+        #if canImport(UIKit)
+        setActive(MainActor.assumeIsolated { UIApplication.shared.applicationState != .background })
+        let center = NotificationCenter.default
+        center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.setActive(false)
+        }
+        center.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.setActive(true)
+        }
+        #else
+        setActive(MainActor.assumeIsolated { NSApplication.shared.isActive })
+        let center = NotificationCenter.default
+        center.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.setActive(false)
+        }
+        center.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.setActive(true)
+        }
+        #endif
         // Its own thread: the watch never returns, and on `queue` it kept
         // every report after it from being written.
         let watcher = Thread { [weak self] in self?.watch() }
@@ -66,8 +92,27 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
 
     // MARK: Main-thread watch
 
+    /// Pauses the watch, or picks it up again from now: time spent in the
+    /// background isn't a stall.
+    private func setActive(_ active: Bool) {
+        let wake = lock.withLock { state -> Bool in
+            let wasPaused = state.paused
+            state.paused = !active
+            guard active, wasPaused else { return false }
+            state.awaiting = false
+            state.stallStart = nil
+            state.lastPong = .now()
+            return true
+        }
+        if wake { resumed.signal() }
+    }
+
     private func watch() {
         while true {
+            if lock.withLock({ $0.paused }) {
+                resumed.wait()
+                continue
+            }
             let shouldPing = lock.withLock { state -> Bool in
                 if state.awaiting {
                     let waited = DispatchTime.now().uptimeNanoseconds - state.lastPong.uptimeNanoseconds

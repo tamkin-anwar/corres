@@ -659,6 +659,49 @@ struct SwiftDataMailRepositoryTests {
         #expect(ids == ["conv2"])
     }
 
+    /// An iCloud pass can report hundreds of messages at once, several from
+    /// one conversation: fetched together, applied in order, and only the
+    /// conversation's latest message counts.
+    @Test func manyRemoteChangesApplyTogether() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        let account = "me@icloud.test"
+        func thread(_ n: Int) -> Correspondence {
+            Correspondence(id: ThreadID(account: account, providerID: "conv\(n)"), sender: "S", senderEmail: "s@x.test",
+                           organization: "", subject: "s", excerpt: "", body: "", latestMessageID: "1:\(n):INBOX",
+                           receivedAt: now, dueAt: nil, reason: InboxClassifier.personalUnreadReason,
+                           attention: .needsYou, isUnread: true, labelIds: ["INBOX", "UNREAD"])
+        }
+        try await repository.upsert((1...1_200).map(thread), isInitialSync: true)
+        func change(_ n: Int, message: String? = nil, labels: [String]? = ["INBOX"], removed: Bool = false) -> RemoteMessageChange {
+            RemoteMessageChange(threadID: ThreadID(account: account, providerID: "conv\(n)"), messageID: message ?? "1:\(n):INBOX",
+                                currentLabelIds: removed ? nil : labels, removed: removed)
+        }
+        var changes = (1...1_100).map { change($0) }
+        changes += [
+            change(1_101, removed: true),
+            change(1_101, labels: ["INBOX", "STARRED"]),
+            change(1_102, message: "1:999999:INBOX"),
+            change(1_103, labels: ["INBOX", "UNREAD"]),
+            change(1_104),
+            change(1_104, labels: ["INBOX", "UNREAD", "STARRED"]),
+            change(5_000),
+        ]
+        let changed = try await repository.applyRemoteChanges(changes)
+
+        let byID = Dictionary(uniqueKeysWithValues: try await repository.threads().map { ($0.id.providerID, $0) })
+        // 1,100 read, one removed, one read then flagged; the rest no-ops.
+        #expect(changed == 1_100 + 1 + 2)
+        #expect(byID["conv1"]?.isUnread == false)
+        #expect(byID["conv1100"]?.isUnread == false)
+        #expect(byID["conv1101"] == nil)
+        #expect(byID["conv1102"]?.isUnread == true)
+        #expect(byID["conv1103"]?.isUnread == true)
+        #expect(byID["conv1104"]?.isUnread == true)
+        #expect(byID["conv1104"]?.isFlagged == true)
+        #expect(byID["conv1200"]?.isUnread == true)
+        #expect(byID.count == 1_199)
+    }
+
     /// Metadata-first sync stores the snippet as the body until the full
     /// message loads; loading fills it in, unless a newer message arrived
     /// in the meantime.

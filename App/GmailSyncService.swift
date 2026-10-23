@@ -552,6 +552,10 @@ final class GmailSyncService {
 
     private func dropCursor(for account: String) {
         defaults.removeObject(forKey: Self.cursorKey(for: account))
+        // Whatever the provider: it may already be forgotten.
+        fileCursors[account] = nil
+        fileCursorsRead.insert(account)
+        CursorFiles.remove(account)
         defaults.removeObject(forKey: Self.missedIDsKey(for: account))
         defaults.removeObject(forKey: Self.olderTokenKey(for: account))
         defaults.removeObject(forKey: Self.olderExhaustedKey(for: account))
@@ -631,14 +635,79 @@ final class GmailSyncService {
     private static func olderExhaustedKey(for account: String) -> String { "corres.gmail.olderInboxExhausted.\(account)" }
 
     private func historyCursor(for account: String) -> String? {
-        defaults.string(forKey: Self.cursorKey(for: account))
+        guard MailAccounts.provider(for: account).usesIMAP else { return defaults.string(forKey: Self.cursorKey(for: account)) }
+        if fileCursorsRead.contains(account) { return fileCursors[account] }
+        // First read this launch, after any write still waiting.
+        var value = CursorFiles.queue.sync { CursorFiles.read(account) }
+        if value == nil, let old = defaults.string(forKey: Self.cursorKey(for: account)) {
+            // Kept in UserDefaults by an earlier build: moved to its file, once.
+            value = old
+            CursorFiles.write(old, for: account, thenRemoveDefault: Self.cursorKey(for: account))
+        }
+        fileCursorsRead.insert(account)
+        fileCursors[account] = value
+        return value
     }
 
     private func setHistoryCursor(_ value: String, for account: String) {
-        defaults.set(value, forKey: Self.cursorKey(for: account))
+        guard MailAccounts.provider(for: account).usesIMAP else {
+            defaults.set(value, forKey: Self.cursorKey(for: account))
+            return
+        }
+        // A pass that changed nothing gives back the same cursor.
+        if fileCursorsRead.contains(account), fileCursors[account] == value { return }
+        fileCursorsRead.insert(account)
+        fileCursors[account] = value
+        CursorFiles.write(value, for: account)
     }
 
     private static func cursorKey(for account: String) -> String { "corres.gmail.historyId.\(account)" }
+
+    /// An IMAP account's cursor (iCloud's, any other server's) holds each
+    /// synced folder's state and its newest messages, tens of KB: kept in
+    /// a file of its own, written off the main thread and only when it
+    /// changed, instead of rewriting UserDefaults every 20 seconds.
+    /// Gmail's and Outlook's are small and stay in UserDefaults. What was
+    /// last read or written is kept here, so only a launch reads the file.
+    private var fileCursors: [String: String] = [:]
+    private var fileCursorsRead: Set<String> = []
+
+    private enum CursorFiles {
+        /// One at a time, in order: a later cursor never lands before an
+        /// earlier one, and a read waits for the writes before it.
+        static let queue = DispatchQueue(label: "studio.anwarcreative.corres.cursors", qos: .utility)
+        static var directory: URL { URL.applicationSupportDirectory.appending(path: "sync-cursors", directoryHint: .isDirectory) }
+
+        static func url(for account: String) -> URL {
+            let name = account.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? account
+            return directory.appending(path: "\(name).json")
+        }
+
+        /// Call on `queue`.
+        static func read(_ account: String) -> String? {
+            (try? Data(contentsOf: url(for: account))).flatMap { String(data: $0, encoding: .utf8) }
+        }
+
+        /// Written whole or not at all. If the app ends before it lands,
+        /// the next sync starts from the cursor before: work done twice,
+        /// nothing missed.
+        static func write(_ value: String, for account: String, thenRemoveDefault key: String? = nil) {
+            queue.async {
+                try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                do {
+                    try Data(value.utf8).write(to: url(for: account), options: .atomic)
+                    if let key { UserDefaults.standard.removeObject(forKey: key) }
+                } catch {
+                    Logger(subsystem: "studio.anwarcreative.corres", category: "sync")
+                        .error("Saving the sync cursor failed: \(String(describing: error), privacy: .public)")
+                }
+            }
+        }
+
+        static func remove(_ account: String) {
+            queue.async { try? FileManager.default.removeItem(at: url(for: account)) }
+        }
+    }
 
     private func missedMessageIDs(for account: String) -> [String] {
         defaults.stringArray(forKey: Self.missedIDsKey(for: account)) ?? []

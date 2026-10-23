@@ -121,7 +121,22 @@ struct MacSidebar: View {
 
     private var needsYouCount: Int { store.overview().needsYou.count }
     private var waitingCount: Int { store.overview().waitingCount }
-    private var newSendersCount: Int { Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count }
+    /// Counted once per change to the mail, not on every redraw (a drag
+    /// over the sidebar redraws it as it moves).
+    private final class SendersCount {
+        var revision: Int?
+        var count = 0
+    }
+    @State private var sendersCount = SendersCount()
+
+    private var newSendersCount: Int {
+        let cache = sendersCount
+        if cache.revision != store.revision {
+            cache.count = Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count
+            cache.revision = store.revision
+        }
+        return cache.count
+    }
     private var primaryUnread: Int { store.overview().primaryUnread }
 
     /// What's happening with your mail, and Get New Mail one click away.

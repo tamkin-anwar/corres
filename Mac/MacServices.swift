@@ -64,6 +64,7 @@ final class MacServices {
             Task { @MainActor in
                 Organizer.shared.applyWidgetHandoffs()
                 ServerRules.shared.retryIfFailed()
+                await Organizer.shared.outbox?.retryFailedQuietly()
             }
         }
         labelDirectory = LabelDirectory()
@@ -131,6 +132,11 @@ final class MacServices {
         // The mail first, then the accounts: the list doesn't wait on the
         // keychain.
         let loading = Task { await store.load() }
+        // Removed from all your devices on another one: its mail here goes.
+        auth.onRemovedElsewhere = { [unowned self] email in
+            await pushService.disable(account: email)
+            await AccountRemoval.forgetHere(email, sync: sync, store: store, intelligence: intelligence)
+        }
         await auth.restoreConnectedAccounts()
         HangReporter.step("accounts restored")
         await loading.value

@@ -55,12 +55,7 @@ struct MessageList: NSViewRepresentable {
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.parent = self
-        // Bigger or Smaller: every row measured and drawn again.
-        if context.coordinator.scale != textScale {
-            context.coordinator.scale = textScale
-            context.coordinator.table?.reloadData()
-        }
-        context.coordinator.apply(rows: rows, selection: selection)
+        context.coordinator.apply(rows: rows, selection: selection, scale: textScale)
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -69,48 +64,155 @@ struct MessageList: NSViewRepresentable {
     final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
         var parent: MessageList
         weak var table: MessageTableView?
-        var scale = CorresSettings.textScale
         private var rows: [MacRow] = []
+        /// Each row's id and what it shows, kept beside `rows` so an update
+        /// compares a few fields per row, not every conversation whole.
+        private var keys: [String] = []
+        private var looks: [RowLook?] = []
+        /// What every row's height hangs on: Bigger or Smaller, and whether
+        /// the list shows reasons.
+        private var layout: Layout?
+        private var groupHeight: CGFloat = 30
+        private var threadHeight: CGFloat = 76
+        /// The selected conversations the list last scrolled to, so a
+        /// reshuffle that keeps the same selection doesn't jump to it again.
+        private var shownSelection: Set<ThreadID> = []
         private var applyingSelection = false
 
         init(_ parent: MessageList) { self.parent = parent }
 
-        func apply(rows newRows: [MacRow], selection: Set<ThreadID>) {
+        private struct Layout: Equatable {
+            let scale: Double
+            let showsReasons: Bool
+        }
+
+        func apply(rows newRows: [MacRow], selection: Set<ThreadID>, scale: Double) {
             guard let table else { return }
-            if newRows != rows {
-                let oldIDs = rows.map(Self.key)
-                let newIDs = newRows.map(Self.key)
-                let newSet = Set(newIDs)
-                // Only removals (archive, delete, a move): slide those rows
-                // away rather than redrawing the whole list.
-                let removed = IndexSet(oldIDs.indices.filter { !newSet.contains(oldIDs[$0]) })
-                let kept = oldIDs.enumerated().filter { !removed.contains($0.offset) }.map(\.element)
+            let newLayout = Layout(scale: scale, showsReasons: parent.showsReasons)
+            if newLayout != layout {
+                layout = newLayout
+                // Read once here, not once per row: the factor comes from
+                // the settings store.
+                let factor = MacListScale.factor
+                groupHeight = (30 * factor).rounded()
+                threadHeight = ((newLayout.showsReasons ? 92 : 76) * factor).rounded()
+                // Bigger or Smaller, or another kind of list: every row
+                // measured and drawn again.
                 rows = newRows
-                // A conversation leaving the list on its own (answered, say)
-                // stays open in the reading pane, as in Mail: the update
-                // doesn't count as you choosing nothing.
-                applyingSelection = true
-                defer { applyingSelection = false }
-                if !removed.isEmpty, kept == newIDs, removed.count < 50 {
-                    // System Settings › Accessibility › Reduce Motion: no slide.
-                    let motion: NSTableView.AnimationOptions = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? [] : [.effectFade, .slideUp]
-                    table.removeRows(at: removed, withAnimation: motion)
-                    // Content in the kept rows may have changed too (read state).
-                    table.reloadData(forRowIndexes: IndexSet(integersIn: 0..<newRows.count), columnIndexes: [0])
-                } else if oldIDs == newIDs {
-                    let changed = IndexSet(newRows.indices)
-                    table.reloadData(forRowIndexes: changed, columnIndexes: [0])
+                keys = newRows.map(Self.key)
+                looks = newRows.map(RowLook.init)
+                withSelectionHeld { table.reloadData() }
+            } else if !Self.sameStorage(rows, newRows) {
+                update(table, to: newRows)
+            }
+            let wanted = IndexSet(rows.indices.filter { rows[$0].thread.map { selection.contains($0.id) } ?? false })
+            if table.selectedRowIndexes != wanted {
+                withSelectionHeld { table.selectRowIndexes(wanted, byExtendingSelection: false) }
+                // Only when the selection itself changed (a key, the next
+                // conversation after an archive): new mail reshuffling the
+                // list leaves the view where it is.
+                let shown = Set(wanted.compactMap { rows[$0].thread?.id })
+                if shown != shownSelection, let first = wanted.first { table.scrollRowToVisible(first) }
+                shownSelection = shown
+            }
+        }
+
+        /// From the rows on screen to `newRows`: rows that left are removed,
+        /// rows that came are inserted, rows that moved are moved, and only
+        /// rows whose content changed are drawn again. A different list
+        /// altogether (another mailbox) is drawn again whole.
+        private func update(_ table: MessageTableView, to newRows: [MacRow]) {
+            let newKeys = newRows.map(Self.key)
+            let newLooks = newRows.map(RowLook.init)
+            if newKeys == keys {
+                let changed = IndexSet(newLooks.indices.filter { newLooks[$0] != looks[$0] })
+                rows = newRows
+                looks = newLooks
+                if !changed.isEmpty { table.reloadData(forRowIndexes: changed, columnIndexes: [0]) }
+                return
+            }
+            let oldLooks = looks
+            let oldIndex = Dictionary(keys.enumerated().map { ($0.element, $0.offset) }, uniquingKeysWith: { first, _ in first })
+            let edits = RowEdits(from: keys, to: newKeys)
+            // The row at the top of the view stays put when mail arrives or
+            // leaves above it, unless the list is already at the top, where
+            // new mail should show.
+            let sameList = edits.map { $0.removed.count + $0.inserted.count <= RowEdits.limit } ?? false
+            let anchor = sameList ? topAnchor(table, leaving: edits?.removed ?? []) : nil
+            rows = newRows
+            keys = newKeys
+            looks = newLooks
+            // A conversation leaving the list on its own (answered, say)
+            // stays open in the reading pane, as in Mail: the update
+            // doesn't count as you choosing nothing.
+            withSelectionHeld {
+                if let edits, edits.isSmall {
+                    if edits.moves.isEmpty, edits.inserted.isEmpty {
+                        // Only removals (archive, delete, a move): slide those
+                        // rows away. Reduce Motion: no slide.
+                        let motion: NSTableView.AnimationOptions = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? [] : [.effectFade, .slideUp]
+                        table.removeRows(at: edits.removed, withAnimation: motion)
+                    } else {
+                        // Arrivals and reorders land at once, as a redraw did.
+                        NSAnimationContext.runAnimationGroup { context in
+                            context.duration = 0
+                            context.allowsImplicitAnimation = false
+                            table.beginUpdates()
+                            table.removeRows(at: edits.removed, withAnimation: [])
+                            for move in edits.moves { table.moveRow(at: move.from, to: move.to) }
+                            for run in edits.inserted.rangeView { table.insertRows(at: IndexSet(integersIn: run), withAnimation: []) }
+                            table.endUpdates()
+                        }
+                    }
+                    // Kept rows whose content changed (read, flagged, a reply).
+                    let changed = IndexSet(newKeys.indices.filter { index in
+                        guard !edits.inserted.contains(index), let old = oldIndex[newKeys[index]] else { return false }
+                        return oldLooks[old] != newLooks[index]
+                    })
+                    if !changed.isEmpty { table.reloadData(forRowIndexes: changed, columnIndexes: [0]) }
                 } else {
                     table.reloadData()
                 }
             }
-            let wanted = IndexSet(rows.indices.filter { rows[$0].thread.map { selection.contains($0.id) } ?? false })
-            if table.selectedRowIndexes != wanted {
-                applyingSelection = true
-                table.selectRowIndexes(wanted, byExtendingSelection: false)
-                applyingSelection = false
-                if let first = wanted.first { table.scrollRowToVisible(first) }
-            }
+            if let anchor { restore(anchor, in: table) }
+        }
+
+        private func withSelectionHeld(_ body: () -> Void) {
+            applyingSelection = true
+            defer { applyingSelection = false }
+            body()
+        }
+
+        /// The first row in view that stays in the list, and how far it
+        /// sits from the top; nil when the list is scrolled to the very top.
+        private func topAnchor(_ table: NSTableView, leaving removed: IndexSet) -> (key: String, offset: CGFloat)? {
+            guard let clip = table.enclosingScrollView?.contentView else { return nil }
+            var visible = clip.bounds
+            visible.origin.y += clip.contentInsets.top
+            visible.size.height -= clip.contentInsets.top
+            guard visible.minY > 1 else { return nil }
+            let inView = table.rows(in: visible)
+            guard let row = (inView.location..<inView.location + inView.length).first(where: {
+                keys.indices.contains($0) && !removed.contains($0)
+            }) else { return nil }
+            return (keys[row], table.rect(ofRow: row).minY - clip.bounds.minY)
+        }
+
+        /// Scrolls so the anchored row sits where it was.
+        private func restore(_ anchor: (key: String, offset: CGFloat), in table: NSTableView) {
+            guard let scroll = table.enclosingScrollView, let row = keys.firstIndex(of: anchor.key) else { return }
+            let clip = scroll.contentView
+            var bounds = clip.bounds
+            bounds.origin.y = table.rect(ofRow: row).minY - anchor.offset
+            guard abs(bounds.origin.y - clip.bounds.origin.y) > 0.5 else { return }
+            clip.scroll(to: clip.constrainBoundsRect(bounds).origin)
+            scroll.reflectScrolledClipView(clip)
+        }
+
+        /// The same array handed in again (the mailbox's cached rows on a
+        /// selection change): nothing to compare.
+        private static func sameStorage(_ a: [MacRow], _ b: [MacRow]) -> Bool {
+            a.count == b.count && a.withUnsafeBufferPointer { a in b.withUnsafeBufferPointer { a.baseAddress == $0.baseAddress } }
         }
 
         private static func key(_ row: MacRow) -> String {
@@ -137,10 +239,7 @@ struct MessageList: NSViewRepresentable {
         }
 
         func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
-            switch rows[row] {
-            case .group: (30 * MacListScale.factor).rounded()
-            case .thread: ((parent.showsReasons ? 92 : 76) * MacListScale.factor).rounded()
-            }
+            if case .group = rows[row] { groupHeight } else { threadHeight }
         }
 
         func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
@@ -168,6 +267,8 @@ struct MessageList: NSViewRepresentable {
         func tableViewSelectionDidChange(_ notification: Notification) {
             guard !applyingSelection, let table else { return }
             let ids = Set(table.selectedRowIndexes.compactMap { rows.indices.contains($0) ? rows[$0].thread?.id : nil })
+            // Chosen here, so already in view.
+            shownSelection = ids
             if ids != parent.selection { parent.selection = ids }
         }
 
@@ -209,6 +310,111 @@ struct MessageList: NSViewRepresentable {
             if !(parent.selection.contains(thread.id)) { parent.selection = [thread.id] }
             return parent.menu(thread)
         }
+    }
+}
+
+/// What a conversation's row shows: when none of it changed, the row
+/// isn't drawn again.
+private struct RowLook: Equatable {
+    let sender: String
+    let senderEmail: String?
+    let toRecipients: [String]
+    let ccRecipients: [String]
+    let subject: String
+    let excerpt: String
+    let reason: String
+    let receivedAt: Date
+    let snoozedUntil: Date?
+    let isUnread: Bool
+    let isPinned: Bool
+    let isFlagged: Bool
+    let hasAttachments: Bool
+
+    /// Nil for a group's label, which its id already says all of.
+    init?(_ row: MacRow) {
+        guard let thread = row.thread else { return nil }
+        sender = thread.sender
+        senderEmail = thread.senderEmail
+        toRecipients = thread.toRecipients
+        ccRecipients = thread.ccRecipients
+        subject = thread.subject
+        excerpt = thread.excerpt
+        reason = thread.reason
+        receivedAt = thread.receivedAt
+        snoozedUntil = thread.snoozedUntil
+        isUnread = thread.isUnread
+        isPinned = thread.isPinned
+        isFlagged = thread.isFlagged
+        hasAttachments = !thread.attachments.isEmpty
+    }
+}
+
+/// The table edits that turn one list of row ids into the next: removals
+/// at their old positions, then moves one at a time, then insertions at
+/// their new positions. Nil when an id repeats, which no diff can place.
+struct RowEdits {
+    /// Past this many edits, drawing the list again is quicker and clearer.
+    static let limit = 100
+
+    private(set) var removed = IndexSet()
+    private(set) var moves: [(from: Int, to: Int)] = []
+    private(set) var inserted = IndexSet()
+    /// Few enough edits to apply one by one.
+    private(set) var isSmall = false
+
+    init?(from old: [String], to new: [String]) {
+        var oldIndex: [String: Int] = [:]
+        for (index, key) in old.enumerated() where oldIndex.updateValue(index, forKey: key) != nil { return nil }
+        var newKeys = Set<String>()
+        for key in new where !newKeys.insert(key).inserted { return nil }
+        removed = IndexSet(old.indices.filter { !newKeys.contains(old[$0]) })
+        inserted = IndexSet(new.indices.filter { oldIndex[new[$0]] == nil })
+        // The rows in both lists: as they'll be, and as they are once the
+        // removals are done.
+        let kept = new.filter { oldIndex[$0] != nil }
+        var current = old.filter { newKeys.contains($0) }
+        var position: [String: Int] = [:]
+        for (index, key) in current.enumerated() { position[key] = index }
+        // The most rows already in the right order stay; the rest move.
+        let stays = Self.longestRising(kept.compactMap { position[$0] })
+        guard removed.count + (kept.count - stays.count) + inserted.count <= Self.limit else { return }
+        for index in kept.indices where !stays.contains(index) {
+            guard let from = current.firstIndex(of: kept[index]) else { return }
+            current.remove(at: from)
+            // Right after the row that comes before it in the new list.
+            var to = 0
+            if index > 0 {
+                guard let before = current.firstIndex(of: kept[index - 1]) else { return }
+                to = before + 1
+            }
+            current.insert(kept[index], at: to)
+            if from != to { moves.append((from, to)) }
+        }
+        isSmall = current == kept
+    }
+
+    /// The positions in `values` of its longest rising run, gaps allowed.
+    /// The values are all different.
+    static func longestRising(_ values: [Int]) -> Set<Int> {
+        // tails[n]: where the smallest last value of a run n + 1 long is.
+        var tails: [Int] = []
+        var previous = [Int](repeating: -1, count: values.count)
+        for (index, value) in values.enumerated() {
+            var low = 0, high = tails.count
+            while low < high {
+                let middle = (low + high) / 2
+                if values[tails[middle]] < value { low = middle + 1 } else { high = middle }
+            }
+            if low > 0 { previous[index] = tails[low - 1] }
+            if low == tails.count { tails.append(index) } else { tails[low] = index }
+        }
+        var run = Set<Int>()
+        var index = tails.last ?? -1
+        while index >= 0 {
+            run.insert(index)
+            index = previous[index]
+        }
+        return run
     }
 }
 

@@ -1,4 +1,5 @@
 import Foundation
+import Network
 import Observation
 import os
 
@@ -43,7 +44,12 @@ final class OutboxService {
     }
 
     private(set) var pending: Pending?
-    private(set) var failed: FailedSend?
+    /// Every send that didn't go, oldest first, each kept until it's sent
+    /// or you discard it. Only one used to be kept, so a second failure
+    /// hid the first.
+    private(set) var failedSends: [FailedSend] = []
+    /// The one the banner shows.
+    var failed: FailedSend? { failedSends.first }
 
     /// An email you stepped away from mid-way, kept like Mail's tucked-away
     /// compose: a pill at the bottom reopens it where you left off, and it's
@@ -167,7 +173,17 @@ final class OutboxService {
         self.store = store
         self.auth = auth
         self.repository = repository
+        // Back online: what failed for want of a connection goes, without
+        // asking (Mail leaves it in the Outbox for you to tap).
+        network.pathUpdateHandler = { path in
+            guard path.status == .satisfied else { return }
+            Task { @MainActor in await self.retryFailedQuietly() }
+        }
+        network.start(queue: DispatchQueue(label: "studio.anwarcreative.corres.outbox"))
     }
+
+    @ObservationIgnored private let network = NWPathMonitor()
+    @ObservationIgnored private var retryingQuietly = false
 
     /// Called once at app launch. A record still `pending` means the app was
     /// force-quit before its undo window ever finished or was cancelled; the
@@ -195,9 +211,30 @@ final class OutboxService {
                 // and risks a real duplicate.
                 await commit(entry.draft, thread: resolveThread(for: entry.draft), id: entry.id, checkForExistingSendFirst: true)
             case .failed:
-                failed = FailedSend(id: entry.id, draft: entry.draft)
+                markFailed(entry.id, entry.draft)
             }
         }
+        // Tried again once now: most failures were a lost connection.
+        await retryFailedQuietly()
+    }
+
+    /// Each failed send tried again, quietly: the Message-ID it kept means
+    /// Gmail is asked first, so one that did go out is never sent twice.
+    /// Whatever still can't go stays listed.
+    func retryFailedQuietly() async {
+        guard !retryingQuietly, !failedSends.isEmpty, auth.hasRestored else { return }
+        retryingQuietly = true
+        defer { retryingQuietly = false }
+        for failedSend in failedSends {
+            failedSends.removeAll { $0.id == failedSend.id }
+            await commit(failedSend.draft, thread: resolveThread(for: failedSend.draft), id: failedSend.id,
+                         checkForExistingSendFirst: true, quietly: true)
+        }
+    }
+
+    private func markFailed(_ id: UUID, _ draft: Draft) {
+        failedSends.removeAll { $0.id == id }
+        failedSends.append(FailedSend(id: id, draft: draft))
     }
 
     /// `thread` is the conversation being replied to or forwarded, when
@@ -274,18 +311,18 @@ final class OutboxService {
 
     func retryFailed() {
         guard let failed else { return }
-        self.failed = nil
+        failedSends.removeFirst()
         queueSend(failed.draft, replyingTo: resolveThread(for: failed.draft), reusing: failed.id)
     }
 
     func discardFailed() {
         guard let failed else { return }
-        self.failed = nil
+        failedSends.removeFirst()
         let id = failed.id
         Task { try? await repository.removeOutboxEntry(id: id) }
     }
 
-    private func commit(_ draft: Draft, thread: Correspondence?, id: UUID, checkForExistingSendFirst: Bool = false) async {
+    private func commit(_ draft: Draft, thread: Correspondence?, id: UUID, checkForExistingSendFirst: Bool = false, quietly: Bool = false) async {
         guard committing.insert(id).inserted else { return }
         defer { committing.remove(id) }
         if pending?.id == id {
@@ -304,8 +341,8 @@ final class OutboxService {
         if isReal, sendingAccount == nil {
             Logger(subsystem: "studio.anwarcreative.corres", category: "outbox")
                 .error("Send failed: no connected account to send from")
-            failed = FailedSend(id: id, draft: draft)
-            Assistive.announce(String(localized: "Couldn't send \u{201C}\(draft.subject)\u{201D}. Retry or Discard."))
+            markFailed(id, draft)
+            if !quietly { Assistive.announce(String(localized: "Couldn't send \u{201C}\(draft.subject)\u{201D}. Retry or Discard.")) }
             try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .failed))
             return
         }
@@ -321,8 +358,8 @@ final class OutboxService {
                 // Why it failed, for Console: the banner only says it did.
                 Logger(subsystem: "studio.anwarcreative.corres", category: "outbox")
                     .error("Send failed: \(String(describing: error), privacy: .public)")
-                failed = FailedSend(id: id, draft: draft)
-                Assistive.announce(String(localized: "Couldn't send \u{201C}\(draft.subject)\u{201D}. Retry or Discard."))
+                markFailed(id, draft)
+                if !quietly { Assistive.announce(String(localized: "Couldn't send \u{201C}\(draft.subject)\u{201D}. Retry or Discard.")) }
                 try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .failed))
                 return
             }

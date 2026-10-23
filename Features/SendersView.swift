@@ -19,12 +19,53 @@ struct SendersView: View {
     @State private var vips: [String] = CorresSettings.vips.sorted()
     @State private var showingScreener = false
     @State private var suggestions: [SenderHabits.Suggestion] = []
+    @State private var cache = Directory()
 
-    private var all: [SenderSummary] { SenderDirectory.summaries(store.threads) }
+    /// Everyone's summary, the count for each Show option and VIPs' names,
+    /// worked out once per change to the mail; and the rows shown, once
+    /// per change to those or to the search, filter or order. Each redraw
+    /// and keystroke used to go through the whole mailbox again.
+    private final class Directory {
+        var revision: Int?
+        var senders: [SenderSummary] = []
+        var counts: [SenderDirectory.Filter: Int] = [:]
+        /// The name on each sender's mail, by lowercased address.
+        var names: [String: String] = [:]
+        /// New senders waiting to be screened.
+        var waiting = 0
+        var shownKey: String?
+        var shown: [SenderSummary] = []
+    }
+
+    private var directory: Directory {
+        let cache = cache
+        if cache.revision != store.revision {
+            let threads = store.threads
+            cache.senders = SenderDirectory.summaries(threads)
+            cache.counts = Dictionary(uniqueKeysWithValues: SenderDirectory.Filter.allCases.map {
+                ($0, SenderDirectory.filtered(cache.senders, $0).count)
+            })
+            var names: [String: String] = [:]
+            for thread in threads {
+                guard let email = thread.senderEmail?.lowercased(), names[email] == nil else { continue }
+                names[email] = thread.sender
+            }
+            cache.names = names
+            cache.waiting = Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count
+            cache.revision = store.revision
+            cache.shownKey = nil
+        }
+        let key = "\(filter.rawValue)|\(order.rawValue)|\(search)"
+        if cache.shownKey != key {
+            cache.shown = SenderDirectory.filtered(cache.senders, filter, search: search, order: order)
+            cache.shownKey = key
+        }
+        return cache
+    }
 
     var body: some View {
-        let senders = all
-        let shown = SenderDirectory.filtered(senders, filter, search: search, order: order)
+        let directory = directory
+        let shown = directory.shown
         container {
             #if os(macOS)
             // A settings window has no toolbar search, so it's a field here.
@@ -50,7 +91,7 @@ struct SendersView: View {
             Section {
                 Picker("Show", selection: $filter) {
                     ForEach(SenderDirectory.Filter.allCases, id: \.self) { item in
-                        Text(title(item, count: SenderDirectory.filtered(senders, item).count)).tag(item)
+                        Text(title(item, count: directory.counts[item] ?? 0)).tag(item)
                     }
                 }
                 .pickerStyle(.menu)
@@ -184,7 +225,7 @@ struct SendersView: View {
                     CorresSettings.applyToCore()
                     store.listsShouldRebuild()
                 }
-            let waiting = Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count
+            let waiting = directory.waiting
             Button {
                 showingScreener = true
             } label: {
@@ -237,7 +278,7 @@ struct SendersView: View {
     }
 
     private func vipName(for email: String) -> String {
-        store.threads.first { $0.senderEmail?.lowercased() == email }.map(\.sender) ?? email
+        directory.names[email] ?? email
     }
 
     private func row(_ sender: SenderSummary) -> some View {

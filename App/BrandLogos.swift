@@ -8,18 +8,32 @@ import Observation
 /// company sees that server, never the person reading, and the relay is
 /// sent a domain, never an address or anything from an email. Kept on this
 /// device afterwards; Settings › Private by Design can turn them off.
-@MainActor @Observable
+@MainActor
 final class BrandLogos {
     static let shared = BrandLogos()
 
     static let enabledKey = "corres.companyLogos"
     static var isEnabled: Bool { UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true }
 
+    /// One domain's logo, watched on its own: a logo arriving redraws the
+    /// avatars for that company, not every avatar on screen.
+    @MainActor @Observable
+    fileprivate final class Slot {
+        var image: PlatformImage?
+    }
+
     /// Logos ready to draw, by domain.
-    private(set) var images: [String: PlatformImage] = [:]
-    @ObservationIgnored private var checked: Set<String> = []
-    @ObservationIgnored private var waiting: [String] = []
-    @ObservationIgnored private var running = 0
+    private var slots: [String: Slot] = [:]
+    private var checked: Set<String> = []
+    private var waiting: [String] = []
+    private var running = 0
+
+    private func slot(_ domain: String) -> Slot {
+        if let slot = slots[domain] { return slot }
+        let slot = Slot()
+        slots[domain] = slot
+        return slot
+    }
 
     nonisolated private static let endpoint = URL(string: "https://us-central1-corres-509320.cloudfunctions.net/corres-logos")!
     /// People's own addresses: a Gmail or iCloud logo beside a friend's
@@ -47,7 +61,7 @@ final class BrandLogos {
     /// arrives.
     func logo(for email: String) -> PlatformImage? {
         guard Self.isEnabled, let domain = Self.domain(of: email) else { return nil }
-        if let image = images[domain] { return image }
+        if let image = slot(domain).image { return image }
         if checked.insert(domain).inserted {
             waiting.append(domain)
             pump()
@@ -71,7 +85,7 @@ final class BrandLogos {
             Task {
                 let image = await Self.load(domain)
                 running -= 1
-                if let image { images[domain] = image }
+                if let image { slot(domain).image = image }
                 pump()
             }
         }
@@ -109,7 +123,7 @@ final class BrandLogos {
 
     /// Settings: logos off, and the ones kept on this device forgotten.
     func forgetAll() {
-        images = [:]
+        for slot in slots.values { slot.image = nil }
         checked = []
         waiting = []
         if let folder = Self.folder { try? FileManager.default.removeItem(at: folder) }

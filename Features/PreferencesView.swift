@@ -655,7 +655,7 @@ private struct AccountDetailView: View {
             Section {
                 Button("Remove Account", role: .destructive) { confirmingRemoval = true }
             } footer: {
-                Text("Removes this account and its mail from Corres on this \(Device.name). Nothing is deleted from \(MailAccounts.serviceTitle(for: account.email)).")
+                Text("Remove it from this \(Device.name) only, or from all your devices. Nothing is deleted from \(MailAccounts.serviceTitle(for: account.email)).")
             }
         }
         .scrollContentBackground(.hidden)
@@ -670,22 +670,20 @@ private struct AccountDetailView: View {
         }
         .onChange(of: showsInAllInboxes) { AccountPreferences.changed() }
         .confirmationDialog("Remove \(account.email)?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
-            Button("Remove Account", role: .destructive) {
-                let email = account.email
-                sync.clearCursor(for: email)
-                Task {
-                    // A stale watch subscription would keep the relay
-                    // pinging for an account nothing here listens for.
-                    await pushService.disable(account: email)
-                    await auth.signOut(email)
-                    await store.removeAccountData(email)
-                    intelligence.forget(account: email)
-                }
-                dismiss()
-            }
+            Button("Remove from This \(Device.name)", role: .destructive) { remove(everywhere: false) }
+            Button("Remove from All Devices", role: .destructive) { remove(everywhere: true) }
         } message: {
-            Text("Its mail is removed from this \(Device.name). It stays in \(MailAccounts.serviceTitle(for: account.email)).")
+            Text(AccountRemoval.explanation(for: account.email))
         }
+    }
+
+    private func remove(everywhere: Bool) {
+        let email = account.email
+        Task {
+            await AccountRemoval.remove(email, everywhere: everywhere, auth: auth, sync: sync, store: store,
+                                        push: pushService, intelligence: intelligence)
+        }
+        dismiss()
     }
 
     private func setInstant(_ on: Bool) {

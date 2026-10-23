@@ -3215,3 +3215,9 @@
 "The conversation so far" = "এ পর্যন্ত কথোপকথন";
 "%lld messages" = "%lldটি বার্তা";
 "Scheduled email" = "নির্ধারিত ইমেইল";
+"Remove it from this %@ only, or from all your devices. Nothing is deleted from %@." = "শুধু এই %@ থেকে, অথবা আপনার সব ডিভাইস থেকে সরান। %@ থেকে কিছুই মোছা হয় না।";
+"Remove from This %@" = "এই %@ থেকে সরান";
+"Remove from All Devices" = "সব ডিভাইস থেকে সরান";
+"Your other devices keep it unless you remove it from all of them. Nothing is deleted from %@." = "সব ডিভাইস থেকে না সরালে আপনার অন্য ডিভাইসগুলোতে এটি থেকে যাবে। %@ থেকে কিছুই মোছা হয় না।";
+"Removing it from all devices also takes out the %lld rules Corres made in %@." = "সব ডিভাইস থেকে সরালে Corres %2$@-এ যে %1$lldটি নিয়ম বানিয়েছিল সেগুলোও মুছে যাবে।";
+"and %lld more" = "আরও %lldটি";

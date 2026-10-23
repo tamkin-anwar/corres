@@ -2299,3 +2299,11 @@
 "Go to %@" = "Ir a %@";
 "this conversation" = "esta conversación";
 "Its mail is removed from this Mac. It stays in %@." = "Su correo se quita de este Mac. Sigue en %@.";
+"Remove from All Devices" = "Quitar de todos los dispositivos";
+"Your other devices keep it unless you remove it from all of them. Nothing is deleted from %@." = "Tus otros dispositivos la conservan, salvo que la quites de todos. No se borra nada de %@.";
+"Removing it from all devices also takes out the %lld rules Corres made in %@." = "Al quitarla de todos los dispositivos también se eliminan las %lld reglas que Corres creó en %@.";
+"and %lld more" = "y %lld más";
+"Remove from This Mac" = "Quitar de este Mac";
+"Discard" = "Descartar";
+"Retry" = "Reintentar";
+"Couldn't send “%@”" = "No se pudo enviar «%@»";

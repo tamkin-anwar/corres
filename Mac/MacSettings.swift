@@ -114,21 +114,19 @@ private struct MacAccountsSettings: View {
             .frame(width: 520, height: 520)
         }
         .confirmationDialog("Remove \(removing ?? "")?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } })) {
-            Button("Remove", role: .destructive) {
-                guard let email = removing else { return }
-                // As on iPhone: its sync position goes too, or adding it back
-                // would start from where it left off with no mail.
-                services.sync.clearCursor(for: email)
-                Task {
-                    await services.pushService.disable(account: email)
-                    await auth.signOut(email)
-                    await services.store.removeAccountData(email)
-                    services.intelligence.forget(account: email)
-                    services.accountsChanged()
-                }
-            }
+            Button("Remove from This Mac", role: .destructive) { remove(everywhere: false) }
+            Button("Remove from All Devices", role: .destructive) { remove(everywhere: true) }
         } message: {
-            Text("Its mail is removed from this Mac. It stays in \(MailAccounts.serviceTitle(for: removing ?? "")).")
+            Text(AccountRemoval.explanation(for: removing ?? ""))
+        }
+    }
+
+    private func remove(everywhere: Bool) {
+        guard let email = removing else { return }
+        Task {
+            await AccountRemoval.remove(email, everywhere: everywhere, auth: auth, sync: services.sync, store: services.store,
+                                        push: services.pushService, intelligence: services.intelligence)
+            services.accountsChanged()
         }
     }
 }

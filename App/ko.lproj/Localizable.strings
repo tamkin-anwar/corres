@@ -3215,3 +3215,9 @@
 "The conversation so far" = "지금까지의 대화";
 "%lld messages" = "메시지 %lld개";
 "Scheduled email" = "예약된 이메일";
+"Remove it from this %@ only, or from all your devices. Nothing is deleted from %@." = "이 %@에서만 제거하거나 모든 기기에서 제거할 수 있습니다. %@에서는 아무것도 삭제되지 않습니다.";
+"Remove from This %@" = "이 %@에서 제거";
+"Remove from All Devices" = "모든 기기에서 제거";
+"Your other devices keep it unless you remove it from all of them. Nothing is deleted from %@." = "모든 기기에서 제거하지 않으면 다른 기기에는 남아 있습니다. %@에서는 아무것도 삭제되지 않습니다.";
+"Removing it from all devices also takes out the %lld rules Corres made in %@." = "모든 기기에서 제거하면 Corres가 %2$@에 만든 규칙 %1$lld개도 함께 삭제됩니다.";
+"and %lld more" = "외 %lld개";

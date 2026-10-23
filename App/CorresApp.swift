@@ -101,8 +101,10 @@ struct CorresApp: App {
                 // Each batch of 50 a sync saves shows up as it lands, so the
                 // first screenful appears within a round trip, not after the
                 // whole first sync finishes.
+                // At most one reload each half second, though: a first sync
+                // saves a hundred batches, and each reload redraws the lists.
                 .onChange(of: appDelegate.sync.syncProgress) {
-                    Task { await appDelegate.store.refresh() }
+                    SyncBatchRefresh.schedule(appDelegate.store)
                 }
                 .onOpenURL { url in
                     if !appDelegate.router.open(url) { GIDSignIn.sharedInstance.handle(url) }
@@ -123,7 +125,7 @@ struct CorresApp: App {
                 .onChange(of: appDelegate.store.revision) {
                     SpotlightIndex.shared.scheduleUpdate { [store = appDelegate.store] in store.searchableThreads }
                     WidgetBridge.scheduleUpdate { [store = appDelegate.store] in store.threads }
-                    LiveActivities.syncDeliveries(appDelegate.store.threads)
+                    LiveActivities.scheduleDeliveries { [store = appDelegate.store] in store.threads }
                     WatchBridge.shared.scheduleUpdate { [store = appDelegate.store] in store.threads }
                 }
                 // Live Activities can only start while Corres is open.
@@ -163,6 +165,27 @@ struct CorresApp: App {
                 Button("Mail") { appDelegate.router.pending = .destination(.mail) }
                     .keyboardShortcut("3", modifiers: .command)
             }
+        }
+    }
+}
+
+/// Shows each batch a sync saves, at most one reload each half second: the
+/// first batch at once, the last one always, the ones between folded
+/// together.
+@MainActor
+private enum SyncBatchRefresh {
+    private static var running: Task<Void, Never>?
+    private static var again = false
+
+    static func schedule(_ store: MailStore) {
+        guard running == nil else { again = true; return }
+        running = Task {
+            repeat {
+                again = false
+                await store.refresh()
+                try? await Task.sleep(for: .milliseconds(500))
+            } while again
+            running = nil
         }
     }
 }

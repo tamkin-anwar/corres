@@ -2299,3 +2299,11 @@
 "Go to %@" = "%@-এ যান";
 "this conversation" = "এই কথোপকথন";
 "Its mail is removed from this Mac. It stays in %@." = "এর মেইল এই Mac থেকে সরানো হবে। এটি %@-এ থেকে যাবে।";
+"Remove from All Devices" = "সব ডিভাইস থেকে সরান";
+"Your other devices keep it unless you remove it from all of them. Nothing is deleted from %@." = "সব ডিভাইস থেকে না সরালে আপনার অন্য ডিভাইসগুলোতে এটি থেকে যাবে। %@ থেকে কিছুই মোছা হয় না।";
+"Removing it from all devices also takes out the %lld rules Corres made in %@." = "সব ডিভাইস থেকে সরালে Corres %2$@-এ যে %1$lldটি নিয়ম বানিয়েছিল সেগুলোও মুছে যাবে।";
+"and %lld more" = "আরও %lldটি";
+"Remove from This Mac" = "এই Mac থেকে সরান";
+"Discard" = "বাদ দিন";
+"Retry" = "আবার চেষ্টা করুন";
+"Couldn't send “%@”" = "“%@” পাঠানো যায়নি";
