@@ -34,6 +34,30 @@ extension Correspondence {
     }
 }
 
+extension Correspondence {
+    /// The email's attachments as files to send on, up to the account's
+    /// limit, and the names of any that couldn't come along. Forwards on
+    /// iPhone, iPad, Mac and from Siri all carry them, as in Mail and Gmail.
+    func attachmentsToForward() async -> (files: [PendingAttachment], missing: [String]) {
+        guard let messageID = latestMessageID else { return ([], attachments.map(\.filename)) }
+        let client = MailClient()
+        var files: [PendingAttachment] = []
+        var missing: [String] = []
+        var total = 0
+        for attachment in attachments {
+            guard total + attachment.sizeBytes <= MailAccounts.provider(for: id.account).attachmentLimit,
+                  let data = try? await client.fetchAttachmentData(messageId: messageID, attachmentId: attachment.id,
+                                                                   account: id.account) else {
+                missing.append(attachment.filename)
+                continue
+            }
+            total += data.count
+            files.append(PendingAttachment(filename: attachment.filename, mimeType: attachment.mimeType, data: data))
+        }
+        return (files, missing)
+    }
+}
+
 extension Draft {
     /// The signature above the quoted email, or at the end of a new one.
     static func adding(signature: String, to body: String) -> String {

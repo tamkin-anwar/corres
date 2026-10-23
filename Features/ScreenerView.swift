@@ -254,7 +254,8 @@ struct ScreenerView: View {
                     HStack {
                         Image(systemName: rules[domain] == .blocked ? "nosign" : "checkmark.circle")
                             .foregroundStyle(CorresPalette.secondary)
-                        Text((rules[domain] == .blocked ? "Block " : "Allow ") + "everyone from \(domain)")
+                        Text(rules[domain] == .blocked ? String(localized: "Block everyone from \(domain)")
+                             : String(localized: "Allow everyone from \(domain)"))
                             .font(.subheadline)
                         Spacer()
                         Button("Remove") {

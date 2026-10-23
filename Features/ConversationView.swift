@@ -279,7 +279,8 @@ struct ConversationView: View {
             }
         }
         .animation(.snappy(duration: 0.25), value: preparingForward)
-        .alert(forwardMissing.map { $0.missing.count == 1 ? "One attachment couldn't be added" : "\($0.missing.count) attachments couldn't be added" } ?? "",
+        .alert(forwardMissing.map { $0.missing.count == 1 ? String(localized: "One attachment couldn't be added")
+                   : String(localized: "\($0.missing.count) attachments couldn't be added") } ?? "",
                isPresented: Binding(get: { forwardMissing != nil }, set: { if !$0 { forwardMissing = nil } })) {
             Button("Forward Without Them") {
                 if let pending = forwardMissing { composeDraft = pending.draft }
@@ -287,8 +288,7 @@ struct ConversationView: View {
             }
             Button("Cancel", role: .cancel) { forwardMissing = nil }
         } message: {
-            Text((forwardMissing?.missing.joined(separator: ", ") ?? "")
-                 + ". They may be too large to send on, or the connection dropped.")
+            Text(String(localized: "\(forwardMissing?.missing.joined(separator: ", ") ?? ""). They may be too large to send on, or the connection dropped."))
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
@@ -909,7 +909,7 @@ struct ConversationView: View {
                 defer { preparingForward = false }
                 if !thread.isBodyLoaded { await threadActions.loadContent(for: thread) }
                 let source = store.thread(thread.id) ?? thread
-                let (files, missing) = await Self.downloadForForward(source)
+                let (files, missing) = await source.attachmentsToForward()
                 if missing.isEmpty {
                     open(source, attachments: files)
                 } else {
@@ -926,28 +926,6 @@ struct ConversationView: View {
             await threadActions.loadContent(for: thread)
             open(store.thread(thread.id) ?? thread)
         }
-    }
-
-    /// The email's attachments as files to send on, up to Gmail's limit.
-    /// The email's attachments as files to send on, up to Gmail's limit,
-    /// and the names of any that couldn't come along.
-    private static func downloadForForward(_ thread: Correspondence) async -> (files: [PendingAttachment], missing: [String]) {
-        guard let messageID = thread.latestMessageID else { return ([], thread.attachments.map(\.filename)) }
-        let client = MailClient()
-        var files: [PendingAttachment] = []
-        var missing: [String] = []
-        var total = 0
-        for attachment in thread.attachments {
-            guard total + attachment.sizeBytes <= MailAccounts.provider(for: thread.id.account).attachmentLimit,
-                  let data = try? await client.fetchAttachmentData(messageId: messageID, attachmentId: attachment.id,
-                                                                   account: thread.id.account) else {
-                missing.append(attachment.filename)
-                continue
-            }
-            total += data.count
-            files.append(PendingAttachment(filename: attachment.filename, mimeType: attachment.mimeType, data: data))
-        }
-        return (files, missing)
     }
 
     /// Tapping a suggested direction drafts the full reply in the person's

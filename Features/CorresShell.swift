@@ -126,8 +126,9 @@ struct CorresShell: View {
             show(destination)
         case .compose:
             composeDraft = Draft(kind: .new, to: "", subject: "")
-        case .composeTo(let to, let subject, let body):
-            composeDraft = Draft(kind: .new, to: to, subject: subject, body: body)
+        case .composeTo(let to, let cc, let bcc, let subject, let body):
+            composeDraft = Draft(kind: .new, to: to, cc: cc.isEmpty ? nil : cc, bcc: bcc.isEmpty ? nil : bcc,
+                                 subject: subject, body: body)
         case .draft(let draft):
             composeDraft = draft
         case .search(let words):
@@ -430,9 +431,19 @@ struct CorresShell: View {
 
     @State private var bannerDrag: CGFloat = 0
 
-    @ViewBuilder
+    /// The Undo pill above the sending one: a send that failed (or is
+    /// counting down) used to hide every Undo while it lingered.
     fileprivate var outboxBanner: some View {
-        if outbox.pending == nil, outbox.failed == nil, let removal = threadActions.pendingRemoval {
+        VStack(spacing: 10) {
+            undoBanner
+            sendBanner
+        }
+        .padding(.bottom, 92)
+    }
+
+    @ViewBuilder
+    private var undoBanner: some View {
+        if let removal = threadActions.pendingRemoval {
             // A small pill, not a full-width bar: working through a stack of
             // email, the rows beside it stay swipeable, the list makes room
             // below (see CorrespondenceList), and a flick down sends it now.
@@ -463,47 +474,6 @@ struct CorresShell: View {
                 })
             .accessibilityElement(children: .contain)
             .accessibilityLabel(removal.threads.count == 1 ? "\(removal.title): \(removal.thread.subject)" : removal.title)
-            .padding(.bottom, 92)
-            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-        } else if let pending = outbox.pending {
-            HStack(spacing: 12) {
-                // The subject truncates; the countdown never does.
-                Text("Sending \u{201C}\(pending.subjectPreview)\u{201D}")
-                    .font(.subheadline).lineLimit(1)
-                Text("\(pending.secondsRemaining)s")
-                    .font(.subheadline).monospacedDigit()
-                    .foregroundStyle(CorresPalette.secondary)
-                    .fixedSize()
-                    .contentTransition(.numericText(countsDown: true))
-                Spacer(minLength: 8)
-                Button("Undo") { outbox.undo() }.font(.subheadline.weight(.semibold))
-            }
-            .padding(.horizontal, 20).padding(.vertical, 14)
-            .corresGlass(in: Capsule())
-            .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
-            // Reduce Motion drops the slide specifically (large-scale
-            // positional movement, what the setting actually targets), not
-            // the whole transition: a plain fade still shows the banner
-            // appearing/disappearing rather than an abrupt, disorienting
-            // instant swap.
-            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-        } else if let failed = outbox.failed {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Couldn't send \u{201C}\(failed.draft.subject)\u{201D}").font(.subheadline).lineLimit(1)
-                    // Each is kept until it goes or you discard it; the
-                    // rest follow this one.
-                    if outbox.failedSends.count > 1 {
-                        Text("and \(outbox.failedSends.count - 1) more").font(.caption).foregroundStyle(CorresPalette.secondary)
-                    }
-                }
-                Spacer(minLength: 8)
-                Button("Discard") { outbox.discardFailed() }.font(.subheadline)
-                Button("Retry") { outbox.retryFailed() }.font(.subheadline.weight(.semibold))
-            }
-            .padding(.horizontal, 20).padding(.vertical, 14)
-            .corresGlass(in: Capsule())
-            .padding(.horizontal, CorresSpace.page).padding(.bottom, 90)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         } else if let change = threadActions.lastChange {
             // Handled, read, flag, pin, Move to: the same pill as Archive,
@@ -536,7 +506,6 @@ struct CorresShell: View {
                     withAnimation(.spring(duration: 0.25)) { bannerDrag = 0 }
                 })
             .accessibilityElement(children: .contain)
-            .padding(.bottom, 92)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         } else if let shelved = outbox.shelved, composeDraft == nil {
             // The email you stepped away from, a tap from where you left
@@ -563,7 +532,51 @@ struct CorresShell: View {
             .fixedSize()
             .onTapGesture { composeDraft = outbox.takeShelved() }
             .accessibilityElement(children: .contain)
-            .padding(.bottom, 92)
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    @ViewBuilder
+    private var sendBanner: some View {
+        if let pending = outbox.pending {
+            HStack(spacing: 12) {
+                // The subject truncates; the countdown never does.
+                Text("Sending \u{201C}\(pending.subjectPreview)\u{201D}")
+                    .font(.subheadline).lineLimit(1)
+                Text("\(pending.secondsRemaining)s")
+                    .font(.subheadline).monospacedDigit()
+                    .foregroundStyle(CorresPalette.secondary)
+                    .fixedSize()
+                    .contentTransition(.numericText(countsDown: true))
+                Spacer(minLength: 8)
+                Button("Undo") { outbox.undo() }.font(.subheadline.weight(.semibold))
+            }
+            .padding(.horizontal, 20).padding(.vertical, 14)
+            .corresGlass(in: Capsule())
+            .padding(.horizontal, CorresSpace.page)
+            // Reduce Motion drops the slide specifically (large-scale
+            // positional movement, what the setting actually targets), not
+            // the whole transition: a plain fade still shows the banner
+            // appearing/disappearing rather than an abrupt, disorienting
+            // instant swap.
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+        } else if let failed = outbox.failed {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Couldn't send \u{201C}\(failed.draft.subject)\u{201D}").font(.subheadline).lineLimit(1)
+                    // Each is kept until it goes or you discard it; the
+                    // rest follow this one.
+                    if outbox.failedSends.count > 1 {
+                        Text("and \(outbox.failedSends.count - 1) more").font(.caption).foregroundStyle(CorresPalette.secondary)
+                    }
+                }
+                Spacer(minLength: 8)
+                Button("Discard") { outbox.discardFailed() }.font(.subheadline)
+                Button("Retry") { outbox.retryFailed() }.font(.subheadline.weight(.semibold))
+            }
+            .padding(.horizontal, 20).padding(.vertical, 14)
+            .corresGlass(in: Capsule())
+            .padding(.horizontal, CorresSpace.page)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         }
     }

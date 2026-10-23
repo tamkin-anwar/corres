@@ -72,32 +72,59 @@ function buildAPNsToken() {
 // content-available so the app's background handler runs and syncs for
 // itself. Background pushes must use apns-priority 5, not the default 10
 // (Apple silently drops/throttles priority-10 background pushes).
-function sendSilentPush(deviceToken, environment) {
+// One connection per APNs server, kept open and reused: a new HTTP/2
+// connection per push added a handshake to every one. Every request has a
+// timeout and handles stream errors, so a stuck push can't hang or crash
+// the function (and get the whole notice redelivered).
+const apnsSessions = {};
+function apnsSession(environment) {
+  const existing = apnsSessions[environment];
+  if (existing && !existing.closed && !existing.destroyed) return existing;
+  const session = http2.connect(`https://${APNS_HOSTS[environment]}`);
+  session.on('error', () => { delete apnsSessions[environment]; });
+  session.on('close', () => { delete apnsSessions[environment]; });
+  session.setTimeout(60_000, () => session.close());
+  apnsSessions[environment] = session;
+  return session;
+}
+
+function apnsRequest(environment, deviceToken, headers, payload) {
   return new Promise((resolve) => {
-    const client = http2.connect(`https://${APNS_HOSTS[environment]}`);
-    client.on('error', () => resolve({ status: 0, reason: 'ConnectionError' }));
-    const request = client.request({
-      ':method': 'POST',
-      ':path': `/3/device/${deviceToken}`,
-      authorization: `bearer ${buildAPNsToken()}`,
-      'apns-topic': process.env.APNS_BUNDLE_ID,
-      'apns-push-type': 'background',
-      'apns-priority': '5',
-    });
+    let settled = false;
+    const done = (result) => { if (!settled) { settled = true; resolve(result); } };
+    let request;
+    try {
+      request = apnsSession(environment).request({
+        ':method': 'POST',
+        ':path': `/3/device/${deviceToken}`,
+        authorization: `bearer ${buildAPNsToken()}`,
+        'apns-topic': process.env.APNS_BUNDLE_ID,
+        ...headers,
+      });
+    } catch {
+      delete apnsSessions[environment];
+      return done({ status: 0, reason: 'ConnectionError' });
+    }
     request.setEncoding('utf8');
+    request.setTimeout(10_000, () => { request.close(); done({ status: 0, reason: 'Timeout' }); });
+    request.on('error', () => done({ status: 0, reason: 'StreamError' }));
     let status = 0;
     let body = '';
-    request.on('response', (headers) => { status = headers[':status']; });
+    request.on('response', (h) => { status = h[':status']; });
     request.on('data', (chunk) => { body += chunk; });
     request.on('end', () => {
-      client.close();
       let reason = null;
       try { reason = body ? JSON.parse(body).reason : null; } catch { reason = null; }
-      resolve({ status, reason });
+      done({ status, reason });
     });
-    request.write(JSON.stringify({ aps: { 'content-available': 1 } }));
+    request.write(JSON.stringify(payload));
     request.end();
   });
+}
+
+function sendSilentPush(deviceToken, environment) {
+  return apnsRequest(environment, deviceToken, { 'apns-push-type': 'background', 'apns-priority': '5' },
+    { aps: { 'content-available': 1 } });
 }
 
 // A visible alert for one new email, filled in on the iPhone by Corres's
@@ -109,35 +136,14 @@ function sendSilentPush(deviceToken, environment) {
 // `messageId`: the extension asks Gmail itself what's new since then, and
 // stays silent if nothing is (Apple's notification filtering).
 function sendAlertPush(deviceToken, environment, emailAddress, messageId, historyId) {
-  return new Promise((resolve) => {
-    const client = http2.connect(`https://${APNS_HOSTS[environment]}`);
-    client.on('error', () => resolve({ status: 0, reason: 'ConnectionError' }));
-    const request = client.request({
-      ':method': 'POST',
-      ':path': `/3/device/${deviceToken}`,
-      authorization: `bearer ${buildAPNsToken()}`,
-      'apns-topic': process.env.APNS_BUNDLE_ID,
-      'apns-push-type': 'alert',
-      'apns-priority': '10',
-      'apns-collapse-id': crypto.createHash('sha256').update(messageId || `${emailAddress}:${historyId}`).digest('hex').slice(0, 64),
-    });
-    request.setEncoding('utf8');
-    let status = 0;
-    let body = '';
-    request.on('response', (headers) => { status = headers[':status']; });
-    request.on('data', (chunk) => { body += chunk; });
-    request.on('end', () => {
-      client.close();
-      let reason = null;
-      try { reason = body ? JSON.parse(body).reason : null; } catch { reason = null; }
-      resolve({ status, reason });
-    });
-    request.write(JSON.stringify({
-      aps: { alert: { title: 'New email', body: emailAddress }, sound: 'default', 'mutable-content': 1 },
-      account: emailAddress,
-      ...(messageId ? { message: messageId } : { gmailHistory: String(historyId) }),
-    }));
-    request.end();
+  return apnsRequest(environment, deviceToken, {
+    'apns-push-type': 'alert',
+    'apns-priority': '10',
+    'apns-collapse-id': crypto.createHash('sha256').update(messageId || `${emailAddress}:${historyId}`).digest('hex').slice(0, 64),
+  }, {
+    aps: { alert: { title: 'New email', body: emailAddress }, sound: 'default', 'mutable-content': 1 },
+    account: emailAddress,
+    ...(messageId ? { message: messageId } : { gmailHistory: String(historyId) }),
   });
 }
 
@@ -355,17 +361,20 @@ async function handleGraph(req, res) {
     const isNew = (notification.changeType || 'created') === 'created';
     if (isNew && typeof messageId === 'string' && MESSAGE_ID_PATTERN.test(messageId)) accounts.get(emailAddress).add(messageId);
   }
-  for (const [emailAddress, messageIds] of accounts) {
+  // Everything in parallel: Microsoft expects an answer within about three
+  // seconds, and the reply waits for the pushes (a Cloud Function may lose
+  // its CPU once it has answered, so the work can't run after it).
+  await Promise.all([...accounts].map(async ([emailAddress, messageIds]) => {
     const matches = await devices.where('emailAddresses', 'array-contains', emailAddress).get();
     await Promise.all(matches.docs.map(async (device) => {
       const alerting = (device.data().alertAccounts || []).includes(emailAddress);
-      if (alerting) {
-        for (const messageId of [...messageIds].slice(0, 10)) await wakeDevice(device, { emailAddress, messageId });
-      }
+      const alerts = alerting
+        ? [...messageIds].slice(0, 10).map((messageId) => wakeDevice(device, { emailAddress, messageId }))
+        : [];
       // The quiet wake-up too, so Corres syncs in the background as before.
-      await wakeDevice(device);
+      await Promise.all([...alerts, wakeDevice(device)]);
     }));
-  }
+  }));
   res.status(202).send();
 }
 

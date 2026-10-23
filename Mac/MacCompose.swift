@@ -7,6 +7,9 @@ struct ComposeRequest: Codable, Hashable {
     var kind: Draft.Kind
     var thread: ThreadID?
     var to: String = ""
+    /// Optional so compose windows restored from before these still decode.
+    var cc: String?
+    var bcc: String?
     var subject: String = ""
     var body: String = ""
     /// The account to send from, when it's known (a draft's own).
@@ -39,6 +42,11 @@ struct MacComposeView: View {
     @State private var signatureText = ""
     /// Which suggestion Return or Tab would pick.
     @State private var highlighted = 0
+    /// As it opened: nothing is saved until it's changed from this.
+    @State private var opened: Draft?
+    /// The save to Drafts waiting for a pause in typing.
+    @State private var saveTask: Task<Void, Never>?
+    @State private var confirmDelete = false
     @FocusState private var focus: Field?
     @Environment(\.dismiss) private var dismiss
 
@@ -98,6 +106,10 @@ struct MacComposeView: View {
                 .help("Templates")
             }
             ToolbarItem { signatureMenu }
+            ToolbarItem {
+                Button { askToDelete() } label: { Label("Delete Draft", systemImage: "trash") }
+                    .help("Delete this draft")
+            }
         }
         .popover(isPresented: $choosingTime, arrowEdge: .top) { sendLaterPicker }
         // Files dragged in from Finder or another app are attached.
@@ -106,6 +118,12 @@ struct MacComposeView: View {
             guard !files.isEmpty else { return false }
             add(files)
             return true
+        }
+        .confirmationDialog("Delete this draft?", isPresented: $confirmDelete) {
+            Button("Delete Draft", role: .destructive) { deleteDraft() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("It's removed from Drafts too.")
         }
         .confirmationDialog("Send without a subject?", isPresented: $confirmEmptySubject) {
             Button("Send") { send(confirmed: true) }
@@ -116,20 +134,72 @@ struct MacComposeView: View {
         } message: { Text(attachmentError ?? "") }
         .task {
             load()
+            await carryForwardedAttachments()
             // Your other addresses, and who to suggest as you type.
             await SendAsDirectory.shared.refresh(accounts: accounts)
             chooseDefaultAddress()
             services.people.update(from: services.store.threads, accounts: accounts)
         }
+        // Saved to Drafts after a pause in typing, not on every key: each
+        // save sends the whole email, attachments and all. A copy stays on
+        // this Mac meanwhile, for a quit or a lost connection.
         .onChange(of: draft) { _, value in
-            guard loaded else { return }
-            services.outbox.autosave(value, replyingTo: replyingTo)
+            guard loaded, !sent, isChanged(value) else { return }
+            MacComposeDrafts.shared.changed(value, serverID: services.outbox.savedDraftID(for: value))
+            saveTask?.cancel()
+            saveTask = Task {
+                try? await Task.sleep(for: .seconds(3))
+                guard !Task.isCancelled else { return }
+                saveNow()
+            }
         }
         .onDisappear {
+            saveTask?.cancel()
+            guard loaded, !sent else { return }
+            let drafts = MacComposeDrafts.shared
+            // Opened and closed untouched, with nothing waiting for Drafts.
+            guard isChanged(draft) || drafts.needsSaving(draft.id) else { drafts.forget(draft.id); return }
             // Closing the window keeps what you wrote in Drafts.
-            guard loaded, !sent, !draft.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !draft.to.isEmpty else { return }
-            services.outbox.autosave(draft, replyingTo: replyingTo)
+            saveNow()
+            // Quitting: it opens again next time. Closed: the Mac's copy
+            // goes once Drafts has it, and stays if Drafts couldn't be reached.
+            if !drafts.isQuitting { drafts.forgetOnceSaved(draft, outbox: services.outbox) }
         }
+    }
+
+    /// Different from how it opened, in what you'd notice: who it's to,
+    /// the subject, the words, the files.
+    private func isChanged(_ value: Draft) -> Bool {
+        guard let opened else { return false }
+        return value.to != opened.to || (value.cc ?? "") != (opened.cc ?? "") || (value.bcc ?? "") != (opened.bcc ?? "")
+            || value.subject != opened.subject || value.body != opened.body
+            || value.attachments.map(\.id) != opened.attachments.map(\.id)
+    }
+
+    /// The latest words to Drafts now, if they haven't gone yet.
+    private func saveNow() {
+        saveTask?.cancel()
+        guard MacComposeDrafts.shared.needsSaving(draft.id) else { return }
+        MacComposeDrafts.shared.savingToServer(draft.id)
+        services.outbox.autosave(draft, replyingTo: replyingTo)
+    }
+
+    /// Untouched and never saved: closed without asking.
+    private func askToDelete() {
+        if isChanged(draft) || draft.gmailDraftID != nil || services.outbox.savedDraftID(for: draft) != nil {
+            confirmDelete = true
+        } else {
+            deleteDraft()
+        }
+    }
+
+    /// Gone from this window, this Mac and Drafts.
+    private func deleteDraft() {
+        sent = true
+        saveTask?.cancel()
+        MacComposeDrafts.shared.forget(draft.id)
+        services.outbox.discard(draft, replyingTo: replyingTo)
+        dismiss()
     }
 
     /// The first person it's going to, by name, for a template's
@@ -176,6 +246,12 @@ struct MacComposeView: View {
         }
         .textFieldStyle(.plain)
         .onChange(of: fromAccount) { old, account in
+            // The draft saved under the old account goes; the next save
+            // makes it again under the new one.
+            if loaded, !old.isEmpty, old != account {
+                services.outbox.moveDraft(draft, awayFrom: old)
+                draft.gmailDraftID = nil
+            }
             draft.fromAccount = account
             // Each account's own signature.
             if loaded, !old.isEmpty, old != account { useSignature(CorresSettings.signature(for: account, reply: draft.kind != .new)) }
@@ -399,6 +475,7 @@ struct MacComposeView: View {
             showsCc = !(whole.cc ?? "").isEmpty || !(whole.bcc ?? "").isEmpty
             initialBody = whole.body
             focus = .body
+            opened = draft
             loaded = true
             return
         }
@@ -406,7 +483,8 @@ struct MacComposeView: View {
             replyingTo = thread
             draft = thread.draft(kind: request.kind)
         } else {
-            draft = Draft(kind: .new, to: request.to, subject: request.subject, body: request.body)
+            draft = Draft(kind: .new, to: request.to, cc: request.cc?.isEmpty == false ? request.cc : nil,
+                          bcc: request.bcc?.isEmpty == false ? request.bcc : nil, subject: request.subject, body: request.body)
             draft.fromAccount = request.account
             draft.gmailDraftID = request.serverDraftID
         }
@@ -425,6 +503,7 @@ struct MacComposeView: View {
         // Into To while there's an address to finish, then the message.
         let unfinished = !PeopleIndex.split(draft.to).typing.trimmingCharacters(in: .whitespaces).isEmpty
         focus = draft.to.isEmpty || unfinished ? .to : .body
+        opened = draft
         loaded = true
     }
 
@@ -435,6 +514,8 @@ struct MacComposeView: View {
             return
         }
         sent = true
+        saveTask?.cancel()
+        MacComposeDrafts.shared.forget(draft.id)
         services.outbox.queueSend(draft, replyingTo: replyingTo)
         dismiss()
     }
@@ -491,6 +572,8 @@ struct MacComposeView: View {
     private func send(at date: Date) {
         guard draft.isSendable else { return }
         sent = true
+        saveTask?.cancel()
+        MacComposeDrafts.shared.forget(draft.id)
         services.outbox.removeGmailDraft(of: draft, replyingTo: replyingTo)
         var scheduled = draft
         scheduled.gmailDraftID = nil
@@ -506,6 +589,19 @@ struct MacComposeView: View {
         add(panel.urls)
     }
 
+    /// A forward brings the email's attachments along, as in Mail and Gmail,
+    /// and says which couldn't come.
+    private func carryForwardedAttachments() async {
+        guard request.kind == .forward, request.handoff == nil, draft.attachments.isEmpty,
+              let thread = replyingTo, !thread.attachments.isEmpty else { return }
+        let (files, missing) = await thread.attachmentsToForward()
+        draft.attachments = files
+        opened?.attachments = files
+        if !missing.isEmpty {
+            attachmentError = String(localized: "These attachments couldn't come along: \(ListFormatter.localizedString(byJoining: missing))")
+        }
+    }
+
     /// From the Attach button, or dropped on the window from Finder.
     private func add(_ urls: [URL]) {
         for url in urls {
@@ -518,6 +614,129 @@ struct MacComposeView: View {
                 break
             }
             draft.attachments.append(file)
+        }
+    }
+}
+
+/// Every email being written, kept on this Mac as you go, so a quit, a
+/// crash or a lost connection doesn't lose it: unsent ones open again at
+/// the next launch. Drafts on the server has them too, once it's reached.
+@MainActor
+final class MacComposeDrafts {
+    static let shared = MacComposeDrafts()
+
+    private struct Entry: Codable {
+        var draft: Draft
+        /// Changed since it last went to Drafts on the server.
+        var needsSaving: Bool
+    }
+
+    private var entries: [UUID: Entry] = [:]
+    private var writeTask: Task<Void, Never>?
+    private var restored = false
+    /// Set as Corres quits: windows closing then are kept to open again.
+    var isQuitting = false
+
+    private static var fileURL: URL? {
+        guard let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
+        let folder = support.appendingPathComponent(Bundle.main.bundleIdentifier ?? "Corres", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder.appendingPathComponent("ComposeDrafts.json")
+    }
+
+    private init() {
+        if let url = Self.fileURL, let data = try? Data(contentsOf: url),
+           let saved = try? JSONDecoder().decode([Entry].self, from: data) {
+            entries = Dictionary(saved.map { ($0.draft.id, $0) }, uniquingKeysWith: { $1 })
+        }
+    }
+
+    /// The unsent ones from last time, once per launch, to open again.
+    func takeForRestore() -> [Draft] {
+        guard !restored else { return [] }
+        restored = true
+        return entries.values.map(\.draft)
+    }
+
+    /// Written to, and so worth keeping. `serverID`: its draft on the server so far.
+    func changed(_ draft: Draft, serverID: String?) {
+        var kept = draft
+        kept.gmailDraftID = draft.gmailDraftID ?? serverID ?? entries[draft.id]?.draft.gmailDraftID
+        entries[draft.id] = Entry(draft: kept, needsSaving: true)
+        scheduleWrite()
+    }
+
+    func needsSaving(_ id: UUID) -> Bool { entries[id]?.needsSaving ?? false }
+
+    /// On its way to Drafts on the server.
+    func savingToServer(_ id: UUID) {
+        guard entries[id]?.needsSaving == true else { return }
+        entries[id]?.needsSaving = false
+        scheduleWrite()
+    }
+
+    /// Sent, scheduled, deleted, or closed with nothing written.
+    func forget(_ id: UUID) {
+        guard entries.removeValue(forKey: id) != nil else { return }
+        scheduleWrite()
+    }
+
+    /// Closed: the copy here goes once Drafts on the server has it, and
+    /// stays, to open again, if it couldn't be saved there.
+    func forgetOnceSaved(_ draft: Draft, outbox: OutboxService) {
+        Task {
+            _ = await outbox.finishDraftSaves(timeout: .seconds(60))
+            guard !isQuitting else { return }
+            if outbox.savedDraftID(for: draft) != nil || draft.gmailDraftID != nil, entries[draft.id]?.needsSaving != true {
+                forget(draft.id)
+            } else {
+                entries[draft.id]?.needsSaving = true
+                scheduleWrite()
+            }
+        }
+    }
+
+    /// Quitting: whatever hasn't gone to Drafts yet goes now.
+    func saveAllNow(outbox: OutboxService, store: MailStore?) {
+        for (id, entry) in entries where entry.needsSaving {
+            let thread = entry.draft.threadID.flatMap { store?.thread($0) }
+            outbox.autosave(entry.draft, replyingTo: thread)
+            entries[id]?.needsSaving = false
+        }
+        writeNow()
+    }
+
+    /// After the saves: each one's server draft, so the next launch
+    /// updates it rather than saving a second; still marked to save if
+    /// the server never had it.
+    func noteSavedDrafts(from outbox: OutboxService) {
+        for (id, entry) in entries {
+            if let serverID = outbox.savedDraftID(for: entry.draft) {
+                entries[id]?.draft.gmailDraftID = serverID
+            } else if entry.draft.gmailDraftID == nil {
+                entries[id]?.needsSaving = true
+            }
+        }
+        writeNow()
+    }
+
+    private func scheduleWrite() {
+        writeTask?.cancel()
+        writeTask = Task {
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            writeNow()
+        }
+    }
+
+    func writeNow() {
+        writeTask?.cancel()
+        writeTask = nil
+        guard let url = Self.fileURL else { return }
+        if entries.isEmpty {
+            try? FileManager.default.removeItem(at: url)
+        } else if let data = try? JSONEncoder().encode(Array(entries.values)) {
+            try? data.write(to: url, options: .atomic)
         }
     }
 }

@@ -99,6 +99,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         CorresTips.start()
         CrashCollector.shared.start()
+        // Every launch, as Apple asks, so a new or restored iPhone (or a
+        // changed token) keeps getting new-mail pushes.
+        pushService.registerIfEnabled()
         // The search copy of every body is the first thing to give back.
         NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: .main) { _ in
             MailQuery.SearchIndex.shared.clear()
@@ -164,7 +167,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
         async let didSync = sync.syncAll(accounts: accountEmails)
         async let labelsRefreshed: Void = labelDirectory.refreshIfConnected(accounts: accountEmails)
-        async let watchRenewed: Void = pushService.renewWatch(accounts: accountEmails)
+        async let watchRenewed: Bool = pushService.renewWatch(accounts: accountEmails)
 
         if await didSync {
             await store.load()
@@ -212,6 +215,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         Self.scheduleBackgroundRefresh()
         let work = Task {
             if store.state != .loaded { await store.load() }
+            // Launched for this: the accounts may still be on their way.
+            await auth.waitUntilRestored()
             // iCloud has no push for apps: this is when its new mail is
             // found and notified while Corres is closed.
             let icloud = auth.accounts.map(\.email).filter { MailAccounts.provider(for: $0).usesIMAP }
@@ -262,7 +267,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // already unread before this sync (the person just hasn't gotten
         // to it yet) must not re-trigger a notification every time
         // something else in the account also changes.
-        guard await syncAndNotify(accounts: auth.accounts.map(\.email)) else { return .noData }
+        guard await syncAndNotify() else { return .noData }
         return .newData
     }
 
@@ -270,36 +275,34 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     /// account's notification choice. A push for Gmail or Outlook runs it
     /// for every account; background refresh runs it for iCloud, which has
     /// no push for apps.
-    private func syncAndNotify(accounts: [String]) async -> Bool {
+    private func syncAndNotify(accounts requested: [String]? = nil) async -> Bool {
         // The snapshot needs the saved mail: taken from an empty store on a
-        // cold launch, every unread email looked new.
+        // cold launch, every unread email looked new. And the accounts: a
+        // push that launches Corres arrives while they're still being read
+        // from the keychain, and found none to sync.
         if store.state != .loaded { await store.load() }
-        let previousUnread = Dictionary(store.threads.map { ($0.id, $0.isUnread) }, uniquingKeysWith: { first, _ in first })
+        await auth.waitUntilRestored()
+        let accounts = requested ?? auth.accounts.map(\.email)
+        // Each conversation's newest message before this sync: a new reply
+        // in one that's already unread is new mail too.
+        let before = Dictionary(store.threads.map { ($0.id, ($0.isUnread, $0.latestMessageID)) }, uniquingKeysWith: { first, _ in first })
+        func isNew(_ thread: Correspondence) -> Bool {
+            guard thread.isUnread, !thread.isFromAccountOwner else { return false }
+            guard let previous = before[thread.id] else { return true }
+            return !previous.0 || previous.1 != thread.latestMessageID
+        }
         guard await sync.syncAll(accounts: accounts) else { return false }
         await store.load()
-        // A push is also a chance to send what's scheduled, and to see
-        // whether a follow-up reminder is due or answered.
-        await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
-        await FollowUps.shared.check(store: store)
-        await pushService.renewOutlookSubscriptions(accounts: auth.accounts.map(\.email))
         func newlyUnreadThreads() -> [Correspondence] {
-            store.threads.filter { thread in
-                thread.isUnread && previousUnread[thread.id] != true && !thread.isScreenedOut
-            }
+            store.threads.filter { isNew($0) && !$0.isScreenedOut }
         }
         // First emails from senders still in New senders, filtered by
         // Settings → Notifications → New senders.
-        let newSenders = store.threads.filter { thread in
-            thread.isUnread && previousUnread[thread.id] != true
-                && PushNotificationService.NewSenderAlerts.includes(thread)
-        }
+        let newSenders = store.threads.filter { isNew($0) && PushNotificationService.NewSenderAlerts.includes($0) }
         // Triage only what just arrived, before deciding what to notify
         // about, so "Only notify for what needs me" acts on a refined
-        // judgment. Scoped deliberately: iOS allows roughly 30 seconds of
-        // background execution per push, and assessing the whole untriaged
-        // backlog first could delay this notification past that window, or
-        // get the app killed before it's posted at all. The backlog is
-        // picked up by the next foreground sync instead.
+        // judgment. Scoped to what's new: iOS allows roughly 30 seconds per
+        // push.
         await semanticTriageService.triageIfNeeded(store: store, only: Set(newlyUnreadThreads().map(\.id)))
         let newlyUnread = newlyUnreadThreads()
         // Settings → Notifications (see PushNotificationService.Level), or
@@ -308,8 +311,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                         + newSenders.filter { AccountPreferences.level(for: $0.id.account) != nil })
             // During a Focus limited to one account, only that account notifies.
             .filter { thread in CorresFocusFilter.activeAccount.map { $0 == thread.id.account } ?? true }
+        // Posted first, then everything else: what the push is for mustn't
+        // wait behind sends, reminders and renewals inside iOS's time limit.
         pushService.notifyAboutNewMail(toNotify)
         WidgetBridge.update(from: store.threads)
+        // A push is also a chance to send what's scheduled, to see whether
+        // a follow-up reminder is due, and to keep push itself alive (Gmail
+        // lapses after 7 days, Outlook after about 3).
+        await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
+        await FollowUps.shared.check(store: store)
+        await pushService.renewOutlookSubscriptions(accounts: auth.accounts.map(\.email))
+        await pushService.renewWatchIfDue(accounts: auth.accounts.map(\.email))
         return true
     }
 
@@ -380,7 +392,23 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         if store.state != .loaded { await store.load() }
         // Archive and reply need the account back, or they're turned away.
         await auth.waitUntilRestored()
-        guard let thread = store.threads.first(where: { $0.id == ThreadID(account: account, providerID: providerID) }) else { return }
+        let id = ThreadID(account: account, providerID: providerID)
+        // The notification extension can show an email before Corres has
+        // stored it: fetched now, or a reply typed into it would be lost.
+        if store.thread(id) == nil {
+            _ = await sync.syncAll(accounts: [account])
+            await store.load()
+        }
+        guard let thread = store.thread(id) else {
+            // Still not here: your words are kept as a draft to finish in
+            // Corres, rather than vanishing.
+            if action == PushNotificationService.replyAction, let typed, !typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                outbox.shelve(Draft(kind: .new, fromAccount: account, to: "", subject: "", body: typed), replyingTo: nil)
+            } else if action == UNNotificationDefaultActionIdentifier {
+                router.pending = .thread(id)
+            }
+            return
+        }
         switch action {
         case PushNotificationService.archiveAction:
             await threadActions.archive(thread)

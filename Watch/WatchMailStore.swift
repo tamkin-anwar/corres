@@ -76,21 +76,25 @@ final class WatchMailStore: NSObject {
     }
 
     /// Straight to the iPhone when it's near; otherwise queued until it is.
-    func send(_ command: WatchLink.Command) {
+    /// False when it was only queued, so a reply doesn't claim it went.
+    @discardableResult
+    func send(_ command: WatchLink.Command) -> Bool {
         switch command {
         case .handled, .archive:
             done.insert(command.key)
             updateFace()
         case .markRead, .reply: break
         }
-        guard let data = WatchLink.encode(command) else { return }
+        guard let data = WatchLink.encode(command) else { return false }
         let session = WCSession.default
         if session.activationState == .activated, session.isReachable {
             session.sendMessage([WatchLink.commandKey: data], replyHandler: nil) { _ in
                 session.transferUserInfo([WatchLink.commandKey: data])
             }
+            return true
         } else {
             session.transferUserInfo([WatchLink.commandKey: data])
+            return false
         }
     }
 }

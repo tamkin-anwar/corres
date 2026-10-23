@@ -69,6 +69,7 @@ final class OutboxService {
     /// Puts an unfinished email aside and saves it to Gmail's Drafts
     /// (updating the same draft if it was saved before).
     func shelve(_ draft: Draft, replyingTo thread: Correspondence?) {
+        let draft = Self.keepingReplyHeaders(draft, thread: thread)
         shelved = Shelved(draft: draft)
         autosave(draft, replyingTo: thread)
     }
@@ -97,10 +98,11 @@ final class OutboxService {
             }
             let from = fromHeader(draft, account: account)
             let existing = gmailDraftID(for: draft)
-            guard let id = try? await client.saveDraft(attachments: draft.attachments, threadId: thread?.id.providerID,
+            let draft = Self.keepingReplyHeaders(draft, thread: thread)
+            guard let id = try? await client.saveDraft(attachments: draft.attachments, threadId: Self.threadProviderID(draft, thread: thread, account: account),
                                                        existingID: existing, account: account, compose: { withAttachments in
                 GmailMessageComposer.compose(from: from, to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
-                                             body: draft.body, inReplyTo: thread?.messageIdHeader, rootReference: Self.rootReference(of: thread),
+                                             body: draft.body, inReplyTo: draft.inReplyTo, rootReference: draft.rootReference,
                                              messageID: Self.rfc822MessageID(for: draft.id),
                                              attachments: withAttachments ? draft.attachments : [], html: draft.bodyHTML, calendar: draft.calendarReply)
             }) else {
@@ -129,6 +131,22 @@ final class OutboxService {
         removeGmailDraft(of: draft, replyingTo: thread)
     }
 
+    /// From changed to another account: the draft saved in the old
+    /// account's Drafts goes, once any save in flight lands, and the next
+    /// save starts a new one in the new account. Queued behind that save,
+    /// so a later one waits for this instead of racing it.
+    func moveDraft(_ draft: Draft, awayFrom oldAccount: String) {
+        let previous = saving[draft.id]
+        let known = draft.gmailDraftID
+        saving[draft.id] = Task {
+            await previous?.value
+            guard let draftID = known ?? gmailDraftIDs[draft.id] else { return }
+            gmailDraftIDs[draft.id] = nil
+            if shelved?.id == draft.id { shelved?.draft.gmailDraftID = nil }
+            try? await client.deleteDraft(id: draftID, account: oldAccount)
+        }
+    }
+
     /// Takes its Gmail draft away, once any save in flight lands: when it's
     /// deleted, and when it's scheduled (Send Later holds it now, and a
     /// copy left in Drafts could be sent from another device as well).
@@ -141,6 +159,26 @@ final class OutboxService {
             gmailDraftIDs[draft.id] = nil
             try? await client.deleteDraft(id: draftID, account: account)
         }
+    }
+
+    /// The server draft saved for this email so far, if any: kept with a
+    /// copy on the Mac, so it's updated, not saved twice, after a relaunch.
+    func savedDraftID(for draft: Draft) -> String? { gmailDraftID(for: draft) }
+
+    /// Waits for the draft saves in flight, for up to `timeout`, so quitting
+    /// doesn't cut one off halfway. False if some were still going.
+    func finishDraftSaves(timeout: Duration) async -> Bool {
+        let inFlight = Array(saving.values)
+        guard !inFlight.isEmpty else { return true }
+        @MainActor final class Done { var value = false }
+        let done = Done()
+        let waiter = Task { for task in inFlight { await task.value }; done.value = true }
+        let deadline = ContinuousClock.now + timeout
+        while !done.value, ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        if !done.value { waiter.cancel() }
+        return done.value
     }
 
     private let store: MailStore
@@ -267,6 +305,7 @@ final class OutboxService {
     /// own id (the Share sheet, before it lost its connection), so it keeps
     /// that Message-ID and Gmail is asked first, and it never goes twice.
     func sendNow(_ draft: Draft, replyingTo thread: Correspondence?, asEarlierAttempt: Bool = false) async {
+        let draft = Self.keepingReplyHeaders(draft, thread: thread)
         let id = asEarlierAttempt ? draft.id : UUID()
         try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .pending))
         await commit(draft, thread: thread, id: id, checkForExistingSendFirst: asEarlierAttempt)
@@ -276,6 +315,9 @@ final class OutboxService {
     /// Message-ID, so a first attempt that did reach the server is found
     /// rather than sent again.
     func queueSend(_ draft: Draft, replyingTo thread: Correspondence?, reusing earlierID: UUID? = nil) {
+        // Saved with the reply's headers, so a retry or a resume after a
+        // restart still threads it, found or not.
+        let draft = Self.keepingReplyHeaders(draft, thread: thread)
         // Compose is modal, so only one send is ever mid-undo-window at a
         // time; if a second arrives anyway, the first has already had its
         // chance to be undone and commits for real right now.
@@ -312,10 +354,13 @@ final class OutboxService {
         }
     }
 
-    /// Cancels the pending send entirely; nothing is sent, and the draft is
-    /// gone, matching what "undo send" means everywhere else.
+    /// Cancels the pending send: nothing is sent, and the email is put
+    /// aside (the pill) to open again and change, as Gmail and Mail bring
+    /// it back. It used to be lost.
     func undo() {
         guard let currentPending = pending else { return }
+        let draft = queuedDraft
+        let thread = queuedThread
         task?.cancel()
         task = nil
         pending = nil
@@ -323,6 +368,7 @@ final class OutboxService {
         queuedThread = nil
         let id = currentPending.id
         Task { try? await repository.removeOutboxEntry(id: id) }
+        if let draft { shelve(draft, replyingTo: thread) }
     }
 
     func waitForAccounts() async { await auth.waitUntilRestored() }
@@ -487,8 +533,29 @@ final class OutboxService {
     /// snapshot, since the thread it refers to is already the repository's
     /// own source of truth and could otherwise drift out of date between
     /// when it was queued and when it's resumed).
+    /// Any conversation the store has (archived, or opened from a mailbox),
+    /// not only those listed in Mail. Not found, the draft's own reply
+    /// headers still thread it (`keepingReplyHeaders`).
     private func resolveThread(for draft: Draft) -> Correspondence? {
-        draft.threadID.flatMap { id in store.threads.first { $0.id == id } }
+        draft.threadID.flatMap { store.thread($0) }
+    }
+
+    /// The reply's In-Reply-To and References, taken from the thread while
+    /// it's to hand (its latest message) and kept on the draft.
+    nonisolated private static func keepingReplyHeaders(_ draft: Draft, thread: Correspondence?) -> Draft {
+        guard let thread else { return draft }
+        var draft = draft
+        if let header = thread.messageIdHeader { draft.inReplyTo = header }
+        if let root = rootReference(of: thread) { draft.rootReference = root }
+        return draft
+    }
+
+    /// The conversation to send into: the thread's, or, when it couldn't
+    /// be found, the one the draft was written in, on the same account.
+    nonisolated private static func threadProviderID(_ draft: Draft, thread: Correspondence?, account: String) -> String? {
+        if let thread { return thread.id.providerID }
+        guard draft.kind != .new, let id = draft.threadID, id.account == account else { return nil }
+        return id.providerID
     }
 
     /// A reply/forward to a real (non-sample) thread always sends via Gmail
@@ -607,9 +674,11 @@ final class OutboxService {
     private func sendViaGmail(draft: Draft, thread: Correspondence?, account: String, id: UUID) async throws -> ThreadID {
         guard auth.isConnected(account) else { throw GmailAPIClient.ClientError.notSignedIn }
         let from = fromHeader(draft, account: account)
-        let threadId = try await client.send(attachments: draft.attachments, threadId: thread?.id.providerID, account: account) { withAttachments in
+        let draft = Self.keepingReplyHeaders(draft, thread: thread)
+        let threadId = try await client.send(attachments: draft.attachments, threadId: Self.threadProviderID(draft, thread: thread, account: account),
+                                             account: account) { withAttachments in
             GmailMessageComposer.compose(from: from, to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
-                                         body: draft.body, inReplyTo: thread?.messageIdHeader, rootReference: Self.rootReference(of: thread),
+                                         body: draft.body, inReplyTo: draft.inReplyTo, rootReference: draft.rootReference,
                                          messageID: Self.rfc822MessageID(for: id),
                                          attachments: withAttachments ? draft.attachments : [], html: draft.bodyHTML, calendar: draft.calendarReply)
         }

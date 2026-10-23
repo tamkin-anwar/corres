@@ -35,7 +35,34 @@ struct ReplyAddressTests {
 
     @Test func youAreNeverCopied() {
         let mail = message(from: "sam@example.com", to: ["ME@example.com"], cc: [me, "alex@example.com"])
-        #expect(mail.replyAllCc == ["alex@example.com"])
+        #expect(mail.replyAllCc(own: []) == ["alex@example.com"])
+    }
+
+    /// Recipients usually come with names: "Me <me@…>" is still you.
+    @Test func youAreNeverCopiedUnderYourName() {
+        let mail = message(from: "Sam <sam@example.com>", to: ["Tamkin Anwar <ME@example.com>", "Alex <alex@example.com>"],
+                           cc: ["\"Anwar, Tamkin\" <me@example.com>"])
+        #expect(mail.replyAllCc(own: []) == ["Alex <alex@example.com>"])
+    }
+
+    /// Your other accounts and send-as addresses aren't copied either.
+    @Test func noneOfYourAddressesAreCopied() {
+        let own: Set<String> = ["hello@studio.example", "me@work.example"]
+        let mail = message(from: "sam@example.com", to: [me, "Studio <Hello@Studio.example>"],
+                           cc: ["me@work.example", "Alex <alex@example.com>"])
+        #expect(mail.replyAllCc(own: own) == ["Alex <alex@example.com>"])
+    }
+
+    /// Someone listed twice, once with a name, is copied once.
+    @Test func everyoneIsCopiedOnce() {
+        let mail = message(from: "sam@example.com", to: [me, "alex@example.com"], cc: ["Alex <ALEX@example.com>", "Sam <sam@example.com>"])
+        #expect(mail.replyAllCc(own: []) == ["alex@example.com"])
+    }
+
+    /// Your own message sent from an alias: Reply goes to who you wrote to.
+    @Test func replyingToYourAliasGoesToWhoYouWroteTo() {
+        let mail = message(from: "hello@studio.example", to: ["Sam <sam@example.com>", "Studio <hello@studio.example>"])
+        #expect(mail.replyAddresses(own: ["hello@studio.example"]) == ["Sam <sam@example.com>"])
     }
 }
 

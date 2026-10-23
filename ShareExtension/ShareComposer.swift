@@ -36,6 +36,9 @@ final class ShareComposer {
 
     private let client = MailClient()
     private let draftID = UUID()
+    /// Sent once already: a try again asks the server first, since the
+    /// first may have gone with only its answer lost.
+    private var triedSending = false
 
     init() {
         snapshot = ShareSnapshot.load()
@@ -253,13 +256,21 @@ final class ShareComposer {
         guard let account else { return }
         let draft = draft()
         phase = .sending
+        if triedSending,
+           (try? await client.findMessage(rfc822MessageID: "\(draft.id.uuidString)@corres.app", account: account)) != nil {
+            phase = .sent
+            return
+        }
+        triedSending = true
         do {
             let full = raw(draft), bare = raw(draft, withAttachments: false)
             try await client.send(attachments: draft.attachments, threadId: nil, account: account) { $0 ? full : bare }
             phase = .sent
-        } catch let error as URLError where Self.neverReachedGmail(error) {
-            // Corres sends it as soon as it can (the same Message-ID, so
-            // it can't arrive twice).
+        } catch let error as URLError where Self.neverReachedGmail(error) || Self.mayHaveGone(error) {
+            // Never reached the server, or the connection dropped before
+            // its answer came back (it may have gone): either way Corres
+            // sends it as soon as it can, asking the server first (the same
+            // Message-ID), so it never arrives twice.
             if (try? ShareOutbox.add(draft)) != nil {
                 phase = .queued
             } else {
@@ -285,6 +296,11 @@ final class ShareComposer {
     }
 
     func retry() { phase = .editing }
+
+    /// The connection went mid-send: the server may have it.
+    private static func mayHaveGone(_ error: URLError) -> Bool {
+        [.timedOut, .networkConnectionLost].contains(error.code)
+    }
 
     private static func neverReachedGmail(_ error: URLError) -> Bool {
         [.notConnectedToInternet, .dataNotAllowed, .internationalRoamingOff, .cannotFindHost,

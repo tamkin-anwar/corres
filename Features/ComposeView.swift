@@ -102,7 +102,13 @@ struct ComposeView: View {
                 ?? auth?.primaryAccount?.email
         }
         let signature = CorresSettings.signature(for: initial.fromAccount ?? initial.threadID?.account ?? "sample", reply: initial.kind != .new)
-        initial.body = Self.adding(signature: signature, to: initial.body)
+        // Only a fresh email gets the signature, as on the Mac: a saved
+        // draft, one put aside or undone, or one opened from Send Later
+        // has the one it was written with, and adding it again doubled it.
+        if initial.gmailDraftID == nil, initial.signatureAdded != true {
+            initial.body = Self.adding(signature: signature, to: initial.body)
+        }
+        initial.signatureAdded = true
         self._signatureText = State(initialValue: initial.body.contains(signature) ? signature : "")
         // A reply, Reply All or a saved draft arrives with its people
         // already written in: chips from the start, as in Mail, not text
@@ -1187,6 +1193,12 @@ struct ComposeView: View {
                 set: { newValue in
                     guard let option = fromOptions.first(where: { $0.account + "|" + $0.address.email == newValue }) else { return }
                     let previous = draft.fromAccount
+                    if previous != option.account, let old = previous ?? auth?.primaryAccount?.email {
+                        // Saved to the old account's Drafts: it goes from
+                        // there, and the next save starts one in the new.
+                        outbox.moveDraft(draft, awayFrom: old)
+                        draft.gmailDraftID = nil
+                    }
                     draft.fromAccount = option.account
                     draft.fromAddress = option.address.isPrimary ? nil : option.address.email
                     draft.fromName = option.address.name.isEmpty ? nil : option.address.name

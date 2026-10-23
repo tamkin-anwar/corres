@@ -61,12 +61,19 @@ final class PushNotificationService {
         await renewWatch(accounts: accounts)
     }
 
+    /// Every launch while notifications are on, as Apple asks: a new or
+    /// restored iPhone, or a changed token, gets its pushes again.
+    func registerIfEnabled() {
+        guard isEnabled else { return }
+        PushNotificationService.application.registerForRemoteNotifications()
+    }
+
     func disableAll(accounts: [String]) async {
         isEnabled = false
         defaults.set(false, forKey: Self.enabledKey)
         PushNotificationService.application.unregisterForRemoteNotifications()
         await withTaskGroup(of: Void.self) { group in
-            for account in accounts {
+            for account in accounts where MailAccounts.provider(for: account) != .google {
                 group.addTask { try? await self.client.stopWatching(account: account) }
             }
         }
@@ -81,7 +88,9 @@ final class PushNotificationService {
     /// account's; `disableAll` remains the "turn notifications off entirely"
     /// path.
     func disable(account: String) async {
-        try? await client.stopWatching(account: account)
+        // Gmail's watch belongs to the account, shared by all your devices:
+        // stopping it here would silence them too. It lapses on its own.
+        if MailAccounts.provider(for: account) != .google { try? await client.stopWatching(account: account) }
         if let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) {
             try? await post(path: "unregister", body: ["deviceToken": deviceTokenHex, "emailAddress": account])
         }
@@ -93,11 +102,8 @@ final class PushNotificationService {
     func didRegister(deviceToken: Data, accounts: [String]) async {
         let hex = deviceToken.map { String(format: "%02x", $0) }.joined()
         defaults.set(hex, forKey: Self.deviceTokenKey)
-        await withTaskGroup(of: Void.self) { group in
-            for account in accounts {
-                group.addTask { try? await self.post(path: "register", body: ["emailAddress": account, "deviceToken": hex]) }
-            }
-        }
+        // Each account by its own route, with its alert choice kept.
+        await renewWatch(accounts: accounts)
     }
 
     /// Outlook's subscriptions last under three days, so every push also
@@ -108,8 +114,8 @@ final class PushNotificationService {
         let key = "corres.push.lastRenewed"
         let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
         guard !accounts.isEmpty, Date.now.timeIntervalSince(last) > 12 * 3_600 else { return }
-        UserDefaults.standard.set(Date.now, forKey: key)
-        await renewWatch(accounts: accounts)
+        // Recorded only once it worked: offline, it's tried again next time.
+        if await renewWatch(accounts: accounts) { UserDefaults.standard.set(Date.now, forKey: key) }
     }
 
     func renewOutlookSubscriptions(accounts: [String]) async {
@@ -129,55 +135,59 @@ final class PushNotificationService {
     /// `AppDelegate.performLaunchWork`) and inside a capped-duration
     /// `BGAppRefreshTask`, so N accounts waiting on each other's network
     /// round trip in turn is real, avoidable time either way.
-    func renewWatch(accounts: [String]) async {
-        guard isEnabled else { return }
+    /// Whether every account's watch and registration went through, so a
+    /// failed renewal is tried again soon rather than in twelve hours.
+    @discardableResult
+    func renewWatch(accounts: [String]) async -> Bool {
+        guard isEnabled else { return true }
         // Read once, on the main actor, before spawning concurrent child
-        // tasks: `UserDefaults` isn't `Sendable`, so a task-group closure
-        // can't reach back across the actor boundary to read `self.defaults`
-        // directly without forcing an await on every access anyway.
+        // tasks: `UserDefaults` isn't `Sendable`.
         let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey)
-        await withTaskGroup(of: Void.self) { group in
+        return await withTaskGroup(of: Bool.self) { group in
             for account in accounts {
                 group.addTask {
-                    // iCloud has no push for apps: with Instant Notifications
-                    // on, Corres's watcher holds its Inbox open instead.
-                    if MailAccounts.provider(for: account).usesIMAP {
-                        if await MainActor.run(body: { AccountPreferences.icloudInstant(for: account) }), let deviceTokenHex {
-                            try? await self.registerICloud(account: account, deviceToken: deviceTokenHex)
+                    do {
+                        // iCloud has no push for apps: with Instant Notifications
+                        // on, Corres's watcher holds its Inbox open instead.
+                        if MailAccounts.provider(for: account).usesIMAP {
+                            if await MainActor.run(body: { AccountPreferences.icloudInstant(for: account) }), let deviceTokenHex {
+                                try await self.registerICloud(account: account, deviceToken: deviceTokenHex)
+                            }
+                            return true
                         }
-                        return
-                    }
-                    // Outlook: a Graph subscription, its secret handed to
-                    // the relay, so only Microsoft's real notifications wake
-                    // this device.
-                    if MailAccounts.provider(for: account) == .microsoft {
-                        guard let deviceTokenHex,
-                              let subscription = try? await OutlookClient().subscribe(account: account, notificationURL: Self.graphNotificationURL) else { return }
-                        // "alerts": this build's notification extension shows
-                        // the email itself, the moment it arrives, unless the
-                        // account's notifications are off.
-                        let alerts = await MainActor.run { Self.showsPushAlerts && AccountPreferences.level(for: account) != nil }
-                        try? await self.post(path: "register-graph", body: ["subscriptionId": subscription.id, "clientState": subscription.secret,
-                                                                            "emailAddress": account, "deviceToken": deviceTokenHex,
-                                                                            "alerts": alerts ? "1" : "0"])
-                        return
-                    }
-                    // `watch` is `@discardableResult` on its own
-                    // declaration, but that doesn't propagate through
-                    // `try?`, which still warns its own result is unused;
-                    // discard it explicitly.
-                    _ = try? await self.client.watch(topicName: Self.pubsubTopicName, account: account)
-                    if let deviceTokenHex {
+                        // Outlook: a Graph subscription, its secret handed to
+                        // the relay, so only Microsoft's real notifications wake
+                        // this device.
+                        if MailAccounts.provider(for: account) == .microsoft {
+                            guard let deviceTokenHex else { return false }
+                            let subscription = try await OutlookClient().subscribe(account: account, notificationURL: Self.graphNotificationURL)
+                            // "alerts": this build's notification extension shows
+                            // the email itself, the moment it arrives, unless the
+                            // account's notifications are off.
+                            let alerts = await MainActor.run { Self.showsPushAlerts && AccountPreferences.level(for: account) != nil }
+                            try await self.post(path: "register-graph", body: ["subscriptionId": subscription.id, "clientState": subscription.secret,
+                                                                               "emailAddress": account, "deviceToken": deviceTokenHex,
+                                                                               "alerts": alerts ? "1" : "0"])
+                            return true
+                        }
+                        _ = try await self.client.watch(topicName: Self.pubsubTopicName, account: account)
+                        guard let deviceTokenHex else { return false }
                         // Visible Gmail pushes only where the extension can stay
                         // silent about changes that aren't new mail.
                         let alerts = await MainActor.run {
                             NotifyPolicy.gmailAlerts && Self.showsPushAlerts && AccountPreferences.level(for: account) != nil
                         }
-                        try? await self.post(path: "register", body: ["emailAddress": account, "deviceToken": deviceTokenHex,
-                                                                      "gmailAlerts": alerts ? "1" : "0"])
+                        try await self.post(path: "register", body: ["emailAddress": account, "deviceToken": deviceTokenHex,
+                                                                     "gmailAlerts": alerts ? "1" : "0"])
+                        return true
+                    } catch {
+                        return false
                     }
                 }
             }
+            var allWent = true
+            for await went in group where !went { allWent = false }
+            return allWent
         }
     }
 

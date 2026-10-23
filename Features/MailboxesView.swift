@@ -497,9 +497,11 @@ struct MailboxView: View {
         } else if mailbox.offersMoveToInbox && !thread.labelIds.contains("INBOX") {
             Button {
                 Task {
-                    await threadActions.moveToInbox(thread)
                     // Trash and Spam no longer hold it; the others still do.
-                    if mailbox == .trash || mailbox == .spam { removed.insert(thread.id) }
+                    // Only once the server agreed: a failed Restore keeps the row.
+                    if await threadActions.moveToInbox(thread), mailbox == .trash || mailbox == .spam {
+                        removed.insert(thread.id)
+                    }
                 }
             } label: {
                 Label(mailbox == .spam ? "Not Spam" : mailbox == .trash ? "Restore" : "Move to Inbox",
@@ -521,7 +523,8 @@ struct MailboxView: View {
         if mailbox == .flagged {
             Button {
                 removed.insert(thread.id)
-                Task { await threadActions.setFlagged(false, for: thread) }
+                // Back in the list if the server refused it.
+                Task { if !(await threadActions.setFlagged(false, for: thread)) { removed.remove(thread.id) } }
             } label: {
                 Label("Unflag", systemImage: "flag.slash")
             }

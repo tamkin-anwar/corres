@@ -40,6 +40,7 @@ struct MailListView: View {
 private struct MailRow: View {
     let mail: WatchLink.Mail
     let showsReason: Bool
+    @Environment(\.isLuminanceReduced) private var isLuminanceReduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -54,6 +55,9 @@ private struct MailRow: View {
                 Text(mail.reason).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
             }
         }
+        // Who wrote and what about stay hidden with your wrist down.
+        .privacySensitive()
+        .redacted(reason: isLuminanceReduced ? .privacy : [])
         .accessibilityElement(children: .combine)
         .accessibilityValue(mail.isUnread ? Text("Unread") : Text(""))
     }
@@ -64,19 +68,24 @@ struct MailDetailView: View {
     let mail: WatchLink.Mail
     @State private var replying = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.isLuminanceReduced) private var isLuminanceReduced
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
-                Text(mail.sender).font(.headline)
-                Text(mail.subject).font(.subheadline.weight(.semibold))
-                if !mail.reason.isEmpty {
-                    Text(mail.reason).font(.footnote).foregroundStyle(WatchPalette.accent)
+                Group {
+                    Text(mail.sender).font(.headline)
+                    Text(mail.subject).font(.subheadline.weight(.semibold))
+                    if !mail.reason.isEmpty {
+                        Text(mail.reason).font(.footnote).foregroundStyle(WatchPalette.accent)
+                    }
                 }
+                .privacySensitive()
                 Text(mail.receivedAt, format: .dateTime.weekday(.abbreviated).hour().minute())
                     .font(.caption2).foregroundStyle(.secondary)
                 Divider()
                 Text(mail.preview).font(.body)
+                    .privacySensitive()
                 VStack(spacing: 6) {
                     Button { replying = true } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
                     Button {
@@ -91,7 +100,8 @@ struct MailDetailView: View {
                 .padding(.top, 6)
             }
         }
-        .navigationTitle(mail.sender)
+        .redacted(reason: isLuminanceReduced ? .privacy : [])
+        .navigationTitle(isLuminanceReduced ? "" : mail.sender)
         .onAppear { if mail.isUnread { store.send(.markRead(key: mail.key)) } }
         .sheet(isPresented: $replying) {
             ReplyView(store: store, mail: mail)
@@ -105,6 +115,8 @@ struct ReplyView: View {
     let mail: WatchLink.Mail
     @State private var text = ""
     @State private var sent = false
+    /// The iPhone was out of reach: the reply waits on the Watch until it's back.
+    @State private var queued = false
     @Environment(\.dismiss) private var dismiss
 
     private var suggestions: [String] {
@@ -115,8 +127,9 @@ struct ReplyView: View {
     var body: some View {
         if sent {
             VStack(spacing: 8) {
-                Image(systemName: "paperplane.fill").font(.title2).foregroundStyle(WatchPalette.accent)
-                Text("Sent from your iPhone").font(.footnote).multilineTextAlignment(.center)
+                Image(systemName: queued ? "clock" : "paperplane.fill").font(.title2).foregroundStyle(WatchPalette.accent)
+                (queued ? Text("Will send from your iPhone") : Text("Sent from your iPhone"))
+                    .font(.footnote).multilineTextAlignment(.center)
             }
             .task {
                 try? await Task.sleep(for: .seconds(1.2))
@@ -139,7 +152,7 @@ struct ReplyView: View {
     private func send(_ words: String) {
         let trimmed = words.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        store.send(.reply(key: mail.key, text: trimmed))
+        queued = !store.send(.reply(key: mail.key, text: trimmed))
         sent = true
     }
 }

@@ -506,13 +506,30 @@ extension Correspondence {
     /// nobody is listed by name.
     public var reachedYouHidden: Bool {
         guard !isFromAccountOwner, listUnsubscribeMailto == nil, listUnsubscribeURL == nil else { return false }
-        let me = id.account.lowercased()
-        return !(toRecipients + ccRecipients).contains { $0.lowercased() == me }
+        let own = ownAddresses
+        return !(toRecipients + ccRecipients).contains { own.contains(Self.bareAddress($0)) }
     }
 
-    public var replyAddresses: [String] {
-        if isFromAccountOwner {
-            let others = toRecipients.filter { $0.lowercased() != id.account.lowercased() }
+    /// Every address that is you, for this conversation's account: the
+    /// account itself, your other accounts and every address they send as
+    /// (`InboxClassifier.ownAddresses`, kept up to date by the app).
+    public var ownAddresses: Set<String> {
+        InboxClassifier.ownAddresses.union([id.account.lowercased()])
+    }
+
+    /// "Maya Chen <Maya@X.com>" and "maya@x.com" are the same person.
+    public static func bareAddress(_ entry: String) -> String {
+        PeopleIndex.parse(entry)?.email ?? entry.trimmingCharacters(in: CharacterSet(charactersIn: "<> ")).lowercased()
+    }
+
+    public var replyAddresses: [String] { replyAddresses(own: ownAddresses) }
+
+    /// `own`: every address that is you (lowercased). This account is
+    /// always one of them.
+    public func replyAddresses(own: Set<String>) -> [String] {
+        let own = Set(own.map { $0.lowercased() }).union([id.account.lowercased()])
+        if own.contains((senderEmail ?? "").lowercased()) {
+            let others = toRecipients.filter { !own.contains(Self.bareAddress($0)) }
             return others.isEmpty ? [senderEmail ?? sender] : others
         }
         if !replyTo.isEmpty { return replyTo }
@@ -569,15 +586,22 @@ extension Correspondence {
     /// Reply All's Cc: everyone else on the message, never you or anyone
     /// already in To. A no-reply sender replaced by Reply-To isn't added
     /// back.
-    public var replyAllCc: [String] {
-        let me = id.account.lowercased()
-        var seen = Set([me, (senderEmail ?? "").lowercased()] + replyAddresses.map { $0.lowercased() })
+    /// Addresses are compared bare ("Me <me@x.com>" is still you), and
+    /// every address of yours is left out: this account, your other
+    /// accounts and their send-as addresses.
+    public var replyAllCc: [String] { replyAllCc(own: ownAddresses) }
+
+    public func replyAllCc(own: Set<String>) -> [String] {
+        let own = Set(own.map { $0.lowercased() }).union([id.account.lowercased()])
+        let fromYou = own.contains((senderEmail ?? "").lowercased())
+        var seen = own.union([(senderEmail ?? "").lowercased()])
+            .union(replyAddresses(own: own).map(Self.bareAddress))
         var result: [String] = []
-        let others = isFromAccountOwner ? ccRecipients : toRecipients + ccRecipients
+        let others = fromYou ? ccRecipients : toRecipients + ccRecipients
         for email in others {
-            let lowered = email.lowercased()
-            guard !seen.contains(lowered) else { continue }
-            seen.insert(lowered)
+            let bare = Self.bareAddress(email)
+            guard !seen.contains(bare) else { continue }
+            seen.insert(bare)
             result.append(email)
         }
         return result
@@ -635,6 +659,17 @@ public struct Draft: Identifiable, Hashable, Sendable, Codable {
     /// The Gmail draft this was opened from (Mailboxes → Drafts), deleted
     /// once this is sent so the draft doesn't linger after it's gone out.
     public var gmailDraftID: String?
+    /// For a reply: the Message-ID it answers and the conversation's first
+    /// (both without `<>`), kept with the draft so a reply sent later (a
+    /// retry, or a send resumed after a restart) still joins its
+    /// conversation when the thread itself isn't to hand. Optional so older
+    /// drafts decode.
+    public var inReplyTo: String?
+    public var rootReference: String?
+    /// Compose has added the signature already (it was opened before:
+    /// put aside, scheduled, undone), so opening it again doesn't add a
+    /// second one. Optional so older drafts decode.
+    public var signatureAdded: Bool?
 
     public init(id: UUID = UUID(), kind: Kind, threadID: ThreadID? = nil, fromAccount: String? = nil,
                 to: String, cc: String? = nil, bcc: String? = nil, subject: String, body: String = "", attachments: [PendingAttachment] = []) {
@@ -1685,4 +1720,81 @@ extension InboxClassifier {
 extension Correspondence {
     /// `reason`, in the reader's language.
     public var displayReason: String { InboxClassifier.displayReason(reason) }
+}
+
+/// Text written into a raw email so any mail server carries it as typed:
+/// paragraphs of any length and words in any script.
+public enum MailEncoding {
+    /// RFC 2045 quoted-printable over UTF-8, with CRLF line endings and no
+    /// line longer than 76 characters. Sent as 8bit, a long paragraph (or a
+    /// short one in Bengali, three bytes a letter) passed SMTP's 998-byte
+    /// line limit and arrived broken.
+    public static func quotedPrintable(_ text: String) -> String {
+        let normalized = text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
+        let hex = Array("0123456789ABCDEF".utf8)
+        func escaped(_ byte: UInt8) -> String {
+            String(decoding: [UInt8(ascii: "="), hex[Int(byte >> 4)], hex[Int(byte & 0x0F)]], as: UTF8.self)
+        }
+        return normalized.components(separatedBy: "\n").map { line -> String in
+            let bytes = Array(line.utf8)
+            var tokens: [String] = []
+            for (index, byte) in bytes.enumerated() {
+                let isLast = index == bytes.count - 1
+                switch byte {
+                case UInt8(ascii: " "), UInt8(ascii: "\t"):
+                    // Spaces at the end of a line are dropped in transit.
+                    tokens.append(isLast ? escaped(byte) : String(UnicodeScalar(byte)))
+                case 33...60, 62...126:
+                    tokens.append(String(UnicodeScalar(byte)))
+                default:
+                    tokens.append(escaped(byte))
+                }
+            }
+            // Soft line breaks ("=" at the end) keep each line at 76,
+            // never splitting an "=XX".
+            var lines: [String] = []
+            var current = ""
+            for token in tokens {
+                if current.count + token.count > 75 {
+                    lines.append(current + "=")
+                    current = ""
+                }
+                current += token
+            }
+            lines.append(current)
+            return lines.joined(separator: "\r\n")
+        }.joined(separator: "\r\n")
+    }
+
+    /// A header value as RFC 2047 encoded words when it isn't plain ASCII,
+    /// each word at most 75 characters (as the RFC requires) and split
+    /// between characters, never inside one, folded onto lines of their
+    /// own. Plain ASCII comes back as it is.
+    public static func encodedWords(_ text: String) -> String {
+        guard !text.allSatisfy(\.isASCII) else { return text }
+        // "=?UTF-8?B?" and "?=" take 12, leaving 63: 60 characters of
+        // base64, which is 45 bytes.
+        let maxBytes = 45
+        var chunks: [[UInt8]] = []
+        var current: [UInt8] = []
+        func add(_ bytes: [UInt8]) {
+            if !current.isEmpty, current.count + bytes.count > maxBytes {
+                chunks.append(current)
+                current = []
+            }
+            current += bytes
+        }
+        for character in text {
+            let bytes = Array(String(character).utf8)
+            if bytes.count <= maxBytes {
+                add(bytes)
+            } else {
+                // One very long character (a family emoji): split between
+                // its scalars, still never inside a UTF-8 sequence.
+                for scalar in character.unicodeScalars { add(Array(String(scalar).utf8)) }
+            }
+        }
+        if !current.isEmpty { chunks.append(current) }
+        return chunks.map { "=?UTF-8?B?\(Data($0).base64EncodedString())?=" }.joined(separator: "\r\n ")
+    }
 }

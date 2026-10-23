@@ -33,7 +33,7 @@ final class ThreadActionService {
             if let snapshot = action.snapshot { await self.store.putBack(snapshot) }
             // A read or a flag that didn't take settles with the next sync;
             // only a conversation coming back needs saying.
-            await self.report(error, failureMessage: "A change you made while offline couldn't be saved.", account: action.account,
+            await self.report(error, failureMessage: String(localized: "A change you made while offline couldn't be saved."), account: action.account,
                               quietly: action.snapshot == nil)
         }
     }
@@ -360,16 +360,16 @@ final class ThreadActionService {
         var done = false
         switch kind {
         case .archive:
-            await perform(thread, failureMessage: "Couldn't archive this conversation. Try again.",
+            await perform(thread, failureMessage: String(localized: "Couldn't archive this conversation. Try again."),
                           change: .modify(add: [], remove: ["INBOX"]), local: { done = true })
         case .trash:
-            await perform(thread, failureMessage: "Couldn't move this conversation to Trash. Try again.",
+            await perform(thread, failureMessage: String(localized: "Couldn't move this conversation to Trash. Try again."),
                           change: .trash, local: { done = true })
         case .spam:
-            await perform(thread, failureMessage: "Couldn't report this conversation as spam. Try again.",
+            await perform(thread, failureMessage: String(localized: "Couldn't report this conversation as spam. Try again."),
                           change: .modify(add: ["SPAM"], remove: ["INBOX"]), local: { done = true })
         case .move(let labelId, _):
-            await perform(thread, failureMessage: "Couldn't move this conversation. Try again.",
+            await perform(thread, failureMessage: String(localized: "Couldn't move this conversation. Try again."),
                           change: .modify(add: [labelId], remove: ["INBOX"]), local: { done = true })
         }
         return done
@@ -386,8 +386,9 @@ final class ThreadActionService {
     }
 
     /// Out of Trash or Spam, or back from the archive or a label: into the
-    /// Inbox, and into Corres's lists.
-    func moveToInbox(_ thread: Correspondence) async {
+    /// Inbox, and into Corres's lists. Whether the server took it.
+    @discardableResult
+    func moveToInbox(_ thread: Correspondence) async -> Bool {
         let labels = store.thread(thread.id)?.labelIds ?? thread.labelIds
         let account = thread.id.account, id = thread.id.providerID
         do {
@@ -400,8 +401,10 @@ final class ThreadActionService {
                 try await client.modifyThread(threadId: id, addLabelIds: ["INBOX"], account: account)
             }
             await store.adoptIntoInbox(thread)
+            return true
         } catch {
-            store.errorMessage = "Couldn't move this conversation to the Inbox. Try again."
+            store.errorMessage = String(localized: "Couldn't move this conversation to the Inbox. Try again.")
+            return false
         }
     }
 
@@ -413,7 +416,8 @@ final class ThreadActionService {
     /// trivial, harmless correction, nothing like re-inserting a removed
     /// row into a screen the person has already navigated away from.
     func setUnread(_ isUnread: Bool, for thread: Correspondence) async {
-        let failureMessage = "Couldn't mark this conversation as \(isUnread ? "unread" : "read"). Try again."
+        let failureMessage = isUnread ? String(localized: "Couldn't mark this conversation as unread. Try again.")
+            : String(localized: "Couldn't mark this conversation as read. Try again.")
         // Read state is never worth an alert, as in Mail and Gmail: a
         // failure is retried or settles with the next sync. Only a login
         // that can't change mail at all is said, since Reconnect fixes it.
@@ -427,7 +431,8 @@ final class ThreadActionService {
     /// Gmail's `STARRED` label, so this is just that label, optimistic like
     /// any other, and the same label arriving from elsewhere via sync is
     /// what shows a flag set in another app.
-    func setFlagged(_ isFlagged: Bool, for thread: Correspondence) async {
+    @discardableResult
+    func setFlagged(_ isFlagged: Bool, for thread: Correspondence) async -> Bool {
         await toggleLabel("STARRED", isOn: isFlagged, for: thread)
     }
 
@@ -514,8 +519,9 @@ final class ThreadActionService {
     /// before this call, since another toggle could have raced ahead of it
     /// locally; called once for the optimistic apply and, if needed, again
     /// with the opposite `isOn` to compute the revert.
-    func toggleLabel(_ labelId: String, isOn: Bool, for thread: Correspondence) async {
-        let failureMessage = "Couldn't update this label. Try again."
+    @discardableResult
+    func toggleLabel(_ labelId: String, isOn: Bool, for thread: Correspondence) async -> Bool {
+        let failureMessage = String(localized: "Couldn't update this label. Try again.")
         func labelIds(isOn: Bool) -> [String] {
             var labelIds = self.store.thread(thread.id)?.labelIds ?? thread.labelIds
             if isOn {
@@ -525,7 +531,7 @@ final class ThreadActionService {
             }
             return labelIds
         }
-        await performOptimistic(thread, failureMessage: failureMessage,
+        return await performOptimistic(thread, failureMessage: failureMessage,
                                 change: isOn ? .modify(add: [labelId], remove: []) : .modify(add: [], remove: [labelId]),
                                 local: { await self.store.setLabelIds(labelIds(isOn: isOn), for: thread.id) },
            revert: { await self.store.setLabelIds(labelIds(isOn: !isOn), for: thread.id) })
@@ -604,16 +610,18 @@ final class ThreadActionService {
     /// already uses. Only used where undoing the optimistic change is a
     /// trivial, non-destructive correction (`setUnread`/`toggleLabel`), never
     /// for Archive/Trash.
+    /// Whether the change stands: false once it was refused and reverted.
+    @discardableResult
     private func performOptimistic(_ thread: Correspondence, failureMessage: String, quietly: Bool = false,
                                    change: ActionQueue.Action.Kind, local: () async -> Void,
-                                   revert: () async -> Void) async {
+                                   revert: () async -> Void) async -> Bool {
         await local()
-        guard thread.id.account != Self.sampleAccount else { return }
+        guard thread.id.account != Self.sampleAccount else { return true }
         guard auth.isConnected(thread.id.account) else {
             // Still signing in (just launched, or opened from a
             // notification): the change waits for it rather than failing.
             ActionQueue.shared.enqueue(ActionQueue.Action(account: thread.id.account, threadID: thread.id.providerID, kind: change))
-            return
+            return true
         }
         do {
             try await guardModifyPermission(for: thread.id.account)
@@ -621,10 +629,12 @@ final class ThreadActionService {
             // a mark-as-read cancelled halfway used to come back as an
             // error and put the unread dot back.
             try await Task { try await self.send(change, for: thread) }.value
+            return true
         } catch {
             HangReporter.failure(failureMessage, error)
             await report(error, failureMessage: failureMessage, account: thread.id.account, quietly: quietly)
             await revert()
+            return false
         }
     }
 
@@ -670,21 +680,21 @@ final class ThreadActionService {
             } else if status == 403 && quietly {
                 askToReconnect(account)
             } else if let reason, GmailAPIClient.rateLimitReasons.contains(reason) {
-                errorMessage = "\(MailAccounts.provider(for: account).title) is limiting how fast changes can be made right now. Give it a moment and try again."
+                errorMessage = String(localized: "\(MailAccounts.provider(for: account).title) is limiting how fast changes can be made right now. Give it a moment and try again.")
             } else {
                 // Unexplained: show Gmail's own words, and offer Reconnect
                 // for any 403, the one thing within the person's reach.
                 if status == 403 { reconnectAccount = account }
                 let detail = [message, reason.map { "(\($0), \(status))" } ?? "(\(status))"].compactMap { $0 }.joined(separator: " ")
-                errorMessage = "\(failureMessage)\n\n\(MailAccounts.provider(for: account).title) said: \(detail)"
+                errorMessage = String(localized: "\(failureMessage)\n\n\(MailAccounts.provider(for: account).title) said: \(detail)")
             }
         case GmailAPIClient.ClientError.badResponse(let status) where status == 403 && hasModify != true:
             askToReconnect(account)
         case GmailAPIClient.ClientError.notSignedIn:
             if !quietly { reconnectAccount = account }
-            errorMessage = "\(account) needs to sign in again before Corres can change its mail."
+            errorMessage = String(localized: "\(account) needs to sign in again before Corres can change its mail.")
         case GmailAPIClient.ClientError.badResponse(let status):
-            errorMessage = "\(failureMessage) (\(MailAccounts.provider(for: account).title) error \(status))"
+            errorMessage = String(localized: "\(failureMessage) (\(MailAccounts.provider(for: account).title) error \(status))")
         default:
             errorMessage = failureMessage
         }
@@ -692,6 +702,6 @@ final class ThreadActionService {
 
     private func askToReconnect(_ account: String) {
         reconnectAccount = account
-        errorMessage = "Corres can read \(account) but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for."
+        errorMessage = String(localized: "Corres can read \(account) but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for.")
     }
 }

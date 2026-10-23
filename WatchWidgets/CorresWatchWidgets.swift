@@ -27,9 +27,11 @@ struct NeedsYouProvider: TimelineProvider {
         completion(NeedsYouEntry(date: .now, face: context.isPreview ? .placeholder : WatchFace.load()))
     }
 
-    /// Drawn again only when the Watch app hears from the iPhone.
+    /// Drawn again when the Watch app hears from the iPhone, and every
+    /// half hour, so the Smart Stack can bring it up to date on its own.
     func getTimeline(in context: Context, completion: @escaping (Timeline<NeedsYouEntry>) -> Void) {
-        completion(Timeline(entries: [NeedsYouEntry(date: .now, face: WatchFace.load())], policy: .never))
+        completion(Timeline(entries: [NeedsYouEntry(date: .now, face: WatchFace.load())],
+                            policy: .after(.now.addingTimeInterval(30 * 60))))
     }
 }
 

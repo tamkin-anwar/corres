@@ -503,7 +503,7 @@ struct CorrespondenceList: View {
                 Section {
                     if destination == .mail, kind == .needsYou, needsYouLocked {
                         ProLockView(destination: .needsYou, onUnlock: { onUnlockPro?() },
-                                    onOpenMail: { mailFilter = .primary }, openMailTitle: "Show Primary")
+                                    onOpenMail: { mailFilter = .primary }, openMailTitle: String(localized: "Show Primary"))
                             .frame(minHeight: 440)
                     } else {
                         if destination == .mail, kind == .needsYou { needsYouShortcuts }
@@ -880,15 +880,69 @@ struct CorrespondenceList: View {
     }
 
     /// "When is my flight?", "what did Sam send", "receipts from Apple
-    /// this month": a question or a request, not a name to find.
+    /// this month": a question or a request, not a name to find. In each
+    /// of Corres's languages: Japanese and Chinese have no spaces to count
+    /// words by, so they go by their own question words and a long enough
+    /// question.
     static func looksLikeQuestion(_ text: String) -> Bool {
-        let words = text.lowercased().split(whereSeparator: { !$0.isLetter && $0 != "'" })
+        let lowered = text.lowercased()
+        let words = lowered.split(whereSeparator: { $0.isWhitespace || $0.isSymbol || ($0.isPunctuation && $0 != "'") })
+        let asks = lowered.contains { "?？¿".contains($0) }
+        if lowered.unicodeScalars.contains(where: { isUnspacedScript($0) }) {
+            let length = lowered.filter { !$0.isWhitespace && !$0.isPunctuation }.count
+            guard length >= 4 else { return false }
+            return asks || length >= 12 || unspacedQuestionWords.contains { lowered.contains($0) }
+        }
         guard words.count >= 3 else { return false }
-        if text.contains("?") { return true }
-        let openers: Set<Substring> = ["when", "what", "where", "who", "whom", "which", "how", "why", "did", "does", "do",
-                                       "is", "are", "was", "were", "has", "have", "can", "could", "show", "find", "any"]
-        return openers.contains(words[0])
+        if asks { return true }
+        if openers.contains(words[0]) { return true }
+        // Korean and Bengali put the question word anywhere in the sentence.
+        // A one-letter word only on its own ("কি", "왜"); longer ones also
+        // with an ending attached ("언제야").
+        return words.contains { word in
+            anywhereQuestionWords.contains { word == $0 || ($0.count > 1 && word.hasPrefix($0)) }
+        }
     }
+
+    /// Han, Hiragana and Katakana: written without spaces between words.
+    private static func isUnspacedScript(_ scalar: Unicode.Scalar) -> Bool {
+        switch scalar.value {
+        case 0x3040...0x30FF, 0x3400...0x4DBF, 0x4E00...0x9FFF, 0xF900...0xFAFF: return true
+        default: return false
+        }
+    }
+
+    private static let openers: Set<Substring> = [
+        // English
+        "when", "what", "where", "who", "whom", "which", "how", "why", "did", "does", "do",
+        "is", "are", "was", "were", "has", "have", "can", "could", "show", "find", "any",
+        // German
+        "wann", "was", "wo", "wer", "wem", "wen", "wie", "warum", "wieso", "welche", "welcher", "welches",
+        "hat", "habe", "hatte", "ist", "sind", "gibt", "kann", "zeig", "zeige", "finde",
+        // French
+        "quand", "quoi", "que", "qu'est", "qu", "où", "qui", "quel", "quelle", "quels", "quelles",
+        "comment", "pourquoi", "combien", "est", "ai", "montre", "trouve",
+        // Spanish
+        "cuándo", "cuando", "qué", "dónde", "donde", "quién", "quien", "quiénes", "cuál", "cual", "cuáles",
+        "cómo", "cuánto", "cuántos", "cuánta", "hay", "tengo", "muestra", "muéstrame", "busca", "encuentra",
+        // Portuguese
+        "quando", "quê", "onde", "quem", "qual", "quais", "como", "quanto", "quantos", "quanta",
+        "tem", "tenho", "há", "mostre", "mostra", "encontre", "ache"
+    ]
+
+    private static let anywhereQuestionWords: [String] = [
+        // Korean
+        "언제", "뭐", "무엇", "무슨", "어디", "누구", "누가", "어떻게", "왜", "어느", "몇", "알려", "보여", "찾아",
+        // Bengali
+        "কখন", "কী", "কি", "কোথায়", "কে", "কার", "কোন", "কীভাবে", "কিভাবে", "কেন", "কত", "দেখাও", "খুঁজ"
+    ]
+
+    private static let unspacedQuestionWords: [String] = [
+        // Japanese
+        "何", "なに", "いつ", "どこ", "誰", "だれ", "どう", "なぜ", "どれ", "どの", "いくら", "教えて", "ですか", "ますか",
+        // Chinese
+        "什么", "哪", "谁", "怎么", "为什么", "吗", "几", "多少", "何时", "是否", "有没有"
+    ]
 
     /// Typing a name in search offers the person, as Spark does: tap and
     /// you see everything with them, to and from, the whole mailbox
@@ -1222,16 +1276,25 @@ struct CorrespondenceList: View {
     private func leadingVisual(for action: LeadingSwipeAction, thread: Correspondence) -> SwipeVisual {
         switch action {
         case .pin:
-            SwipeVisual(title: thread.isPinned ? "Unpin" : "Pin",
+            SwipeVisual(title: thread.isPinned ? String(localized: "Unpin") : String(localized: "Pin"),
                        systemImage: thread.isPinned ? "pin.slash.fill" : "pin.fill", tint: CorresPalette.swipePin)
         case .unread:
-            SwipeVisual(title: thread.isUnread ? "Read" : "Unread",
+            SwipeVisual(title: thread.isUnread ? String(localized: "Read") : String(localized: "Unread"),
                        systemImage: thread.isUnread ? "envelope.open.fill" : "envelope.badge.fill",
                        tint: CorresPalette.swipeUnread)
         case .flag:
-            SwipeVisual(title: thread.isFlagged ? "Unflag" : "Flag",
+            SwipeVisual(title: thread.isFlagged ? String(localized: "Unflag") : String(localized: "Flag"),
                        systemImage: thread.isFlagged ? "flag.slash.fill" : "flag.fill",
                        tint: CorresPalette.swipeFlag)
+        }
+    }
+
+    /// A leading swipe as VoiceOver offers it: what it will do to this row.
+    private func accessibilityName(for action: LeadingSwipeAction, thread: Correspondence) -> String {
+        switch action {
+        case .pin: thread.isPinned ? String(localized: "Unpin") : String(localized: "Pin")
+        case .unread: thread.isUnread ? String(localized: "Mark as Read") : String(localized: "Mark as Unread")
+        case .flag: thread.isFlagged ? String(localized: "Unflag") : String(localized: "Flag")
         }
     }
 
@@ -1342,21 +1405,28 @@ struct CorrespondenceList: View {
             // `Button` — checked explicitly here so a VoiceOver user can't
             // double-fire an action through the accessibility path in the
             // same narrow window a sighted swipe is already blocked from.
-            .accessibilityAction(named: Text(leadingShortAction.settingsTitle)) {
-                guard !store.pending.contains(thread.id) else { return }
-                perform(leadingShortAction, on: thread)
-            }
-            .accessibilityAction(named: Text(leadingLongAction.settingsTitle)) {
-                guard !store.pending.contains(thread.id) else { return }
-                perform(leadingLongAction, on: thread)
-            }
-            .accessibilityAction(named: Text(trailingShortAction.title)) {
-                guard !store.pending.contains(thread.id) else { return }
-                perform(trailingShortAction, on: thread)
-            }
-            .accessibilityAction(named: Text(trailingLongAction.title)) {
-                guard !store.pending.contains(thread.id) else { return }
-                perform(trailingLongAction, on: thread)
+            //
+            // Named for what each does to this row now ("Unpin" on a pinned
+            // one), and not offered in Select mode, where a swipe isn't either.
+            .accessibilityActions {
+                if !isSelecting {
+                    Button(accessibilityName(for: leadingShortAction, thread: thread)) {
+                        guard !store.pending.contains(thread.id) else { return }
+                        perform(leadingShortAction, on: thread)
+                    }
+                    Button(accessibilityName(for: leadingLongAction, thread: thread)) {
+                        guard !store.pending.contains(thread.id) else { return }
+                        perform(leadingLongAction, on: thread)
+                    }
+                    Button(trailingShortAction.title) {
+                        guard !store.pending.contains(thread.id) else { return }
+                        perform(trailingShortAction, on: thread)
+                    }
+                    Button(trailingLongAction.title) {
+                        guard !store.pending.contains(thread.id) else { return }
+                        perform(trailingLongAction, on: thread)
+                    }
+                }
             }
         }
     }

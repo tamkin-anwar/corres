@@ -230,13 +230,13 @@ struct MessageList: NSViewRepresentable {
 
         func numberOfRows(in tableView: NSTableView) -> Int { rows.count }
 
-        /// A dragged row carries its conversation, and the rest of the
-        /// selection when it's part of it.
+        /// A dragged row carries its own conversation.
         func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> (any NSPasteboardWriting)? {
             guard rows.indices.contains(row), let thread = rows[row].thread else { return nil }
-            let ids = parent.selection.contains(thread.id) ? parent.selection : [thread.id]
+            // This row's own: AppKit asks once for each dragged row, so the
+            // rest of the selection comes with their own items.
             let item = NSPasteboardItem()
-            item.setString(MacDrag.encode(ids), forType: .string)
+            item.setString(MacDrag.encode([thread.id]), forType: .string)
             return item
         }
 
@@ -432,6 +432,40 @@ struct MessageListKey {
     let modifiers: NSEvent.ModifierFlags
 
     static let delete: UInt16 = 51, forwardDelete: UInt16 = 117, returnKey: UInt16 = 36, space: UInt16 = 49
+}
+
+/// Space in the list: the open email, a page at a time, as in Mail.
+@MainActor
+enum MacReadingScroll {
+    /// False when there's no email open beside `list` to scroll.
+    static func page(down: Bool, beside list: NSView?) -> Bool {
+        guard let listScroll = list?.enclosingScrollView, let content = listScroll.window?.contentView,
+              let pane = readingScroller(in: content, rightOf: listScroll) else { return false }
+        let clip = pane.contentView
+        let flipped = pane.documentView?.isFlipped ?? true
+        // A screenful, less a line or two kept in view, as paging does.
+        let step = max(clip.bounds.height - 40, 40) * (down == flipped ? 1 : -1)
+        var bounds = clip.bounds
+        bounds.origin.y += step
+        clip.scroll(to: clip.constrainBoundsRect(bounds).origin)
+        pane.reflectScrolledClipView(clip)
+        return true
+    }
+
+    /// The tallest scroller to the right of the list: the reading pane.
+    private static func readingScroller(in view: NSView, rightOf listScroll: NSScrollView) -> NSScrollView? {
+        let listEdge = listScroll.convert(listScroll.bounds, to: nil).maxX
+        var best: (scroll: NSScrollView, height: CGFloat)?
+        var stack = [view]
+        while let next = stack.popLast() {
+            if let scroll = next as? NSScrollView, scroll !== listScroll, !scroll.isHiddenOrHasHiddenAncestor {
+                let frame = scroll.convert(scroll.bounds, to: nil)
+                if frame.minX >= listEdge - 1, frame.height > (best?.height ?? 0) { best = (scroll, frame.height) }
+            }
+            stack += next.subviews
+        }
+        return best?.scroll
+    }
 }
 
 final class MessageTableView: NSTableView {

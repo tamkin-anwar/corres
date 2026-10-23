@@ -226,7 +226,7 @@ struct PreferencesView: View {
                 CorrespondenceMark().frame(width: 34, height: 34)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entitlements.plan != .none ? entitlements.plan.title
-                         : entitlements.isPro ? "Corres Pro · Beta" : "Corres Pro").font(.body.weight(.semibold))
+                         : entitlements.isPro ? String(localized: "Corres Pro · Beta") : "Corres Pro").font(.body.weight(.semibold))
                     Text(planStatus).font(.footnote).foregroundStyle(CorresPalette.secondary)
                 }
             }
@@ -1054,7 +1054,7 @@ private struct SortingSettingsView: View {
                     ForEach(CorresSettings.followUpChoices, id: \.self) { Text($0 == 1 ? "1 day" : "\($0) days").tag($0) }
                 }
             } footer: {
-                Text(sensitivityDetail + " Waiting turns into Follow up once someone hasn't replied in that long.")
+                Text(String(localized: "\(sensitivityDetail) Waiting turns into Follow up once someone hasn't replied in that long."))
             }
             Section {
                 Picker("Start of Day", selection: $morningHour) {
@@ -1338,8 +1338,7 @@ private struct NotificationSettingsView: View {
                 } header: {
                     Text("Notify Me About")
                 } footer: {
-                    Text((PushNotificationService.Level(rawValue: level) ?? .people).detail
-                         + " Everything is always in Corres when you open it.")
+                    Text(String(localized: "\((PushNotificationService.Level(rawValue: level) ?? .people).detail) Everything is always in Corres when you open it."))
                 }
                 Section {
                     Toggle("Morning Brief", isOn: $briefEnabled)
@@ -1375,8 +1374,7 @@ private struct NotificationSettingsView: View {
                     ForEach(CorresSettings.Badge.allCases) { Text($0.title).tag($0.rawValue) }
                 }
             } footer: {
-                Text((CorresSettings.Badge(rawValue: badge) ?? .needsYou).detail
-                     + " Accounts left out of All Inboxes aren't counted.")
+                Text(String(localized: "\((CorresSettings.Badge(rawValue: badge) ?? .needsYou).detail) Accounts left out of All Inboxes aren't counted."))
             }
             .onChange(of: badge) { if let store { WidgetBridge.update(from: store.threads) } }
         }

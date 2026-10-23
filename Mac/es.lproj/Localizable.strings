@@ -2317,3 +2317,41 @@
 "Show Sender Pictures" = "Mostrar fotos de remitentes";
 "Couldn't send" = "No se pudo enviar";
 "“%@” is waiting in Corres. It goes as soon as you're back online, or open Corres to try again." = "“%@” está esperando en Corres. Se enviará en cuanto vuelvas a tener conexión, o abre Corres para intentarlo de nuevo.";
+"A change you made while offline couldn't be saved." = "No se pudo guardar un cambio que hiciste sin conexión.";
+"Couldn't archive this conversation. Try again." = "No se pudo archivar esta conversación. Inténtalo de nuevo.";
+"Couldn't move this conversation to Trash. Try again." = "No se pudo mover esta conversación a la papelera. Inténtalo de nuevo.";
+"Couldn't report this conversation as spam. Try again." = "No se pudo marcar esta conversación como spam. Inténtalo de nuevo.";
+"Couldn't move this conversation. Try again." = "No se pudo mover esta conversación. Inténtalo de nuevo.";
+"Couldn't move this conversation to the Inbox. Try again." = "No se pudo mover esta conversación a la bandeja de entrada. Inténtalo de nuevo.";
+"Couldn't mark this conversation as unread. Try again." = "No se pudo marcar esta conversación como no leída. Inténtalo de nuevo.";
+"Couldn't mark this conversation as read. Try again." = "No se pudo marcar esta conversación como leída. Inténtalo de nuevo.";
+"Couldn't update this label. Try again." = "No se pudo actualizar esta etiqueta. Inténtalo de nuevo.";
+"%@ is limiting how fast changes can be made right now. Give it a moment and try again." = "%@ está limitando la velocidad de los cambios en este momento. Espera un poco e inténtalo de nuevo.";
+"%@\n\n%@ said: %@" = "%@\n\n%@ respondió: %@";
+"%@ needs to sign in again before Corres can change its mail." = "%@ tiene que volver a iniciar sesión para que Corres pueda cambiar su correo.";
+"%@ (%@ error %lld)" = "%@ (error de %@ %lld)";
+"Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres puede leer %@ pero no tiene permiso para cambiarla, así que marcar como leído, archivar y marcar con bandera no se aplican. Vuelve a conectarla y permite todos los permisos que pida.";
+"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "Tu compra está esperando aprobación. Corres Pro se desbloquea en cuanto se apruebe.";
+"The purchase didn't go through. Try again." = "La compra no se completó. Inténtalo de nuevo.";
+"Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "No se pudo abrir la hoja para canjear códigos. También puedes canjearlo en la App Store, desde tu cuenta.";
+"No Corres Pro purchase was found for this Apple Account." = "No se encontró ninguna compra de Corres Pro para esta cuenta de Apple.";
+"Couldn't reach the App Store to restore purchases. Try again." = "No se pudo conectar con la App Store para restaurar las compras. Inténtalo de nuevo.";
+"Corres couldn't find that email." = "Corres no encontró ese correo.";
+"There was nothing to change." = "No había nada que cambiar.";
+"Corres can't move mail to %@." = "Corres no puede mover correo a %@.";
+"Block everyone from %@" = "Bloquear a todos de %@";
+"Allow everyone from %@" = "Permitir a todos de %@";
+
+/* No comment provided by engineer. */
+"Delete Draft" = "Eliminar borrador";
+
+/* No comment provided by engineer. */
+"Delete this draft" = "Eliminar este borrador";
+
+/* No comment provided by engineer. */
+"Delete this draft?" = "¿Eliminar este borrador?";
+
+/* No comment provided by engineer. */
+"It's removed from Drafts too." = "También se quita de Borradores.";
+
+"These attachments couldn't come along: %@" = "Estos archivos adjuntos no se pudieron incluir: %@";

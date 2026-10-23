@@ -425,10 +425,12 @@ struct GmailAPIClient {
         return try await searchByRFC822MessageID("<\(rfc822MessageID)>", account: account)
     }
 
+    /// Drafts left out: a saved draft carries the same Message-ID as the
+    /// email it becomes, and must never count as sent.
     private func searchByRFC822MessageID(_ value: String, account: String) async throws -> ThreadID? {
         let token = try await accessToken(for: account)
         var components = URLComponents(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages")!
-        components.queryItems = [URLQueryItem(name: "q", value: "rfc822msgid:\(value)")]
+        components.queryItems = [URLQueryItem(name: "q", value: "rfc822msgid:\(value) -in:drafts")]
         let (data, response) = try await authorizedRequest(url: components.url!, token: token)
         try validate(response)
         let list = try JSONDecoder().decode(MessageListResponse.self, from: data)

@@ -7,14 +7,31 @@ import WebKit
 @MainActor
 final class MacPrinter: NSObject, WKNavigationDelegate {
     private static var current: MacPrinter?
-    private let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 640, height: 800))
+    private let webView: WKWebView = {
+        // Mail never runs its own scripts, printed or not.
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = false
+        return WKWebView(frame: NSRect(x: 0, y: 0, width: 640, height: 800), configuration: configuration)
+    }()
     private let window: NSWindow?
 
     static func print(_ thread: Correspondence, in window: NSWindow?) {
         let printer = MacPrinter(window: window)
         current = printer
         printer.webView.navigationDelegate = printer
-        printer.webView.loadHTMLString(page(for: thread), baseURL: nil)
+        let page = page(for: thread)
+        // A sender whose images are off stays off on paper: printing must
+        // not fetch the tracking pixels reading held back.
+        guard !(thread.imagesTrusted || CorresSettings.remoteImages == .always) else {
+            printer.webView.loadHTMLString(page, baseURL: nil)
+            return
+        }
+        Task { @MainActor in
+            if let list = await RemoteContentBlocker.list() {
+                printer.webView.configuration.userContentController.add(list)
+            }
+            printer.webView.loadHTMLString(page, baseURL: nil)
+        }
     }
 
     private init(window: NSWindow?) {

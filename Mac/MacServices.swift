@@ -131,6 +131,9 @@ final class MacServices {
         // Waking from sleep or back online: the old connections are gone,
         // so open new ones and check now.
         MacAppDelegate.didWake = { [weak self] in self?.reconnect() }
+        // A push only says mail changed: check now, without reconnecting
+        // every iCloud account's live connection.
+        MacAppDelegate.didReceivePush = { [weak self] in Task { await self?.checkForMail() } }
         NetworkWatch.shared.cameBack = { [weak self] in self?.reconnect() }
         NetworkWatch.shared.start()
         // The mail first, then the accounts: the list doesn't wait on the
@@ -152,8 +155,11 @@ final class MacServices {
         }
         await store.migrateAttentionRulesIfNeeded()
         let accounts = auth.accounts.map(\.email)
+        // What's already here isn't news: only what arrives from now on.
+        noticeBaseline()
         if await sync.syncAll(accounts: accounts) {
             await store.load()
+            await notifyArrivals()
             await semanticTriage.triageIfNeeded(store: store)
         }
         await labelDirectory.refreshIfConnected(accounts: accounts)
@@ -201,19 +207,47 @@ final class MacServices {
         let accounts = auth.accounts.map(\.email)
         guard !accounts.isEmpty, NetworkWatch.shared.isOnline else { return }
         let changeBefore = sync.lastChange
-        let before = Dictionary(store.threads.map { ($0.id, $0.isUnread) }, uniquingKeysWith: { first, _ in first })
+        // Handled from a desktop widget while Corres runs in the background:
+        // applied here, or the next snapshot brought the email back.
+        Organizer.shared.applyWidgetHandoffs()
         guard await sync.syncAll(accounts: accounts) else { return }
         await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
+        // Push kept alive while Corres stays open for days (cheap when not due).
+        await pushService.renewWatchIfDue(accounts: accounts)
         // Nothing new: the mailbox isn't read again.
         guard sync.lastChange != changeBefore else { return }
         await store.load()
-        let arrived = store.threads.filter { $0.isUnread && before[$0.id] != true && !$0.isScreenedOut }
-        await semanticTriage.triageIfNeeded(store: store, only: Set(arrived.map(\.id)))
+        await notifyArrivals()
+    }
+
+    /// The newest message of each conversation already considered, so a
+    /// new reply in an unread conversation is news, and nothing is
+    /// announced twice however many checks find it.
+    private var noticed: [ThreadID: String] = [:]
+
+    private func noticeBaseline() {
+        for thread in store.threads { if let latest = thread.latestMessageID { noticed[thread.id] = latest } }
+    }
+
+    /// Whatever arrived since last time, wherever the sync came from (the
+    /// 20-second check, iCloud's live connection, a push): one place.
+    private func notifyArrivals() async {
+        let fresh = store.threads.filter { thread in
+            guard let latest = thread.latestMessageID, noticed[thread.id] != latest else { return false }
+            return thread.isUnread && !thread.isFromAccountOwner
+        }
+        noticeBaseline()
+        guard !fresh.isEmpty else { return }
+        let ids = Set(fresh.filter { !$0.isScreenedOut }.map(\.id))
+        await semanticTriage.triageIfNeeded(store: store, only: ids)
         // Only while Corres isn't the app in front: when you're looking
         // at the list, the new row is the notice.
         guard !NSApplication.shared.isActive else { return }
-        let fresh = store.threads.filter { $0.isUnread && before[$0.id] != true && !$0.isScreenedOut }
-        let toNotify = fresh.filter { AccountPreferences.level(for: $0.id.account)?.includes($0) == true }
+        let toNotify = fresh.compactMap { store.thread($0.id) }.filter { thread in
+            thread.isScreenedOut
+                ? PushNotificationService.NewSenderAlerts.includes(thread) && AccountPreferences.level(for: thread.id.account) != nil
+                : AccountPreferences.level(for: thread.id.account)?.includes(thread) == true
+        }
         pushService.notifyAboutNewMail(toNotify)
     }
 
@@ -268,8 +302,13 @@ final class MacServices {
     /// iCloud and other IMAP accounts have no push for other apps: IDLE
     /// keeps a connection open so new mail lands within seconds.
     private func watchIMAP() {
-        IMAPWatcher.shared.start(accounts: auth.accounts.map(\.email)) { [sync, store] account in
-            Task { if await sync.syncIfConnected(account: account) { await store.load() } }
+        IMAPWatcher.shared.start(accounts: auth.accounts.map(\.email)) { [weak self] account in
+            Task { @MainActor in
+                guard let self, await self.sync.syncIfConnected(account: account) else { return }
+                await self.store.load()
+                // iCloud's new mail notifies too, not only the 20-second check's.
+                await self.notifyArrivals()
+            }
         }
     }
 

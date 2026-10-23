@@ -6,9 +6,19 @@ import UserNotifications
 /// with no window open.
 final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     /// Quitting while an email is in its Undo countdown: it goes first.
+    /// Emails still being written are saved to Drafts (for up to a few
+    /// seconds) and kept on this Mac, to open again at the next launch.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard let outbox = Organizer.shared.outbox, outbox.pending != nil else { return .terminateNow }
+        let drafts = MacComposeDrafts.shared
+        drafts.isQuitting = true
+        guard let outbox = Organizer.shared.outbox else {
+            drafts.writeNow()
+            return .terminateNow
+        }
         Task { @MainActor in
+            drafts.saveAllNow(outbox: outbox, store: Organizer.shared.store)
+            _ = await outbox.finishDraftSaves(timeout: .seconds(3))
+            drafts.noteSavedDrafts(from: outbox)
             await outbox.sendPendingNow()
             sender.reply(toApplicationShouldTerminate: true)
         }
@@ -21,6 +31,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
 
     /// The push token, and a wake-up push, handed to MacServices.
     @MainActor static var didRegister: ((Data) -> Void)?
+    @MainActor static var didReceivePush: (() -> Void)?
     @MainActor static var didWake: (() -> Void)?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -37,7 +48,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
     /// A silent push: mail changed on the server, so check now rather
     /// than at the next 20-second look.
     func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String: Any]) {
-        MainActor.assumeIsolated { MacAppDelegate.didWake?() }
+        MainActor.assumeIsolated { MacAppDelegate.didReceivePush?() }
     }
 
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
@@ -59,7 +70,9 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
             } else {
                 AppRouter.shared.pending = .destination(.needsYou)
             }
-            NSApplication.shared.activate()
+            // With the main window closed (Corres stays in the menu bar),
+            // it opens and takes the request as it appears.
+            MacWindows.showMain()
         }
     }
 

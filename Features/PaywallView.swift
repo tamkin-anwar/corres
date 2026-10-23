@@ -157,8 +157,8 @@ struct PaywallView: View {
 
     private func badge(_ product: Product) -> String? {
         switch product.id {
-        case EntitlementStore.ProductID.annual: savings.map { "Save \($0)%" }
-        case EntitlementStore.ProductID.lifetime: "Family"
+        case EntitlementStore.ProductID.annual: savings.map { String(localized: "Save \($0)%") }
+        case EntitlementStore.ProductID.lifetime: String(localized: "Family")
         default: nil
         }
     }
@@ -195,12 +195,30 @@ struct PaywallView: View {
         guard entitlements.isEligibleForTrial, let offer = product.subscription?.introductoryOffer,
               offer.paymentMode == .freeTrial else { return nil }
         let period = offer.period
+        // Spelled out in the person's own language ("1 week", "1週間").
+        var length = DateComponents()
+        let formatter = DateComponentsFormatter()
+        formatter.unitsStyle = .full
+        formatter.maximumUnitCount = 1
         switch period.unit {
-        case .day: return period.value == 7 ? "1 week" : "\(period.value) days"
-        case .week: return period.value == 2 ? "14 days" : "\(period.value) weeks"
-        case .month: return period.value == 1 ? "1 month" : "\(period.value) months"
+        case .day where period.value == 7:
+            length.weekOfMonth = 1
+            formatter.allowedUnits = [.weekOfMonth]
+        case .day:
+            length.day = period.value
+            formatter.allowedUnits = [.day]
+        case .week where period.value == 2:
+            length.day = 14
+            formatter.allowedUnits = [.day]
+        case .week:
+            length.weekOfMonth = period.value
+            formatter.allowedUnits = [.weekOfMonth]
+        case .month:
+            length.month = period.value
+            formatter.allowedUnits = [.month]
         default: return nil
         }
+        return formatter.string(from: length)
     }
 
     // MARK: - Purchase
@@ -276,7 +294,7 @@ struct ProLockView: View {
     let destination: Destination
     let onUnlock: () -> Void
     let onOpenMail: () -> Void
-    var openMailTitle = "Go to Mail"
+    var openMailTitle = String(localized: "Go to Mail")
 
     var body: some View {
         VStack(spacing: 18) {

@@ -87,7 +87,19 @@ final class WatchBridge: NSObject {
         // command (and a reply's text) would be dropped.
         if store.state != .loaded { await store.load() }
         await Organizer.shared.outbox?.waitForAccounts()
-        guard let thread = store.thread(ThreadID(account: parts[0], providerID: parts[1])) else { return }
+        let id = ThreadID(account: parts[0], providerID: parts[1])
+        // Archived or moved since the Watch last heard: still known here.
+        guard let thread = store.thread(id) ?? store.threadsIncludingHidden.first(where: { $0.id == id }) else {
+            // Gone altogether: a reply's words are kept as a draft, in Drafts
+            // and on the undo pill, to finish and address here.
+            if case .reply(_, let text) = command, id.account != "sample", let outbox = Organizer.shared.outbox {
+                var draft = Draft(kind: .new, fromAccount: id.account, to: "",
+                                  subject: String(localized: "Reply from your Apple Watch"))
+                draft.body = Draft.adding(signature: CorresSettings.signature(for: id.account, reply: true), to: text)
+                outbox.shelve(draft, replyingTo: nil)
+            }
+            return
+        }
         switch command {
         case .handled:
             await actions.setAttention(.handled, for: thread)

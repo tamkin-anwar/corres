@@ -162,10 +162,20 @@ final class MacMailboxModel {
         cachedRows.compactMap(\.thread).filter { selection.contains($0.id) }
     }
 
+    /// The selection's conversations, or, when they aren't in this list's
+    /// rows (Purchases, Attachments, one opened from a notification or
+    /// moved by a sync), from the store, so actions still reach them.
+    func selectedThreads(in store: MailStore) -> [Correspondence] {
+        let listed = selectedThreads
+        return listed.isEmpty ? selection.compactMap { store.thread($0) } : listed
+    }
+
     /// The conversation after (or, at the end, before) the selection, for
     /// selecting once the selection is archived or deleted, as Mail does.
-    func neighbor(after ids: Set<ThreadID>) -> ThreadID? {
-        let threads = cachedRows.compactMap(\.thread)
+    /// `rows`: the ones on screen (less what Unread Only hides), so a
+    /// hidden conversation isn't the one chosen.
+    func neighbor(after ids: Set<ThreadID>, in rows: [MacRow]? = nil) -> ThreadID? {
+        let threads = (rows ?? cachedRows).compactMap(\.thread)
         guard let last = threads.lastIndex(where: { ids.contains($0.id) }) else { return nil }
         if let next = threads[(last + 1)...].first(where: { !ids.contains($0.id) }) { return next.id }
         return threads[..<last].last(where: { !ids.contains($0.id) })?.id

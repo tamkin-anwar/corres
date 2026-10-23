@@ -197,14 +197,14 @@ final class EntitlementStore {
                 if case .verified(let transaction) = verification { await transaction.finish() }
                 await refresh()
             case .pending:
-                errorMessage = "Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved."
+                errorMessage = String(localized: "Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved.")
             case .userCancelled:
                 break
             @unknown default:
                 break
             }
         } catch {
-            errorMessage = "The purchase didn't go through. Try again."
+            errorMessage = String(localized: "The purchase didn't go through. Try again.")
         }
     }
 
@@ -225,7 +225,7 @@ final class EntitlementStore {
             #endif
             await refresh()
         } catch {
-            errorMessage = "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account."
+            errorMessage = String(localized: "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account.")
         }
     }
 
@@ -234,9 +234,9 @@ final class EntitlementStore {
         do {
             try await AppStore.sync()
             await refresh()
-            if !isPro { errorMessage = "No Corres Pro purchase was found for this Apple Account." }
+            if !isPro { errorMessage = String(localized: "No Corres Pro purchase was found for this Apple Account.") }
         } catch {
-            errorMessage = "Couldn't reach the App Store to restore purchases. Try again."
+            errorMessage = String(localized: "Couldn't reach the App Store to restore purchases. Try again.")
         }
     }
 

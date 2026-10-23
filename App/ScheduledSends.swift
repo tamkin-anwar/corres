@@ -38,6 +38,10 @@ final class ScheduledSends {
     /// Set by the shell: says it's scheduled, with Undo.
     var announce: ((Item) -> Void)?
     private var timer: Task<Void, Never>?
+    /// What the timer sends with, kept from the last `keepTime`, so a send
+    /// scheduled while Corres is open goes on its minute too.
+    private weak var timeStore: MailStore?
+    private weak var timeOutbox: OutboxService?
 
     private static var fileURL: URL {
         #if DEBUG
@@ -70,6 +74,7 @@ final class ScheduledSends {
         #if os(iOS)
         AppDelegate.scheduleBackgroundRefresh()
         #endif
+        rearm()
         announce?(item)
     }
 
@@ -84,6 +89,7 @@ final class ScheduledSends {
         #if os(iOS)
         AppDelegate.scheduleBackgroundRefresh()
         #endif
+        rearm()
     }
 
     /// Taken off the schedule (Cancel, or opened to edit): its draft.
@@ -145,6 +151,8 @@ final class ScheduledSends {
 
     /// While Corres is open, sends each one on its minute.
     func keepTime(store: MailStore, outbox: OutboxService) {
+        timeStore = store
+        timeOutbox = outbox
         timer?.cancel()
         guard let next = nextSendAt else { return }
         timer = Task { [weak self] in
@@ -152,6 +160,14 @@ final class ScheduledSends {
             guard !Task.isCancelled else { return }
             await self?.sendDue(store: store, outbox: outbox)
         }
+    }
+
+    /// The timer set again for the earliest send, once Corres has handed
+    /// over what it sends with. Scheduling used to leave the old timer (or
+    /// none), so an email sent while Corres was open waited for a refresh.
+    private func rearm() {
+        guard let store = timeStore, let outbox = timeOutbox else { return }
+        keepTime(store: store, outbox: outbox)
     }
 
     private func hold(_ item: Item, because sender: String) {

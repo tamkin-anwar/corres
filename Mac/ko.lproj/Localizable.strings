@@ -2317,3 +2317,41 @@
 "Show Sender Pictures" = "보낸 사람 사진 보기";
 "Couldn't send" = "보낼 수 없음";
 "“%@” is waiting in Corres. It goes as soon as you're back online, or open Corres to try again." = "‘%@’이(가) Corres에서 대기 중입니다. 다시 온라인이 되면 바로 전송되며, Corres를 열어 다시 시도할 수도 있습니다.";
+"A change you made while offline couldn't be saved." = "오프라인 상태에서 한 변경 사항을 저장할 수 없습니다.";
+"Couldn't archive this conversation. Try again." = "이 대화를 보관할 수 없습니다. 다시 시도하세요.";
+"Couldn't move this conversation to Trash. Try again." = "이 대화를 휴지통으로 옮길 수 없습니다. 다시 시도하세요.";
+"Couldn't report this conversation as spam. Try again." = "이 대화를 스팸으로 신고할 수 없습니다. 다시 시도하세요.";
+"Couldn't move this conversation. Try again." = "이 대화를 옮길 수 없습니다. 다시 시도하세요.";
+"Couldn't move this conversation to the Inbox. Try again." = "이 대화를 받은 편지함으로 옮길 수 없습니다. 다시 시도하세요.";
+"Couldn't mark this conversation as unread. Try again." = "이 대화를 읽지 않음으로 표시할 수 없습니다. 다시 시도하세요.";
+"Couldn't mark this conversation as read. Try again." = "이 대화를 읽음으로 표시할 수 없습니다. 다시 시도하세요.";
+"Couldn't update this label. Try again." = "이 라벨을 업데이트할 수 없습니다. 다시 시도하세요.";
+"%@ is limiting how fast changes can be made right now. Give it a moment and try again." = "%@에서 지금 변경 속도를 제한하고 있습니다. 잠시 후 다시 시도하세요.";
+"%@\n\n%@ said: %@" = "%@\n\n%@ 응답: %@";
+"%@ needs to sign in again before Corres can change its mail." = "Corres가 메일을 변경하려면 %@에 다시 로그인해야 합니다.";
+"%@ (%@ error %lld)" = "%@ (%@ 오류 %lld)";
+"Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres는 %@을(를) 읽을 수 있지만 변경할 권한이 없어 읽음 표시, 보관, 깃발 표시가 반영되지 않습니다. 다시 연결하고 요청하는 모든 권한을 허용하세요.";
+"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "구입이 승인을 기다리고 있습니다. 승인되는 즉시 Corres Pro가 잠금 해제됩니다.";
+"The purchase didn't go through. Try again." = "구입이 완료되지 않았습니다. 다시 시도하세요.";
+"Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "코드 사용 화면을 열 수 없습니다. App Store의 계정 메뉴에서도 코드를 사용할 수 있습니다.";
+"No Corres Pro purchase was found for this Apple Account." = "이 Apple 계정에서 Corres Pro 구입 내역을 찾을 수 없습니다.";
+"Couldn't reach the App Store to restore purchases. Try again." = "App Store에 연결할 수 없어 구입 내역을 복원하지 못했습니다. 다시 시도하세요.";
+"Corres couldn't find that email." = "Corres에서 해당 이메일을 찾을 수 없습니다.";
+"There was nothing to change." = "변경할 내용이 없습니다.";
+"Corres can't move mail to %@." = "Corres는 메일을 %@(으)로 옮길 수 없습니다.";
+"Block everyone from %@" = "%@의 모든 발신자 차단";
+"Allow everyone from %@" = "%@의 모든 발신자 허용";
+
+/* No comment provided by engineer. */
+"Delete Draft" = "임시 저장 메일 삭제";
+
+/* No comment provided by engineer. */
+"Delete this draft" = "이 임시 저장 메일 삭제";
+
+/* No comment provided by engineer. */
+"Delete this draft?" = "이 임시 저장 메일을 삭제할까요?";
+
+/* No comment provided by engineer. */
+"It's removed from Drafts too." = "임시 보관함에서도 삭제됩니다.";
+
+"These attachments couldn't come along: %@" = "다음 첨부 파일은 함께 보낼 수 없었습니다: %@";

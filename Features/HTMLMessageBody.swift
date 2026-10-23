@@ -162,10 +162,32 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         // entirely from loadHTMLString), it exists only to give the page
         // a real https origin.
         let kind: BodyKind = !designed ? .plain : analysis.hasOwnDarkMode ? .designedWithDarkMode : .designed
-        webView.loadHTMLString(Self.wrap(processed, kind: kind, dark: dark, textSize: textSize,
-                                         load: coordinator.loadGeneration, lateStyles: lateStyles),
-                               baseURL: Self.placeholderBaseURL)
-        HangReporter.lap("handed to WebKit")
+        let page = Self.wrap(processed, kind: kind, dark: dark, textSize: textSize,
+                             load: coordinator.loadGeneration, lateStyles: lateStyles)
+        // The rewrite above only catches `<img src>`. With images off,
+        // WebKit itself refuses every remote load too (srcset, CSS url(),
+        // background=, posters, `//` sources), so nothing reaches a sender.
+        let controller = webView.configuration.userContentController
+        guard blockRemoteImages else {
+            if let list = RemoteContentBlocker.compiled { controller.remove(list) }
+            webView.loadHTMLString(page, baseURL: Self.placeholderBaseURL)
+            HangReporter.lap("handed to WebKit")
+            return
+        }
+        if let list = RemoteContentBlocker.compiled {
+            controller.add(list)
+            webView.loadHTMLString(page, baseURL: Self.placeholderBaseURL)
+            HangReporter.lap("handed to WebKit")
+            return
+        }
+        // Only the very first email waits for the rules to compile.
+        let generation = coordinator.loadGeneration
+        Task { @MainActor [weak webView, weak coordinator] in
+            let list = await RemoteContentBlocker.list()
+            guard let webView, let coordinator, coordinator.loadGeneration == generation else { return }
+            if let list { webView.configuration.userContentController.add(list) }
+            webView.loadHTMLString(page, baseURL: Self.placeholderBaseURL)
+        }
     }
 
     static let placeholderBaseURL = URL(string: "https://mail.corres.app/")
@@ -665,10 +687,19 @@ struct HTMLMessageBody: PlatformViewRepresentable {
     private static let embeddedViewportMetaRegex = try? NSRegularExpression(
         pattern: #"<meta\b[^>]*\bname\s*=\s*["']viewport["'][^>]*>"#, options: [.caseInsensitive])
 
+    /// A sender's `<meta http-equiv="refresh">` works with scripts off and
+    /// would move the email away (to a website, a mailto: or tel: link) the
+    /// moment it opened. Stripped with the viewport tag.
+    private static let embeddedRefreshMetaRegex = try? NSRegularExpression(
+        pattern: #"<meta\b[^>]*\bhttp-equiv\s*=\s*["']?refresh\b[^>]*>"#, options: [.caseInsensitive])
+
     private static func strippingEmbeddedViewportMeta(_ html: String) -> String {
-        guard let regex = embeddedViewportMetaRegex else { return html }
-        let range = NSRange(html.startIndex..., in: html)
-        return regex.stringByReplacingMatches(in: html, options: [], range: range, withTemplate: "")
+        var html = html
+        for regex in [embeddedViewportMetaRegex, embeddedRefreshMetaRegex].compactMap({ $0 }) {
+            let range = NSRange(html.startIndex..., in: html)
+            html = regex.stringByReplacingMatches(in: html, options: [], range: range, withTemplate: "")
+        }
+        return html
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -1112,7 +1143,10 @@ struct HTMLMessageBody: PlatformViewRepresentable {
                 await scroll(to: fragment, in: webView)
                 return .cancel
             }
-            LinkOpener.open(url)
+            // Only a link the person tapped opens. Anything else (a redirect,
+            // a refresh tag, a form) is the email trying to go somewhere on
+            // its own, and goes nowhere.
+            if navigationAction.navigationType == .linkActivated { LinkOpener.open(url) }
             return .cancel
         }
 
@@ -1186,9 +1220,43 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         /// nothing at all when tapped.
         func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                      for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-            if let url = navigationAction.request.url { LinkOpener.open(url) }
+            if navigationAction.navigationType == .linkActivated, let url = navigationAction.request.url {
+                LinkOpener.open(url)
+            }
             return nil
         }
+    }
+}
+
+/// Content rules that stop a web view loading anything from the network
+/// except the page itself: every image, stylesheet, font, video and frame
+/// a sender links to. Used while an email's images are off.
+@MainActor
+enum RemoteContentBlocker {
+    /// Ready once compiled; compiled once per launch and kept.
+    private(set) static var compiled: WKContentRuleList?
+    private static var compiling: Task<WKContentRuleList?, Never>?
+
+    private static let rules = #"""
+    [{"trigger": {"url-filter": "^(https?|wss?|ftp):"}, "action": {"type": "block"}},
+     {"trigger": {"url-filter": ".*", "resource-type": ["document"], "load-context": ["top-frame"]},
+      "action": {"type": "ignore-previous-rules"}}]
+    """#
+
+    static func list() async -> WKContentRuleList? {
+        if let compiled { return compiled }
+        if let compiling { return await compiling.value }
+        let task = Task { @MainActor () -> WKContentRuleList? in
+            let list = try? await WKContentRuleListStore.default()?.compileContentRuleList(
+                forIdentifier: "corres-remote-content", encodedContentRuleList: rules)
+            if list == nil { print("RemoteContentBlocker: rules did not compile") }
+            return list
+        }
+        compiling = task
+        let list = await task.value
+        compiled = list
+        compiling = nil
+        return list
     }
 }
 

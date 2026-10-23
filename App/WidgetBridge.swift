@@ -11,6 +11,14 @@ enum WidgetBridge {
     /// Widgets are part of Corres Pro once a real account is connected.
     static var isLocked = false
 
+    /// Whether widgets, Siri and the Brief lock: a real account connected
+    /// and no Pro (a subscription, or a TestFlight build's beta access).
+    /// Before the first check answers, the last known answer stands in, so
+    /// a subscriber's widgets never flash locked.
+    static func locks(connected: Bool, entitlements: EntitlementStore) -> Bool {
+        connected && !entitlements.isProForDisplay
+    }
+
     private static var pendingUpdate: Task<Void, Never>?
 
     /// For changes made while the app is in use: waits for a pause, then

@@ -63,7 +63,7 @@ enum GmailMessageComposer {
             func base64(_ string: String) -> String {
                 Data(string.utf8).base64EncodedString(options: [.lineLength76Characters, .endLineWithCarriageReturn, .endLineWithLineFeed])
             }
-            var content = "--\(alternative)\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n\(body)\r\n"
+            var content = "--\(alternative)\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n\(MailEncoding.quotedPrintable(body))\r\n"
             if let html {
                 content += "--\(alternative)\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n\(base64(html))\r\n"
             }
@@ -72,7 +72,9 @@ enum GmailMessageComposer {
             }
             text = ("Content-Type: multipart/alternative; boundary=\"\(alternative)\"", content + "--\(alternative)--")
         } else {
-            text = ("Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit", body)
+            // Quoted-printable, not 8bit: a long paragraph went past SMTP's
+            // 998-byte line limit and arrived broken.
+            text = ("Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable", MailEncoding.quotedPrintable(body))
         }
         guard !attachments.isEmpty else {
             headers.append(text.headers)
@@ -106,7 +108,7 @@ enum GmailMessageComposer {
         PeopleIndex.entries(in: field).map { entry in
             guard let (name, email) = PeopleIndex.parse(entry) else { return entry }
             guard !name.isEmpty else { return email }
-            if !name.allSatisfy(\.isASCII) { return "=?UTF-8?B?\(Data(name.utf8).base64EncodedString())?= <\(email)>" }
+            if !name.allSatisfy(\.isASCII) { return "\(MailEncoding.encodedWords(name)) <\(email)>" }
             if name.rangeOfCharacter(from: CharacterSet(charactersIn: "()<>[]:;@\\,.\"")) != nil {
                 let escaped = name.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
                 return "\"\(escaped)\" <\(email)>"
@@ -135,12 +137,11 @@ enum GmailMessageComposer {
         return "filename=\"\(headerName(filename))\"; filename*=UTF-8''\(encoded)"
     }
 
-    /// RFC 2047 encoding for a non-ASCII subject; left untouched otherwise,
-    /// since most real subjects are plain ASCII and don't need it.
+    /// RFC 2047 encoding for a non-ASCII subject, in words of at most 75
+    /// characters on lines of their own; left untouched otherwise, since
+    /// most real subjects are plain ASCII and don't need it.
     private static func encodedSubject(_ subject: String) -> String {
-        guard !subject.allSatisfy(\.isASCII) else { return subject }
-        let base64 = Data(subject.utf8).base64EncodedString()
-        return "=?UTF-8?B?\(base64)?="
+        MailEncoding.encodedWords(subject)
     }
 
     private static func base64URLEncode(_ data: Data) -> String {

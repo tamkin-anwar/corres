@@ -2317,3 +2317,41 @@
 "Show Sender Pictures" = "显示发件人图片";
 "Couldn't send" = "无法发送";
 "“%@” is waiting in Corres. It goes as soon as you're back online, or open Corres to try again." = "“%@”正在 Corres 中等待。恢复联网后会立即发送，你也可以打开 Corres 重试。";
+"A change you made while offline couldn't be saved." = "离线时所做的一项更改未能保存。";
+"Couldn't archive this conversation. Try again." = "无法归档此对话。请重试。";
+"Couldn't move this conversation to Trash. Try again." = "无法将此对话移到废纸篓。请重试。";
+"Couldn't report this conversation as spam. Try again." = "无法将此对话报告为垃圾邮件。请重试。";
+"Couldn't move this conversation. Try again." = "无法移动此对话。请重试。";
+"Couldn't move this conversation to the Inbox. Try again." = "无法将此对话移到收件箱。请重试。";
+"Couldn't mark this conversation as unread. Try again." = "无法将此对话标为未读。请重试。";
+"Couldn't mark this conversation as read. Try again." = "无法将此对话标为已读。请重试。";
+"Couldn't update this label. Try again." = "无法更新此标签。请重试。";
+"%@ is limiting how fast changes can be made right now. Give it a moment and try again." = "%@ 目前正在限制更改的速度。请稍候再试。";
+"%@\n\n%@ said: %@" = "%@\n\n%@ 回复：%@";
+"%@ needs to sign in again before Corres can change its mail." = "%@ 需要重新登录，Corres 才能更改其邮件。";
+"%@ (%@ error %lld)" = "%@（%@ 错误 %lld）";
+"Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres 可以读取 %@，但没有更改它的权限，因此标为已读、归档和旗标都无法生效。请重新连接，并允许它请求的所有权限。";
+"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "你的购买正在等待批准。一经批准，Corres Pro 即会解锁。";
+"The purchase didn't go through. Try again." = "购买未完成。请重试。";
+"Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "无法打开兑换代码页面。你也可以在 App Store 的账户页面中兑换。";
+"No Corres Pro purchase was found for this Apple Account." = "未找到此 Apple 账户的 Corres Pro 购买记录。";
+"Couldn't reach the App Store to restore purchases. Try again." = "无法连接 App Store 来恢复购买。请重试。";
+"Corres couldn't find that email." = "Corres 找不到那封邮件。";
+"There was nothing to change." = "没有需要更改的内容。";
+"Corres can't move mail to %@." = "Corres 无法将邮件移到“%@”。";
+"Block everyone from %@" = "屏蔽来自 %@ 的所有人";
+"Allow everyone from %@" = "允许来自 %@ 的所有人";
+
+/* No comment provided by engineer. */
+"Delete Draft" = "删除草稿";
+
+/* No comment provided by engineer. */
+"Delete this draft" = "删除此草稿";
+
+/* No comment provided by engineer. */
+"Delete this draft?" = "要删除此草稿吗？";
+
+/* No comment provided by engineer. */
+"It's removed from Drafts too." = "它也会从草稿中移除。";
+
+"These attachments couldn't come along: %@" = "以下附件无法一起转发：%@";

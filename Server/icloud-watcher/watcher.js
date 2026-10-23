@@ -143,16 +143,21 @@ async function connect(emailAddress) {
       }
       entry.client = client;
       entry.attempt = 0;
-      let count = mailbox.exists;
-      client.on('exists', async (data) => {
-        if (data.count <= count) { count = data.count; return; }
-        const from = count + 1;
-        count = data.count;
+      // The highest message number seen, not the count: a message deleted
+      // on another device lowers the count without an EXISTS, so a count
+      // check missed the next new mail, and sequence numbers shift.
+      let lastUid = Math.max(0, (Number(mailbox.uidNext) || 1) - 1);
+      client.on('exists', async () => {
         // Only the numbers of what arrived: never a header or a body.
         const uids = [];
         try {
-          for await (const message of client.fetch(`${from}:*`, { uid: true })) uids.push(message.uid);
+          for await (const message of client.fetch(`${lastUid + 1}:*`, { uid: true }, { uid: true })) {
+            // "N:*" past the end still returns the last message: skip it.
+            if (message.uid > lastUid) uids.push(message.uid);
+          }
         } catch { /* wake quietly anyway */ }
+        if (uids.length === 0) return;
+        lastUid = Math.max(lastUid, ...uids);
         const validity = String(client.mailbox && client.mailbox.uidValidity);
         await notify(emailAddress, uids.slice(-10).map((uid) => `${validity}:${uid}:INBOX`)).catch((e) => log('notify failed', e.message));
       });

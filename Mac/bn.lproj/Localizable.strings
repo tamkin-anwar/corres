@@ -2317,3 +2317,41 @@
 "Show Sender Pictures" = "প্রেরকের ছবি দেখান";
 "Couldn't send" = "পাঠানো যায়নি";
 "“%@” is waiting in Corres. It goes as soon as you're back online, or open Corres to try again." = "“%@” Corres-এ অপেক্ষা করছে। আবার অনলাইনে এলেই এটি যাবে, অথবা আবার চেষ্টা করতে Corres খুলুন।";
+"A change you made while offline couldn't be saved." = "অফলাইনে থাকার সময় করা একটি পরিবর্তন সংরক্ষণ করা যায়নি।";
+"Couldn't archive this conversation. Try again." = "এই কথোপকথন আর্কাইভ করা যায়নি। আবার চেষ্টা করুন।";
+"Couldn't move this conversation to Trash. Try again." = "এই কথোপকথন ট্র্যাশে সরানো যায়নি। আবার চেষ্টা করুন।";
+"Couldn't report this conversation as spam. Try again." = "এই কথোপকথন স্প্যাম হিসেবে রিপোর্ট করা যায়নি। আবার চেষ্টা করুন।";
+"Couldn't move this conversation. Try again." = "এই কথোপকথন সরানো যায়নি। আবার চেষ্টা করুন।";
+"Couldn't move this conversation to the Inbox. Try again." = "এই কথোপকথন ইনবক্সে সরানো যায়নি। আবার চেষ্টা করুন।";
+"Couldn't mark this conversation as unread. Try again." = "এই কথোপকথন অপঠিত হিসেবে চিহ্নিত করা যায়নি। আবার চেষ্টা করুন।";
+"Couldn't mark this conversation as read. Try again." = "এই কথোপকথন পঠিত হিসেবে চিহ্নিত করা যায়নি। আবার চেষ্টা করুন।";
+"Couldn't update this label. Try again." = "এই লেবেল আপডেট করা যায়নি। আবার চেষ্টা করুন।";
+"%@ is limiting how fast changes can be made right now. Give it a moment and try again." = "%@ এখন পরিবর্তনের গতি সীমিত করছে। একটু অপেক্ষা করে আবার চেষ্টা করুন।";
+"%@\n\n%@ said: %@" = "%@\n\n%@ জানিয়েছে: %@";
+"%@ needs to sign in again before Corres can change its mail." = "Corres মেইল পরিবর্তন করার আগে %@-এ আবার সাইন ইন করতে হবে।";
+"%@ (%@ error %lld)" = "%@ (%@ ত্রুটি %lld)";
+"Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres %@ পড়তে পারে কিন্তু পরিবর্তন করার অনুমতি নেই, তাই পঠিত চিহ্নিত করা, আর্কাইভ করা ও ফ্ল্যাগ দেওয়া কার্যকর হবে না। আবার সংযুক্ত করুন এবং চাওয়া সব অনুমতি দিন।";
+"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "আপনার কেনাকাটা অনুমোদনের অপেক্ষায় আছে। অনুমোদন পেলেই Corres Pro চালু হবে।";
+"The purchase didn't go through. Try again." = "কেনাকাটা সম্পন্ন হয়নি। আবার চেষ্টা করুন।";
+"Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "কোড রিডিম করার পাতা খোলা যায়নি। আপনি App Store-এ আপনার অ্যাকাউন্ট থেকেও রিডিম করতে পারেন।";
+"No Corres Pro purchase was found for this Apple Account." = "এই Apple অ্যাকাউন্টে কোনো Corres Pro কেনাকাটা পাওয়া যায়নি।";
+"Couldn't reach the App Store to restore purchases. Try again." = "কেনাকাটা পুনরুদ্ধার করতে App Store-এ সংযোগ করা যায়নি। আবার চেষ্টা করুন।";
+"Corres couldn't find that email." = "Corres সেই ইমেইলটি খুঁজে পায়নি।";
+"There was nothing to change." = "পরিবর্তন করার মতো কিছু ছিল না।";
+"Corres can't move mail to %@." = "Corres মেইল %@-এ সরাতে পারে না।";
+"Block everyone from %@" = "%@ থেকে সবাইকে ব্লক করুন";
+"Allow everyone from %@" = "%@ থেকে সবাইকে অনুমতি দিন";
+
+/* No comment provided by engineer. */
+"Delete Draft" = "খসড়া মুছুন";
+
+/* No comment provided by engineer. */
+"Delete this draft" = "এই খসড়াটি মুছুন";
+
+/* No comment provided by engineer. */
+"Delete this draft?" = "এই খসড়াটি মুছবেন?";
+
+/* No comment provided by engineer. */
+"It's removed from Drafts too." = "এটি খসড়া থেকেও সরানো হবে।";
+
+"These attachments couldn't come along: %@" = "এই সংযুক্তিগুলো সঙ্গে পাঠানো যায়নি: %@";

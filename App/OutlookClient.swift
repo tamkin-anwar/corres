@@ -183,8 +183,10 @@ struct OutlookClient: Sendable {
 
     func findMessage(rfc822MessageID: String, account: String) async throws -> ThreadID? {
         let filter = "internetMessageId eq '<\(rfc822MessageID)>'".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let page: GraphPage<GraphMessage> = try await getJSON("\(Self.base)/me/messages?$select=id,conversationId&$filter=\(filter)&$top=1", account: account)
-        return page.value.first?.conversationId.map { ThreadID(account: account, providerID: $0) }
+        // Drafts carry the same Message-ID (a large send starts as one, and a
+        // saved draft keeps it), so only a message that really went counts.
+        let page: GraphPage<GraphMessage> = try await getJSON("\(Self.base)/me/messages?$select=id,conversationId,isDraft&$filter=\(filter)&$top=10", account: account)
+        return page.value.first { $0.isDraft != true }?.conversationId.map { ThreadID(account: account, providerID: $0) }
     }
 
     func fetchAttachmentData(messageId: String, attachmentId: String, account: String) async throws -> Data {
@@ -241,7 +243,14 @@ struct OutlookClient: Sendable {
     /// same email built without them.
     func sendLarge(rawWithout: String, attachments: [PendingAttachment], threadId: String?, account: String) async throws -> String {
         let draftID = try await draftWithAttachments(rawWithout: rawWithout, attachments: attachments, account: account)
-        try await change("POST", "\(Self.base)/me/messages/\(draftID)/send", body: nil, account: account)
+        do {
+            try await change("POST", "\(Self.base)/me/messages/\(draftID)/send", body: nil, account: account)
+        } catch {
+            // Not sent: the half-built draft goes, so a retry starts clean
+            // and nothing is left behind in Drafts.
+            try? await deleteDraft(id: draftID, account: account)
+            throw error
+        }
         if let messageID = Self.messageID(inRaw: rawWithout) {
             for delay in [0.8, 1.6, 3.2] {
                 try? await Task.sleep(for: .seconds(delay))
@@ -257,15 +266,21 @@ struct OutlookClient: Sendable {
         let created = try await postMIME("\(Self.base)/me/messages", raw: rawWithout, account: account)
         guard (200..<300).contains(created.status) else { throw ClientError.badResponse(statusCode: created.status) }
         let draftID = try JSONDecoder().decode(GraphMessage.self, from: created.data).id
-        for attachment in attachments {
-            if attachment.data.count < Self.singleRequestLimit {
-                try await change("POST", "\(Self.base)/me/messages/\(draftID)/attachments", body: [
-                    "@odata.type": "#microsoft.graph.fileAttachment", "name": attachment.filename,
-                    "contentType": attachment.mimeType, "contentBytes": attachment.data.base64EncodedString(),
-                ], account: account)
-            } else {
-                try await upload(attachment, toDraft: draftID, account: account)
+        do {
+            for attachment in attachments {
+                if attachment.data.count < Self.singleRequestLimit {
+                    try await change("POST", "\(Self.base)/me/messages/\(draftID)/attachments", body: [
+                        "@odata.type": "#microsoft.graph.fileAttachment", "name": attachment.filename,
+                        "contentType": attachment.mimeType, "contentBytes": attachment.data.base64EncodedString(),
+                    ], account: account)
+                } else {
+                    try await upload(attachment, toDraft: draftID, account: account)
+                }
             }
+        } catch {
+            // A draft missing some attachments is no use to anyone.
+            try? await deleteDraft(id: draftID, account: account)
+            throw error
         }
         return draftID
     }

@@ -34,6 +34,9 @@ final class IMAPWatcher {
     }
 
     private func watch(_ account: String, changed: @escaping @MainActor (String) -> Void) async {
+        // Ended for good (a sign-in refused): its place is cleared, so the
+        // next start, after a new password, watches it again.
+        defer { if !Task.isCancelled { watches[account] = nil } }
         var pause = Duration.seconds(5)
         var reconnecting = false
         while !Task.isCancelled {

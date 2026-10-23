@@ -12,7 +12,7 @@ final class AppRouter {
         case compose
         /// A `mailto:` link, tapped inside an email or anywhere on the
         /// iPhone once Corres is the default mail app.
-        case composeTo(to: String, subject: String, body: String)
+        case composeTo(to: String, cc: String = "", bcc: String = "", subject: String, body: String)
         /// A reply or forward Siri prepared, to read and send.
         case draft(Draft)
         /// Siri's "search my email for…".
@@ -58,13 +58,14 @@ final class AppRouter {
     }
 
     /// A new message from a `mailto:` link: the addresses in the link and
-    /// any `to=` field, plus its subject and body.
+    /// any `to=` field, its `cc=` and `bcc=`, plus its subject and body.
     static func compose(mailto url: URL) -> Target {
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         let query = Dictionary((components?.queryItems ?? []).map { ($0.name.lowercased(), $0.value ?? "") },
                                uniquingKeysWith: { first, _ in first })
         let to = [components?.path ?? "", query["to"] ?? ""].filter { !$0.isEmpty }.joined(separator: ",")
-        return .composeTo(to: to, subject: query["subject"] ?? "", body: query["body"] ?? "")
+        return .composeTo(to: to, cc: query["cc"] ?? "", bcc: query["bcc"] ?? "",
+                          subject: query["subject"] ?? "", body: query["body"] ?? "")
     }
 }
 

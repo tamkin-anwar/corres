@@ -284,6 +284,7 @@ struct ForwardMailIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         guard let id = target.threadID, let thread = Organizer.shared.store?.thread(id) else { return .result() }
         var draft = thread.draft(kind: .forward)
+        draft.attachments = await thread.attachmentsToForward().files
         let addresses = to.compactMap(Self.address)
         if !addresses.isEmpty { draft.to = addresses.joined(separator: ", ") }
         if let body, !body.isEmpty { draft.body = body + draft.body }
@@ -306,15 +307,71 @@ struct UpdateMailIntent: AppIntent {
     @Parameter var isJunk: Bool?
     @Parameter var mailbox: CorresMailbox?
 
-    /// Read or unread, flagged or not, as asked. Junk reports it as spam.
+    /// Read or unread, flagged or not, as asked. Junk reports it as spam,
+    /// not junk brings it back to the Inbox, and a mailbox moves it there.
+    /// Says so when it can't, rather than reporting a change it didn't make.
     @MainActor
     func perform() async throws -> some IntentResult {
-        guard let store = Organizer.shared.store, let actions = Organizer.shared.actions else { return .result() }
+        guard let store = Organizer.shared.store, let actions = Organizer.shared.actions else { throw UpdateMailError.notFound }
         let threads = target.compactMap(\.threadID).compactMap(store.thread)
+        guard !threads.isEmpty else { throw UpdateMailError.notFound }
+        guard isRead != nil || isFlagged != nil || isJunk != nil || mailbox != nil else { throw UpdateMailError.nothingToChange }
         if let isRead { for thread in threads { await actions.setUnread(!isRead, for: thread) } }
         if let isFlagged { for thread in threads { await actions.setFlagged(isFlagged, for: thread) } }
-        if isJunk == true { for thread in threads { await actions.reportSpam(thread, animated: false) } }
+        if isJunk == true {
+            for thread in threads { await actions.reportSpam(thread, animated: false) }
+            // Sent now: there's no Undo pill for Siri to wait out.
+            await actions.commitPendingRemoval()
+        } else if isJunk == false {
+            for thread in threads where thread.labelIds.contains("SPAM") {
+                guard await actions.moveToInbox(thread) else { throw UpdateMailError.notMoved }
+            }
+        }
+        if let mailbox, isJunk != true { try await move(threads, to: mailbox, actions: actions) }
         return .result()
+    }
+
+    /// Mail goes back to the Inbox; any other name is one of the account's
+    /// own labels or folders. Needs You and Waiting are Corres's own lists,
+    /// not places mail can be moved to.
+    @MainActor
+    private func move(_ threads: [Correspondence], to mailbox: CorresMailbox, actions: ThreadActionService) async throws {
+        let list = mailbox.id.split(separator: "|", maxSplits: 1).dropFirst().first.map(String.init) ?? ""
+        let account = mailbox.account.emailAddress
+        let inAccount = threads.filter { $0.id.account == account }
+        guard !inAccount.isEmpty else { throw UpdateMailError.noSuchMailbox(mailbox.name) }
+        switch list.lowercased() {
+        case "mail", "inbox":
+            for thread in inAccount where !thread.labelIds.contains("INBOX") || thread.labelIds.contains("SPAM")
+                || thread.labelIds.contains("TRASH") {
+                guard await actions.moveToInbox(thread) else { throw UpdateMailError.notMoved }
+            }
+        case "needsyou", "waiting":
+            throw UpdateMailError.noSuchMailbox(mailbox.name)
+        default:
+            let labels = (try? await MailClient().fetchUserLabels(account: account)) ?? []
+            guard let label = labels.first(where: { label in
+                !label.isCategory && (label.id == list || label.name.localizedCaseInsensitiveCompare(list) == .orderedSame
+                                      || label.name.localizedCaseInsensitiveCompare(mailbox.name) == .orderedSame)
+            }) else { throw UpdateMailError.noSuchMailbox(mailbox.name) }
+            for thread in inAccount { await actions.moveToLabel(label.id, named: label.name, thread) }
+            await actions.commitPendingRemoval()
+        }
+    }
+}
+
+/// What Siri says when a change to mail can't be made.
+enum UpdateMailError: Error, CustomLocalizedStringResourceConvertible {
+    case notFound, nothingToChange, notMoved
+    case noSuchMailbox(String)
+
+    var localizedStringResource: LocalizedStringResource {
+        switch self {
+        case .notFound: "Corres couldn't find that email."
+        case .nothingToChange: "There was nothing to change."
+        case .notMoved: "Couldn't move this conversation to the Inbox. Try again."
+        case .noSuchMailbox(let name): "Corres can't move mail to \(name)."
+        }
     }
 }
 

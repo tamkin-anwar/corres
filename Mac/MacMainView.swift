@@ -24,6 +24,9 @@ struct MacMainView: View {
     @State private var keptRead: Set<ThreadID> = []
     @State private var showingWelcome = false
     @FocusState private var searchFocused: Bool
+    @Environment(\.undoManager) private var undoManager
+    /// What Edit › Undo is registered against, for the pill's Undo.
+    @State private var mailUndo = MailUndoTarget()
 
     private var store: MailStore { services.store }
     private var dockCount: Int {
@@ -34,6 +37,19 @@ struct MacMainView: View {
     private var accounts: [String] { services.auth.accounts.map(\.email) }
 
     var body: some View {
+        window
+            // Edit › Undo (⌘Z) takes back what the pill offers, while it does.
+            .onChange(of: actions.pendingRemoval?.id ?? actions.lastChange?.id, initial: true) { registerMailUndo() }
+            .onAppear {
+                MacWindows.mainIsOpen = true
+                MacWindows.openWindow = openWindow
+                reopenUnsentDrafts()
+            }
+            .onDisappear { MacWindows.mainIsOpen = false }
+    }
+
+    @ViewBuilder
+    private var window: some View {
         let rows = visibleRows()
         NavigationSplitView(columnVisibility: $columns) {
             MacSidebar(services: services, model: model, onDrop: drop)
@@ -73,7 +89,7 @@ struct MacMainView: View {
                 perform(.snooze(date), on: threads)
             }
         }
-        .focusedSceneValue(\.macActions, MacActions(perform: { perform($0) }))
+        .focusedSceneValue(\.macActions, MacActions(perform: { perform($0) }, selectionCount: model.selection.count))
         .onChange(of: model.selection) { _, selection in if filtersUnread { keptRead.formUnion(selection) } }
         // The next few after the one you're on, and the top of a mailbox,
         // read ahead: arrowing down shows each at once.
@@ -96,8 +112,9 @@ struct MacMainView: View {
             // The desktop widgets show what's on this Mac.
             WidgetBridge.scheduleUpdate { [store] in store.threads }
         }
-        .onChange(of: services.entitlements.isPro, initial: true) { _, isPro in
-            WidgetBridge.isLocked = !isPro
+        .onChange(of: WidgetBridge.locks(connected: !accounts.isEmpty, entitlements: services.entitlements),
+                  initial: true) { _, locked in
+            WidgetBridge.isLocked = locked
             WidgetBridge.update(from: store.threads)
         }
         // At most one reload each half second: a first sync saves a hundred
@@ -127,8 +144,8 @@ struct MacMainView: View {
                 }
             case .compose:
                 perform(.compose)
-            case .composeTo(let to, let subject, let body):
-                openWindow(value: ComposeRequest(kind: .new, to: to, subject: subject, body: body))
+            case .composeTo(let to, let cc, let bcc, let subject, let body):
+                openWindow(value: ComposeRequest(kind: .new, to: to, cc: cc, bcc: bcc, subject: subject, body: body))
             case .draft(let draft):
                 let handoff = UUID()
                 MacComposeHandoff.drafts[handoff] = draft
@@ -329,10 +346,8 @@ struct MacMainView: View {
 
     @ViewBuilder
     private var conversationDetail: some View {
-        let listed = model.selectedThreads
         // Still open after it left the list (answered, moved by a sync).
-        let selected = listed.isEmpty && model.selection.count == 1
-            ? model.selection.compactMap { store.thread($0) } : listed
+        let selected = model.selectedThreads(in: store)
         if selected.count == 1, let thread = selected.first {
             // From the store, which adds the HTML once it's read.
             ReadingPane(thread: store.thread(thread.id) ?? thread, services: services) { kind in compose(kind, thread) }
@@ -465,10 +480,37 @@ struct MacMainView: View {
         }
     }
 
+    /// The pill's Undo, as Edit › Undo, named for what it takes back.
+    private func registerMailUndo() {
+        guard let undoManager else { return }
+        undoManager.removeAllActions(withTarget: mailUndo)
+        guard let title = actions.pendingRemoval?.title ?? actions.lastChange?.title else { return }
+        let actions = actions
+        undoManager.registerUndo(withTarget: mailUndo) { _ in
+            MainActor.assumeIsolated {
+                if actions.pendingRemoval != nil { actions.undoRemoval() } else { actions.undoLastChange() }
+            }
+        }
+        undoManager.setActionName(title)
+    }
+
+    /// Emails you were writing when Corres last quit, open again.
+    private func reopenUnsentDrafts() {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-CorresScreenshots") { return }
+        #endif
+        for draft in MacComposeDrafts.shared.takeForRestore() {
+            let handoff = UUID()
+            MacComposeHandoff.drafts[handoff] = draft
+            openWindow(value: ComposeRequest(kind: draft.kind, handoff: handoff))
+        }
+    }
+
     private func undoPill(_ title: String, systemImage: String, undo: @escaping () -> Void) -> some View {
         HStack(spacing: 12) {
             Label(title, systemImage: systemImage)
-            Button("Undo", action: undo).buttonStyle(.borderless).keyboardShortcut("z", modifiers: .command)
+            // ⌘Z is Edit › Undo, which takes this back too (`registerMailUndo`).
+            Button("Undo", action: undo).buttonStyle(.borderless)
                 .foregroundStyle(CorresPalette.accent)
         }
         .font(.callout)
@@ -515,7 +557,9 @@ struct MacMainView: View {
 
     /// Conversations dragged onto a mailbox: moved there, as in Mail.
     private func drop(on mailbox: MacMailbox, _ ids: [ThreadID]) {
-        let threads = ids.compactMap { store.thread($0) }
+        // Each conversation once, however many times it came in the drag.
+        var seen = Set<ThreadID>()
+        let threads = ids.filter { seen.insert($0).inserted }.compactMap { store.thread($0) }
         guard !threads.isEmpty else { return }
         switch mailbox {
         case .needsYou: perform(.move(.needsYou), on: threads)
@@ -543,7 +587,7 @@ struct MacMainView: View {
     /// Runs an action on the selection, or on `threads` when given (a
     /// swiped row that isn't selected).
     func perform(_ action: MacAction, on threads: [Correspondence]? = nil) {
-        let selected = threads ?? model.selectedThreads
+        let selected = threads ?? model.selectedThreads(in: store)
         switch action {
         case .compose:
             openWindow(value: ComposeRequest(kind: .new))
@@ -554,7 +598,7 @@ struct MacMainView: View {
             guard !selected.isEmpty else { return }
             let ids = Set(selected.map(\.id))
             if !model.selection.isDisjoint(with: ids) {
-                let next = model.neighbor(after: ids)
+                let next = model.neighbor(after: ids, in: visibleRows())
                 model.selection = next.map { [$0] } ?? []
             }
             services.remote.remove(ids)
@@ -564,7 +608,7 @@ struct MacMainView: View {
             // Moved out of the list it's in: on to the next, as archiving does.
             let ids = Set(selected.map(\.id))
             if model.mailbox.isAttentionList, !model.selection.isDisjoint(with: ids) {
-                model.selection = model.neighbor(after: ids).map { [$0] } ?? []
+                model.selection = model.neighbor(after: ids, in: visibleRows()).map { [$0] } ?? []
             }
             Task { await actions.setAttention(attention, for: selected) }
         case .toggleFlag:
@@ -579,7 +623,7 @@ struct MacMainView: View {
             guard !selected.isEmpty else { return }
             if date != nil {
                 let ids = Set(selected.map(\.id))
-                if !model.selection.isDisjoint(with: ids) { model.selection = model.neighbor(after: ids).map { [$0] } ?? [] }
+                if !model.selection.isDisjoint(with: ids) { model.selection = model.neighbor(after: ids, in: visibleRows()).map { [$0] } ?? [] }
             }
             Task { for thread in selected { await store.snooze(thread.id, until: date) } }
         case .askSnooze:
@@ -628,7 +672,7 @@ struct MacMainView: View {
     private var paletteCommands: [MacCommandPalette.Command] {
         typealias Command = MacCommandPalette.Command
         var commands: [Command] = [Command(title: "New Message", detail: "⌘N", systemImage: "square.and.pencil") { perform(.compose) }]
-        let selected = model.selectedThreads
+        let selected = model.selectedThreads(in: store)
         if !selected.isEmpty {
             let what = selected.count == 1 ? String(localized: "this conversation") : String(localized: "\(selected.count) conversations")
             commands += [
@@ -712,6 +756,10 @@ struct MacMainView: View {
             perform(.trash); return true
         }
         if key.keyCode == MessageListKey.returnKey { perform(.openInWindow); return true }
+        // Space pages through the open email, Shift-Space back, as in Mail.
+        if key.keyCode == MessageListKey.space, key.modifiers.subtracting(.shift).isEmpty {
+            return MacReadingScroll.page(down: !key.modifiers.contains(.shift), beside: NSApp.keyWindow?.firstResponder as? NSView)
+        }
         guard key.modifiers.subtracting(.shift).isEmpty else { return false }
         switch key.characters {
         case "e", "y": perform(.archive)
@@ -822,6 +870,9 @@ struct MacMainView: View {
         }
     }
 }
+
+/// What the mail's Undo is registered against in the window's undo manager.
+final class MailUndoTarget {}
 
 /// An NSMenuItem that runs a closure.
 final class ClosureMenuItem: NSMenuItem {

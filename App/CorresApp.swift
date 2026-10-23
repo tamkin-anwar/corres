@@ -140,8 +140,12 @@ struct CorresApp: App {
                 .onChange(of: appDelegate.auth.accounts.isEmpty) { _, isEmpty in
                     if isEmpty { appDelegate.people.reset() }
                 }
-                .onChange(of: appDelegate.entitlements.isPro) { _, isPro in
-                    WidgetBridge.isLocked = !isPro
+                // Set from launch, not only on a change: a free or lapsed
+                // user's widgets, Siri and Brief otherwise never locked. The
+                // same rule as the app's own lock (CorresShell.requiresPro).
+                .onChange(of: WidgetBridge.locks(connected: !appDelegate.auth.accounts.isEmpty,
+                                                 entitlements: appDelegate.entitlements), initial: true) { _, locked in
+                    WidgetBridge.isLocked = locked
                     WidgetBridge.update(from: appDelegate.store.threads)
                 }
         }
