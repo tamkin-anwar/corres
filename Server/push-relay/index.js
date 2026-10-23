@@ -76,25 +76,51 @@ function buildAPNsToken() {
 // connection per push added a handshake to every one. Every request has a
 // timeout and handles stream errors, so a stuck push can't hang or crash
 // the function (and get the whole notice redelivered).
+// Google drops an outbound connection after 20 idle minutes, and a
+// function's CPU sleeps between requests, so a connection quiet for 10
+// minutes is replaced rather than trusted, and a push that fails on a
+// reused one is tried once more on a fresh connection.
+const APNS_IDLE_MS = 10 * 60_000;
 const apnsSessions = {};
-function apnsSession(environment) {
-  const existing = apnsSessions[environment];
-  if (existing && !existing.closed && !existing.destroyed) return existing;
-  const session = http2.connect(`https://${APNS_HOSTS[environment]}`);
-  session.on('error', () => { delete apnsSessions[environment]; });
-  session.on('close', () => { delete apnsSessions[environment]; });
-  session.setTimeout(60_000, () => session.close());
-  apnsSessions[environment] = session;
-  return session;
+function dropSession(environment) {
+  const entry = apnsSessions[environment];
+  delete apnsSessions[environment];
+  if (entry) { try { entry.session.close(); } catch { /* already gone */ } }
 }
 
-function apnsRequest(environment, deviceToken, headers, payload) {
+function apnsSession(environment) {
+  const entry = apnsSessions[environment];
+  if (entry && !entry.session.closed && !entry.session.destroyed && Date.now() - entry.usedAt < APNS_IDLE_MS) {
+    entry.usedAt = Date.now();
+    return { session: entry.session, reused: true };
+  }
+  dropSession(environment);
+  const session = http2.connect(`https://${APNS_HOSTS[environment]}`);
+  const forget = () => { if (apnsSessions[environment] && apnsSessions[environment].session === session) delete apnsSessions[environment]; };
+  session.on('error', forget);
+  session.on('close', forget);
+  session.on('goaway', forget);
+  apnsSessions[environment] = { session, usedAt: Date.now() };
+  return { session, reused: false };
+}
+
+async function apnsRequest(environment, deviceToken, headers, payload) {
+  const first = await apnsAttempt(environment, deviceToken, headers, payload);
+  if (first.status !== 0 || !first.reused) return first;
+  dropSession(environment);
+  return apnsAttempt(environment, deviceToken, headers, payload);
+}
+
+function apnsAttempt(environment, deviceToken, headers, payload) {
   return new Promise((resolve) => {
     let settled = false;
     const done = (result) => { if (!settled) { settled = true; resolve(result); } };
     let request;
+    let reused = false;
     try {
-      request = apnsSession(environment).request({
+      const connection = apnsSession(environment);
+      reused = connection.reused;
+      request = connection.session.request({
         ':method': 'POST',
         ':path': `/3/device/${deviceToken}`,
         authorization: `bearer ${buildAPNsToken()}`,
@@ -102,12 +128,12 @@ function apnsRequest(environment, deviceToken, headers, payload) {
         ...headers,
       });
     } catch {
-      delete apnsSessions[environment];
-      return done({ status: 0, reason: 'ConnectionError' });
+      dropSession(environment);
+      return done({ status: 0, reason: 'ConnectionError', reused });
     }
     request.setEncoding('utf8');
-    request.setTimeout(10_000, () => { request.close(); done({ status: 0, reason: 'Timeout' }); });
-    request.on('error', () => done({ status: 0, reason: 'StreamError' }));
+    request.setTimeout(10_000, () => { request.close(); done({ status: 0, reason: 'Timeout', reused }); });
+    request.on('error', () => done({ status: 0, reason: 'StreamError', reused }));
     let status = 0;
     let body = '';
     request.on('response', (h) => { status = h[':status']; });
