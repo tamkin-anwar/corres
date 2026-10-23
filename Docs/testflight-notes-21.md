@@ -174,3 +174,37 @@ Please try
 3. Command-plus on a long email.
 
 Something off? Help > Send Diagnostics, or send feedback through TestFlight.
+
+## Build 29 (iPhone and iPad)
+
+Corres 0.2.0 (29) for iPhone, iPad and Apple Watch
+
+The big ones
+- Your tabs stay put. Needs You, Primary, Everything and the rest now stay at the top as you scroll, so you can switch at any time. Prefer them at the bottom, in reach of your thumb? Settings > Customize > Lists > Tabs > Bottom puts them beside Search. Or turn off Keep Tabs in View to have them scroll away as before.
+- Rules that work with Corres closed. A rule can now also run in Gmail and Outlook themselves, so mail is marked read, archived or flagged even when Corres isn't open, and on their websites too. New rules do this by default; Gmail asks once for permission. Needs You stays in Corres.
+- Corres on your watch face. Add Corres to a watch face or the Smart Stack to see how many emails need you, and who the first is from. The name hides while your wrist is down.
+
+Also new since build 25
+- Key Details and suggested replies now work the same way on your iPhone and your Mac.
+
+Please try
+1. Scroll down a long list and switch tabs. Then try Tabs > Bottom.
+2. Make a test rule, like From a newsletter with Mark as Read on. Check it appears in Gmail (Settings > Filters) or Outlook (Settings > Rules), then delete it in Corres and check it's gone there too.
+3. Add Corres to your watch face: press and hold the face, tap Edit, swipe to the slots, and pick Corres.
+4. Open a receipt or delivery email and check the total and order number at the top, then tap a suggested reply and see if it sounds like you.
+
+Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
+
+## Mac build 30
+
+Corres for Mac 0.2.0 (30)
+
+The big ones
+- Rules that work with Corres closed. In Settings > Rules, a rule can now also run in Gmail and Outlook themselves, so it works with your Mac asleep and on their websites. Gmail asks once for permission. Needs You stays in Corres.
+- View > Bigger and Smaller (Command-plus and Command-minus) now make the mail list bigger too, not just the email.
+
+Please try
+1. Make a test rule and check it appears in Gmail or Outlook, then delete it in Corres and check it's gone there too.
+2. Press Command-plus a few times with the list in view.
+
+Something off? Help > Send Diagnostics, or send feedback through TestFlight.
