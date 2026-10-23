@@ -100,6 +100,9 @@ enum CorresSettings {
     static var previewLines: Int { defaults.object(forKey: previewLinesKey) as? Int ?? 2 }
 
     static let showAvatarsKey = "corres.showAvatars"
+    /// The Mac list's View › Show Sender Pictures, kept on the Mac alone:
+    /// a denser list on the iPhone shouldn't take the Mac's pictures away.
+    static let macSenderPicturesKey = "corres.mac.senderPictures"
     static var showAvatars: Bool { defaults.object(forKey: showAvatarsKey) as? Bool ?? true }
 
     static let badgeKey = "corres.badge"

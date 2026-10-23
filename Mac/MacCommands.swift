@@ -50,6 +50,7 @@ enum MacTextSize {
 struct MacCommands: Commands {
     @FocusedValue(\.macActions) private var actions
     @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
+    @AppStorage(CorresSettings.macSenderPicturesKey) private var showsSenderPictures = true
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -73,6 +74,9 @@ struct MacCommands: Commands {
             Button("Actual Size") { CorresSettings.textScale = 1 }
                 .keyboardShortcut("0", modifiers: .command)
                 .disabled(textScale == 1)
+            Divider()
+            // As Mail has it: pictures beside each row, or a denser list.
+            Toggle("Show Sender Pictures", isOn: $showsSenderPictures)
             Divider()
         }
         CommandGroup(replacing: .printItem) {

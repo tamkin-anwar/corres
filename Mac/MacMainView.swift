@@ -209,7 +209,8 @@ struct MacMainView: View {
                                 }
                                 guard let source = model.mailbox.remoteSource else { return }
                                 Task { await services.remote.loadMore(source, accounts: accounts, store: store) }
-                            })
+                            },
+                            people: services.people)
             }
         }
         .navigationTitle(model.search.isEmpty ? model.mailbox.title : String(localized: "Search"))

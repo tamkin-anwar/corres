@@ -18,8 +18,13 @@ struct MessageList: NSViewRepresentable {
     var onSwipe: (Correspondence, MacAction) -> Void = { _, _ in }
     /// Scrolled near the end: time to fetch more, where there's more.
     var onReachEnd: () -> Void = {}
+    /// Whose photo to show beside a person's mail, from Contacts.
+    var people: PeopleDirectory? = nil
     /// View › Bigger and Smaller.
     @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
+    /// View › Show Sender Pictures: a company's logo or a person's initials
+    /// beside each row, as Mail does since macOS 15.4.
+    @AppStorage(CorresSettings.macSenderPicturesKey) private var showsPictures = true
 
     func makeNSView(context: Context) -> NSScrollView {
         let table = MessageTableView()
@@ -55,7 +60,7 @@ struct MessageList: NSViewRepresentable {
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.parent = self
-        context.coordinator.apply(rows: rows, selection: selection, scale: textScale)
+        context.coordinator.apply(rows: rows, selection: selection, scale: textScale, pictures: showsPictures)
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -84,11 +89,12 @@ struct MessageList: NSViewRepresentable {
         private struct Layout: Equatable {
             let scale: Double
             let showsReasons: Bool
+            let showsPictures: Bool
         }
 
-        func apply(rows newRows: [MacRow], selection: Set<ThreadID>, scale: Double) {
+        func apply(rows newRows: [MacRow], selection: Set<ThreadID>, scale: Double, pictures: Bool) {
             guard let table else { return }
-            let newLayout = Layout(scale: scale, showsReasons: parent.showsReasons)
+            let newLayout = Layout(scale: scale, showsReasons: parent.showsReasons, showsPictures: pictures)
             if newLayout != layout {
                 layout = newLayout
                 // Read once here, not once per row: the factor comes from
@@ -255,7 +261,8 @@ struct MessageList: NSViewRepresentable {
                 return view
             case .thread(let thread):
                 let view = tableView.makeView(withIdentifier: ThreadCellView.identifier, owner: nil) as? ThreadCellView ?? ThreadCellView()
-                view.configure(thread, showsReason: parent.showsReasons, accountColor: parent.accountColors[thread.id.account])
+                view.configure(thread, showsReason: parent.showsReasons, accountColor: parent.accountColors[thread.id.account],
+                               picture: layout?.showsPictures ?? true, people: parent.people)
                 // Which email this row is, for Siri ("archive this one").
                 if #available(macOS 15.4, *) {
                     view.appEntityIdentifier = EntityIdentifier(for: CorresMailMessage.self, identifier: thread.id.entityKey)
@@ -485,6 +492,11 @@ final class ThreadCellView: NSTableCellView {
     private let accountDot = NSView()
     private let subject = NSTextField(labelWithString: "")
     private let detail = NSTextField(wrappingLabelWithString: "")
+    /// The sender's picture: the same avatar as on iPhone (a company's
+    /// logo through Corres's relay, a contact's photo, or initials).
+    private let picture = NSHostingView(rootView: AnyView(EmptyView()))
+    private var pictureSize: NSLayoutConstraint!
+    private var textLeading: NSLayoutConstraint!
     private var isUnread = false
     private var showsReason = false
     /// Pinned, flagged, has attachments: small symbols before the time.
@@ -507,7 +519,7 @@ final class ThreadCellView: NSTableCellView {
         detail.cell?.truncatesLastVisibleLine = true
         time.alignment = .right
         applyFonts()
-        for view in [dot, sender, time, marks, accountDot, subject, detail] {
+        for view in [dot, picture, sender, time, marks, accountDot, subject, detail] {
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
         }
@@ -521,7 +533,10 @@ final class ThreadCellView: NSTableCellView {
             dot.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
             dot.centerYAnchor.constraint(equalTo: sender.centerYAnchor),
 
-            sender.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            picture.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
+            picture.topAnchor.constraint(equalTo: topAnchor, constant: 10),
+            picture.heightAnchor.constraint(equalTo: picture.widthAnchor),
+
             sender.topAnchor.constraint(equalTo: topAnchor, constant: 10),
             sender.trailingAnchor.constraint(lessThanOrEqualTo: marks.leadingAnchor, constant: -6),
 
@@ -544,12 +559,26 @@ final class ThreadCellView: NSTableCellView {
             detail.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             detail.topAnchor.constraint(equalTo: subject.bottomAnchor, constant: 2),
         ])
+        pictureSize = picture.widthAnchor.constraint(equalToConstant: 32)
+        textLeading = sender.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20)
+        NSLayoutConstraint.activate([pictureSize, textLeading])
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(_ thread: Correspondence, showsReason: Bool, accountColor: NSColor?) {
+    func configure(_ thread: Correspondence, showsReason: Bool, accountColor: NSColor?, picture showsPicture: Bool = true,
+                   people: PeopleDirectory? = nil) {
         isUnread = thread.isUnread
+        picture.isHidden = !showsPicture
+        if showsPicture {
+            let side = (32 * MacListScale.factor).rounded()
+            pictureSize.constant = side
+            textLeading.constant = 18 + side + 10
+            let avatar = CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail, size: CGSize(width: side, height: side))
+            picture.rootView = people.map { AnyView(avatar.environment($0)) } ?? AnyView(avatar)
+        } else {
+            textLeading.constant = 20
+        }
         self.showsReason = showsReason
         sender.stringValue = thread.isFromAccountOwner && !thread.toRecipients.isEmpty
             ? String(localized: "To: \(thread.counterpartName())") : thread.sender
