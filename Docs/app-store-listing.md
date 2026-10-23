@@ -39,7 +39,7 @@ Updatable any time without a new build.
 
 ## Description (4,000)
 
-> Corres opens on what needs you. Gmail, Outlook, iCloud and almost any other email account sit in one inbox, read and sorted on your iPhone. The emails that ask something of you come first, each with the reason it's there. The rest of your mail waits one swipe away, quiet until you're ready.
+> Corres opens on what needs you. Gmail, Outlook, iCloud and almost any other email account sit in one inbox, read and sorted on your iPhone. The emails that ask something of you come first, each with the reason it's there. The rest of your mail is one tap away, quiet until you're ready.
 >
 > NEEDS YOU AND WAITING
 > • Needs You holds the emails with a question, a decision or a deadline for you, grouped into Due soon and When you can.
@@ -51,6 +51,7 @@ Updatable any time without a new build.
 > • Primary, Promotions, Social and Updates, sorted by Corres and learning from the emails you move.
 > • Each account has its own color, name, signatures and notification settings.
 > • New Outlook and iCloud mail notifies you within seconds.
+> • Rules sort mail as it arrives, and can run in Gmail and Outlook themselves, so they work even with Corres closed.
 >
 > NEW SENDERS
 > • First emails from someone new wait until you allow or block them.
@@ -70,10 +71,16 @@ Updatable any time without a new build.
 > • Several signatures, send-as addresses, and bold, lists and links.
 > • Suggested replies and rewrites. Nothing is sent until you send it.
 > • Write an email from the Share button in any app.
+> • Suggested replies in your own greeting, sign-off and length, learned from email you've sent.
+> • Ask Siri to write, send or find an email in Corres.
 >
 > ANYWHERE
 > • Archive, delete and flag with no signal. Your changes go through once you're back online.
 > • What you sort, snooze, pin, allow and block follows you to your other devices through iCloud. Your email never does.
+>
+> APPLE WATCH
+> • What needs you, on your wrist and on your watch face.
+> • Reply by voice, Scribble or a ready answer, or mark it handled.
 >
 > SMART ON EVERY IPHONE
 > • Needs You, its reasons, and key details like amounts, dates and order numbers work on every iPhone.
@@ -90,7 +97,12 @@ Updatable any time without a new build.
 > Terms: https://anwarcreativestudio.com/corres/terms/
 > Privacy: https://anwarcreativestudio.com/corres/privacy/
 
-(3199 characters)
+(3594 characters. Updated 2026-10-22 in App Store Connect for iOS and
+macOS 1.0, in all 11 languages: "one tap away" instead of "one swipe
+away", the rules bullet, the two Writing bullets, and Apple Watch on iOS.
+French and German dropped their Invitations section to stay under 4,000
+characters. `localized/listing.py` predates this; App Store Connect is now
+the source of truth for the other languages.)
 
 Prices match App Store Connect today ($20.00 monthly, $200.00 yearly,
 $1,000 Lifetime, 2-week free trial). If they change, change them here too:
@@ -143,6 +155,11 @@ untouched). The window has to be on a regular desktop Space: macOS doesn't
 draw windows on another Space or a full-screen one. The Mac description is
 the iOS one with Mac wording, an "A real Mac app" section, and no claim of
 instant alerts until they're verified on the Mac.
+
+Apple Watch (iOS 1.0, uploaded 2026-10-22): four 416 × 496 in
+`Docs/AppStore/watch/` from the Watch simulator with `-SampleSnapshot`:
+Needs You, the watch face with the Corres complication, an email, and
+Reply/Handled/Archive. One size for every language, as Apple requires.
 
 ## Other languages
 
