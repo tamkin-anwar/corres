@@ -617,6 +617,10 @@ struct CorrespondenceList: View {
                 router.pendingSearch = nil
                 searchPresented = true
                 search = words
+                #if DEBUG
+                // Screenshots: a question is asked, not just typed.
+                if ProcessInfo.processInfo.arguments.contains("-Search"), words.hasSuffix("?") { askQuestion(words) }
+                #endif
             }
             .searchSuggestions {
                 if search.isEmpty {

@@ -141,10 +141,18 @@ struct CorresShell: View {
             }
             let preferred: Destination = thread.attention == .waiting ? .waiting : (thread.attention == .needsYou ? .needsYou : .mail)
             let destination = tabs.contains(preferred) || sizeClass == .regular ? preferred : .mail
+            let switching = selection != destination
             selection = destination
             let route = ConversationRoute(id: id, orderedIDs: [id])
             if sizeClass == .regular {
-                splitRoute = route
+                // Changing list clears the open conversation, once this
+                // update is applied: set after that, or it's cleared too and
+                // a notification on iPad opened to "No conversation selected".
+                if switching {
+                    Task { @MainActor in splitRoute = route }
+                } else {
+                    splitRoute = route
+                }
             } else {
                 var fresh = NavigationPath()
                 fresh.append(route)
@@ -267,6 +275,11 @@ struct CorresShell: View {
             #if DEBUG
             // Screenshots: -OpenThread sample-N opens that sample email.
             let args = ProcessInfo.processInfo.arguments
+            // Screenshots: -Search "question" opens Search with it typed.
+            if let flag = args.firstIndex(of: "-Search"), flag + 1 < args.count {
+                try? await Task.sleep(for: .seconds(1.5))
+                router.pending = .search(args[flag + 1])
+            }
             if let flag = args.firstIndex(of: "-OpenThread"), flag + 1 < args.count {
                 try? await Task.sleep(for: .seconds(1.5))
                 router.pending = .thread(ThreadID(account: "sample", providerID: args[flag + 1]))

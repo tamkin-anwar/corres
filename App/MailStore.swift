@@ -247,7 +247,7 @@ final class MailStore {
     /// away its scroll position and dropped you back at the top mid-task.
     func load() async {
         if state == .loaded {
-            if seedsSampleMail() { try? await repository.seedIfNeeded(now: .now) }
+            if seedsSampleMail() { try? await repository.seedIfNeeded(now: Self.sampleNow) }
             await refresh()
             return
         }
@@ -285,6 +285,14 @@ final class MailStore {
     }
     private static let firstScreen = 300
 
+    /// When sample mail is dated from. App Store screenshots show 9:41, so
+    /// there the mail arrives that morning, whatever time they're taken.
+    static var sampleNow: Date {
+        guard EntitlementStore.isScreenshotMode,
+              let morning = Calendar.current.date(bySettingHour: 9, minute: 41, second: 0, of: .now) else { return .now }
+        return morning
+    }
+
     /// The mailbox, read in the background while the window is still being
     /// built (which keeps the main thread busy for a second or more on a
     /// Mac): by the time the lists can show, the mail is already here.
@@ -313,7 +321,7 @@ final class MailStore {
     private func loadFirst() async {
         state = .loading
         do {
-            if seedsSampleMail() { try await repository.seedIfNeeded(now: .now) }
+            if seedsSampleMail() { try await repository.seedIfNeeded(now: Self.sampleNow) }
             // The newest first, so the first screen is up in a moment, then
             // everything (thousands of conversations take a few seconds on
             // a phone). Lists show as soon as the first part is here.
