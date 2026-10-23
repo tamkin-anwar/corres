@@ -115,6 +115,9 @@ struct ReadingPane: View {
                                  text: showingTranslation ? MailDigest.readableText(body: thread.body, html: thread.htmlBody) : "")
         .id(thread.id)
         .task(id: thread.id) { await opened() }
+        .onChange(of: showImages) { _, shown in
+            if shown { MacPrinter.imagesShown.insert(thread.id) }
+        }
         .userActivity(Handoff.conversation) { activity in Handoff.describe(activity, thread) }
     }
 
@@ -580,6 +583,8 @@ struct ReadingPane: View {
         HangReporter.start("open")
         await services.store.loadStoredContent(thread.id)
         showImages = false
+        // Hidden again on screen, so hidden again on paper.
+        MacPrinter.imagesShown.remove(thread.id)
         showEarlier = false
         invitation = nil
         aids = ReadingAids()
