@@ -96,7 +96,7 @@ struct ReadingPane: View {
                         Button("Try Again") { Task { await services.threadActions.loadContent(for: thread) } }
                             .buttonStyle(.link)
                     }
-                    .font(.callout)
+                    .macFont(.callout)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 28)
                     .padding(.bottom, 10)
@@ -140,7 +140,7 @@ struct ReadingPane: View {
                 openReply(prefill: String(localized: "Here are a few times that work for me:\n\n\(times)\n\nDo any of these suit you?"))
             }
         } label: {
-            Label("Suggest Times from Your Calendar", systemImage: "calendar.badge.clock")
+            Label("Suggest Times from Your Calendar", systemImage: "calendar.badge.clock").macTextSize()
         }
         .buttonStyle(.bordered)
         .help("Three open times from your calendar, in a reply you can change.")
@@ -160,7 +160,7 @@ struct ReadingPane: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(thread.subject.isEmpty ? String(localized: "No subject") : thread.subject)
-                .font(.system(size: 24, weight: .regular, design: .serif))
+                .macFont(size: 24, weight: .regular, design: .serif)
                 .foregroundStyle(CorresPalette.ink)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
@@ -173,26 +173,26 @@ struct ReadingPane: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Button { showPerson() } label: {
-                            Text(thread.sender).font(.headline).foregroundStyle(CorresPalette.ink)
+                            Text(thread.sender).macFont(.headline).foregroundStyle(CorresPalette.ink)
                         }
                         .buttonStyle(.plain)
                         .help("Show your mail with \(thread.sender)")
                         if let email = thread.senderEmail, email.lowercased() != thread.sender.lowercased() {
-                            Text(email).font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                            Text(email).macFont(.subheadline).foregroundStyle(CorresPalette.secondary)
                                 .textSelection(.enabled)
                         }
                     }
                     if !recipients.isEmpty {
-                        Text(recipients).font(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(2)
+                        Text(recipients).macFont(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(2)
                     }
                 }
                 Spacer(minLength: 12)
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(thread.receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()))
-                        .font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                        .macFont(.subheadline).foregroundStyle(CorresPalette.secondary)
                     if services.auth.accounts.count > 1 {
                         Text(AccountPreferences.nickname(for: thread.id.account))
-                            .font(.caption).foregroundStyle(CorresPalette.tertiary)
+                            .macFont(.caption).foregroundStyle(CorresPalette.tertiary)
                     }
                 }
             }
@@ -215,18 +215,18 @@ struct ReadingPane: View {
         return VStack(alignment: .leading, spacing: 10) {
             if let insight, let summary = insight.summary {
                 Label("In short", systemImage: "sparkle")
-                    .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.accent)
-                Text(summary).font(.body).foregroundStyle(CorresPalette.ink)
+                    .macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.accent)
+                Text(summary).macFont(.body).foregroundStyle(CorresPalette.ink)
                     .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                 ForEach(insight.details, id: \.self) { detail in
-                    Text("• " + detail).font(.callout).foregroundStyle(CorresPalette.secondary)
+                    Text("• " + detail).macFont(.callout).foregroundStyle(CorresPalette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Divider()
             } else if preparing {
                 HStack(spacing: 8) {
                     Label("In short", systemImage: "sparkle")
-                        .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                        .macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.accent)
                     ProgressView().controlSize(.mini)
                 }
                 Divider()
@@ -244,7 +244,7 @@ struct ReadingPane: View {
                 Divider()
             }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(statusLine).font(.callout).foregroundStyle(CorresPalette.secondary)
+                Text(statusLine).macFont(.callout).foregroundStyle(CorresPalette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
                 Menu {
@@ -256,16 +256,18 @@ struct ReadingPane: View {
                         }
                     }
                 } label: {
-                    Text("Move")
+                    Text("Move").macTextSize()
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
                 if thread.attention(at: .now) == .needsYou {
-                    Button("Handled") {
+                    Button {
                         Task { await services.threadActions.setAttention(.handled, for: thread) }
+                    } label: {
+                        Text("Handled").macTextSize()
                     }
                     .buttonStyle(.bordered)
-                    .controlSize(.small)
+                    .macControlSize(.small)
                 }
             }
         }
@@ -280,17 +282,17 @@ struct ReadingPane: View {
         VStack(alignment: .leading, spacing: 8) {
             if let status = glance.status {
                 Label(Glance.display(status), systemImage: glance.isAlert ? "exclamationmark.circle.fill" : "checkmark.circle")
-                    .font(.callout.weight(.semibold))
+                    .macFont(.callout, weight: .semibold)
                     .foregroundStyle(glance.isAlert ? CorresPalette.alert : CorresPalette.ink)
             } else {
                 Label("At a glance", systemImage: "list.bullet.rectangle")
-                    .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                    .macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.accent)
             }
             FlowRow(spacing: 22) {
                 ForEach(glance.facts, id: \.self) { fact in
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(Glance.display(fact.label)).font(.caption).foregroundStyle(CorresPalette.secondary)
-                        Text(fact.value).font(.body.weight(.semibold)).monospacedDigit().foregroundStyle(CorresPalette.ink)
+                        Text(Glance.display(fact.label)).macFont(.caption).foregroundStyle(CorresPalette.secondary)
+                        Text(fact.value).macFont(.body, weight: .semibold).monospacedDigit().foregroundStyle(CorresPalette.ink)
                             .textSelection(.enabled)
                     }
                 }
@@ -305,11 +307,11 @@ struct ReadingPane: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 8) {
                 Label("Asks you", systemImage: "questionmark.bubble")
-                    .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                    .macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.accent)
                 Spacer(minLength: 8)
                 if thread.attention == .needsYou, let due = thread.dueAt { DueChip(date: due) }
             }
-            Text("\u{201C}\(ask)\u{201D}").font(.body).foregroundStyle(CorresPalette.ink)
+            Text("\u{201C}\(ask)\u{201D}").macFont(.body).foregroundStyle(CorresPalette.ink)
                 .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .combine)
@@ -321,16 +323,16 @@ struct ReadingPane: View {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
                     Label("Next step", systemImage: "arrow.turn.down.right")
-                        .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                        .macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.accent)
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(Glance.display(step.label)).font(.body.weight(.semibold)).foregroundStyle(CorresPalette.ink)
+                        Text(Glance.display(step.label)).macFont(.body, weight: .semibold).foregroundStyle(CorresPalette.ink)
                         if !step.host.isEmpty {
-                            Text(step.host).font(.callout).foregroundStyle(CorresPalette.secondary).lineLimit(1)
+                            Text(step.host).macFont(.callout).foregroundStyle(CorresPalette.secondary).lineLimit(1)
                         }
                     }
                 }
                 Spacer(minLength: 8)
-                Image(systemName: "arrow.up.right").font(.callout.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                Image(systemName: "arrow.up.right").macFont(.callout, weight: .semibold).foregroundStyle(CorresPalette.accent)
             }
             .contentShape(Rectangle())
         }
@@ -346,12 +348,12 @@ struct ReadingPane: View {
     private func newSenderBar(email: String) -> some View {
         HStack(spacing: 10) {
             Label("First email from them. Allow them into your inbox?", systemImage: "checkmark.shield")
-                .font(.callout).foregroundStyle(CorresPalette.secondary)
+                .macFont(.callout).foregroundStyle(CorresPalette.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
-            Button("Block") { Task { await services.store.blockSender(email, account: thread.id.account) } }
+            Button { Task { await services.store.blockSender(email, account: thread.id.account) } } label: { Text("Block").macTextSize() }
                 .help("Their mail stays out of every list, and they're never told.")
-            Button("Allow") { Task { await services.store.approveSender(email, account: thread.id.account) } }
+            Button { Task { await services.store.approveSender(email, account: thread.id.account) } } label: { Text("Allow").macTextSize() }
                 .buttonStyle(.borderedProminent)
                 .help("Their mail comes to your inbox from now on.")
         }
@@ -380,7 +382,8 @@ struct ReadingPane: View {
                 } label: {
                     HStack(spacing: 6) {
                         if draftingIntent == intent { ProgressView().controlSize(.small) }
-                        Text(intent)
+                        // A bordered button sets its own font; this one is read.
+                        Text(intent).macTextSize()
                     }
                 }
                 .buttonStyle(.bordered)
@@ -446,7 +449,7 @@ struct ReadingPane: View {
             } label: {
                 Label(earlier.count == 1 ? "1 earlier message" : "\(earlier.count) earlier messages",
                       systemImage: showEarlier ? "chevron.down" : "chevron.right")
-                    .font(.callout)
+                    .macFont(.callout)
             }
             .buttonStyle(.plain)
             .foregroundStyle(CorresPalette.accent)
@@ -454,12 +457,12 @@ struct ReadingPane: View {
                 ForEach(earlier) { message in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text(message.sender).font(.callout.weight(.semibold))
+                            Text(message.sender).macFont(.callout, weight: .semibold)
                             Spacer()
-                            Text(MacDates.short(message.receivedAt)).font(.caption).foregroundStyle(CorresPalette.secondary)
+                            Text(MacDates.short(message.receivedAt)).macFont(.caption).foregroundStyle(CorresPalette.secondary)
                         }
                         Text(MailDigest.preview(body: message.body, html: message.htmlBody) ?? message.excerpt)
-                            .font(.callout).foregroundStyle(CorresPalette.secondary)
+                            .macFont(.callout).foregroundStyle(CorresPalette.secondary)
                             .lineLimit(4).textSelection(.enabled)
                     }
                     .padding(10)
@@ -483,19 +486,21 @@ struct ReadingPane: View {
             Image(systemName: "envelope.badge.shield.half.filled").foregroundStyle(CorresPalette.secondary)
             Text(unsubscribed ? "Unsubscribed. You won't get more from this list."
                               : "This email is from a mailing list.")
-                .font(.callout).foregroundStyle(CorresPalette.secondary)
+                .macFont(.callout).foregroundStyle(CorresPalette.secondary)
             Spacer()
             if !unsubscribed {
                 if unsubscribing { ProgressView().controlSize(.small) }
-                Button("Unsubscribe") {
+                Button {
                     unsubscribing = true
                     Task {
                         let outcome = await services.unsubscribeService.unsubscribe(from: thread, store: services.store)
                         unsubscribing = false
                         unsubscribed = outcome == .done
                     }
+                } label: {
+                    Text("Unsubscribe").macTextSize()
                 }
-                .controlSize(.small)
+                .macControlSize(.small)
                 .disabled(unsubscribing)
             }
         }
@@ -509,10 +514,10 @@ struct ReadingPane: View {
             Image(systemName: "translate").foregroundStyle(CorresPalette.secondary)
             let name = Locale.current.localizedString(forLanguageCode: language.languageCode?.identifier ?? "") ?? ""
             Text(name.isEmpty ? String(localized: "This email is in another language.") : String(localized: "This email is in \(name)."))
-                .font(.callout).foregroundStyle(CorresPalette.secondary)
+                .macFont(.callout).foregroundStyle(CorresPalette.secondary)
             Spacer()
-            Button("Translate") { showingTranslation = true }
-                .controlSize(.small)
+            Button { showingTranslation = true } label: { Text("Translate").macTextSize() }
+                .macControlSize(.small)
                 .help("Translates it on this Mac with Apple's Translate")
         }
         .padding(10)
@@ -543,15 +548,17 @@ struct ReadingPane: View {
             Text(trackers == 1 ? "Images hidden, and 1 tracker blocked"
                  : trackers > 1 ? "Images hidden, and \(trackers) trackers blocked"
                               : "Images hidden to protect your privacy")
-                .font(.callout).foregroundStyle(CorresPalette.secondary)
+                .macFont(.callout).foregroundStyle(CorresPalette.secondary)
             Spacer()
-            Button("Show Images") { showImages = true }.controlSize(.small)
+            Button { showImages = true } label: { Text("Show Images").macTextSize() }.macControlSize(.small)
             if let sender = thread.senderEmail {
-                Button("Always from \(thread.sender)") {
+                Button {
                     showImages = true
                     Task { await services.store.trustSenderImages(sender, account: thread.id.account) }
+                } label: {
+                    Text("Always from \(thread.sender)").macTextSize()
                 }
-                .controlSize(.small)
+                .macControlSize(.small)
             }
         }
         .padding(10)
@@ -561,7 +568,7 @@ struct ReadingPane: View {
     private var attachments: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("\(thread.attachments.count) \(thread.attachments.count == 1 ? "attachment" : "attachments")")
-                .font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.secondary)
+                .macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.secondary)
             FlowRow(spacing: 8) {
                 ForEach(thread.attachments) { file in
                     MacAttachmentChip(file: file, thread: thread)
@@ -658,13 +665,13 @@ struct MacAttachmentChip: View {
             HStack(spacing: 8) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 6, style: .continuous).fill(kind.color)
-                    Image(systemName: kind.symbol).font(.caption.weight(.semibold)).foregroundStyle(.white)
+                    Image(systemName: kind.symbol).macFont(.caption, weight: .semibold).foregroundStyle(.white)
                 }
                 .frame(width: 26, height: 26)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(file.filename).lineLimit(1).truncationMode(.middle)
                     Text(failed ? String(localized: "Couldn't download") : ByteCountFormatter.string(fromByteCount: Int64(file.sizeBytes), countStyle: .file))
-                        .font(.caption).foregroundStyle(failed ? CorresPalette.alert : CorresPalette.secondary)
+                        .macFont(.caption).foregroundStyle(failed ? CorresPalette.alert : CorresPalette.secondary)
                 }
                 if working { ProgressView().controlSize(.small) }
             }

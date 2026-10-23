@@ -162,6 +162,15 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         // entirely from loadHTMLString), it exists only to give the page
         // a real https origin.
         let kind: BodyKind = !designed ? .plain : analysis.hasOwnDarkMode ? .designedWithDarkMode : .designed
+        #if os(macOS)
+        // Mail from people grows by its text size (above). Designed mail
+        // sets its own sizes, and WebKit on the Mac ignores
+        // -webkit-text-size-adjust, so it's zoomed instead, as Safari's
+        // Bigger does: a design that reflows grows, and one shrunk to fit
+        // (`sizingScript`) still fits the pane, since the zoom narrows the
+        // width it lays out in.
+        webView.pageZoom = kind == .plain ? 1 : CGFloat(CorresSettings.textScale)
+        #endif
         let page = Self.wrap(processed, kind: kind, dark: dark, textSize: textSize,
                              load: coordinator.loadGeneration, lateStyles: lateStyles)
         // The rewrite above only catches `<img src>`. With images off,
@@ -1065,11 +1074,14 @@ struct HTMLMessageBody: PlatformViewRepresentable {
             baseHeight = height
             #if canImport(UIKit)
             let zoomed = height * (webView?.scrollView.zoomScale ?? 1)
+            if let key = parent.heightKey { MessageHeights.remember(height, for: key) }
             #else
-            let zoomed = height
+            // The page measures itself in CSS pixels; zoomed, each is more
+            // than a point.
+            let zoomed = (height * (webView?.pageZoom ?? 1)).rounded(.up)
+            if let key = parent.heightKey { MessageHeights.remember(zoomed, for: key) }
             #endif
             if abs(parent.height - zoomed) >= 1 { parent.height = zoomed }
-            if let key = parent.heightKey { MessageHeights.remember(height, for: key) }
 
         }
 
@@ -1167,7 +1179,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
             #else
             guard let top = try? await webView.evaluateJavaScript(script, in: nil, contentWorld: .defaultClient) as? Double,
                   let outer = webView.enclosingScrollView, let document = outer.documentView else { return }
-            let point = webView.convert(CGPoint(x: 0, y: top), to: document)
+            let point = webView.convert(CGPoint(x: 0, y: top * webView.pageZoom), to: document)
             outer.contentView.animator().setBoundsOrigin(CGPoint(x: 0, y: max(0, point.y - 12)))
             #endif
         }

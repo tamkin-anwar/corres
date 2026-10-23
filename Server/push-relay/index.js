@@ -11,6 +11,7 @@ const { Firestore } = require('@google-cloud/firestore');
 const { KeyManagementServiceClient } = require('@google-cloud/kms');
 const crypto = require('crypto');
 const http2 = require('http2');
+const appAttest = require('./appattest');
 
 const firestore = new Firestore();
 const devices = firestore.collection('devices');
@@ -27,6 +28,22 @@ const icloudWatches = firestore.collection('icloudWatches');
 const ICLOUD_KEY_VERSION = process.env.ICLOUD_KEY_VERSION;
 let kms = null;
 let cachedPublicKey = null;
+
+// App Attest (see appattest.js): one-time challenges, and each attested
+// key's public half and counter, by key id (hex). Only keys, never mail.
+const attestChallenges = firestore.collection('attestChallenges');
+const attestKeys = firestore.collection('attestKeys');
+// Monitor mode until this is "1": every call is checked and the result
+// recorded and logged, but a call without (or failing) App Attest still
+// goes through, so no tester loses notifications while it's watched.
+const APP_ATTEST_ENFORCE = process.env.APP_ATTEST_ENFORCE === '1';
+// "0" stops handing out challenges for new keys, so apps back off from
+// Apple's attestation servers (Apple's advice if it ever throttles us).
+const APP_ATTEST_NEW_KEYS = process.env.APP_ATTEST_NEW_KEYS !== '0';
+// "0" refuses keys made by development builds without the production
+// entitlement. TestFlight and App Store builds always make production keys.
+const APP_ATTEST_DEVELOPMENT = process.env.APP_ATTEST_DEVELOPMENT !== '0';
+const CHALLENGE_LIFETIME_MS = 5 * 60_000;
 
 // A device token belongs to one of Apple's two APNs servers: development
 // for a build run from Xcode, production for TestFlight and the App Store.
@@ -225,6 +242,163 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // device token, whether malicious or just a client-side bug looping.
 const MAX_EMAIL_ADDRESSES_PER_DEVICE = 50;
 
+// App Attest routes and checks.
+
+const CHALLENGE_PATTERN = /^[A-Za-z0-9+/]{43}=$/;
+const KEY_ID_PATTERN = /^[A-Za-z0-9+/]{43}=$/;
+const ATTESTATION_PATTERN = /^[A-Za-z0-9+/=]{100,16384}$/;
+const ASSERTION_PATTERN = /^[A-Za-z0-9+/=]{40,1024}$/;
+
+// A key id (base64 of 32 bytes) as its Firestore document id.
+function keyDocID(keyId) {
+  return Buffer.from(keyId, 'base64').toString('hex');
+}
+
+// 32 random bytes, good for one use within five minutes. Stored by its
+// hash, so the database never holds a usable challenge. Unused ones are
+// cleared by Firestore's TTL policy on `expiresAt` (see README).
+async function handleAttestChallenge(req, res) {
+  if (req.body && req.body.purpose === 'attest' && !APP_ATTEST_NEW_KEYS) {
+    res.status(503).send('New App Attest keys are paused');
+    return;
+  }
+  const challenge = crypto.randomBytes(32).toString('base64');
+  await attestChallenges.doc(hash(challenge)).set({
+    expiresAt: Firestore.Timestamp.fromMillis(Date.now() + CHALLENGE_LIFETIME_MS),
+  });
+  res.status(200).json({ challenge });
+}
+
+// True once for a challenge this relay issued and that hasn't expired;
+// it's deleted as it's used, so a second use always fails.
+async function consumeChallenge(challenge) {
+  if (typeof challenge !== 'string' || !CHALLENGE_PATTERN.test(challenge)) return false;
+  const ref = attestChallenges.doc(hash(challenge));
+  return firestore.runTransaction(async (transaction) => {
+    const doc = await transaction.get(ref);
+    if (!doc.exists) return false;
+    transaction.delete(ref);
+    return doc.data().expiresAt.toMillis() > Date.now();
+  });
+}
+
+// The app's new key, attested by Apple over one of our challenges. Once
+// verified, its public key and a zero counter are kept for its assertions.
+async function handleAttest(req, res) {
+  const { keyId, attestation, challenge } = req.body || {};
+  if (typeof keyId !== 'string' || typeof attestation !== 'string'
+      || !KEY_ID_PATTERN.test(keyId) || !ATTESTATION_PATTERN.test(attestation)) {
+    res.status(400).send('keyId, attestation and challenge are required and must be well formed');
+    return;
+  }
+  if (!(await consumeChallenge(challenge))) {
+    console.log('app attest /attest: rejected, bad-challenge');
+    res.status(401).send('Challenge is unknown, used or expired');
+    return;
+  }
+  let verified;
+  try {
+    verified = appAttest.verifyAttestation({
+      attestation: Buffer.from(attestation, 'base64'),
+      keyId: Buffer.from(keyId, 'base64'),
+      challenge: Buffer.from(challenge, 'base64'),
+      allowDevelopment: APP_ATTEST_DEVELOPMENT,
+    });
+  } catch (error) {
+    const reason = error instanceof appAttest.AttestError ? error.reason : 'error';
+    console.log(`app attest /attest: rejected, ${reason}`);
+    res.status(401).send('Attestation did not verify');
+    return;
+  }
+  // A key is attested once: one already on file is never replaced.
+  const ref = attestKeys.doc(keyDocID(keyId));
+  const created = await firestore.runTransaction(async (transaction) => {
+    if ((await transaction.get(ref)).exists) return false;
+    transaction.create(ref, {
+      publicKey: verified.publicKeyPem,
+      appId: verified.appId,
+      environment: verified.environment,
+      counter: 0,
+      // Kept for Apple's fraud metric (how many keys one device has made).
+      receipt: verified.receipt ? verified.receipt.toString('base64') : null,
+      validationCategory: verified.validationCategory ?? null,
+      bundleVersion: verified.bundleVersion ?? null,
+      createdAt: Firestore.FieldValue.serverTimestamp(),
+    });
+    return true;
+  });
+  if (!created) {
+    console.log('app attest /attest: rejected, key-exists');
+    res.status(409).send('Key already attested');
+    return;
+  }
+  console.log(`app attest /attest: ok, ${verified.environment}`);
+  res.status(204).send();
+}
+
+// Whether this request carries a valid assertion from an attested key:
+// the `Corres-Attest-Key` and `Corres-Attest-Assertion` headers, signed
+// over the exact request body, which names a fresh challenge
+// (`attestChallenge`). Never throws; says why when it isn't attested.
+async function checkAssertion(req) {
+  const keyId = req.get('Corres-Attest-Key');
+  const assertion = req.get('Corres-Attest-Assertion');
+  if (!keyId && !assertion) return { attested: false, reason: 'none' };
+  if (!keyId || !assertion || !KEY_ID_PATTERN.test(keyId) || !ASSERTION_PATTERN.test(assertion)
+      || !Buffer.isBuffer(req.rawBody)) {
+    return { attested: false, reason: 'malformed' };
+  }
+  try {
+    const ref = attestKeys.doc(keyDocID(keyId));
+    if (!(await ref.get()).exists) return { attested: false, reason: 'unknown-key', keyId };
+    if (!(await consumeChallenge(req.body && req.body.attestChallenge))) {
+      return { attested: false, reason: 'bad-challenge', keyId };
+    }
+    // Checked and counted in one transaction, so two requests can't both
+    // pass with the same counter.
+    await firestore.runTransaction(async (transaction) => {
+      const doc = await transaction.get(ref);
+      const stored = doc.data();
+      const { counter } = appAttest.verifyAssertion({
+        assertion: Buffer.from(assertion, 'base64'),
+        clientData: req.rawBody,
+        publicKeyPem: stored.publicKey,
+        appId: stored.appId,
+        previousCounter: stored.counter,
+      });
+      transaction.update(ref, { counter, lastUsedAt: Firestore.FieldValue.serverTimestamp() });
+    });
+    return { attested: true, reason: null, keyId };
+  } catch (error) {
+    return { attested: false, reason: error instanceof appAttest.AttestError ? error.reason : 'error', keyId };
+  }
+}
+
+// One line per checked call, and in enforcement mode a 401 for anything
+// not attested. Returns false when the request was refused.
+async function appAttestGate(req, res, route) {
+  const result = await checkAssertion(req);
+  if (APP_ATTEST_ENFORCE && !result.attested) {
+    console.log(`app attest ${route}: rejected, ${result.reason}`);
+    res.status(401).set('Corres-Attest-Result', result.reason).send('App Attest required');
+    return null;
+  }
+  console.log(`app attest ${route}: ${result.attested ? 'ok' : `allowed unattested, ${result.reason}`}`);
+  // Lets the app notice the relay no longer knows its key and attest again.
+  res.set('Corres-Attest-Result', result.attested ? 'ok' : result.reason);
+  return result;
+}
+
+// What's kept on the device record: whether its last call was attested.
+function attestFields(result) {
+  return {
+    attested: result.attested,
+    attestReason: result.reason,
+    attestKeyId: result.keyId || null,
+    attestCheckedAt: Firestore.FieldValue.serverTimestamp(),
+  };
+}
+
 // One device can now be signed into more than one Gmail account at once
 // (Corres's own multi-account support), so a device token maps to a list of
 // email addresses, not a single one: `emailAddresses` (array-contains
@@ -241,6 +415,8 @@ async function handleRegister(req, res) {
     res.status(400).send('emailAddress or deviceToken is malformed');
     return;
   }
+  const attest = await appAttestGate(req, res, '/register');
+  if (!attest) return;
   const existing = await devices.doc(deviceToken).get();
   const currentCount = (existing.exists && existing.data().emailAddresses) ? existing.data().emailAddresses.length : 0;
   if (currentCount >= MAX_EMAIL_ADDRESSES_PER_DEVICE) {
@@ -256,6 +432,7 @@ async function handleRegister(req, res) {
       ? Firestore.FieldValue.arrayUnion(emailAddress)
       : Firestore.FieldValue.arrayRemove(emailAddress),
     updatedAt: Firestore.FieldValue.serverTimestamp(),
+    ...attestFields(attest),
     ...environmentFrom(req.body),
   }, { merge: true });
   res.status(204).send();
@@ -273,11 +450,14 @@ async function handleUnregister(req, res) {
     res.status(400).send('deviceToken is required and must be a valid device token');
     return;
   }
+  const attest = await appAttestGate(req, res, '/unregister');
+  if (!attest) return;
   if (emailAddress) {
     await devices.doc(deviceToken).set({
       emailAddresses: Firestore.FieldValue.arrayRemove(emailAddress),
       alertAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
       gmailAlertAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
+      ...attestFields(attest),
     }, { merge: true });
   } else {
     await devices.doc(deviceToken).delete();
@@ -512,6 +692,8 @@ functions.http('corresPushRelay', async (req, res) => {
   switch (req.path) {
     case '/register': return handleRegister(req, res);
     case '/unregister': return handleUnregister(req, res);
+    case '/attest-challenge': return handleAttestChallenge(req, res);
+    case '/attest': return handleAttest(req, res);
     case '/register-graph': return handleRegisterGraph(req, res);
     case '/icloud-key': return handleICloudKey(req, res);
     case '/register-icloud': return handleRegisterICloud(req, res);

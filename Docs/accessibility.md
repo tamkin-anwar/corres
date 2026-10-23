@@ -17,7 +17,7 @@ What Corres can say on its App Store page under Accessibility, by device, and wh
 
 | Label | iPhone | iPad | Mac | Why |
 |---|---|---|---|---|
-| Larger Text | Yes | Yes | Not yet | On iPhone and iPad all text follows the system text size up to the largest accessibility size. At those sizes, field names move above their fields and rows wrap instead of cutting words off. Checked with Apple's accessibility audit at AX5. On the Mac, View › Bigger and Smaller (⌘+ and ⌘−) scale the list and the email text, since macOS has no Text Size setting apps can read. |
+| Larger Text | Yes | Yes | n/a (Apple doesn't offer it on Mac) | On iPhone and iPad all text follows the system text size up to the largest accessibility size. At those sizes, field names move above their fields and rows wrap instead of cutting words off. Checked with Apple's accessibility audit at AX5. The Mac meets the same bar anyway: View › Bigger and Smaller (⌘+ and ⌘−) take the sidebar, the list, the conversation, the email itself and Compose up to 200%, since macOS has no Text Size setting apps other than Apple's can read. Rows get taller and columns wider as the text grows. Settings and the toolbar keep the system's sizes. |
 | Dark Interface | Yes | Yes | Yes | Follows Dark Mode everywhere, including the emails themselves. |
 | Sufficient Contrast | Yes | Yes | Yes | All text colors measure at least 4.84:1 against the background in light and dark, and higher with Increase Contrast. Apple's bar is 4.5:1. |
 | Differentiate Without Color Alone | Yes | Yes | Yes | Unread, flagged, pinned and VIP each have a shape or a word as well as a color. On the Mac, with the setting on, the account is named instead of only shown as a colored dot. |
@@ -29,7 +29,7 @@ What Corres can say on its App Store page under Accessibility, by device, and wh
 
 ## In App Store Connect
 
-Entered 2026-10-22 as drafts: iPhone and iPad with Larger Text, Dark Interface, Sufficient Contrast, Differentiate Without Color Alone and Reduced Motion; Mac with the same minus Larger Text (Apple doesn't offer it on Mac). Apple only lets them be published once Corres is live on the App Store, so publish them right after launch. VoiceOver and Voice Control stay off until the hands-on check below. Apple Watch has no declaration yet.
+Entered 2026-10-22 as drafts: iPhone and iPad with Larger Text, Dark Interface, Sufficient Contrast, Differentiate Without Color Alone and Reduced Motion; Mac with the same minus Larger Text (Apple doesn't offer it on Mac: "This label isn't supported on Mac" in its overview of the labels). If Apple adds it, Corres can claim it on the Mac too (see the table). Apple only lets them be published once Corres is live on the App Store, so publish them right after launch. VoiceOver and Voice Control stay off until the hands-on check below. Apple Watch has no declaration yet.
 
 ## What's built for VoiceOver and Voice Control
 

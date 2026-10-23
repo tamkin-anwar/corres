@@ -605,7 +605,8 @@ final class ThreadCellView: NSTableCellView {
         isUnread = thread.isUnread
         picture.isHidden = !showsPicture
         if showsPicture {
-            let side = (32 * MacListScale.factor).rounded()
+            // Pictures grow less than the text, leaving it the room.
+            let side = (32 * min(MacListScale.factor, 1.5)).rounded()
             pictureSize.constant = side
             textLeading.constant = 18 + side + 10
             let avatar = CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail, size: CGSize(width: side, height: side))
@@ -720,9 +721,10 @@ enum MacDates {
     }
 }
 
-/// The list follows View › Bigger and Smaller too, a little more gently
-/// than the email itself, so more fits as it grows.
+/// The list follows View › Bigger and Smaller by the same factor as the
+/// rest of the window and the email, up to twice the size. Row heights are
+/// worked out from it too (`Coordinator.apply`), so nothing is cut off.
 enum MacListScale {
-    @MainActor static var factor: CGFloat { 1 + (CGFloat(CorresSettings.textScale) - 1) * 0.75 }
+    @MainActor static var factor: CGFloat { CGFloat(CorresSettings.textScale) }
     @MainActor static func size(_ base: CGFloat) -> CGFloat { (base * factor).rounded() }
 }

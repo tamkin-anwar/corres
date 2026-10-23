@@ -19,15 +19,15 @@ struct MacScheduledList: View {
             List(scheduled.items, selection: $selection) { item in
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(alignment: .firstTextBaseline) {
-                        Text(Self.recipients(item.draft)).font(.headline).lineLimit(1)
+                        Text(Self.recipients(item.draft)).macFont(.headline).lineLimit(1)
                         Spacer(minLength: 8)
                         Text(item.sendAt.formatted(date: .abbreviated, time: .shortened))
-                            .font(.caption).foregroundStyle(CorresPalette.secondary)
+                            .macFont(.caption).foregroundStyle(CorresPalette.secondary)
                     }
                     Text(item.draft.subject.isEmpty ? String(localized: "No subject") : item.draft.subject).lineLimit(1)
                     Label(item.heldBecauseReplied ? "Held: they replied first" : "Sends \(ScheduledSends.describe(item.sendAt))",
                           systemImage: item.heldBecauseReplied ? "pause.circle" : "clock.arrow.circlepath")
-                        .font(.caption)
+                        .macFont(.caption)
                         .foregroundStyle(item.heldBecauseReplied ? CorresPalette.alert : CorresPalette.accent)
                 }
                 .padding(.vertical, 4)
@@ -63,7 +63,7 @@ struct MacScheduledDetail: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 Text(item.draft.subject.isEmpty ? String(localized: "No subject") : item.draft.subject)
-                    .font(.system(size: 24, weight: .regular, design: .serif))
+                    .macFont(size: 24, weight: .regular, design: .serif)
                     .textSelection(.enabled)
                 VStack(alignment: .leading, spacing: 4) {
                     line("To", MacScheduledList.recipients(item.draft))
@@ -76,7 +76,7 @@ struct MacScheduledDetail: View {
                         .foregroundStyle(item.heldBecauseReplied ? CorresPalette.alert : CorresPalette.accent)
                     Spacer()
                 }
-                .font(.callout)
+                .macFont(.callout)
                 .padding(12)
                 .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 10))
                 HStack(spacing: 8) {
@@ -97,12 +97,12 @@ struct MacScheduledDetail: View {
                 }
                 Divider()
                 Text(item.draft.body)
-                    .font(.body)
+                    .macFont(.body)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if !item.draft.attachments.isEmpty {
                     Label(item.draft.attachments.count == 1 ? "1 attachment" : "\(item.draft.attachments.count) attachments", systemImage: "paperclip")
-                        .font(.callout).foregroundStyle(CorresPalette.secondary)
+                        .macFont(.callout).foregroundStyle(CorresPalette.secondary)
                 }
             }
             .padding(28)
@@ -122,12 +122,12 @@ struct MacScheduledDetail: View {
             Text(label).foregroundStyle(CorresPalette.secondary)
             Text(value).textSelection(.enabled)
         }
-        .font(.subheadline)
+        .macFont(.subheadline)
     }
 
     private var timePicker: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Change Time").font(.headline)
+            Text("Change Time").macFont(.headline)
             DatePicker("Send at", selection: $newTime, in: Date.now.addingTimeInterval(60)...,
                        displayedComponents: [.date, .hourAndMinute])
                 .datePickerStyle(.graphical)

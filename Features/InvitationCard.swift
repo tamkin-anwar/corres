@@ -76,7 +76,7 @@ struct InvitationCard: View {
                 .eyebrow(isCanceled ? CorresPalette.alert : CorresPalette.accent)
             VStack(alignment: .leading, spacing: 6) {
                 Text(invitation.summary)
-                    .font(.headline)
+                    .cardFont(.headline)
                     .foregroundStyle(CorresPalette.ink)
                     .strikethrough(isCanceled, color: CorresPalette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -150,7 +150,7 @@ struct InvitationCard: View {
     private func detail(_ text: String, _ icon: String) -> some View {
         Label(text, systemImage: icon)
             .labelStyle(TightLabelStyle())
-            .font(.subheadline)
+            .cardFont(.subheadline)
             .foregroundStyle(CorresPalette.secondary)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -164,19 +164,19 @@ struct InvitationCard: View {
                 Label(overlaps.count > 1 ? "Overlaps \(first) and \(overlaps.count - 1) more" : "Overlaps \(first)",
                       systemImage: "exclamationmark.circle")
                     .labelStyle(TightLabelStyle())
-                    .font(.subheadline.weight(.medium))
+                    .cardFont(.subheadline, weight: .medium)
                     .foregroundStyle(CorresPalette.flag)
             } else {
                 Label("You're free then", systemImage: "checkmark.circle")
                     .labelStyle(TightLabelStyle())
-                    .font(.subheadline.weight(.medium))
+                    .cardFont(.subheadline, weight: .medium)
                     .foregroundStyle(CorresPalette.swipeHandled)
             }
         } else if calendar.canAsk, invitation.start != nil, !invitation.isAllDay {
             Button { Task { await calendar.requestRead() } } label: {
                 Label("Check Your Calendar", systemImage: "calendar")
                     .labelStyle(TightLabelStyle())
-                    .font(.subheadline.weight(.medium))
+                    .cardFont(.subheadline, weight: .medium)
                     .foregroundStyle(CorresPalette.accent)
             }
             .buttonStyle(.plain)
@@ -245,7 +245,7 @@ struct InvitationCard: View {
         if let answered {
             HStack(spacing: 12) {
                 Label(youSaid(answered), systemImage: answered == .declined ? "xmark.circle" : "checkmark.circle")
-                    .labelStyle(TightLabelStyle()).font(.subheadline.weight(.semibold))
+                    .labelStyle(TightLabelStyle()).cardFont(.subheadline, weight: .semibold)
                     .foregroundStyle(CorresPalette.ink)
                 Spacer(minLength: 8)
                 if answered != .declined, !isPast { calendarButton }
@@ -254,7 +254,7 @@ struct InvitationCard: View {
                         Button(title(response)) { choose(response) }
                     }
                 } label: {
-                    Text("Change").font(.subheadline.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                    Text("Change").cardFont(.subheadline, weight: .semibold).foregroundStyle(CorresPalette.accent)
                 }
                 .menuIndicator(.hidden)
                 .menuStyle(.button)
@@ -267,13 +267,14 @@ struct InvitationCard: View {
                     Text(earlierAnswer == .accepted ? "The organizer changed this event. You'd accepted the earlier version."
                          : earlierAnswer == .tentative ? "The organizer changed this event. You'd said maybe to the earlier version."
                          : "The organizer changed this event. You'd declined the earlier version.")
-                        .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                        .cardFont(.footnote).foregroundStyle(CorresPalette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 HStack(spacing: 8) {
                     ForEach([Invitation.Response.accepted, .tentative, .declined], id: \.self) { response in
                         Button { choose(response) } label: {
-                            Text(title(response)).frame(maxWidth: .infinity)
+                            // The pill's own font, named here so it grows on the Mac too.
+                            Text(title(response)).cardFont(.subheadline, weight: .medium).frame(maxWidth: .infinity)
                         }
                         .buttonStyle(CorresPillStyle())
                     }
@@ -287,11 +288,11 @@ struct InvitationCard: View {
         if isAdded {
             Label("On Calendar", systemImage: "checkmark")
                 .labelStyle(TightLabelStyle())
-                .font(.subheadline.weight(.medium))
+                .cardFont(.subheadline, weight: .medium)
                 .foregroundStyle(CorresPalette.secondary)
         } else if invitation.start != nil {
             Button("Add to Calendar") { addToCalendar() }
-                .font(.subheadline.weight(.semibold))
+                .cardFont(.subheadline, weight: .semibold)
                 .buttonStyle(.plain)
                 .foregroundStyle(CorresPalette.accent)
         }
@@ -301,12 +302,12 @@ struct InvitationCard: View {
     private var canceledActions: some View {
         HStack(spacing: 12) {
             Text("The organizer canceled this event.")
-                .font(.subheadline).foregroundStyle(CorresPalette.secondary)
+                .cardFont(.subheadline).foregroundStyle(CorresPalette.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
             if onCalendar != nil {
                 Button("Remove from Calendar", role: .destructive) { confirmingRemove = true }
-                    .font(.subheadline.weight(.semibold))
+                    .cardFont(.subheadline, weight: .semibold)
                     .buttonStyle(.plain)
                     .foregroundStyle(CorresPalette.alert)
             }
@@ -315,7 +316,7 @@ struct InvitationCard: View {
             Button { Task { await calendar.requestRead() } } label: {
                 Label("Check Your Calendar", systemImage: "calendar")
                     .labelStyle(TightLabelStyle())
-                    .font(.subheadline.weight(.medium))
+                    .cardFont(.subheadline, weight: .medium)
                     .foregroundStyle(CorresPalette.accent)
             }
             .buttonStyle(.plain)
@@ -358,5 +359,19 @@ struct InvitationCard: View {
             earlierAnswer = nil
         }
         respond(response)
+    }
+}
+
+private extension View {
+    /// A text style that follows the person's text size: Dynamic Type on
+    /// the iPhone and iPad, View › Bigger and Smaller on the Mac
+    /// (`MacScaledFont`), where text styles are fixed sizes.
+    @ViewBuilder
+    func cardFont(_ style: Font.TextStyle, weight: Font.Weight? = nil) -> some View {
+        #if os(macOS)
+        macFont(style, weight: weight)
+        #else
+        font(.system(style, weight: weight))
+        #endif
     }
 }

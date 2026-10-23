@@ -32,11 +32,12 @@ export APNS_PRODUCTION=false   # true only for an App Store / TestFlight build
 npm run deploy
 ```
 
-This deploys one HTTP Cloud Function (`corres-push-relay`) with two routes:
+This deploys one HTTP Cloud Function (`corres-push-relay`) with these routes:
 - `POST /register`: called by the app once a device grants notification permission, once per connected account. A `devices` document is keyed by device token and holds an `emailAddresses` array, not a single email: Corres supports multiple simultaneously-connected accounts (Batch 29), and one device can be registered for several accounts' pushes at once.
 - `POST /unregister`: called with just a `deviceToken` when notifications are turned off entirely (removes the whole device record), or with `deviceToken` + `emailAddress` when a single account is disconnected while others stay connected (removes just that account from the list).
+- `POST /attest-challenge` and `POST /attest`: App Attest, which lets the two routes above check that a call comes from a genuine Corres. See "App Attest (monitor mode)" below.
 
-Both routes stay `--allow-unauthenticated`: there is no user-login system in Corres to authenticate these calls against, so they have to stay reachable by any anonymous app install. Real input validation (device-token/email format, a cap on how many accounts one device token can register) closes off the cheapest abuse, but this is *not* authentication — see "What this deliberately does not do" below.
+Both routes stay `--allow-unauthenticated`: there is no user-login system in Corres to authenticate these calls against, so they have to stay reachable by any anonymous app install. Real input validation (device-token/email format, a cap on how many accounts one device token can register) closes off the cheapest abuse, but this is *not* authentication on its own. App Attest is (see "App Attest (monitor mode)" below), once enforcement is turned on.
 
 Note the deployed function's URL; it's the base URL the app needs.
 
@@ -96,7 +97,37 @@ Set `PushNotificationService.relayBaseURL` and `.pubsubTopicName` (in `App/PushN
 - No message content ever passes through this service, in either direction. The push it sends carries no alert text, subject, sender, or body, `content-available` only. The app fetches and displays the real content itself, on-device, exactly like any other sync.
 - No Gmail OAuth token ever reaches this service. The app itself calls `users.watch` (it already holds the token for every other Gmail API call); this relay only needs to know which device token belongs to which email address to route Gmail's contentless ping.
 - Does not renew Gmail's watch subscription on its own. `users.watch` expires after 7 days; the app renews it at launch. An account that isn't opened for a week silently stops getting push until the next launch, a known, accepted gap, not a bug (see Docs/Architecture.md).
-- **Does not, and currently cannot, verify that a `/register`/`/unregister` call actually came from a genuine Corres install**, not just something shaped like one. Real authentication for these two routes — proving the caller is a real, unmodified copy of the app on genuine Apple hardware, without requiring a user-login system this app doesn't have — is what Apple's **App Attest** framework exists for, and would be the correct fix; it's real client-side + server-side work (a per-device attested key, a server-side verification call against Apple's attestation service) deliberately not built as part of this pass. Until then, the format validation and per-device registration cap in `index.js` raise the cost of casual abuse but are not a substitute for actual authentication — worth treating as a known, open gap, not a solved one.
+- Does not yet *require* proof that a `/register`/`/unregister` call came from a genuine Corres install. It checks for that proof (App Attest, below) and records the result, but in monitor mode it still accepts calls without it. Until enforcement is on, the format validation and per-device registration cap remain the only barrier to a scripted caller.
+
+## App Attest (monitor mode)
+
+`/register` and `/unregister` can now carry proof that the call comes from a genuine, unmodified Corres on real Apple hardware, using Apple's App Attest ([Establishing your app's integrity](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity), [Validating apps that connect to your server](https://developer.apple.com/documentation/devicecheck/validating-apps-that-connect-to-your-server)). The checks live in `appattest.js`; the routes in `index.js`.
+
+How it works:
+
+1. Once per install, the app makes a key in the Secure Enclave (`DCAppAttestService.generateKey`), asks `POST /attest-challenge` for a one-time challenge (32 random bytes, good for five minutes, stored only as a hash in `attestChallenges`), and has Apple attest the key over `SHA256(challenge)`.
+2. `POST /attest` with `{ keyId, attestation, challenge }` verifies all of Apple's steps: the certificate chain up to the pinned Apple App Attestation Root CA, the nonce in the leaf's `1.2.840.113635.100.8.2` extension equal to `SHA256(authData || SHA256(challenge))`, `SHA256(public key) == keyId`, the RP ID hash equal to `SHA256("7GGTC43CG8.studio.anwarcreative.corres")` (or the Mac debug build's `.debug` App ID), counter 0, aaguid `appattest` (production) or `appattestdevelop`, credential id equal to the key id, and on macOS the key's access policy. The public key, a zero counter, the environment and Apple's receipt are kept in `attestKeys`, keyed by the key id. A key already on file is never replaced.
+3. Each later `register`/`unregister` gets a fresh challenge, puts it in the body as `attestChallenge`, and signs the exact body bytes: headers `Corres-Attest-Key` and `Corres-Attest-Assertion`. The relay checks the challenge (single use), the signature against the stored key over `SHA256(authenticatorData || SHA256(body))`, the RP ID, and that the counter went up, then stores the new counter.
+
+Monitor mode (the default): every checked call is logged on one line (`app attest /register: ok` or `app attest /register: allowed unattested, <reason>`), the device record gets `attested`, `attestReason`, `attestKeyId` and `attestCheckedAt`, and the call goes through either way. Reasons: `none` (no proof sent: an older build, the Simulator, a Mac without App Attest, or a key still being attested), `unknown-key`, `bad-challenge`, `bad-signature`, `replayed-counter`, `wrong-app`, `malformed`. The answer carries a `Corres-Attest-Result` header; on `unknown-key` the app makes and attests a new key. On the app side every failure (no support, no network, an Apple or relay error, Apple throttling) sends the call as before, so nobody loses notifications.
+
+One-time setup: let Firestore delete unused challenges on its own:
+
+```bash
+gcloud firestore fields ttls update expiresAt --collection-group=attestChallenges --enable-ttl
+```
+
+Turning enforcement on, once the logs and device records show every current build attesting (`attested: true` on the devices still in use):
+
+```bash
+APP_ATTEST_ENFORCE=1 npm run deploy
+```
+
+Unattested `register`/`unregister` calls then get 401. Back to monitor mode with a plain `npm run deploy` (the script sets `APP_ATTEST_ENFORCE=0` unless told otherwise). Keep in mind before switching it on: devices that can't attest (the Simulator, and Macs, where `isSupported` is false today) would lose notifications, so enforcement for them needs a decision first.
+
+Other switches, set with `gcloud functions deploy corres-push-relay --update-env-vars=...`:
+- `APP_ATTEST_NEW_KEYS=0` stops handing out challenges for new keys, so apps back off from Apple's attestation servers if Apple ever throttles Corres. Signed calls with existing keys keep working.
+- `APP_ATTEST_DEVELOPMENT=0` refuses keys made in Apple's development environment. The iOS app's entitlement asks for production keys in every build, so this should only catch builds signed without it.
 
 ## Gmail alerts while Corres is closed (waiting on Apple)
 

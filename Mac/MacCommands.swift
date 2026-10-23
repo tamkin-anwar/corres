@@ -50,6 +50,11 @@ enum MacTextSize {
         if let next { CorresSettings.textScale = next }
     }
 
+    /// The stored scale, kept to the steps' range, as `CorresSettings` reads it.
+    static func clamped(_ value: Double) -> CGFloat {
+        CGFloat(min(max(value, CorresSettings.textScales[0]), CorresSettings.textScales.last!))
+    }
+
     /// ⌘= is ⌘+ without Shift on most keyboards, as in Safari.
     static func installEqualsShortcut() {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -58,6 +63,99 @@ enum MacTextSize {
                   event.charactersIgnoringModifiers == "=" else { return event }
             step(+1)
             return nil
+        }
+    }
+}
+
+/// Text in Corres's own Mac views follows View › Bigger and Smaller. macOS
+/// text styles are fixed sizes (13pt body), and the system's Text Size
+/// setting isn't open to apps other than Apple's, so the scale is applied
+/// here: at Actual Size every style is exactly the system's, and each step
+/// grows it by the same factor as the email, up to twice the size.
+struct MacScaledFont: ViewModifier {
+    @AppStorage(CorresSettings.textScaleKey) private var stored = 1.0
+    var style: Font.TextStyle?
+    var size: CGFloat?
+    var weight: Font.Weight?
+    var design: Font.Design?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        // Nothing set when there's nothing to change: even `.font(nil)`
+        // takes the place of a button's or a sidebar's own font.
+        if let font { content.font(font) } else { content }
+    }
+
+    private var font: Font? {
+        let scale = MacTextSize.clamped(stored)
+        if let size { return .system(size: (size * scale).rounded(), weight: weight, design: design) }
+        guard let style else {
+            // No style: the default text, left to the system at Actual Size
+            // (a sidebar keeps the size set in System Settings).
+            return scale == 1 ? nil : .system(size: (NSFont.systemFontSize * scale).rounded())
+        }
+        if scale == 1 { return .system(style, design: design, weight: weight) }
+        let base = NSFont.preferredFont(forTextStyle: style.appKit)
+        return .system(size: (base.pointSize * scale).rounded(), weight: weight ?? (style == .headline ? .bold : nil),
+                       design: design)
+    }
+}
+
+extension View {
+    /// A text style that grows with View › Bigger (`MacScaledFont`).
+    func macFont(_ style: Font.TextStyle, weight: Font.Weight? = nil, design: Font.Design? = nil) -> some View {
+        modifier(MacScaledFont(style: style, weight: weight, design: design))
+    }
+
+    /// A designed size (a serif heading) that grows with View › Bigger.
+    func macFont(size: CGFloat, weight: Font.Weight? = nil, design: Font.Design? = nil) -> some View {
+        modifier(MacScaledFont(size: size, weight: weight, design: design))
+    }
+
+    /// For a window's content: text without a style of its own, and
+    /// buttons, grow too. Not for a toolbar: its fields keep their height.
+    func macTextSize() -> some View {
+        modifier(MacScaledFont()).modifier(MacScaledControls(base: .regular))
+    }
+
+    /// A control size that steps up as the text grows (View › Bigger):
+    /// macOS draws a button's title at its control size, not the font's.
+    func macControlSize(_ base: ControlSize) -> some View {
+        modifier(MacScaledControls(base: base))
+    }
+}
+
+struct MacScaledControls: ViewModifier {
+    @AppStorage(CorresSettings.textScaleKey) private var stored = 1.0
+    var base: ControlSize
+
+    func body(content: Content) -> some View {
+        content.controlSize(size)
+    }
+
+    private var size: ControlSize {
+        let order: [ControlSize] = [.mini, .small, .regular, .large, .extraLarge]
+        let scale = MacTextSize.clamped(stored)
+        let steps = scale >= 1.75 ? 2 : scale >= 1.3 ? 1 : 0
+        let start = order.firstIndex(of: base) ?? 2
+        return order[min(start + steps, order.count - 1)]
+    }
+}
+
+private extension Font.TextStyle {
+    var appKit: NSFont.TextStyle {
+        switch self {
+        case .largeTitle: .largeTitle
+        case .title: .title1
+        case .title2: .title2
+        case .title3: .title3
+        case .headline: .headline
+        case .subheadline: .subheadline
+        case .callout: .callout
+        case .footnote: .footnote
+        case .caption: .caption1
+        case .caption2: .caption2
+        default: .body
         }
     }
 }
@@ -87,7 +185,8 @@ struct MacCommands: Commands {
                 .keyboardShortcut("/", modifiers: .command)
             Button("Send Diagnostics…") { actions?.perform(.sendDiagnostics) }
         }
-        // Mail's and Safari's Bigger and Smaller, for the email you're reading.
+        // Mail's and Safari's Bigger and Smaller: the email you're reading,
+        // and the text around it (`MacScaledFont`, `MacListScale`).
         CommandGroup(after: .toolbar) {
             Divider()
             Button("Bigger") { MacTextSize.step(+1) }

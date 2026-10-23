@@ -19,6 +19,7 @@ struct MacMainView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("corres.mac.welcomed") private var welcomed = false
     @AppStorage(MailFilter.unreadOnlyKey) private var unreadOnly = false
+    @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
     /// Read while Unread Only was on: kept in the list until you change
     /// mailbox, so the message you're reading doesn't vanish, as in Mail.
     @State private var keptRead: Set<ThreadID> = []
@@ -48,17 +49,27 @@ struct MacMainView: View {
             .onDisappear { MacWindows.mainIsOpen = false }
     }
 
+    /// Half the text's growth: at twice the size, columns half as wide again.
+    private var columnGrowth: CGFloat { 1 + (MacTextSize.clamped(textScale) - 1) / 2 }
+
     @ViewBuilder
     private var window: some View {
         let rows = visibleRows()
         NavigationSplitView(columnVisibility: $columns) {
             MacSidebar(services: services, model: model, onDrop: drop)
-                .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 300)
+                .macTextSize()
+                .navigationSplitViewColumnWidth(min: (190 * columnGrowth).rounded(), ideal: (220 * columnGrowth).rounded(),
+                                                max: (300 * columnGrowth).rounded())
         } content: {
+            // Wider as the text grows (View › Bigger), so a row still
+            // shows who it's from and what it's about.
             listColumn(rows)
-                .navigationSplitViewColumnWidth(min: 320, ideal: 400, max: 560)
+                .macTextSize()
+                .navigationSplitViewColumnWidth(min: (320 * columnGrowth).rounded(), ideal: (400 * columnGrowth).rounded(),
+                                                max: (560 * columnGrowth).rounded())
         } detail: {
             detail
+                .macTextSize()
         }
         .searchable(text: $model.search, placement: .toolbar, prompt: "Search, or ask a question")
         .onSubmit(of: .search) { submitSearch() }
@@ -298,7 +309,7 @@ struct MacMainView: View {
         let ask = services.ask
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                Label("Answer", systemImage: "sparkle").font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.accent)
+                Label("Answer", systemImage: "sparkle").macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.accent)
                 if ask.phase == .searching || ask.phase == .answering { ProgressView().controlSize(.mini) }
             }
             if let answer = ask.answer {
@@ -306,13 +317,13 @@ struct MacMainView: View {
                 // column for its full height pushed the whole window's
                 // content up out of view.
                 ScrollView {
-                    Text(answer).font(.callout).foregroundStyle(CorresPalette.ink).textSelection(.enabled)
+                    Text(answer).macFont(.callout).foregroundStyle(CorresPalette.ink).textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxHeight: 220)
                 .fixedSize(horizontal: false, vertical: true)
             } else if ask.phase == .done {
-                Text("Couldn't find an answer in your mail.").font(.callout).foregroundStyle(CorresPalette.secondary)
+                Text("Couldn't find an answer in your mail.").macFont(.callout).foregroundStyle(CorresPalette.secondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -468,7 +479,7 @@ struct MacMainView: View {
                 Button("Retry") { services.outbox.retryFailed() }.buttonStyle(.borderless)
                     .foregroundStyle(CorresPalette.accent)
             }
-            .font(.callout)
+            .macFont(.callout)
             .padding(.horizontal, 16).padding(.vertical, 10)
             .corresGlass(in: Capsule())
             .padding(.bottom, 18)
@@ -513,7 +524,7 @@ struct MacMainView: View {
             Button("Undo", action: undo).buttonStyle(.borderless)
                 .foregroundStyle(CorresPalette.accent)
         }
-        .font(.callout)
+        .macFont(.callout)
         .padding(.horizontal, 16).padding(.vertical, 10)
         .corresGlass(in: Capsule())
         .padding(.bottom, 18)
@@ -916,7 +927,7 @@ private struct MacNotices: ViewModifier {
 
     private func diagnosticsSheet(_ url: URL) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Send Diagnostics").font(.headline)
+            Text("Send Diagnostics").macFont(.headline)
             Text("If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail.")
                 .foregroundStyle(CorresPalette.secondary).fixedSize(horizontal: false, vertical: true)
             HStack {

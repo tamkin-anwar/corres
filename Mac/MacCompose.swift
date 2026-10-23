@@ -48,6 +48,8 @@ struct MacComposeView: View {
     @State private var saveTask: Task<Void, Never>?
     @State private var confirmDelete = false
     @FocusState private var focus: Field?
+    /// View › Bigger and Smaller, so the field names keep fitting.
+    @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
     @Environment(\.dismiss) private var dismiss
 
     private enum Field { case to, cc, bcc, subject, body }
@@ -307,7 +309,7 @@ struct MacComposeView: View {
                                 CorrespondentAvatar(initials: Self.initials(person.displayName), email: person.email,
                                                     size: CGSize(width: 24, height: 24))
                                 Text(person.displayName).foregroundStyle(index == highlighted ? Color.white : CorresPalette.ink)
-                                Text(person.email).font(.callout)
+                                Text(person.email).macFont(.callout)
                                     .foregroundStyle(index == highlighted ? Color.white.opacity(0.85) : CorresPalette.secondary)
                                 Spacer(minLength: 0)
                             }
@@ -438,7 +440,7 @@ struct MacComposeView: View {
 
     private func field<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: 8) {
-            Text(title + ":").foregroundStyle(CorresPalette.secondary).frame(width: 58, alignment: .trailing)
+            Text(title + ":").foregroundStyle(CorresPalette.secondary).frame(width: (58 * MacTextSize.clamped(textScale)).rounded(), alignment: .trailing)
             content()
         }
         .padding(.horizontal, 14)
@@ -545,13 +547,13 @@ struct MacComposeView: View {
 
     private var sendLaterPicker: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Send Later").font(.headline)
+            Text("Send Later").macFont(.headline)
             DatePicker("Send at", selection: $chosenTime, in: Date.now.addingTimeInterval(60)...,
                        displayedComponents: [.date, .hourAndMinute])
                 .datePickerStyle(.graphical)
                 .labelsHidden()
             Text("Corres sends it from this Mac at that time, or the moment it can if your Mac is asleep or offline.")
-                .font(.caption).foregroundStyle(CorresPalette.secondary)
+                .macFont(.caption).foregroundStyle(CorresPalette.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {
                 Spacer()

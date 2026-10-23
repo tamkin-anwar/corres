@@ -46,7 +46,7 @@ struct MacCommandPalette: View {
                 Image(systemName: "command").foregroundStyle(CorresPalette.secondary)
                 TextField("Go to a mailbox or do something…", text: $query)
                     .textFieldStyle(.plain)
-                    .font(.title3)
+                    .macFont(.title3)
                     .focused($focused)
                     // The system's typing suggestions covered the list.
                     .autocorrectionDisabled()
@@ -65,7 +65,7 @@ struct MacCommandPalette: View {
                             Text(command.title).foregroundStyle(CorresPalette.ink)
                             Spacer()
                             if let detail = command.detail {
-                                Text(detail).font(.caption).foregroundStyle(CorresPalette.tertiary)
+                                Text(detail).macFont(.caption).foregroundStyle(CorresPalette.tertiary)
                             }
                         }
                         .padding(.vertical, 3)
@@ -82,7 +82,7 @@ struct MacCommandPalette: View {
             .frame(height: 320)
             if matches.isEmpty {
                 Text("Nothing matches \u{201C}\(query)\u{201D}.")
-                    .font(.callout).foregroundStyle(CorresPalette.secondary)
+                    .macFont(.callout).foregroundStyle(CorresPalette.secondary)
                     .padding(.bottom, 14)
             }
         }
@@ -111,6 +111,7 @@ struct MacCommandPalette: View {
 /// Every key Corres answers to, on one sheet: ? in the list, or Help ›
 /// Keyboard Shortcuts.
 struct MacShortcutsSheet: View {
+    @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
     @Environment(\.dismiss) private var dismiss
 
     private let groups: [(String, [(String, String)])] = [
@@ -126,19 +127,19 @@ struct MacShortcutsSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack {
-                Text("Keyboard Shortcuts").font(.system(size: 22, weight: .regular, design: .serif))
+                Text("Keyboard Shortcuts").macFont(size: 22, weight: .regular, design: .serif)
                 Spacer()
                 Button("Done") { dismiss() }.keyboardShortcut(.defaultAction)
             }
             HStack(alignment: .top, spacing: 28) {
                 ForEach(groups, id: \.0) { group in
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(group.0.uppercased()).font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.tertiary)
+                        Text(group.0.uppercased()).macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.tertiary)
                         ForEach(group.1, id: \.0) { key, meaning in
                             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                                Text(key).font(.system(.callout, design: .monospaced).weight(.medium))
-                                    .frame(width: 92, alignment: .leading)
-                                Text(meaning).font(.callout).foregroundStyle(CorresPalette.secondary)
+                                Text(key).macFont(.callout, weight: .medium, design: .monospaced)
+                                    .frame(width: (92 * MacTextSize.clamped(textScale)).rounded(), alignment: .leading)
+                                Text(meaning).macFont(.callout).foregroundStyle(CorresPalette.secondary)
                             }
                         }
                     }
@@ -147,6 +148,6 @@ struct MacShortcutsSheet: View {
             }
         }
         .padding(24)
-        .frame(width: 760)
+        .frame(width: (760 * min(MacTextSize.clamped(textScale), 1.5)).rounded())
     }
 }

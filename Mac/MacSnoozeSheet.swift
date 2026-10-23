@@ -12,14 +12,14 @@ struct MacSnoozeSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Snooze until…").font(.system(size: 18, weight: .regular, design: .serif))
+            Text("Snooze until…").macFont(size: 18, weight: .regular, design: .serif)
             TextField("Tomorrow 8am, next friday, in 3 days", text: $phrase)
                 .textFieldStyle(.roundedBorder)
                 .focused($focused)
                 .onSubmit { if let parsed { finish(parsed) } }
             if let parsed {
                 Text(parsed.formatted(.dateTime.weekday(.wide).month().day().hour().minute()))
-                    .font(.callout).foregroundStyle(CorresPalette.accent)
+                    .macFont(.callout).foregroundStyle(CorresPalette.accent)
             }
             Grid(horizontalSpacing: 8, verticalSpacing: 8) {
                 GridRow {
@@ -44,9 +44,9 @@ struct MacSnoozeSheet: View {
     private func option(_ option: SnoozeOption) -> some View {
         Button { finish(option.date()) } label: {
             VStack(alignment: .leading, spacing: 2) {
-                Text(option.title).font(.callout.weight(.semibold))
+                Text(option.title).macFont(.callout, weight: .semibold)
                 Text(option.date().formatted(.dateTime.weekday(.abbreviated).hour().minute()))
-                    .font(.caption).foregroundStyle(CorresPalette.secondary)
+                    .macFont(.caption).foregroundStyle(CorresPalette.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(10)

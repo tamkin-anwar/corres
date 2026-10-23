@@ -8,6 +8,7 @@ struct MacSidebar: View {
     /// Conversations dropped on a mailbox.
     var onDrop: (MacMailbox, [ThreadID]) -> Void = { _, _ in }
     @State private var dropTarget: MacMailbox?
+    @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
 
     private var store: MailStore { services.store }
     private var accounts: [String] { services.auth.accounts.map(\.email) }
@@ -28,7 +29,7 @@ struct MacSidebar: View {
                 Section("Accounts") {
                     ForEach(accounts, id: \.self) { account in
                         Label {
-                            Text(AccountPreferences.nickname(for: account))
+                            Text(AccountPreferences.nickname(for: account)).macTextSize()
                         } icon: {
                             Circle().fill(AccountPreferences.color(for: account, among: accounts) ?? CorresPalette.accent)
                                 .frame(width: 9, height: 9)
@@ -101,7 +102,14 @@ struct MacSidebar: View {
     }
 
     private func row(_ mailbox: MacMailbox, count: Int? = nil, prominent: Bool = false) -> some View {
-        Label(mailbox.title, systemImage: mailbox.systemImage)
+        // A sidebar sets its own font for a row; View › Bigger is applied
+        // to the title itself, so it's seen. The symbol keeps the sidebar's
+        // size: its space in the row doesn't grow with it.
+        Label {
+            Text(mailbox.title).macTextSize()
+        } icon: {
+            Image(systemName: mailbox.systemImage)
+        }
             .badge(count.map { $0 > 0 ? Text("\($0)") : nil } ?? nil)
             .fontWeight(prominent ? .semibold : nil)
             .tag(mailbox)
@@ -167,9 +175,11 @@ struct MacSidebar: View {
                 .accessibilityLabel(problem == nil ? "Get New Mail" : "Try Again")
             }
         }
-        .font(.caption)
+        .macFont(.caption)
         .foregroundStyle(CorresPalette.secondary)
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
+        // Bigger text runs the mailboxes under it; a bar keeps both readable.
+        .background(textScale > 1 ? AnyShapeStyle(.bar) : AnyShapeStyle(.clear))
     }
 }

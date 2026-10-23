@@ -65,6 +65,7 @@ struct CorresMacApp: App {
                     .environment(services.people)
                     .tint(CorresPalette.accent)
                     .preferredColorScheme(colorScheme)
+                    .macTextSize()
                     .frame(minWidth: 560, minHeight: 480)
             }
         }
@@ -75,6 +76,7 @@ struct CorresMacApp: App {
                 MacComposeView(request: request, services: services)
                     .tint(CorresPalette.accent)
                     .preferredColorScheme(colorScheme)
+                    .macTextSize()
             }
         }
         .defaultSize(width: 680, height: 560)

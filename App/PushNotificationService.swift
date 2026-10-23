@@ -7,6 +7,8 @@ import UIKit
 import AppKit
 #endif
 import UserNotifications
+import DeviceCheck
+import CryptoKit
 
 /// The client half of Batch 25's push relay (see Server/push-relay). This
 /// never sends or receives message content: it only (a) asks Gmail to
@@ -26,7 +28,7 @@ final class PushNotificationService {
     /// "no-op rather than crash on unconfigured infrastructure" choice
     /// already made elsewhere in this app, which now just also covers a
     /// real but temporarily unreachable relay.
-    static let relayBaseURL = URL(string: "https://us-central1-corres-509320.cloudfunctions.net/corres-push-relay")!
+    nonisolated static let relayBaseURL = URL(string: "https://us-central1-corres-509320.cloudfunctions.net/corres-push-relay")!
     static let pubsubTopicName = "projects/corres-509320/topics/gmail-push"
     /// Where Microsoft Graph sends Outlook's new-mail notifications.
     static let graphNotificationURL = URL(string: "https://us-central1-corres-509320.cloudfunctions.net/corres-push-relay-graph")!
@@ -431,7 +433,14 @@ final class PushNotificationService {
         // so the relay wakes it through the right one.
         if path.hasPrefix("register") { body["apnsEnvironment"] = Self.apnsEnvironment }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        let (_, response) = try await URLSession.shared.data(for: request)
+        // Proof this is a genuine Corres (App Attest) where the device can
+        // give it; without it the call goes exactly as before.
+        let response: URLResponse
+        if path == "register" || path == "unregister" {
+            response = try await AppAttest.shared.send(request, body: body)
+        } else {
+            (_, response) = try await URLSession.shared.data(for: request)
+        }
         if path.hasSuffix("icloud"), let status = (response as? HTTPURLResponse)?.statusCode, !(200..<300).contains(status) {
             throw ICloudInstantError.unavailable
         }
@@ -453,4 +462,200 @@ extension PushNotificationService {
     #else
     static let showsPushAlerts = false
     #endif
+}
+
+/// App Attest (Apple's "Establishing your app's integrity"): a key in this
+/// device's Secure Enclave that Apple certifies belongs to a genuine,
+/// unmodified Corres, used to sign the relay's register and unregister
+/// calls so it can tell them from something only shaped like Corres.
+/// Strictly best effort: no support (the Simulator, most Macs), no network,
+/// a relay or Apple error, or Apple throttling all mean the call goes
+/// without it, exactly as before. Only the app itself runs this; App Attest
+/// doesn't work in extensions, and the Watch never calls the relay.
+actor AppAttest {
+    static let shared = AppAttest()
+
+    /// The key's id, and whether the relay has verified its attestation.
+    private struct Stored: Codable {
+        var keyId: String
+        var attested: Bool
+    }
+
+    private static let keychainService = "corres.appattest"
+    private static let retryKey = "corres.appattest.retryAfter"
+    private var attesting: Task<Void, Never>?
+
+    private static var isAvailable: Bool {
+        #if targetEnvironment(simulator)
+        return false
+        #else
+        guard Bundle.main.bundleURL.pathExtension != "appex" else { return false }
+        return DCAppAttestService.shared.isSupported
+        #endif
+    }
+
+    /// Sends a register or unregister call, signed when this device has an
+    /// attested key: the body then also names a fresh challenge, and the
+    /// headers carry the key id and its signature over that exact body.
+    /// Otherwise (or if signing fails) it goes as it was, and with no
+    /// attested key yet one is made and attested in the background.
+    func send(_ request: URLRequest, body: [String: String]) async throws -> URLResponse {
+        guard Self.isAvailable else { return try await URLSession.shared.data(for: request).1 }
+        guard let stored = load(), stored.attested else {
+            attestIfDue()
+            return try await URLSession.shared.data(for: request).1
+        }
+        // One signed call at a time: each signature takes the key's next
+        // counter, and the relay refuses one that arrives after a higher one.
+        await takeTurn()
+        defer { endTurn() }
+        var request = request
+        if let signed = await sign(body, keyId: stored.keyId) {
+            request.httpBody = signed.body
+            for (name, value) in signed.headers { request.setValue(value, forHTTPHeaderField: name) }
+        }
+        let (_, response) = try await URLSession.shared.data(for: request)
+        // The relay no longer knows this key (say its records were reset):
+        // a new one is made and attested before the next call.
+        if (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Corres-Attest-Result") == "unknown-key" { forget() }
+        return response
+    }
+
+    private func sign(_ body: [String: String], keyId: String) async -> (body: Data, headers: [String: String])? {
+        do {
+            var body = body
+            body["attestChallenge"] = try await challenge()
+            let data = try JSONSerialization.data(withJSONObject: body)
+            let assertion = try await DCAppAttestService.shared.generateAssertion(keyId, clientDataHash: Data(SHA256.hash(data: data)))
+            return (data, ["Corres-Attest-Key": keyId, "Corres-Attest-Assertion": assertion.base64EncodedString()])
+        } catch let error as DCError where error.code == .invalidKey {
+            // Gone with a reinstall or a restore from backup: start over.
+            forget()
+            return nil
+        } catch {
+            return nil
+        }
+    }
+
+    private var busy = false
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+
+    private func takeTurn() async {
+        guard busy else {
+            busy = true
+            return
+        }
+        await withCheckedContinuation { waiting.append($0) }
+    }
+
+    private func endTurn() {
+        if waiting.isEmpty { busy = false } else { waiting.removeFirst().resume() }
+    }
+
+    private func attestIfDue() {
+        let retryAfter = UserDefaults.standard.object(forKey: Self.retryKey) as? Date ?? .distantPast
+        guard attesting == nil, Date.now >= retryAfter else { return }
+        attesting = Task {
+            await attest()
+            attesting = nil
+        }
+    }
+
+    /// Makes a key once (kept for every later launch), has Apple attest it
+    /// over a one-time challenge, and hands the result to the relay. As
+    /// Apple asks: on serverUnavailable the same key is tried again later;
+    /// any other Apple error drops the key for a new one. Every failure
+    /// waits before trying again, so Apple's servers aren't asked often.
+    private func attest() async {
+        var keyId = load()?.keyId
+        do {
+            if keyId == nil {
+                let made = try await DCAppAttestService.shared.generateKey()
+                save(Stored(keyId: made, attested: false))
+                keyId = made
+            }
+            guard let keyId else { return }
+            let issued = try await challenge(purpose: "attest")
+            guard let issuedData = Data(base64Encoded: issued) else { return retry(in: 3_600) }
+            let attestation = try await DCAppAttestService.shared.attestKey(keyId, clientDataHash: Data(SHA256.hash(data: issuedData)))
+            let status = try await post("attest", ["keyId": keyId, "attestation": attestation.base64EncodedString(), "challenge": issued])
+            switch status {
+            case 204, 409: save(Stored(keyId: keyId, attested: true))
+            case 400, 401:
+                // The relay didn't accept it: a new key, but not soon.
+                forget()
+                retry(in: 86_400)
+            default: retry(in: 6 * 3_600)
+            }
+        } catch let error as DCError where error.code == .serverUnavailable {
+            retry(in: 3_600)
+        } catch let error as DCError {
+            if error.code != .featureUnsupported { forget() }
+            retry(in: 86_400)
+        } catch {
+            retry(in: 3_600)
+        }
+    }
+
+    private func retry(in seconds: TimeInterval) {
+        UserDefaults.standard.set(Date.now.addingTimeInterval(seconds), forKey: Self.retryKey)
+    }
+
+    /// A one-time challenge from the relay. "attest" ones can be paused on
+    /// the relay's side, which makes every app back off.
+    private func challenge(purpose: String = "assert") async throws -> String {
+        var request = URLRequest(url: PushNotificationService.relayBaseURL.appendingPathComponent("attest-challenge"), timeoutInterval: 15)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["purpose": purpose])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200,
+              let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let challenge = json["challenge"] as? String else { throw URLError(.badServerResponse) }
+        return challenge
+    }
+
+    private func post(_ path: String, _ body: [String: String]) async throws -> Int {
+        var request = URLRequest(url: PushNotificationService.relayBaseURL.appendingPathComponent(path), timeoutInterval: 30)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        return (response as? HTTPURLResponse)?.statusCode ?? 0
+    }
+
+    // MARK: Keychain
+
+    /// This device only and never synced: the key it names lives in this
+    /// device's Secure Enclave and means nothing anywhere else.
+    private static var query: [String: Any] {
+        [kSecClass as String: kSecClassGenericPassword,
+         kSecAttrService as String: keychainService,
+         kSecAttrAccount as String: "key",
+         kSecAttrSynchronizable as String: false,
+         kSecUseDataProtectionKeychain as String: true]
+    }
+
+    private func load() -> Stored? {
+        var query = Self.query
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess, let data = result as? Data else { return nil }
+        return try? JSONDecoder().decode(Stored.self, from: data)
+    }
+
+    private func save(_ stored: Stored) {
+        guard let data = try? JSONEncoder().encode(stored) else { return }
+        SecItemDelete(Self.query as CFDictionary)
+        var attributes = Self.query
+        attributes[kSecValueData as String] = data
+        // Background launches (push, refresh) sign calls too.
+        attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        SecItemAdd(attributes as CFDictionary, nil)
+    }
+
+    private func forget() {
+        SecItemDelete(Self.query as CFDictionary)
+    }
 }

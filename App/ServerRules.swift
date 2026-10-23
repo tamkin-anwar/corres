@@ -217,7 +217,9 @@ final class ServerRules {
         for step in ServerRulePlan.removals(wanted: wanted, kept: kept(account)) {
             switch step {
             case .remove(let ruleID, let id):
-                try await gmail.deleteFilter(id: id, account: account)
+                // Only Corres's own: a filter of yours that a rule leaned on
+                // is let go, never deleted.
+                if Self.madeIDs.contains(id) { try await gmail.deleteFilter(id: id, account: account) }
                 ledger[ruleID]?[account] = nil
             case .forget(let ruleID):
                 ledger[ruleID]?[account] = nil
@@ -227,11 +229,15 @@ final class ServerRules {
         }
         guard !ServerRulePlan.additions(wanted: wanted, kept: kept(account), existing: []).isEmpty else { return }
         let made = Self.madeIDs
-        let existing = try await gmail.filters(account: account).compactMap { filter -> ServerRulePlan.Existing? in
-            guard let id = filter.id, made.contains(id) else { return nil }
+        let all = try await gmail.filters(account: account).compactMap { filter -> ServerRulePlan.Existing? in
+            guard let id = filter.id else { return nil }
             return ServerRulePlan.Existing(id: id, key: ServerRulePlan.gmailKey(
                 query: filter.criteria.query ?? "", add: filter.action.addLabelIds ?? [], remove: filter.action.removeLabelIds ?? []))
         }
+        let existing = all.filter { made.contains($0.id) }
+        // Yours, exactly alike: Gmail refuses to make a second, and yours
+        // already does the job, so the rule rests on it without owning it.
+        let yours = all.filter { !made.contains($0.id) }
         for step in ServerRulePlan.additions(wanted: wanted, kept: kept(account), existing: existing) {
             switch step {
             case .adopt(let ruleID, let id, let signature):
@@ -241,6 +247,11 @@ final class ServerRules {
                 let id: String
                 do {
                     id = try await create(spec, account)
+                } catch GmailAPIClient.ClientError.badResponse(statusCode: 400)
+                            where yours.contains(where: { $0.key == Self.key(spec) }) {
+                    let own = yours.first { $0.key == Self.key(spec) }!
+                    ledger[ruleID, default: [:]][account] = Entry(id: own.id, signature: signature)
+                    continue
                 } catch GmailAPIClient.ClientError.badResponse(statusCode: 400) {
                     // Gmail may not let a filter choose a tab; the rest still goes.
                     // Only on that refusal: offline or busy, it's tried again later.

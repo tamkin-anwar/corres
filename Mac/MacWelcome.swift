@@ -14,10 +14,10 @@ struct MacWelcome: View {
                 .frame(width: 110, height: 110)
                 .padding(.top, 36)
             Text("corres")
-                .font(.system(size: 42, weight: .regular, design: .serif))
+                .macFont(size: 42, weight: .regular, design: .serif)
                 .padding(.top, 14)
             Text("Email, considered.")
-                .font(.system(.title3, design: .serif).italic())
+                .macFont(.title3, design: .serif).italic()
                 .foregroundStyle(CorresPalette.secondary)
             VStack(alignment: .leading, spacing: 16) {
                 point("exclamationmark.circle", "What needs you, first",
@@ -52,12 +52,12 @@ struct MacWelcome: View {
     private func point(_ icon: String, _ title: LocalizedStringKey, _ detail: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: icon)
-                .font(.body.weight(.medium))
+                .macFont(.body, weight: .medium)
                 .foregroundStyle(CorresPalette.accent)
                 .frame(width: 24, height: 20)
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.body.weight(.semibold))
-                Text(detail).font(.callout).foregroundStyle(CorresPalette.secondary)
+                Text(title).macFont(.body, weight: .semibold)
+                Text(detail).macFont(.callout).foregroundStyle(CorresPalette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

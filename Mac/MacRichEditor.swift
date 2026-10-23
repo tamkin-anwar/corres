@@ -13,6 +13,10 @@ struct MacRichEditor: NSViewRepresentable {
     var focusOnAppear = false
     /// Lets Compose put text in where the cursor is (a template).
     var inserter: MacTextInserter?
+    /// View › Bigger and Smaller. Only how it shows here: what's sent
+    /// carries no size (`RichBody`).
+    @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
+    private static let baseSize: CGFloat = 14
 
     func makeNSView(context: Context) -> NSScrollView {
         let scroll = NSTextView.scrollableTextView()
@@ -28,7 +32,8 @@ struct MacRichEditor: NSViewRepresentable {
         text.usesFindBar = true
         text.drawsBackground = false
         text.textContainerInset = NSSize(width: 12, height: 12)
-        let font = NSFont.systemFont(ofSize: 14)
+        let font = NSFont.systemFont(ofSize: (Self.baseSize * MacTextSize.clamped(textScale)).rounded())
+        context.coordinator.size = font.pointSize
         text.font = font
         text.typingAttributes = [.font: font, .foregroundColor: NSColor.labelColor]
         text.string = initialText
@@ -48,6 +53,7 @@ struct MacRichEditor: NSViewRepresentable {
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.parent = self
+        context.coordinator.resize(to: (Self.baseSize * MacTextSize.clamped(textScale)).rounded())
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -56,8 +62,26 @@ struct MacRichEditor: NSViewRepresentable {
     final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: MacRichEditor
         weak var textView: NSTextView?
+        var size: CGFloat = 0
 
         init(_ parent: MacRichEditor) { self.parent = parent }
+
+        /// Every run at the new size, keeping its bold and italic. Not an
+        /// edit: it isn't undoable and the draft doesn't change.
+        func resize(to newSize: CGFloat) {
+            guard newSize != size, let text = textView, let storage = text.textStorage else { return }
+            size = newSize
+            func resized(_ font: NSFont?) -> NSFont {
+                guard let font else { return .systemFont(ofSize: newSize) }
+                return NSFont(descriptor: font.fontDescriptor, size: newSize) ?? .systemFont(ofSize: newSize)
+            }
+            storage.beginEditing()
+            storage.enumerateAttribute(.font, in: NSRange(location: 0, length: storage.length)) { value, range, _ in
+                storage.addAttribute(.font, value: resized(value as? NSFont), range: range)
+            }
+            storage.endEditing()
+            text.typingAttributes[.font] = resized(text.typingAttributes[.font] as? NSFont)
+        }
 
         func textDidChange(_ notification: Notification) {
             guard let text = textView, let storage = text.textStorage else { return }
