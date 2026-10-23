@@ -13,6 +13,12 @@ enum AccountSync {
     }
 
     private static let key = "corres.accountRoster"
+    private static let queue = DispatchQueue(label: "studio.anwarcreative.corres.accountsync", qos: .utility)
+
+    /// Changes to the list, in the order they were made, off the main thread.
+    static func inOrder(_ work: @escaping @Sendable () -> Void) {
+        queue.async(execute: work)
+    }
 
     static func publish(_ accounts: [String]) {
         let entries = accounts.map { email in

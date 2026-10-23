@@ -487,13 +487,19 @@ final class GoogleAuthService {
     /// yet is still yours on the others.
     private func persistAccountList(removing signedOut: String? = nil, everywhere: Bool = false, adding added: String? = nil) {
         defaults.set(accounts.map(\.email), forKey: Self.connectedAccountsKey)
-        if let signedOut {
-            if everywhere { AccountSync.remove(signedOut) } else { AccountSync.removeHere(signedOut) }
-        } else if let added {
-            AccountSync.added(added)
-            AccountSync.include(accounts.map(\.email))
-        } else {
-            AccountSync.include(accounts.map(\.email))
+        // iCloud Keychain reads are slow (up to most of a second): off the
+        // main thread, one after another so they keep their order. At launch
+        // this held the first mail on the Mac back by half a second.
+        let emails = accounts.map(\.email)
+        AccountSync.inOrder {
+            if let signedOut {
+                if everywhere { AccountSync.remove(signedOut) } else { AccountSync.removeHere(signedOut) }
+            } else if let added {
+                AccountSync.added(added)
+                AccountSync.include(emails)
+            } else {
+                AccountSync.include(emails)
+            }
         }
         SendAsDirectory.publishOwnAddresses(accounts: accounts.map(\.email), aliases: SendAsDirectory.shared.allAddresses)
     }
