@@ -19,4 +19,26 @@ public enum SyncMerge {
         if merged.count == remoteItems.count, !remoteItems.contains(where: { removed.contains(id($0) ?? "") }) { return remote }
         return try? JSONSerialization.data(withJSONObject: merged, options: [.sortedKeys])
     }
+
+    /// A set of plain values (VIP addresses): both devices' together, less
+    /// any removed after it was last added. `token` names a value in the
+    /// added and removed notes.
+    public static func strings(local: [String], remote: [String], added: [String: Date], removed: [String: Date],
+                               token: (String) -> String) -> [String] {
+        Set(local + remote).filter { value in
+            guard let gone = removed[token(value)] else { return true }
+            return (added[token(value)] ?? .distantPast) > gone
+        }.sorted()
+    }
+
+    /// Values with the date they were set (muted conversations): both
+    /// devices' together, the later date kept, less any removed after it
+    /// was set.
+    public static func dated(local: [String: Date], remote: [String: Date], removed: [String: Date],
+                             token: (String) -> String) -> [String: Date] {
+        local.merging(remote) { max($0, $1) }.filter { key, at in
+            guard let gone = removed[token(key)] else { return true }
+            return at > gone
+        }
+    }
 }

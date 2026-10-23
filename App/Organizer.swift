@@ -206,6 +206,7 @@ final class Organizer {
     }
 
     func unmute(_ id: ThreadID) {
+        CloudSync.noteRemoved(CloudSync.mutedToken(Self.key(id)))
         muted[Self.key(id)] = nil
         saveMuted()
     }

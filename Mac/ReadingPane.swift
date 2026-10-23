@@ -36,7 +36,7 @@ struct ReadingPane: View {
                     .padding(.top, 22)
                     .padding(.bottom, 14)
                     .sheet(item: $personCard) { personSheet($0) }
-                if thread.senderDecision == .pending, let email = thread.senderEmail {
+                if thread.senderDecision == .pending, MailQuery.newSenderMode != .acceptAll, let email = thread.senderEmail {
                     newSenderBar(email: email)
                         .padding(.horizontal, 28)
                         .padding(.bottom, 14)

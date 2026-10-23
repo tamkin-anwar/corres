@@ -3,7 +3,7 @@ import Testing
 @testable import CorresCore
 
 /// Serialized: two tests here switch the global Screen new senders setting
-/// (`MailQuery.holdsNewSenders`), which no other suite depends on.
+/// (`MailQuery.newSenderMode`), which no other suite depends on.
 @Suite(.serialized)
 struct CorresCoreTests {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
@@ -318,8 +318,8 @@ struct CorresCoreTests {
         let threads = try await repository.threads()
         #expect(threads.first?.senderDecision == .pending)
         // With Screen new senders on (it's off by default).
-        MailQuery.holdsNewSenders = true
-        defer { MailQuery.holdsNewSenders = false }
+        MailQuery.newSenderMode = .reviewEveryone
+        defer { MailQuery.newSenderMode = .inMail }
         #expect(!MailQuery.filter(threads, now: now).contains { $0.id == fromUnknownSender.id })
         #expect(!MailQuery.filter(threads, attention: .needsYou, now: now).contains { $0.id == fromUnknownSender.id })
         // Held from ordinary browsing, same as HEY's Screener, but never
@@ -509,15 +509,29 @@ struct CorresCoreTests {
                            reason: "r", attention: .needsYou, senderDecision: decision)
         }
         let threads = [thread("approved", .approved), thread("new", .pending), thread("blocked", .blocked)]
-        defer { MailQuery.holdsNewSenders = false }
+        defer { MailQuery.newSenderMode = .inMail }
 
-        MailQuery.holdsNewSenders = false
+        MailQuery.newSenderMode = .inMail
         #expect(BriefSnapshot(threads: threads, now: now).needsYou == 2)
         #expect(MailQuery.filter(threads, attention: .needsYou, now: now).map(\.sender).sorted() == ["approved", "new"])
 
-        MailQuery.holdsNewSenders = true
+        MailQuery.newSenderMode = .reviewEveryone
         #expect(BriefSnapshot(threads: threads, now: now).needsYou == 1)
         #expect(MailQuery.filter(threads, attention: .needsYou, now: now).map(\.sender) == ["approved"])
+
+        // Review Companies: a person's first email comes in, a company's waits.
+        var company = thread("shop", .pending)
+        company.labelIds = ["CATEGORY_PROMOTIONS"]
+        MailQuery.newSenderMode = .reviewCompanies
+        #expect(!thread("person", .pending).isScreenedOut)
+        #expect(thread("person", .pending).showsAsNewSender)
+        #expect(company.isScreenedOut)
+
+        // Let Everyone In: nothing held, nothing marked New.
+        MailQuery.newSenderMode = .acceptAll
+        #expect(!company.isScreenedOut)
+        #expect(!company.showsAsNewSender)
+        #expect(thread("blocked", .blocked).isScreenedOut)
     }
 
     @Test func searchUnderstandsFilters() {

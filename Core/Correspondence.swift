@@ -1045,12 +1045,19 @@ public extension String {
     }
 }
 
+/// What happens to someone's first email (Settings › Senders), as in
+/// Spark's Gatekeeper: held for review, held only when it's a company's,
+/// shown in Mail marked New (the default), or let in like anyone else's.
+/// Blocked senders stay hidden in every mode.
+public enum NewSenderMode: String, CaseIterable, Sendable {
+    case reviewEveryone, reviewCompanies, inMail, acceptAll
+}
+
 public enum MailQuery {
-    /// Settings → Sorting → Screen new senders. Off (the default), a new
-    /// sender's mail shows everywhere like anyone else's, marked as new,
-    /// and can be allowed or blocked from the email; on, it waits in New
-    /// senders until allowed. Blocked senders stay hidden either way.
-    public nonisolated(unsafe) static var holdsNewSenders = false
+    public nonisolated(unsafe) static var newSenderMode = NewSenderMode.inMail
+
+    /// Whether any new sender's mail is held back for review.
+    public static var holdsNewSenders: Bool { [.reviewEveryone, .reviewCompanies].contains(newSenderMode) }
 
     /// The curated lists in the order that matters: Needs You with the
     /// nearest deadline first, then newest; Waiting with whoever has gone
@@ -1564,13 +1571,31 @@ public final class MailSearch {
 
 extension Correspondence {
     /// Kept out of the lists: a blocked sender always, and a new sender
-    /// only while Screen new senders is on (`MailQuery.holdsNewSenders`).
+    /// while `MailQuery.newSenderMode` holds them (only companies, in
+    /// Review Companies: a first email from a person comes straight in).
     public var isScreenedOut: Bool {
         switch senderDecision {
         case .approved: false
         case .blocked: true
-        case .pending: MailQuery.holdsNewSenders
+        case .pending:
+            switch MailQuery.newSenderMode {
+            case .reviewEveryone: true
+            case .reviewCompanies: isFromCompany
+            case .inMail, .acceptAll: false
+            }
         }
+    }
+
+    /// Marked New, with Allow and Block in the email: a new sender's mail
+    /// that's in the lists, unless every new sender is simply let in.
+    public var showsAsNewSender: Bool {
+        senderDecision == .pending && MailQuery.newSenderMode != .acceptAll && !isScreenedOut
+    }
+
+    /// Mail a company sends (newsletters, receipts, notifications) rather
+    /// than a person writing, as the New Senders screen splits them.
+    public var isFromCompany: Bool {
+        InboxClassifier.bulkKind(labelIds: labelIds, looksAutomated: looksAutomated) != nil
     }
 }
 

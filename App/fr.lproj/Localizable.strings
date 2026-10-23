@@ -3221,3 +3221,10 @@
 "Your other devices keep it unless you remove it from all of them. Nothing is deleted from %@." = "Vos autres appareils le gardent, sauf si vous le retirez de tous. Rien n’est supprimé de %@.";
 "Removing it from all devices also takes out the %lld rules Corres made in %@." = "Le retirer de tous les appareils supprime aussi les %lld règles créées par Corres dans %@.";
 "and %lld more" = "et %lld de plus";
+"First Emails" = "Premiers e-mails";
+"Review Everyone" = "Tout vérifier";
+"Review Companies" = "Vérifier les entreprises";
+"Show Marked New" = "Afficher comme nouveau";
+"Let Everyone In" = "Tout accepter";
+"A first email from a person comes straight in, marked New. A company's waits in New Senders until you allow it, so newsletters and offers don't arrive unasked. Blocked senders stay hidden." = "Le premier e-mail d’une personne arrive directement, marqué comme nouveau. Celui d’une entreprise attend dans Nouveaux expéditeurs jusqu’à ce que vous l’acceptiez, pour que les newsletters et les offres n’arrivent pas sans être demandées. Les expéditeurs bloqués restent masqués.";
+"Everyone's mail comes straight in, with nothing to review. You can still block anyone from their email, and blocked senders stay hidden." = "Tous les e-mails arrivent directement, sans rien à vérifier. Vous pouvez toujours bloquer quelqu’un depuis son e-mail, et les expéditeurs bloqués restent masqués.";

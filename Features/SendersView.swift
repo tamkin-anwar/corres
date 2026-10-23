@@ -15,7 +15,7 @@ struct SendersView: View {
     @State private var search = ""
     @State private var confirmingUnsubscribe: SenderSummary?
     @State private var note: String?
-    @AppStorage(CorresSettings.screenNewSendersKey) private var screenNewSenders = false
+    @AppStorage(CorresSettings.newSenderModeKey) private var newSenderMode = CorresSettings.newSenderMode.rawValue
     @State private var vips: [String] = CorresSettings.vips.sorted()
     @State private var showingScreener = false
     @State private var suggestions: [SenderHabits.Suggestion] = []
@@ -220,11 +220,16 @@ struct SendersView: View {
 
     private var newSendersSection: some View {
         Section {
-            Toggle("Screen New Senders", isOn: $screenNewSenders)
-                .onChange(of: screenNewSenders) {
-                    CorresSettings.applyToCore()
-                    store.listsShouldRebuild()
-                }
+            Picker("First Emails", selection: $newSenderMode) {
+                Text("Review Everyone").tag(NewSenderMode.reviewEveryone.rawValue)
+                Text("Review Companies").tag(NewSenderMode.reviewCompanies.rawValue)
+                Text("Show Marked New").tag(NewSenderMode.inMail.rawValue)
+                Text("Let Everyone In").tag(NewSenderMode.acceptAll.rawValue)
+            }
+            .onChange(of: newSenderMode) {
+                CorresSettings.applyToCore()
+                store.listsShouldRebuild()
+            }
             let waiting = directory.waiting
             Button {
                 showingScreener = true
@@ -235,10 +240,21 @@ struct SendersView: View {
         } header: {
             Text("New Senders")
         } footer: {
-            Text(screenNewSenders
-                 ? "Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden."
-                 : "Someone's first email shows like anyone else's, marked New, and you can allow or block them right from the email. Blocked senders stay hidden.")
+            Text(newSenderFooter)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var newSenderFooter: String {
+        switch NewSenderMode(rawValue: newSenderMode) ?? .inMail {
+        case .reviewEveryone:
+            String(localized: "Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden.")
+        case .reviewCompanies:
+            String(localized: "A first email from a person comes straight in, marked New. A company's waits in New Senders until you allow it, so newsletters and offers don't arrive unasked. Blocked senders stay hidden.")
+        case .inMail:
+            String(localized: "Someone's first email shows like anyone else's, marked New, and you can allow or block them right from the email. Blocked senders stay hidden.")
+        case .acceptAll:
+            String(localized: "Everyone's mail comes straight in, with nothing to review. You can still block anyone from their email, and blocked senders stay hidden.")
         }
     }
 

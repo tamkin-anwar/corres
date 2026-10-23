@@ -138,6 +138,8 @@ enum CorresSettings {
     static func setVIP(_ email: String, _ isVIP: Bool) {
         var all = vips
         if isVIP { all.insert(email.lowercased()) } else { all.remove(email.lowercased()) }
+        // So your other devices follow, rather than adding them back.
+        if isVIP { CloudSync.noteAdded(CloudSync.vipToken(email)) } else { CloudSync.noteRemoved(CloudSync.vipToken(email)) }
         defaults.set(all.sorted(), forKey: vipsKey)
     }
 
@@ -169,8 +171,14 @@ enum CorresSettings {
     /// Mailboxes → Edit: the order of mailboxes and labels, and which are hidden.
     static let mailboxOrderKey = "corres.mailboxes.order"
     static let mailboxHiddenKey = "corres.mailboxes.hidden"
+    /// Before the four modes, a switch: on held everyone, off showed them
+    /// marked New. Read once to choose the mode.
     static let screenNewSendersKey = "corres.screenNewSenders"
-    static var screensNewSenders: Bool { defaults.bool(forKey: screenNewSendersKey) }
+    static let newSenderModeKey = "corres.newSenderMode"
+    static var newSenderMode: NewSenderMode {
+        if let raw = defaults.string(forKey: newSenderModeKey), let mode = NewSenderMode(rawValue: raw) { return mode }
+        return defaults.bool(forKey: screenNewSendersKey) ? .reviewEveryone : .inMail
+    }
 
     @MainActor static func applyToCore() {
         // Mail became the one home screen, opening on Needs You (it was the
@@ -185,7 +193,7 @@ enum CorresSettings {
             defaults.set(MailFilter.everything.rawValue, forKey: "corres.mailFilter")
             defaults.set(true, forKey: MailFilter.unreadOnlyKey)
         }
-        MailQuery.holdsNewSenders = screensNewSenders
+        MailQuery.newSenderMode = newSenderMode
         InboxClassifier.vipAddresses = vips
         InboxClassifier.domainDecisions = domainRules
         InboxClassifier.sensitivity = sensitivity

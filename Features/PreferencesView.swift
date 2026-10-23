@@ -1291,7 +1291,7 @@ private struct NotificationSettingsView: View {
     @AppStorage(PushNotificationService.NewSenderAlerts.timeSensitiveKey) private var newTimeSensitive = true
     /// The New senders alerts only apply while new senders are held back;
     /// otherwise their mail notifies like anyone else's.
-    @AppStorage(CorresSettings.screenNewSendersKey) private var screenNewSenders = false
+    @AppStorage(CorresSettings.newSenderModeKey) private var newSenderMode = CorresSettings.newSenderMode.rawValue
     @AppStorage(PushNotificationService.NewSenderAlerts.peopleKey) private var newPeople = true
     @AppStorage(PushNotificationService.NewSenderAlerts.otherKey) private var newOther = false
     @AppStorage(BriefNotifier.enabledKey) private var briefEnabled = false
@@ -1349,7 +1349,7 @@ private struct NotificationSettingsView: View {
                 } footer: {
                     Text("One quiet notification a day with what needs you and who you're waiting on. Tap it to open Needs You.")
                 }
-                if screenNewSenders {
+                if [NewSenderMode.reviewEveryone.rawValue, NewSenderMode.reviewCompanies.rawValue].contains(newSenderMode) {
                 Section {
                     Toggle("Time-sensitive", isOn: $newTimeSensitive)
                     Toggle("From a Person", isOn: $newPeople)

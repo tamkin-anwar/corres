@@ -37,6 +37,18 @@ final class ServerRules {
     private init() {
         ledger = UserDefaults.standard.data(forKey: Self.ledgerKey)
             .flatMap { try? JSONDecoder().decode([String: [String: Entry]].self, from: $0) } ?? [:]
+        // Filters made before this list existed count as Corres's own.
+        let kept = ledger.values.flatMap { $0.values.map(\.id) }
+        if !Set(kept).isSubset(of: Self.madeIDs) { Self.noteMade(kept) }
+    }
+
+    /// Every Gmail filter Corres made, on any of your devices (it follows
+    /// you through iCloud). Only one of these is ever adopted, so a filter
+    /// you made yourself, however alike, is never taken over or deleted.
+    static let madeKey = "corres.serverRuleIDs"
+    static var madeIDs: Set<String> { Set(UserDefaults.standard.stringArray(forKey: madeKey) ?? []) }
+    static func noteMade(_ ids: [String]) {
+        UserDefaults.standard.set(madeIDs.union(ids).sorted(), forKey: madeKey)
     }
 
     /// Called once at launch.
@@ -196,9 +208,11 @@ final class ServerRules {
             }
         }
         guard !ServerRulePlan.additions(wanted: wanted, kept: kept(account), existing: []).isEmpty else { return }
-        let existing = try await gmail.filters(account: account).compactMap { filter in
-            filter.id.map { ServerRulePlan.Existing(id: $0, key: ServerRulePlan.gmailKey(
-                query: filter.criteria.query ?? "", add: filter.action.addLabelIds ?? [], remove: filter.action.removeLabelIds ?? [])) }
+        let made = Self.madeIDs
+        let existing = try await gmail.filters(account: account).compactMap { filter -> ServerRulePlan.Existing? in
+            guard let id = filter.id, made.contains(id) else { return nil }
+            return ServerRulePlan.Existing(id: id, key: ServerRulePlan.gmailKey(
+                query: filter.criteria.query ?? "", add: filter.action.addLabelIds ?? [], remove: filter.action.removeLabelIds ?? []))
         }
         for step in ServerRulePlan.additions(wanted: wanted, kept: kept(account), existing: existing) {
             switch step {
@@ -216,6 +230,7 @@ final class ServerRules {
                     guard fallback != spec, fallback.hasAction else { throw GmailAPIClient.ClientError.badResponse(statusCode: 400) }
                     id = try await create(fallback, account)
                 }
+                Self.noteMade([id])
                 ledger[ruleID, default: [:]][account] = Entry(id: id, signature: signature)
             case .remove, .forget:
                 break

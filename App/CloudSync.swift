@@ -42,7 +42,7 @@ final class CloudSync {
     /// seen time) stay put.
     static let syncedSettings: [String] = [
         CorresSettings.vipsKey, CorresSettings.domainRulesKey, CorresSettings.sensitivityKey,
-        CorresSettings.screenNewSendersKey, CorresSettings.followUpDaysKey, CorresSettings.morningHourKey,
+        CorresSettings.screenNewSendersKey, CorresSettings.newSenderModeKey, CorresSettings.followUpDaysKey, CorresSettings.morningHourKey,
         CorresSettings.laterTodayEveningKey, CorresSettings.readingBarKey, CorresSettings.undoSendKey,
         CorresSettings.defaultReplyKey, CorresSettings.remoteImagesKey, CorresSettings.confirmTrashKey,
         CorresSettings.markReadOnOpenKey, CorresSettings.openLinksKey, CorresSettings.summariesKey,
@@ -51,7 +51,7 @@ final class CloudSync {
         "corres.trailingShortSwipeAction", "corres.trailingLongSwipeAction",
         "corres.leadingShortSwipeAction", "corres.leadingLongSwipeAction",
         Organizer.rulesKey, Organizer.templatesKey, Organizer.searchesKey, Organizer.mutedKey,
-        removedItemsKey,
+        removedItemsKey, addedItemsKey, ServerRules.madeKey,
     ]
 
     /// Lists of things with an `id`, merged item by item: a rule added on
@@ -60,13 +60,24 @@ final class CloudSync {
     static let mergedLists: Set<String> = [Organizer.rulesKey, Organizer.templatesKey, Organizer.searchesKey]
     /// Ids of items deleted from those lists, and when, so a merge doesn't
     /// bring one back from a device that still had it.
-    static let removedItemsKey = "corres.removedItems"
+    nonisolated static let removedItemsKey = "corres.removedItems"
+
+    /// When a VIP was added, so one removed and added back isn't left out
+    /// by the earlier removal.
+    nonisolated static let addedItemsKey = "corres.addedItems"
 
     /// Called when a rule, template or saved search is deleted.
-    static func noteRemoved(_ id: UUID) {
-        var removed = UserDefaults.standard.dictionary(forKey: removedItemsKey) as? [String: Date] ?? [:]
-        removed[id.uuidString] = .now
-        UserDefaults.standard.set(removed.filter { $0.value > .now.addingTimeInterval(-keepFor) }, forKey: removedItemsKey)
+    nonisolated static func noteRemoved(_ id: UUID) { note(id.uuidString, in: removedItemsKey) }
+    /// A VIP or a muted conversation taken off (`vipToken`, `mutedToken`).
+    nonisolated static func noteRemoved(_ token: String) { note(token, in: removedItemsKey) }
+    nonisolated static func noteAdded(_ token: String) { note(token, in: addedItemsKey) }
+    nonisolated static func vipToken(_ email: String) -> String { "vip:" + email.lowercased() }
+    nonisolated static func mutedToken(_ key: String) -> String { "muted:" + key }
+
+    nonisolated private static func note(_ token: String, in key: String) {
+        var notes = UserDefaults.standard.dictionary(forKey: key) as? [String: Date] ?? [:]
+        notes[token] = .now
+        UserDefaults.standard.set(notes.filter { $0.value > .now.addingTimeInterval(-keepFor) }, forKey: key)
     }
 
     private let cloud = NSUbiquitousKeyValueStore.default
@@ -79,7 +90,7 @@ final class CloudSync {
     private weak var store: MailStore?
     private static let log = Logger(subsystem: "studio.anwarcreative.corres", category: "cloud")
     private static let markChunk = 600
-    private static let keepFor: TimeInterval = 90 * 86_400
+    nonisolated private static let keepFor: TimeInterval = 90 * 86_400
     /// Until iCloud has delivered what your other devices saved, marks
     /// aren't written: a new device would otherwise replace them all with
     /// its own one or two.
@@ -177,19 +188,41 @@ final class CloudSync {
     func pull() async {
         isApplying = true
         var pushBack = false
-        // Deletions first, so the lists below merge without them.
-        let localRemoved = defaults.dictionary(forKey: Self.removedItemsKey) as? [String: Date] ?? [:]
-        let remoteRemoved = cloud.object(forKey: "setting." + Self.removedItemsKey) as? [String: Date] ?? [:]
-        let removed = localRemoved.merging(remoteRemoved) { max($0, $1) }
-        if removed != localRemoved { defaults.set(removed, forKey: Self.removedItemsKey) }
-        if removed != remoteRemoved { pushBack = true }
-        for key in Self.syncedSettings where key != Self.removedItemsKey {
+        // The notes of what was added and removed first, so the lists below
+        // merge with them.
+        func mergedNotes(_ key: String) -> [String: Date] {
+            let local = defaults.dictionary(forKey: key) as? [String: Date] ?? [:]
+            let remote = cloud.object(forKey: "setting." + key) as? [String: Date] ?? [:]
+            let merged = local.merging(remote) { max($0, $1) }
+            if merged != local { defaults.set(merged, forKey: key) }
+            if merged != remote { pushBack = true }
+            return merged
+        }
+        let removed = mergedNotes(Self.removedItemsKey)
+        let added = mergedNotes(Self.addedItemsKey)
+        for key in Self.syncedSettings where key != Self.removedItemsKey && key != Self.addedItemsKey {
             guard let remote = cloud.object(forKey: "setting." + key),
                   !Self.same(remote, defaults.object(forKey: key)) else { continue }
             if Self.mergedLists.contains(key), let remoteData = remote as? Data,
                let merged = SyncMerge.list(local: defaults.data(forKey: key), remote: remoteData, removed: Set(removed.keys)) {
                 defaults.set(merged, forKey: key)
                 if merged != remoteData { pushBack = true }
+            } else if key == ServerRules.madeKey, let remoteIDs = remote as? [String] {
+                // Only ever grows: every device's filters together.
+                let merged = Set(remoteIDs).union(defaults.stringArray(forKey: key) ?? []).sorted()
+                defaults.set(merged, forKey: key)
+                if merged != remoteIDs.sorted() { pushBack = true }
+            } else if key == CorresSettings.vipsKey, let remoteVIPs = remote as? [String] {
+                let merged = SyncMerge.strings(local: defaults.stringArray(forKey: key) ?? [], remote: remoteVIPs,
+                                               added: added, removed: removed, token: Self.vipToken)
+                defaults.set(merged, forKey: key)
+                if merged != remoteVIPs.sorted() { pushBack = true }
+            } else if key == Organizer.mutedKey, let remoteData = remote as? Data,
+                      let remoteMuted = try? JSONDecoder().decode([String: Date].self, from: remoteData) {
+                let localMuted = defaults.data(forKey: key).flatMap { try? JSONDecoder().decode([String: Date].self, from: $0) } ?? [:]
+                let merged = SyncMerge.dated(local: localMuted, remote: remoteMuted, removed: removed, token: Self.mutedToken)
+                if merged != localMuted { defaults.set(try? JSONEncoder().encode(merged), forKey: key) }
+                if merged != remoteMuted { pushBack = true }
             } else {
                 defaults.set(remote, forKey: key)
             }

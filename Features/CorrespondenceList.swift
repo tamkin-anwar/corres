@@ -77,7 +77,7 @@ struct CorrespondenceRow: View {
                     // A sender you haven't allowed or blocked yet, while the
                     // mail is new. Every unreviewed sender used to carry
                     // it, which on a busy inbox was half the rows.
-                    if thread.senderDecision == .pending, thread.receivedAt > .now.addingTimeInterval(-3 * 86_400) {
+                    if thread.showsAsNewSender, thread.receivedAt > .now.addingTimeInterval(-3 * 86_400) {
                         Text("NEW")
                             .font(.caption2.weight(.semibold)).letterSpacing(0.4)
                             .foregroundStyle(CorresPalette.accent)

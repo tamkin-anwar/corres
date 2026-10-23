@@ -276,9 +276,9 @@ final class PushNotificationService {
         static let otherKey = "corres.newSenders.other"
 
         static func includes(_ thread: Correspondence) -> Bool {
-            // Only while new senders are held; otherwise their mail
+            // Only while this sender's mail is held back; otherwise it
             // notifies like anyone else's.
-            guard thread.senderDecision == .pending, MailQuery.holdsNewSenders else { return false }
+            guard thread.senderDecision == .pending, thread.isScreenedOut else { return false }
             let defaults = UserDefaults.standard
             func on(_ key: String, _ fallback: Bool) -> Bool { defaults.object(forKey: key) as? Bool ?? fallback }
             let timeSensitive = thread.dueAt != nil

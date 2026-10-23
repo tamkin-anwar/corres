@@ -3221,3 +3221,10 @@
 "Your other devices keep it unless you remove it from all of them. Nothing is deleted from %@." = "সব ডিভাইস থেকে না সরালে আপনার অন্য ডিভাইসগুলোতে এটি থেকে যাবে। %@ থেকে কিছুই মোছা হয় না।";
 "Removing it from all devices also takes out the %lld rules Corres made in %@." = "সব ডিভাইস থেকে সরালে Corres %2$@-এ যে %1$lldটি নিয়ম বানিয়েছিল সেগুলোও মুছে যাবে।";
 "and %lld more" = "আরও %lldটি";
+"First Emails" = "প্রথম ইমেইল";
+"Review Everyone" = "সবাইকে আগে দেখুন";
+"Review Companies" = "শুধু প্রতিষ্ঠান দেখুন";
+"Show Marked New" = "নতুন চিহ্ন দিয়ে দেখান";
+"Let Everyone In" = "সবাইকে আসতে দিন";
+"A first email from a person comes straight in, marked New. A company's waits in New Senders until you allow it, so newsletters and offers don't arrive unasked. Blocked senders stay hidden." = "কোনো মানুষের প্রথম ইমেইল সরাসরি আসে, নতুন চিহ্ন দিয়ে। কোনো প্রতিষ্ঠানের ইমেইল আপনি অনুমতি না দেওয়া পর্যন্ত নতুন প্রেরকে অপেক্ষা করে, যাতে না চাওয়া নিউজলেটার আর অফার না আসে। ব্লক করা প্রেরকেরা লুকানো থাকে।";
+"Everyone's mail comes straight in, with nothing to review. You can still block anyone from their email, and blocked senders stay hidden." = "সব ইমেইল সরাসরি আসে, দেখার কিছু নেই। তবু যে কাউকে তার ইমেইল থেকে ব্লক করতে পারেন, আর ব্লক করা প্রেরকেরা লুকানো থাকে।";

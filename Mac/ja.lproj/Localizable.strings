@@ -2307,3 +2307,10 @@
 "Discard" = "破棄";
 "Retry" = "再試行";
 "Couldn't send “%@”" = "「%@」を送信できませんでした";
+"First Emails" = "最初のメール";
+"Review Everyone" = "すべて確認する";
+"Review Companies" = "企業だけ確認する";
+"Show Marked New" = "「新規」として表示";
+"Let Everyone In" = "すべて受け入れる";
+"A first email from a person comes straight in, marked New. A company's waits in New Senders until you allow it, so newsletters and offers don't arrive unasked. Blocked senders stay hidden." = "個人からの最初のメールはそのまま届き、「新規」と表示されます。企業からのメールは許可するまで「新しい差出人」で待つので、頼んでいないニュースレターや広告が届きません。ブロックした差出人は表示されません。";
+"Everyone's mail comes straight in, with nothing to review. You can still block anyone from their email, and blocked senders stay hidden." = "すべてのメールがそのまま届き、確認するものはありません。メールからいつでも差出人をブロックでき、ブロックした差出人は表示されません。";

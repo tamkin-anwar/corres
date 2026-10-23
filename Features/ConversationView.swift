@@ -69,7 +69,8 @@ struct ConversationView: View {
                             .textSelection(.enabled)
                             .accessibilityAddTraits(.isHeader)
                             .padding(.horizontal, CorresSpace.page)
-                        if thread.senderDecision == .pending, let email = thread.senderEmail {
+                        // Allow or Block, unless every new sender is let in.
+                        if thread.senderDecision == .pending, MailQuery.newSenderMode != .acceptAll, let email = thread.senderEmail {
                             newSenderCard(thread: thread, email: email)
                                 .padding(.horizontal, CorresSpace.page)
                         }
