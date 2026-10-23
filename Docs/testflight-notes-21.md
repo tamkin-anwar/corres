@@ -257,3 +257,48 @@ Please try
 2. Keep an email selected while new mail arrives, and check the list doesn't jump.
 
 Something off? Help > Send Diagnostics, or send feedback through TestFlight.
+
+## Build 33 (iPhone and iPad)
+
+Corres 0.2.0 (33) for iPhone, iPad and Apple Watch
+
+The big ones
+- Emails go even if you leave right away. Leaving Corres while Undo is counting down used to pause the email until you next opened Corres, so it could arrive hours late. Now leaving sends it at once, and a send in progress finishes after you leave. If one still can't go, you get a notification, and Corres keeps trying in the background.
+- Choose how new senders arrive. Settings > Senders > First Emails: Review Everyone, Review Companies (a person's first email comes straight in, a company's waits for your OK), Show Marked New, or Let Everyone In.
+- On iPad, tapping a notification or a link now opens that email, instead of an empty "No conversation selected".
+
+Also new
+- VIPs and muted conversations stay in step between your devices.
+- A Gmail filter you made yourself is never changed or removed by Corres, even if it matches one of your rules.
+
+Fixed
+- A search on a big mailbox kept showing the whole list while mail was syncing.
+- Removing an account from this iPhone only no longer turns off Gmail alerts on your other devices.
+
+Please try
+1. Send an email and lock your phone straight away. Check it arrives within seconds.
+2. Settings > Senders > First Emails > Review Companies.
+3. On iPad, tap a mail notification.
+
+Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
+
+## Mac build 34
+
+Corres for Mac 0.2.0 (34)
+
+The big ones
+- Sender pictures. A company's logo or a person's initials beside each email, as on iPhone. View > Show Sender Pictures turns them off.
+- Emails go even if you quit right away. Quitting during Undo sends the email first, and a failed send tells you in a notification.
+- Choose how new senders arrive, in Settings > Senders.
+
+Also new
+- VIPs and muted conversations stay in step between your devices.
+
+Fixed
+- A search on a big mailbox kept showing the whole list while mail was syncing.
+
+Please try
+1. Send an email and quit Corres straight away. Check it arrives.
+2. View > Show Sender Pictures, on and off.
+
+Something off? Help > Send Diagnostics, or send feedback through TestFlight.
