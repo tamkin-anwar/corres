@@ -208,3 +208,52 @@ Please try
 2. Press Command-plus a few times with the list in view.
 
 Something off? Help > Send Diagnostics, or send feedback through TestFlight.
+
+## Build 31 (iPhone and iPad)
+
+Corres 0.2.0 (31) for iPhone, iPad and Apple Watch
+
+The big ones
+- Nothing you do gets lost. A scheduled email, a reply from your Watch or a Handled tap on a widget now waits for your mail to load when Corres opens, instead of being dropped. A send that didn't go stays listed until it goes or you discard it, and Corres tries it again by itself when your connection comes back.
+- Remove an account the way you mean it. Settings > your account > Remove Account now asks: from this iPhone only (your other devices keep it), or from all your devices. All devices also takes the rules Corres made out of Gmail or Outlook, and your other devices sign out of it instead of adding it back.
+- Fast with a big mailbox. Search is about ten times faster and no longer pauses while you type. iCloud Mail checks only what changed, and Corres does much less in the background when nothing new has arrived.
+
+Also new
+- Moves, snoozes, pins, rules, templates and saved searches merge between your devices, instead of one device's list replacing another's.
+- The watch face counts all of Needs You, not just the first 25.
+
+Fixed
+- Being offline no longer shows as signed out of Gmail.
+- A few lines in other languages ran two words together, and some widget and Send Later text wasn't translated.
+- Settings > Send Diagnostics now includes stall reports, which weren't being saved.
+
+Please try
+1. Turn on Airplane Mode, send an email, then turn it off. It should go by itself.
+2. Search a word you know is in an older email, and type quickly.
+3. If you have Corres on two devices, snooze something on one and check the other.
+4. If you have an account you don't mind removing and adding back, tap Remove Account > Remove from This iPhone and check your other devices still have it.
+
+Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
+
+## Mac build 32
+
+Corres for Mac 0.2.0 (32)
+
+The big ones
+- Sends you can see. If an email doesn't go, the Mac now shows it at the bottom of the window with Retry and Discard, and tries it again by itself when your connection comes back. Before, a failed send on the Mac went unannounced.
+- Remove an account from this Mac only, or from all your devices (Settings > Accounts > Remove). All devices also takes Corres's rules out of Gmail or Outlook.
+- A steadier, faster list. New mail and re-sorting move only the rows that changed, so your selection and place in the list stay put. Search is about ten times faster on a big mailbox.
+
+Also new
+- Moves, snoozes, pins, rules, templates and saved searches merge between your devices.
+- The Command-K list and its "Go to" and "Move to" items are translated.
+
+Fixed
+- Command-equals didn't make text bigger with Caps Lock on.
+- A suggested reply could open for an email you had already moved away from.
+
+Please try
+1. Turn off Wi-Fi, send an email, then turn Wi-Fi back on. It should go by itself.
+2. Keep an email selected while new mail arrives, and check the list doesn't jump.
+
+Something off? Help > Send Diagnostics, or send feedback through TestFlight.
