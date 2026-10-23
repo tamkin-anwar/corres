@@ -196,6 +196,7 @@ struct CorresShell: View {
         }
         .onChange(of: scenePhase) { _, phase in
             // Back from a Control Center button or a widget's Handled.
+            OutboxService.isAway = phase == .background
             if phase == .active {
                 Organizer.shared.applyWidgetHandoffs()
                 ServerRules.shared.retryIfFailed()
@@ -208,6 +209,8 @@ struct CorresShell: View {
                 // reaches the server rather than coming back next launch.
                 let work = BackgroundWork.begin("Leaving Corres")
                 Task {
+                    // An email still in its Undo countdown goes now.
+                    await outbox.sendPendingNow()
                     await threadActions.commitPendingRemoval()
                     // After the snapshot iOS takes on the way out, so it
                     // isn't kept waiting on this.

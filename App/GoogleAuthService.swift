@@ -98,10 +98,13 @@ final class GoogleAuthService {
         let removedElsewhere = storedEmails.filter { removed[$0.lowercased()] != nil }
         storedEmails.removeAll { removed[$0.lowercased()] != nil }
         for email in removedElsewhere {
-            await forgetSignIn(email, everywhere: true)
+            // Only this device's copy: the one that removed it already took
+            // out the shared one, and deleting it again could only remove a
+            // newer sign-in made since.
+            await forgetSignIn(email, everywhere: false, duringRestore: true)
             await onRemovedElsewhere?(email)
         }
-        storedEmails += AccountSync.adopt(roster, into: storedEmails)
+        storedEmails += AccountSync.adopt(roster.filter { removed[$0.email.lowercased()] == nil }, into: storedEmails)
         var restored: [GmailAccount] = []
         for email in storedEmails {
             let signedIn = switch MailAccounts.provider(for: email) {
@@ -286,8 +289,10 @@ final class GoogleAuthService {
             await GoogleTokenProvider.shared.store(refreshToken: result.user.refreshToken.tokenString, for: email)
             if !accounts.contains(where: { $0.email == email }) {
                 accounts.append(GmailAccount(email: email))
-                persistAccountList(adding: email)
             }
+            // Even when it was still listed: signing in again clears a
+            // "removed from all devices" note, or the next launch removes it.
+            persistAccountList(adding: email)
         } catch {
             let nsError = error as NSError
             // Cancellation is not an error worth surfacing: the user changed
@@ -316,8 +321,10 @@ final class GoogleAuthService {
             Task { await fillOutlookPhoto(for: result.email) }
             if !accounts.contains(where: { $0.email == result.email }) {
                 accounts.append(GmailAccount(email: result.email))
-                persistAccountList(adding: result.email)
             }
+            // Even when it was still listed: signing in again clears a
+            // "removed from all devices" note, or the next launch removes it.
+            persistAccountList(adding: result.email)
         } catch MicrosoftSignIn.SignInError.cancelled {
             // Changed their mind: nothing to say.
         } catch MicrosoftSignIn.SignInError.notConfigured {
@@ -356,8 +363,8 @@ final class GoogleAuthService {
         await IMAPSessions.shared.forget(email)
         if !accounts.contains(where: { $0.email == email }) {
             accounts.append(GmailAccount(email: email))
-            persistAccountList(adding: email)
         }
+        persistAccountList(adding: email)
         return nil
     }
 
@@ -403,8 +410,8 @@ final class GoogleAuthService {
         if icloudNeedsPassword == email { icloudNeedsPassword = nil }
         if !accounts.contains(where: { $0.email == email }) {
             accounts.append(GmailAccount(email: email))
-            persistAccountList(adding: email)
         }
+        persistAccountList(adding: email)
         return nil
     }
 
@@ -452,7 +459,7 @@ final class GoogleAuthService {
 
     /// Its sign-in, profile and caches on this device; with `everywhere`
     /// its iCloud Keychain copy too.
-    private func forgetSignIn(_ email: String, everywhere: Bool) async {
+    private func forgetSignIn(_ email: String, everywhere: Bool, duringRestore: Bool = false) async {
         MailIndexer.shared.forget(email)
         Task { await SpotlightIndex.shared.forget(account: email) }
         profiles[email] = nil
@@ -475,7 +482,8 @@ final class GoogleAuthService {
         // the one it currently holds, but calling it unconditionally when no
         // accounts remain is a harmless, simple way to also fully clear that
         // legacy single slot (relevant right after the migration path above).
-        if accounts.isEmpty {
+        // While restoring, `accounts` isn't filled in yet: no conclusion.
+        if accounts.isEmpty, !duringRestore {
             GIDSignIn.sharedInstance.signOut()
             // The Brief's greeting name belongs to whoever is connected.
             defaults.removeObject(forKey: Self.givenNameKey)
@@ -491,9 +499,12 @@ final class GoogleAuthService {
         // main thread, one after another so they keep their order. At launch
         // this held the first mail on the Mac back by half a second.
         let emails = accounts.map(\.email)
+        // This device's own note, at once: a force-quit mustn't lose it.
+        if let signedOut, !everywhere { AccountSync.removeHere(signedOut) }
+        if let added { AccountSync.keepHere(added) }
         AccountSync.inOrder {
             if let signedOut {
-                if everywhere { AccountSync.remove(signedOut) } else { AccountSync.removeHere(signedOut) }
+                if everywhere { AccountSync.remove(signedOut) }
             } else if let added {
                 AccountSync.added(added)
                 AccountSync.include(emails)

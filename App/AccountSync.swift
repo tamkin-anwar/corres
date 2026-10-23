@@ -48,8 +48,6 @@ enum AccountSync {
     static func added(_ email: String) {
         var removed = removedEverywhere()
         if removed.removeValue(forKey: email.lowercased()) != nil { saveRemovedEverywhere(removed) }
-        var here = removedHere
-        if here.remove(email.lowercased()) != nil { removedHere = here }
         include([email])
     }
 
@@ -92,6 +90,12 @@ enum AccountSync {
 
     static func removeHere(_ email: String) {
         removedHere.insert(email.lowercased())
+    }
+
+    /// Signed in here again: no longer left out on this device.
+    static func keepHere(_ email: String) {
+        var here = removedHere
+        if here.remove(email.lowercased()) != nil { removedHere = here }
     }
 
     static func roster() -> [Entry] {

@@ -2,6 +2,7 @@ import Foundation
 import Network
 import Observation
 import os
+import UserNotifications
 
 /// Makes Send feel instant: ComposeView dismisses the moment the button is
 /// tapped, and the actual work (a real Gmail send whenever an account is
@@ -226,10 +227,26 @@ final class OutboxService {
         retryingQuietly = true
         defer { retryingQuietly = false }
         for failedSend in failedSends {
+            // Discarded or retried by hand while an earlier one was going.
+            guard failedSends.contains(where: { $0.id == failedSend.id }) else { continue }
             failedSends.removeAll { $0.id == failedSend.id }
             await commit(failedSend.draft, thread: resolveThread(for: failedSend.draft), id: failedSend.id,
                          checkForExistingSendFirst: true, quietly: true)
         }
+    }
+
+    /// A send that failed after you'd left Corres: said in a notification,
+    /// since there's no banner to see.
+    /// Set by the app as it leaves the screen and comes back (the
+    /// extensions that share this file can't ask).
+    static var isAway = false
+
+    private func tellIfAway(_ draft: Draft) {
+        guard Self.isAway else { return }
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "Couldn't send")
+        content.body = String(localized: "\u{201C}\(draft.subject)\u{201D} is waiting in Corres. It goes as soon as you're back online, or open Corres to try again.")
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "corres.sendFailed." + UUID().uuidString, content: content, trigger: nil))
     }
 
     private func markFailed(_ id: UUID, _ draft: Draft) {
@@ -290,6 +307,7 @@ final class OutboxService {
                 try? await Task.sleep(for: .seconds(1))
             }
             if Task.isCancelled { return }
+            self.task = nil
             await self.commit(draft, thread: thread, id: id, checkForExistingSendFirst: checkFirst)
         }
     }
@@ -309,14 +327,33 @@ final class OutboxService {
 
     func waitForAccounts() async { await auth.waitUntilRestored() }
 
+    /// Leaving Corres while Undo counts down: it goes now. Leaving means you
+    /// meant it, and iOS would otherwise pause the countdown, and the email
+    /// with it, until Corres was opened again.
+    func sendPendingNow() async {
+        guard let current = pending, let draft = queuedDraft else { return }
+        let thread = queuedThread
+        task?.cancel()
+        task = nil
+        await commit(draft, thread: thread, id: current.id)
+    }
+
+    /// The account was removed: its unsent and failed emails go with it,
+    /// rather than being sent if it's ever added back.
+    func forget(account: String) {
+        let gone = failedSends.filter { ($0.draft.fromAccount ?? $0.draft.threadID?.account) == account }.map(\.id)
+        failedSends.removeAll { gone.contains($0.id) }
+        Task { for id in gone { try? await repository.removeOutboxEntry(id: id) } }
+    }
+
     func retryFailed() {
-        guard let failed else { return }
+        guard let failed, !committing.contains(failed.id) else { return }
         failedSends.removeFirst()
         queueSend(failed.draft, replyingTo: resolveThread(for: failed.draft), reusing: failed.id)
     }
 
     func discardFailed() {
-        guard let failed else { return }
+        guard let failed, !committing.contains(failed.id) else { return }
         failedSends.removeFirst()
         let id = failed.id
         Task { try? await repository.removeOutboxEntry(id: id) }
@@ -324,8 +361,15 @@ final class OutboxService {
 
     private func commit(_ draft: Draft, thread: Correspondence?, id: UUID, checkForExistingSendFirst: Bool = false, quietly: Bool = false) async {
         guard committing.insert(id).inserted else { return }
-        defer { committing.remove(id) }
+        // Time to finish if Corres is left mid-send: without it iOS paused
+        // the send until Corres was next opened, a day later for some.
+        let work = BackgroundWork.begin("Sending")
+        defer { committing.remove(id); work.end() }
         if pending?.id == id {
+            // A countdown still running for it (a retry by hand) stops; the
+            // countdown that ended clears itself before it gets here.
+            task?.cancel()
+            task = nil
             pending = nil
             queuedDraft = nil
             queuedThread = nil
@@ -342,7 +386,10 @@ final class OutboxService {
             Logger(subsystem: "studio.anwarcreative.corres", category: "outbox")
                 .error("Send failed: no connected account to send from")
             markFailed(id, draft)
-            if !quietly { Assistive.announce(String(localized: "Couldn't send \u{201C}\(draft.subject)\u{201D}. Retry or Discard.")) }
+            if !quietly {
+                Assistive.announce(String(localized: "Couldn't send \u{201C}\(draft.subject)\u{201D}. Retry or Discard."))
+                tellIfAway(draft)
+            }
             try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .failed))
             return
         }
@@ -359,7 +406,10 @@ final class OutboxService {
                 Logger(subsystem: "studio.anwarcreative.corres", category: "outbox")
                     .error("Send failed: \(String(describing: error), privacy: .public)")
                 markFailed(id, draft)
-                if !quietly { Assistive.announce(String(localized: "Couldn't send \u{201C}\(draft.subject)\u{201D}. Retry or Discard.")) }
+                if !quietly {
+                Assistive.announce(String(localized: "Couldn't send \u{201C}\(draft.subject)\u{201D}. Retry or Discard."))
+                tellIfAway(draft)
+            }
                 try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .failed))
                 return
             }

@@ -60,8 +60,12 @@ final class MacServices {
         Organizer.shared.attach(store: store, actions: threadActions, outbox: outbox)
         ServerRules.shared.attach(auth: auth)
         // Handled from a desktop widget, applied when Corres comes forward.
+        NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
+            Task { @MainActor in OutboxService.isAway = true }
+        }
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
             Task { @MainActor in
+                OutboxService.isAway = false
                 Organizer.shared.applyWidgetHandoffs()
                 ServerRules.shared.retryIfFailed()
                 await Organizer.shared.outbox?.retryFailedQuietly()

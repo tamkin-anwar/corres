@@ -84,18 +84,36 @@ final class ServerRules {
     /// Removed from all your devices: Corres's filters or rules in it are
     /// taken out, while it can still be reached.
     func removeAll(for account: String) async {
-        for (ruleID, entries) in ledger {
-            guard let entry = entries[account] else { continue }
+        // Every one Corres made there, from any of your devices: this
+        // device's record, and what's in the account that carries Corres's
+        // mark (its Gmail filters by id, its Outlook rules by name).
+        var ids = Set(ledger.values.compactMap { $0[account]?.id })
+        let isOutlook = MailAccounts.provider(for: account) == .microsoft
+        if isOutlook {
+            if let there = try? await outlook.messageRules(account: account) {
+                ids.formUnion(there.filter { ($0.displayName ?? "").hasPrefix("Corres · ") }.map(\.id))
+            }
+        } else if MailAccounts.provider(for: account) == .google {
+            if let there = try? await gmail.filters(account: account) {
+                let made = Self.madeIDs
+                ids.formUnion(there.compactMap(\.id).filter { made.contains($0) })
+            }
+        } else {
+            return
+        }
+        var failed = Set<String>()
+        for id in ids {
             do {
-                if MailAccounts.provider(for: account) == .microsoft {
-                    try await outlook.deleteMessageRule(id: entry.id, account: account)
-                } else if MailAccounts.provider(for: account) == .google {
-                    try await gmail.deleteFilter(id: entry.id, account: account)
-                }
+                if isOutlook { try await outlook.deleteMessageRule(id: id, account: account) }
+                else { try await gmail.deleteFilter(id: id, account: account) }
             } catch {
+                failed.insert(id)
                 Self.log.error("Couldn't remove a rule from a removed account: \(String(describing: error), privacy: .public)")
             }
-            ledger[ruleID]?[account] = nil
+        }
+        // Ones that couldn't be removed stay recorded, so they aren't lost.
+        for ruleID in ledger.keys {
+            if let entry = ledger[ruleID]?[account], !failed.contains(entry.id) { ledger[ruleID]?[account] = nil }
         }
         save()
     }

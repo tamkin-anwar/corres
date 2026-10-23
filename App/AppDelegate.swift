@@ -217,6 +217,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             let icloud = auth.accounts.map(\.email).filter { MailAccounts.provider(for: $0).usesIMAP }
             if !icloud.isEmpty { _ = await syncAndNotify(accounts: icloud) }
             await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
+            // Sends that failed for want of a connection try again here too,
+            // not only when Corres is next opened.
+            await outbox.retryFailedQuietly()
             await FollowUps.shared.check(store: store)
             await pushService.renewWatch(accounts: auth.accounts.map(\.email))
             task.setTaskCompleted(success: true)

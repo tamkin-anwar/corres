@@ -1352,7 +1352,11 @@ private struct NotificationSettingsView: View {
                 if [NewSenderMode.reviewEveryone.rawValue, NewSenderMode.reviewCompanies.rawValue].contains(newSenderMode) {
                 Section {
                     Toggle("Time-sensitive", isOn: $newTimeSensitive)
-                    Toggle("From a Person", isOn: $newPeople)
+                    // In Review Companies a person's first email isn't held: it
+                    // notifies like anyone's.
+                    if newSenderMode != NewSenderMode.reviewCompanies.rawValue {
+                        Toggle("From a Person", isOn: $newPeople)
+                    }
                     Toggle("Everything Else", isOn: $newOther)
                 } header: {
                     Text("New Senders")

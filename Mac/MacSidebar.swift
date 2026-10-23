@@ -17,7 +17,7 @@ struct MacSidebar: View {
             Section {
                 row(.needsYou, count: needsYouCount, prominent: true)
                 row(.waiting, count: waitingCount)
-                if newSendersCount > 0 { row(.newSenders, count: newSendersCount) }
+                if newSendersCount > 0, MailQuery.newSenderMode != .acceptAll { row(.newSenders, count: newSendersCount) }
             }
             Section("Mail") {
                 ForEach([MailFilter.primary, .everything, .promotions, .social, .updates]) { filter in

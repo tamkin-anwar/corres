@@ -290,7 +290,8 @@ final class MailStore {
     static var sampleNow: Date {
         guard EntitlementStore.isScreenshotMode,
               let morning = Calendar.current.date(bySettingHour: 9, minute: 41, second: 0, of: .now) else { return .now }
-        return morning
+        // Before 9:41 it's yesterday's, so nothing arrives in the future.
+        return morning > .now ? morning.addingTimeInterval(-86_400) : morning
     }
 
     /// The mailbox, read in the background while the window is still being

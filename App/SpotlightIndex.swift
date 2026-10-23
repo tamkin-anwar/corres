@@ -63,6 +63,8 @@ final class SpotlightIndex {
             let pass = try await Task.detached(priority: .utility) {
                 try await Self.pass(threads, known: known, limit: limit)
             }.value
+            // Switched off while this pass ran: what it just added comes out.
+            guard Self.isEnabled else { await removeAll(); return }
             indexed = pass.indexed
             loadedIndexed = true
             if pass.changed > 0 || pass.removed > 0 {

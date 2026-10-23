@@ -5,6 +5,16 @@ import UserNotifications
 /// conversation, and the app comes forward when the Dock icon is clicked
 /// with no window open.
 final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+    /// Quitting while an email is in its Undo countdown: it goes first.
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard let outbox = Organizer.shared.outbox, outbox.pending != nil else { return .terminateNow }
+        Task { @MainActor in
+            await outbox.sendPendingNow()
+            sender.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
+    }
+
     /// Archive, Mark as Read and Reply from a notification, done without
     /// bringing Corres forward. Set by MacServices once it's running.
     @MainActor static var handleAction: (@MainActor (_ action: String, _ id: ThreadID, _ typed: String?) async -> Void)?

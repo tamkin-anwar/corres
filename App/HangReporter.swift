@@ -54,7 +54,9 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         // Only while Corres is in use: pinging the main thread ten times a
         // second in the background kept it awake for nothing.
         #if canImport(UIKit)
-        setActive(MainActor.assumeIsolated { UIApplication.shared.applicationState != .background })
+        // Watching through launch, whatever's in front: the launch is what
+        // the stalls are most wanted for. Paused only once Corres leaves.
+        setActive(true)
         let center = NotificationCenter.default
         center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
             self?.setActive(false)
@@ -63,7 +65,7 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
             self?.setActive(true)
         }
         #else
-        setActive(MainActor.assumeIsolated { NSApplication.shared.isActive })
+        setActive(true)
         let center = NotificationCenter.default
         center.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
             self?.setActive(false)

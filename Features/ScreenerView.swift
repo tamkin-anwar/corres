@@ -92,7 +92,9 @@ struct ScreenerView: View {
                             .pickerStyle(.segmented)
                             .padding(.bottom, 4)
 
-                            Text(MailQuery.holdsNewSenders
+                            // Held back: everyone in Review Everyone, only companies
+                            // in Review Companies (people's mail is already in).
+                            Text(MailQuery.newSenderMode == .reviewEveryone || (MailQuery.newSenderMode == .reviewCompanies && tab == .companies)
                                  ? "Their mail reaches Corres only once you allow them. Blocking hides them quietly, for good. Neither changes your email account."
                                  : "Their mail already shows in Corres. Allow marks them as known; Block hides them quietly, for good. Neither changes your email account.")
                                 .font(.subheadline).foregroundStyle(CorresPalette.secondary)

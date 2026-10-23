@@ -1098,11 +1098,11 @@ struct CorrespondenceList: View {
                             detail: rows.longestWait)
             }
             .buttonStyle(.plain)
-            if senders > 0, let showingScreener {
+            if senders > 0, MailQuery.newSenderMode != .acceptAll, let showingScreener {
                 Hairline(leading: 52)
                 Button { showingScreener.wrappedValue = true } label: {
                     shortcutRow(icon: "checkmark.shield",
-                                title: MailQuery.holdsNewSenders
+                                title: MailQuery.newSenderMode == .reviewEveryone
                                     ? (senders == 1 ? "1 new sender to approve" : "\(senders) new senders to approve")
                                     : (senders == 1 ? "1 new sender to review" : "\(senders) new senders to review"),
                                 detail: nil)

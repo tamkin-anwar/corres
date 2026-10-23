@@ -679,7 +679,7 @@ public actor SwiftDataMailRepository: MailRepository {
                     let youWroteFirst = correspondents.contains(key) || item.isFromAccountOwner
                         || InboxClassifier.isVIP(item.senderEmail)
                     item.senderDecision = isInitialSync || youWroteFirst ? .approved
-                        : InboxClassifier.domainDecision(for: senderEmail) ?? .pending
+                        : InboxClassifier.domainDecision(for: senderEmail) ?? MailQuery.firstEmailDecision
                     knownSenderDecisions[key] = item.senderDecision
                 }
                 if facts.imageTrust.contains(key) { item.imagesTrusted = true }

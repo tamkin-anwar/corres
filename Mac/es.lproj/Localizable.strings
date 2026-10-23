@@ -2315,3 +2315,5 @@
 "A first email from a person comes straight in, marked New. A company's waits in New Senders until you allow it, so newsletters and offers don't arrive unasked. Blocked senders stay hidden." = "El primer correo de una persona llega directamente, marcado como nuevo. El de una empresa espera en Remitentes nuevos hasta que lo permitas, para que no lleguen boletines ni ofertas sin pedirlos. Los remitentes bloqueados siguen ocultos.";
 "Everyone's mail comes straight in, with nothing to review. You can still block anyone from their email, and blocked senders stay hidden." = "Todo el correo llega directamente, sin nada que revisar. Aun así puedes bloquear a cualquiera desde su correo, y los remitentes bloqueados siguen ocultos.";
 "Show Sender Pictures" = "Mostrar fotos de remitentes";
+"Couldn't send" = "No se pudo enviar";
+"“%@” is waiting in Corres. It goes as soon as you're back online, or open Corres to try again." = "“%@” está esperando en Corres. Se enviará en cuanto vuelvas a tener conexión, o abre Corres para intentarlo de nuevo.";

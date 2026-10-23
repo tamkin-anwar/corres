@@ -12,9 +12,10 @@ enum AccountRemoval {
     static func remove(_ email: String, everywhere: Bool, auth: GoogleAuthService, sync: GmailSyncService,
                        store: MailStore, push: PushNotificationService, intelligence: MailIntelligence) async {
         if everywhere { await ServerRules.shared.removeAll(for: email) }
-        // A stale watch subscription would keep the relay pinging for an
-        // account nothing here listens for.
-        await push.disable(account: email)
+        // Gmail's watch is the account's, not this device's: stopping it
+        // would silence new-mail alerts on your other devices too, so only
+        // when the account leaves all of them.
+        if everywhere { await push.disable(account: email) }
         await auth.signOut(email, everywhere: everywhere)
         await forgetHere(email, sync: sync, store: store, intelligence: intelligence)
     }
@@ -35,6 +36,7 @@ enum AccountRemoval {
     static func forgetHere(_ email: String, sync: GmailSyncService, store: MailStore, intelligence: MailIntelligence) async {
         sync.clearCursor(for: email)
         ActionQueue.shared.forget(account: email)
+        Organizer.shared.outbox?.forget(account: email)
         ServerRules.shared.forget(account: email)
         await store.removeAccountData(email)
         intelligence.forget(account: email)

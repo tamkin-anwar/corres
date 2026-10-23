@@ -95,25 +95,27 @@ final class ActionQueue {
         while index < actions.count {
             let action = actions[index]
             guard !waitingAccounts.contains(action.account) else { index += 1; continue }
+            // Found again by id after each wait: the list can change meanwhile
+            // (an account removed drops its changes), and a stale index
+            // would touch the wrong change or none.
+            func position() -> Int? { actions.firstIndex { $0.id == action.id } }
             do {
                 try await Self.run(action, client: client)
-                actions.remove(at: index)
-                save()
+                if let at = position() { actions.remove(at: at); save() }
             } catch where Self.isGone(error) {
                 // Already gone on the server (deleted elsewhere): what this
                 // change wanted is true. Putting it back would undo that.
-                actions.remove(at: index)
-                save()
+                if let at = position() { actions.remove(at: at); save() }
             } catch where Self.isTransient(error) && action.attempts < Self.maxAttempts {
-                actions[index].attempts += 1
+                guard let at = position() else { continue }
+                actions[at].attempts += 1
                 save()
                 waitingAccounts.insert(action.account)
-                nextRetry = min(nextRetry ?? .max, actions[index].attempts)
-                index += 1
+                nextRetry = min(nextRetry ?? .max, actions[at].attempts)
+                index = at + 1
             } catch {
                 Self.log.error("A waiting change was refused: \(String(describing: error), privacy: .public)")
-                actions.remove(at: index)
-                save()
+                if let at = position() { actions.remove(at: at); save() }
                 await onRefused?(action, error)
             }
         }

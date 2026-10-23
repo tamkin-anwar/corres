@@ -2315,3 +2315,5 @@
 "A first email from a person comes straight in, marked New. A company's waits in New Senders until you allow it, so newsletters and offers don't arrive unasked. Blocked senders stay hidden." = "个人发来的首封邮件会直接进来，并标为“新”。公司的邮件会在“新发件人”中等你允许，这样不请自来的简报和优惠就不会出现。已屏蔽的发件人不会显示。";
 "Everyone's mail comes straight in, with nothing to review. You can still block anyone from their email, and blocked senders stay hidden." = "所有邮件都会直接进来，无需审核。你仍可在邮件中屏蔽任何人，已屏蔽的发件人不会显示。";
 "Show Sender Pictures" = "显示发件人图片";
+"Couldn't send" = "无法发送";
+"“%@” is waiting in Corres. It goes as soon as you're back online, or open Corres to try again." = "“%@”正在 Corres 中等待。恢复联网后会立即发送，你也可以打开 Corres 重试。";

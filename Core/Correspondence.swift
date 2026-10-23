@@ -1056,6 +1056,11 @@ public enum NewSenderMode: String, CaseIterable, Sendable {
 public enum MailQuery {
     public nonisolated(unsafe) static var newSenderMode = NewSenderMode.inMail
 
+    /// A first email's sender: waiting for your OK, or simply let in when
+    /// every new sender is (so nothing piles up to review, and choosing a
+    /// Review mode later doesn't hide them all at once).
+    public static var firstEmailDecision: SenderDecision { newSenderMode == .acceptAll ? .approved : .pending }
+
     /// Whether any new sender's mail is held back for review.
     public static var holdsNewSenders: Bool { [.reviewEveryone, .reviewCompanies].contains(newSenderMode) }
 
@@ -1450,7 +1455,13 @@ extension MailQuery {
             guard !missing.isEmpty else { return found.compactMap { $0 } }
             let made = Self.make(missing.map { threads[$0] })
             lock.lock()
-            if entries.count + made.count > Self.limit { entries.removeAll(keepingCapacity: true) }
+            // Past the limit: only conversations no longer searched go (a
+            // removed account's, deleted ones), not the whole copy, which
+            // made every later search build it all again.
+            if entries.count + made.count > Self.limit {
+                let current = Set(threads.map(\.id))
+                entries = entries.filter { current.contains($0.key) }
+            }
             for (index, entry) in zip(missing, made) {
                 found[index] = entry
                 entries[threads[index].id] = entry
@@ -1541,16 +1552,23 @@ public final class MailSearch {
             pending = nil
             return result.matches
         }
-        guard pending != request else { return nil }
+        // The same search on mail that's still changing (a sync landing
+        // every half second): the last results stay up meanwhile, rather
+        // than the whole unsearched list.
+        let provisional = found.flatMap { $0.request.search == request.search && $0.request.attention == request.attention ? $0.matches : nil }
+        guard pending != request else { return provisional }
         pending = request
         Task { [weak self] in
             let result = await Task.detached(priority: .userInitiated) { run() }.value
-            guard let self, self.pending == request else { return }
+            guard let self, let pending = self.pending else { return }
+            // A newer request for the same search: these are kept to show
+            // until it's done, instead of thrown away.
+            guard pending == request || (pending.search == request.search && pending.attention == request.attention) else { return }
             self.found = (request, result.matches, result.ranked)
-            self.pending = nil
+            if pending == request { self.pending = nil }
             onFound()
         }
-        return nil
+        return provisional
     }
 
     /// Top Results (`MailQuery.topResults`) among `shown`, the last

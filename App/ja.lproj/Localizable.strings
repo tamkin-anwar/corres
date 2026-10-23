@@ -3228,3 +3228,5 @@
 "Let Everyone In" = "すべて受け入れる";
 "A first email from a person comes straight in, marked New. A company's waits in New Senders until you allow it, so newsletters and offers don't arrive unasked. Blocked senders stay hidden." = "個人からの最初のメールはそのまま届き、「新規」と表示されます。企業からのメールは許可するまで「新しい差出人」で待つので、頼んでいないニュースレターや広告が届きません。ブロックした差出人は表示されません。";
 "Everyone's mail comes straight in, with nothing to review. You can still block anyone from their email, and blocked senders stay hidden." = "すべてのメールがそのまま届き、確認するものはありません。メールからいつでも差出人をブロックでき、ブロックした差出人は表示されません。";
+"Couldn't send" = "送信できませんでした";
+"“%@” is waiting in Corres. It goes as soon as you're back online, or open Corres to try again." = "「%@」はCorresで待機中です。オンラインに戻るとすぐに送信されます。Corresを開いてもう一度試すこともできます。";
