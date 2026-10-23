@@ -11,6 +11,9 @@ import os
 final class WatchBridge: NSObject {
     static let shared = WatchBridge()
     private var lastSent: WatchLink.Snapshot?
+    /// What the watch face last showed, so its daily budget of wake-ups
+    /// is spent only when the count or the first sender changes.
+    private var lastFace: (count: Int, first: String?)?
     private var pendingUpdate: Task<Void, Never>?
     private static let log = Logger(subsystem: "studio.anwarcreative.corres", category: "watch")
 
@@ -42,10 +45,23 @@ final class WatchBridge: NSObject {
             try WCSession.default.updateApplicationContext([WatchLink.snapshotKey: data])
             lastSent = snapshot
             Self.log.info("Sent the Watch \(snapshot.needsYou.count) in Needs You")
+            updateFace(snapshot, data: data)
         } catch {
             // Not reachable yet; the next change tries again.
             Self.log.error("Couldn't update the Watch: \(String(describing: error), privacy: .public)")
         }
+    }
+
+    /// With Corres on the watch face, a change there goes straight away,
+    /// waking the Watch app (Apple allows about 50 a day).
+    private func updateFace(_ snapshot: WatchLink.Snapshot, data: Data) {
+        let session = WCSession.default
+        let face = (count: snapshot.needsYou.count, first: snapshot.needsYou.first?.sender)
+        guard session.isComplicationEnabled, session.remainingComplicationUserInfoTransfers > 0,
+              lastFace.map({ $0.count != face.count || $0.first != face.first }) ?? true else { return }
+        session.transferCurrentComplicationUserInfo([WatchLink.snapshotKey: data])
+        lastFace = face
+        Self.log.info("Sent the watch face \(face.count)")
     }
 
     static func snapshot(from threads: [Correspondence], now: Date = .now) -> WatchLink.Snapshot {

@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WatchConnectivity
+import WidgetKit
 
 /// The Watch's copy of what the iPhone sent (see `WatchLink`), kept for
 /// when the iPhone is out of reach, and the way back to it.
@@ -18,7 +19,10 @@ final class WatchMailStore: NSObject {
         super.init()
         #if DEBUG
         // Screenshots and checks without an iPhone nearby.
-        if ProcessInfo.processInfo.arguments.contains("-SampleSnapshot") { snapshot = Self.sample }
+        if ProcessInfo.processInfo.arguments.contains("-SampleSnapshot") {
+            snapshot = Self.sample
+            updateFace()
+        }
         #endif
     }
 
@@ -49,15 +53,27 @@ final class WatchMailStore: NSObject {
     }
 
     func apply(_ snapshot: WatchLink.Snapshot) {
+        // A watch-face update and the regular one can carry the same list.
+        guard snapshot.updatedAt >= self.snapshot.updatedAt || !hasHeardFromPhone else { return }
         self.snapshot = snapshot
         done = []
         if let data = WatchLink.encode(snapshot) { UserDefaults.standard.set(data, forKey: Self.savedKey) }
+        updateFace()
+    }
+
+    /// The watch face, drawn again only when what it shows changed.
+    private func updateFace() {
+        let face = WatchFace(needsYou: needsYou.count, waiting: waiting.count,
+                             firstSender: needsYou.first.map { WatchFace.firstName($0.sender) }, updatedAt: snapshot.updatedAt)
+        if face.save() { WidgetCenter.shared.reloadAllTimelines() }
     }
 
     /// Straight to the iPhone when it's near; otherwise queued until it is.
     func send(_ command: WatchLink.Command) {
         switch command {
-        case .handled, .archive: done.insert(command.key)
+        case .handled, .archive:
+            done.insert(command.key)
+            updateFace()
         case .markRead, .reply: break
         }
         guard let data = WatchLink.encode(command) else { return }
@@ -81,6 +97,13 @@ extension WatchMailStore: WCSessionDelegate {
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         guard let snapshot = WatchLink.decode(WatchLink.Snapshot.self, from: applicationContext[WatchLink.snapshotKey] as? Data) else { return }
+        Task { @MainActor in self.apply(snapshot) }
+    }
+
+    /// Sent for the watch face: wakes Corres on the Watch even when it's
+    /// closed, so the count is right when you raise your wrist.
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        guard let snapshot = WatchLink.decode(WatchLink.Snapshot.self, from: userInfo[WatchLink.snapshotKey] as? Data) else { return }
         Task { @MainActor in self.apply(snapshot) }
     }
 }

@@ -213,5 +213,11 @@ final class PeopleDirectory {
         guard let data = try? JSONEncoder().encode(Saved(history: history, backfilled: backfilled, hidden: hidden, version: Self.version)) else { return }
         try? FileManager.default.createDirectory(at: URL.applicationSupportDirectory, withIntermediateDirectories: true)
         try? data.write(to: Self.fileURL, options: [.atomic, .completeFileProtection])
+        // Rebuilt from your mail on any device, so it stays out of iCloud
+        // and computer backups: who you write to isn't kept anywhere else.
+        var url = Self.fileURL
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? url.setResourceValues(values)
     }
 }

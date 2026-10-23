@@ -18,6 +18,8 @@ struct MessageList: NSViewRepresentable {
     var onSwipe: (Correspondence, MacAction) -> Void = { _, _ in }
     /// Scrolled near the end: time to fetch more, where there's more.
     var onReachEnd: () -> Void = {}
+    /// View › Bigger and Smaller.
+    @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
 
     func makeNSView(context: Context) -> NSScrollView {
         let table = MessageTableView()
@@ -53,6 +55,11 @@ struct MessageList: NSViewRepresentable {
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.parent = self
+        // Bigger or Smaller: every row measured and drawn again.
+        if context.coordinator.scale != textScale {
+            context.coordinator.scale = textScale
+            context.coordinator.table?.reloadData()
+        }
         context.coordinator.apply(rows: rows, selection: selection)
     }
 
@@ -62,6 +69,7 @@ struct MessageList: NSViewRepresentable {
     final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
         var parent: MessageList
         weak var table: MessageTableView?
+        var scale = CorresSettings.textScale
         private var rows: [MacRow] = []
         private var applyingSelection = false
 
@@ -130,8 +138,8 @@ struct MessageList: NSViewRepresentable {
 
         func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
             switch rows[row] {
-            case .group: 30
-            case .thread: parent.showsReasons ? 92 : 76
+            case .group: (30 * MacListScale.factor).rounded()
+            case .thread: ((parent.showsReasons ? 92 : 76) * MacListScale.factor).rounded()
             }
         }
 
@@ -236,12 +244,17 @@ final class GroupCellView: NSTableCellView {
     static let identifier = NSUserInterfaceItemIdentifier("group")
     private let label = NSTextField(labelWithString: "")
 
-    var title: String = "" { didSet { label.stringValue = title.uppercased() } }
+    var title: String = "" {
+        didSet {
+            label.stringValue = title.uppercased()
+            label.font = .systemFont(ofSize: MacListScale.size(11), weight: .semibold)
+        }
+    }
 
     init() {
         super.init(frame: .zero)
         identifier = Self.identifier
-        label.font = .systemFont(ofSize: 11, weight: .semibold)
+        label.font = .systemFont(ofSize: MacListScale.size(11), weight: .semibold)
         label.textColor = .tertiaryLabelColor
         label.translatesAutoresizingMaskIntoConstraints = false
         addSubview(label)
@@ -287,10 +300,7 @@ final class ThreadCellView: NSTableCellView {
         detail.lineBreakMode = .byTruncatingTail
         detail.cell?.truncatesLastVisibleLine = true
         time.alignment = .right
-        time.font = .systemFont(ofSize: 11)
-        marks.font = .systemFont(ofSize: 10)
-        subject.font = .systemFont(ofSize: 13)
-        detail.font = .systemFont(ofSize: 12)
+        applyFonts()
         for view in [dot, sender, time, marks, accountDot, subject, detail] {
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
@@ -376,19 +386,27 @@ final class ThreadCellView: NSTableCellView {
         didSet { updateColors() }
     }
 
+    /// At View › Bigger and Smaller's size.
+    private func applyFonts() {
+        time.font = .systemFont(ofSize: MacListScale.size(11))
+        marks.font = .systemFont(ofSize: MacListScale.size(10))
+        detail.font = .systemFont(ofSize: MacListScale.size(12))
+        sender.font = .systemFont(ofSize: MacListScale.size(13), weight: isUnread ? .semibold : .regular)
+        subject.font = .systemFont(ofSize: MacListScale.size(13), weight: isUnread ? .medium : .regular)
+    }
+
     private func updateColors() {
         let selected = backgroundStyle == .emphasized
         let accent = NSColor(named: "corresAccent") ?? .controlAccentColor
         dot.isHidden = !isUnread
         dot.layer?.backgroundColor = (selected ? NSColor.white : accent).cgColor
-        sender.font = .systemFont(ofSize: 13, weight: isUnread ? .semibold : .regular)
-        subject.font = .systemFont(ofSize: 13, weight: isUnread ? .medium : .regular)
+        applyFonts()
         sender.textColor = selected ? .white : .labelColor
         subject.textColor = selected ? .white : .labelColor
         time.textColor = selected ? NSColor.white.withAlphaComponent(0.85) : .secondaryLabelColor
         let markText = NSMutableAttributedString()
         for symbol in symbols {
-            let configuration = NSImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
+            let configuration = NSImage.SymbolConfiguration(pointSize: MacListScale.size(10), weight: .semibold)
                 .applying(.init(paletteColors: [selected ? .white : symbol.color]))
             guard let image = NSImage(systemSymbolName: symbol.name, accessibilityDescription: nil)?
                 .withSymbolConfiguration(configuration) else { continue }
@@ -403,11 +421,11 @@ final class ThreadCellView: NSTableCellView {
             let oneLine = NSMutableParagraphStyle()
             oneLine.lineBreakMode = .byTruncatingTail
             let styled = NSMutableAttributedString(string: lines[0], attributes: [.paragraphStyle: oneLine,
-                .foregroundColor: selected ? NSColor.white : accent, .font: NSFont.systemFont(ofSize: 12, weight: .medium)])
+                .foregroundColor: selected ? NSColor.white : accent, .font: NSFont.systemFont(ofSize: MacListScale.size(12), weight: .medium)])
             if lines.count > 1 {
                 styled.append(NSAttributedString(string: "\n" + lines[1], attributes: [.paragraphStyle: oneLine,
                     .foregroundColor: selected ? NSColor.white.withAlphaComponent(0.8) : NSColor.secondaryLabelColor,
-                    .font: NSFont.systemFont(ofSize: 12)]))
+                    .font: NSFont.systemFont(ofSize: MacListScale.size(12))]))
             }
             detail.attributedStringValue = styled
         } else {
@@ -431,4 +449,11 @@ enum MacDates {
         if calendar.isDate(date, equalTo: now, toGranularity: .year) { return date.formatted(dateFormat) }
         return date.formatted(olderFormat)
     }
+}
+
+/// The list follows View › Bigger and Smaller too, a little more gently
+/// than the email itself, so more fits as it grows.
+enum MacListScale {
+    @MainActor static var factor: CGFloat { 1 + (CGFloat(CorresSettings.textScale) - 1) * 0.75 }
+    @MainActor static func size(_ base: CGFloat) -> CGFloat { (base * factor).rounded() }
 }
