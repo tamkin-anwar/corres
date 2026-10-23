@@ -102,6 +102,11 @@ final class ScheduledSends {
     /// background refresh and from each push that wakes Corres.
     func sendDue(store: MailStore, outbox: OutboxService, now: Date = .now) async {
         adoptShared(now: now)
+        guard items.contains(where: { !$0.heldBecauseReplied && $0.sendAt <= now }) else { keepTime(store: store, outbox: outbox); return }
+        // On a cold launch: the conversation a reply belongs to, and the
+        // account it goes from, both have to be back first.
+        if store.state != .loaded { await store.load() }
+        await outbox.waitForAccounts()
         for item in items where !item.heldBecauseReplied && item.sendAt <= now {
             // Two checks can overlap (a push as Corres opens): whichever
             // takes it off the list first is the one that sends it.

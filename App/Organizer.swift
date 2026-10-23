@@ -65,11 +65,16 @@ final class Organizer {
         }
         let handled = WidgetHandoff.takeHandled()
         guard !handled.isEmpty, let store, let actions else { return }
-        let threads = handled.compactMap { id -> Correspondence? in
-            let parts = id.split(separator: "|", maxSplits: 1).map(String.init)
-            return parts.count == 2 ? store.thread(ThreadID(account: parts[0], providerID: parts[1])) : nil
+        Task {
+            // Opened from the widget with Corres closed: the mail isn't read
+            // yet, and without it every tap would be dropped.
+            if store.state != .loaded { await store.load() }
+            let threads = handled.compactMap { id -> Correspondence? in
+                let parts = id.split(separator: "|", maxSplits: 1).map(String.init)
+                return parts.count == 2 ? store.thread(ThreadID(account: parts[0], providerID: parts[1])) : nil
+            }
+            await actions.setAttention(.handled, for: threads)
         }
-        Task { await actions.setAttention(.handled, for: threads) }
     }
 
     private func organizeNow() async {

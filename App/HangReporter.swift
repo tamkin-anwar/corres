@@ -46,7 +46,12 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         MXMetricManager.shared.add(self)
         // Diagnostics iOS already had waiting from an earlier run.
         didReceive(MXMetricManager.shared.pastDiagnosticPayloads)
-        queue.async { [weak self] in self?.watch() }
+        // Its own thread: the watch never returns, and on `queue` it kept
+        // every report after it from being written.
+        let watcher = Thread { [weak self] in self?.watch() }
+        watcher.name = "studio.anwarcreative.corres.hangwatch"
+        watcher.qualityOfService = .utility
+        watcher.start()
     }
 
     /// Records what the app is doing, so a stall report says "swipe to

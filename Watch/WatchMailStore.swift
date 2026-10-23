@@ -54,7 +54,9 @@ final class WatchMailStore: NSObject {
 
     func apply(_ snapshot: WatchLink.Snapshot) {
         // A watch-face update and the regular one can carry the same list.
-        guard snapshot.updatedAt >= self.snapshot.updatedAt || !hasHeardFromPhone else { return }
+        // Only a newer one: the same one again would bring back what was
+        // just handled here.
+        guard snapshot.updatedAt > self.snapshot.updatedAt || !hasHeardFromPhone else { return }
         self.snapshot = snapshot
         done = []
         if let data = WatchLink.encode(snapshot) { UserDefaults.standard.set(data, forKey: Self.savedKey) }
@@ -63,7 +65,12 @@ final class WatchMailStore: NSObject {
 
     /// The watch face, drawn again only when what it shows changed.
     private func updateFace() {
-        let face = WatchFace(needsYou: needsYou.count, waiting: waiting.count,
+        // The lists stop at 25 and 10; the counts are the whole of each,
+        // less what was handled here since.
+        let handledNeedsYou = snapshot.needsYou.count - needsYou.count
+        let handledWaiting = snapshot.waiting.count - waiting.count
+        let face = WatchFace(needsYou: max(0, (snapshot.needsYouCount ?? snapshot.needsYou.count) - handledNeedsYou),
+                             waiting: max(0, (snapshot.waitingCount ?? snapshot.waiting.count) - handledWaiting),
                              firstSender: needsYou.first.map { WatchFace.firstName($0.sender) }, updatedAt: snapshot.updatedAt)
         if face.save() { WidgetCenter.shared.reloadAllTimelines() }
     }

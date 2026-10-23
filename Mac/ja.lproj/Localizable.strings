@@ -2298,3 +2298,4 @@
 
 "Go to %@" = "%@を開く";
 "this conversation" = "この会話";
+"Its mail is removed from this Mac. It stays in %@." = "このアカウントのメールはこのMacから削除されます。%@には残ります。";

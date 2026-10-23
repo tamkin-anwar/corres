@@ -63,6 +63,10 @@ final class CloudSync {
     private static let keepFor: TimeInterval = 90 * 86_400
 
     func start(store: MailStore) {
+        #if DEBUG
+        // Screenshot and test runs: nothing from sample mail reaches iCloud.
+        if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly") { return }
+        #endif
         self.store = store
         NotificationCenter.default.addObserver(forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
                                                object: cloud, queue: .main) { _ in
@@ -113,9 +117,13 @@ final class CloudSync {
 
     private func pushSettings() {
         guard !isApplying else { return }
+        // Only what's saved on this device: `object(forKey:)` also returns a
+        // value given at launch (`-corres.tabsAtBottom YES` in a screenshot
+        // run), which would otherwise go to every device.
+        let saved = Bundle.main.bundleIdentifier.flatMap { defaults.persistentDomain(forName: $0) } ?? [:]
         var changed = false
         for key in Self.syncedSettings {
-            let local = defaults.object(forKey: key)
+            let local = saved[key]
             let remote = cloud.object(forKey: "setting." + key)
             if let local, !Self.same(local, remote) {
                 cloud.set(local, forKey: "setting." + key)

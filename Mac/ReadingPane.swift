@@ -397,8 +397,10 @@ struct ReadingPane: View {
         Task {
             let source = services.store.thread(id) ?? thread
             let drafted = await ReplyDrafting.draft(intent, replyingTo: source, with: intelligence)
+            // Moved on to another email meanwhile: opening it cleared this,
+            // and a reply to the one left behind would be a surprise.
+            guard draftingIntent == intent else { return }
             draftingIntent = nil
-            guard thread.id == id else { return }
             openReply(prefill: drafted ?? "")
         }
     }
@@ -466,7 +468,7 @@ struct ReadingPane: View {
 
     // MARK: Images and attachments
 
-    private var blockedImages: Int { thread.htmlBody.map(HTMLMessageBody.remoteImageCount(in:)) ?? 0 }
+    private var blockedImages: Int { thread.htmlBody.map { HTMLMessageBody.analysis(of: $0).remoteImages } ?? 0 }
     private var imagesAllowed: Bool { showImages || thread.imagesTrusted || CorresSettings.remoteImages == .always }
 
     @State private var unsubscribing = false

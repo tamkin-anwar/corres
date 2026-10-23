@@ -439,6 +439,12 @@ struct GmailAPIClient {
     private func accessToken(for account: String) async throws -> String {
         do {
             return try await GoogleTokenProvider.shared.accessToken(for: account)
+        } catch let error as URLError {
+            // Offline is not signed out: sends retry, and sync doesn't ask
+            // you to sign in again.
+            throw error
+        } catch GoogleTokenProvider.TokenError.unavailable(let statusCode) {
+            throw ClientError.badResponse(statusCode: statusCode)
         } catch {
             throw ClientError.notSignedIn
         }

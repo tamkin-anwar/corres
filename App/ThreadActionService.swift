@@ -124,7 +124,7 @@ final class ThreadActionService {
         // the thread still shows how it got where it was.
         let lessonsBefore = SenderLessons.all
         let learned = moving.compactMap { SenderLessons.learn(from: $0, was: $0.attention, now: attention) }
-        for (id, _) in before { await store.update(id, to: attention) }
+        await store.asOneChange { for (id, _) in before { await store.update(id, to: attention) } }
         // "No action needed" on a sender's mail the model brought in takes
         // back the rest of what it brought in from them, too.
         var alsoQuieted: [(ThreadID, String)] = []
@@ -200,7 +200,7 @@ final class ThreadActionService {
     /// email marks it read through `setUnread` directly, with no Undo.)
     func toggleUnread(_ isUnread: Bool, for threads: [Correspondence]) async {
         let before = threads.map { ($0, $0.isUnread) }
-        for thread in threads { await setUnread(isUnread, for: thread) }
+        await store.asOneChange { for thread in threads { await setUnread(isUnread, for: thread) } }
         let n = threads.count
         let said = switch (isUnread, n == 1) {
         case (true, true): String(localized: "Marked as unread")
@@ -215,7 +215,7 @@ final class ThreadActionService {
 
     func toggleFlagged(_ isFlagged: Bool, for threads: [Correspondence]) async {
         let before = threads.map { ($0, $0.isFlagged) }
-        for thread in threads { await setFlagged(isFlagged, for: thread) }
+        await store.asOneChange { for thread in threads { await setFlagged(isFlagged, for: thread) } }
         offerUndo(isFlagged ? String(localized: "Flagged") : String(localized: "Unflagged"), systemImage: isFlagged ? "flag" : "flag.slash") { [weak self] in
             for (thread, was) in before { await self?.setFlagged(was, for: thread) }
         }

@@ -80,8 +80,23 @@ final class MailStore {
 
     /// Several changes the lists see as one, so they rebuild once.
     private func asOneChange(_ changes: () -> Void) {
+        let isOutermost = !holdingRevision
         holdingRevision = true
         changes()
+        guard isOutermost else { return }
+        holdingRevision = false
+        revision &+= 1
+        contentRevision &+= 1
+    }
+
+    /// The same for a run of saved changes (Select All, then Mark as Read):
+    /// the lists are worked out again once at the end, not after each of
+    /// hundreds.
+    func asOneChange(_ changes: () async -> Void) async {
+        let isOutermost = !holdingRevision
+        holdingRevision = true
+        await changes()
+        guard isOutermost else { return }
         holdingRevision = false
         revision &+= 1
         contentRevision &+= 1
@@ -806,7 +821,9 @@ final class MailStore {
         defer { pending.remove(id) }
         do {
             let updated = try await operation()
-            if let index = allThreads.firstIndex(where: { $0.id == updated.id }) {
+            if let index = positions[updated.id], allThreads.indices.contains(index), allThreads[index].id == updated.id {
+                allThreads[index] = updated
+            } else if let index = allThreads.firstIndex(where: { $0.id == updated.id }) {
                 allThreads[index] = updated
             }
         } catch RepositoryError.threadNotFound {

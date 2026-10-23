@@ -60,8 +60,10 @@ struct CorresApp: App {
                 // instead of each view needing its own triage call. Unawaited
                 // by the refresh itself, so the pull-to-refresh spinner ends
                 // when mail arrives, not when the on-device model finishes.
-                .onChange(of: appDelegate.sync.lastCompletedSync) {
-                    Task { await FollowUps.shared.check(store: appDelegate.store) }
+                // Only when a sync brought or changed something: each of these
+                // goes over the whole mailbox, and the 20-second check
+                // usually finds nothing.
+                .onChange(of: appDelegate.sync.lastChange) {
                     // Mail that just arrived may have a move or snooze
                     // waiting for it from your other devices.
                     Task { await CloudSync.shared.apply() }
@@ -76,6 +78,9 @@ struct CorresApp: App {
                         await appDelegate.store.refresh()
                         await appDelegate.semanticTriageService.triageIfNeeded(store: appDelegate.store)
                     }
+                }
+                .onChange(of: appDelegate.sync.lastCompletedSync) {
+                    Task { await FollowUps.shared.check(store: appDelegate.store) }
                     // Network-bound, independent of the on-device model, so
                     // it runs alongside triage rather than after it.
                     // Then ready summaries for what's likely to be opened

@@ -32,6 +32,11 @@ final class GmailSyncService {
     /// push paths that used to be the only ones calling it — new mail from
     /// a manual refresh otherwise sat untriaged until the next cold launch.
     private(set) var lastCompletedSync: Date?
+    /// When a pass last brought something in or changed something. The
+    /// work over the whole mailbox (iCloud marks, people, triage) follows
+    /// this, not every 20-second check that found nothing.
+    private(set) var lastChange: Date?
+    private var changedAccounts: Set<String> = []
     var errorMessage: String?
 
     /// Each account's last good sync, and what's wrong when it isn't
@@ -209,7 +214,10 @@ final class GmailSyncService {
             // Removed while this ran: whatever it saved goes, and the flag
             // doesn't outlive it to trip up the account added back later.
             if self.retired.remove(account) != nil { self.dropCursor(for: account) }
-            if succeeded { self.lastCompletedSync = .now }
+            if succeeded {
+                if self.changedAccounts.remove(account) != nil { self.lastChange = .now }
+                self.lastCompletedSync = .now
+            }
             return succeeded
         }
         running[account] = task
@@ -262,6 +270,10 @@ final class GmailSyncService {
             // moved past the point where the ordinary sync path would ever
             // offer them again (see `GmailAPIClient.SyncPlan`).
             let previouslyMissed = missedMessageIDs(for: account)
+            if isFullListing || !plan.messageIDs.isEmpty || !plan.restoredMessageIDs.isEmpty
+                || !plan.remoteChanges.isEmpty || !previouslyMissed.isEmpty {
+                changedAccounts.insert(account)
+            }
             if !previouslyMissed.isEmpty {
                 if let retried = try? await client.fetchMessages(ids: previouslyMissed, account: account) {
                     try await repository.upsert(retried.items, isInitialSync: isFullListing)

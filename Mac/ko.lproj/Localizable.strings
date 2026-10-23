@@ -2298,3 +2298,4 @@
 
 "Go to %@" = "%@(으)로 이동하기";
 "this conversation" = "이 대화";
+"Its mail is removed from this Mac. It stays in %@." = "이 계정의 메일이 이 Mac에서 제거됩니다. %@에는 남아 있습니다.";

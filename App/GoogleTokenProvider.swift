@@ -21,7 +21,11 @@ import Foundation
 actor GoogleTokenProvider {
     static let shared = GoogleTokenProvider()
 
-    enum TokenError: Error { case noRefreshToken, noClientID, refreshFailed }
+    enum TokenError: Error {
+        case noRefreshToken, noClientID, refreshFailed
+        /// Google was busy or down (429, 5xx): try again, still signed in.
+        case unavailable(statusCode: Int)
+    }
 
     private struct CachedToken { let value: String; let expiresAt: Date }
     private var cache: [String: CachedToken] = [:]
@@ -74,6 +78,8 @@ actor GoogleTokenProvider {
             .data(using: .utf8)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode else {
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            if status == 429 || (500...599).contains(status) { throw TokenError.unavailable(statusCode: status) }
             throw TokenError.refreshFailed
         }
         let decoded = try JSONDecoder().decode(TokenResponse.self, from: data)

@@ -2298,3 +2298,4 @@
 
 "Go to %@" = "前往 %@";
 "this conversation" = "此对话";
+"Its mail is removed from this Mac. It stays in %@." = "此账户的邮件将从这台Mac上移除，但仍保留在 %@ 中。";

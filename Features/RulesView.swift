@@ -240,11 +240,13 @@ extension RuleEditor {
 }
 
 extension MailRule {
-    /// Whether any part of the rule is something Gmail or Outlook can do.
-    var runsInService: Bool {
+    /// Whether any part of the rule is something a connected Gmail or
+    /// Outlook account can do.
+    @MainActor var runsInService: Bool {
         var probe = self
         probe.isEnabled = true
-        return ServerRuleSpec.gmail(for: probe) != nil || ServerRuleSpec.outlook(for: probe) != nil
+        return (ServerRules.hasGmail && ServerRuleSpec.gmail(for: probe) != nil)
+            || (ServerRules.hasOutlook && ServerRuleSpec.outlook(for: probe) != nil)
     }
 }
 

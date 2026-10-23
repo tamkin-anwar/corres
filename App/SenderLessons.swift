@@ -69,8 +69,18 @@ enum SenderLessons {
         }
         set {
             cache = newValue
+            byEmail = nil
             UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: lessonsKey)
         }
+    }
+
+    /// `all` by sender: looked up for every thread in every tab.
+    private static var byEmail: [String: [Lesson]]?
+    private static var lessonsByEmail: [String: [Lesson]] {
+        if let byEmail { return byEmail }
+        let grouped = Dictionary(grouping: all, by: \.email)
+        byEmail = grouped
+        return grouped
     }
 
     /// The lesson about this thread: its sender and its kind of mail; a
@@ -78,8 +88,9 @@ enum SenderLessons {
     /// Where mail goes is a rule you made, so it holds with Learn from My
     /// Changes off; that setting is about what Corres works out itself.
     private static func lesson(for thread: Correspondence, where wanted: (Lesson) -> Bool, always: Bool = false) -> Lesson? {
-        guard isEnabled || always, let email = thread.senderEmail?.lowercased() else { return nil }
-        let theirs = all.filter { $0.email == email && wanted($0) }
+        guard always || isEnabled, let email = thread.senderEmail?.lowercased(),
+              let lessons = lessonsByEmail[email] else { return nil }
+        let theirs = lessons.filter(wanted)
         guard !theirs.isEmpty else { return nil }
         // Working out the kind of email reads its text; only for senders
         // with a lesson.

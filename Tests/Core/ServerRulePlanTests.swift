@@ -49,4 +49,19 @@ struct ServerRulePlanTests {
         #expect(Plan.gmailKey(query: "from:a", add: ["STARRED", "CATEGORY_UPDATES"], remove: ["UNREAD"])
                 == Plan.gmailKey(query: "from:a", add: ["CATEGORY_UPDATES", "STARRED"], remove: ["UNREAD"]))
     }
+
+    @Test func oneKeptForAnotherRuleIsNotTakenOver() {
+        // a and b are the same filter: b must get its own.
+        let wanted = [Plan.Wanted(ruleID: "a", signature: "s1", keys: ["k1"]), Plan.Wanted(ruleID: "b", signature: "s1", keys: ["k1"])]
+        let kept = ["a": Plan.Entry(id: "f1", signature: "s1")]
+        let existing = [Plan.Existing(id: "f1", key: "k1")]
+        #expect(Plan.additions(wanted: wanted, kept: kept, existing: existing) == [.create(ruleID: "b", signature: "s1")])
+    }
+
+    @Test func sharedFilterIsForgottenNotDeleted() {
+        // An older ledger where a and b share f1: deleting a keeps f1 for b.
+        let kept = ["a": Plan.Entry(id: "f1", signature: "s1"), "b": Plan.Entry(id: "f1", signature: "s1")]
+        let wanted = [Plan.Wanted(ruleID: "b", signature: "s1", keys: [])]
+        #expect(Plan.removals(wanted: wanted, kept: kept) == [.forget(ruleID: "a")])
+    }
 }

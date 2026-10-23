@@ -366,6 +366,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     /// Awaited to completion so iOS keeps the app alive until Gmail has it.
     private func handleNotificationAction(_ action: String, account: String, providerID: String, typed: String? = nil) async {
         if store.state != .loaded { await store.load() }
+        // Archive and reply need the account back, or they're turned away.
+        await auth.waitUntilRestored()
         guard let thread = store.threads.first(where: { $0.id == ThreadID(account: account, providerID: providerID) }) else { return }
         switch action {
         case PushNotificationService.archiveAction:

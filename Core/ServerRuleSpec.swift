@@ -34,6 +34,14 @@ public enum ServerRuleSpec {
         /// Shown in Outlook's rules list, and how Corres knows its own.
         /// The same in every language, so every device recognizes it.
         public var displayName: String { "Corres · \(condition.replacingOccurrences(of: "Contains", with: "")) \(phrase)" }
+
+        /// How a copy already in Outlook is recognized: the name says what
+        /// it looks for, the actions what it does.
+        public var key: String { Self.key(displayName: displayName, markAsRead: markAsRead, archive: archive) }
+
+        public static func key(displayName: String, markAsRead: Bool, archive: Bool) -> String {
+            "\(displayName)|\(markAsRead)|\(archive)"
+        }
     }
 
     public static func words(_ rule: MailRule) -> [String] {
@@ -63,7 +71,11 @@ public enum ServerRuleSpec {
             // Corres's To includes Cc.
             case .to: "{to:\(term) cc:\(term)}"
             case .subject: "subject:\(term)"
-            case .anywhere: term
+            // A bare word in Gmail also matches To and Cc, which Corres's
+            // Anywhere doesn't look at: "acme" would catch everything sent
+            // to you@acme.com. Sender and subject only; Corres itself still
+            // checks the body.
+            case .anywhere: "{from:\(term) subject:\(term)}"
             }
         }.joined(separator: " ")
     }
@@ -72,7 +84,10 @@ public enum ServerRuleSpec {
     /// Gmail reads it as text, not as search syntax.
     static func quoted(_ word: String) -> String {
         let plain = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: ".@_-+'"))
-        if word.unicodeScalars.allSatisfy(plain.contains) { return word }
+        // A leading - or + and the words OR, AND and AROUND are search
+        // syntax even when every character is plain.
+        let isSyntax = word.hasPrefix("-") || word.hasPrefix("+") || ["OR", "AND", "AROUND"].contains(word)
+        if !isSyntax, word.unicodeScalars.allSatisfy(plain.contains) { return word }
         return "\"" + word.replacingOccurrences(of: "\"", with: "") + "\""
     }
 

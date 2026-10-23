@@ -7,7 +7,13 @@ import Foundation
 public enum Scheduling {
     /// Whether the email asks you for a time to meet or talk.
     public static func asksForTime(_ text: String) -> Bool {
-        let lower = text.lowercased()
+        // The opening is where an ask is, not the quoted history below; and
+        // this is checked each time a reading view is drawn.
+        String(text.prefix(4_000)).patternRange(askPattern, caseInsensitive: true) != nil
+    }
+
+    /// One pattern, compiled once (`PatternCache`).
+    private static let askPattern: String = {
         let patterns = [
             #"when (are|would) you (be )?(free|available)"#,
             #"(what|which) (time|day|times|days)s? (would |might )?(work|suit|suits|works) (for|best for) you"#,
@@ -18,8 +24,8 @@ public enum Scheduling {
             #"(free|available) (to|for) (a )?(chat|call|meet|talk|catch up|coffee)"#,
             #"let me know (when|what time) (you're|you are) (free|available)"#,
         ]
-        return patterns.contains { lower.range(of: $0, options: .regularExpression) != nil }
-    }
+        return patterns.map { "(?:\($0))" }.joined(separator: "|")
+    }()
 
     public struct Slot: Equatable, Sendable {
         public let start: Date

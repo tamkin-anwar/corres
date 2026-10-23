@@ -36,7 +36,8 @@ enum MacTextSize {
     /// ⌘= is ⌘+ without Shift on most keyboards, as in Safari.
     static func installEqualsShortcut() {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+            // Caps Lock and the keypad's = don't count as other modifiers.
+            guard event.modifierFlags.intersection([.command, .shift, .option, .control]) == .command,
                   event.charactersIgnoringModifiers == "=" else { return event }
             step(+1)
             return nil

@@ -39,7 +39,8 @@ final class WatchBridge: NSObject {
     }
 
     private func send(_ snapshot: WatchLink.Snapshot) {
-        guard snapshot.needsYou != lastSent?.needsYou || snapshot.waiting != lastSent?.waiting,
+        guard snapshot.needsYou != lastSent?.needsYou || snapshot.waiting != lastSent?.waiting
+                || snapshot.needsYouCount != lastSent?.needsYouCount || snapshot.waitingCount != lastSent?.waitingCount,
               let data = WatchLink.encode(snapshot) else { return }
         do {
             try WCSession.default.updateApplicationContext([WatchLink.snapshotKey: data])
@@ -56,7 +57,7 @@ final class WatchBridge: NSObject {
     /// waking the Watch app (Apple allows about 50 a day).
     private func updateFace(_ snapshot: WatchLink.Snapshot, data: Data) {
         let session = WCSession.default
-        let face = (count: snapshot.needsYou.count, first: snapshot.needsYou.first?.sender)
+        let face = (count: snapshot.needsYouCount ?? snapshot.needsYou.count, first: snapshot.needsYou.first?.sender)
         guard session.isComplicationEnabled, session.remainingComplicationUserInfoTransfers > 0,
               lastFace.map({ $0.count != face.count || $0.first != face.first }) ?? true else { return }
         session.transferCurrentComplicationUserInfo([WatchLink.snapshotKey: data])
@@ -71,17 +72,22 @@ final class WatchBridge: NSObject {
                                   subject: thread.subject, reason: thread.displayReason,
                                   preview: String(words.prefix(600)), receivedAt: thread.receivedAt, isUnread: thread.isUnread)
         }
-        let needsYou = MailQuery.prioritized(threads, attention: .needsYou).prefix(25).map(mail)
-        let waiting = MailQuery.prioritized(threads, attention: .waiting).prefix(10).map(mail)
-        return WatchLink.Snapshot(needsYou: Array(needsYou), waiting: Array(waiting),
-                                  isSample: threads.allSatisfy { $0.id.account == "sample" }, updatedAt: now)
+        let allNeedsYou = MailQuery.prioritized(threads, attention: .needsYou)
+        let allWaiting = MailQuery.prioritized(threads, attention: .waiting)
+        return WatchLink.Snapshot(needsYou: allNeedsYou.prefix(25).map(mail), waiting: allWaiting.prefix(10).map(mail),
+                                  isSample: threads.allSatisfy { $0.id.account == "sample" }, updatedAt: now,
+                                  needsYouCount: allNeedsYou.count, waitingCount: allWaiting.count)
     }
 
     /// What the Watch asked for.
     func perform(_ command: WatchLink.Command) async {
         let parts = command.key.split(separator: "|", maxSplits: 1).map(String.init)
-        guard parts.count == 2, let store = Organizer.shared.store, let actions = Organizer.shared.actions,
-              let thread = store.thread(ThreadID(account: parts[0], providerID: parts[1])) else { return }
+        guard parts.count == 2, let store = Organizer.shared.store, let actions = Organizer.shared.actions else { return }
+        // Delivered as Corres launches: mail and accounts first, or the
+        // command (and a reply's text) would be dropped.
+        if store.state != .loaded { await store.load() }
+        await Organizer.shared.outbox?.waitForAccounts()
+        guard let thread = store.thread(ThreadID(account: parts[0], providerID: parts[1])) else { return }
         switch command {
         case .handled:
             await actions.setAttention(.handled, for: thread)
@@ -128,6 +134,14 @@ extension WatchBridge: WCSessionDelegate {
         let command = WatchLink.decode(WatchLink.Command.self, from: message[WatchLink.commandKey] as? Data)
         // Received; the Watch has already shown it done.
         replyHandler(["received": command != nil])
+        Task { @MainActor in
+            if let command { await self.perform(command) }
+        }
+    }
+
+    /// Sent without asking for a reply (as the Watch does).
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        let command = WatchLink.decode(WatchLink.Command.self, from: message[WatchLink.commandKey] as? Data)
         Task { @MainActor in
             if let command { await self.perform(command) }
         }

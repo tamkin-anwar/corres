@@ -181,10 +181,17 @@ struct CorresShell: View {
         // while it's on; turning the Focus off brings every account back.
         .onReceive(NotificationCenter.default.publisher(for: CorresFocusFilter.didChange)) { _ in applyFocusFilter() }
         .onAppear { applyFocusFilter(); watchICloud() }
-        .onChange(of: auth.accounts) { watchICloud() }
+        .onChange(of: auth.accounts) {
+            watchICloud()
+            // A new account gets the rules set to run in your accounts.
+            ServerRules.shared.schedule()
+        }
         .onChange(of: scenePhase) { _, phase in
             // Back from a Control Center button or a widget's Handled.
-            if phase == .active { Organizer.shared.applyWidgetHandoffs() }
+            if phase == .active {
+                Organizer.shared.applyWidgetHandoffs()
+                ServerRules.shared.retryIfFailed()
+            }
             // Leaving Corres. Not on a glance at Notification Center or
             // Control Center (`.inactive`), which used to end Undo early.
             if phase == .background {
@@ -335,7 +342,9 @@ struct CorresShell: View {
                 // iCloud too: its live connection watches only the Inbox,
                 // and a connection that quietly dropped would miss changes.
                 let accounts = auth.accounts.map(\.email)
-                if !accounts.isEmpty, await sync.syncAll(accounts: accounts) { await store.refresh() }
+                let changeBefore = sync.lastChange
+                // The lists are read again only when something came in.
+                if !accounts.isEmpty, await sync.syncAll(accounts: accounts), sync.lastChange != changeBefore { await store.refresh() }
                 // Each check asks only what changed (a few small requests),
                 // so reading, archiving or deleting in Gmail, Outlook or
                 // Mail shows here within seconds, not a minute.

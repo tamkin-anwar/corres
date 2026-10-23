@@ -90,6 +90,7 @@ struct MacMainView: View {
             NSApplication.shared.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
         }
         .onChange(of: services.sync.lastCompletedSync) { services.afterSync() }
+        .onChange(of: services.sync.lastChange) { services.afterChange() }
         .onChange(of: store.revision, initial: true) {
             SpotlightIndex.shared.scheduleUpdate { [store] in store.searchableThreads }
             // The desktop widgets show what's on this Mac.

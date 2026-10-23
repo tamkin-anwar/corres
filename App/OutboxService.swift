@@ -270,6 +270,8 @@ final class OutboxService {
         Task { try? await repository.removeOutboxEntry(id: id) }
     }
 
+    func waitForAccounts() async { await auth.waitUntilRestored() }
+
     func retryFailed() {
         guard let failed else { return }
         self.failed = nil
@@ -291,8 +293,23 @@ final class OutboxService {
             queuedDraft = nil
             queuedThread = nil
         }
+        // A cold launch (a scheduled send, a Watch reply) can get here
+        // before the accounts are back.
+        await auth.waitUntilRestored()
         var realThreadID: ThreadID?
-        if shouldSendViaGmail(thread: thread), let account = resolveSendingAccount(draft: draft, thread: thread) {
+        // From a real account: it goes out or stays as a failed send, never
+        // recorded as sent on this device alone.
+        let isReal = (draft.fromAccount ?? draft.threadID?.account).map { $0 != Self.sampleAccount } ?? false
+        let sendingAccount = shouldSendViaGmail(thread: thread) ? resolveSendingAccount(draft: draft, thread: thread) : nil
+        if isReal, sendingAccount == nil {
+            Logger(subsystem: "studio.anwarcreative.corres", category: "outbox")
+                .error("Send failed: no connected account to send from")
+            failed = FailedSend(id: id, draft: draft)
+            Assistive.announce(String(localized: "Couldn't send \u{201C}\(draft.subject)\u{201D}. Retry or Discard."))
+            try? await repository.saveOutboxEntry(OutboxRecord(id: id, draft: draft, status: .failed))
+            return
+        }
+        if let account = sendingAccount {
             do {
                 if checkForExistingSendFirst,
                    let existing = try? await client.findMessage(rfc822MessageID: Self.rfc822MessageID(for: id), account: account) {

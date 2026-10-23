@@ -15,7 +15,14 @@ struct ServerRuleSpecTests {
     @Test func gmailEveryWordMustAppear() {
         #expect(ServerRuleSpec.gmailQuery(field: .subject, words: ["weekly", "digest"]) == "subject:weekly subject:digest")
         #expect(ServerRuleSpec.gmailQuery(field: .to, words: ["team@x.com"]) == "{to:team@x.com cc:team@x.com}")
-        #expect(ServerRuleSpec.gmailQuery(field: .anywhere, words: ["(urgent)"]) == "\"(urgent)\"")
+        #expect(ServerRuleSpec.gmailQuery(field: .anywhere, words: ["(urgent)"]) == "{from:\"(urgent)\" subject:\"(urgent)\"}")
+    }
+
+    @Test func gmailSearchSyntaxIsQuoted() {
+        #expect(ServerRuleSpec.quoted("-draft") == "\"-draft\"")
+        #expect(ServerRuleSpec.quoted("OR") == "\"OR\"")
+        #expect(ServerRuleSpec.quoted("or") == "or")
+        #expect(ServerRuleSpec.quoted("news-letter") == "news-letter")
     }
 
     @Test func needsYouOnlyStaysInCorres() {

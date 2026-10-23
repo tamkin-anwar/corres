@@ -1028,11 +1028,17 @@ extension OutlookClient {
     struct MessageRule: Decodable, Sendable {
         let id: String
         let displayName: String?
+        let actions: Actions?
+
+        struct Actions: Decodable, Sendable {
+            let markAsRead: Bool?
+            let moveToFolder: String?
+        }
     }
 
     /// The account's inbox rules (Settings › Mail › Rules in Outlook).
     func messageRules(account: String) async throws -> [MessageRule] {
-        let page: GraphPage<MessageRule> = try await getJSON("\(Self.base)/me/mailFolders/inbox/messageRules?$select=id,displayName", account: account)
+        let page: GraphPage<MessageRule> = try await getJSON("\(Self.base)/me/mailFolders/inbox/messageRules?$select=id,displayName,actions", account: account)
         return page.value
     }
 

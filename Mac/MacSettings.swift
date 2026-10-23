@@ -116,14 +116,19 @@ private struct MacAccountsSettings: View {
         .confirmationDialog("Remove \(removing ?? "")?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } })) {
             Button("Remove", role: .destructive) {
                 guard let email = removing else { return }
+                // As on iPhone: its sync position goes too, or adding it back
+                // would start from where it left off with no mail.
+                services.sync.clearCursor(for: email)
                 Task {
+                    await services.pushService.disable(account: email)
                     await auth.signOut(email)
                     await services.store.removeAccountData(email)
+                    services.intelligence.forget(account: email)
                     services.accountsChanged()
                 }
             }
         } message: {
-            Text("It's removed from Corres on all your devices. Nothing is deleted from the account itself.")
+            Text("Its mail is removed from this Mac. It stays in \(MailAccounts.serviceTitle(for: removing ?? "")).")
         }
     }
 }

@@ -49,8 +49,16 @@ final class ServerRules {
         pending = Task {
             try? await Task.sleep(for: .seconds(2))
             guard !Task.isCancelled else { return }
-            await update()
+            // Apart from `pending`, so a later edit cancels only the wait,
+            // never an update halfway through its calls.
+            Task { await self.update() }
         }
+    }
+
+    /// When Corres comes back: tries again for accounts whose last update
+    /// failed (offline, or the service was busy).
+    func retryIfFailed() {
+        if !failedAccounts.isEmpty { schedule() }
     }
 
     /// Whether any connected account can run rules itself.
@@ -66,6 +74,10 @@ final class ServerRules {
         case (false, true): return String(localized: "Outlook")
         default: return String(localized: "Gmail")
         }
+    }
+
+    static var hasGmail: Bool {
+        capableAccounts(shared.auth?.accounts.map(\.email) ?? []).contains { MailAccounts.provider(for: $0) == .google }
     }
 
     static var hasOutlook: Bool {
@@ -132,9 +144,16 @@ final class ServerRules {
             ServerRulePlan.Wanted(ruleID: ruleID, signature: ServerRuleSpec.signature(spec),
                                   keys: [Self.key(spec), Self.key(spec.withoutCategory)])
         }
-        for case let .remove(ruleID, id) in ServerRulePlan.removals(wanted: wanted, kept: kept(account)) {
-            try await gmail.deleteFilter(id: id, account: account)
-            ledger[ruleID]?[account] = nil
+        for step in ServerRulePlan.removals(wanted: wanted, kept: kept(account)) {
+            switch step {
+            case .remove(let ruleID, let id):
+                try await gmail.deleteFilter(id: id, account: account)
+                ledger[ruleID]?[account] = nil
+            case .forget(let ruleID):
+                ledger[ruleID]?[account] = nil
+            case .adopt, .create:
+                break
+            }
         }
         guard !ServerRulePlan.additions(wanted: wanted, kept: kept(account), existing: []).isEmpty else { return }
         let existing = try await gmail.filters(account: account).compactMap { filter in
@@ -150,14 +169,15 @@ final class ServerRules {
                 let id: String
                 do {
                     id = try await create(spec, account)
-                } catch {
+                } catch GmailAPIClient.ClientError.badResponse(statusCode: 400) {
                     // Gmail may not let a filter choose a tab; the rest still goes.
+                    // Only on that refusal: offline or busy, it's tried again later.
                     let fallback = spec.withoutCategory
-                    guard fallback != spec, fallback.hasAction else { throw error }
+                    guard fallback != spec, fallback.hasAction else { throw GmailAPIClient.ClientError.badResponse(statusCode: 400) }
                     id = try await create(fallback, account)
                 }
                 ledger[ruleID, default: [:]][account] = Entry(id: id, signature: signature)
-            case .remove:
+            case .remove, .forget:
                 break
             }
         }
@@ -177,15 +197,26 @@ final class ServerRules {
         var specs: [String: ServerRuleSpec.Outlook] = [:]
         for rule in rules { if let spec = ServerRuleSpec.outlook(for: rule) { specs[rule.id.uuidString] = spec } }
         let wanted = specs.sorted { $0.key < $1.key }.map { ruleID, spec in
-            ServerRulePlan.Wanted(ruleID: ruleID, signature: ServerRuleSpec.signature(spec), keys: [spec.displayName])
+            ServerRulePlan.Wanted(ruleID: ruleID, signature: ServerRuleSpec.signature(spec), keys: [spec.key])
         }
-        for case let .remove(ruleID, id) in ServerRulePlan.removals(wanted: wanted, kept: kept(account)) {
-            try await outlook.deleteMessageRule(id: id, account: account)
-            ledger[ruleID]?[account] = nil
+        for step in ServerRulePlan.removals(wanted: wanted, kept: kept(account)) {
+            switch step {
+            case .remove(let ruleID, let id):
+                try await outlook.deleteMessageRule(id: id, account: account)
+                ledger[ruleID]?[account] = nil
+            case .forget(let ruleID):
+                ledger[ruleID]?[account] = nil
+            case .adopt, .create:
+                break
+            }
         }
         guard !ServerRulePlan.additions(wanted: wanted, kept: kept(account), existing: []).isEmpty else { return }
         let rulesThere = try await outlook.messageRules(account: account)
-        let existing = rulesThere.map { ServerRulePlan.Existing(id: $0.id, key: $0.displayName ?? "") }
+        let existing = rulesThere.map { rule in
+            ServerRulePlan.Existing(id: rule.id, key: ServerRuleSpec.Outlook.key(displayName: rule.displayName ?? "",
+                                                                                markAsRead: rule.actions?.markAsRead == true,
+                                                                                archive: rule.actions?.moveToFolder != nil))
+        }
         var count = rulesThere.count
         for step in ServerRulePlan.additions(wanted: wanted, kept: kept(account), existing: existing) {
             switch step {
@@ -198,7 +229,7 @@ final class ServerRules {
                                                              markAsRead: spec.markAsRead, archive: spec.archive,
                                                              sequence: count, account: account)
                 ledger[ruleID, default: [:]][account] = Entry(id: id, signature: signature)
-            case .remove:
+            case .remove, .forget:
                 break
             }
         }

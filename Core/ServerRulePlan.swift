@@ -32,6 +32,9 @@ public enum ServerRulePlan {
     public enum Step: Equatable, Sendable {
         /// Out of date, or its Corres rule is gone or off.
         case remove(ruleID: String, id: String)
+        /// Out of date, but another rule still uses the same one: kept
+        /// in the account, dropped from this rule.
+        case forget(ruleID: String)
         /// Made already, by another device: kept, not made twice.
         case adopt(ruleID: String, id: String, signature: String)
         case create(ruleID: String, signature: String)
@@ -40,8 +43,12 @@ public enum ServerRulePlan {
     /// What's kept but no longer matches what's wanted.
     public static func removals(wanted: [Wanted], kept: [String: Entry]) -> [Step] {
         let current = Dictionary(wanted.map { ($0.ruleID, $0.signature) }, uniquingKeysWith: { first, _ in first })
-        return kept.sorted { $0.key < $1.key }.compactMap { ruleID, entry in
-            current[ruleID] == entry.signature ? nil : .remove(ruleID: ruleID, id: entry.id)
+        let outdated = kept.filter { current[$0.key] != $0.value.signature }
+        // One still in use by a rule that stays is only forgotten, not
+        // deleted: deleting it would stop that rule too.
+        let stillUsed = Set(kept.filter { current[$0.key] == $0.value.signature }.map(\.value.id))
+        return outdated.sorted { $0.key < $1.key }.map { ruleID, entry in
+            stillUsed.contains(entry.id) ? .forget(ruleID: ruleID) : .remove(ruleID: ruleID, id: entry.id)
         }
     }
 
@@ -49,7 +56,9 @@ public enum ServerRulePlan {
     /// is already in the account, each existing one adopted at most once,
     /// and made otherwise.
     public static func additions(wanted: [Wanted], kept: [String: Entry], existing: [Existing]) -> [Step] {
-        var available = existing
+        // One already kept for another rule is never taken over as well.
+        let keptIDs = Set(kept.values.map(\.id))
+        var available = existing.filter { !keptIDs.contains($0.id) }
         var steps: [Step] = []
         for want in wanted where kept[want.ruleID]?.signature != want.signature {
             if let index = available.firstIndex(where: { want.keys.contains($0.key) }) {

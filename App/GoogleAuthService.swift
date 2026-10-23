@@ -54,6 +54,26 @@ final class GoogleAuthService {
 
     func isConnected(_ email: String) -> Bool { accounts.contains { $0.email == email } }
 
+    /// Whether this launch's `restoreConnectedAccounts()` has finished.
+    /// Until then `accounts` is empty even for someone with mail.
+    private(set) var hasRestored = false
+    @ObservationIgnored private var restoreWaiters: [CheckedContinuation<Void, Never>] = []
+
+    /// For anything a cold launch can start before the accounts are back
+    /// (a scheduled send, a Watch reply, a notification action): with
+    /// none yet, it would have nowhere to go.
+    func waitUntilRestored() async {
+        if hasRestored { return }
+        await withCheckedContinuation { restoreWaiters.append($0) }
+    }
+
+    private func finishRestoring() {
+        hasRestored = true
+        let waiters = restoreWaiters
+        restoreWaiters = []
+        waiters.forEach { $0.resume() }
+    }
+
     /// Restores every account this device already has a stored refresh token
     /// for. Also migrates a single pre-Batch-29 GoogleSignIn session
     /// (someone who connected Gmail before multi-account existed): without
@@ -64,8 +84,9 @@ final class GoogleAuthService {
         #if DEBUG
         // App Store screenshots: sample mail only, whatever accounts this
         // device has, and nothing written back to them.
-        if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly") { return }
+        if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly") { finishRestoring(); return }
         #endif
+        defer { finishRestoring() }
         watchICloudPasswords()
         var storedEmails = defaults.stringArray(forKey: Self.connectedAccountsKey) ?? []
         // Added on your other devices (iCloud Keychain): signed in here too.

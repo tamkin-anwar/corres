@@ -61,7 +61,10 @@ final class MacServices {
         ServerRules.shared.attach(auth: auth)
         // Handled from a desktop widget, applied when Corres comes forward.
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
-            Task { @MainActor in Organizer.shared.applyWidgetHandoffs() }
+            Task { @MainActor in
+                Organizer.shared.applyWidgetHandoffs()
+                ServerRules.shared.retryIfFailed()
+            }
         }
         labelDirectory = LabelDirectory()
         pushService = PushNotificationService()
@@ -187,10 +190,13 @@ final class MacServices {
     func checkForMail() async {
         let accounts = auth.accounts.map(\.email)
         guard !accounts.isEmpty, NetworkWatch.shared.isOnline else { return }
+        let changeBefore = sync.lastChange
         let before = Dictionary(store.threads.map { ($0.id, $0.isUnread) }, uniquingKeysWith: { first, _ in first })
         guard await sync.syncAll(accounts: accounts) else { return }
-        await store.load()
         await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
+        // Nothing new: the mailbox isn't read again.
+        guard sync.lastChange != changeBefore else { return }
+        await store.load()
         let arrived = store.threads.filter { $0.isUnread && before[$0.id] != true && !$0.isScreenedOut }
         await semanticTriage.triageIfNeeded(store: store, only: Set(arrived.map(\.id)))
         // Only while Corres isn't the app in front: when you're looking
@@ -201,10 +207,9 @@ final class MacServices {
         pushService.notifyAboutNewMail(toNotify)
     }
 
-    /// What follows every sync, wherever it came from (the minute check,
-    /// IDLE, a newly added account): the same as on the iPhone.
-    func afterSync() {
-        Task { await FollowUps.shared.check(store: store) }
+    /// What follows a sync that brought or changed something: each goes
+    /// over the whole mailbox, so not after every check that found nothing.
+    func afterChange() {
         Task { await CloudSync.shared.apply() }
         Task {
             let accounts = auth.accounts.map(\.email)
@@ -215,6 +220,12 @@ final class MacServices {
             await store.refresh()
             await semanticTriage.triageIfNeeded(store: store)
         }
+    }
+
+    /// What follows every sync, wherever it came from (the minute check,
+    /// IDLE, a newly added account): the same as on the iPhone.
+    func afterSync() {
+        Task { await FollowUps.shared.check(store: store) }
         Task {
             await sync.backfillContent()
             await store.refresh()
@@ -229,6 +240,7 @@ final class MacServices {
 
     func accountsChanged() {
         watchIMAP()
+        ServerRules.shared.schedule()
         Task { await checkForMail() }
     }
 

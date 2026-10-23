@@ -27,6 +27,10 @@ enum WatchLink {
         var waiting: [Mail]
         var isSample: Bool
         var updatedAt: Date
+        /// How many in all: the lists stop at 25 and 10. Nil from a build
+        /// before these were sent.
+        var needsYouCount: Int?
+        var waitingCount: Int?
 
         static let empty = Snapshot(needsYou: [], waiting: [], isSample: false, updatedAt: .distantPast)
     }
