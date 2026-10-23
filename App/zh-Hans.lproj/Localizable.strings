@@ -3211,3 +3211,6 @@
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "永久拥有 · 购买于 %@";
 
+
+"The conversation so far" = "目前的对话";
+"%lld messages" = "%lld 封邮件";

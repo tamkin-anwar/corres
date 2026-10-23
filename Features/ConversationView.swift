@@ -353,6 +353,15 @@ struct ConversationView: View {
             }
             // Covers the whole conversation once its history is here.
             if proUnlocked, let current = store.thread(currentID) {
+                #if DEBUG
+                // Screenshots: what Apple Intelligence shows on Maya's sample email.
+                if ProcessInfo.processInfo.arguments.contains("-SampleReplies"), current.id.providerID == "sample-0" {
+                    intelligence.showForScreenshots(
+                        .init(summary: "Maya needs your approval on the final creative direction before tomorrow's review.",
+                              replyIntents: ["Approve the direction", "Ask for one more round"]), on: current)
+                    return
+                }
+                #endif
                 await intelligence.prepareInsight(for: current, conversation: threadActions.messages(in: current))
             }
         }
@@ -573,8 +582,8 @@ struct ConversationView: View {
     /// Gmail's), what it covers, the summary, and any key points it left out.
     private func summaryBlock(_ insight: MailIntelligence.Insight, summary: String) -> some View {
         let isConversation = insight.messageCount > 1
-        let title = isConversation ? "The conversation so far" : "In short"
-        let coverage: String? = isConversation && insight.coversWholeMessage ? "\(insight.messageCount) messages" : nil
+        let title = isConversation ? String(localized: "The conversation so far") : String(localized: "In short")
+        let coverage: String? = isConversation && insight.coversWholeMessage ? String(localized: "\(insight.messageCount) messages") : nil
         return VStack(alignment: .leading, spacing: 8) {
             Button {
                 withAnimation(.easeOut(duration: 0.2)) { summaryCollapsed.toggle() }

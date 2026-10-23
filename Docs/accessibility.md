@@ -27,6 +27,10 @@ What Corres can say on its App Store page under Accessibility, by device, and wh
 | Captions | n/a | n/a | n/a | Corres has no video or audio of its own. |
 | Audio Descriptions | n/a | n/a | n/a | Same. |
 
+## In App Store Connect
+
+Entered 2026-10-22 as drafts: iPhone and iPad with Larger Text, Dark Interface, Sufficient Contrast, Differentiate Without Color Alone and Reduced Motion; Mac with the same minus Larger Text (Apple doesn't offer it on Mac). Apple only lets them be published once Corres is live on the App Store, so publish them right after launch. VoiceOver and Voice Control stay off until the hands-on check below. Apple Watch has no declaration yet.
+
 ## What's built for VoiceOver and Voice Control
 
 - Every button has a name, including the icon-only ones. Swipe actions on a row are also VoiceOver actions ("Archive", "Move to Trash"), so no swipe is needed.

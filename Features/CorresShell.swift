@@ -256,6 +256,14 @@ struct CorresShell: View {
             HangReporter.step("first frame")
             if store.state == .idle { await store.load() }
             handle(router.pending)
+            #if DEBUG
+            // Screenshots: -OpenThread sample-N opens that sample email.
+            let args = ProcessInfo.processInfo.arguments
+            if let flag = args.firstIndex(of: "-OpenThread"), flag + 1 < args.count {
+                try? await Task.sleep(for: .seconds(1.5))
+                router.pending = .thread(ThreadID(account: "sample", providerID: args[flag + 1]))
+            }
+            #endif
         }
     }
 

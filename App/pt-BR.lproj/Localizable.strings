@@ -3211,3 +3211,6 @@
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "Seu para sempre · comprado em %@";
 
+
+"The conversation so far" = "A conversa até agora";
+"%lld messages" = "%lld mensagens";

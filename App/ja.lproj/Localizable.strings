@@ -3211,3 +3211,6 @@
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "ずっと使えます · %@に購入";
 
+
+"The conversation so far" = "これまでのやり取り";
+"%lld messages" = "%lld件のメッセージ";

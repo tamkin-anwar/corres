@@ -3211,3 +3211,6 @@
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "영구 소장 · %@ 구입";
 
+
+"The conversation so far" = "지금까지의 대화";
+"%lld messages" = "메시지 %lld개";

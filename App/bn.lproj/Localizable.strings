@@ -3211,3 +3211,6 @@
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "চিরকালের জন্য আপনার · কেনা হয়েছে %@";
 
+
+"The conversation so far" = "এ পর্যন্ত কথোপকথন";
+"%lld messages" = "%lldটি বার্তা";
