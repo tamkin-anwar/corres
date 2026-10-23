@@ -302,3 +302,56 @@ Please try
 2. View > Show Sender Pictures, on and off.
 
 Something off? Help > Send Diagnostics, or send feedback through TestFlight.
+
+## Build 35
+
+Corres 0.2.0 (35)
+
+The big ones
+- New mail shows up faster. When a push arrives, Corres now fetches the new email and shows the notification first, and does everything else after.
+- Replies and Reply All got more careful. Reply All no longer copies you or your other addresses, a retried reply stays in its conversation, and your signature is never added twice.
+- Forwarding brings the attachments along, from Siri too.
+
+Also new
+- Undo and Sending messages stack at the bottom instead of waiting for each other.
+- Ask understands questions in every language Corres speaks.
+- Emails with images turned off can't load anything from the internet, and can't redirect themselves.
+
+Fixed
+- A reply typed in a notification is kept as a draft if its email hasn't arrived on this iPhone yet.
+- Changing the From address no longer leaves the old draft behind in Drafts.
+- Send Later goes on time even while Corres is open.
+- Restore and Not Spam only hide an email once it has really moved.
+
+Please try
+1. Ask someone to email you while Corres is closed. Note how long the notification takes.
+2. Reply All on a thread you're copied on from another of your addresses.
+3. Forward an email with an attachment.
+
+Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
+
+## Mac build 36
+
+Corres for Mac 0.2.0 (36)
+
+The big ones
+- Bigger text everywhere. View > Bigger and Smaller now sizes the whole window, up to twice the normal size, and designed emails zoom like they do in Safari.
+- Drafts are safe. Compose saves after a short pause, has a Delete Draft button, and anything you were writing comes back if you quit or lose your connection.
+- Corres tells you about new mail itself, and printing matches the screen: tap Show Images and they print too.
+
+Also new
+- Menus and shortcuts work from a conversation in its own window.
+- Space scrolls the open email, and Edit > Undo takes back your last change.
+- Forwarding brings the attachments along.
+
+Fixed
+- Command-Delete in a text field edits the text instead of deleting the email.
+- Dragging several emails to a mailbox moves each one once.
+- With Unread Only on, the next email after archiving is the right one.
+
+Please try
+1. View > Bigger a few times, then read an email.
+2. Start an email, quit Corres, and open it again.
+3. Print an email after tapping Show Images.
+
+Something off? Help > Send Diagnostics, or send feedback through TestFlight.
