@@ -2786,7 +2786,7 @@
 "To" = "Para";
 
 /* No comment provided by engineer. */
-"To " = "Para";
+"To " = "Para ";
 
 /* No comment provided by engineer. */
 "To “%@”" = "Para “%@”";
@@ -3214,3 +3214,4 @@
 
 "The conversation so far" = "A conversa até agora";
 "%lld messages" = "%lld mensagens";
+"Scheduled email" = "E-mail agendado";

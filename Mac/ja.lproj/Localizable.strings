@@ -2296,3 +2296,5 @@
 /* No comment provided by engineer. */
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "ルールは今Corresで実行されています。許可すると、Corresを閉じていてもGmailでも実行されます：%@。";
 
+"Go to %@" = "%@を開く";
+"this conversation" = "この会話";

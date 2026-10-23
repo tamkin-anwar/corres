@@ -598,9 +598,12 @@ struct ConversationView: View {
                     Image(systemName: summaryCollapsed ? "chevron.down" : "chevron.up")
                         .font(.caption2.weight(.semibold)).foregroundStyle(CorresPalette.tertiary)
                 }
+                // A full-size target without moving the heading.
+                .padding(.vertical, 12)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .padding(.vertical, -12)
             .accessibilityLabel(summaryCollapsed ? String(localized: "\(title), collapsed") : title)
             .accessibilityHint(summaryCollapsed ? "Shows the summary" : "Hides the summary")
             if !summaryCollapsed {

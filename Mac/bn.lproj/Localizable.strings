@@ -2296,3 +2296,5 @@
 /* No comment provided by engineer. */
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "আপনার নিয়মগুলো এখন Corres-এ চলে। অনুমতি দিলে Corres বন্ধ থাকলেও Gmail-এ চলবে: %@।";
 
+"Go to %@" = "%@-এ যান";
+"this conversation" = "এই কথোপকথন";

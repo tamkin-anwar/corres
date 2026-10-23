@@ -121,8 +121,8 @@ extension Color {
 struct NeedsYouWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "corres.needsYou", provider: SnapshotProvider()) { entry in
-            ListWidgetView(title: "Needs You", count: entry.snapshot.needsYouCount, items: entry.snapshot.needsYou,
-                           emptyText: "Nothing in Needs You", showsReason: true, destination: "needs-you",
+            ListWidgetView(title: String(localized: "Needs You"), count: entry.snapshot.needsYouCount, items: entry.snapshot.needsYou,
+                           emptyText: String(localized: "Nothing in Needs You"), showsReason: true, destination: "needs-you",
                            isSample: entry.snapshot.isSample, isLocked: entry.snapshot.isLocked == true)
         }
         .configurationDisplayName("Needs You")
@@ -134,8 +134,8 @@ struct NeedsYouWidget: Widget {
 struct WaitingWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "corres.waiting", provider: SnapshotProvider()) { entry in
-            ListWidgetView(title: "Waiting", count: entry.snapshot.waitingCount, items: entry.snapshot.waiting,
-                           emptyText: "Nothing in Waiting", showsReason: false, destination: "waiting",
+            ListWidgetView(title: String(localized: "Waiting"), count: entry.snapshot.waitingCount, items: entry.snapshot.waiting,
+                           emptyText: String(localized: "Nothing in Waiting"), showsReason: false, destination: "waiting",
                            isSample: entry.snapshot.isSample, isLocked: entry.snapshot.isLocked == true)
         }
         .configurationDisplayName("Waiting")

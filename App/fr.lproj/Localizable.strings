@@ -2786,7 +2786,7 @@
 "To" = "À";
 
 /* No comment provided by engineer. */
-"To " = "À";
+"To " = "À ";
 
 /* No comment provided by engineer. */
 "To “%@”" = "À « %@ »";
@@ -3214,3 +3214,4 @@
 
 "The conversation so far" = "La conversation jusqu’ici";
 "%lld messages" = "%lld messages";
+"Scheduled email" = "E-mail programmé";

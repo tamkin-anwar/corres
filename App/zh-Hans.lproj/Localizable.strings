@@ -2786,7 +2786,7 @@
 "To" = "收件人";
 
 /* No comment provided by engineer. */
-"To " = "发给";
+"To " = "发给 ";
 
 /* No comment provided by engineer. */
 "To “%@”" = "发给“%@”";
@@ -3214,3 +3214,4 @@
 
 "The conversation so far" = "目前的对话";
 "%lld messages" = "%lld 封邮件";
+"Scheduled email" = "定时邮件";

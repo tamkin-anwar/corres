@@ -926,7 +926,7 @@
 "In Needs You" = "나에게 필요";
 
 /* No comment provided by engineer. */
-"In Needs You: " = "나에게 필요:";
+"In Needs You: " = "나에게 필요: ";
 
 /* No comment provided by engineer. */
 "In short" = "요약하면";
@@ -1241,7 +1241,7 @@
 "No action needed" = "조치 필요 없음";
 
 /* No comment provided by engineer. */
-"No action needed: " = "조치 필요 없음:";
+"No action needed: " = "조치 필요 없음: ";
 
 /* No comment provided by engineer. */
 "No Attachments" = "첨부 파일 없음";
@@ -1994,7 +1994,7 @@
 "To" = "받는 사람";
 
 /* No comment provided by engineer. */
-"To " = "받는 사람:";
+"To " = "받는 사람: ";
 
 /* No comment provided by engineer. */
 "To “%@”" = "받는 사람 '%@'";
@@ -2162,7 +2162,7 @@
 "Waiting turns into Follow up once someone hasn't replied in that long." = "그 기간 동안 답이 없으면 ‘대기 중’이 ‘후속 조치’로 바뀝니다.";
 
 /* No comment provided by engineer. */
-"Waiting: " = "대기 중:";
+"Waiting: " = "대기 중: ";
 
 /* No comment provided by engineer. */
 "Warmer" = "더 따뜻하게";
@@ -2296,3 +2296,5 @@
 /* No comment provided by engineer. */
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "규칙이 지금은 Corres에서 실행됩니다. 허용하면 Corres를 닫아도 Gmail에서도 실행됩니다: %@.";
 
+"Go to %@" = "%@(으)로 이동하기";
+"this conversation" = "이 대화";

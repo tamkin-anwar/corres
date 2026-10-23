@@ -1994,7 +1994,7 @@
 "To" = "收件人";
 
 /* No comment provided by engineer. */
-"To " = "发给";
+"To " = "发给 ";
 
 /* No comment provided by engineer. */
 "To “%@”" = "发给“%@”";
@@ -2296,3 +2296,5 @@
 /* No comment provided by engineer. */
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "你的规则现在在 Corres 中运行。允许后，即使关闭 Corres，Gmail 也会运行它们：%@。";
 
+"Go to %@" = "前往 %@";
+"this conversation" = "此对话";

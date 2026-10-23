@@ -58,3 +58,5 @@
 /* No comment provided by engineer. */
 "Waiting" = "等待中";
 
+"Nothing in Needs You" = "“需要你”中暂无邮件";
+"Nothing in Waiting" = "“等待中”中暂无邮件";

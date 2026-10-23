@@ -133,8 +133,6 @@ struct MacMainView: View {
             case .search(let words):
                 model.search = words
                 submitSearch()
-            default:
-                break
             }
         }
         // Typing pauses: ask each account's server too, for mail older
@@ -608,7 +606,7 @@ struct MacMainView: View {
         var commands: [Command] = [Command(title: "New Message", detail: "⌘N", systemImage: "square.and.pencil") { perform(.compose) }]
         let selected = model.selectedThreads
         if !selected.isEmpty {
-            let what = selected.count == 1 ? "this conversation" : "\(selected.count) conversations"
+            let what = selected.count == 1 ? String(localized: "this conversation") : String(localized: "\(selected.count) conversations")
             commands += [
                 Command(title: "Archive", detail: what, systemImage: "archivebox") { perform(.archive) },
                 Command(title: "Delete", detail: what, systemImage: "trash") { perform(.trash) },
@@ -617,7 +615,7 @@ struct MacMainView: View {
                 Command(title: selected.allSatisfy(\.isUnread) ? "Mark as Read" : "Mark as Unread", detail: what, systemImage: "envelope.badge") { perform(.toggleUnread) },
             ]
             // Only the moves that change something.
-            let moves: [(Attention, String, String)] = [(.needsYou, "Move to Needs You", "exclamationmark.circle"),
+            let moves: [(Attention, String.LocalizationValue, String)] = [(.needsYou, "Move to Needs You", "exclamationmark.circle"),
                                                         (.waiting, "Move to Waiting", "clock"),
                                                         (.handled, "Mark as Handled", "checkmark.circle")]
             for (attention, title, icon) in moves where !selected.allSatisfy({ $0.attention == attention }) {

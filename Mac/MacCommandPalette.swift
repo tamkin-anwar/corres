@@ -10,6 +10,13 @@ struct MacCommandPalette: View {
         let detail: String?
         let systemImage: String
         let run: () -> Void
+
+        init(title: String.LocalizationValue, detail: String?, systemImage: String, run: @escaping () -> Void) {
+            self.title = String(localized: title)
+            self.detail = detail
+            self.systemImage = systemImage
+            self.run = run
+        }
     }
 
     let commands: [Command]

@@ -88,14 +88,11 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         }
         guard let (milliseconds, crumbs) = finished else { return }
         Self.log.error("Main thread stalled for \(milliseconds) ms")
-        let report: [String: Any] = [
-            "kind": "stall",
-            "milliseconds": milliseconds,
-            "at": Date().formatted(.iso8601),
-            "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
-            "recent": crumbs,
-        ]
-        queue.async { Self.write(report, prefix: "stall") }
+        let at = Date().formatted(.iso8601)
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+        queue.async {
+            Self.write(["kind": "stall", "milliseconds": milliseconds, "at": at, "build": build, "recent": crumbs], prefix: "stall")
+        }
     }
 
     // MARK: MetricKit

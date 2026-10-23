@@ -77,12 +77,6 @@ enum Platform {
     }
 }
 
-#if os(macOS)
-/// Images are made once and only read after, so passing one between
-/// actors is safe, as UIImage already declares.
-extension NSImage: @retroactive @unchecked Sendable {}
-#endif
-
 #if canImport(UIKit)
 typealias ASPresentationAnchorWindow = UIWindow
 #else

@@ -926,7 +926,7 @@
 "In Needs You" = "Dans Pour vous";
 
 /* No comment provided by engineer. */
-"In Needs You: " = "Dans Pour vous :";
+"In Needs You: " = "Dans Pour vous : ";
 
 /* No comment provided by engineer. */
 "In short" = "En bref";
@@ -1241,7 +1241,7 @@
 "No action needed" = "Aucune action requise";
 
 /* No comment provided by engineer. */
-"No action needed: " = "Aucune action requise :";
+"No action needed: " = "Aucune action requise : ";
 
 /* No comment provided by engineer. */
 "No Attachments" = "Aucune pièce jointe";
@@ -1994,7 +1994,7 @@
 "To" = "À";
 
 /* No comment provided by engineer. */
-"To " = "À";
+"To " = "À ";
 
 /* No comment provided by engineer. */
 "To “%@”" = "À « %@ »";
@@ -2162,7 +2162,7 @@
 "Waiting turns into Follow up once someone hasn't replied in that long." = "« En attente » devient « Relancer » quand quelqu’un n’a pas répondu depuis ce délai.";
 
 /* No comment provided by engineer. */
-"Waiting: " = "En attente :";
+"Waiting: " = "En attente : ";
 
 /* No comment provided by engineer. */
 "Warmer" = "Plus chaleureux";
@@ -2296,3 +2296,5 @@
 /* No comment provided by engineer. */
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "Vos règles s’appliquent maintenant dans Corres. Autorisez ceci et Gmail les appliquera aussi, même avec Corres fermé : %@.";
 
+"Go to %@" = "Aller à %@";
+"this conversation" = "cette conversation";

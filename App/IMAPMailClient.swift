@@ -312,7 +312,7 @@ struct IMAPMailClient: Sendable {
         let messageID = Self.messageID(ofMessage: outgoing)
         let copy = Data(outgoing.utf8)
         Task.detached {
-            if let messageID { try? await Task.sleep(for: .seconds(2)) }
+            if messageID != nil { try? await Task.sleep(for: .seconds(2)) }
             do {
                 try await IMAPSessions.shared.with(account) { session in
                     guard let sent = try await session.folders().sent else { return }
@@ -380,7 +380,7 @@ struct IMAPMailClient: Sendable {
                 uid = try await session.connection.search(messageID: messageID).max()
             }
             if let existingID, let old = Self.parse(existingID), old.uid != uid || old.path != drafts {
-                try? await session.connection.select(old.path)
+                _ = try? await session.connection.select(old.path)
                 try? await session.connection.setFlags(["\\Deleted"], uids: [old.uid], add: true)
                 try? await session.connection.expungeIfPossible(uids: [old.uid])
             }

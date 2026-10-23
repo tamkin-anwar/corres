@@ -17,7 +17,7 @@ What Corres can say on its App Store page under Accessibility, by device, and wh
 
 | Label | iPhone | iPad | Mac | Why |
 |---|---|---|---|---|
-| Larger Text | Yes | Yes | Not yet | On iPhone and iPad all text follows the system text size up to the largest accessibility size. At those sizes, field names move above their fields and rows wrap instead of cutting words off. Checked with Apple's accessibility audit at AX5. The Mac list and reading pane use fixed sizes and don't follow macOS's Text Size setting yet. |
+| Larger Text | Yes | Yes | Not yet | On iPhone and iPad all text follows the system text size up to the largest accessibility size. At those sizes, field names move above their fields and rows wrap instead of cutting words off. Checked with Apple's accessibility audit at AX5. On the Mac, View › Bigger and Smaller (⌘+ and ⌘−) scale the list and the email text, since macOS has no Text Size setting apps can read. |
 | Dark Interface | Yes | Yes | Yes | Follows Dark Mode everywhere, including the emails themselves. |
 | Sufficient Contrast | Yes | Yes | Yes | All text colors measure at least 4.84:1 against the background in light and dark, and higher with Increase Contrast. Apple's bar is 4.5:1. |
 | Differentiate Without Color Alone | Yes | Yes | Yes | Unread, flagged, pinned and VIP each have a shape or a word as well as a color. On the Mac, with the setting on, the account is named instead of only shown as a colored dot. |

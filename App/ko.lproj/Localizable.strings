@@ -2786,7 +2786,7 @@
 "To" = "받는 사람";
 
 /* No comment provided by engineer. */
-"To " = "받는 사람:";
+"To " = "받는 사람: ";
 
 /* No comment provided by engineer. */
 "To “%@”" = "받는 사람 '%@'";
@@ -3214,3 +3214,4 @@
 
 "The conversation so far" = "지금까지의 대화";
 "%lld messages" = "메시지 %lld개";
+"Scheduled email" = "예약된 이메일";

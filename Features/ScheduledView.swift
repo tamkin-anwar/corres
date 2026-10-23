@@ -31,7 +31,7 @@ struct ScheduledView: View {
         .background(CorresPalette.canvas)
         .navigationTitle("Send Later")
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog(chosen?.draft.subject.isEmpty == false ? chosen!.draft.subject : "Scheduled email",
+        .confirmationDialog(chosen?.draft.subject.isEmpty == false ? chosen!.draft.subject : String(localized: "Scheduled email"),
                             isPresented: Binding(get: { chosen != nil }, set: { if !$0 { chosen = nil } }),
                             titleVisibility: .visible, presenting: chosen) { item in
             Button("Send Now") { Task { await scheduled.sendNow(item.id, store: store, outbox: outbox) } }
