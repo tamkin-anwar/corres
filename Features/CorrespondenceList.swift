@@ -641,10 +641,7 @@ struct CorrespondenceList: View {
             .onChange(of: search) { _, new in
                 if new.isEmpty { ask?.reset() }
             }
-            .refreshable {
-                _ = await sync?.syncAll(accounts: auth?.accounts.map(\.email) ?? [])
-                await store.load()
-            }
+            .refreshable { await pullToRefresh() }
             // Debounced: fires 450ms after typing pauses, not per keystroke,
             // and cancels automatically (`.task(id:)`'s own behavior) if the
             // person keeps typing before that. Reaches past what's already
@@ -664,6 +661,28 @@ struct CorrespondenceList: View {
                     await store.refresh()
                 }
             }
+    }
+
+    /// The spinner waits for new mail, up to a few seconds, not for a long
+    /// catch-up: a pull that joined a big first sync (or one that pushes
+    /// keep extending) used to leave it spinning at the top for minutes.
+    /// The sync carries on, and its mail appears as it lands, as in Mail.
+    private func pullToRefresh() async {
+        let accounts = auth?.accounts.map(\.email) ?? []
+        let syncing = Task { @MainActor in
+            #if DEBUG
+            // A refresh that takes a while, to see what the screen does then.
+            if ProcessInfo.processInfo.arguments.contains("-slowRefresh") { try? await Task.sleep(for: .seconds(30)) }
+            #endif
+            _ = await sync?.syncAll(accounts: accounts)
+            await store.load()
+        }
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await syncing.value }
+            group.addTask { try? await Task.sleep(for: .seconds(6)) }
+            await group.next()
+            group.cancelAll()
+        }
     }
 
     /// `searchPresented`, reading the mail's text ahead as Search opens
@@ -1384,7 +1403,9 @@ struct CorrespondenceList: View {
             .alignmentGuide(.listRowSeparatorLeading) { [separatorInset] _ in separatorInset }
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { rowFrames.frames[thread.id] = $0 }
             .onAppear {
-                if pagesOlderMail, thread.id == results.last?.id { loadOlderMail() }
+                // A screenful ahead of the end, so older mail is usually
+                // there before you reach it, instead of a spinner at the end.
+                if pagesOlderMail, results.suffix(15).contains(where: { $0.id == thread.id }) { loadOlderMail() }
             }
             .onDisappear { rowFrames.frames[thread.id] = nil }
             // A hand-built drag gesture gets none of what Apple's own

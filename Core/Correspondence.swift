@@ -1021,7 +1021,24 @@ public extension String {
     /// invisible padding newsletters put after their preview (`&zwnj;`,
     /// zero-width spaces, soft hyphens) so a row doesn't read "‌ ‌ ‌", and
     /// rules drawn with dashes or underscores.
-    var previewText: String {
+    var previewText: String { cleanedPreview.droppingImageLabel }
+
+    /// "Logo Hello Tamkin, …": a newsletter's first image has no text but
+    /// its label, and the label lands at the start of the preview. Only a
+    /// lone first word that names an image, with real text after it.
+    private var droppingImageLabel: String {
+        guard let space = firstIndex(of: " ") else { return self }
+        let word = self[..<space].lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ":|-"))
+        guard ["logo", "image", "img", "banner", "header", "spacer"].contains(word) else { return self }
+        let rest = self[index(after: space)...].trimmingCharacters(in: .whitespaces)
+        // A sentence starts after it ("Logo Hello Tamkin, …"); "Logo design
+        // brief attached" is a subject about a logo, and stays.
+        guard rest.count >= 12, rest.first?.isUppercase == true,
+              rest.prefix(60).contains(where: { ",.!?:".contains($0) }) else { return self }
+        return rest
+    }
+
+    private var cleanedPreview: String {
         guard unicodeScalars.contains(where: { $0 == "&" || $0 == "<" || $0 == "[" || Self.isPreviewNoise($0) })
                 || contains("---") || contains("___") || contains("===") else { return self }
         var text = decodingHTMLEntities

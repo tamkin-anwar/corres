@@ -337,13 +337,15 @@ struct PreferencesView: View {
                     Button("iCloud Mail") { connect(.icloud) }
                     Button("Other Email") { connect(.imap) }
                 } label: {
-                    if auth.isSigningIn || sync.isSyncing {
+                    // A sync running (a big first one can take minutes) is no
+                    // reason to hide the row: only a sign-in under way is.
+                    if auth.isSigningIn {
                         ProgressView()
                     } else {
                         settingLabel("Add Account", "plus")
                     }
                 }
-                .disabled(auth.isSigningIn || sync.isSyncing)
+                .disabled(auth.isSigningIn)
                 if auth.accounts.count > 1 {
                     Toggle(isOn: $colorCoding) { settingLabel("Color-Code Accounts", "paintpalette") }
                         .onChange(of: colorCoding) { AccountPreferences.changed() }
@@ -601,7 +603,9 @@ private struct AccountDetailView: View {
                     }
                 } label: {
                     LabeledContent {
-                        if syncing || sync.isSyncing {
+                        // Only this tap's own sync: the quiet checks Corres runs
+                        // every 20 seconds kept it spinning, and the button off.
+                        if syncing {
                             ProgressView()
                         } else if let last = sync.health[account.email]?.lastSuccess ?? sync.lastCompletedSync {
                             Text(last, format: .relative(presentation: .named))
@@ -610,7 +614,7 @@ private struct AccountDetailView: View {
                         Label("Sync Now", systemImage: "arrow.triangle.2.circlepath")
                     }
                 }
-                .disabled(syncing || sync.isSyncing)
+                .disabled(syncing)
                 .alert("Couldn't Sync", isPresented: $syncFailed) {
                     Button("OK", role: .cancel) {}
                 } message: {

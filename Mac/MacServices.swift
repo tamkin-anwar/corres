@@ -191,15 +191,25 @@ final class MacServices {
 
     /// Get New Mail (⇧⌘N, the toolbar or the sidebar's footer): a fresh
     /// connection to iCloud's live updates too, in case it went quiet.
+    /// While a Get New Mail you asked for runs. The quiet check every 20
+    /// seconds doesn't count: shown, it kept "Checking for mail…" up and
+    /// the button gone most of the time.
+    private(set) var isGettingNewMail = false
+
     func getNewMail() {
-        reconnect()
+        guard NetworkWatch.shared.isOnline, !isGettingNewMail else { return }
+        isGettingNewMail = true
+        reconnect { self.isGettingNewMail = false }
     }
 
-    private func reconnect() {
-        guard NetworkWatch.shared.isOnline else { return }
+    private func reconnect(then done: (@MainActor () -> Void)? = nil) {
+        guard NetworkWatch.shared.isOnline else { done?(); return }
         IMAPWatcher.shared.stopAll()
         watchIMAP()
-        Task { await checkForMail() }
+        Task {
+            await checkForMail()
+            done?()
+        }
     }
 
     /// The regular check (every 20 seconds while open).

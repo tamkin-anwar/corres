@@ -154,7 +154,7 @@ struct MacSidebar: View {
             if !NetworkWatch.shared.isOnline {
                 Image(systemName: "wifi.slash")
                 Text("Offline. Mail will check when you're back.")
-            } else if services.sync.isSyncing {
+            } else if services.isGettingNewMail {
                 ProgressView().controlSize(.small)
                 Text("Checking for mail…")
             } else if let problem {
@@ -166,7 +166,7 @@ struct MacSidebar: View {
                 Text("Sample mail · add an account in Settings")
             }
             Spacer(minLength: 4)
-            if !accounts.isEmpty, NetworkWatch.shared.isOnline, !services.sync.isSyncing {
+            if !accounts.isEmpty, NetworkWatch.shared.isOnline, !services.isGettingNewMail {
                 Button { services.getNewMail() } label: {
                     Image(systemName: problem == nil ? "arrow.clockwise" : "arrow.clockwise.circle.fill")
                 }

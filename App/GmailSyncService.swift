@@ -505,29 +505,40 @@ final class GmailSyncService {
         isLoadingOlder = true
         defer { isLoadingOlder = false }
         let known = (try? await repository.storedIDs()) ?? []
-        var anyLoaded = false
-        for account in accounts where !isOlderInboxExhausted(for: account) {
-            var pageToken = olderInboxPageToken(for: account)
-            var newIDs: [String] = []
-            var pagesScanned = 0
-            do {
-                repeat {
-                    let page = try await client.listOlderInbox(account: account, pageToken: pageToken)
-                    newIDs += page.ids.filter { !known.contains("\(account)|\($0.threadId ?? $0.id)") }.map(\.id)
-                    pageToken = page.nextPageToken
-                    pagesScanned += 1
-                } while newIDs.isEmpty && pageToken != nil && pagesScanned < Self.maxOlderPagesScanned
-                for chunk in newIDs.chunked(into: GmailAPIClient.batchSize) {
-                    let fetched = try await client.fetchMetadata(ids: chunk, account: account)
-                    // Older mail predates anything the Screener should hold.
-                    try await repository.upsert(fetched.items, isInitialSync: true)
-                    anyLoaded = anyLoaded || !fetched.items.isEmpty
-                    syncProgress += 1
-                }
-                setOlderInboxPageToken(pageToken, for: account)
-            } catch {
-                continue
+        // Every account at once: one after another, three accounts kept the
+        // spinner at the end of the list three times as long.
+        return await withTaskGroup(of: Bool.self) { group in
+            for account in accounts where !isOlderInboxExhausted(for: account) {
+                group.addTask { await self.loadOlder(account: account, known: known) }
             }
+            var anyLoaded = false
+            for await loaded in group where loaded { anyLoaded = true }
+            return anyLoaded
+        }
+    }
+
+    private func loadOlder(account: String, known: Set<String>) async -> Bool {
+        var pageToken = olderInboxPageToken(for: account)
+        var newIDs: [String] = []
+        var pagesScanned = 0
+        var anyLoaded = false
+        do {
+            repeat {
+                let page = try await client.listOlderInbox(account: account, pageToken: pageToken)
+                newIDs += page.ids.filter { !known.contains("\(account)|\($0.threadId ?? $0.id)") }.map(\.id)
+                pageToken = page.nextPageToken
+                pagesScanned += 1
+            } while newIDs.isEmpty && pageToken != nil && pagesScanned < Self.maxOlderPagesScanned
+            for chunk in newIDs.chunked(into: GmailAPIClient.batchSize) {
+                let fetched = try await client.fetchMetadata(ids: chunk, account: account)
+                // Older mail predates anything the Screener should hold.
+                try await repository.upsert(fetched.items, isInitialSync: true)
+                anyLoaded = anyLoaded || !fetched.items.isEmpty
+                syncProgress += 1
+            }
+            setOlderInboxPageToken(pageToken, for: account)
+        } catch {
+            return anyLoaded
         }
         return anyLoaded
     }

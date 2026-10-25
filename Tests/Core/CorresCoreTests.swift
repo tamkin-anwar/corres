@@ -583,6 +583,9 @@ struct CorresCoreTests {
         #expect("Why it matters...<a href=\" src=\" alt=\"\" border=\"0\" /></a> More below".previewText == "Why it matters... More below")
         #expect("Don&#39;t miss it".previewText == "Don't miss it")
         #expect("a < b and 3 <4".previewText == "a < b and 3 <4")
+        #expect("Logo Hello TAMKIN, We're checking in".previewText == "Hello TAMKIN, We're checking in")
+        #expect("Logo design brief attached".previewText == "Logo design brief attached")
+        #expect("Image".previewText == "Image")
         #expect("[cid:image001.png@01DD5FDE.D10AB060] Congratulations".previewText == "Congratulations")
     }
 
