@@ -355,3 +355,56 @@ Please try
 3. Print an email after tapping Show Images.
 
 Something off? Help > Send Diagnostics, or send feedback through TestFlight.
+
+## Build 37
+
+Corres 0.2.0 (37)
+
+The big ones
+- Today's Brief is back, better and optional. A short card at the top of Needs You with what's due today, today's events, deliveries arriving and the reply you've owed longest. Check items off, or tap Done for Today. Turn it on in Settings > Sorting > Daily Brief.
+- Built for everywhere. Deadlines, receipts, deliveries, one-time codes, events and questions are understood in all of Corres's languages, weekends follow your region (Friday and Saturday in Bangladesh), and replies from other mail apps no longer pile up prefixes like "Re: AW:".
+- Steadier sync. Mail that can never be fetched stops being retried, so Corres stops working in the background for nothing, and Outlook syncs whole even when one message fails.
+
+Also new
+- Pull to refresh and Sync Now finish within a few seconds and keep going quietly.
+- Japanese, Chinese and Korean mail in older encodings shows in full.
+- Bank codes ("Your OTP is...") are recognized as codes.
+
+Fixed
+- Turning an iPhone Pro Max or narrowing an iPad window no longer freezes the list.
+- Opening an email from a widget or Spotlight goes straight to it.
+- A reply that was sent is never shown as unsent.
+- iCloud mail sent from the Share sheet now appears in Sent.
+
+Please try
+1. Settings > Sorting > Daily Brief, then open Needs You.
+2. Pull to refresh on a big mailbox. It should stop spinning within a few seconds.
+3. Reply to an email that came from Outlook in another language.
+
+Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
+
+## Mac build 38
+
+Corres for Mac 0.2.0 (38)
+
+The big ones
+- Undo Send on the Mac. After you send, a Sending pill gives you a few seconds to take it back, and Edit > Undo works too.
+- Drafts open whole. A draft from Drafts keeps its full text, Cc and conversation, so nothing is lost when you keep writing.
+- Corres keeps working with no window open: new mail, the Dock badge, widgets and search stay current from the menu bar.
+
+Also new
+- Mailbox and Help menu items work from any window.
+- Command-Plus and Command-Minus always change text size; Format has Bold, Italic and Underline.
+- Save to Downloads never replaces a file with the same name.
+
+Fixed
+- A conversation in its own window no longer goes blank after you archive it.
+- Mail removed from Spam, Trash or a label stays removed.
+- Single-key shortcuts work with Caps Lock on.
+
+Please try
+1. Send an email and press Command-Z within a few seconds.
+2. Open a draft from Drafts and keep writing.
+3. Close the main window, wait for new mail, and check the Dock badge.
+
+Something off? Help > Send Diagnostics, or send feedback through TestFlight.
