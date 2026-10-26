@@ -2687,3 +2687,59 @@
 
 /* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
 "%@ from %@" = "来自%2$@的%1$@";
+
+/* Sixth sweep (Mac) */
+/* Mac compose: files attached past the size limit */
+"Attachments can add up to 25 MB in one email." = "一封邮件的附件总计最多 25 MB。";
+
+/* Mac Settings, adding an account: an address that has its own sign-in */
+"This address signs in with its own button: use Gmail, Outlook or iCloud." = "此地址需通过专用按钮登录：请使用 Gmail、Outlook 或 iCloud。";
+
+/* Mac Settings > Signatures: the name of a new signature */
+"Signature %lld" = "签名 %lld";
+
+/* Mac Keyboard Shortcuts sheet: heading for keys used in the message list */
+"In the list" = "在列表中";
+
+/* Mac Keyboard Shortcuts sheet: heading for keys used to write email */
+"Writing" = "撰写";
+
+/* Mac Keyboard Shortcuts sheet: what J and K do */
+"Next and previous conversation" = "下一个和上一个对话";
+
+/* Mac Keyboard Shortcuts sheet: two keys that do the same thing ("R  or  ⌘R") */
+"%@  or  %@" = "%@  或  %@";
+
+/* Mac Keyboard Shortcuts sheet: what ⌘, opens */
+"Settings" = "设置";
+
+/* Notification title for the daily brief */
+"Your Brief" = "你的简报";
+
+/* Mac: storage couldn't be opened */
+"Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage." = "Corres 无法打开常用的本地存储，目前仅在内存中运行。关闭 App 后不会保存任何内容。请重新启动 Corres。如果此问题反复出现，你的设备可能存储空间不足。";
+"Add your email account in Corres first." = "请先在 Corres 中添加你的邮件账户。";
+"It didn't send. It's waiting in Corres to try again." = "没有发送出去。它在 Corres 中等待重试。";
+/* Invitations on the Mac, as on the iPhone */
+"Call" = "通话";
+"%@, all day" = "%@，全天";
+"Organized by %@" = "组织者：%@";
+
+/* Empty states and due dates, now translated on the Mac too */
+"Couldn't load %@" = "无法载入%@";
+"Due %@" = "%@ 到期";
+"No Purchases" = "没有购物";
+"No new senders" = "没有新发件人";
+"No unread mail" = "没有未读邮件";
+"Overdue, was due %@" = "已逾期，原定 %@ 到期";
+"Was on %@" = "在%@";
+/* Mac reading pane with several conversations chosen */
+"%lld conversations selected" = "已选择 %lld 个对话";
+/* Mac Settings > Signatures with none chosen */
+"No signature selected" = "未选择签名";
+/* Mac Send Later mailbox, empty */
+"Nothing scheduled" = "没有已安排的邮件";
+
+"Automatic reply." = "自动回复。";
+
+"Automatic reply. Kept out of Needs You." = "自动回复。未放入“需要你”。";

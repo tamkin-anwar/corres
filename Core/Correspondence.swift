@@ -378,7 +378,8 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// copied (`Cc`) on this message — a real signal of whether a reply is
     /// actually expected of them, not a guess.
     public var isDirectRecipient: Bool {
-        toRecipients.contains(id.account.lowercased())
+        let me = id.account.lowercased()
+        return toRecipients.contains { $0 == me || Self.bareAddress($0) == me }
     }
 
     /// Named in Cc but not in To. Only this exact case counts: mail that
@@ -388,9 +389,13 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
         Self.isCopiedOnly(account: id.account, to: toRecipients, cc: ccRecipients)
     }
 
+    /// Outlook and IMAP keep recipients with their names ("Tamkin Anwar
+    /// <me@outlook.com>"), so each is read for its address: compared as
+    /// written, mail you were only copied on never counted as that.
     public static func isCopiedOnly(account: String, to: [String], cc: [String]) -> Bool {
         let me = account.lowercased()
-        return cc.contains(me) && !to.contains(me)
+        func isMe(_ entry: String) -> Bool { entry == me || bareAddress(entry) == me }
+        return cc.contains(where: isMe) && !to.contains(where: isMe)
     }
 
     /// Whether the latest message in this thread is your own.
@@ -552,13 +557,18 @@ extension Correspondence {
     /// `knownSenderNames`), else from their address. Waiting used to read
     /// "Tamkin hasn't replied" about your own message.
     public func counterpartName(knownNames: [String: String] = [:]) -> String {
+        // Compared by address: "Tamkin <me@x.com>" in Cc is you, and the
+        // name shown is this recipient's, never the first one's.
+        let me = id.account.lowercased()
         guard isFromAccountOwner, let address = (toRecipients + ccRecipients).first(where: {
-            $0.lowercased() != id.account.lowercased()
+            Self.bareAddress($0) != me
         }) else { return sender }
         let bare = address.components(separatedBy: "<").last?
             .trimmingCharacters(in: CharacterSet(charactersIn: "<> ")).lowercased() ?? address.lowercased()
         if let known = knownNames[bare] { return known }
-        if let named = recipientNames.first, !named.contains("@") { return named }
+        let named = address.components(separatedBy: "<").first?
+            .trimmingCharacters(in: CharacterSet.whitespaces.union(CharacterSet(charactersIn: "\""))) ?? ""
+        if address.contains("<"), !named.isEmpty, !named.contains("@") { return named }
         return Self.name(fromAddress: bare)
     }
 
@@ -909,6 +919,9 @@ public enum InboxClassifier {
     public static let confirmationReason = "Confirms something you did. Nothing to do unless it wasn't you."
     /// Placed by a rule you set (Settings → Sorting → Rules).
     public static let ruleReason = "Placed here by your rule."
+    /// An out-of-office or other automatic reply: its "until Monday" and
+    /// "could you contact Sam?" are for anyone who writes, not asks of you.
+    public static let autoReplyReason = "Automatic reply. Kept out of Needs You."
 
     /// Every reason these rules can produce for unread mail: a thread
     /// carrying one of these (and never triaged) still reflects a pure rule
@@ -917,6 +930,7 @@ public enum InboxClassifier {
                                                   readReason, legacyReadReason, questionReason, deadlineReason, obligationReason, copiedReason,
                                                   askedReason, repliedReason, startedReason, vipReason, fyiReason,
                                                   lessonReason, confirmationReason, fromYouReason, failureReason, paymentReason,
+                                                  autoReplyReason,
                                                   BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,
                                                   BulkKind.updates.reason, BulkKind.automated.reason]
 
@@ -1029,7 +1043,9 @@ public enum InboxClassifier {
                                              isStale: Bool = false, isCopiedOnly: Bool = false,
                                              currentReason: String? = nil) -> (attention: Attention, reason: String)? {
         guard isUnread, isCorrespondent, !hasListUnsubscribe, !isStale,
-              !isCopiedOnly || sensitivity == .inclusive else { return nil }
+              !isCopiedOnly || sensitivity == .inclusive,
+              // Someone you wrote to, answering automatically that they're away.
+              currentReason != autoReplyReason else { return nil }
         // A more specific reason the rules already found says more than
         // "someone you've written to".
         if let currentReason, [questionReason, deadlineReason, vipReason].contains(currentReason) {
@@ -1092,6 +1108,7 @@ public enum InboxClassifier {
             return (.quiet, kind.reason)
         }
         if stale { return (.quiet, staleReason) }
+        if MailSignals.isAutoReply(text) { return (.quiet, autoReplyReason) }
         // Copied on a thread addressed to someone else: Gmail's Priority
         // Inbox weighs To above Cc for the same reason.
         if isCopiedOnly, sensitivity != .inclusive { return (.quiet, copiedReason) }
@@ -1875,6 +1892,7 @@ extension InboxClassifier {
         fromYouReason: String(localized: "From your other account. Kept out of Needs You."),
         confirmationReason: String(localized: "Confirms something you did. Nothing to do unless it wasn't you."),
         ruleReason: String(localized: "Placed here by your rule."),
+        autoReplyReason: String(localized: "Automatic reply. Kept out of Needs You."),
         BulkKind.promotions.reason: String(localized: "Promotion. Kept out of Needs You."),
         BulkKind.social.reason: String(localized: "Social notification. Kept out of Needs You."),
         BulkKind.forums.reason: String(localized: "Mailing list. Kept out of Needs You."),
@@ -1892,6 +1910,7 @@ extension InboxClassifier {
         "You're copied, not asked.": String(localized: "You're copied, not asked."),
         "From a person, nothing asked.": String(localized: "From a person, nothing asked."),
         "From your other account.": String(localized: "From your other account."),
+        "Automatic reply.": String(localized: "Automatic reply."),
     ]
 }
 

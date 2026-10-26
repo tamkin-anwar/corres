@@ -134,8 +134,15 @@ struct DueChip: View {
             .foregroundStyle(tint)
             .padding(.horizontal, 8).padding(.vertical, 2)
             .overlay(Capsule().strokeBorder(isPast && isEvent ? CorresPalette.line : tint.opacity(0.5), lineWidth: 1))
-            .accessibilityLabel(isPast ? (isEvent ? "Was on " : "Overdue, was due ") + date.formatted(.dateTime.weekday(.wide).month().day())
-                                       : "Due \(date.formatted(.dateTime.weekday(.wide).month().day()))")
+            // Whole sentences: the English pieces joined together were
+            // read out in English in every language.
+            .accessibilityLabel(spokenLabel)
+    }
+
+    private var spokenLabel: String {
+        let day = date.formatted(.dateTime.weekday(.wide).month().day())
+        if !isPast { return String(localized: "Due \(day)") }
+        return isEvent ? String(localized: "Was on \(day)") : String(localized: "Overdue, was due \(day)")
     }
 
     private var label: String {
@@ -213,6 +220,9 @@ struct EmptyTitle: View {
         self.systemImage = systemImage
     }
 
+    /// For text already worked out. Disfavored, as Text's own is: without
+    /// it a plain "One moment" took this one and was never translated.
+    @_disfavoredOverload
     init<S: StringProtocol>(_ string: S, systemImage: String) {
         title = Text(string)
         self.systemImage = systemImage

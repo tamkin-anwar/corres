@@ -352,3 +352,13 @@
 /* No comment provided by engineer. */
 "You're waiting on their reply" = "Esperas su respuesta";
 
+"Sending…" = "Enviando…";
+"Sent" = "Enviado";
+"No connection. Corres will send it as soon as it can." = "Sin conexión. Corres lo enviará en cuanto pueda.";
+"Couldn’t send it. Check your connection and try again." = "No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.";
+"Open Corres once, then share again. Corres finishes setting up sharing the first time it opens after updating." = "Abre Corres una vez y vuelve a compartir. Corres termina de configurar el compartir la primera vez que se abre tras actualizarse.";
+"%@ didn’t accept it. Try again in a moment." = "%@ no lo aceptó. Inténtalo de nuevo en un momento.";
+
+"Automatic reply." = "Respuesta automática.";
+
+"Automatic reply. Kept out of Needs You." = "Respuesta automática. Fuera de Te necesita.";

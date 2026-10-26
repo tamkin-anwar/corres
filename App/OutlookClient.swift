@@ -24,6 +24,11 @@ struct OutlookClient: Sendable {
     /// Graph's limit for one $batch.
     private static let batchLimit = 20
     private static let changeBatchLimit = 4
+    /// A query value's characters left as they are. Not `.urlQueryAllowed`,
+    /// which leaves "&", "+" and "=" alone: a search for "AT&T" or "C++",
+    /// or a category named "Bills & Receipts", was cut short or turned
+    /// into spaces on the way to Outlook.
+    private static let queryValueAllowed = CharacterSet.urlQueryAllowed.subtracting(CharacterSet(charactersIn: "&+=#?"))
     private static let initialInboxDays = 60
     private static let initialSentDays = 60
 
@@ -158,13 +163,13 @@ struct OutlookClient: Sendable {
 
     func fetchThreadMessages(threadId: String, account: String) async throws -> [Correspondence] {
         let escaped = threadId.replacingOccurrences(of: "'", with: "''")
-        let filter = "conversationId eq '\(escaped)'".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let filter = "conversationId eq '\(escaped)'".addingPercentEncoding(withAllowedCharacters: Self.queryValueAllowed) ?? ""
         let ids = try await allPages("\(Self.base)/me/messages?$select=id&$filter=\(filter)&$top=50", account: account).map(\.id)
         return try await fetchMessages(ids: ids, account: account).items.sorted { $0.receivedAt < $1.receivedAt }
     }
 
     func searchPage(query: String, account: String, pageToken: String?) async throws -> (items: [Correspondence], nextPageToken: String?) {
-        let term = "\"\(query.replacingOccurrences(of: "\"", with: ""))\"".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let term = "\"\(query.replacingOccurrences(of: "\"", with: ""))\"".addingPercentEncoding(withAllowedCharacters: Self.queryValueAllowed) ?? ""
         let url = pageToken ?? "\(Self.base)/me/messages?$select=\(Self.listFields)&$search=\(term)&$top=50"
         let page: GraphPage<GraphMessage> = try await getJSON(url, account: account)
         let folders = try await OutlookFolders.shared.ids(for: account, client: self)
@@ -181,7 +186,7 @@ struct OutlookClient: Sendable {
     }
 
     func addressing(matching name: String, account: String) async throws -> [GmailAPIClient.Addressing] {
-        let term = "\"\(name.replacingOccurrences(of: "\"", with: ""))\"".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let term = "\"\(name.replacingOccurrences(of: "\"", with: ""))\"".addingPercentEncoding(withAllowedCharacters: Self.queryValueAllowed) ?? ""
         let page: GraphPage<GraphMessage> = try await getJSON("\(Self.base)/me/messages?$select=from,toRecipients,ccRecipients,subject,receivedDateTime&$search=\(term)&$top=25", account: account)
         return page.value.map(Self.addressing)
     }
@@ -193,7 +198,7 @@ struct OutlookClient: Sendable {
     }
 
     func findMessage(rfc822MessageID: String, account: String) async throws -> ThreadID? {
-        let filter = "internetMessageId eq '<\(rfc822MessageID)>'".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let filter = "internetMessageId eq '<\(rfc822MessageID)>'".addingPercentEncoding(withAllowedCharacters: Self.queryValueAllowed) ?? ""
         // Drafts carry the same Message-ID (a large send starts as one, and a
         // saved draft keeps it), so only a message that really went counts.
         let page: GraphPage<GraphMessage> = try await getJSON("\(Self.base)/me/messages?$select=id,conversationId,isDraft&$filter=\(filter)&$top=10", account: account)
@@ -255,7 +260,15 @@ struct OutlookClient: Sendable {
     func sendLarge(rawWithout: String, attachments: [PendingAttachment], threadId: String?, account: String) async throws -> String {
         let draftID = try await draftWithAttachments(rawWithout: rawWithout, attachments: attachments, account: account)
         do {
-            try await change("POST", "\(Self.base)/me/messages/\(draftID)/send", body: nil, account: account)
+            try await change("POST", "\(Self.base)/me/messages/\(draftID)/send", body: nil, account: account, oncePastGateway: true)
+        } catch ClientError.refused(let status, _, _) where status == 504 {
+            // May have gone: the draft stays (deleting it would delete the
+            // sent copy, which keeps its id), and the outbox looks for it
+            // by its Message-ID before trying again.
+            throw ClientError.badResponse(statusCode: 504)
+        } catch let error as URLError {
+            // The same when the answer was lost on the way back.
+            throw error
         } catch {
             // Not sent: the half-built draft goes, so a retry starts clean
             // and nothing is left behind in Drafts.
@@ -402,7 +415,7 @@ struct OutlookClient: Sendable {
 
     private func conversation(_ threadId: String, account: String) async throws -> [GraphMessage] {
         let escaped = threadId.replacingOccurrences(of: "'", with: "''")
-        let filter = "conversationId eq '\(escaped)'".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let filter = "conversationId eq '\(escaped)'".addingPercentEncoding(withAllowedCharacters: Self.queryValueAllowed) ?? ""
         return try await allPages("\(Self.base)/me/messages?$select=id,parentFolderId,categories&$filter=\(filter)&$top=100", account: account)
     }
 
@@ -473,21 +486,21 @@ struct OutlookClient: Sendable {
             case "DRAFT": url = "\(Self.base)/me/mailFolders/drafts/messages?\(top)"
             case "INBOX": url = "\(Self.base)/me/mailFolders/inbox/messages?\(top)"
             case "STARRED":
-                let filter = "flag/flagStatus eq 'flagged'".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                let filter = "flag/flagStatus eq 'flagged'".addingPercentEncoding(withAllowedCharacters: Self.queryValueAllowed) ?? ""
                 url = "\(Self.base)/me/messages?$select=\(Self.listFields)&$top=\(pageSize)&$filter=\(filter)"
             case let label? where label.hasPrefix("folder:"):
                 let id = String(label.dropFirst(7)).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
                 url = "\(Self.base)/me/mailFolders/\(id)/messages?\(top)"
             case let label? where label.hasPrefix("cat:"):
                 let name = String(label.dropFirst(4)).replacingOccurrences(of: "'", with: "''")
-                let filter = "categories/any(c:c eq '\(name)')".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                let filter = "categories/any(c:c eq '\(name)')".addingPercentEncoding(withAllowedCharacters: Self.queryValueAllowed) ?? ""
                 url = "\(Self.base)/me/messages?$select=\(Self.listFields)&$top=\(pageSize)&$filter=\(filter)"
             default:
                 // All Mail, as Gmail means it: everything but Deleted Items and Junk.
                 let folders = try await OutlookFolders.shared.ids(for: account, client: self)
                 let excluded = [folders.trash, folders.junk].compactMap { $0 }.map { "parentFolderId ne '\($0)'" }
                 let filter = (["receivedDateTime ge 1900-01-01T00:00:00Z"] + excluded).joined(separator: " and ")
-                    .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                    .addingPercentEncoding(withAllowedCharacters: Self.queryValueAllowed) ?? ""
                 url = "\(Self.base)/me/messages?\(top)&$filter=\(filter)"
             }
         }
@@ -693,8 +706,11 @@ struct OutlookClient: Sendable {
     }
 
     /// Honors Graph's throttling (429 with Retry-After) a few times, and a
-    /// stale token once.
-    private func perform(_ request: URLRequest, account: String) async throws -> (Data, Int) {
+    /// stale token once. `oncePastGateway`: a request that mustn't happen
+    /// twice (sending, making a draft). A gateway timeout (504) can come
+    /// after Outlook already did it, so that one is handed back for the
+    /// caller to check, instead of sent again here: an email went twice.
+    private func perform(_ request: URLRequest, account: String, oncePastGateway: Bool = false) async throws -> (Data, Int) {
         var request = request
         for attempt in 0..<4 {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -704,7 +720,7 @@ struct OutlookClient: Sendable {
                 request.setValue("Bearer \(try await token(account))", forHTTPHeaderField: "Authorization")
                 continue
             }
-            if status == 429 || status == 503 || status == 504, attempt < 3 {
+            if status == 429 || status == 503 || (status == 504 && !oncePastGateway), attempt < 3 {
                 let wait = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After").flatMap(Double.init) ?? Double(1 << attempt)
                 try await Task.sleep(for: .seconds(min(wait, 10)))
                 continue
@@ -720,7 +736,7 @@ struct OutlookClient: Sendable {
         do { return try JSONDecoder().decode(T.self, from: data) } catch { throw ClientError.decodingFailed }
     }
 
-    private func change(_ method: String, _ url: String, body: [String: Any]?, account: String) async throws {
+    private func change(_ method: String, _ url: String, body: [String: Any]?, account: String, oncePastGateway: Bool = false) async throws {
         guard let requestURL = URL(string: url) else { throw ClientError.decodingFailed }
         var request = URLRequest(url: requestURL)
         request.httpMethod = method
@@ -730,7 +746,7 @@ struct OutlookClient: Sendable {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
-        let (data, status) = try await perform(request, account: account)
+        let (data, status) = try await perform(request, account: account, oncePastGateway: oncePastGateway)
         try Self.check(status, data)
     }
 
@@ -744,7 +760,7 @@ struct OutlookClient: Sendable {
         var base64 = raw.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
         while base64.count % 4 != 0 { base64 += "=" }
         request.httpBody = Data(base64.utf8)
-        let (data, status) = try await perform(request, account: account)
+        let (data, status) = try await perform(request, account: account, oncePastGateway: true)
         return (data, status)
     }
 

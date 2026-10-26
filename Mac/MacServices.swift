@@ -57,7 +57,7 @@ final class MacServices {
         let auth = GoogleAuthService()
         self.store = store
         if inMemory {
-            store.errorMessage = "Corres couldn't open its usual storage and is running in memory only. Nothing will be saved once you quit. Restart Corres, and check your Mac has free space."
+            store.errorMessage = String(localized: "Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage.")
         }
         sync = GmailSyncService(repository: repository)
         self.auth = auth
@@ -349,6 +349,13 @@ final class MacServices {
         // At most one reload each half second: a first sync saves a hundred
         // batches, and each reload redraws the lists.
         observe({ [unowned self] in sync.syncProgress }) { [unowned self] _ in SyncBatchRefresh.schedule(store) }
+        // Siri, Shortcuts or a person's card in a conversation window asking
+        // for a place (open this email, this draft, search) while the main
+        // window is closed: only it takes those, so it opens and takes the
+        // request as it appears, rather than nothing happening.
+        observe({ [unowned self] in router.pending }) { pending in
+            if pending != nil, !MacWindows.mainIsOpen { MacWindows.showMain() }
+        }
     }
 
     /// SwiftUI's onChange, for the app rather than a view: `changed` runs

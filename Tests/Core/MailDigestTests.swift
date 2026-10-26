@@ -23,6 +23,14 @@ struct MailDigestTests {
         #expect(MailDigest.preview(body: "Thanks!", html: nil) == nil)
     }
 
+    /// Chinese and Japanese run on without spaces; the preview still stops.
+    @Test func aPreviewWithoutSpacesIsCut() {
+        let chinese = String(repeating: "我们已经收到您的申请材料并会尽快处理。", count: 60)
+        let preview = MailDigest.preview(body: chinese, html: nil)
+        #expect(preview?.count == 240)
+        #expect(chinese.hasPrefix(preview ?? "-"))
+    }
+
     /// A card-used notice is not a fraud alert: alarm words only when the
     /// email says them.
     @Test func alarmWordsNeedTheEmailToSayThem() {

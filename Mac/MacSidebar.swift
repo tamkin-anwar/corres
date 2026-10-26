@@ -76,7 +76,7 @@ struct MacSidebar: View {
                         row(.label(account: account, id: label.id, name: label.name))
                     }
                 } header: {
-                    Text(accounts.count > 1 ? AccountPreferences.nickname(for: account) : "Labels")
+                    Text(accounts.count > 1 ? AccountPreferences.nickname(for: account) : String(localized: "Labels"))
                 }
             }
         }

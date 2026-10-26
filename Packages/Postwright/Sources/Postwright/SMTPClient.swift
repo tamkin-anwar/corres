@@ -96,23 +96,35 @@ public actor SMTPClient {
     /// recipient. One connection per message keeps failures independent.
     public func send(_ message: Data, from sender: String, to recipients: [String],
                      username: String, password: String) async throws {
-        if channel == nil { try await open() }
-        let credentials = Data("\0\(username)\0\(password)".utf8).base64EncodedString()
-        let auth = try await command("AUTH PLAIN \(credentials)")
-        guard auth.code == 235 else { throw SMTPError.authenticationFailed(auth.text) }
+        // Closed however it ends: a refused recipient or a wrong password
+        // used to leave the connection open.
+        do {
+            if channel == nil { try await open() }
+            let credentials = Data("\0\(username)\0\(password)".utf8).base64EncodedString()
+            let auth = try await command("AUTH PLAIN \(credentials)")
+            guard auth.code == 235 else { throw SMTPError.authenticationFailed(auth.text) }
 
-        let utf8 = !(sender + recipients.joined()).allSatisfy(\.isASCII) && extensions.contains("SMTPUTF8")
-        try await expect(250, try await command("MAIL FROM:<\(sender)>" + (utf8 ? " SMTPUTF8" : "")))
-        for recipient in recipients {
-            let reply = try await command("RCPT TO:<\(recipient)>")
-            guard reply.code == 250 || reply.code == 251 else { throw SMTPError.recipientRejected(recipient, reply.text) }
+            let utf8 = !(sender + recipients.joined()).allSatisfy(\.isASCII) && extensions.contains("SMTPUTF8")
+            try await expect(250, try await command("MAIL FROM:<\(sender)>" + (utf8 ? " SMTPUTF8" : "")))
+            for recipient in recipients {
+                let reply = try await command("RCPT TO:<\(recipient)>")
+                guard reply.code == 250 || reply.code == 251 else { throw SMTPError.recipientRejected(recipient, reply.text) }
+            }
+            try await expect(354, try await command("DATA"))
+            try await write(Self.dotStuffed(message))
+            // A server may take minutes to accept a large message (RFC 5321
+            // 4.5.3.2.6 allows ten). Giving up sooner said "not sent" for
+            // mail that went, and trying again sent it twice.
+            try await expect(250, try await readReply(timeout: max(timeout, Self.dataTerminationTimeout)))
+        } catch {
+            await close()
+            throw error
         }
-        try await expect(354, try await command("DATA"))
-        try await write(Self.dotStuffed(message))
-        try await expect(250, try await readReply())
         _ = try? await command("QUIT")
         await close()
     }
+
+    static let dataTerminationTimeout: Duration = .seconds(600)
 
     /// Connects, secures and signs in, then leaves: proves an outgoing
     /// server and password without sending anything.
@@ -153,10 +165,10 @@ public actor SMTPClient {
     }
 
     /// One reply: "250-first", "250-more", "250 last".
-    private func readReply() async throws -> Reply {
+    private func readReply(timeout: Duration? = nil) async throws -> Reply {
         var collected: [String] = []
         while true {
-            guard let line = try await lines.next(timeout: timeout) else { throw SMTPError.disconnected }
+            guard let line = try await lines.next(timeout: timeout ?? self.timeout) else { throw SMTPError.disconnected }
             guard line.count >= 3, let code = Int(line.prefix(3)) else { continue }
             let rest = line.dropFirst(4)
             collected.append(String(rest))

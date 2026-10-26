@@ -2687,3 +2687,59 @@
 
 /* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
 "%@ from %@" = "%2$@님이 보낸 %1$@";
+
+/* Sixth sweep (Mac) */
+/* Mac compose: files attached past the size limit */
+"Attachments can add up to 25 MB in one email." = "이메일 한 통에 첨부 파일은 모두 합해 25MB까지 넣을 수 있습니다.";
+
+/* Mac Settings, adding an account: an address that has its own sign-in */
+"This address signs in with its own button: use Gmail, Outlook or iCloud." = "이 주소는 전용 버튼으로 로그인합니다. Gmail, Outlook 또는 iCloud를 사용하세요.";
+
+/* Mac Settings > Signatures: the name of a new signature */
+"Signature %lld" = "서명 %lld";
+
+/* Mac Keyboard Shortcuts sheet: heading for keys used in the message list */
+"In the list" = "목록에서";
+
+/* Mac Keyboard Shortcuts sheet: heading for keys used to write email */
+"Writing" = "작성";
+
+/* Mac Keyboard Shortcuts sheet: what J and K do */
+"Next and previous conversation" = "다음 대화와 이전 대화";
+
+/* Mac Keyboard Shortcuts sheet: two keys that do the same thing ("R  or  ⌘R") */
+"%@  or  %@" = "%@  또는  %@";
+
+/* Mac Keyboard Shortcuts sheet: what ⌘, opens */
+"Settings" = "설정";
+
+/* Notification title for the daily brief */
+"Your Brief" = "나의 브리핑";
+
+/* Mac: storage couldn't be opened */
+"Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage." = "Corres가 평소 사용하는 로컬 저장 공간을 열 수 없어 지금은 메모리에서만 실행 중입니다. 앱을 닫으면 아무것도 저장되지 않습니다. Corres를 다시 시작하세요. 이 문제가 계속되면 기기의 저장 공간이 부족할 수 있습니다.";
+"Add your email account in Corres first." = "먼저 Corres에서 이메일 계정을 추가하세요.";
+"It didn't send. It's waiting in Corres to try again." = "보내지 못했습니다. Corres에서 다시 보내기를 기다리고 있습니다.";
+/* Invitations on the Mac, as on the iPhone */
+"Call" = "통화";
+"%@, all day" = "%@, 종일";
+"Organized by %@" = "주최자: %@";
+
+/* Empty states and due dates, now translated on the Mac too */
+"Couldn't load %@" = "%@을(를) 불러올 수 없음";
+"Due %@" = "%@ 마감";
+"No Purchases" = "구매 없음";
+"No new senders" = "새 보낸 사람 없음";
+"No unread mail" = "읽지 않은 메일 없음";
+"Overdue, was due %@" = "기한 지남, %@ 마감이었음";
+"Was on %@" = "%@였음";
+/* Mac reading pane with several conversations chosen */
+"%lld conversations selected" = "대화 %lld개 선택됨";
+/* Mac Settings > Signatures with none chosen */
+"No signature selected" = "선택한 서명 없음";
+/* Mac Send Later mailbox, empty */
+"Nothing scheduled" = "예약된 항목 없음";
+
+"Automatic reply." = "자동 회신입니다.";
+
+"Automatic reply. Kept out of Needs You." = "자동 회신입니다. '나에게 필요'에 넣지 않았습니다.";

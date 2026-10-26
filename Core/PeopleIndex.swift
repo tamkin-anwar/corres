@@ -297,7 +297,9 @@ public struct PeopleIndex: Codable, Sendable, Equatable {
     public mutating func add(_ threads: [Correspondence], accounts: Set<String>) {
         for thread in threads where thread.id.account != "sample" {
             if thread.isFromAccountOwner {
-                for address in thread.toRecipients + thread.ccRecipients where !accounts.contains(address.lowercased()) {
+                // By address: "Tamkin <me@x.com>" is still you.
+                for address in thread.toRecipients + thread.ccRecipients
+                where !accounts.contains(address.lowercased()) && !accounts.contains(Correspondence.bareAddress(address)) {
                     recordSent(to: address, at: thread.lastSentAt ?? thread.receivedAt, subject: thread.subject)
                 }
             } else if let email = thread.senderEmail, !accounts.contains(email.lowercased()) {

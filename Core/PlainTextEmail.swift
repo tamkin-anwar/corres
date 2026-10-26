@@ -244,7 +244,8 @@ public enum QuoteDetector {
 /// "回复：", Japanese "返信:", Korean "답장:", and Outlook's "RE[2]:".
 /// Before, a German reply's subject became "Re: AW: Angebot".
 public enum MailSubject {
-    static let prefixPattern = #"(?i)^\s*((re|aw|antw|sv|vs|r|rif|tr|wg|fw|fwd|enc|rv|odp|回复|答复|回覆|転送|返信|전달|답장)\s*(\[\d+\])?\s*[:：]\s*)+"#
+    /// Outlook's Brazilian "RES:", Korean "회신:" and Chinese "转发：" too.
+    static let prefixPattern = #"(?i)^\s*((re|res|aw|antw|sv|vs|r|rif|tr|wg|fw|fwd|enc|rv|odp|回复|答复|回覆|転送|返信|转发|轉寄|转寄|전달|답장|회신)\s*(\[\d+\])?\s*[:：]\s*)+"#
 
     /// "AW: WG: Angebot" → "Angebot".
     public static func base(_ subject: String) -> String {
@@ -254,7 +255,7 @@ public enum MailSubject {
     /// The subject for a reply: one "Re: " in front of the base subject.
     public static func reply(_ subject: String) -> String { "Re: " + base(subject) }
 
-    static let forwardPrefixPattern = #"(?i)^\s*((tr|wg|fw|fwd|enc|rv|転送|转发|轉寄|전달)\s*(\[\d+\])?\s*[:：]\s*)+"#
+    static let forwardPrefixPattern = #"(?i)^\s*((tr|wg|fw|fwd|enc|rv|転送|转发|轉寄|转寄|전달)\s*(\[\d+\])?\s*[:：]\s*)+"#
 
     /// The subject for a forward: one "Fwd: " in front, any forward prefix
     /// ("WG:", "TR :", "転送:") folded into it. A reply's "Re:" stays, as

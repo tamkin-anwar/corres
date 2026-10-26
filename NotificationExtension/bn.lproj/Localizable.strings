@@ -253,3 +253,7 @@
 
 /* Alert title for a push when the notification extension can't fill in the email in time (title-loc-key from the push relay and iCloud watcher). */
 "New email" = "নতুন ইমেইল";
+
+"Automatic reply." = "স্বয়ংক্রিয় উত্তর।";
+
+"Automatic reply. Kept out of Needs You." = "স্বয়ংক্রিয় উত্তর। আপনার করণীয়-র বাইরে রাখা হয়েছে।";

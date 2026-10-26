@@ -88,7 +88,12 @@ actor IMAPSessions {
                 Self.announceRejected(account)
                 throw GmailAPIClient.ClientError.notSignedIn
             }
-            throw error
+            if error is GmailAPIClient.ClientError || error is CancellationError { throw error }
+            // Couldn't connect (offline, the server not answering): said
+            // the way a dropped connection is, so it's waited out. Thrown
+            // as it came, a change made offline counted as refused and
+            // the conversation came back.
+            throw GmailAPIClient.ClientError.badResponse(statusCode: 0)
         }
         do {
             // Every command reads which folder is the Inbox, Sent and the
@@ -155,6 +160,7 @@ actor IMAPSessions {
         } catch SMTPClient.SMTPError.authenticationFailed {
             throw GmailAPIClient.ClientError.notSignedIn
         }
+        await shared.accepted(email)
     }
 
     func forget(_ account: String) async {
@@ -170,15 +176,43 @@ actor IMAPSessions {
             await existing.connection.logout()
         }
         guard let password = IMAPCredentials.password(for: account) else { throw GmailAPIClient.ClientError.notSignedIn }
+        // A password the server just turned away isn't offered again on
+        // every 20-second check (and every action, index page and body):
+        // dozens of failed sign-ins an hour can get the account locked.
+        // Tried again after a while, in case the refusal was the server's
+        // passing mood; a new password is tried at once.
+        if let refused = rejected[account], refused.password == password.hashValue,
+           Date.now.timeIntervalSince(refused.at) < Self.rejectedPause {
+            throw GmailAPIClient.ClientError.notSignedIn
+        }
         let server = IMAPServer.for(account)
         let connection = IMAPConnection(host: server.imapHost, port: server.imapPort)
-        try await connection.connect()
-        try await connection.login(username: server.username ?? account, password: password)
         let session = Session(connection: connection)
-        try await session.refreshFolders()
+        do {
+            try await connection.connect()
+            try await connection.login(username: server.username ?? account, password: password)
+            try await session.refreshFolders()
+        } catch {
+            // Closed, not left open: a password turned away on every check
+            // used to leave one more connection to the server each time.
+            await connection.logout()
+            if case IMAPConnection.ConnectionError.authenticationFailed = error {
+                rejected[account] = (password.hashValue, .now)
+            }
+            throw error
+        }
+        rejected[account] = nil
         sessions[account] = session
         return session
     }
+
+    /// The password each account's server last refused, and when.
+    private var rejected: [String: (password: Int, at: Date)] = [:]
+    private static let rejectedPause: TimeInterval = 10 * 60
+
+    /// A password just checked and accepted (signing in again): sync may
+    /// use it straight away.
+    func accepted(_ account: String) { rejected[account] = nil }
 
     private func acquire(_ account: String) async {
         if !busy.contains(account) { busy.insert(account); return }

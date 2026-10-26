@@ -13,7 +13,7 @@ final class WatchBridge: NSObject {
     private var lastSent: WatchLink.Snapshot?
     /// What the watch face last showed, so its daily budget of wake-ups
     /// is spent only when the count or the first sender changes.
-    private var lastFace: (count: Int, first: String?)?
+    private var lastFace: (count: Int, first: String?, locked: Bool)?
     private var pendingUpdate: Task<Void, Never>?
     private static let log = Logger(subsystem: "studio.anwarcreative.corres", category: "watch")
 
@@ -58,9 +58,12 @@ final class WatchBridge: NSObject {
     /// waking the Watch app (Apple allows about 50 a day).
     private func updateFace(_ snapshot: WatchLink.Snapshot, data: Data) {
         let session = WCSession.default
-        let face = (count: snapshot.needsYouCount ?? snapshot.needsYou.count, first: snapshot.needsYou.first?.sender)
+        // The lock too: free with nothing in Needs You looked unchanged, so
+        // the face kept its last answer until the Watch app next ran.
+        let face = (count: snapshot.needsYouCount ?? snapshot.needsYou.count, first: snapshot.needsYou.first?.sender,
+                    locked: snapshot.isLocked == true)
         guard session.isComplicationEnabled, session.remainingComplicationUserInfoTransfers > 0,
-              lastFace.map({ $0.count != face.count || $0.first != face.first }) ?? true else { return }
+              lastFace.map({ $0.count != face.count || $0.first != face.first || $0.locked != face.locked }) ?? true else { return }
         session.transferCurrentComplicationUserInfo([WatchLink.snapshotKey: data])
         lastFace = face
         Self.log.info("Sent the watch face \(face.count)")
@@ -122,16 +125,23 @@ final class WatchBridge: NSObject {
             let source = store.thread(thread.id) ?? thread
             var draft = source.draft(kind: .reply)
             draft.body = Draft.adding(signature: CorresSettings.signature(for: source.id.account, reply: true), to: text + draft.body)
+            // From the address it was sent to, as a reply from a notification goes.
+            if let address = SendAsDirectory.shared.address(for: source.id.account, answering: source), !address.isPrimary {
+                draft.fromAddress = address.email
+                draft.fromName = address.name.isEmpty ? nil : address.name
+            }
             await outbox.sendNow(draft, replyingTo: source)
         }
-        send(Self.snapshot(from: store.threads))
+        // Locked as before: this used to send the whole of Needs You to a
+        // free user's Watch after any action there.
+        send(Self.snapshot(from: store.threads, locked: WidgetBridge.isLocked))
     }
 }
 
 extension WatchBridge: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         Task { @MainActor in
-            if let store = Organizer.shared.store { self.send(Self.snapshot(from: store.threads)) }
+            if let store = Organizer.shared.store { self.send(Self.snapshot(from: store.threads, locked: WidgetBridge.isLocked)) }
         }
     }
 
@@ -141,7 +151,7 @@ extension WatchBridge: WCSessionDelegate {
     nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
         Task { @MainActor in
             self.lastSent = nil
-            if let store = Organizer.shared.store { self.send(Self.snapshot(from: store.threads)) }
+            if let store = Organizer.shared.store { self.send(Self.snapshot(from: store.threads, locked: WidgetBridge.isLocked)) }
         }
     }
 

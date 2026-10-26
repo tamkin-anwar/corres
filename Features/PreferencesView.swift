@@ -220,7 +220,7 @@ struct PreferencesView: View {
                 set: { if !$0 { auth.errorMessage = nil } }
             )) {
                 Button("OK", role: .cancel) { auth.errorMessage = nil }
-            } message: { Text(auth.errorMessage ?? "Try again.") }
+            } message: { Text(auth.errorMessage ?? String(localized: "Try again.")) }
 
         }
         // Self-sufficient: a distant .preferredColorScheme does not reliably
@@ -243,7 +243,8 @@ struct PreferencesView: View {
             .padding(.vertical, 2)
             switch entitlements.plan {
             case .none:
-                Button("Try Corres Pro Free") { showingPaywall = true }
+                // Someone who's had the trial can't have it again.
+                Button(entitlements.isEligibleForTrial ? "Try Corres Pro Free" : "Get Corres Pro") { showingPaywall = true }
             case .monthly, .annual:
                 Button("Manage Subscription") { managingSubscription = true }
             case .lifetime:
@@ -279,9 +280,11 @@ struct PreferencesView: View {
         case .none:
             if let monthly = entitlements.product(EntitlementStore.ProductID.monthly),
                let annual = entitlements.product(EntitlementStore.ProductID.annual) {
-                return String(localized: "Try it free, then \(monthly.displayPrice) a month or \(annual.displayPrice) a year.")
+                return entitlements.isEligibleForTrial
+                    ? String(localized: "Try it free, then \(monthly.displayPrice) a month or \(annual.displayPrice) a year.")
+                    : String(localized: "\(monthly.displayPrice) a month or \(annual.displayPrice) a year.")
             }
-            return String(localized: "Try it free for 14 days.")
+            return entitlements.isEligibleForTrial ? String(localized: "Try it free for 14 days.") : String(localized: "Monthly or yearly.")
         case .monthly(let renews, let inTrial), .annual(let renews, let inTrial):
             let date = renews.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? String(localized: "soon")
             return inTrial ? String(localized: "Free trial · first charge \(date)") : String(localized: "Renews \(date)")
@@ -532,7 +535,7 @@ private struct AccountDetailView: View {
                     // the one you use on your other accounts.
                     TextField(profile?.name
                               ?? auth.accounts.lazy.compactMap { AccountPreferences.senderName(for: $0.email) ?? auth.profile(for: $0.email)?.name }.first
-                              ?? "Name", text: $senderName)
+                              ?? String(localized: "Name"), text: $senderName)
                         .multilineTextAlignment(.trailing)
                         .textContentType(.name)
                         .submitLabel(.done)
@@ -1420,7 +1423,7 @@ private struct NotificationSettingsView: View {
             set: { if !$0 { pushService.errorMessage = nil } }
         )) {
             Button("OK", role: .cancel) { pushService.errorMessage = nil }
-        } message: { Text(pushService.errorMessage ?? "Try again.") }
+        } message: { Text(pushService.errorMessage ?? String(localized: "Try again.")) }
     }
 }
 

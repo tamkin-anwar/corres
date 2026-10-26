@@ -57,6 +57,9 @@ struct OrganizingTests {
         #expect(!MuteRule.breaksMute(email(to: ["me@example.com", "team@example.com"]), accountAddresses: me))
         #expect(!MuteRule.breaksMute(email(to: ["me@example.com"], cc: ["boss@example.com"]), accountAddresses: me))
         #expect(!MuteRule.breaksMute(email(to: ["list@example.com"]), accountAddresses: me))
+        // Named, in any case, is still you; an address ending in yours is not.
+        #expect(MuteRule.breaksMute(email(to: ["Me <Me@Example.com>"]), accountAddresses: me))
+        #expect(!MuteRule.breaksMute(email(to: ["jme@example.com"]), accountAddresses: me))
     }
 
     @Test func purchaseStagesFollowTheStatus() {

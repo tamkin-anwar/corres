@@ -45,9 +45,21 @@ public actor SwiftDataMailRepository: MailRepository {
         return try modelContext.fetch(descriptor).map(\.asListCorrespondence)
     }
 
+    /// Of the newest `limit` conversations, those whose message is still to
+    /// download. Not the newest `limit` still to download: with older mail
+    /// indexed for Search (thousands, by design without bodies), that
+    /// reached further back on every pass and downloaded the whole year's
+    /// mail, 200 more every 20 seconds.
     public func threadsAwaitingContent(limit: Int) throws -> [Correspondence] {
+        var newest = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.account != "sample" })
+        newest.propertiesToFetch = [\.receivedAt]
+        newest.sortBy = [SortDescriptor(\.receivedAt, order: .reverse)]
+        newest.fetchLimit = limit
+        guard let oldest = try modelContext.fetch(newest).last?.receivedAt else { return [] }
         var descriptor = PersistedCorrespondence.summaries(withText: true)
-        descriptor.predicate = #Predicate { !$0.isBodyLoaded && $0.latestMessageID != nil && $0.account != "sample" }
+        descriptor.predicate = #Predicate {
+            !$0.isBodyLoaded && $0.latestMessageID != nil && $0.account != "sample" && $0.receivedAt >= oldest
+        }
         descriptor.sortBy = [SortDescriptor(\.receivedAt, order: .reverse)]
         descriptor.fetchLimit = limit
         return try modelContext.fetch(descriptor).map(\.asListCorrespondence)
@@ -472,8 +484,11 @@ public actor SwiftDataMailRepository: MailRepository {
             let bulk = InboxClassifier.bulkKind(labelIds: model.labelIds, looksAutomated: automated)
             if recent {
                 // The sender says how to read 03/11/2026 (`numericDateOrder`).
-                due = bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text, now: now, senderEmail: model.senderEmail)
-                    : bulk == nil ? MailSignals.deadline(in: text, now: now, senderEmail: model.senderEmail) : nil
+                due = bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text, now: now, senderEmail: model.senderEmail, receivedAt: model.receivedAt)
+                    : bulk == nil ? MailSignals.deadline(in: text, now: now, senderEmail: model.senderEmail, receivedAt: model.receivedAt) : nil
+                // "By Friday" is read only on the day it arrives; after that,
+                // keep what was read then rather than lose it.
+                if due == nil, !MailSignals.readsRelativeDates(model.receivedAt) { due = model.dueAt }
             }
             let copied = Correspondence.isCopiedOnly(account: model.account, to: model.toRecipients, cc: model.ccRecipients)
             (attention, reason) = InboxClassifier.initialAttention(

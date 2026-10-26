@@ -102,6 +102,15 @@ final class ScheduledSends {
         return item.draft
     }
 
+    /// The account was removed: its scheduled emails go with it, as its
+    /// unsent ones do (`OutboxService.forget`). Left here, each one came
+    /// due and failed as "Couldn't send" from an account that was gone.
+    func forget(account: String) {
+        let gone = items.filter { ($0.draft.fromAccount ?? $0.draft.threadID?.account)?.lowercased() == account.lowercased() }
+        for item in gone { remove(item.id) }
+        if !gone.isEmpty { rearm() }
+    }
+
     // MARK: Sending
 
     /// Sends whatever is due. Called on launch, on foreground, from

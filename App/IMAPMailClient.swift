@@ -854,21 +854,26 @@ struct IMAPMailClient: Sendable {
         let normalized = raw.replacingOccurrences(of: "\r\n", with: "\n")
         guard let split = normalized.range(of: "\n\n") else { return ([], raw) }
         let headerText = String(normalized[..<split.lowerBound])
-        var lines: [String] = []
+        // Each header with its continuation lines. Read unfolded, but sent
+        // folded as written: unfolded, a long subject in Japanese or a long
+        // References line ran past SMTP's 998-character line limit, and
+        // servers turned the email away.
+        var fields: [[String]] = []
         for line in headerText.components(separatedBy: "\n") {
-            if let first = line.first, first == " " || first == "\t", !lines.isEmpty { lines[lines.count - 1] += " " + line.trimmingCharacters(in: .whitespaces) }
-            else { lines.append(line) }
+            if let first = line.first, first == " " || first == "\t", !fields.isEmpty { fields[fields.count - 1].append(line) }
+            else { fields.append([line]) }
         }
         var recipients: [String] = []
         var kept: [String] = []
-        for line in lines {
+        for field in fields {
+            let line = field.map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: " ")
             let lower = line.lowercased()
             if lower.hasPrefix("to:") || lower.hasPrefix("cc:") || lower.hasPrefix("bcc:") {
                 let value = line[line.index(after: line.firstIndex(of: ":")!)...]
                 let pattern = #"[A-Za-z0-9._%+'-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"#
                 recipients += value.matches(of: try! Regex(pattern)).map { String(value[$0.range]).lowercased() }
             }
-            if !lower.hasPrefix("bcc:") { kept.append(line) }
+            if !lower.hasPrefix("bcc:") { kept += field }
         }
         var seen = Set<String>()
         let unique = recipients.filter { seen.insert($0).inserted }

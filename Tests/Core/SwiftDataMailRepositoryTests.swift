@@ -793,4 +793,26 @@ struct SwiftDataMailRepositoryTests {
         #expect(byID["4"]?.attention == .needsYou)
         #expect(byID["5"]?.attention == .handled)
     }
+
+    /// Bodies are filled in for the newest conversations only. Older mail
+    /// indexed for Search has none on purpose, and once the newest were
+    /// loaded the next pass used to reach back for the next ones, until
+    /// the whole indexed year had been downloaded.
+    @Test func onlyTheNewestConversationsAwaitTheirBodies() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        func thread(_ n: Int, loaded: Bool) -> Correspondence {
+            Correspondence(id: ThreadID(account: "me@example.com", providerID: "\(n)"), sender: "S", senderEmail: "s@example.com",
+                           organization: "", subject: "Subject \(n)", excerpt: "", body: "", latestMessageID: "m\(n)",
+                           receivedAt: now.addingTimeInterval(-Double(n) * 3_600), dueAt: nil, reason: "", attention: .quiet,
+                           labelIds: n < 3 ? ["INBOX"] : ["CATEGORY_UPDATES"], isBodyLoaded: loaded)
+        }
+        try await repository.upsert((1...6).map { thread($0, loaded: $0 == 1) }, isInitialSync: true)
+
+        let first = try await repository.threadsAwaitingContent(limit: 3)
+        #expect(first.map(\.id.providerID) == ["2", "3"])
+
+        try await repository.applyLoadedContent([thread(2, loaded: true), thread(3, loaded: true)])
+        let next = try await repository.threadsAwaitingContent(limit: 3)
+        #expect(next.isEmpty)
+    }
 }

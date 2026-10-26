@@ -124,11 +124,13 @@ public struct TodayBrief: Equatable, Sendable {
         return order.compactMap { latest[$0] }
     }
 
-    /// Deadlines read from "by Friday" land on midnight or the day's last
-    /// minute: a day, not a time worth printing.
+    /// Deadlines read from "by Friday" land on midnight, noon (where the
+    /// date detector and `LocalDates` put a day with no time) or the day's
+    /// last minute: a day, not a time worth printing. Read as a time, "Pay
+    /// by Friday" showed "Due 12:00 PM" and turned Overdue at one o'clock.
     public static func hasTime(_ date: Date, calendar: Calendar = .current) -> Bool {
         let parts = calendar.dateComponents([.hour, .minute], from: date)
         let hour = parts.hour ?? 0, minute = parts.minute ?? 0
-        return !(hour == 0 && minute == 0) && !(hour == 23 && minute == 59)
+        return !(hour == 0 && minute == 0) && !(hour == 12 && minute == 0) && !(hour == 23 && minute == 59)
     }
 }

@@ -5,6 +5,7 @@ import Testing
 /// Needs You and Waiting are sorted by keys read once per conversation; the
 /// order must be exactly what sorting the conversations themselves gave,
 /// ties included.
+extension NewSenderModeSuites {
 struct MailQueryOrderTests {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
@@ -92,4 +93,5 @@ struct MailQueryOrderTests {
             #expect(Set(unordered.map(\.id)) == Set(filtered.map(\.id)))
         }
     }
+}
 }

@@ -121,9 +121,13 @@ public enum MuteRule {
     /// Gmail does: when it's written to you and you alone, or you've been
     /// added as a recipient. Everything else stays quiet and out of the
     /// lists.
+    /// Addresses are compared whole ("Me <me@x.com>" is you), never as
+    /// text inside another: "jme@x.com" contains "me@x.com" but is someone
+    /// else, and a muted thread came back for mail sent to them.
     public static func breaksMute(_ thread: Correspondence, accountAddresses: Set<String>) -> Bool {
-        let to = thread.toRecipients.map { $0.lowercased() }
-        let mine = to.filter { address in accountAddresses.contains { address.contains($0) } }
+        let yours = Set(accountAddresses.map { $0.lowercased() })
+        let to = thread.toRecipients.map(Correspondence.bareAddress)
+        let mine = to.filter { yours.contains($0) }
         return !mine.isEmpty && mine.count == to.count && thread.ccRecipients.isEmpty
     }
 }

@@ -105,7 +105,7 @@ enum GmailMessageComposer {
     /// with a comma or other special character quoted, and one in any other
     /// script ("Zoë", "রিদিতা") RFC 2047-encoded, so it arrives as typed.
     static func addressList(_ field: String) -> String {
-        PeopleIndex.entries(in: field).map { entry in
+        let entries = PeopleIndex.entries(in: field).map { entry in
             guard let (name, email) = PeopleIndex.parse(entry) else { return entry }
             guard !name.isEmpty else { return email }
             if !name.allSatisfy(\.isASCII) { return "\(MailEncoding.encodedWords(name)) <\(email)>" }
@@ -114,7 +114,27 @@ enum GmailMessageComposer {
                 return "\"\(escaped)\" <\(email)>"
             }
             return "\(name) <\(email)>"
-        }.joined(separator: ", ")
+        }
+        // Folded between addresses once a line runs long (RFC 5322 2.2.3):
+        // a reply to everyone on a long thread made one line past the
+        // 998 characters mail servers accept.
+        var result = ""
+        var lineLength = 4 // "To: "
+        for (index, entry) in entries.enumerated() {
+            let lines = entry.components(separatedBy: "\r\n")
+            if index > 0 {
+                if lineLength + 2 + (lines.first?.count ?? 0) > 76 {
+                    result += ",\r\n "
+                    lineLength = 1
+                } else {
+                    result += ", "
+                    lineLength += 2
+                }
+            }
+            result += entry
+            lineLength = lines.count > 1 ? (lines.last?.count ?? 0) : lineLength + entry.count
+        }
+        return result
     }
 
     /// A filename as a header value: plain when it's ASCII (quotes and

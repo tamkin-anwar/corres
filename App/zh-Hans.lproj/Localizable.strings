@@ -3726,3 +3726,72 @@
 
 /* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
 "%@ from %@" = "来自%2$@的%1$@";
+"Add your email account in Corres first." = "请先在 Corres 中添加你的邮件账户。";
+"It didn't send. It's waiting in Corres to try again." = "没有发送出去。它在 Corres 中等待重试。";
+
+/* No comment provided by engineer. */
+"Call" = "通话";
+
+/* No comment provided by engineer. */
+"%@, all day" = "%@，全天";
+
+/* No comment provided by engineer. */
+"Organized by %@" = "组织者：%@";
+
+/* No comment provided by engineer. */
+"Your mail couldn't be opened." = "无法打开你的邮件。";
+
+/* No comment provided by engineer. */
+"Get Corres Pro" = "获取 Corres Pro";
+
+/* No comment provided by engineer. */
+"%@ a month or %@ a year." = "每月 %@ 或每年 %@。";
+
+/* No comment provided by engineer. */
+"Monthly or yearly." = "按月或按年。";
+
+/* No comment provided by engineer. */
+"Couldn't Suggest Times" = "无法建议时间";
+
+/* No comment provided by engineer. */
+"Corres doesn't have access to your calendar. You can allow it in Settings > Apps > Corres." = "Corres 无权访问你的日历。你可以在“设置”>“App”>“Corres”中允许。";
+
+/* No comment provided by engineer. */
+"Your calendar has no open times on weekdays in the next week." = "未来一周的工作日里，你的日历没有空闲时间。";
+
+/* No comment provided by engineer. */
+"No new senders" = "没有新发件人";
+
+/* No comment provided by engineer. */
+"One moment" = "请稍候";
+
+/* No comment provided by engineer. */
+"No conversation selected" = "未选择对话";
+
+/* No comment provided by engineer. */
+"Nothing Muted" = "没有已静音的内容";
+
+/* No comment provided by engineer. */
+"Nothing Matches" = "没有匹配项";
+
+/* No comment provided by engineer. */
+"Couldn't load %@" = "无法载入%@";
+
+/* No comment provided by engineer. */
+"Couldn't load Drafts" = "无法载入草稿";
+
+/* No comment provided by engineer. */
+"Conversation unavailable" = "对话不可用";
+
+/* No comment provided by engineer. */
+"No Purchases" = "没有购物";
+
+/* No comment provided by engineer. */
+"Was on %@" = "在%@";
+
+/* No comment provided by engineer. */
+"Overdue, was due %@" = "已逾期，原定 %@ 到期";
+
+"Automatic reply." = "自动回复。";
+
+"Automatic reply. Kept out of Needs You." = "自动回复。未放入“需要你”。";

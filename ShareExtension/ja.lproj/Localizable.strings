@@ -352,3 +352,13 @@
 /* No comment provided by engineer. */
 "You're waiting on their reply" = "相手の返信を待っています";
 
+"Sending…" = "送信中…";
+"Sent" = "送信しました";
+"No connection. Corres will send it as soon as it can." = "接続がありません。Corresができるだけ早く送信します。";
+"Couldn’t send it. Check your connection and try again." = "送信できませんでした。接続を確認して、もう一度お試しください。";
+"Open Corres once, then share again. Corres finishes setting up sharing the first time it opens after updating." = "Corresを一度開いてから、もう一度共有してください。アップデート後に初めて開いたときに、Corresが共有の設定を済ませます。";
+"%@ didn’t accept it. Try again in a moment." = "%@が受け付けませんでした。少ししてからもう一度お試しください。";
+
+"Automatic reply." = "自動返信です。";
+
+"Automatic reply. Kept out of Needs You." = "自動返信です。「要対応」には入れません。";

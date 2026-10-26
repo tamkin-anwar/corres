@@ -184,7 +184,7 @@ private struct MacIMAPSignIn: View {
             } else {
                 switch await MailServerDiscovery.find(for: email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()) {
                 case .useSignIn:
-                    error = "This address signs in with its own button: use Gmail, Outlook or iCloud."
+                    error = String(localized: "This address signs in with its own button: use Gmail, Outlook or iCloud.")
                     return
                 case .unsupported(let message):
                     error = message
@@ -380,7 +380,7 @@ private struct MacPlanSettings: View {
     var body: some View {
         Form {
             Section {
-                LabeledContent("Plan", value: entitlements.isPro ? "Corres Pro" : "Free")
+                LabeledContent("Plan", value: entitlements.isPro ? "Corres Pro" : String(localized: "Free"))
                 Text("Corres Pro adds Needs You, Waiting, answers in Search, summaries and suggested replies. One purchase covers your iPhone, iPad and Mac.")
                     .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
@@ -489,7 +489,7 @@ private struct MacSignaturesSettings: View {
     }
 
     private func add() {
-        let signature = Signature(name: "Signature \(signatures.count + 1)", text: "")
+        let signature = Signature(name: String(localized: "Signature \(signatures.count + 1)"), text: "")
         signatures.append(signature)
         selection = signature.id
     }

@@ -29,6 +29,14 @@ struct AskQueryTests {
         #expect(query.gmailQuery == "from:oliver has:attachment")
     }
 
+    /// A question typed as a sentence ends in a full stop, not part of a name.
+    @Test func aFullStopIsNotPartOfTheName() {
+        let query = AskQuery("Show emails from Maya.", now: now, calendar: calendar)
+        #expect(query.person == "maya")
+        #expect(query.matches(thread("1", sender: "Maya Chen", email: "maya.chen@x.test", subject: "Hi")))
+        #expect(AskQuery("Emails from maya@x.test.", now: now, calendar: calendar).person == "maya@x.test")
+    }
+
     @Test func receiptsThisMonth() {
         let query = AskQuery("Receipts this month", now: now, calendar: calendar)
         #expect(query.topic == .receipts && query.keywords.isEmpty)

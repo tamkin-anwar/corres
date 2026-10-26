@@ -102,6 +102,12 @@ public struct AskQuery: Equatable, Sendable {
         } else if let bengali = take(#" ([\p{L}\p{M}\p{N}]+?)(?:ের|এর|র)? (?:কাছ )?থেকে "#) {
             person = bengali[1]
         }
+        // "Show emails from Maya." ends the name with the sentence's full
+        // stop, and "maya." matched nobody.
+        if let name = person {
+            let trimmed = name.trimmingCharacters(in: CharacterSet(charactersIn: ".'-"))
+            person = trimmed.isEmpty ? nil : trimmed
+        }
         if let name = person, Self.notPeople.contains(name) { person = nil }
 
         keywords = text.split(separator: " ").map(String.init)

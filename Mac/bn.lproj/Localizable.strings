@@ -2687,3 +2687,59 @@
 
 /* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
 "%@ from %@" = "%2$@ থেকে %1$@";
+
+/* Sixth sweep (Mac) */
+/* Mac compose: files attached past the size limit */
+"Attachments can add up to 25 MB in one email." = "একটি ইমেইলে অ্যাটাচমেন্ট মিলিয়ে সর্বোচ্চ 25 MB হতে পারে।";
+
+/* Mac Settings, adding an account: an address that has its own sign-in */
+"This address signs in with its own button: use Gmail, Outlook or iCloud." = "এই ঠিকানা নিজস্ব বোতাম দিয়ে সাইন ইন করে: Gmail, Outlook বা iCloud ব্যবহার করুন।";
+
+/* Mac Settings > Signatures: the name of a new signature */
+"Signature %lld" = "স্বাক্ষর %lld";
+
+/* Mac Keyboard Shortcuts sheet: heading for keys used in the message list */
+"In the list" = "তালিকায়";
+
+/* Mac Keyboard Shortcuts sheet: heading for keys used to write email */
+"Writing" = "লেখা";
+
+/* Mac Keyboard Shortcuts sheet: what J and K do */
+"Next and previous conversation" = "পরের ও আগের কথোপকথন";
+
+/* Mac Keyboard Shortcuts sheet: two keys that do the same thing ("R  or  ⌘R") */
+"%@  or  %@" = "%@  অথবা  %@";
+
+/* Mac Keyboard Shortcuts sheet: what ⌘, opens */
+"Settings" = "সেটিংস";
+
+/* Notification title for the daily brief */
+"Your Brief" = "আপনার সারসংক্ষেপ";
+
+/* Mac: storage couldn't be opened */
+"Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage." = "Corres তার স্বাভাবিক লোকাল স্টোরেজ খুলতে পারেনি এবং এখন শুধু মেমোরিতে চলছে। অ্যাপ বন্ধ করলে কিছুই সংরক্ষিত হবে না। Corres আবার চালু করুন। এটি বারবার হলে আপনার ডিভাইসে স্টোরেজ কম থাকতে পারে।";
+"Add your email account in Corres first." = "আগে Corres-এ আপনার ইমেইল অ্যাকাউন্ট যোগ করুন।";
+"It didn't send. It's waiting in Corres to try again." = "পাঠানো যায়নি। আবার চেষ্টার জন্য এটি Corres-এ অপেক্ষা করছে।";
+/* Invitations on the Mac, as on the iPhone */
+"Call" = "কল";
+"%@, all day" = "%@, সারাদিন";
+"Organized by %@" = "আয়োজক: %@";
+
+/* Empty states and due dates, now translated on the Mac too */
+"Couldn't load %@" = "%@ লোড করা যায়নি";
+"Due %@" = "শেষ সময় %@";
+"No Purchases" = "কোনো কেনাকাটা নেই";
+"No new senders" = "কোনো নতুন প্রেরক নেই";
+"No unread mail" = "কোনো অপঠিত মেইল নেই";
+"Overdue, was due %@" = "সময় পেরিয়ে গেছে, শেষ সময় ছিল %@";
+"Was on %@" = "%@ তারিখে ছিল";
+/* Mac reading pane with several conversations chosen */
+"%lld conversations selected" = "%lld টি কথোপকথন নির্বাচিত";
+/* Mac Settings > Signatures with none chosen */
+"No signature selected" = "কোনো স্বাক্ষর বাছাই করা নেই";
+/* Mac Send Later mailbox, empty */
+"Nothing scheduled" = "কিছু নির্ধারিত নেই";
+
+"Automatic reply." = "স্বয়ংক্রিয় উত্তর।";
+
+"Automatic reply. Kept out of Needs You." = "স্বয়ংক্রিয় উত্তর। আপনার করণীয়-র বাইরে রাখা হয়েছে।";

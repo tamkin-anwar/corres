@@ -688,7 +688,8 @@ struct CorresShell: View {
             ContentUnavailableView {
                 EmptyTitle("One moment", systemImage: "arrow.clockwise")
             } description: {
-                Text("Your sample conversations couldn't be opened.")
+                // Real mail too: it used to say "sample" to everyone.
+                Text(auth.accounts.isEmpty ? "Your sample conversations couldn't be opened." : "Your mail couldn't be opened.")
             } actions: {
                 Button("Try Again") { Task { await store.load() } }
             }

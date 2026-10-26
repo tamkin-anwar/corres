@@ -1,4 +1,5 @@
 import Foundation
+import Postwright
 
 /// Raw REST calls against the Gmail API. No third-party HTTP dependency,
 /// URLSession + a token minted per-account by `GoogleTokenProvider` (Batch
@@ -183,18 +184,31 @@ struct GmailAPIClient {
                 for change in entry.labelsAdded ?? [] {
                     let labels = Set(change.message.labelIds ?? [])
                     let trashed = labels.contains("TRASH") || labels.contains("SPAM")
+                    // Moved back earlier in this window: a star or a label
+                    // added after doesn't undo that. It used to, so mail
+                    // moved back to the Inbox and then starred never returned.
+                    let wasRestored = restored[change.message.id] == true
                     record(change.message, removed: trashed)
                     // Only an explicit move *into* the Inbox counts as a
                     // restore, not any label added to a message already there.
-                    if !(change.labelIds ?? []).contains("INBOX") { restored[change.message.id] = false }
+                    if !(change.labelIds ?? []).contains("INBOX") {
+                        restored[change.message.id] = wasRestored && labels.contains("INBOX") && !trashed
+                    }
                 }
                 for change in entry.labelsRemoved ?? [] {
                     let labels = Set(change.message.labelIds ?? [])
-                    let removedFromInbox = (change.labelIds ?? []).contains("INBOX")
+                    let taken = Set(change.labelIds ?? [])
+                    let removedFromInbox = taken.contains("INBOX")
                         && !labels.contains("INBOX") && !labels.contains("SENT")
                     let trashed = labels.contains("TRASH") || labels.contains("SPAM")
+                    let wasRestored = restored[change.message.id] == true
                     record(change.message, removed: removedFromInbox || trashed)
-                    restored[change.message.id] = false
+                    // Out of Trash or Spam into the Inbox is a restore too.
+                    // Read (UNREAD taken off) after moving it back is not
+                    // a reason to forget the move: moved back and opened
+                    // on the web, it never came back here.
+                    let untrashed = (taken.contains("TRASH") || taken.contains("SPAM")) && labels.contains("INBOX")
+                    restored[change.message.id] = !trashed && !removedFromInbox && labels.contains("INBOX") && (wasRestored || untrashed)
                 }
                 for deleted in entry.messagesDeleted ?? [] {
                     record(deleted.message, removed: true)
@@ -1004,8 +1018,8 @@ struct GmailAPIClient {
         let fromYou = senderEmail.lowercased() == account.lowercased()
         let bulk = InboxClassifier.bulkKind(labelIds: labelIds, looksAutomated: automated)
         let deadline = fromYou ? nil
-            : (bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text, senderEmail: senderEmail)
-               : bulk == nil ? MailSignals.deadline(in: text, senderEmail: senderEmail) : nil)
+            : (bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text, senderEmail: senderEmail, receivedAt: receivedAt)
+               : bulk == nil ? MailSignals.deadline(in: text, senderEmail: senderEmail, receivedAt: receivedAt) : nil)
         var (attention, reason) = InboxClassifier.initialAttention(
             isUnread: isUnread, labelIds: labelIds, looksAutomated: automated, receivedAt: receivedAt,
             isCopiedOnly: Correspondence.isCopiedOnly(account: account, to: toRecipients, cc: ccRecipients),
@@ -1142,16 +1156,38 @@ struct GmailAPIClient {
     /// messages nest arbitrarily (plain/html alternatives, inline attachments).
     private static func bodyPart(mimeType: String, from part: GmailMessagePart?) -> String? {
         guard let part else { return nil }
-        if part.mimeType == mimeType, let data = part.body?.data { return decodeBase64URL(data) }
+        if part.mimeType == mimeType, let data = part.body?.data {
+            let contentType = part.headers?.first { $0.name.lowercased() == "content-type" }?.value
+            return decodeBase64URL(data, charset: contentType.flatMap(charset(inContentType:)))
+        }
         for child in part.parts ?? [] {
             if let found = bodyPart(mimeType: mimeType, from: child) { return found }
         }
         return nil
     }
 
-    private static func decodeBase64URL(_ value: String) -> String? {
+    /// Gmail hands back a part's bytes in the charset the sender wrote it
+    /// in (Shift_JIS, GB2312, Windows-1252…), not converted to UTF-8.
+    /// Read only as UTF-8, those bodies failed and the email showed just
+    /// its snippet; read as labelled, as IMAP mail already is.
+    private static func decodeBase64URL(_ value: String, charset: String?) -> String? {
         guard let data = Data(base64URLEncoded: value) else { return nil }
-        return String(data: data, encoding: .utf8)
+        if let charset, let encoding = Charset.encoding(named: charset), encoding != .utf8,
+           let text = String(data: data, encoding: encoding) {
+            return text
+        }
+        return String(data: data, encoding: .utf8) ?? String(data: data, encoding: .windowsCP1252)
+    }
+
+    /// The `charset` parameter of a Content-Type header value.
+    static func charset(inContentType value: String) -> String? {
+        for piece in value.split(separator: ";").dropFirst() {
+            let pair = piece.split(separator: "=", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+            guard pair.count == 2, pair[0].lowercased() == "charset" else { continue }
+            let name = pair[1].trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+            return name.isEmpty ? nil : name
+        }
+        return nil
     }
 
     /// Many real emails (marketing templates, signatures) embed images as

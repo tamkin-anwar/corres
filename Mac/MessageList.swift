@@ -324,11 +324,12 @@ struct MessageList: NSViewRepresentable {
             }
             switch edge {
             case .trailing:
-                return [action("Archive", "archivebox.fill", CorresPalette.swipeArchive, .archive),
-                        action("Delete", "trash.fill", CorresPalette.swipeTrash, .trash, style: .destructive)]
+                return [action(String(localized: "Archive"), "archivebox.fill", CorresPalette.swipeArchive, .archive),
+                        action(String(localized: "Delete"), "trash.fill", CorresPalette.swipeTrash, .trash, style: .destructive)]
             case .leading:
-                return [action("Handled", "checkmark.circle.fill", CorresPalette.swipeHandled, .move(.handled)),
-                        action(thread.isUnread ? "Read" : "Unread", "envelope.badge.fill", CorresPalette.swipeUnread, .toggleUnread)]
+                return [action(String(localized: "Handled"), "checkmark.circle.fill", CorresPalette.swipeHandled, .move(.handled)),
+                        action(thread.isUnread ? String(localized: "Read") : String(localized: "Unread"), "envelope.badge.fill",
+                               CorresPalette.swipeUnread, .toggleUnread)]
             @unknown default:
                 return []
             }
@@ -562,6 +563,7 @@ final class ThreadCellView: NSTableCellView {
     private var textLeading: NSLayoutConstraint!
     private var isUnread = false
     private var showsReason = false
+    private var accountColor: NSColor?
     /// Pinned, flagged, has attachments: small symbols before the time.
     private var symbols: [(name: String, color: NSColor)] = []
 
@@ -658,7 +660,7 @@ final class ThreadCellView: NSTableCellView {
         if thread.isFlagged { symbols.append(("flag.fill", NSColor(CorresPalette.flag))) }
         if !thread.attachments.isEmpty { symbols.append(("paperclip", .secondaryLabelColor)) }
         accountDot.isHidden = accountColor == nil
-        accountDot.layer?.backgroundColor = accountColor?.cgColor
+        self.accountColor = accountColor
         if showsReason, !thread.reason.isEmpty {
             // The reason, then the preview: one line each.
             let preview = thread.excerpt.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\n", with: " ")
@@ -685,6 +687,13 @@ final class ThreadCellView: NSTableCellView {
         didSet { updateColors() }
     }
 
+    /// Light or Dark (the Mac's, or Settings › Appearance): the dots are
+    /// layer colors, fixed when set, so they're set again in the new one.
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateColors()
+    }
+
     /// At View › Bigger and Smaller's size.
     private func applyFonts() {
         time.font = .systemFont(ofSize: MacListScale.size(11))
@@ -698,7 +707,10 @@ final class ThreadCellView: NSTableCellView {
         let selected = backgroundStyle == .emphasized
         let accent = NSColor(named: "corresAccent") ?? .controlAccentColor
         dot.isHidden = !isUnread
-        dot.layer?.backgroundColor = (selected ? NSColor.white : accent).cgColor
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            dot.layer?.backgroundColor = (selected ? NSColor.white : accent).cgColor
+            accountDot.layer?.backgroundColor = accountColor?.cgColor
+        }
         applyFonts()
         sender.textColor = selected ? .white : .labelColor
         subject.textColor = selected ? .white : .labelColor

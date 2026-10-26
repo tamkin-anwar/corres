@@ -23,6 +23,49 @@ struct MailSignalsTests {
         #expect(!MailSignals.asksSomething("Sounds good.\n\nOn Mon, Sep 21, 2026 at 9:00 AM, Maya wrote:\n> Can you make it?"))
     }
 
+    /// The subject of a reply repeats the first message's question; the
+    /// reply itself is the answer.
+    @Test func aRepliesSubjectIsNotItsQuestion() {
+        #expect(!MailSignals.asksSomething("Re: Are you free Thursday?\nYes, Thursday works for me."))
+        #expect(!MailSignals.asksSomething("AW: Können Sie das prüfen?\nErledigt, danke."))
+        #expect(!MailSignals.asksSomething("Fwd: Can you help?\nFYI, sorted now."))
+        // A question in the reply still counts, and a new email's subject does.
+        #expect(MailSignals.asksSomething("Re: Lunch\nSure. What time works for you?"))
+        #expect(MailSignals.asksSomething("Lunch Thursday?\nI'm around all day."))
+        // Your own reply is not waiting on anyone because of the subject.
+        let sent = InboxClassifier.afterYouWrote(asksSomething: MailSignals.asksSomething("Re: Can you send the report?\nHere it is."),
+                                                 toPeople: true, sentAt: Date())
+        #expect(sent.attention == .quiet)
+    }
+
+    /// "I'm away until Monday. Could you contact Sam?" is said to anyone
+    /// who writes; it asks nothing of you and sets no deadline.
+    @Test func automaticRepliesStayOutOfNeedsYou() {
+        let soon = Date().addingTimeInterval(5 * 86_400)
+        for subject in ["Automatic reply: Budget", "Out of Office: Budget", "Abwesenheitsnotiz: Budget",
+                        "Réponse automatique : Budget", "Respuesta automática: Presupuesto", "自動応答: 予算", "자동 회신: 예산",
+                        "自动回复：预算"] {
+            let text = "\(subject)\nI'm out of the office until \(spelled(soon)). Could you contact Sam instead?"
+            #expect(MailSignals.isAutoReply(text), "\(subject)")
+            let placed = InboxClassifier.initialAttention(isUnread: true, labelIds: [], looksAutomated: false,
+                                                          asksSomething: true, deadline: soon, text: text)
+            #expect(placed.attention == .quiet, "\(subject)")
+            #expect(placed.reason == InboxClassifier.autoReplyReason)
+            // Someone you wrote to, still away.
+            #expect(InboxClassifier.correspondentOverride(isUnread: true, hasListUnsubscribe: false, isCorrespondent: true,
+                                                          currentReason: placed.reason) == nil)
+        }
+        // A person saying so themselves is not an automatic reply.
+        #expect(!MailSignals.isAutoReply("Out of office next week\nCan we meet before then?"))
+        #expect(!MailSignals.isAutoReply("Re: Budget\nAutomatic reply: no"))
+    }
+
+    @Test func aQuestionInASignatureAsksNothing() {
+        let text = "Hi Sam\nThanks for the update.\n\n-- \nJohn Smith\nWant to book time with me? https://cal.example/john"
+        #expect(!MailSignals.asksSomething(text))
+        #expect(MailSignals.asksSomething("Could you check this?\n-- \nJohn Smith"))
+    }
+
     @Test func aDateIsADeadlineOnlyWhenTheWordingSaysSo() {
         let now = Date()
         let soon = now.addingTimeInterval(5 * 86_400)
@@ -36,9 +79,40 @@ struct MailSignalsTests {
         #expect(MailSignals.deadline(in: "Due \(spelled(now.addingTimeInterval(200 * 86_400))).", now: now) == nil)
     }
 
+    /// The date detector reads "tomorrow" and "Friday" by today's clock:
+    /// in an email from days ago they meant another day.
+    @Test func relativeDatesCountOnlyInTodaysMail() {
+        let now = Date()
+        let lastWeek = now.addingTimeInterval(-4 * 86_400)
+        #expect(MailSignals.deadline(in: "Please reply by tomorrow.", now: now) != nil)
+        #expect(MailSignals.deadline(in: "Please reply by tomorrow.", now: now, receivedAt: now) != nil)
+        #expect(MailSignals.deadline(in: "Please reply by tomorrow.", now: now, receivedAt: lastWeek) == nil)
+        #expect(MailSignals.deadline(in: "Please reply by 5pm.", now: now, receivedAt: lastWeek) == nil)
+        // A date that names its day still counts.
+        let soon = now.addingTimeInterval(5 * 86_400)
+        #expect(MailSignals.deadline(in: "Please sign by \(spelled(soon)).", now: now, receivedAt: lastWeek) != nil)
+        #expect(MailSignals.timeSensitiveDate(in: "Your appointment is tomorrow at 9:00 AM. Please check in early.",
+                                              now: now, receivedAt: lastWeek) == nil)
+    }
+
     @Test func noReplyAddressesAreNotPeople() {
         #expect(MailSignals.hasPersonRecipient(["maya@studio.test"], account: "me@x.test"))
         #expect(!MailSignals.hasPersonRecipient(["noreply@bank.test", "me@x.test"], account: "me@x.test"))
+        // With names, as Outlook and IMAP keep them.
+        #expect(!MailSignals.hasPersonRecipient(["Bank <noreply@bank.test>", "Me <Me@X.test>"], account: "me@x.test"))
+        #expect(MailSignals.hasPersonRecipient(["Maya Chen <maya@studio.test>"], account: "me@x.test"))
+    }
+
+    @Test func copiedOnlyReadsAddressesWithNames() {
+        #expect(Correspondence.isCopiedOnly(account: "me@x.test", to: ["Maya <maya@x.test>"], cc: ["Tamkin Anwar <Me@X.test>"]))
+        #expect(!Correspondence.isCopiedOnly(account: "me@x.test", to: ["Tamkin <me@x.test>"], cc: ["Tamkin <me@x.test>"]))
+        #expect(Correspondence.isCopiedOnly(account: "me@x.test", to: ["maya@x.test"], cc: ["me@x.test"]))
+        #expect(!Correspondence.isCopiedOnly(account: "me@x.test", to: ["maya@x.test"], cc: ["jme@x.test"]))
+        // "To you", not "Cc you", when To names you with your name.
+        let named = Correspondence(id: ThreadID(account: "me@x.test", providerID: "1"), sender: "Maya", organization: "",
+                                   subject: "Hi", excerpt: "", body: "", receivedAt: Date(), dueAt: nil, reason: "",
+                                   attention: .needsYou, toRecipients: ["Tamkin Anwar <me@x.test>"])
+        #expect(named.isDirectRecipient)
     }
 
     @Test func classifierUsesQuestionsDeadlinesAndCc() {

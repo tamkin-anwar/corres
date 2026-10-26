@@ -2687,3 +2687,59 @@
 
 /* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
 "%@ from %@" = "%2$@からの%1$@";
+
+/* Sixth sweep (Mac) */
+/* Mac compose: files attached past the size limit */
+"Attachments can add up to 25 MB in one email." = "1通のメールに添付できるファイルは合計25 MBまでです。";
+
+/* Mac Settings, adding an account: an address that has its own sign-in */
+"This address signs in with its own button: use Gmail, Outlook or iCloud." = "このアドレスは専用のボタンでサインインします。Gmail、Outlook、iCloudのいずれかを使ってください。";
+
+/* Mac Settings > Signatures: the name of a new signature */
+"Signature %lld" = "署名 %lld";
+
+/* Mac Keyboard Shortcuts sheet: heading for keys used in the message list */
+"In the list" = "リスト内";
+
+/* Mac Keyboard Shortcuts sheet: heading for keys used to write email */
+"Writing" = "作成";
+
+/* Mac Keyboard Shortcuts sheet: what J and K do */
+"Next and previous conversation" = "次の会話と前の会話";
+
+/* Mac Keyboard Shortcuts sheet: two keys that do the same thing ("R  or  ⌘R") */
+"%@  or  %@" = "%@  または  %@";
+
+/* Mac Keyboard Shortcuts sheet: what ⌘, opens */
+"Settings" = "設定";
+
+/* Notification title for the daily brief */
+"Your Brief" = "今日のまとめ";
+
+/* Mac: storage couldn't be opened */
+"Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage." = "Corresはいつものローカルストレージを開けなかったため、現在メモリ上だけで動作しています。アプリを閉じると何も保存されません。Corresを再起動してください。何度も起きる場合は、デバイスのストレージが不足している可能性があります。";
+"Add your email account in Corres first." = "まずCorresでメールアカウントを追加してください。";
+"It didn't send. It's waiting in Corres to try again." = "送信できませんでした。Corresで再送信を待っています。";
+/* Invitations on the Mac, as on the iPhone */
+"Call" = "通話";
+"%@, all day" = "%@、終日";
+"Organized by %@" = "主催者：%@";
+
+/* Empty states and due dates, now translated on the Mac too */
+"Couldn't load %@" = "%@を読み込めませんでした";
+"Due %@" = "期限 %@";
+"No Purchases" = "購入はありません";
+"No new senders" = "新しい差出人はいません";
+"No unread mail" = "未読メールはありません";
+"Overdue, was due %@" = "期限切れ、期限は%@でした";
+"Was on %@" = "%@でした";
+/* Mac reading pane with several conversations chosen */
+"%lld conversations selected" = "%lld件の会話を選択中";
+/* Mac Settings > Signatures with none chosen */
+"No signature selected" = "署名が選択されていません";
+/* Mac Send Later mailbox, empty */
+"Nothing scheduled" = "予約はありません";
+
+"Automatic reply." = "自動返信です。";
+
+"Automatic reply. Kept out of Needs You." = "自動返信です。「要対応」には入れません。";

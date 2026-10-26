@@ -253,3 +253,7 @@
 
 /* Alert title for a push when the notification extension can't fill in the email in time (title-loc-key from the push relay and iCloud watcher). */
 "New email" = "새 이메일";
+
+"Automatic reply." = "자동 회신입니다.";
+
+"Automatic reply. Kept out of Needs You." = "자동 회신입니다. '나에게 필요'에 넣지 않았습니다.";

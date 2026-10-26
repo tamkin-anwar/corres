@@ -106,6 +106,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: .main) { _ in
             MailQuery.SearchIndex.shared.clear()
         }
+        // Before anything can write the widgets, the Watch's lists or the
+        // Brief: woken in the background by a push or a refresh, no window
+        // opens to set it (CorresApp), and a free user's Lock Screen and
+        // Watch were sent their mail unlocked.
+        WidgetBridge.isLocked = WidgetBridge.locks(connected: GoogleAuthService.hasSavedAccounts, entitlements: entitlements)
         WatchBridge.shared.start()
         HangReporter.shared.start()
         HangReporter.step("app started")
@@ -420,6 +425,13 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         case PushNotificationService.replyAction:
             let text = (typed ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return }
+            // The email it quotes: Corres closed, it often hasn't been read
+            // here yet, and the reply went out quoting nothing.
+            var thread = thread
+            if !thread.isBodyLoaded {
+                await threadActions.loadContent(for: thread)
+                thread = store.thread(thread.id) ?? thread
+            }
             // As a reply written in Compose: your words, your signature,
             // then the email quoted; from the address it was sent to.
             var draft = thread.draft(kind: .reply)

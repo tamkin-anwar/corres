@@ -28,6 +28,9 @@ struct ConversationView: View {
     /// Told which conversation is showing, when it opens and on Next or
     /// Previous, so the window can keep it open if it changes width.
     let onShow: ((ConversationRoute) -> Void)?
+    /// Leaves a conversation that has a window of its own (iPad): closes
+    /// the window, where going back has nowhere to go.
+    let onLeave: (() -> Void)?
     @State private var currentID: ThreadID
     @State private var composeDraft: Draft?
     @State private var htmlHeight: CGFloat = 200
@@ -57,7 +60,7 @@ struct ConversationView: View {
 
     init(store: MailStore, outbox: OutboxService, threadActions: ThreadActionService,
         labelDirectory: LabelDirectory, unsubscribeService: UnsubscribeService, auth: GoogleAuthService? = nil,
-        route: ConversationRoute, onShow: ((ConversationRoute) -> Void)? = nil) {
+        route: ConversationRoute, onShow: ((ConversationRoute) -> Void)? = nil, onLeave: (() -> Void)? = nil) {
         self.store = store
         self.outbox = outbox
         self.threadActions = threadActions
@@ -66,6 +69,7 @@ struct ConversationView: View {
         self.auth = auth
         self.orderedIDs = route.orderedIDs
         self.onShow = onShow
+        self.onLeave = onLeave
         self._currentID = State(initialValue: route.id)
     }
 
@@ -227,9 +231,19 @@ struct ConversationView: View {
                 } message: {
                     Text("Their mail is hidden in Corres from now on, with no notice to them. Your email account isn't changed.")
                 }
-                .sheet(item: $personCard) { person in
+                // Write asks once the card has closed: asked while it was
+                // still up, Compose couldn't show and nothing happened.
+                .sheet(item: $personCard, onDismiss: {
+                    if let address = writeAfterPerson {
+                        writeAfterPerson = nil
+                        router.pending = .composeTo(to: address, subject: "", body: "")
+                    }
+                }) { person in
                     PersonView(person: person, store: store, open: { currentID = $0 },
-                               write: { address in router.pending = .composeTo(to: address, subject: "", body: "") })
+                               write: { address in
+                                   writeAfterPerson = address
+                                   personCard = nil
+                               })
                 }
                 .alert(reminderOutcome == .added ? "Added to Reminders" : "Couldn't Add to Reminders",
                        isPresented: Binding(get: { reminderOutcome != nil }, set: { if !$0 { reminderOutcome = nil } })) {
@@ -242,6 +256,10 @@ struct ConversationView: View {
                     }
                 }
                 .sensoryFeedback(.success, trigger: reminderOutcome) { _, new in new == .added }
+                .alert("Couldn't Suggest Times", isPresented: Binding(get: { suggestTimesProblem != nil },
+                                                                     set: { if !$0 { suggestTimesProblem = nil } })) {
+                    Button("OK", role: .cancel) { suggestTimesProblem = nil }
+                } message: { Text(suggestTimesProblem ?? "") }
                 .sheet(isPresented: $addingEvent) {
                     if let calendarEvent {
                         NewEventSheet(event: calendarEvent, sender: thread.sender) { _ in }
@@ -434,9 +452,10 @@ struct ConversationView: View {
     }
 
     /// Leaves the conversation: pops it on iPhone, clears the detail
-    /// column in the split layout.
+    /// column in the split layout, closes its own window. In a window,
+    /// archiving it used to leave "Conversation unavailable" on screen.
     private func dismiss() {
-        if let splitSelection { splitSelection.wrappedValue = nil } else { systemDismiss() }
+        if let splitSelection { splitSelection.wrappedValue = nil } else if let onLeave { onLeave() } else { systemDismiss() }
     }
 
     private var threadExists: Bool { store.thread(currentID) != nil }
@@ -734,11 +753,18 @@ struct ConversationView: View {
             Task {
                 let calendar = CalendarAccess.shared
                 if !calendar.canRead { await calendar.requestRead() }
-                guard calendar.canRead else { return }
+                // Said, rather than a tap that did nothing.
+                guard calendar.canRead else {
+                    suggestTimesProblem = String(localized: "Corres doesn't have access to your calendar. You can allow it in Settings > Apps > Corres.")
+                    return
+                }
                 let now = Date.now
                 let busy = calendar.busy(from: now, to: now.addingTimeInterval(8 * 86_400))
                 let slots = Scheduling.freeSlots(busy: busy, from: now)
-                guard !slots.isEmpty else { return }
+                guard !slots.isEmpty else {
+                    suggestTimesProblem = String(localized: "Your calendar has no open times on weekdays in the next week.")
+                    return
+                }
                 let times = slots.map {
                     "• " + $0.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().hour().minute().timeZone(.specificName(.short)))
                 }.joined(separator: "\n")
@@ -1279,6 +1305,10 @@ struct ConversationView: View {
 
     @State private var confirmingBlock: Correspondence?
     @State private var personCard: PersonRef?
+    /// Write, tapped on the person card: Compose opens once it's closed.
+    @State private var writeAfterPerson: String?
+    /// Why Suggest Times had nothing to offer.
+    @State private var suggestTimesProblem: String?
     @State private var addingEvent = false
     /// Add to Reminders: what happened.
     @State private var reminderOutcome: MailReminders.Outcome?
@@ -1550,7 +1580,12 @@ private struct AttachmentRow: View {
             // not silently overwrite each other's temp file.
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            let url = directory.appendingPathComponent(attachment.filename)
+            // A name with a slash in it ("Q3/Q4 report.pdf") pointed into
+            // a folder that doesn't exist, and a nameless one at the folder
+            // itself: both failed as "Couldn't Download".
+            let safeName = attachment.filename.replacingOccurrences(of: "/", with: "-")
+                .replacingOccurrences(of: ":", with: "-").trimmingCharacters(in: .whitespacesAndNewlines)
+            let url = directory.appendingPathComponent(safeName.isEmpty || safeName.hasPrefix(".") ? "Attachment" + safeName : safeName)
             try data.write(to: url)
             previewURL = url
         } catch {
@@ -1587,7 +1622,8 @@ enum AttachmentThumbnails {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("thumb-" + UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
         guard (try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)) != nil else { return nil }
-        let url = directory.appendingPathComponent(filename)
+        // A slash in the name would point into a folder that isn't there.
+        let url = directory.appendingPathComponent(filename.replacingOccurrences(of: "/", with: "-"))
         guard (try? data.write(to: url)) != nil else { return nil }
         let request = QLThumbnailGenerator.Request(fileAt: url, size: CGSize(width: size.width * 2, height: size.height * 2),
                                                    scale: scale, representationTypes: .thumbnail)

@@ -37,6 +37,7 @@ enum AccountRemoval {
         sync.clearCursor(for: email)
         ActionQueue.shared.forget(account: email)
         Organizer.shared.outbox?.forget(account: email)
+        ScheduledSends.shared.forget(account: email)
         ServerRules.shared.forget(account: email)
         await store.removeAccountData(email)
         intelligence.forget(account: email)

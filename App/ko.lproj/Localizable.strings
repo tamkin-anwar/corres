@@ -3726,3 +3726,72 @@
 
 /* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
 "%@ from %@" = "%2$@님이 보낸 %1$@";
+"Add your email account in Corres first." = "먼저 Corres에서 이메일 계정을 추가하세요.";
+"It didn't send. It's waiting in Corres to try again." = "보내지 못했습니다. Corres에서 다시 보내기를 기다리고 있습니다.";
+
+/* No comment provided by engineer. */
+"Call" = "통화";
+
+/* No comment provided by engineer. */
+"%@, all day" = "%@, 종일";
+
+/* No comment provided by engineer. */
+"Organized by %@" = "주최자: %@";
+
+/* No comment provided by engineer. */
+"Your mail couldn't be opened." = "메일을 열 수 없습니다.";
+
+/* No comment provided by engineer. */
+"Get Corres Pro" = "Corres Pro 받기";
+
+/* No comment provided by engineer. */
+"%@ a month or %@ a year." = "월 %@ 또는 연 %@.";
+
+/* No comment provided by engineer. */
+"Monthly or yearly." = "월간 또는 연간.";
+
+/* No comment provided by engineer. */
+"Couldn't Suggest Times" = "시간을 제안할 수 없음";
+
+/* No comment provided by engineer. */
+"Corres doesn't have access to your calendar. You can allow it in Settings > Apps > Corres." = "Corres가 캘린더에 접근할 수 없습니다. 설정 > 앱 > Corres에서 허용할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"Your calendar has no open times on weekdays in the next week." = "앞으로 일주일 동안 평일에 캘린더의 빈 시간이 없습니다.";
+
+/* No comment provided by engineer. */
+"No new senders" = "새 보낸 사람 없음";
+
+/* No comment provided by engineer. */
+"One moment" = "잠시만 기다려 주세요";
+
+/* No comment provided by engineer. */
+"No conversation selected" = "선택한 대화 없음";
+
+/* No comment provided by engineer. */
+"Nothing Muted" = "알림을 끈 항목 없음";
+
+/* No comment provided by engineer. */
+"Nothing Matches" = "일치하는 항목 없음";
+
+/* No comment provided by engineer. */
+"Couldn't load %@" = "%@을(를) 불러올 수 없음";
+
+/* No comment provided by engineer. */
+"Couldn't load Drafts" = "임시 저장을 불러올 수 없음";
+
+/* No comment provided by engineer. */
+"Conversation unavailable" = "대화를 사용할 수 없음";
+
+/* No comment provided by engineer. */
+"No Purchases" = "구매 없음";
+
+/* No comment provided by engineer. */
+"Was on %@" = "%@였음";
+
+/* No comment provided by engineer. */
+"Overdue, was due %@" = "기한 지남, %@ 마감이었음";
+
+"Automatic reply." = "자동 회신입니다.";
+
+"Automatic reply. Kept out of Needs You." = "자동 회신입니다. '나에게 필요'에 넣지 않았습니다.";

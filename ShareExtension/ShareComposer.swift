@@ -274,12 +274,12 @@ final class ShareComposer {
             if (try? ShareOutbox.add(draft)) != nil {
                 phase = .queued
             } else {
-                phase = .failed("Couldn\u{2019}t send it. Check your connection and try again.")
+                phase = .failed(String(localized: "Couldn\u{2019}t send it. Check your connection and try again."))
             }
         } catch GmailAPIClient.ClientError.notSignedIn {
-            phase = .failed("Open Corres once, then share again. Corres finishes setting up sharing the first time it opens after updating.")
+            phase = .failed(String(localized: "Open Corres once, then share again. Corres finishes setting up sharing the first time it opens after updating."))
         } catch {
-            phase = .failed("\(MailAccounts.serviceTitle(for: account)) didn\u{2019}t accept it. Try again in a moment.")
+            phase = .failed(String(localized: "\(MailAccounts.serviceTitle(for: account)) didn\u{2019}t accept it. Try again in a moment."))
         }
     }
 

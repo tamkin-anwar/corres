@@ -2,9 +2,13 @@ import Foundation
 import Testing
 @testable import CorresCore
 
-/// Serialized: two tests here switch the global Screen new senders setting
-/// (`MailQuery.newSenderMode`), which no other suite depends on.
+/// Suites that switch or depend on the global Screen new senders setting
+/// (`MailQuery.newSenderMode`), run one at a time: two tests here switch
+/// it, and `MailQueryOrderTests` sorts held mail that it decides.
 @Suite(.serialized)
+enum NewSenderModeSuites {}
+
+extension NewSenderModeSuites {
 struct CorresCoreTests {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
@@ -597,4 +601,5 @@ struct CorresCoreTests {
         #expect(MailQuery.filter([item], search: "invoice", serverMatches: [id]).count == 1)
         #expect(MailQuery.filter([item], search: "invoice is:unread", serverMatches: [id]).isEmpty)
     }
+}
 }

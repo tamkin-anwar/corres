@@ -2687,3 +2687,59 @@
 
 /* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
 "%@ from %@" = "%1$@ de %2$@";
+
+/* Sixth sweep (Mac) */
+/* Mac compose: files attached past the size limit */
+"Attachments can add up to 25 MB in one email." = "Les pièces jointes peuvent atteindre 25 Mo au total par e-mail.";
+
+/* Mac Settings, adding an account: an address that has its own sign-in */
+"This address signs in with its own button: use Gmail, Outlook or iCloud." = "Cette adresse se connecte avec son propre bouton : utilisez Gmail, Outlook ou iCloud.";
+
+/* Mac Settings > Signatures: the name of a new signature */
+"Signature %lld" = "Signature %lld";
+
+/* Mac Keyboard Shortcuts sheet: heading for keys used in the message list */
+"In the list" = "Dans la liste";
+
+/* Mac Keyboard Shortcuts sheet: heading for keys used to write email */
+"Writing" = "Rédaction";
+
+/* Mac Keyboard Shortcuts sheet: what J and K do */
+"Next and previous conversation" = "Conversation suivante et précédente";
+
+/* Mac Keyboard Shortcuts sheet: two keys that do the same thing ("R  or  ⌘R") */
+"%@  or  %@" = "%@  ou  %@";
+
+/* Mac Keyboard Shortcuts sheet: what ⌘, opens */
+"Settings" = "Réglages";
+
+/* Notification title for the daily brief */
+"Your Brief" = "Votre point";
+
+/* Mac: storage couldn't be opened */
+"Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage." = "Corres n'a pas pu ouvrir son stockage local habituel et fonctionne pour l'instant uniquement en mémoire. Rien ne sera enregistré une fois l'app fermée. Redémarrez Corres. Si cela se reproduit, votre appareil manque peut-être d'espace de stockage.";
+"Add your email account in Corres first." = "Ajoutez d’abord votre compte de messagerie dans Corres.";
+"It didn't send. It's waiting in Corres to try again." = "Il n’est pas parti. Il attend dans Corres pour un nouvel essai.";
+/* Invitations on the Mac, as on the iPhone */
+"Call" = "l’appel";
+"%@, all day" = "%@, toute la journée";
+"Organized by %@" = "Organisé par %@";
+
+/* Empty states and due dates, now translated on the Mac too */
+"Couldn't load %@" = "Impossible de charger %@";
+"Due %@" = "Pour %@";
+"No Purchases" = "Aucun achat";
+"No new senders" = "Aucun nouvel expéditeur";
+"No unread mail" = "Aucun e-mail non lu";
+"Overdue, was due %@" = "En retard, prévu pour %@";
+"Was on %@" = "C’était le %@";
+/* Mac reading pane with several conversations chosen */
+"%lld conversations selected" = "%lld conversations sélectionnées";
+/* Mac Settings > Signatures with none chosen */
+"No signature selected" = "Aucune signature sélectionnée";
+/* Mac Send Later mailbox, empty */
+"Nothing scheduled" = "Rien de programmé";
+
+"Automatic reply." = "Réponse automatique.";
+
+"Automatic reply. Kept out of Needs You." = "Réponse automatique. Gardée hors de Pour vous.";

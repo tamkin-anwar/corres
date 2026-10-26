@@ -12,6 +12,9 @@ public enum MailSignals {
         for (index, line) in lines.enumerated() {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.hasPrefix(">") { continue }
+            // The signature delimiter ("-- "): a "Want to book a call?" in
+            // a signature asks nothing of this email's reader.
+            if trimmed == "--" { break }
             // "On … wrote:", "Am … schrieb:", "…写道：", an Outlook "From: /
             // Sent:" block, "-----Original Message-----" (`QuoteDetector`).
             if QuoteDetector.startsQuote(lines, at: index) { break }
@@ -92,11 +95,36 @@ public enum MailSignals {
     /// request. Links are removed first, since their query strings carry
     /// question marks. A question mark in any script counts: full-width
     /// "？" (Chinese, Japanese) and Arabic-script "؟" too.
+    ///
+    /// A reply's or forward's subject ("Re: Are you free Thursday?") is the
+    /// first message's question, not this one's: answered with "Yes,
+    /// Thursday works", it read as asking you something.
     public static func asksSomething(_ text: String) -> Bool {
-        let own = ownText(text).replacingPattern(#"https?://\S+"#, with: "")
+        let own = ownText(withoutReplySubject(text)).replacingPattern(#"https?://\S+"#, with: "")
         if own.patternRange(#"[\p{L}\p{N})"'’」』]\s?[?？؟]"#) != nil { return true }
         if own.matchesAny(requestPatterns) { return true }
         return own.unicodeScalars.contains { $0.value >= 0x0980 } && own.matchesAny(requestPatternsOtherScripts)
+    }
+
+    /// An out-of-office or other automatic reply, by its subject (the first
+    /// line of `text`) as mail servers write it in each language:
+    /// "Automatic reply:", "Out of Office:", "Abwesenheitsnotiz", "Réponse
+    /// automatique", "Respuesta automática", "自動応答", "자동 회신", "自动回复".
+    public static func isAutoReply(_ text: String) -> Bool {
+        let subject = text.prefix { $0 != "\n" }
+        return subject.patternRange(autoReplyPattern, caseInsensitive: true) != nil
+    }
+
+    /// With the colon that follows it, as servers write it: "Out of office
+    /// next week" is a person telling you, and stays theirs.
+    static let autoReplyPattern = #"^\s*((automatic|auto)[- ]?(reply|response)|autoreply|out of (the )?office( auto ?reply)?|automatische antwort|abwesenheitsnotiz|réponse automatique|absence du bureau|respuesta automática|fuera de la oficina|resposta automática|ausência temporária|fora do escritório|自動応答|自動返信|자동 ?(회신|응답)|自动回复|自動回覆|স্বয়ংক্রিয় উত্তর)\s?[:：]"#
+
+    /// `text` (a subject, then the message) without its first line when
+    /// that is a reply's or forward's subject, in any language (`MailSubject`).
+    static func withoutReplySubject(_ text: String) -> String {
+        guard let end = text.firstIndex(of: "\n"),
+              text[..<end].patternRange(MailSubject.prefixPattern) != nil else { return text }
+        return String(text[text.index(after: end)...])
     }
 
     /// Words that make a date a deadline when they come right before it:
@@ -117,19 +145,30 @@ public enum MailSignals {
     /// the date ("期限：", "截止日期：", "마감", "শেষ তারিখ") or after it
     /// ("11月12日まで", "11월 12일까지", "11月12日前", "১২ নভেম্বরের মধ্যে").
     static let localLeadIn = #"(期限|締め?切り?日?|締切日?|支払期限|お支払い期限|期日|마감(일)?|기한|납부 ?기한|截止(日期|时间|時間)?|最晚|最迟|最遲|请于|請於|于|於|শেষ তারিখ)\s?[:：は은는이]?\s?$"#
+    /// The same words before a numeric date, without "于"/"於" ("on"),
+    /// which as often says when a meeting is as when something is due.
+    static let numericLocalLeadIn = #"(期限|締め?切り?日?|締切日?|支払期限|お支払い期限|期日|마감(일)?|기한|납부 ?기한|截止(日期|时间|時間)?|最晚|最迟|最遲|请于|請於|শেষ তারিখ)\s?[:：は은는이]?\s?$"#
     static let localLeadOut = #"^\s?(\([^)]{1,4}\)|（[^）]{1,4}）)?\s?(ের|এর)?\s?(まで|迄|까지|前|之前|以前|মধ্যে)"#
 
     /// The earliest upcoming deadline the message names, within `horizon`.
-    /// Relative dates ("by Friday") resolve against now, so this is meant
-    /// for mail read as it arrives. `senderEmail` says how the sender
-    /// writes a date like 03/11/2026 (`numericDateOrder`).
+    /// Relative dates ("by Friday", "tomorrow") resolve against today's
+    /// clock, so they count only in mail that arrived today: given
+    /// `receivedAt` on an earlier day, "reply by Friday" from last week
+    /// became next Friday. `senderEmail` says how the sender writes a date
+    /// like 03/11/2026 (`numericDateOrder`).
     public static func deadline(in text: String, now: Date = .now, horizon: TimeInterval = 45 * 86_400,
-                                senderEmail: String? = nil) -> Date? {
+                                senderEmail: String? = nil, receivedAt: Date? = nil) -> Date? {
         let own = String(ownText(text).prefix(4_000))
         guard !own.isEmpty else { return nil }
-        return dates(in: own, senderEmail: senderEmail, now: now)
+        return dates(in: own, senderEmail: senderEmail, now: now, relativeToday: readsRelativeDates(receivedAt))
             .filter { $0.isDeadline && $0.date > now.addingTimeInterval(-3_600) && $0.date < now.addingTimeInterval(horizon) }
             .map(\.date).min()
+    }
+
+    /// Whether "Friday" in mail received at `receivedAt` still means the
+    /// Friday the date detector reads it as (the next one by the clock).
+    static func readsRelativeDates(_ receivedAt: Date?) -> Bool {
+        receivedAt.map { Calendar.current.isDateInToday($0) } ?? true
     }
 
     /// For automated mail about an appointment, bill or signature, any date
@@ -137,11 +176,11 @@ public enum MailSignals {
     /// "Your appointment is tomorrow at 9:00 AM" has no "by" or "due" in
     /// it. Promotions never get here (see `InboxClassifier`).
     public static func timeSensitiveDate(in text: String, now: Date = .now, within: TimeInterval = 3 * 86_400,
-                                         senderEmail: String? = nil) -> Date? {
-        if let due = deadline(in: text, now: now, horizon: within, senderEmail: senderEmail) { return due }
+                                         senderEmail: String? = nil, receivedAt: Date? = nil) -> Date? {
+        if let due = deadline(in: text, now: now, horizon: within, senderEmail: senderEmail, receivedAt: receivedAt) { return due }
         guard isObligation(text) else { return nil }
         let own = String(ownText(text).prefix(4_000))
-        return dates(in: own, senderEmail: senderEmail, now: now).map(\.date)
+        return dates(in: own, senderEmail: senderEmail, now: now, relativeToday: readsRelativeDates(receivedAt)).map(\.date)
             .filter { $0 > now.addingTimeInterval(-3_600) && $0 < now.addingTimeInterval(within) }
             .min()
     }
@@ -153,12 +192,17 @@ public enum MailSignals {
     /// word taken into the date, and a numeric date read the reader's way
     /// rather than the writer's), and `LocalDates` for Chinese, Japanese,
     /// Korean and Bengali dates, which it doesn't read at all.
-    static func dates(in own: String, senderEmail: String?, now: Date) -> [FoundDate] {
+    /// `relativeToday`: whether a date the text gives only relative to
+    /// the day it was written ("Friday", "tomorrow", "5pm") is read at all.
+    static func dates(in own: String, senderEmail: String?, now: Date, relativeToday: Bool = true) -> [FoundDate] {
         guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else { return [] }
-        let ns = own as NSString
-        let order = numericDateOrder(senderEmail: senderEmail, text: own)
+        // Bengali and Arabic-Indic digits ("৩১/১২/২০২৬") as 0-9, which is
+        // all the date detector reads (`asciiDigits` keeps the length).
+        let source = MailDigest.asciiDigits(own)
+        let ns = source as NSString
+        let order = numericDateOrder(senderEmail: senderEmail, text: source)
         var found: [FoundDate] = []
-        for match in detector.matches(in: own, range: NSRange(location: 0, length: ns.length)) {
+        for match in detector.matches(in: source, range: NSRange(location: 0, length: ns.length)) {
             var range = match.range
             var date = match.date
             var leadIn = false
@@ -168,12 +212,13 @@ public enum MailSignals {
                 guard let lead = phrase.patternRange(leadInAtStart) else { break }
                 let skip = phrase[..<lead.upperBound].utf16.count
                 let rest = NSRange(location: range.location + skip, length: range.length - skip)
-                guard rest.length > 0, let again = detector.firstMatch(in: own, range: rest) else { date = nil; break }
+                guard rest.length > 0, let again = detector.firstMatch(in: source, range: rest) else { date = nil; break }
                 range = again.range
                 date = again.date
                 leadIn = true
             }
             guard var date else { continue }
+            if !relativeToday, ns.substring(with: range).patternRange(explicitDatePattern) == nil { continue }
             switch numericReading(of: ns.substring(with: range), detected: date, order: order) {
             case .notNumeric: break
             case .date(let written): date = written
@@ -184,9 +229,15 @@ public enum MailSignals {
             }
             let start = max(0, range.location - 32)
             let before = ns.substring(with: NSRange(location: start, length: range.location - start))
-            found.append(FoundDate(date: date, isDeadline: leadIn || before.patternRange(deadlineLeadIn) != nil))
+            // A numeric date in Japanese, Korean, Chinese or Bengali mail
+            // says it's a deadline the same way: "締切：11/12", "11/12(木)
+            // まで", "৩১/১২/২০২৬ এর মধ্যে".
+            let afterStart = NSMaxRange(range)
+            let after = ns.substring(with: NSRange(location: afterStart, length: min(14, ns.length - afterStart)))
+            let local = before.patternRange(numericLocalLeadIn) != nil || after.patternRange(localLeadOut) != nil
+            found.append(FoundDate(date: date, isDeadline: leadIn || local || before.patternRange(deadlineLeadIn) != nil))
         }
-        let digits = MailDigest.asciiDigits(own) as NSString
+        let digits = ns
         for local in LocalDates.find(in: own, now: now) where local.hasDay {
             let start = max(0, local.range.location - 12)
             let before = digits.substring(with: NSRange(location: start, length: local.range.location - start))
@@ -198,6 +249,13 @@ public enum MailSignals {
         }
         return found
     }
+
+    /// A date that says which day it is whenever it's read: a month name
+    /// (in the languages the date detector reads), a numeric date (not a
+    /// time, "7.15pm"), a year or a day of the month ("the 12th"). Anything
+    /// else ("Friday", "tomorrow", "at 5pm") is relative to the day it was
+    /// written.
+    static let explicitDatePattern = #"(?i)\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\b|\d{1,2}/\d{1,2}|\d{1,2}[.\-]\d{1,2}[.\-]\d{2,4}|\b\d{4}\b|\d(st|nd|rd|th)\b|\b(januar|februar|märz|mai|juni|juli|oktober|dezember|janvier|février|mars|avril|juin|juillet|août|septembre|octobre|novembre|décembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|janeiro|fevereiro|março|maio|junho|julho|setembro|outubro|novembro|dezembro)\b"#
 
     // MARK: Numeric dates
 
@@ -238,10 +296,30 @@ public enum MailSignals {
                 if second > 12, (1...12).contains(first), second <= 31 { return .monthFirst }
             }
         }
-        guard let host = senderEmail?.split(separator: "@").last?.lowercased(),
-              let ending = host.split(separator: ".").last.map(String.init) else { return nil }
-        if dayFirstEndings.contains(ending) { return .dayFirst }
-        if monthFirstEndings.contains(ending) { return .monthFirst }
+        if let host = senderEmail?.split(separator: "@").last?.lowercased(),
+           let ending = host.split(separator: ".").last.map(String.init) {
+            if dayFirstEndings.contains(ending) { return .dayFirst }
+            if monthFirstEndings.contains(ending) { return .monthFirst }
+        }
+        return numericDateOrder(byScript: text)
+    }
+
+    /// The order the email's own language writes dates in, when that
+    /// language uses one order everywhere: Japanese and Korean month
+    /// first ("11/12" is the 12th of November), Bengali day first.
+    /// Chinese says nothing (Hong Kong and Singapore write the day first).
+    static func numericDateOrder(byScript text: String) -> DateOrder? {
+        var kanaOrHangul = 0, bengali = 0, latin = 0
+        for scalar in text.unicodeScalars.prefix(4_000) {
+            switch scalar.value {
+            case 0x3040...0x30FF, 0xAC00...0xD7A3: kanaOrHangul += 1
+            case 0x0980...0x09FF: bengali += 1
+            case 0x41...0x5A, 0x61...0x7A: latin += 1
+            default: break
+            }
+        }
+        if kanaOrHangul >= 5, kanaOrHangul * 2 > latin { return .monthFirst }
+        if bengali >= 10, bengali > latin { return .dayFirst }
         return nil
     }
 
@@ -371,9 +449,12 @@ public enum MailSignals {
     /// "应付金额". Said up top. Not a receipt, an autopay notice, or a
     /// reminder that thanks you if you've already paid.
     public static func isPaymentRequest(_ text: String) -> Bool {
-        let lower = String(text.prefix(obligationOpening)).lowercased()
+        let opening = String(text.prefix(obligationOpening))
+        let lower = opening.lowercased()
+        // The amount as written: currency codes are capitals ("BDT 2,500",
+        // "Tk 1,250", "Rs 500"), and lowercased they were never found.
         guard lower.matchesAny(paymentRequestPattern),
-              lower.patternRange(MailDigest.amountPattern) != nil
+              opening.patternRange(MailDigest.amountPattern) != nil
         else { return false }
         return !lower.matchesAny(alreadyPaidPattern)
     }
@@ -412,11 +493,13 @@ public enum MailSignals {
 
     /// Whether anyone you wrote to is a person rather than a no-reply
     /// system address: waiting on `noreply@` makes no sense.
+    /// Recipients are read for their addresses: Outlook and IMAP keep the
+    /// name too ("Support <noreply@shop.com>"), which hid the no-reply.
     public static func hasPersonRecipient(_ recipients: [String], account: String) -> Bool {
         recipients.contains { address in
-            let lower = address.lowercased()
-            return lower != account.lowercased()
-                && lower.patternRange(Correspondence.automatedLocalPart) == nil
+            let bare = Correspondence.bareAddress(address)
+            return !bare.isEmpty && bare != account.lowercased()
+                && bare.patternRange(Correspondence.automatedLocalPart) == nil
         }
     }
 }
@@ -771,19 +854,27 @@ public enum EventFinder {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
-        var title = subject.trimmingCharacters(in: .whitespacesAndNewlines)
+        // The subject without "Re:" or "Fwd:" in any language: a calendar
+        // event isn't called "Re: Fwd: Dinner".
+        var title = MailSubject.base(subject.trimmingCharacters(in: .whitespacesAndNewlines))
         // A capitalised name right before the event word ("Labcorp
-        // appointment", "Delta flight"); the event word in any case.
-        let named = try? NSRegularExpression(pattern: "\\b([A-Z][\\w&'.-]*)\\s+(?i:(" + eventWords + "))\\b")
+        // appointment", "Delta flight"); the event word in any case. On
+        // the same line: a subject "Meeting" above "Meeting on Friday" made
+        // "Meeting Meeting".
+        let named = try? NSRegularExpression(pattern: "\\b([A-Z][\\w&'.-]*)[ \\t]+(?i:(" + eventWords + "))\\b")
         let skip: Set<String> = ["your", "the", "our", "this", "an", "a", "upcoming", "next", "for", "of", "my", "new"]
+        let isEventWord = { (word: String) in word.patternRange("(?i)^(" + eventWords + ")$") != nil }
         for match in named?.matches(in: all, range: NSRange(location: 0, length: (all as NSString).length)) ?? [] {
             let name = (all as NSString).substring(with: match.range(at: 1))
-            guard !skip.contains(name.lowercased()) else { continue }
+            guard !skip.contains(name.lowercased()), !isEventWord(name) else { continue }
             let kind = (all as NSString).substring(with: match.range(at: 2))
             title = name + " " + kind.prefix(1).uppercased() + kind.dropFirst().lowercased()
             break
         }
-        let confirmation = all.firstMatch(of: /(?i)confirmation(?:\s+(?:number|code|#))?\s*[:#]?\s*([A-Z0-9-]{5,})/).map { String($0.1) }
+        // A real code has a digit and is in capitals: "Confirmation email
+        // was sent" and "Confirmation: pending" have none.
+        let confirmation = all.patternRange(#"(?i:confirmation(?:\s+(?:number|code|#))?)\s*[:#]?\s*(?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{4,}\b"#)
+            .flatMap { found in all[found].patternRange(#"(?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{4,}$"#).map { String(all[found][$0]) } }
         return EventSuggestion(title: title, start: start, end: duration > 0 ? start.addingTimeInterval(duration) : nil,
                                location: location, confirmation: confirmation)
     }

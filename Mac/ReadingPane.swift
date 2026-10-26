@@ -170,6 +170,9 @@ struct ReadingPane: View {
                 }
                 .buttonStyle(.plain)
                 .help("Show your mail with \(thread.sender)")
+                // The picture has no words of its own; the name beside it
+                // is the same button for VoiceOver.
+                .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Button { showPerson() } label: {
@@ -419,6 +422,8 @@ struct ReadingPane: View {
         draft.body = Draft.adding(signature: CorresSettings.signature(for: source.id.account, reply: true), to: prefill + draft.body)
         let handoff = UUID()
         MacComposeHandoff.drafts[handoff] = draft
+        // A new reply, as Reply makes: from the address of yours it was sent to.
+        MacComposeHandoff.fresh.insert(handoff)
         openWindow(value: ComposeRequest(kind: .reply, handoff: handoff))
     }
 
@@ -568,7 +573,7 @@ struct ReadingPane: View {
 
     private var attachments: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("\(thread.attachments.count) \(thread.attachments.count == 1 ? "attachment" : "attachments")")
+            Text(thread.attachments.count == 1 ? String(localized: "1 attachment") : String(localized: "\(thread.attachments.count) attachments"))
                 .macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.secondary)
             FlowRow(spacing: 8) {
                 ForEach(thread.attachments) { file in
@@ -589,6 +594,10 @@ struct ReadingPane: View {
 
     private func opened() async {
         HangReporter.start("open")
+        // The pane stays as you move between emails: the last one's
+        // Unsubscribe doesn't carry over to the next newsletter.
+        unsubscribed = false
+        unsubscribing = false
         await services.store.loadStoredContent(thread.id)
         showImages = false
         // Hidden again on screen, so hidden again on paper.

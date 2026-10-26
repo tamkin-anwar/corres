@@ -87,7 +87,7 @@ struct InvitationCard: View {
             }
             if !isCanceled, !isPast, let join = invitation.joinURL {
                 Button { openURL(join) } label: {
-                    Label("Join \(invitation.joinService ?? "Call")", systemImage: "video.fill")
+                    Label("Join \(invitation.joinService ?? String(localized: "Call"))", systemImage: "video.fill")
                         .labelStyle(TightLabelStyle())
                 }
                 .buttonStyle(CorresPillStyle(minHeight: 32))
@@ -131,7 +131,7 @@ struct InvitationCard: View {
         guard let start = invitation.start else { return nil }
         if invitation.isAllDay {
             let day = start.formatted(.dateTime.weekday(.wide).month(.wide).day())
-            guard let end = invitation.end, end.timeIntervalSince(start) > 86_400 else { return day + ", all day" }
+            guard let end = invitation.end, end.timeIntervalSince(start) > 86_400 else { return String(localized: "\(day), all day") }
             return day + " – " + end.addingTimeInterval(-1).formatted(.dateTime.weekday(.wide).month(.wide).day())
         }
         let first = start.formatted(.dateTime.weekday(.wide).month(.wide).day().hour().minute())
@@ -144,7 +144,7 @@ struct InvitationCard: View {
     private var organizer: String? {
         guard invitation.organizerEmail != senderEmail?.lowercased(),
               invitation.organizerName?.caseInsensitiveCompare(senderName) != .orderedSame else { return nil }
-        return "Organized by \(invitation.organizerName ?? invitation.organizerEmail)"
+        return String(localized: "Organized by \(invitation.organizerName ?? invitation.organizerEmail)")
     }
 
     private func detail(_ text: String, _ icon: String) -> some View {

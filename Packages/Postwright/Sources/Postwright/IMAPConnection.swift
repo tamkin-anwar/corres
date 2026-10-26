@@ -158,7 +158,15 @@ public actor IMAPConnection {
 
     /// UIDs in the selected folder matching words anywhere in the message.
     public func search(text: String) async throws -> [UInt32] {
-        try await run(.uidSearch(key: .text(ByteBuffer(string: text))), folder: selectedFolder ?? "").searchResults
+        try await run(.uidSearch(key: .text(ByteBuffer(string: text)), charset: Self.charset(for: text)), folder: selectedFolder ?? "").searchResults
+    }
+
+    /// Words in any other script ("Müller", "請求書") are said to be UTF-8,
+    /// which every server must accept (RFC 3501 6.4.4). Sent unlabelled,
+    /// the default is US-ASCII, and servers answered with nothing found or
+    /// an error.
+    static func charset(for term: String) -> String? {
+        term.allSatisfy(\.isASCII) ? nil : "UTF-8"
     }
 
     /// UIDs in the selected folder whose Message-ID is `messageID`: how a
@@ -172,7 +180,8 @@ public actor IMAPConnection {
     /// From, To or Cc.
     public func search(person name: String) async throws -> [UInt32] {
         let term = ByteBuffer(string: name)
-        return try await run(.uidSearch(key: .or(.from(term), .or(.to(term), .cc(term)))), folder: selectedFolder ?? "").searchResults
+        return try await run(.uidSearch(key: .or(.from(term), .or(.to(term), .cc(term))), charset: Self.charset(for: name)),
+                             folder: selectedFolder ?? "").searchResults
     }
 
     /// UIDs in the selected folder that belong to the conversation started

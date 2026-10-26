@@ -854,6 +854,12 @@ final class MailStore {
             // already sent it, so there's nothing here to update, and
             // saying it wasn't sent would be wrong.
             return true
+        } catch where realThreadID != nil {
+            // Gone out already; only this device's record of it failed,
+            // and the next sync brings the server's copy. "Nothing was
+            // sent" would be untrue, and a resend would send it twice.
+            HangReporter.failure("record a sent email", error)
+            return true
         } catch {
             errorMessage = String(localized: "Your message couldn't be sent. Nothing was sent. Try again.")
             return false

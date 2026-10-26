@@ -75,7 +75,12 @@ public enum MailDigest {
             .joined(separator: " ")
             .replacingPattern(#"\s{2,}"#, with: " ")
         guard words.count >= 20 else { return nil }
-        guard words.count > 240, let cut = words.prefix(240).lastIndex(of: " ") else { return words }
+        guard words.count > 240 else { return words }
+        // Chinese and Japanese have no spaces to cut at: without one, the
+        // whole email became its preview.
+        guard let cut = words.prefix(240).lastIndex(of: " "), words.distance(from: words.startIndex, to: cut) >= 120 else {
+            return String(words.prefix(240))
+        }
         return String(words[..<cut])
     }
 
@@ -307,12 +312,26 @@ public enum MailDigest {
             return String(text[before])
         }
         guard let cue = text.firstPatternRange(codeCue) else { return nil }
-        let window = text[cue.lowerBound..<(text.index(cue.upperBound, offsetBy: 120, limitedBy: text.endIndex) ?? text.endIndex)]
+        let window = String(text[cue.lowerBound..<(text.index(cue.upperBound, offsetBy: 120, limitedBy: text.endIndex) ?? text.endIndex)])
         // Digits right after a CJK word have no word boundary ("验证码
         // 482913"), so the digits are bounded by what isn't a digit.
-        guard let match = window.patternRange(#"\b(?=[A-Z0-9-]*\d)[A-Z0-9]{3,4}-?[A-Z0-9]{2,4}\b|(?<![\d.,])\d{4,8}(?![\d.,]?\d)"#) else { return nil }
-        return String(window[match])
+        guard let regex = PatternCache.shared.regex(#"\b(?=[A-Z0-9-]*\d)[A-Z0-9]{3,4}-?[A-Z0-9]{2,4}\b|(?<![\d.,])\d{4,8}(?![\d.,]?\d)"#,
+                                                    caseInsensitive: false) else { return nil }
+        let ns = window as NSString
+        for match in regex.matches(in: window, range: NSRange(location: 0, length: ns.length)) {
+            // "Your verification code expires on Oct 25, 2026. Code:
+            // 482913": the year of a date is never the code.
+            let before = ns.substring(to: match.range.location)
+            if ns.substring(with: match.range).patternRange(#"^(19|20)\d\d$"#) != nil,
+               before.patternRange(yearOfDateLeadIn, caseInsensitive: true) != nil { continue }
+            return ns.substring(with: match.range)
+        }
+        return nil
     }
+
+    /// What comes before the year of a written date: "Oct 25, ", "25
+    /// October ", "25/10/".
+    private static let yearOfDateLeadIn = #"((jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(st|nd|rd|th)?,?|\d{1,2}(st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?,?|\d{1,2}[/.\-]\d{1,2}[/.\-])\s*$"#
 
     /// Facts already in the email, exactly as written, for the model to
     /// quote rather than retype: amounts, codes, order/booking numbers and

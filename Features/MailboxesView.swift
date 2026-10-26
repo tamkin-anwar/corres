@@ -188,7 +188,7 @@ struct MailboxesView: View {
             ForEach(accounts, id: \.self) { account in
                 let labels = arranged(labels(for: account))
                 if !labels.isEmpty {
-                    section(labels, header: accounts.count > 1 ? account : "Labels")
+                    section(labels, header: accounts.count > 1 ? account : String(localized: "Labels"))
                 }
             }
         }

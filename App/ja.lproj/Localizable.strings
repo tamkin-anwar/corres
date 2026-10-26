@@ -3726,3 +3726,72 @@
 
 /* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
 "%@ from %@" = "%2$@からの%1$@";
+"Add your email account in Corres first." = "まずCorresでメールアカウントを追加してください。";
+"It didn't send. It's waiting in Corres to try again." = "送信できませんでした。Corresで再送信を待っています。";
+
+/* No comment provided by engineer. */
+"Call" = "通話";
+
+/* No comment provided by engineer. */
+"%@, all day" = "%@、終日";
+
+/* No comment provided by engineer. */
+"Organized by %@" = "主催者：%@";
+
+/* No comment provided by engineer. */
+"Your mail couldn't be opened." = "メールを開けませんでした。";
+
+/* No comment provided by engineer. */
+"Get Corres Pro" = "Corres Proを入手";
+
+/* No comment provided by engineer. */
+"%@ a month or %@ a year." = "月額%@または年額%@。";
+
+/* No comment provided by engineer. */
+"Monthly or yearly." = "月額または年額。";
+
+/* No comment provided by engineer. */
+"Couldn't Suggest Times" = "時間を提案できませんでした";
+
+/* No comment provided by engineer. */
+"Corres doesn't have access to your calendar. You can allow it in Settings > Apps > Corres." = "Corresはカレンダーにアクセスできません。「設定」>「アプリ」>「Corres」で許可できます。";
+
+/* No comment provided by engineer. */
+"Your calendar has no open times on weekdays in the next week." = "今後1週間の平日に、カレンダーの空き時間がありません。";
+
+/* No comment provided by engineer. */
+"No new senders" = "新しい差出人はいません";
+
+/* No comment provided by engineer. */
+"One moment" = "少々お待ちください";
+
+/* No comment provided by engineer. */
+"No conversation selected" = "会話が選択されていません";
+
+/* No comment provided by engineer. */
+"Nothing Muted" = "ミュート中のものはありません";
+
+/* No comment provided by engineer. */
+"Nothing Matches" = "一致するものはありません";
+
+/* No comment provided by engineer. */
+"Couldn't load %@" = "%@を読み込めませんでした";
+
+/* No comment provided by engineer. */
+"Couldn't load Drafts" = "下書きを読み込めませんでした";
+
+/* No comment provided by engineer. */
+"Conversation unavailable" = "会話を表示できません";
+
+/* No comment provided by engineer. */
+"No Purchases" = "購入はありません";
+
+/* No comment provided by engineer. */
+"Was on %@" = "%@でした";
+
+/* No comment provided by engineer. */
+"Overdue, was due %@" = "期限切れ、期限は%@でした";
+
+"Automatic reply." = "自動返信です。";
+
+"Automatic reply. Kept out of Needs You." = "自動返信です。「要対応」には入れません。";

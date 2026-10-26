@@ -321,7 +321,7 @@ extension MailDigest {
     private static func firstFact(in text: String, labels: String, value: String? = nil) -> Glance.Fact? {
         // Not inside a longer Latin word ("Subtotal"); Chinese and Japanese
         // labels follow other characters directly ("今回のご請求金額：").
-        let pattern = #"(?i)(?<!\p{Latin})("# + labels + #")\s*[:：\-–—]?\s*"# + (value ?? "(" + amountPattern + ")")
+        let pattern = #"(?i)(?<!\p{Latin})("# + labels + #")\s*[:：\-–—]?\s*"# + (value ?? "(" + caseSensitiveAmount + ")")
         guard let regex = try? NSRegularExpression(pattern: pattern),
               let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
               let labelRange = Range(match.range(at: 1), in: text),
@@ -331,9 +331,15 @@ extension MailDigest {
         return Glance.Fact(label: label.prefix(1).uppercased() + label.dropFirst(), value: value)
     }
 
+    /// An amount with its currency code in capitals, as receipts write
+    /// it, inside a pattern that ignores case: read without case, "paid
+    /// all 3 instalments" was an amount in Albanian lek ("ALL 3"), and
+    /// "top 10" one in Tonga's currency ("TOP 10").
+    private static let caseSensitiveAmount = "(?-i:" + amountPattern + ")"
+
     /// Lyft's "Apple Pay (Discover) $21.83": what the card was charged.
     private static func cardCharge(in text: String) -> Glance.Fact? {
-        let pattern = #"(?i)\b(apple pay|google pay|paypal|visa|mastercard|amex|american express|discover)\b[^\n]{0,30}?\s("# + amountPattern + ")"
+        let pattern = #"(?i)\b(apple pay|google pay|paypal|visa|mastercard|amex|american express|discover)\b[^\n]{0,30}?\s("# + caseSensitiveAmount + ")"
         guard let range = text.patternRange(pattern),
               let amount = text[range].patternRange(amountPattern) else { return nil }
         return Glance.Fact(label: "Charged", value: String(text[range][amount]))
@@ -341,7 +347,7 @@ extension MailDigest {
 
     /// "your recent payment of $9.99", "a charge of €40".
     private static func proseAmount(in text: String) -> Glance.Fact? {
-        let pattern = #"(?i)\b(payment|charge|bill|balance|refund) of ("# + amountPattern + ")"
+        let pattern = #"(?i)\b(payment|charge|bill|balance|refund) of ("# + caseSensitiveAmount + ")"
         guard let range = text.patternRange(pattern),
               let amount = text[range].patternRange(amountPattern) else { return nil }
         let noun = text[range].split(separator: " ").first.map { $0.lowercased() } ?? "amount"

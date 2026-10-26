@@ -253,3 +253,7 @@
 
 /* Alert title for a push when the notification extension can't fill in the email in time (title-loc-key from the push relay and iCloud watcher). */
 "New email" = "新邮件";
+
+"Automatic reply." = "自动回复。";
+
+"Automatic reply. Kept out of Needs You." = "自动回复。未放入“需要你”。";

@@ -155,6 +155,8 @@ struct ListWidgetView: View {
     let destination: String
     let isSample: Bool
     @Environment(\.widgetFamily) private var family
+    /// `.privacy` on the Lock Screen while the iPhone is locked.
+    @Environment(\.redactionReasons) private var redactionReasons
 
     var isLocked = false
     /// The entry's moment, for "2h": each entry in the timeline says it as of its own time.
@@ -182,16 +184,21 @@ struct ListWidgetView: View {
         case .accessoryRectangular:
             VStack(alignment: .leading, spacing: 1) {
                 Text("\(count) \(title)").font(.headline).widgetAccentable()
+                // Who wrote and why stay hidden on the Lock Screen until
+                // it's unlocked, as with a notification's preview.
                 if let first = items.first {
-                    Text(first.sender).font(.caption).lineLimit(1)
+                    Text(first.sender).font(.caption).lineLimit(1).privacySensitive()
                     Text(showsReason ? first.reason : first.subject).font(.caption2).lineLimit(1).foregroundStyle(.secondary)
+                        .privacySensitive()
                 } else {
                     Text(emptyText).font(.caption)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         case .accessoryInline:
-            Text(count == 0 ? emptyText : "\(count) \(title.lowercased())" + (items.first.map { " · \($0.sender)" } ?? ""))
+            // One line can't be part hidden: the sender is left out instead.
+            let sender = redactionReasons.contains(.privacy) ? nil : items.first.map { " · \($0.sender)" }
+            Text(count == 0 ? emptyText : "\(count) \(title.lowercased())" + (sender ?? ""))
         case .systemSmall:
             small
         default:
@@ -231,6 +238,7 @@ struct ListWidgetView: View {
                     Text(first.sender).font(.caption.weight(.semibold)).foregroundStyle(WidgetPalette.ink).lineLimit(1)
                     Text(showsReason ? first.reason : first.subject).font(.caption2).foregroundStyle(WidgetPalette.secondary).lineLimit(2)
                 }
+                .privacySensitive()
             } else {
                 Text(emptyText).font(.caption).foregroundStyle(WidgetPalette.secondary)
             }
@@ -292,6 +300,7 @@ struct ListWidgetView: View {
                 }
                 Text(showsReason ? item.reason : item.subject).font(.caption).foregroundStyle(WidgetPalette.secondary).lineLimit(1)
             }
+            .privacySensitive()
         }
     }
 }

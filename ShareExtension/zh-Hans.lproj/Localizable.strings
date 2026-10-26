@@ -352,3 +352,13 @@
 /* No comment provided by engineer. */
 "You're waiting on their reply" = "你在等待对方回复";
 
+"Sending…" = "正在发送…";
+"Sent" = "已发送";
+"No connection. Corres will send it as soon as it can." = "没有网络连接。Corres 会尽快发送。";
+"Couldn’t send it. Check your connection and try again." = "无法发送。请检查网络连接后重试。";
+"Open Corres once, then share again. Corres finishes setting up sharing the first time it opens after updating." = "请先打开一次 Corres，然后再次共享。更新后首次打开时，Corres 会完成共享设置。";
+"%@ didn’t accept it. Try again in a moment." = "%@ 未接受。请稍后重试。";
+
+"Automatic reply." = "自动回复。";
+
+"Automatic reply. Kept out of Needs You." = "自动回复。未放入“需要你”。";

@@ -105,6 +105,31 @@ struct WorldRulesTests {
         #expect(MailSignals.numericDateOrder(senderEmail: "x@city.ca.us", text: "") == .monthFirst)
     }
 
+    /// Bengali and Arabic-Indic digits, and the way Japanese, Korean and
+    /// Bengali mail says a numeric date is a deadline.
+    @Test func numericDatesInOtherScripts() {
+        let january = calendar.date(from: DateComponents(year: 2026, month: 1, day: 10, hour: 12))!
+        let year: TimeInterval = 360 * 86_400
+        #expect(day(MailSignals.deadline(in: "Please pay by ৩১/১২/২০২৬.", now: january, horizon: year,
+                                         senderEmail: "bill@desco.org.bd")) == ymd(2026, 12, 31))
+        #expect(day(MailSignals.deadline(in: "Please pay by ٣١/١٢/٢٠٢٦.", now: january, horizon: year,
+                                         senderEmail: "bill@example.ae")) == ymd(2026, 12, 31))
+        // Japanese from a .com: the language says month first, まで says due.
+        // With no year the detector reads the next 3/11 by the real clock.
+        func monthDay(_ date: Date?) -> [Int]? { date.map { [calendar.component(.month, from: $0), calendar.component(.day, from: $0)] } }
+        #expect(monthDay(MailSignals.deadline(in: "書類は3/11(水)までにご提出ください。", now: Date(), horizon: 400 * 86_400,
+                                              senderEmail: "info@example.com")) == [3, 11])
+        #expect(monthDay(MailSignals.deadline(in: "서류는 3/11까지 제출해 주세요. 감사합니다.", now: Date(), horizon: 400 * 86_400,
+                                              senderEmail: "info@example.com")) == [3, 11])
+        #expect(day(MailSignals.deadline(in: "অনুগ্রহ করে ০৩/১১/২০২৬ এর মধ্যে বিল পরিশোধ করুন।", now: january, horizon: year,
+                                         senderEmail: "info@example.com")) == ymd(2026, 11, 3))
+        // Chinese alone doesn't say which (Hong Kong writes the day first).
+        #expect(MailSignals.numericDateOrder(byScript: "请在3/11之前提交文件，谢谢。") == nil)
+        // A date that only says when something happens is no deadline.
+        #expect(MailSignals.deadline(in: "会議は3/11(水)に行います。よろしくお願いします。", now: Date(), horizon: 400 * 86_400,
+                                     senderEmail: "info@example.com") == nil)
+    }
+
     // MARK: Needs You
 
     @Test func asksInEveryLanguage() {
@@ -141,6 +166,10 @@ struct WorldRulesTests {
         #expect(MailSignals.isPaymentRequest("今月のご請求金額：5,000円"))
         #expect(MailSignals.isPaymentRequest("应付金额：¥300"))
         #expect(MailSignals.isPaymentRequest("বকেয়া পরিমাণ ৳১,২৫০"))
+        // A currency code, as bills in Bangladesh, India and elsewhere write it.
+        #expect(MailSignals.isPaymentRequest("Your bill\nAmount due: BDT 2,500. Please make your payment."))
+        #expect(MailSignals.isPaymentRequest("Payment requested: Tk 1,250 for your connection"))
+        #expect(MailSignals.isPaymentRequest("Amount due: INR 2,499"))
         #expect(!MailSignals.isPaymentRequest("Offener Betrag: 49,90 €. Der Betrag wird per Lastschrift eingezogen."))
     }
 
@@ -165,6 +194,12 @@ struct WorldRulesTests {
         #expect(MailSubject.reply("返信: 会議の件") == "Re: 会議の件")
         #expect(MailSubject.reply("답장: 회의") == "Re: 회의")
         #expect(MailSubject.reply("Odp: Spotkanie") == "Re: Spotkanie")
+        // Outlook in Brazil, Korea and China.
+        #expect(MailSubject.reply("RES: Proposta") == "Re: Proposta")
+        #expect(MailSubject.reply("회신: 회의") == "Re: 회의")
+        #expect(MailSubject.reply("转发：会议纪要") == "Re: 会议纪要")
+        #expect(MailSubject.forward("转寄：會議") == "Fwd: 會議")
+        #expect(MailSubject.sameConversation("Re: 转发: 会议", "会议"))
         // Words that only start like a prefix stay.
         #expect(MailSubject.reply("Answer: yes") == "Re: Answer: yes")
         #expect(MailSubject.reply("Reunion plans") == "Re: Reunion plans")
@@ -362,6 +397,10 @@ struct WorldRulesTests {
             ("[Web발신] 인증번호 [482913]를 입력해주세요", "482913"),
             ("【微信】验证码482913，5分钟内有效。", "482913"),
             ("আপনার যাচাইকরণ কোড ৪৮২৯১৩", "৪৮২৯১৩"),
+            // The year of a date between the words and the code is not it.
+            ("Your verification code expires on Oct 25, 2026. Code: 482913", "482913"),
+            ("Security code valid until 25 October 2026: 7731", "7731"),
+            ("Your login code (sent 25/10/2026) is 5521", "5521"),
         ]
         for (text, code) in cases {
             #expect(MailDigest.verificationCode(in: text) == code, "\(text)")

@@ -114,15 +114,29 @@ struct MacShortcutsSheet: View {
     @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
     @Environment(\.dismiss) private var dismiss
 
-    private let groups: [(String, [(String, String)])] = [
-        ("In the list", [("J  K", "Next and previous conversation"), ("E", "Archive"), ("#  or  ⌘⌫", "Delete"),
-                         ("H", "Mark as Handled"), ("B", "Snooze"), ("S", "Flag"), ("U", "Read or unread"),
-                         ("Z", "Undo"), ("Return", "Open in its own window"), ("/", "Search")]),
-        ("Writing", [("C  or  ⌘N", "New message"), ("R  or  ⌘R", "Reply"), ("A  or  ⇧⌘R", "Reply all"),
-                     ("F  or  ⇧⌘F", "Forward"), ("⇧⌘D", "Send")]),
-        ("Anywhere", [("⌘K", "Go to or do anything"), ("⌘1 to ⌘4", "Needs You, Waiting, Primary, Everything"),
-                      ("⇧⌘N", "Get new mail"), ("⌘P", "Print"), ("⌘,", "Settings"), ("?", "This sheet")]),
-    ]
+    /// In the Mac's language: the menus' own names for each, where there are.
+    private var groups: [(String, [(String, String)])] {
+        func or(_ first: String, _ second: String) -> String { String(localized: "\(first)  or  \(second)") }
+        let lists = [MacMailbox.needsYou, .waiting, .primary, .filter(MailFilter.everything.rawValue)].map(\.title)
+        return [
+            (String(localized: "In the list"), [
+                ("J  K", String(localized: "Next and previous conversation")), ("E", String(localized: "Archive")),
+                (or("#", "⌘⌫"), String(localized: "Delete")), ("H", String(localized: "Mark as Handled")),
+                ("B", String(localized: "Snooze")), ("S", String(localized: "Flag")), ("U", String(localized: "Mark as Read or Unread")),
+                ("Z", String(localized: "Undo")), ("↩", String(localized: "Open in New Window")), ("/", String(localized: "Search")),
+            ]),
+            (String(localized: "Writing"), [
+                (or("C", "⌘N"), String(localized: "New Message")), (or("R", "⌘R"), String(localized: "Reply")),
+                (or("A", "⇧⌘R"), String(localized: "Reply All")), (or("F", "⇧⌘F"), String(localized: "Forward")),
+                ("⇧⌘D", String(localized: "Send")),
+            ]),
+            (String(localized: "Anywhere"), [
+                ("⌘K", String(localized: "Go To or Do…")), ("⌘1–⌘4", lists.joined(separator: ", ")),
+                ("⇧⌘N", String(localized: "Get New Mail")), ("⌘P", String(localized: "Print")),
+                ("⌘,", String(localized: "Settings")), ("?", String(localized: "Keyboard Shortcuts")),
+            ]),
+        ]
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {

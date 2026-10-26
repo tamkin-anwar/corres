@@ -138,7 +138,8 @@ struct CorrespondenceRow: View {
                 // At the largest text sizes the time gets its own line, as
                 // in Mail, so the name isn't cut to a few letters.
                 if typeSize.isAccessibilitySize {
-                    Text(Self.timestamp(thread.receivedAt))
+                    // The same time as above: in Sent, when you sent it.
+                    Text(Self.timestamp(sentTo != nil ? (thread.lastSentAt ?? thread.receivedAt) : thread.receivedAt))
                         .font(.footnote).monospacedDigit()
                         .foregroundStyle(CorresPalette.tertiary)
                 }

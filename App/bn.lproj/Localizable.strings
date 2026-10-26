@@ -3726,3 +3726,72 @@
 
 /* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
 "%@ from %@" = "%2$@ থেকে %1$@";
+"Add your email account in Corres first." = "আগে Corres-এ আপনার ইমেইল অ্যাকাউন্ট যোগ করুন।";
+"It didn't send. It's waiting in Corres to try again." = "পাঠানো যায়নি। আবার চেষ্টার জন্য এটি Corres-এ অপেক্ষা করছে।";
+
+/* No comment provided by engineer. */
+"Call" = "কল";
+
+/* No comment provided by engineer. */
+"%@, all day" = "%@, সারাদিন";
+
+/* No comment provided by engineer. */
+"Organized by %@" = "আয়োজক: %@";
+
+/* No comment provided by engineer. */
+"Your mail couldn't be opened." = "আপনার মেইল খোলা যায়নি।";
+
+/* No comment provided by engineer. */
+"Get Corres Pro" = "Corres Pro নিন";
+
+/* No comment provided by engineer. */
+"%@ a month or %@ a year." = "মাসে %@ বা বছরে %@।";
+
+/* No comment provided by engineer. */
+"Monthly or yearly." = "মাসিক বা বার্ষিক।";
+
+/* No comment provided by engineer. */
+"Couldn't Suggest Times" = "সময় প্রস্তাব করা যায়নি";
+
+/* No comment provided by engineer. */
+"Corres doesn't have access to your calendar. You can allow it in Settings > Apps > Corres." = "Corres-এর আপনার ক্যালেন্ডারে অ্যাক্সেস নেই। সেটিংস > অ্যাপ > Corres-এ অনুমতি দিতে পারেন।";
+
+/* No comment provided by engineer. */
+"Your calendar has no open times on weekdays in the next week." = "আগামী এক সপ্তাহে কর্মদিবসে আপনার ক্যালেন্ডারে কোনো খালি সময় নেই।";
+
+/* No comment provided by engineer. */
+"No new senders" = "কোনো নতুন প্রেরক নেই";
+
+/* No comment provided by engineer. */
+"One moment" = "এক মুহূর্ত";
+
+/* No comment provided by engineer. */
+"No conversation selected" = "কোনো কথোপকথন বাছাই করা হয়নি";
+
+/* No comment provided by engineer. */
+"Nothing Muted" = "কিছুই নিঃশব্দ করা নেই";
+
+/* No comment provided by engineer. */
+"Nothing Matches" = "কিছুই মেলেনি";
+
+/* No comment provided by engineer. */
+"Couldn't load %@" = "%@ লোড করা যায়নি";
+
+/* No comment provided by engineer. */
+"Couldn't load Drafts" = "খসড়া লোড করা যায়নি";
+
+/* No comment provided by engineer. */
+"Conversation unavailable" = "কথোপকথনটি পাওয়া যাচ্ছে না";
+
+/* No comment provided by engineer. */
+"No Purchases" = "কোনো কেনাকাটা নেই";
+
+/* No comment provided by engineer. */
+"Was on %@" = "%@ তারিখে ছিল";
+
+/* No comment provided by engineer. */
+"Overdue, was due %@" = "সময় পেরিয়ে গেছে, শেষ সময় ছিল %@";
+
+"Automatic reply." = "স্বয়ংক্রিয় উত্তর।";
+
+"Automatic reply. Kept out of Needs You." = "স্বয়ংক্রিয় উত্তর। আপনার করণীয়-র বাইরে রাখা হয়েছে।";

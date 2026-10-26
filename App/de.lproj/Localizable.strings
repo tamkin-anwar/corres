@@ -3726,3 +3726,72 @@
 
 /* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
 "%@ from %@" = "%1$@ von %2$@";
+"Add your email account in Corres first." = "Füge zuerst deinen E-Mail-Account in Corres hinzu.";
+"It didn't send. It's waiting in Corres to try again." = "Es wurde nicht gesendet. Es wartet in Corres auf einen neuen Versuch.";
+
+/* No comment provided by engineer. */
+"Call" = "Anruf";
+
+/* No comment provided by engineer. */
+"%@, all day" = "%@, ganztägig";
+
+/* No comment provided by engineer. */
+"Organized by %@" = "Organisiert von %@";
+
+/* No comment provided by engineer. */
+"Your mail couldn't be opened." = "Deine E-Mails konnten nicht geöffnet werden.";
+
+/* No comment provided by engineer. */
+"Get Corres Pro" = "Corres Pro holen";
+
+/* No comment provided by engineer. */
+"%@ a month or %@ a year." = "%@ im Monat oder %@ im Jahr.";
+
+/* No comment provided by engineer. */
+"Monthly or yearly." = "Monatlich oder jährlich.";
+
+/* No comment provided by engineer. */
+"Couldn't Suggest Times" = "Zeiten konnten nicht vorgeschlagen werden";
+
+/* No comment provided by engineer. */
+"Corres doesn't have access to your calendar. You can allow it in Settings > Apps > Corres." = "Corres hat keinen Zugriff auf deinen Kalender. Du kannst es unter Einstellungen > Apps > Corres erlauben.";
+
+/* No comment provided by engineer. */
+"Your calendar has no open times on weekdays in the next week." = "Dein Kalender hat in der nächsten Woche an Werktagen keine freien Zeiten.";
+
+/* No comment provided by engineer. */
+"No new senders" = "Keine neuen Absender";
+
+/* No comment provided by engineer. */
+"One moment" = "Einen Moment";
+
+/* No comment provided by engineer. */
+"No conversation selected" = "Keine Konversation ausgewählt";
+
+/* No comment provided by engineer. */
+"Nothing Muted" = "Nichts stummgeschaltet";
+
+/* No comment provided by engineer. */
+"Nothing Matches" = "Keine Treffer";
+
+/* No comment provided by engineer. */
+"Couldn't load %@" = "%@ konnte nicht geladen werden";
+
+/* No comment provided by engineer. */
+"Couldn't load Drafts" = "Entwürfe konnten nicht geladen werden";
+
+/* No comment provided by engineer. */
+"Conversation unavailable" = "Konversation nicht verfügbar";
+
+/* No comment provided by engineer. */
+"No Purchases" = "Keine Einkäufe";
+
+/* No comment provided by engineer. */
+"Was on %@" = "War am %@";
+
+/* No comment provided by engineer. */
+"Overdue, was due %@" = "Überfällig, war fällig am %@";
+
+"Automatic reply." = "Automatische Antwort.";
+
+"Automatic reply. Kept out of Needs You." = "Automatische Antwort. Nicht in „Braucht dich“.";

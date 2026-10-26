@@ -32,6 +32,22 @@ struct EventFinderTests {
         #expect(when?.hour == 19)
     }
 
+    /// The suggestion's title and confirmation, as the calendar would keep them.
+    @Test func titleAndConfirmationAreReadCarefully() {
+        let body = "Your reservation is on Thursday 15 October 2026 at 7:00 PM. A confirmation email was sent to you."
+        let event = EventFinder.fromWording(body, subject: "Re: Fwd: Dinner reservation", receivedAt: sent, now: now)
+        #expect(event?.title == "Dinner reservation")
+        #expect(event?.confirmation == nil)
+        let coded = EventFinder.fromWording("Meeting on Thursday 15 October 2026 at 7:00 PM. Confirmation number: ABC123",
+                                            subject: "Meeting", receivedAt: sent, now: now)
+        #expect(coded?.title == "Meeting")
+        #expect(coded?.confirmation == "ABC123")
+        let pending = EventFinder.fromWording("Meeting on Thursday 15 October 2026 at 7:00 PM. Confirmation: pending",
+                                              subject: "Planning", receivedAt: sent, now: now)
+        #expect(pending?.confirmation == nil)
+        #expect(pending?.title == "Planning")
+    }
+
     @Test func aTimeAloneInOldMailIsNotToday() {
         let body = "Our meeting starts at 19:15, see you there."
         #expect(EventFinder.fromWording(body, subject: "Meeting", receivedAt: sent, now: now) == nil)

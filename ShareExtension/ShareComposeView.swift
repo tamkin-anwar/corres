@@ -399,7 +399,9 @@ struct ShareComposeView: View {
         }
     }
 
-    private func badge<Icon: View>(_ text: String, @ViewBuilder icon: () -> Icon) -> some View {
+    /// A key, not a String: Text showed a String as written, in English
+    /// whatever the iPhone's language.
+    private func badge<Icon: View>(_ text: LocalizedStringKey, @ViewBuilder icon: () -> Icon) -> some View {
         VStack(spacing: 12) {
             icon()
             Text(text).font(.headline).multilineTextAlignment(.center)

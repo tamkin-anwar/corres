@@ -241,7 +241,9 @@ struct MacComposeView: View {
                 addressField(String(localized: "Bcc"), .bcc) { EmptyView() }
             }
             Divider().padding(.leading, 14)
-            field(String(localized: "Subject")) { TextField("", text: $draft.subject).focused($focus, equals: .subject) }
+            field(String(localized: "Subject")) {
+                TextField("", text: $draft.subject).focused($focus, equals: .subject).accessibilityLabel(Text("Subject"))
+            }
             if fromOptions.count > 1 {
                 Divider().padding(.leading, 14)
                 field(String(localized: "From")) {
@@ -253,6 +255,7 @@ struct MacComposeView: View {
                     }
                     .labelsHidden()
                     .fixedSize()
+                    .accessibilityLabel(Text("From"))
                     Spacer()
                 }
             }
@@ -298,6 +301,8 @@ struct MacComposeView: View {
             field(title) {
                 TextField("", text: Binding(get: { addressText(which) }, set: { setAddressText(which, $0); highlighted = 0 }))
                     .focused($focus, equals: which)
+                    // The field's name is beside it, not in it: VoiceOver hears it too.
+                    .accessibilityLabel(Text(title))
                     .onKeyPress(.downArrow) {
                         guard !found.isEmpty else { return .ignored }
                         highlighted = min(highlighted + 1, found.count - 1)
@@ -635,7 +640,7 @@ struct MacComposeView: View {
             let file = PendingAttachment(filename: url.lastPathComponent, mimeType: type, data: data)
             let total = draft.attachments.reduce(0) { $0 + $1.data.count } + data.count
             guard total <= Draft.maxAttachmentsBytes else {
-                attachmentError = "Attachments can add up to 25 MB in one email."
+                attachmentError = String(localized: "Attachments can add up to 25 MB in one email.")
                 break
             }
             draft.attachments.append(file)

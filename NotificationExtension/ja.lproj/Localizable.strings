@@ -253,3 +253,7 @@
 
 /* Alert title for a push when the notification extension can't fill in the email in time (title-loc-key from the push relay and iCloud watcher). */
 "New email" = "新着メール";
+
+"Automatic reply." = "自動返信です。";
+
+"Automatic reply. Kept out of Needs You." = "自動返信です。「要対応」には入れません。";

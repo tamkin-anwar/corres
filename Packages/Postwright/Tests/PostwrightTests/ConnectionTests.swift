@@ -296,6 +296,18 @@ struct ActionTests {
         #expect(sent.contains(#"OR FROM "Ridita" (OR TO "Ridita" CC "Ridita")"#))
     }
 
+    /// Words outside ASCII are searched as UTF-8, said so; plain words are
+    /// sent as they always were.
+    @Test func searchInAnotherScriptSaysItIsUTF8() async throws {
+        let s = server(capabilities: "IMAP4rev1", extra: ["UID SEARCH": ["* SEARCH 4", "{TAG} OK SEARCH done"]])
+        defer { Task { await s.stop() } }
+        let c = try await session(s)
+        #expect(try await c.search(text: "invoice") == [4])
+        #expect(s.sentLines().last?.contains("CHARSET") == false)
+        #expect(try await c.search(text: "Müller") == [4])
+        #expect(s.sentLines().last?.contains("UID SEARCH CHARSET UTF-8 TEXT") == true)
+    }
+
     @Test func severalMessagesComeBackFromOneFetch() async throws {
         let s = server(capabilities: "IMAP4rev1", extra: ["UID FETCH": [
             "* 1 FETCH (UID 4 BODY[] {7}", "Hello A)",

@@ -174,7 +174,11 @@ struct CreateMailDraftIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some ReturnsValue<CorresMailDraft> {
-        let from = account?.id ?? CorresSettings.defaultFromAccount
+        // An account always: with none named and no default set, Siri was
+        // shown the account of whatever email was first in the list, and
+        // the email then went from the first connected account instead.
+        let connected = UserDefaults.standard.stringArray(forKey: "corres.connectedAccounts") ?? []
+        let from = account?.id ?? CorresSettings.defaultFromAccount.flatMap { connected.contains($0) ? $0 : nil } ?? connected.first
         let text = body.map { String($0.characters) } ?? ""
         let draft = Draft(kind: .new, fromAccount: from, to: IntentPeople.field(to),
                           cc: cc.isEmpty ? nil : IntentPeople.field(cc), bcc: bcc.isEmpty ? nil : IntentPeople.field(bcc),
@@ -226,6 +230,9 @@ struct SaveMailDraftIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         guard let draft = SiriDrafts.shared.draft(target.id) else { throw DraftGone() }
+        // Siri can open Corres for this: before the accounts are back, the
+        // save to Drafts was turned away and the email kept only in memory.
+        await Organizer.shared.outbox?.waitForAccounts()
         Organizer.shared.outbox?.shelve(draft, replyingTo: draft.threadID.flatMap { Organizer.shared.store?.thread($0) })
         SiriDrafts.shared.remove(draft.id)
         return .result()
@@ -243,10 +250,17 @@ struct SendMailDraftIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         guard let draft = SiriDrafts.shared.draft(target.id), let outbox = Organizer.shared.outbox else { throw DraftGone() }
+        // Sample mail only: it would be recorded as sent and go nowhere.
+        guard GoogleAuthService.hasSavedAccounts else {
+            return .result(dialog: IntentDialog(stringLiteral: String(localized: "Add your email account in Corres first.")))
+        }
         guard draft.isSendable, draft.recipientsLookValid else {
             return .result(dialog: IntentDialog(stringLiteral: String(localized: "Who should it go to? Add someone first.")))
         }
-        let names = target.to.map(\.displayName).joined(separator: ", ")
+        // Who it really goes to: a name Siri gave without an address Corres
+        // knows isn't in the email, and asking "to Maya and Sam?" then
+        // sending to Maya alone isn't asking.
+        let names = Self.recipients(of: draft)
         if let sendLaterDate, sendLaterDate > .now {
             let when = sendLaterDate.formatted(date: .abbreviated, time: .shortened)
             try await requestConfirmation(dialog: IntentDialog(stringLiteral: String(localized: "Send this email to \(names) on \(when)?")))
@@ -257,7 +271,19 @@ struct SendMailDraftIntent: AppIntent {
         try await requestConfirmation(dialog: IntentDialog(stringLiteral: String(localized: "Send this email to \(names)?")))
         SiriDrafts.shared.remove(draft.id)
         await outbox.sendNow(draft, replyingTo: draft.threadID.flatMap { Organizer.shared.store?.thread($0) })
+        // Kept to try again (no connection, say): never "Sent." when it wasn't.
+        if outbox.failedSends.contains(where: { $0.draft.id == draft.id }) {
+            return .result(dialog: IntentDialog(stringLiteral: String(localized: "It didn't send. It's waiting in Corres to try again.")))
+        }
         return .result(dialog: IntentDialog(stringLiteral: String(localized: "Sent.")))
+    }
+
+    /// "Maya Chen, sam@x.com": everyone in To, Cc and Bcc, by name where
+    /// there is one.
+    static func recipients(of draft: Draft) -> String {
+        (PeopleIndex.entries(in: draft.to) + PeopleIndex.entries(in: draft.cc ?? "") + PeopleIndex.entries(in: draft.bcc ?? ""))
+            .map { entry in PeopleIndex.parse(entry).map { $0.name.isEmpty ? $0.email : $0.name } ?? entry }
+            .joined(separator: ", ")
     }
 }
 

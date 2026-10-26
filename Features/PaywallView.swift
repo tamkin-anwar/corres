@@ -295,6 +295,7 @@ struct ProLockView: View {
     let onUnlock: () -> Void
     let onOpenMail: () -> Void
     var openMailTitle = String(localized: "Go to Mail")
+    @Environment(EntitlementStore.self) private var entitlements
 
     var body: some View {
         VStack(spacing: 18) {
@@ -307,7 +308,7 @@ struct ProLockView: View {
                 .font(.body).foregroundStyle(CorresPalette.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-            Button("Try Corres Pro Free", action: onUnlock)
+            Button(entitlements.isEligibleForTrial ? "Try Corres Pro Free" : "Get Corres Pro", action: onUnlock)
                 .buttonStyle(CorresButtonStyle())
                 .padding(.top, 6)
             Button(openMailTitle, action: onOpenMail)

@@ -424,18 +424,28 @@ final class GmailSyncService {
         isBackfilling = true
         defer { isBackfilling = false }
         guard let pending = try? await repository.threadsAwaitingContent(limit: Self.backfillLimit) else { return }
+        let now = Date.now
         for (account, accountThreads) in Dictionary(grouping: pending, by: \.id.account) {
             let removal = removalCount(account)
-            let ids = accountThreads.compactMap(\.latestMessageID)
+            // One the server no longer has (deleted, or moved elsewhere)
+            // never loads: asked again after a while, not on every
+            // 20-second check.
+            let ids = accountThreads.compactMap(\.latestMessageID).filter {
+                now.timeIntervalSince(backfillTried[account + "|" + $0] ?? .distantPast) > Self.backfillRetry
+            }
             for chunk in ids.chunked(into: GmailAPIClient.batchSize) {
                 guard let fetched = try? await client.fetchFull(ids: chunk, account: account), isCurrent(account, removal) else { break }
+                for id in chunk { backfillTried[account + "|" + id] = now }
                 if (try? await repository.applyLoadedContent(fetched.items)) ?? 0 > 0 { syncProgress += 1 }
             }
         }
+        if backfillTried.count > 2_000 { backfillTried = backfillTried.filter { now.timeIntervalSince($0.value) <= Self.backfillRetry } }
     }
 
     private static let backfillLimit = 200
+    private static let backfillRetry: TimeInterval = 30 * 60
     private var isBackfilling = false
+    private var backfillTried: [String: Date] = [:]
 
     /// Every few hours, each account's Inbox as the server has it now (the
     /// newest 500 conversations) is compared with what's here: read state

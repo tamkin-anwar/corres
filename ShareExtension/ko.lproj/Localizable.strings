@@ -352,3 +352,13 @@
 /* No comment provided by engineer. */
 "You're waiting on their reply" = "상대방의 답장을 기다리는 중";
 
+"Sending…" = "보내는 중…";
+"Sent" = "보냄";
+"No connection. Corres will send it as soon as it can." = "연결되지 않았습니다. Corres가 가능한 한 빨리 보냅니다.";
+"Couldn’t send it. Check your connection and try again." = "보낼 수 없습니다. 연결을 확인하고 다시 시도하세요.";
+"Open Corres once, then share again. Corres finishes setting up sharing the first time it opens after updating." = "Corres를 한 번 연 다음 다시 공유하세요. 업데이트 후 처음 열 때 Corres가 공유 설정을 마칩니다.";
+"%@ didn’t accept it. Try again in a moment." = "%@에서 받아들이지 않았습니다. 잠시 후 다시 시도하세요.";
+
+"Automatic reply." = "자동 회신입니다.";
+
+"Automatic reply. Kept out of Needs You." = "자동 회신입니다. '나에게 필요'에 넣지 않았습니다.";

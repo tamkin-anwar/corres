@@ -362,7 +362,7 @@ struct ComposeView: View {
                 set: { if !$0 { attachmentError = nil } }
             )) {
                 Button("OK", role: .cancel) { attachmentError = nil }
-            } message: { Text(attachmentError ?? "Try again.") }
+            } message: { Text(attachmentError ?? String(localized: "Try again.")) }
         }
         // Self-contained, like PreferencesView: a distant .preferredColorScheme
         // does not reliably re-trait an already-presented sheet if Appearance

@@ -78,6 +78,9 @@ extension ReplyAddressTests {
             organization: "", subject: "", excerpt: "", body: "", receivedAt: .now, dueAt: nil, reason: "", attention: .quiet)])
         #expect(mine.counterpartName(knownNames: known) == "Samantha Lee")
         #expect(fromSam.counterpartName() == "Someone")
+        // You, named, first in the list: still Sam who owes the reply.
+        let named = message(from: me, to: ["Tamkin Anwar <\(me)>", "Sam Lee <sam.lee@example.com>"])
+        #expect(named.counterpartName() == "Sam Lee")
     }
 
     /// Bcc'd (or forwarded by a rule): Reply All would show everyone.

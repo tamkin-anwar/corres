@@ -227,6 +227,7 @@ struct ConversationWindow: View {
     static let id = "conversation"
     let id: ThreadID
     let appDelegate: AppDelegate
+    @Environment(\.dismissWindow) private var dismissWindow
 
     var body: some View {
         let delegate = appDelegate
@@ -234,7 +235,8 @@ struct ConversationWindow: View {
         NavigationStack {
             ConversationView(store: delegate.store, outbox: delegate.outbox, threadActions: delegate.threadActions,
                              labelDirectory: delegate.labelDirectory, unsubscribeService: delegate.unsubscribeService,
-                             auth: delegate.auth, route: ConversationRoute(id: id, orderedIDs: [id]))
+                             auth: delegate.auth, route: ConversationRoute(id: id, orderedIDs: [id]),
+                             onLeave: { dismissWindow() })
         }
         .environment(delegate.mailIntelligence)
         .environment(delegate.router)

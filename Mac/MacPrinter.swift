@@ -56,11 +56,17 @@ final class MacPrinter: NSObject, WKNavigationDelegate {
         let operation = webView.printOperation(with: info)
         operation.view?.frame = webView.bounds
         if let window {
-            operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+            // A sheet: it returns at once, so the page is kept until the
+            // print panel is done with it, not let go while it's still up.
+            operation.runModal(for: window, delegate: self, didRun: #selector(printDidRun(_:success:contextInfo:)), contextInfo: nil)
         } else {
             operation.run()
+            Self.current = nil
         }
-        Self.current = nil
+    }
+
+    @objc private func printDidRun(_ operation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        if Self.current === self { Self.current = nil }
     }
 
     private static func escape(_ text: String) -> String {

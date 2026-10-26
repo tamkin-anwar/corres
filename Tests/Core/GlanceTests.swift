@@ -44,6 +44,15 @@ struct GlanceTests {
         #expect(glance?.facts.contains(.init(label: "Due date", value: "20 October 2026")) == true)
     }
 
+    /// Words that spell a currency code in lowercase ("all", "top") are
+    /// not amounts.
+    @Test func wordsAreNotCurrencyCodes() {
+        let glance = MailDigest.glance(text: "Payment received\nYou've paid all 3 instalments.\nOrder number: AB12345", kind: .receipt)
+        #expect(glance?.facts.contains { $0.value == "all 3" } != true)
+        let real = MailDigest.glance(text: "Payment received\nTotal: BDT 2,500\nOrder number: AB12345", kind: .receipt)
+        #expect(real?.facts.first == .init(label: "Total", value: "BDT 2,500"))
+    }
+
     @Test func nothingForPersonalMailOrVagueMail() {
         #expect(MailDigest.glance(text: "Total £14.62\nDue date 3 Nov", kind: .personal) == nil)
         // One stray figure with no status isn't worth a card.

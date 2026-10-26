@@ -352,3 +352,13 @@
 /* No comment provided by engineer. */
 "You're waiting on their reply" = "আপনি তাদের উত্তরের অপেক্ষায়";
 
+"Sending…" = "পাঠানো হচ্ছে…";
+"Sent" = "পাঠানো হয়েছে";
+"No connection. Corres will send it as soon as it can." = "সংযোগ নেই। Corres যত তাড়াতাড়ি পারে পাঠিয়ে দেবে।";
+"Couldn’t send it. Check your connection and try again." = "পাঠানো যায়নি। আপনার সংযোগ দেখে আবার চেষ্টা করুন।";
+"Open Corres once, then share again. Corres finishes setting up sharing the first time it opens after updating." = "Corres একবার খুলুন, তারপর আবার শেয়ার করুন। আপডেটের পর প্রথমবার খুললে Corres শেয়ার করার সেটআপ শেষ করে।";
+"%@ didn’t accept it. Try again in a moment." = "%@ এটি গ্রহণ করেনি। একটু পরে আবার চেষ্টা করুন।";
+
+"Automatic reply." = "স্বয়ংক্রিয় উত্তর।";
+
+"Automatic reply. Kept out of Needs You." = "স্বয়ংক্রিয় উত্তর। আপনার করণীয়-র বাইরে রাখা হয়েছে।";

@@ -211,6 +211,25 @@ struct CorresMailMessageQuery: EntityStringQuery {
 
 // MARK: Actions
 
+/// Siri can be what opens Corres: its mail, and for a change the accounts
+/// too, come back first, as for the Watch (`WatchBridge.perform`). Before,
+/// a cold "archive the email from Maya" found no email, or no account to
+/// send the change with, and said it was done.
+@MainActor
+enum IntentMail {
+    static func store() async -> MailStore? {
+        guard let store = Organizer.shared.store else { return nil }
+        if store.state != .loaded { await store.load() }
+        return store
+    }
+
+    static func ready() async -> (store: MailStore, actions: ThreadActionService)? {
+        guard let store = await store(), let actions = Organizer.shared.actions else { return nil }
+        await Organizer.shared.outbox?.waitForAccounts()
+        return (store, actions)
+    }
+}
+
 @available(iOS 18.0, macOS 15.0, *)
 @AppIntent(schema: .mail.archiveMail)
 struct ArchiveMailIntent: AppIntent {
@@ -218,8 +237,9 @@ struct ArchiveMailIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        guard let store = Organizer.shared.store, let actions = Organizer.shared.actions else { return .result() }
+        guard case let (store, actions)? = await IntentMail.ready() else { throw UpdateMailError.notFound }
         let threads = entities.compactMap(\.threadID).compactMap(store.thread)
+        guard !threads.isEmpty else { throw UpdateMailError.notFound }
         await actions.archive(threads)
         await actions.commitPendingRemoval()
         return .result()
@@ -233,8 +253,9 @@ struct DeleteMailIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        guard let store = Organizer.shared.store, let actions = Organizer.shared.actions else { return .result() }
+        guard case let (store, actions)? = await IntentMail.ready() else { throw UpdateMailError.notFound }
         let threads = entities.compactMap(\.threadID).compactMap(store.thread)
+        guard !threads.isEmpty else { throw UpdateMailError.notFound }
         await actions.trash(threads)
         await actions.commitPendingRemoval()
         return .result()
@@ -259,7 +280,7 @@ struct ReplyMailIntent: AppIntent {
     /// and send: nothing goes out on its own.
     @MainActor
     func perform() async throws -> some IntentResult {
-        guard let id = target.threadID, let thread = Organizer.shared.store?.thread(id) else { return .result() }
+        guard let id = target.threadID, let thread = await IntentMail.store()?.thread(id) else { throw UpdateMailError.notFound }
         var draft = thread.draft(kind: isReplyAll ? .replyAll : .reply)
         if let body, !body.isEmpty { draft.body = body + draft.body }
         AppRouter.shared.pending = .draft(draft)
@@ -282,7 +303,7 @@ struct ForwardMailIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        guard let id = target.threadID, let thread = Organizer.shared.store?.thread(id) else { return .result() }
+        guard let id = target.threadID, let thread = await IntentMail.store()?.thread(id) else { throw UpdateMailError.notFound }
         var draft = thread.draft(kind: .forward)
         draft.attachments = await thread.attachmentsToForward().files
         let addresses = to.compactMap(Self.address)
@@ -312,7 +333,7 @@ struct UpdateMailIntent: AppIntent {
     /// Says so when it can't, rather than reporting a change it didn't make.
     @MainActor
     func perform() async throws -> some IntentResult {
-        guard let store = Organizer.shared.store, let actions = Organizer.shared.actions else { throw UpdateMailError.notFound }
+        guard case let (store, actions)? = await IntentMail.ready() else { throw UpdateMailError.notFound }
         let threads = target.compactMap(\.threadID).compactMap(store.thread)
         guard !threads.isEmpty else { throw UpdateMailError.notFound }
         guard isRead != nil || isFlagged != nil || isJunk != nil || mailbox != nil else { throw UpdateMailError.nothingToChange }
@@ -419,7 +440,7 @@ struct RemindAboutMailIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        guard let id = target.threadID, let thread = Organizer.shared.store?.thread(id) else {
+        guard let id = target.threadID, let thread = await IntentMail.store()?.thread(id) else {
             return .result(dialog: IntentDialog(stringLiteral: String(localized: "That email isn't in Corres anymore.")))
         }
         switch await MailReminders.add(thread, due: date ?? thread.dueAt) {

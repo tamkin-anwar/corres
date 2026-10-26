@@ -88,8 +88,9 @@ enum RFC2822Date {
 /// UTF-8.
 /// Strictly decoding as the labelled charset failed on those characters
 /// and dropped the whole part to garbled UTF-8.
-enum Charset {
-    static func encoding(named name: String) -> String.Encoding? {
+/// Public for Gmail's API, which hands back each part in its own charset.
+public enum Charset {
+    public static func encoding(named name: String) -> String.Encoding? {
         let label = name.trimmingCharacters(in: CharacterSet(charactersIn: "\"' \t")).lowercased()
         let cf: CFStringEncoding
         switch label {

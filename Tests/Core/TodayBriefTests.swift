@@ -108,4 +108,15 @@ struct TodayBriefTests {
         #expect(!TodayBrief.hasTime(at(hour: 23, minute: 59), calendar: calendar))
         #expect(TodayBrief.hasTime(at(hour: 17), calendar: calendar))
     }
+
+    /// "Pay by Friday" comes back from the date detector as noon that day.
+    @Test func aDayReadAsNoonIsDueUntilTheDayEnds() {
+        #expect(!TodayBrief.hasTime(at(hour: 12), calendar: calendar))
+        // 10:30 AM now; at 1 PM a noon-only deadline is still due today.
+        let afternoon = TodayBrief.make(needsYou: [mail("friday", due: at(hour: 12))], deliveries: [],
+                                        now: at(hour: 13), calendar: calendar,
+                                        isMeeting: { _ in false }, isPerson: { _ in true })
+        #expect(afternoon.top.first?.kind == .dueToday)
+        #expect(afternoon.top.first?.hasTime == false)
+    }
 }

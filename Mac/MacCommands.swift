@@ -65,6 +65,10 @@ enum MacWindows {
     /// Undo Send: the email isn't sent, and opens again in a compose
     /// window to change, as Mail does.
     static func undoSend(_ outbox: OutboxService) {
+        // Already gone (Undo clicked as it sent): nothing to take back, and
+        // an older email put aside (Move to Drafts, Siri's "save it") isn't
+        // the one to open.
+        guard outbox.pending != nil else { return }
         outbox.undo()
         guard let draft = outbox.takeShelved() else { return }
         let handoff = UUID()
