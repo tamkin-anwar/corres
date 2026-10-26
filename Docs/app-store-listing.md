@@ -246,7 +246,9 @@ documented keyword limit is 100 bytes, not characters.
 Required: **iPhone 6.9"** (1320 × 2868) and, since Corres runs on iPad,
 **iPad 13"** (2064 × 2752). Up to 10 each; Apple shows the first 3 in
 search, so those carry the pitch. Made from the Simulator with sample mail
-(never real mail), dark and light, 9:41, with a short headline above each:
+(never real mail), dark and light, at 9:57 (the owner's birth time, our own
+signature) with a full battery that isn't charging, never the charging bolt,
+with a short headline above each:
 
 1. **Know what needs you.** Needs You with Due soon, When you can and a reason on each row.
 2. **Every account, one inbox.** Primary with Gmail, Outlook and iCloud colors.
@@ -263,7 +265,9 @@ originals sit beside them) and three iPad 13" (2064 × 2752): Know what needs
 you, Every account one inbox, Ask your mail, Invitations answered, Never lose
 a thread, Private by design. Re-render with
 `swift Scripts/RenderStoreShot.swift <capture> <out> "Headline." "Line under it."`
-from Simulator captures of fresh sample mail (status bar at 9:41).
+from Simulator captures of fresh sample mail (status bar at 9:57). All
+iPhone, iPad and language sets were retaken 2026-10-26 at 9:57 without the
+charging bolt; the capture flags are in Scripts/store-shots.
 
 Mac (macOS App 1.0, retaken 2026-10-26 because the 2026-10-19 set still
 showed Unread in the sidebar): six 2880 × 1800 in `Docs/AppStore/mac/`
@@ -272,7 +276,7 @@ from the keyboard, Never lose a thread, Replies that sound like you),
 captured from a debug build run with `-SampleMailOnly -CorresScreenshots
 -corres.appearance dark -ShowMailbox … -SelectThread sample-N` (plus
 `-SearchFor "…"`, `-ShowPalette` for ⌘K, `-SampleReplies`), with `TZ` set to
-a zone where it's just past 9:41 so the sample mail reads as this morning,
+a zone where it's just past 9:57 so the sample mail reads as this morning,
 and uploaded with `node Scripts/asc-listing.mjs replace-shots en-US
 APP_DESKTOP Docs/AppStore/mac/mac-*.png`
 (sample mail in memory, Spotlight off, so a real Corres on the same Mac is
@@ -291,15 +295,16 @@ size; Apple asks for one Watch size, the same in every language) in
 3. `watch-3.png` Reply: "Say or write a reply" and ready answers.
 4. `watch-4.png` The watch face (Modular) with the Needs You complications.
 
-All at 9:41, sample mail, no alpha channel (Apple's specification says
+All at 9:57 (retaken 2026-10-26), sample mail, no alpha channel (Apple's specification says
 screenshots can't have one; the old Watch set did, unlike the iPhone, iPad
 and Mac sets). How they're made: the
 Watch simulator can't override its status bar, so the simulator's time
-zone is set to one where it is 9:41 at the next :41 of the hour
+zone is set to one where it is 9:57 at the next :57 of the hour
 (`xcrun simctl spawn <watch> launchctl setenv TZ Asia/Shanghai`, then
 restart Carousel), and the app is launched with `-SampleSnapshot` plus
 `-WatchScreen detail` or `-WatchScreen reply` (DEBUG only) to open the
-first email or its reply. Terminating the app returns to the face.
+first email or its reply. Terminating the app returns to the face. Run the app
+once before shooting the face, or its complications still say 0.
 
 ## Other languages
 
