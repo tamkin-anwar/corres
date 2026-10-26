@@ -473,6 +473,9 @@ struct CorrespondenceList: View {
 
     private func accountTag(for thread: Correspondence) -> AccountTag? {
         guard showsAccountTags else { return nil }
+        #if DEBUG
+        if SampleAccounts.isOn { return AccountTag.make(for: SampleAccounts.account(for: thread.id), among: SampleAccounts.emails) }
+        #endif
         return rows.tags[thread.id.account] ?? AccountTag.make(for: thread.id.account, among: auth?.accounts.map(\.email) ?? [])
     }
 

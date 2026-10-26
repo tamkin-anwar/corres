@@ -201,6 +201,9 @@ final class GmailSyncService {
     private var wantsAnotherPass: Set<String> = []
 
     private func sync(account: String) async -> Bool {
+        #if DEBUG
+        if SampleAccounts.isSample(account) { return false }
+        #endif
         if let current = running[account] {
             wantsAnotherPass.insert(account)
             return await current.value

@@ -84,7 +84,10 @@ final class GoogleAuthService {
         #if DEBUG
         // App Store screenshots: sample mail only, whatever accounts this
         // device has, and nothing written back to them.
-        if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly") { finishRestoring(); return }
+        if ProcessInfo.processInfo.arguments.contains("-SampleMailOnly") {
+            if SampleAccounts.isOn { accounts = SampleAccounts.emails.map(GmailAccount.init) }
+            finishRestoring(); return
+        }
         #endif
         defer { finishRestoring() }
         watchICloudPasswords()
@@ -519,3 +522,23 @@ final class GoogleAuthService {
         Platform.signInPresenter
     }
 }
+
+#if DEBUG
+/// Screenshots: `-SampleAccounts` beside `-SampleMailOnly` shows three
+/// made-up accounts (Gmail, Outlook, iCloud) with the sample mail shared
+/// out among them, so All Inboxes, account colours and the account
+/// switcher have something to show. Nothing signs in and nothing syncs.
+enum SampleAccounts {
+    static let isOn = ProcessInfo.processInfo.arguments.contains("-SampleMailOnly")
+        && ProcessInfo.processInfo.arguments.contains("-SampleAccounts")
+    static let emails = ["alex.morgan@gmail.com", "alex@outlook.com", "alex.morgan@icloud.com"]
+
+    static func isSample(_ account: String) -> Bool { isOn && emails.contains(account) }
+
+    /// The account a sample conversation is shown under.
+    static func account(for id: ThreadID) -> String {
+        guard isOn, id.account == "sample", let number = Int(id.providerID.dropFirst("sample-".count)) else { return id.account }
+        return emails[number % emails.count]
+    }
+}
+#endif

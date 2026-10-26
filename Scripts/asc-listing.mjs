@@ -6,6 +6,11 @@
 //   node Scripts/asc-listing.mjs apply         descriptions, keywords, promo text, subtitles
 //   node Scripts/asc-listing.mjs diff [locale] what apply would change, line by line (read-only)
 //   node Scripts/asc-listing.mjs watch-shots   Apple Watch screenshots (Docs/AppStore/watch)
+//   node Scripts/asc-listing.mjs shots         every locale's screenshot sets and files (read-only)
+//   node Scripts/asc-listing.mjs replace-shots <locale> <display type> <png>...
+//                                              uploads these, in this order, and removes the set's
+//                                              old ones once the new ones are in (a full set is
+//                                              swapped one at a time to stay within Apple's 10)
 //
 // Sources: English from Docs/app-store-listing.md, every other language
 // from Docs/AppStore/localized/listing.json (rebuild it with listing.py).
@@ -234,19 +239,93 @@ async function watchShots() {
     set = (await api('POST', '/v1/appScreenshotSets', { data: { type: 'appScreenshotSets', attributes: { screenshotDisplayType: type },
       relationships: { appStoreVersionLocalization: { data: { type: 'appStoreVersionLocalizations', id: loc.id } } } } })).data
   }
-  for (const f of files) {
-    const bytes = readFileSync(join(dir, f))
-    const shot = (await api('POST', '/v1/appScreenshots', { data: { type: 'appScreenshots', attributes: { fileName: f, fileSize: statSync(join(dir, f)).size },
-      relationships: { appScreenshotSet: { data: { type: 'appScreenshotSets', id: set.id } } } } })).data
-    for (const op of shot.attributes.uploadOperations) {
-      const res = await fetch(op.url, { method: op.method, headers: Object.fromEntries(op.requestHeaders.map((h) => [h.name, h.value])),
-        body: bytes.subarray(op.offset, op.offset + op.length) })
-      if (!res.ok) throw new Error(`Upload of ${f} failed: ${res.status}`)
-    }
-    await api('PATCH', `/v1/appScreenshots/${shot.id}`, { data: { type: 'appScreenshots', id: shot.id,
-      attributes: { uploaded: true, sourceFileChecksum: createHash('md5').update(bytes).digest('hex') } } })
-    console.log(`Uploaded ${f}`)
+  for (const f of files) await uploadShot(set.id, join(dir, f))
+}
+
+// One screenshot into a set: reserve, send the parts, then confirm with
+// its checksum. Returns the new screenshot's id.
+async function uploadShot(setId, path) {
+  const name = path.split('/').pop()
+  const bytes = readFileSync(path)
+  const shot = (await api('POST', '/v1/appScreenshots', { data: { type: 'appScreenshots', attributes: { fileName: name, fileSize: statSync(path).size },
+    relationships: { appScreenshotSet: { data: { type: 'appScreenshotSets', id: setId } } } } })).data
+  for (const op of shot.attributes.uploadOperations) {
+    const res = await fetch(op.url, { method: op.method, headers: Object.fromEntries(op.requestHeaders.map((h) => [h.name, h.value])),
+      body: bytes.subarray(op.offset, op.offset + op.length) })
+    if (!res.ok) throw new Error(`Upload of ${name} failed: ${res.status}`)
   }
+  await api('PATCH', `/v1/appScreenshots/${shot.id}`, { data: { type: 'appScreenshots', id: shot.id,
+    attributes: { uploaded: true, sourceFileChecksum: createHash('md5').update(bytes).digest('hex') } } })
+  console.log(`Uploaded ${name}`)
+  return shot.id
+}
+
+// Apple processes an upload after it's confirmed; wait until it has.
+async function processed(id) {
+  for (let i = 0; i < 60; i++) {
+    const state = (await api('GET', `/v1/appScreenshots/${id}`)).data.attributes.assetDeliveryState?.state
+    if (state === 'COMPLETE') return
+    if (state === 'FAILED') throw new Error(`App Store Connect couldn't process screenshot ${id}`)
+    await new Promise((r) => setTimeout(r, 3000))
+  }
+  throw new Error(`Screenshot ${id} still processing after 3 minutes`)
+}
+
+// Mac sets live on the macOS version, everything else on iOS.
+const platformOf = (type) => (/^APP_DESKTOP/.test(type) ? 'MAC_OS' : 'IOS')
+
+async function localization(a, platform, locale) {
+  const v = (await versions(a.id)).find((x) => x.platform === platform && editable.has(x.state))
+  if (!v) throw new Error(`No editable ${platform} version`)
+  const loc = (await all(`/v1/appStoreVersions/${v.id}/appStoreVersionLocalizations?limit=50`)).find((l) => l.attributes.locale === locale)
+  if (!loc) throw new Error(`${platform} ${v.version} has no ${locale} localization`)
+  return loc
+}
+
+async function shots() {
+  const a = await app()
+  for (const v of await versions(a.id)) {
+    console.log(`\n${v.platform} ${v.version}: ${v.state}`)
+    for (const l of await all(`/v1/appStoreVersions/${v.id}/appStoreVersionLocalizations?limit=50`)) {
+      for (const s of await all(`/v1/appStoreVersionLocalizations/${l.id}/appScreenshotSets`)) {
+        const files = await all(`/v1/appScreenshotSets/${s.id}/appScreenshots`)
+        console.log(`  ${l.attributes.locale.padEnd(8)} ${s.attributes.screenshotDisplayType.padEnd(24)} ${files.length}: ${files.map((f) => f.attributes.fileName).join(', ')}`)
+      }
+    }
+  }
+}
+
+async function replaceShots() {
+  const [locale, type, ...paths] = process.argv.slice(3)
+  if (!locale || !type || !paths.length) throw new Error('Usage: replace-shots <locale> <display type> <png>...')
+  for (const p of paths) statSync(p)
+  const a = await app()
+  const loc = await localization(a, platformOf(type), locale)
+  let set = (await all(`/v1/appStoreVersionLocalizations/${loc.id}/appScreenshotSets`)).find((s) => s.attributes.screenshotDisplayType === type)
+  if (!set) set = (await api('POST', '/v1/appScreenshotSets', { data: { type: 'appScreenshotSets', attributes: { screenshotDisplayType: type },
+    relationships: { appStoreVersionLocalization: { data: { type: 'appStoreVersionLocalizations', id: loc.id } } } } })).data
+  const old = (await all(`/v1/appScreenshotSets/${set.id}/appScreenshots`)).map((s) => s.id)
+  if (paths.length > 10) throw new Error(`Apple allows 10 screenshots per set, not ${paths.length}`)
+  // A set holds at most 10, so a full one is swapped a shot at a time: an
+  // old one goes only to make room, and only after every new one so far
+  // is uploaded and processed. If an upload fails, the set keeps what it
+  // had plus the new ones that made it.
+  const left = [...old], added = []
+  for (const p of paths) {
+    if (left.length + added.length >= 10) await api('DELETE', `/v1/appScreenshots/${left.shift()}`)
+    let id
+    try {
+      id = await uploadShot(set.id, p)
+      await processed(id)
+    } catch (err) {
+      if (id) await api('DELETE', `/v1/appScreenshots/${id}`).catch(() => {})
+      throw new Error(`${err.message}. ${locale} ${type} now has ${added.length} new and ${left.length} old screenshots.`)
+    }
+    added.push(id)
+  }
+  for (const id of left) await api('DELETE', `/v1/appScreenshots/${id}`)
+  await api('PATCH', `/v1/appScreenshotSets/${set.id}/relationships/appScreenshots`, { data: added.map((id) => ({ type: 'appScreenshots', id })) })
+  console.log(`${locale} ${type}: ${added.length} new, ${old.length} old removed`)
 }
 
 const command = process.argv[2]
@@ -259,6 +338,6 @@ async function iap() {
   }
 }
 
-const run = { status, apply, diff, iap, 'watch-shots': watchShots }[command]
-if (!run) { console.log('Usage: node Scripts/asc-listing.mjs status | diff [locale] | apply | watch-shots'); process.exit(1) }
+const run = { status, apply, diff, iap, shots, 'watch-shots': watchShots, 'replace-shots': replaceShots }[command]
+if (!run) { console.log('Usage: node Scripts/asc-listing.mjs status | diff [locale] | apply | watch-shots | shots | replace-shots <locale> <type> <png>...'); process.exit(1) }
 run().catch((err) => { console.error(err.message); process.exit(1) })
