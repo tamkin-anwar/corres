@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct CorresShell: View {
     @Bindable var store: MailStore
@@ -356,6 +357,11 @@ struct CorresShell: View {
             if let flag = args.firstIndex(of: "-OpenThread"), flag + 1 < args.count {
                 try? await Task.sleep(for: .seconds(1.5))
                 router.pending = .thread(ThreadID(account: "sample", providerID: args[flag + 1]))
+            }
+            // -AskNotifications asks for notification permission, for the
+            // website's lock screen shot.
+            if args.contains("-AskNotifications") {
+                _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])
             }
             // -ShowAccounts opens the account switcher; -Compose a new email.
             if args.contains("-ShowAccounts") {
