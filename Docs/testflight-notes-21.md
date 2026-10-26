@@ -408,3 +408,58 @@ Please try
 3. Close the main window, wait for new mail, and check the Dock badge.
 
 Something off? Help > Send Diagnostics, or send feedback through TestFlight.
+
+## Build 39
+
+Corres 0.2.0 (39) for iPhone, iPad and Apple Watch
+
+The big ones
+- Siri tells you what really happened. It says who an email goes to, says so when a send didn't go through, and tells you when nothing matched what you asked for.
+- Safer sending. If Outlook is slow to answer while an email goes out, Corres checks before trying again, so nothing is sent twice. A big email no longer loses its copy in Sent.
+- Reads mail from everywhere. Bills in taka (Tk, BDT) and rupees, Bengali and Arabic digits, Japanese and Korean dates, and older Japanese and Chinese encodings in Gmail. A deadline with no time lasts the whole day.
+
+Also new
+- Deleting and archiving are much quicker in a big mailbox, and the first minute after opening stays smooth.
+- Automatic replies ("I'm out of the office") stay out of Needs You.
+- The Lock Screen widget hides sender and subject while your iPhone is locked.
+- Replies from a notification or Apple Watch quote the email and come from the address it was sent to.
+- On Apple Watch, Needs You and Waiting are part of Corres Pro, as on iPhone. Everyone on TestFlight has Pro, so nothing changes for you.
+
+Fixed
+- iCloud and other email: archive, delete and flag made offline go through once you're back, and a wrong password no longer locks you out by retrying.
+- Mail moved back to the Inbox on the web comes back in Corres.
+- On iPad, a conversation in its own window closes after you archive, delete or snooze it.
+- Write on a person's card opens a new email.
+
+Please try
+1. Ask Siri to send an email to someone, then check Sent.
+2. Archive or delete several emails in a row in a big mailbox.
+3. If you get bills or dates in Bengali, Japanese or Korean, open one and check the details at the top.
+
+Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
+
+## Mac build 40
+
+Corres for Mac 0.2.0 (40)
+
+The big ones
+- Siri and Shortcuts work with the main window closed. Corres opens it, and Siri says what really happened, including when a send didn't go through.
+- Deleting and archiving are much quicker in a big mailbox, with no stalls in the first minute after opening.
+- Safer sending. If Outlook is slow to answer while an email goes out, Corres checks before trying again, so nothing is sent twice.
+
+Also new
+- Reads mail from everywhere: taka and rupee amounts, Bengali and Arabic digits, Japanese and Korean dates, older Japanese and Chinese encodings.
+- Automatic replies stay out of Needs You.
+- The Keyboard Shortcuts sheet is translated, and Compose has VoiceOver labels.
+
+Fixed
+- Unsubscribe works on the next newsletter, not only the first.
+- Suggested replies come from the address the email was sent to.
+- iCloud and other email: offline actions go through once you're back, and a wrong password no longer locks you out.
+
+Please try
+1. Close the main window, then ask Siri to write an email.
+2. Delete a few emails in a row in a big mailbox.
+3. Unsubscribe from two newsletters, one after the other.
+
+Something off? Help > Send Diagnostics, or send feedback through TestFlight.

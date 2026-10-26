@@ -11,6 +11,8 @@
 //                                              uploads these, in this order, and removes the set's
 //                                              old ones once the new ones are in (a full set is
 //                                              swapped one at a time to stay within Apple's 10)
+//   node Scripts/asc-listing.mjs tester-notes <build> <notes.txt>
+//                                              TestFlight's What to Test (en-US) for that build number
 //
 // Sources: English from Docs/app-store-listing.md, every other language
 // from Docs/AppStore/localized/listing.json (rebuild it with listing.py).
@@ -338,6 +340,23 @@ async function iap() {
   }
 }
 
-const run = { status, apply, diff, iap, shots, 'watch-shots': watchShots, 'replace-shots': replaceShots }[command]
-if (!run) { console.log('Usage: node Scripts/asc-listing.mjs status | diff [locale] | apply | watch-shots | shots | replace-shots <locale> <type> <png>...'); process.exit(1) }
+// TestFlight's What to Test for one build (its build number, unique across
+// the iPhone and Mac builds), from a text file.
+async function testerNotes() {
+  const [number, file] = process.argv.slice(3)
+  if (!number || !file) throw new Error('Usage: tester-notes <build number> <notes.txt>')
+  const whatsNew = readFileSync(file, 'utf8').trim()
+  if (whatsNew.length > 4000) throw new Error(`What to Test is ${whatsNew.length} characters; Apple allows 4,000`)
+  const a = await app()
+  const [build] = await all(`/v1/builds?filter[app]=${a.id}&filter[version]=${number}`)
+  if (!build) throw new Error(`No build ${number}`)
+  const [loc] = (await all(`/v1/builds/${build.id}/betaBuildLocalizations`)).filter((l) => l.attributes.locale === 'en-US')
+  if (loc) await api('PATCH', `/v1/betaBuildLocalizations/${loc.id}`, { data: { type: 'betaBuildLocalizations', id: loc.id, attributes: { whatsNew } } })
+  else await api('POST', '/v1/betaBuildLocalizations', { data: { type: 'betaBuildLocalizations', attributes: { locale: 'en-US', whatsNew },
+    relationships: { build: { data: { type: 'builds', id: build.id } } } } })
+  console.log(`Build ${number}: What to Test set (${whatsNew.length} characters)`)
+}
+
+const run = { status, apply, diff, iap, shots, 'watch-shots': watchShots, 'replace-shots': replaceShots, 'tester-notes': testerNotes }[command]
+if (!run) { console.log('Usage: node Scripts/asc-listing.mjs status | diff [locale] | apply | watch-shots | shots | replace-shots <locale> <type> <png>... | tester-notes <build> <notes.txt>'); process.exit(1) }
 run().catch((err) => { console.error(err.message); process.exit(1) })
