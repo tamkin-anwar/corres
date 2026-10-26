@@ -251,6 +251,7 @@ final class CloudSync {
     /// Brings the conversations and senders here in line with the marks.
     func apply() async {
         guard let store else { return }
+        HangReporter.note("apply iCloud marks")
         var changed = 0
         for thread in store.threadsIncludingHidden {
             guard let mark = marks[Self.key(thread.id)] else { continue }

@@ -186,6 +186,28 @@ public actor SwiftDataMailRepository: MailRepository {
         return models.count
     }
 
+    /// Deletes stored HTML whose conversation is gone. Before build 37,
+    /// mail archived or deleted on another device left its HTML behind,
+    /// which grew Corres's storage by hundreds of megabytes. Returns how
+    /// many were removed.
+    public func removeOrphanedContent(batch: Int) throws -> Int {
+        var threads = FetchDescriptor<PersistedCorrespondence>()
+        threads.propertiesToFetch = [\.compositeID]
+        let kept = Set(try modelContext.fetch(threads).map(\.compositeID))
+        var contents = FetchDescriptor<PersistedMessageContent>()
+        contents.propertiesToFetch = [\.compositeID]
+        let orphans = try modelContext.fetch(contents).map(\.compositeID).filter { !kept.contains($0) }
+        guard !orphans.isEmpty else { return 0 }
+        var removed = 0
+        for start in stride(from: 0, to: orphans.count, by: batch) {
+            let ids = Array(orphans[start..<min(start + batch, orphans.count)])
+            try modelContext.delete(model: PersistedMessageContent.self, where: #Predicate { ids.contains($0.compositeID) })
+            try modelContext.save()
+            removed += ids.count
+        }
+        return removed
+    }
+
     @discardableResult
     public func setAttention(_ attention: Attention, for id: ThreadID) throws -> Correspondence {
         try mutate(id) { model in

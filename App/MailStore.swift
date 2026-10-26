@@ -281,6 +281,15 @@ final class MailStore {
                 HangReporter.note("moved \(moved) messages' HTML")
                 await refresh()
             }
+            // HTML whose conversation is gone, left by builds before 37:
+            // cleared once a week, off the main thread.
+            let key = "corres.orphanContentSweptAt"
+            let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
+            guard Date.now.timeIntervalSince(last) > 7 * 86_400 else { return }
+            if let removed = try? await repository.removeOrphanedContent(batch: 500) {
+                UserDefaults.standard.set(Date.now, forKey: key)
+                if removed > 0 { HangReporter.note("cleared \(removed) orphaned messages' HTML") }
+            }
         }
     }
     private static let firstScreen = 300
@@ -430,6 +439,8 @@ final class MailStore {
     /// running (a sync saves a batch every moment) fold into one more
     /// reload after it, instead of each reading the whole mailbox.
     func refresh() async {
+        // So a stall report says what was running, never which mail.
+        HangReporter.note("reload lists")
         if isRefreshing {
             // Returns once a reload that started after this call is done,
             // so the caller still sees what it just changed.

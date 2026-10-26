@@ -87,6 +87,7 @@ final class SemanticTriageService {
     /// before posting a notification, rather than the whole backlog.
     func triageIfNeeded(store: MailStore, only ids: Set<ThreadID>? = nil) async {
         guard isAvailable else { return }
+        HangReporter.note("triage")
         if let ids {
             await runPass(store: store, only: ids)
             return

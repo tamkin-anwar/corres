@@ -244,6 +244,8 @@ final class GmailSyncService {
     /// silent-push sync inside iOS's short background window never waits on
     /// them.
     private func syncOneLocked(account: String, removal: Int) async -> Bool {
+        // The service, never the address: diagnostics carry no mail.
+        HangReporter.note("sync \(MailAccounts.provider(for: account))")
         do {
             let (plan, isFullListing) = try await planSync(account: account)
             var stillMissing = Set<String>()

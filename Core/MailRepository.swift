@@ -23,6 +23,9 @@ public protocol MailRepository: Sendable {
     /// Moves HTML saved inside conversations into its own place, a batch
     /// at a time; returns how many moved, 0 when done.
     func moveContent(batch: Int) async throws -> Int
+    /// Deletes stored HTML left behind by conversations that are gone;
+    /// returns how many.
+    func removeOrphanedContent(batch: Int) async throws -> Int
     /// Each returns the single thread as it now stands, the same pattern
     /// `send` already used: lets a caller splice just that one item into an
     /// in-memory list instead of re-fetching every thread just to find the
@@ -272,6 +275,7 @@ public actor SampleMailRepository: MailRepository {
         items.filter { $0.id.account == account && $0.latestMessageID == nil }
     }
     public func moveContent(batch: Int) -> Int { 0 }
+    public func removeOrphanedContent(batch: Int) -> Int { 0 }
     public func storedIDs() -> Set<String> { Set(items.map { "\($0.id.account)|\($0.id.providerID)" }) }
 
     /// Sample threads never exist in Gmail, so nothing remote can change them.
