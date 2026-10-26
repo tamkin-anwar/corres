@@ -1610,7 +1610,7 @@
 "Needs You is part of Corres Pro. Open Corres to start your free trial." = "'나에게 필요'는 Corres Pro의 기능입니다. Corres를 열어 무료 체험을 시작하세요.";
 
 /* No comment provided by engineer. */
-"Needs You on your Home Screen and Lock Screen." = "홈 화면과 잠금 화면에 '나에게 필요' 표시.";
+"Needs You on your Home Screen, Lock Screen and Apple Watch." = "홈 화면, 잠금 화면, Apple Watch에 '나에게 필요' 표시.";
 
 /* No comment provided by engineer. */
 "Needs You stays in Corres." = "‘나에게 필요’는 Corres 안에서만 작동합니다.";
@@ -3050,7 +3050,7 @@
 "Who should it go to? Add someone first." = "누구에게 보낼까요? 먼저 받는 사람을 추가하세요.";
 
 /* No comment provided by engineer. */
-"Widgets, Siri and iPad" = "위젯, Siri, iPad";
+"Widgets and Apple Watch" = "위젯과 Apple Watch";
 
 /* No comment provided by engineer. */
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "열면 읽음으로 표시하기가 꺼져 있으면, 쓸어넘기거나 '읽음으로 표시'를 선택할 때까지 대화가 읽지 않음으로 남습니다. 링크는 Safari 읽기 도우미와 콘텐츠 차단기를 사용해 Corres에서 열거나, 기본 브라우저에서 엽니다.";

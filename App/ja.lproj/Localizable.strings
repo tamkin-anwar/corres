@@ -1610,7 +1610,7 @@
 "Needs You is part of Corres Pro. Open Corres to start your free trial." = "「要対応」はCorres Proの機能です。Corresを開いて無料トライアルを始めてください。";
 
 /* No comment provided by engineer. */
-"Needs You on your Home Screen and Lock Screen." = "ホーム画面とロック画面に「要対応」を表示。";
+"Needs You on your Home Screen, Lock Screen and Apple Watch." = "ホーム画面、ロック画面、Apple Watchに「要対応」を表示。";
 
 /* No comment provided by engineer. */
 "Needs You stays in Corres." = "「要対応」はCorresの中だけで動きます。";
@@ -3050,7 +3050,7 @@
 "Who should it go to? Add someone first." = "宛先がありません。先に宛先を追加してください。";
 
 /* No comment provided by engineer. */
-"Widgets, Siri and iPad" = "ウィジェット、Siri、iPad";
+"Widgets and Apple Watch" = "ウィジェットとApple Watch";
 
 /* No comment provided by engineer. */
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "開いても開封済みにしない設定では、スワイプするか「開封済みにする」を選ぶまで未開封のままです。リンクはSafariのリーダーとコンテンツブロッカー付きでCorres内で開くか、デフォルトのブラウザで開きます。";

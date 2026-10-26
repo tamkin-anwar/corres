@@ -22,6 +22,8 @@ final class EntitlementStore {
         static let annual = "studio.anwarcreative.corres.pro.annual"
         static let lifetime = "studio.anwarcreative.corres.pro.lifetime"
         static let all = [annual, monthly, lifetime]
+        /// What the paywall sells. Lifetime is a gift, redeemed with an offer code.
+        static let sold = [annual, monthly]
     }
 
     enum Plan: Equatable {

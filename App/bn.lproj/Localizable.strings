@@ -1610,7 +1610,7 @@
 "Needs You is part of Corres Pro. Open Corres to start your free trial." = "আপনার করণীয় Corres Pro-এর অংশ। বিনামূল্যে ট্রায়াল শুরু করতে Corres খুলুন।";
 
 /* No comment provided by engineer. */
-"Needs You on your Home Screen and Lock Screen." = "হোম স্ক্রিন আর লক স্ক্রিনে আপনার করণীয়।";
+"Needs You on your Home Screen, Lock Screen and Apple Watch." = "হোম স্ক্রিন, লক স্ক্রিন আর Apple Watch-এ আপনার করণীয়।";
 
 /* No comment provided by engineer. */
 "Needs You stays in Corres." = "«আপনার করণীয়» শুধু Corres-এ থাকে।";
@@ -3050,7 +3050,7 @@
 "Who should it go to? Add someone first." = "কাকে পাঠাবেন? আগে কাউকে যোগ করুন।";
 
 /* No comment provided by engineer. */
-"Widgets, Siri and iPad" = "উইজেট, Siri আর iPad";
+"Widgets and Apple Watch" = "উইজেট আর Apple Watch";
 
 /* No comment provided by engineer. */
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "খুললেই পঠিত চিহ্নিত করা বন্ধ থাকলে, সোয়াইপ না করা বা পঠিত চিহ্নিত করুন বেছে না নেওয়া পর্যন্ত কথোপকথন অপঠিত থাকে। লিংক Corres-এ Safari-র রিডার আর কন্টেন্ট ব্লকারসহ খোলে, অথবা আপনার ডিফল্ট ব্রাউজারে।";

@@ -6,9 +6,10 @@ enum CorresLinks {
     static let privacy = URL(string: "https://anwarcreativestudio.com/corres/privacy/")!
 }
 
-/// Corres Pro: annual (with the free trial) chosen by default, monthly,
-/// and lifetime. Prices, trial length and currency all come from the App
-/// Store, never hard-coded, so they're right in every country.
+/// Corres Pro: annual (with the free trial) chosen by default, and
+/// monthly. Lifetime isn't sold here: it's given as a gift through offer
+/// codes (Redeem Code). Prices, trial length and currency all come from
+/// the App Store, never hard-coded, so they're right in every country.
 struct PaywallView: View {
     @Environment(EntitlementStore.self) private var entitlements
     @Environment(\.dismiss) private var dismiss
@@ -69,7 +70,7 @@ struct PaywallView: View {
         VStack(alignment: .leading, spacing: 14) {
             benefit("exclamationmark.circle", "Needs You and Waiting", "What needs you first, with the reason for each, and the replies you're owed.")
             benefit("sparkle", "Apple Intelligence, on this \(Device.name)", "Summaries, replies in your voice, rewrites, and answers from your mail in Search.")
-            benefit("rectangle.stack", "Widgets, Siri and iPad", "Needs You on your Home Screen and Lock Screen.")
+            benefit("rectangle.stack", "Widgets and Apple Watch", "Needs You on your Home Screen, Lock Screen and Apple Watch.")
             benefit("lock", "Private by design", "Your mail is never sent to our servers or an AI company.")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -91,7 +92,8 @@ struct PaywallView: View {
 
     @ViewBuilder
     private var plans: some View {
-        if entitlements.products.isEmpty && entitlements.productsUnavailable {
+        let forSale = entitlements.products.filter { EntitlementStore.ProductID.sold.contains($0.id) }
+        if forSale.isEmpty && entitlements.productsUnavailable {
             VStack(spacing: 10) {
                 Text("Plans couldn't load")
                     .font(.headline).foregroundStyle(CorresPalette.ink)
@@ -104,11 +106,11 @@ struct PaywallView: View {
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity, minHeight: 180)
-        } else if entitlements.products.isEmpty {
+        } else if forSale.isEmpty {
             ProgressView().frame(height: 180)
         } else {
             VStack(spacing: 10) {
-                ForEach(entitlements.products, id: \.id) { product in planCard(product) }
+                ForEach(forSale, id: \.id) { product in planCard(product) }
             }
         }
     }

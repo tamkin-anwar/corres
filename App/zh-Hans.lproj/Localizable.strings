@@ -1610,7 +1610,7 @@
 "Needs You is part of Corres Pro. Open Corres to start your free trial." = "“需要你”是 Corres Pro 的一部分。打开 Corres 开始免费试用。";
 
 /* No comment provided by engineer. */
-"Needs You on your Home Screen and Lock Screen." = "在主屏幕和锁定屏幕上显示“需要你”。";
+"Needs You on your Home Screen, Lock Screen and Apple Watch." = "在主屏幕、锁定屏幕和 Apple Watch 上显示“需要你”。";
 
 /* No comment provided by engineer. */
 "Needs You stays in Corres." = "“需要你”只在 Corres 中生效。";
@@ -3050,7 +3050,7 @@
 "Who should it go to? Add someone first." = "要发给谁？请先添加收件人。";
 
 /* No comment provided by engineer. */
-"Widgets, Siri and iPad" = "小组件、Siri 和 iPad";
+"Widgets and Apple Watch" = "小组件和 Apple Watch";
 
 /* No comment provided by engineer. */
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "关闭“打开时标记为已读”后，对话会保持未读，直到你轻扫或选择“标记为已读”。链接会在 Corres 中以 Safari 阅读器和内容拦截器打开，或在你的默认浏览器中打开。";
