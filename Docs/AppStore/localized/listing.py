@@ -56,7 +56,8 @@ L["ja"] = dict(
    ("作成", [
      "下書き、あとで送信、送信の取り消し、テンプレート、返信がないときのリマインダー。",
      "複数の署名、別の送信アドレス、太字、リスト、リンク。",
-     "返信の候補と書き直し（Corres Pro）は、送信済みメールから学んだあなたの挨拶、結び、長さで書かれます。あなたが送るまで何も送信されません。"])),
+     "返信の候補と書き直し（Corres Pro）は、送信済みメールから学んだあなたの挨拶、結び、長さで書かれます。あなたが送るまで何も送信されません。",
+     "Siriに頼んで、Corresでメールを書く、送る、探すことができます。"])),
   (("どこでも", [
      "電波がなくてもアーカイブ、削除、フラグ付けができます。変更はオンラインに戻ったときに反映されます。",
      "振り分け、スヌーズ、ピン、許可、ブロックはiCloudでほかのデバイスにも反映されます。メール自体は送られません。"]),
@@ -141,7 +142,8 @@ L["zh-Hans"] = dict(
    ("写邮件", [
      "草稿、稍后发送、撤销发送、模板，以及无人回复时的提醒。",
      "多个签名、其他发件地址，以及粗体、列表和链接。",
-     "建议回复和改写（Corres Pro）会沿用你的问候语、结尾和篇幅，这些都从你发出的邮件中学习。在你发送之前，什么都不会发出。"])),
+     "建议回复和改写（Corres Pro）会沿用你的问候语、结尾和篇幅，这些都从你发出的邮件中学习。在你发送之前，什么都不会发出。",
+     "让 Siri 在 Corres 中撰写、发送或查找邮件。"])),
   (("随时随地", [
      "没有信号也能归档、删除和加旗标。恢复联网后，更改会自动完成。",
      "你的分类、稍后提醒、置顶、允许和屏蔽会通过 iCloud 同步到你的其他设备。你的邮件不会。"]),
@@ -218,7 +220,8 @@ L["de-DE"] = dict(
    ("SCHREIBEN", [
      "Entwürfe, Später senden, Senden widerrufen, Vorlagen und eine Erinnerung, wenn niemand antwortet.",
      "Mehrere Signaturen, weitere Absenderadressen sowie Fett, Listen und Links.",
-     "Antwortvorschläge und Umformulierungen mit Corres Pro, in deinem Stil, gelernt aus deinen gesendeten E-Mails. Nichts wird gesendet, bevor du es sendest."])),
+     "Antwortvorschläge und Umformulierungen mit Corres Pro, in deinem Stil, gelernt aus deinen gesendeten E-Mails. Nichts wird gesendet, bevor du es sendest.",
+     "Bitte Siri, in Corres eine E-Mail zu schreiben, zu senden oder zu finden."])),
   (("ÜBERALL", [
      "Archivieren, löschen und markieren ohne Netz. Deine Änderungen gehen durch, sobald du wieder online bist.",
      "Was du sortierst, erinnern lässt, anheftest, erlaubst und blockierst, folgt dir über iCloud auf deine anderen Geräte. Deine E-Mails nie."]),
@@ -302,7 +305,8 @@ L["ko"] = dict(
    ("작성", [
      "임시 저장, 나중에 보내기, 보내기 취소, 템플릿, 답장이 없을 때 알림.",
      "여러 서명, 다른 보내는 주소, 굵게, 목록, 링크.",
-     "추천 답장과 다시 쓰기(Corres Pro)는 보낸 메일에서 배운 나의 인사말, 맺음말, 길이를 따릅니다. 직접 보내기 전에는 아무것도 전송되지 않습니다."])),
+     "추천 답장과 다시 쓰기(Corres Pro)는 보낸 메일에서 배운 나의 인사말, 맺음말, 길이를 따릅니다. 직접 보내기 전에는 아무것도 전송되지 않습니다.",
+     "Siri에게 Corres에서 이메일을 쓰거나 보내거나 찾아 달라고 하세요."])),
   (("어디서나", [
      "신호가 없어도 보관, 삭제, 깃발 표시가 됩니다. 다시 온라인이 되면 변경 사항이 반영됩니다.",
      "분류, 다시 알림, 고정, 허용, 차단은 iCloud로 다른 기기에도 이어집니다. 메일 자체는 이동하지 않습니다."]),
@@ -368,8 +372,7 @@ L["fr-FR"] = dict(
      "Avec Corres Pro, posez une question comme « quand est mon vol ? » et obtenez la réponse à partir de vos propres e-mails."]),
    ("UNE RECHERCHE QUI RÉPOND", [
      "Cherchez dans tous vos comptes à la fois, e-mails archivés compris.",
-     "Avec Corres Pro, posez une question comme « quand est mon vol ? » et obtenez la réponse à partir de vos propres e-mails.",
-     "Retrouvez aussi n’importe quelle conversation depuis Spotlight."])),
+     "Avec Corres Pro, posez une question comme « quand est mon vol ? » et obtenez la réponse à partir de vos propres e-mails."])),
   (("RÉDACTION", [
      "Brouillons, Envoyer plus tard, Annuler l’envoi, modèles, et un rappel si personne ne répond.",
      "Plusieurs signatures, d’autres adresses d’envoi, et gras, listes et liens.",
@@ -378,7 +381,8 @@ L["fr-FR"] = dict(
    ("RÉDACTION", [
      "Brouillons, Envoyer plus tard, Annuler l’envoi, modèles, et un rappel si personne ne répond.",
      "Plusieurs signatures, d’autres adresses d’envoi, et gras, listes et liens.",
-     "Réponses suggérées et reformulations avec Corres Pro, dans votre style, apprises de vos e-mails envoyés. Rien n’est envoyé tant que vous ne l’envoyez pas."])),
+     "Réponses suggérées et reformulations avec Corres Pro, dans votre style, apprises de vos e-mails envoyés. Rien n’est envoyé tant que vous ne l’envoyez pas.",
+     "Demandez à Siri d’écrire, d’envoyer ou de trouver un e-mail dans Corres."])),
   (("PARTOUT", [
      "Archivez, supprimez et signalez sans réseau. Vos changements sont appliqués dès votre retour en ligne.",
      "Ce que vous triez, rappelez plus tard, épinglez, autorisez et bloquez vous suit sur vos autres appareils via iCloud. Vos e-mails, jamais."]),
@@ -456,7 +460,8 @@ L["es-ES"] = dict(
    ("ESCRIBIR", [
      "Borradores, Enviar más tarde, Deshacer envío, plantillas y un recordatorio si nadie responde.",
      "Varias firmas, otras direcciones de envío, y negrita, listas y enlaces.",
-     "Con Corres Pro, respuestas sugeridas y reescrituras con tu saludo, tu despedida y tu extensión, aprendidos de tus correos enviados. No se envía nada hasta que tú lo envías."])),
+     "Con Corres Pro, respuestas sugeridas y reescrituras con tu saludo, tu despedida y tu extensión, aprendidos de tus correos enviados. No se envía nada hasta que tú lo envías.",
+     "Pide a Siri que escriba, envíe o busque un correo en Corres."])),
   (("EN CUALQUIER LUGAR", [
      "Archiva, elimina y marca sin cobertura. Tus cambios se aplican cuando vuelves a estar en línea.",
      "Lo que clasificas, pospones, fijas, permites y bloqueas te sigue a tus otros dispositivos con iCloud. Tu correo nunca."]),
@@ -536,7 +541,8 @@ L["pt-BR"] = dict(
    ("ESCRITA", [
      "Rascunhos, Enviar depois, Desfazer envio, modelos e um lembrete se ninguém responder.",
      "Várias assinaturas, outros endereços de envio, e negrito, listas e links.",
-     "Com o Corres Pro, respostas sugeridas e reescritas com sua saudação, sua despedida e seu tamanho de texto, aprendidos com os e-mails que você enviou. Nada é enviado até você enviar."])),
+     "Com o Corres Pro, respostas sugeridas e reescritas com sua saudação, sua despedida e seu tamanho de texto, aprendidos com os e-mails que você enviou. Nada é enviado até você enviar.",
+     "Peça à Siri para escrever, enviar ou encontrar um e-mail no Corres."])),
   (("EM QUALQUER LUGAR", [
      "Arquive, apague e sinalize sem sinal. Suas alterações são aplicadas quando você volta a ficar online.",
      "O que você classifica, adia, fixa, permite e bloqueia acompanha você nos seus outros dispositivos pelo iCloud. Seus e-mails, nunca."]),
@@ -621,7 +627,8 @@ L["bn-BD"] = dict(
    ("লেখা", [
      "খসড়া, পরে পাঠান, পাঠানো ফিরিয়ে নিন, টেমপ্লেট, আর কেউ উত্তর না দিলে রিমাইন্ডার।",
      "একাধিক স্বাক্ষর, অন্য ঠিকানা থেকে পাঠানো, আর বোল্ড, তালিকা ও লিংক।",
-     "Corres Pro-তে প্রস্তাবিত উত্তর আর নতুন করে লেখা হয় আপনার নিজের সম্ভাষণ, বিদায় সম্ভাষণ আর দৈর্ঘ্যে, আপনার পাঠানো ইমেইল থেকে শেখা। আপনি না পাঠানো পর্যন্ত কিছুই যায় না।"])),
+     "Corres Pro-তে প্রস্তাবিত উত্তর আর নতুন করে লেখা হয় আপনার নিজের সম্ভাষণ, বিদায় সম্ভাষণ আর দৈর্ঘ্যে, আপনার পাঠানো ইমেইল থেকে শেখা। আপনি না পাঠানো পর্যন্ত কিছুই যায় না।",
+     "Siri-কে বলুন Corres-এ ইমেইল লিখতে, পাঠাতে বা খুঁজে দিতে।"])),
   (("যেকোনো জায়গায়", [
      "নেটওয়ার্ক না থাকলেও আর্কাইভ, মুছে ফেলা আর ফ্ল্যাগ করা যায়। আবার অনলাইনে এলে আপনার পরিবর্তনগুলো কার্যকর হয়।",
      "আপনি যা সাজান, স্নুজ করেন, পিন করেন, অনুমতি দেন আর ব্লক করেন, তা iCloud দিয়ে iPhone, iPad আর Mac-এ আপনার সাথে থাকে। আপনার ইমেইল কখনো যায় না।"]),
