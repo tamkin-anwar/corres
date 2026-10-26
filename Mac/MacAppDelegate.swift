@@ -19,10 +19,23 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
             drafts.saveAllNow(outbox: outbox, store: Organizer.shared.store)
             _ = await outbox.finishDraftSaves(timeout: .seconds(3))
             drafts.noteSavedDrafts(from: outbox)
-            await outbox.sendPendingNow()
+            // Ten seconds at most: a send that's still going then is kept in
+            // the outbox and finished at the next launch.
+            await Self.wait(upTo: .seconds(10)) { await outbox.sendPendingNow() }
             sender.reply(toApplicationShouldTerminate: true)
         }
         return .terminateLater
+    }
+
+    /// Runs `work`, waiting for it no longer than `limit`.
+    @MainActor private static func wait(upTo limit: Duration, for work: @escaping @MainActor () async -> Void) async {
+        @MainActor final class Done { var value = false }
+        let done = Done()
+        Task { await work(); done.value = true }
+        let deadline = ContinuousClock.now + limit
+        while !done.value, ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
     }
 
     /// Archive, Mark as Read and Reply from a notification, done without
@@ -37,6 +50,13 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
     func applicationDidFinishLaunching(_ notification: Notification) {
         UNUserNotificationCenter.current().delegate = self
         MacTextSize.installEqualsShortcut()
+        // Mail checked, sorted and notified from launch, whether or not the
+        // main window opens (Corres can start in the menu bar).
+        Task { await MacServices.shared.launch() }
+        // Waking from sleep: the old connections are gone.
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { MacAppDelegate.didWake?() }
+        }
     }
 
     func application(_ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {

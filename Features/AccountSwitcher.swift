@@ -68,7 +68,7 @@ struct AccountSwitcher: View {
             HStack(spacing: 12) {
                 icon(for: account)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(account.map(AccountPreferences.nickname(for:)) ?? "All Inboxes")
+                    Text(account.map(AccountPreferences.nickname(for:)) ?? String(localized: "All Inboxes"))
                         .font(.body.weight(.medium)).foregroundStyle(CorresPalette.ink).lineLimit(1)
                     Text(subtitle(for: account))
                         .font(.footnote).foregroundStyle(CorresPalette.secondary).lineLimit(1)

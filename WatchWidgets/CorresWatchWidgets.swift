@@ -15,9 +15,11 @@ struct NeedsYouEntry: TimelineEntry {
     let face: WatchFace?
     var relevance: TimelineEntryRelevance? {
         // Higher in the Smart Stack while something needs you.
-        guard let count = face?.needsYou, count > 0 else { return TimelineEntryRelevance(score: 0) }
+        guard let count = face?.needsYou, count > 0, !isStale else { return TimelineEntryRelevance(score: 0) }
         return TimelineEntryRelevance(score: Float(min(count, 10)))
     }
+    /// Not heard from the iPhone for a few hours: dimmed, with when.
+    var isStale: Bool { face?.isStale(at: date) ?? false }
 }
 
 struct NeedsYouProvider: TimelineProvider {
@@ -29,9 +31,14 @@ struct NeedsYouProvider: TimelineProvider {
 
     /// Drawn again when the Watch app hears from the iPhone, and every
     /// half hour, so the Smart Stack can bring it up to date on its own.
+    /// A second entry dims it once it's out of date, reload or not.
     func getTimeline(in context: Context, completion: @escaping (Timeline<NeedsYouEntry>) -> Void) {
-        completion(Timeline(entries: [NeedsYouEntry(date: .now, face: WatchFace.load())],
-                            policy: .after(.now.addingTimeInterval(30 * 60))))
+        let face = WatchFace.load()
+        var entries = [NeedsYouEntry(date: .now, face: face)]
+        if let stale = face.map({ $0.updatedAt.addingTimeInterval(WatchFace.staleAfter + 1) }), stale > .now {
+            entries.append(NeedsYouEntry(date: stale, face: face))
+        }
+        completion(Timeline(entries: entries, policy: .after(.now.addingTimeInterval(30 * 60))))
     }
 }
 
@@ -55,12 +62,21 @@ struct NeedsYouFaceView: View {
     private static let accent = Color(red: 0x8F / 255, green: 0xB4 / 255, blue: 0xE8 / 255)
 
     var body: some View {
-        switch family {
-        case .accessoryCircular: circular
-        case .accessoryCorner: corner
-        case .accessoryInline: inline
-        default: rectangular
+        Group {
+            switch family {
+            case .accessoryCircular: circular
+            case .accessoryCorner: corner
+            case .accessoryInline: inline
+            default: rectangular
+            }
         }
+        .opacity(entry.isStale ? 0.55 : 1)
+    }
+
+    /// "Updated 4 hr. ago", for a face that hasn't heard from the iPhone lately.
+    private var updatedText: String? {
+        guard entry.isStale, let updated = entry.face?.updatedAt else { return nil }
+        return String(localized: "Updated \(updated.formatted(.relative(presentation: .named, unitsStyle: .abbreviated)))")
     }
 
     private var countText: String { count.map(String.init) ?? "–" }
@@ -120,6 +136,9 @@ struct NeedsYouFaceView: View {
                 Text("You're all caught up").font(.caption).foregroundStyle(.secondary)
             } else {
                 Text("Open Corres on your iPhone").font(.caption).foregroundStyle(.secondary).lineLimit(2)
+            }
+            if let updatedText {
+                Text(updatedText).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             }
         }
         .accessibilityElement(children: .combine)

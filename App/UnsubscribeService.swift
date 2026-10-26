@@ -59,7 +59,7 @@ final class UnsubscribeService {
             // confirmation).
             return .opened
         }
-        errorMessage = "Couldn't unsubscribe. Try again."
+        errorMessage = String(localized: "Couldn't unsubscribe. Try again.")
         return .failed
     }
 

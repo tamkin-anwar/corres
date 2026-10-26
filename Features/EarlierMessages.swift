@@ -87,11 +87,16 @@ struct EarlierMessages: View {
             .buttonStyle(.plain)
             .accessibilityHint(isOpen ? "Collapses this message" : "Shows the full message")
             if isOpen {
-                Text(Self.linked(Self.readableText(message.body)))
+                let text = Self.readableText(message.body)
+                // Arabic, Hebrew, Persian or Urdu reads from the right.
+                let rightToLeft = Self.isRightToLeft(text)
+                Text(Self.linked(text))
                     .font(.body).lineSpacing(4)
                     .foregroundStyle(CorresPalette.ink)
                     .textSelection(.enabled)
+                    .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .transformEnvironment(\.layoutDirection) { if rightToLeft { $0 = .rightToLeft } }
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
@@ -117,13 +122,19 @@ struct EarlierMessages: View {
     }
 
     /// The message itself, without the quoted history every reply repeats.
+    /// In any language: "Am … schrieb", "…写道：", an Outlook header block.
     static func readableText(_ body: String) -> String {
-        var kept: [Substring] = []
-        for line in body.split(separator: "\n", omittingEmptySubsequences: false) {
-            if line.hasPrefix(">") { continue }
-            if line.patternRange(#"^On .+ wrote:\s*$"#) != nil { break }
-            kept.append(line)
+        QuoteDetector.ownPart(of: body)
+    }
+
+    /// Whether the text's first letter is from a right-to-left script.
+    static func isRightToLeft(_ text: String) -> Bool {
+        for scalar in text.unicodeScalars where scalar.properties.isAlphabetic {
+            switch scalar.value {
+            case 0x0590...0x08FF, 0xFB1D...0xFDFF, 0xFE70...0xFEFF, 0x10800...0x10FFF, 0x1E800...0x1EFFF: return true
+            default: return false
+            }
         }
-        return kept.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return false
     }
 }

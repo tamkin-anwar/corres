@@ -120,6 +120,32 @@ public struct Person: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
+extension Person {
+    /// The name to call someone by, in a greeting or on the Lock Screen:
+    /// "Maya" from "Maya Patel" or "Patel, Maya", and "Rahim" from "Md.
+    /// Rahim Uddin", "Mohammad Rahim" or "Dr. Rahim Khan": titles and the
+    /// name prefixes common in Bangladesh, India and Pakistan are skipped,
+    /// unless nothing else is left. A Chinese, Japanese or Korean name
+    /// comes family name first, and its given name alone is too familiar
+    /// for a greeting, so it stays whole: "王伟", "田中 太郎", "김민준".
+    public static func firstName(of name: String) -> String {
+        let name = readable(name).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return "" }
+        if name.unicodeScalars.contains(where: { scalar in
+            [0x3040...0x30FF, 0x3400...0x4DBF, 0x4E00...0x9FFF, 0xAC00...0xD7A3].contains { $0.contains(scalar.value) }
+        }) { return name }
+        let words = name.split(separator: " ").map(String.init)
+        let given = words.drop { namePrefixes.contains($0.lowercased().trimmingCharacters(in: .punctuationCharacters)) }
+        return given.first ?? words.first ?? name
+    }
+
+    /// Titles and name prefixes that come before the name someone goes by.
+    static let namePrefixes: Set<String> = [
+        "mr", "mrs", "ms", "miss", "mx", "dr", "prof", "engr", "eng", "adv", "md", "mst", "mosammat", "mohammad",
+        "mohammed", "muhammad", "muhammed", "mohamed", "mohd", "syed", "sayed", "sk", "shri", "sri", "smt",
+    ]
+}
+
 /// Everyone you correspond with, offered the way people expect from Mail
 /// and Gmail: type "sar" and Sara is there, because you write to her. Built
 /// on this iPhone from your own mail (who you've written to counts most,

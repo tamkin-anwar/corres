@@ -133,11 +133,21 @@ struct PreferencesView: View {
                     } label: {
                         settingLabel("Customize", "slider.horizontal.3")
                     }
+                    // Set in an account, so there's nothing to show without one.
                     NavigationLink {
                         OutOfOfficeView(auth: auth)
                     } label: {
-                        settingLabel("Out of Office", "airplane")
+                        if auth.accounts.isEmpty {
+                            LabeledContent {
+                                Text("Needs an Account")
+                            } label: {
+                                settingLabel("Out of Office", "airplane")
+                            }
+                        } else {
+                            settingLabel("Out of Office", "airplane")
+                        }
                     }
+                    .disabled(auth.accounts.isEmpty)
                 }
                 Section {
                     LabeledContent {
@@ -296,26 +306,29 @@ struct PreferencesView: View {
                             Text("You're looking at sample mail.").font(.subheadline).foregroundStyle(CorresPalette.secondary)
                         }
                     }
+                    // A sync still running (one for an account just removed can
+                    // go on for minutes) is no reason to hold these back: only
+                    // a sign-in under way is.
                     Button { connect(.google) } label: {
-                        if auth.isSigningIn || sync.isSyncing { ProgressView() } else { Text("Continue with Google") }
+                        if auth.isSigningIn { ProgressView() } else { Text("Continue with Google") }
                     }
                     .buttonStyle(CorresButtonStyle())
-                    .disabled(auth.isSigningIn || sync.isSyncing)
+                    .disabled(auth.isSigningIn)
                     Button { connect(.microsoft) } label: {
                         Text("Continue with Microsoft")
                     }
                     .buttonStyle(CorresButtonStyle())
-                    .disabled(auth.isSigningIn || sync.isSyncing)
+                    .disabled(auth.isSigningIn)
                     Button { connect(.icloud) } label: {
                         Text("Continue with iCloud Mail")
                     }
                     .buttonStyle(CorresButtonStyle())
-                    .disabled(auth.isSigningIn || sync.isSyncing)
+                    .disabled(auth.isSigningIn)
                     Button { connect(.imap) } label: {
                         Text("Other Email Account").frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
                     }
                         .font(.subheadline.weight(.medium))
-                        .disabled(auth.isSigningIn || sync.isSyncing)
+                        .disabled(auth.isSigningIn)
                     Text("Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this \(Device.name).")
                         .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 }
@@ -565,10 +578,10 @@ private struct AccountDetailView: View {
                         .disabled(changingInstant)
                     } footer: {
                         Text(instantError ?? (icloudInstant
-                             ? "New mail notifies the moment it arrives. Corres's server keeps this account's app-specific password, sealed so only its mail watcher can open it, and never reads or stores your email. Turn this off to delete it."
+                             ? String(localized: "New mail notifies the moment it arrives. Corres's server keeps this account's app-specific password, sealed so only its mail watcher can open it, and never reads or stores your email. Turn this off to delete it.")
                              : provider == .icloud
-                             ? "iCloud tells only Apple Mail the moment mail arrives. Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email."
-                             : "Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email."))
+                             ? String(localized: "iCloud tells only Apple Mail the moment mail arrives. Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email.")
+                             : String(localized: "Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email.")))
                             .foregroundStyle(instantError == nil ? CorresPalette.secondary : CorresPalette.alert)
                     }
                 }
@@ -598,7 +611,15 @@ private struct AccountDetailView: View {
                 Button {
                     Task {
                         syncing = true
-                        if await sync.syncNow(account: account.email) { await store.refresh() } else { syncFailed = true }
+                        let work = Task { @MainActor in
+                            let synced = await sync.syncNow(account: account.email)
+                            if synced { await store.refresh() }
+                            return synced
+                        }
+                        // Up to a few seconds, as pull to refresh waits: joined
+                        // to a long sync, it used to spin for minutes. That sync
+                        // carries on, and only one that failed says so.
+                        if await waitBriefly(for: work, upTo: .seconds(6)) == false { syncFailed = true }
                         syncing = false
                     }
                 } label: {
@@ -698,9 +719,9 @@ private struct AccountDetailView: View {
                 try await pushService.setICloudInstant(on, account: account.email)
                 icloudInstant = on
             } catch PushNotificationService.ICloudInstantError.notificationsOff {
-                instantError = "Turn on notifications for Corres first, in Settings > Notifications."
+                instantError = String(localized: "Turn on notifications for Corres first, in Settings > Notifications.")
             } catch {
-                instantError = "Couldn't reach Corres's server. Try again in a moment."
+                instantError = String(localized: "Couldn't reach Corres's server. Try again in a moment.")
             }
             changingInstant = false
         }
@@ -979,10 +1000,9 @@ private struct ReadingSettingsView: View {
             } header: {
                 Text("At the Top of Each Email")
             } footer: {
-                Text("Key Details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. "
-                     + (intelligence.isAvailable
-                        ? "Summaries are written on this \(Device.name) and checked against the email: every name, number and date has to be in it. Summaries are part of Corres Pro."
-                        : "Summaries need Apple Intelligence, and are part of Corres Pro."))
+                Text(intelligence.isAvailable
+                     ? String(localized: "Key Details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. Summaries are written on this \(Device.name) and checked against the email: every name, number and date has to be in it. Summaries are part of Corres Pro.")
+                     : String(localized: "Key Details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. Summaries need Apple Intelligence, and are part of Corres Pro."))
             }
             Section {
                 Picker("Remote Images", selection: $remoteImages) {
@@ -1033,6 +1053,7 @@ private struct SortingSettingsView: View {
     @AppStorage(CorresSettings.followUpDaysKey) private var followUpDays = 3
     @AppStorage(CorresSettings.morningHourKey) private var morningHour = 8
     @AppStorage(CorresSettings.laterTodayEveningKey) private var laterTodayEvening = false
+    @AppStorage(CorresSettings.briefKey) private var dailyBrief = false
 
     var body: some View {
         Form {
@@ -1059,6 +1080,11 @@ private struct SortingSettingsView: View {
                 }
             } footer: {
                 Text(String(localized: "\(sensitivityDetail) Waiting turns into Follow up once someone hasn't replied in that long."))
+            }
+            Section {
+                Toggle("Daily Brief", isOn: $dailyBrief)
+            } footer: {
+                Text("Show a short summary of today at the top of Needs You.")
             }
             Section {
                 Picker("Start of Day", selection: $morningHour) {

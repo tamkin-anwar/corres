@@ -232,7 +232,7 @@ struct ComposeView: View {
                         // Sends now; brings it back to Needs You if nobody
                         // answers by then.
                         Section("Send, Remind Me If No Reply") {
-                            ForEach([("In 1 Day", 1.0), ("In 3 Days", 3.0), ("In 1 Week", 7.0)], id: \.1) { option in
+                            ForEach([(String(localized: "In 1 Day"), 1.0), (String(localized: "In 3 Days"), 3.0), (String(localized: "In 1 Week"), 7.0)], id: \.1) { option in
                                 Button {
                                     draft.followUpAfter = option.1 * 86_400
                                     checkThenSend()
@@ -384,10 +384,10 @@ struct ComposeView: View {
     /// The person's own words, without the quoted original below them:
     /// only this part is ever rewritten.
     private var ownText: (text: String, quote: String) {
-        guard let marker = draft.body.patternRange(#"\n\nOn .+ wrote:\n"#) else {
+        guard let marker = QuoteDetector.quoteStart(in: draft.body) else {
             return (draft.body, "")
         }
-        return (String(draft.body[..<marker.lowerBound]), String(draft.body[marker.lowerBound...]))
+        return (String(draft.body[..<marker]), String(draft.body[marker...]))
     }
 
     /// Shorter / Warmer / More formal / Proofread, rewritten on this

@@ -3266,3 +3266,463 @@
 
 /* No comment provided by engineer. */
 "Reply from your Apple Watch" = "来自你的 Apple Watch 的回复";
+
+/* Alert title for a push when the notification extension can't fill in the email in time (title-loc-key from the push relay and iCloud watcher). */
+"New email" = "新邮件";
+
+
+/* No comment provided by engineer. */
+"Sample mail" = "示例邮件";
+
+/* No comment provided by engineer. */
+"Loading the full email…" = "正在载入完整邮件…";
+
+/* No comment provided by engineer. */
+"To: %@" = "收件人：%@";
+
+/* No comment provided by engineer. */
+"In 1 Day" = "1 天后";
+
+/* No comment provided by engineer. */
+"In 3 Days" = "3 天后";
+
+/* No comment provided by engineer. */
+"In 1 Week" = "1 周后";
+
+/* No comment provided by engineer. */
+"New mail notifies the moment it arrives. Corres's server keeps this account's app-specific password, sealed so only its mail watcher can open it, and never reads or stores your email. Turn this off to delete it." = "新邮件一到就会通知。Corres 的服务器会保存此帐户的 App 专用密码，并加以封存，只有它的邮件监视程序才能打开，且从不读取或存储你的邮件。关闭此项即可删除该密码。";
+
+/* No comment provided by engineer. */
+"iCloud tells only Apple Mail the moment mail arrives. Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email." = "iCloud 只会在邮件到达时立即通知 Apple 邮件。关闭此项时，Corres 会在 iOS 允许时检查，通常在一小时内，打开 Corres 时则立即检查。打开此项后，Corres 的服务器会替你留意收件箱，且从不读取或存储你的邮件。";
+
+/* No comment provided by engineer. */
+"Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email." = "关闭此项时，Corres 会在 iOS 允许时检查，通常在一小时内，打开 Corres 时则立即检查。打开此项后，Corres 的服务器会替你留意收件箱，且从不读取或存储你的邮件。";
+
+/* No comment provided by engineer. */
+"Turn on notifications for Corres first, in Settings > Notifications." = "请先在“设置”>“通知”中打开 Corres 的通知。";
+
+/* No comment provided by engineer. */
+"Couldn't reach Corres's server. Try again in a moment." = "无法连接 Corres 的服务器。请稍后再试。";
+
+/* No comment provided by engineer. */
+"Key Details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. Summaries are written on this %@ and checked against the email: every name, number and date has to be in it. Summaries are part of Corres Pro." = "关键信息：直接从邮件中读取收据或账单的状态和金额、快递的送达日期，以及长邮件要你做的事。摘要在这台%@上生成，并与邮件核对：每个名字、数字和日期都必须出现在邮件中。摘要是 Corres Pro 的一部分。";
+
+/* No comment provided by engineer. */
+"Key Details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. Summaries need Apple Intelligence, and are part of Corres Pro." = "关键信息：直接从邮件中读取收据或账单的状态和金额、快递的送达日期，以及长邮件要你做的事。摘要需要 Apple 智能，并且是 Corres Pro 的一部分。";
+
+/* No comment provided by engineer. */
+"Google asks once for permission to change this setting for %@. Corres asks only now, not when you sign in." = "Google 会就更改 %@ 的这项设置询问一次权限。Corres 只在现在询问，不会在你登录时询问。";
+
+/* No comment provided by engineer. */
+"Google didn’t give Corres permission. Make sure you pick %@ and tick the Gmail settings box." = "Google 没有给 Corres 权限。请确保选择 %@，并勾选 Gmail 设置的复选框。";
+
+/* No comment provided by engineer. */
+"Off. No automatic replies." = "已关闭。不会自动回复。";
+
+/* No comment provided by engineer. */
+"On. %@ will reply from %@ until %@." = "已打开。%@ 将从 %@ 到 %@ 自动回复。";
+
+/* No comment provided by engineer. */
+"On. %@ will reply from %@." = "已打开。%@ 将从 %@ 开始自动回复。";
+
+/* No comment provided by engineer. */
+"Couldn't save. Try again." = "无法存储。请再试一次。";
+
+/* No comment provided by engineer. */
+"%lld messages, including “%@”" = "%lld 封邮件，包括“%@”";
+
+/* No comment provided by engineer. */
+"Allowed %@" = "已允许 %@";
+
+/* No comment provided by engineer. */
+"Blocked %@" = "已屏蔽 %@";
+
+/* No comment provided by engineer. */
+"Allowed 1 sender" = "已允许 1 位发件人";
+
+/* No comment provided by engineer. */
+"Allowed %lld senders" = "已允许 %lld 位发件人";
+
+/* No comment provided by engineer. */
+"Blocked 1 sender" = "已屏蔽 1 位发件人";
+
+/* No comment provided by engineer. */
+"Blocked %lld senders" = "已屏蔽 %lld 位发件人";
+
+/* No comment provided by engineer. */
+"Allowing everyone from %@" = "允许来自 %@ 的所有人";
+
+/* No comment provided by engineer. */
+"Blocking everyone from %@" = "屏蔽来自 %@ 的所有人";
+
+/* No comment provided by engineer. */
+"%@ is allowed" = "已允许 %@";
+
+/* No comment provided by engineer. */
+"%@ is allowed. Their email is back in Mail." = "已允许 %@。其邮件已回到“邮件”。";
+
+/* No comment provided by engineer. */
+"%@ is allowed. Their %lld emails are back in Mail." = "已允许 %@。其 %lld 封邮件已回到“邮件”。";
+
+/* No comment provided by engineer. */
+"%@ is blocked. You can allow them here any time." = "已屏蔽 %@。你可以随时在这里允许对方。";
+
+/* No comment provided by engineer. */
+"Unsubscribed from %@" = "已退订 %@";
+
+/* No comment provided by engineer. */
+"Finish unsubscribing on their page" = "请在对方的页面上完成退订";
+
+/* No comment provided by engineer. */
+"Nothing in your mail answers that." = "你的邮件中没有能回答这个问题的内容。";
+
+/* No comment provided by engineer. */
+"Couldn't find the answer in your mail. These came closest." = "没能在你的邮件中找到答案。以下是最接近的结果。";
+
+/* No comment provided by engineer. */
+"Couldn't remove this account's mail from your %@. Try again." = "无法从你的%@中移除此账户的邮件。请重试。";
+
+/* No comment provided by engineer. */
+"Couldn't remove sample data. Try again." = "无法移除示例数据。请重试。";
+
+/* No comment provided by engineer. */
+"Couldn't update these senders. Try again." = "无法更新这些发件人。请重试。";
+
+/* No comment provided by engineer. */
+"Couldn't update this sender. Try again." = "无法更新此发件人。请重试。";
+
+/* No comment provided by engineer. */
+"Couldn't remember this sender. Try again." = "无法记住此发件人。请重试。";
+
+/* No comment provided by engineer. */
+"Couldn't remember this unsubscribe. Try again." = "无法记录此次退订。请重试。";
+
+/* No comment provided by engineer. */
+"Your message couldn't be sent. Nothing was sent. Try again." = "无法发送你的邮件。未发送任何内容。请重试。";
+
+/* No comment provided by engineer. */
+"Couldn't update this conversation. Try again." = "无法更新此对话。请重试。";
+
+/* No comment provided by engineer. */
+"The change couldn't be saved. Your conversation is unchanged. Try again." = "无法保存更改。你的对话未作改动。请重试。";
+
+/* No comment provided by engineer. */
+"Couldn't find a window to present sign-in from." = "找不到可用于显示登录界面的窗口。";
+
+/* No comment provided by engineer. */
+"Couldn't connect Gmail. Try again." = "无法连接 Gmail。请重试。";
+
+/* No comment provided by engineer. */
+"Corres can read %@ but wasn't allowed to manage it, so marking read, archiving, and flagging won't work. Reconnect and leave every Gmail permission checked." = "Corres 可以读取 %@，但未获准管理它，因此标记为已读、归档和加旗标将无法使用。请重新连接，并保留所有 Gmail 权限的勾选。";
+
+/* No comment provided by engineer. */
+"Outlook sign-in isn't set up in this build yet." = "此版本尚未设置 Outlook 登录。";
+
+/* No comment provided by engineer. */
+"Couldn't connect Outlook. Try again." = "无法连接 Outlook。请重试。";
+
+/* No comment provided by engineer. */
+"Couldn't unsubscribe. Try again." = "无法退订。请重试。";
+
+/* No comment provided by engineer. */
+"Notifications need permission in %@ to turn on." = "需要在%@中授予权限才能开启通知。";
+
+/* No comment provided by engineer. */
+"Dictation needs microphone and speech recognition access. You can allow it in the Settings app under Corres." = "听写需要访问麦克风和语音识别。你可以在“设置”App 的 Corres 中允许访问。";
+
+/* No comment provided by engineer. */
+"On-device dictation isn't available for this language yet." = "此语言暂不支持设备端听写。";
+
+/* No comment provided by engineer. */
+"Dictation couldn't start. Try again." = "无法开始听写。请重试。";
+
+/* No comment provided by engineer. */
+"Couldn't sync your mail. Check your connection and try again." = "无法同步你的邮件。请检查网络连接后重试。";
+
+/* No comment provided by engineer. */
+"Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage." = "Corres 无法打开常用的本地存储，目前仅在内存中运行。关闭 App 后不会保存任何内容。请重新启动 Corres。如果此问题反复出现，你的设备可能存储空间不足。";
+
+/* Daily Brief */
+"Done for Today" = "今天先到这里";
+
+/* Daily Brief */
+"Hides today's summary until tomorrow." = "隐藏今天的摘要，直到明天。";
+
+/* Daily Brief */
+"Collapsed" = "已收起";
+
+/* Daily Brief */
+"Expanded" = "已展开";
+
+/* Daily Brief */
+"Shows today's items." = "显示今天的事项。";
+
+/* Daily Brief */
+"Hides today's items." = "隐藏今天的事项。";
+
+/* Daily Brief */
+"Good morning." = "早上好。";
+
+/* Daily Brief */
+"Good morning, %@." = "%@，早上好。";
+
+/* Daily Brief */
+"Good afternoon." = "下午好。";
+
+/* Daily Brief */
+"Good afternoon, %@." = "%@，下午好。";
+
+/* Daily Brief */
+"Good evening." = "晚上好。";
+
+/* Daily Brief */
+"Good evening, %@." = "%@，晚上好。";
+
+/* Daily Brief */
+"1 overdue" = "1 项已逾期";
+
+/* Daily Brief */
+"%lld overdue" = "%lld 项已逾期";
+
+/* Daily Brief */
+"1 due today" = "1 项今天到期";
+
+/* Daily Brief */
+"%lld due today" = "%lld 项今天到期";
+
+/* Daily Brief */
+"1 event today" = "今天 1 个活动";
+
+/* Daily Brief */
+"%lld events today" = "今天 %lld 个活动";
+
+/* Daily Brief */
+"1 delivery" = "1 个快递";
+
+/* Daily Brief */
+"%lld deliveries" = "%lld 个快递";
+
+/* Daily Brief */
+"1 reply you owe" = "1 封待回复";
+
+/* Daily Brief */
+"%lld replies you owe" = "%lld 封待回复";
+
+/* Daily Brief */
+"Mark Handled" = "标为已处理";
+
+/* Daily Brief */
+"Due today" = "今天到期";
+
+/* Daily Brief */
+"Event" = "活动";
+
+/* Daily Brief */
+"Delivery" = "快递";
+
+/* Daily Brief */
+"Reply owed" = "待回复";
+
+/* Daily Brief */
+"Was due %@" = "原定 %@ 到期";
+
+/* Daily Brief */
+"Due %@" = "%@ 到期";
+
+/* Daily Brief */
+"Today at %@" = "今天 %@";
+
+/* Daily Brief */
+"Arriving today" = "今天送达";
+
+/* Daily Brief */
+"Wrote today" = "今天来信";
+
+/* Daily Brief */
+"Wrote yesterday" = "昨天来信";
+
+/* Daily Brief */
+"Wrote %lld days ago" = "%lld 天前来信";
+
+/* Daily Brief */
+"Today's summary hidden until tomorrow." = "今天的摘要已隐藏，明天再显示。";
+
+/* Daily Brief */
+"Daily Brief" = "每日简报";
+
+/* Daily Brief */
+"Show a short summary of today at the top of Needs You." = "在“需要你”顶部显示今天的简短摘要。";
+
+/* Daily Brief */
+"Your Brief" = "你的简报";
+
+/* Daily Brief tip */
+"Today at a glance" = "今天一目了然";
+
+/* Daily Brief tip */
+"See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings." = "在“需要你”顶部查看到期事项、今天的会议和快递。你可以在设置中更改。";
+
+/* Daily Brief tip */
+"Show Today's Brief" = "显示今天的简报";
+
+/* No comment provided by engineer. */
+"%@ Morning" = "%@早上";
+
+/* No comment provided by engineer. */
+"Scheduled reply held" = "已暂缓定时回复";
+
+/* No comment provided by engineer. */
+"%@ replied to “%@” before it was sent. Open Corres to send it anyway or change it." = "%1$@在发送前回复了“%2$@”。打开 Corres 仍然发送，或进行修改。";
+
+/* No comment provided by engineer. */
+"Ready to send" = "可以发送了";
+
+/* No comment provided by engineer. */
+"Your email" = "你的邮件";
+
+/* No comment provided by engineer. */
+"“%@” is waiting. Open Corres to send it." = "“%@”正在等待发送。打开 Corres 发送。";
+
+/* No comment provided by engineer. */
+"No reply from %@" = "%@尚未回复";
+
+/* No comment provided by engineer. */
+"“%@”: follow up?" = "“%@”：要跟进吗？";
+
+/* No comment provided by engineer. */
+"On %@, %@ wrote:" = "%1$@，%2$@ 写道：";
+
+/* No comment provided by engineer. */
+"tomorrow at 9am" = "明天上午9点";
+
+/* No comment provided by engineer. */
+"Try “tomorrow evening” or “next friday”" = "试试“明天晚上”或“下周五”";
+
+/* No comment provided by engineer. */
+"Not sure when that is" = "无法识别这个时间";
+
+/* No comment provided by engineer. */
+"Open Yahoo Account Security below and sign in." = "打开下方的 Yahoo 账户安全页面并登录。";
+
+/* No comment provided by engineer. */
+"Choose Generate app password." = "选择“生成应用密码”。";
+
+/* No comment provided by engineer. */
+"Name it Corres, then copy the password." = "将其命名为 Corres，然后复制密码。";
+
+/* No comment provided by engineer. */
+"Open AOL Account Security below and sign in." = "打开下方的 AOL 账户安全页面并登录。";
+
+/* No comment provided by engineer. */
+"Open Fastmail below and sign in." = "打开下方的 Fastmail 并登录。";
+
+/* No comment provided by engineer. */
+"Make a new app password with access to IMAP and SMTP." = "新建一个可访问 IMAP 和 SMTP 的应用密码。";
+
+/* No comment provided by engineer. */
+"Open Zoho Accounts below and sign in." = "打开下方的 Zoho Accounts 并登录。";
+
+/* No comment provided by engineer. */
+"Choose App Passwords, then Generate New Password." = "选择“应用密码”，然后选择“生成新密码”。";
+
+/* No comment provided by engineer. */
+"Open Yandex ID below and sign in." = "打开下方的 Yandex ID 并登录。";
+
+/* No comment provided by engineer. */
+"Create an app password for Mail." = "为邮件创建一个应用密码。";
+
+/* No comment provided by engineer. */
+"Copy the password." = "复制密码。";
+
+/* No comment provided by engineer. */
+"Open your AT&T account below and sign in." = "打开下方的 AT&T 账户并登录。";
+
+/* No comment provided by engineer. */
+"Under Sign-in info, choose Secure mail key, then Add secure mail key." = "在“Sign-in info”下选择“Secure mail key”，然后选择“Add secure mail key”。";
+
+/* No comment provided by engineer. */
+"Name it Corres, then copy the key." = "将其命名为 Corres，然后复制密钥。";
+
+/* No comment provided by engineer. */
+"In GMX on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off." = "在网页版 GMX 中，如果 IMAP 访问已关闭，请在“设置”的“POP3 & IMAP”中打开它。";
+
+/* No comment provided by engineer. */
+"In Mail.com on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off." = "在网页版 Mail.com 中，如果 IMAP 访问已关闭，请在“设置”的“POP3 & IMAP”中打开它。";
+
+/* No comment provided by engineer. */
+"In Yahoo! JAPAN Mail on the web, open Settings, then IMAP/POP/SMTP Access." = "在网页版 Yahoo! JAPAN 邮箱中打开“设置”，然后打开“IMAP/POP/SMTP 访问”。";
+
+/* No comment provided by engineer. */
+"Allow access from services other than Yahoo! JAPAN, and set IMAP, POP and SMTP to Use." = "允许来自 Yahoo! JAPAN 以外服务的访问，并将 IMAP、POP 和 SMTP 都设为“使用”。";
+
+/* No comment provided by engineer. */
+"If your Yahoo! JAPAN ID has no password yet, set one, then use it here." = "如果你的 Yahoo! JAPAN ID 还没有密码，请先设置一个，然后在这里使用。";
+
+/* No comment provided by engineer. */
+"Open QQ Mail below and sign in." = "打开下方的 QQ 邮箱并登录。";
+
+/* No comment provided by engineer. */
+"In Settings, Account and Security, turn on IMAP/SMTP, then generate an authorization code." = "在“设置”的“账号与安全”中开启 IMAP/SMTP 服务，然后生成授权码。";
+
+/* No comment provided by engineer. */
+"Copy the 16-character code and use it as the password." = "复制 16 位授权码，并将其用作密码。";
+
+/* No comment provided by engineer. */
+"Open %@ below and sign in." = "打开下方的 %@ 并登录。";
+
+/* No comment provided by engineer. */
+"In Settings, POP3/SMTP/IMAP, turn on IMAP/SMTP, then add an authorization code." = "在“设置”的“POP3/SMTP/IMAP”中开启 IMAP/SMTP 服务，然后新增授权密码。";
+
+/* No comment provided by engineer. */
+"Copy the code and use it as the password. It's shown only once." = "复制授权密码并将其用作密码。它只显示一次。";
+
+/* No comment provided by engineer. */
+"In Naver Mail on the web, open Settings, then POP3/IMAP Settings, and set IMAP/SMTP to Use." = "在网页版 Naver 邮箱中打开“设置”，进入“POP3/IMAP 设置”，将 IMAP/SMTP 设为“使用”。";
+
+/* No comment provided by engineer. */
+"In your Naver account's security settings, turn on 2-step verification and make an app password." = "在 Naver 账户的安全设置中开启两步验证，并创建应用密码。";
+
+/* No comment provided by engineer. */
+"Copy the app password and use it here." = "复制应用密码，并在这里使用。";
+
+/* No comment provided by engineer. */
+"HEY doesn't let other mail apps read its mail, so it can't be added to Corres." = "HEY 不允许其他邮件应用读取其邮件，因此无法添加到 Corres。";
+
+/* No comment provided by engineer. */
+"Proton Mail can only be read by other apps through Proton Mail Bridge, which runs on a computer, so it can't be added on iPhone." = "其他应用只能通过在电脑上运行的 Proton Mail Bridge 读取 Proton Mail，因此无法在 iPhone 上添加。";
+
+/* Calendar suggestion title for a flight booking */
+"Flight" = "航班";
+
+/* Calendar suggestion title when a hotel booking has no name */
+"Hotel" = "酒店";
+
+/* Calendar suggestion title for a hotel stay; the hotel's name */
+"Stay at %@" = "入住%@";
+
+/* Calendar suggestion title for a restaurant booking with no name */
+"Reservation" = "预订";
+
+/* Purchases card label for an order number */
+"Order" = "订单";
+
+/* Ask list heading */
+"1 email with attachments" = "1 封带附件的邮件";
+
+/* Ask list heading */
+"%lld emails with attachments" = "%lld 封带附件的邮件";
+
+/* Ask list heading */
+"1 receipt" = "1 张收据";
+
+/* Ask list heading */
+"%lld receipts" = "%lld 张收据";
+
+/* Ask list heading */
+"1 package" = "1 个包裹";
+
+/* Ask list heading */
+"%lld packages" = "%lld 个包裹";
+
+/* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
+"%@ from %@" = "来自%2$@的%1$@";

@@ -13,7 +13,7 @@ struct MacSnoozeSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Snooze until…").macFont(size: 18, weight: .regular, design: .serif)
-            TextField("Tomorrow 8am, next friday, in 3 days", text: $phrase)
+            TextField(String(localized: "Tomorrow at 8am, next friday, in 3 days"), text: $phrase)
                 .textFieldStyle(.roundedBorder)
                 .focused($focused)
                 .onSubmit { if let parsed { finish(parsed) } }

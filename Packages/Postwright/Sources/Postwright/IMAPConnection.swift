@@ -525,28 +525,48 @@ final class ResponseForwarder: ChannelInboundHandler, Sendable {
 }
 
 /// Raw traffic to stderr when CORRES_IMAP_TRACE is set, for debugging a
-/// server. LOGIN lines are hidden so the password never appears.
-final class TraceHandler: ChannelDuplexHandler, Sendable {
+/// server. Everything the client sends from a LOGIN or AUTHENTICATE line
+/// until the server's tagged answer is hidden, so a password sent as a
+/// literal (on its own line, or in a later write) or an AUTHENTICATE
+/// response never appears. Used only on its channel's event loop.
+final class TraceHandler: ChannelDuplexHandler, @unchecked Sendable {
     typealias InboundIn = ByteBuffer
     typealias InboundOut = ByteBuffer
     typealias OutboundIn = ByteBuffer
     typealias OutboundOut = ByteBuffer
 
+    private var hidingCredentials = false
+
     func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        Self.print("S:", unwrapInboundIn(data))
+        for line in Self.lines(unwrapInboundIn(data)) {
+            // A tagged answer ends the command; "+" (go on) and "*"
+            // (untagged data) come while it's still running.
+            if hidingCredentials, !line.hasPrefix("+"), !line.hasPrefix("*") { hidingCredentials = false }
+            Self.print("S:", String(line.prefix(300)))
+        }
         context.fireChannelRead(data)
     }
 
     func write(context: ChannelHandlerContext, data: NIOAny, promise: EventLoopPromise<Void>?) {
-        Self.print("C:", unwrapOutboundIn(data))
+        for line in Self.lines(unwrapOutboundIn(data)) {
+            let upper = line.uppercased()
+            if upper.contains(" LOGIN ") || upper.contains(" AUTHENTICATE ") {
+                hidingCredentials = true
+                Self.print("C:", "[login hidden]")
+            } else if hidingCredentials {
+                Self.print("C:", "[login hidden]")
+            } else {
+                Self.print("C:", String(line.prefix(300)))
+            }
+        }
         context.write(data, promise: promise)
     }
 
-    private static func print(_ side: String, _ buffer: ByteBuffer) {
-        let text = String(decoding: buffer.readableBytesView, as: UTF8.self)
-        for line in text.split(separator: "\r\n", omittingEmptySubsequences: true) {
-            let shown = line.uppercased().contains(" LOGIN ") ? "[login hidden]" : String(line.prefix(300))
-            FileHandle.standardError.write(Data("IMAP \(side) \(shown)\n".utf8))
-        }
+    private static func lines(_ buffer: ByteBuffer) -> [Substring] {
+        String(decoding: buffer.readableBytesView, as: UTF8.self).split(separator: "\r\n", omittingEmptySubsequences: true)
+    }
+
+    private static func print(_ side: String, _ shown: String) {
+        FileHandle.standardError.write(Data("IMAP \(side) \(shown)\n".utf8))
     }
 }

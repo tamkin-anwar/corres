@@ -110,6 +110,9 @@ public enum InboxCategory: String, Codable, CaseIterable, Sendable {
         "reddit.com", "redditmail.com", "tiktok.com", "pinterest.com", "snapchat.com", "discord.com", "nextdoor.com",
         "quora.com", "threads.net", "bsky.app", "tumblr.com", "meetup.com", "strava.com", "goodreads.com",
         "letterboxd.com", "twitch.tv", "mastodon.social", "whatsapp.com", "telegram.org", "vk.com", "xing.com",
+        // Asia's own: LINE (Japan), KakaoTalk and Band (Korea), Weibo and
+        // Xiaohongshu (China), mixi (Japan), imo (Bangladesh), ShareChat (India).
+        "line.me", "kakaocorp.com", "band.us", "weibo.com", "xiaohongshu.com", "mixi.jp", "imo.im", "sharechat.com",
     ]
 
     static func isSocialNetwork(_ email: String) -> Bool {
@@ -118,7 +121,7 @@ public enum InboxCategory: String, Codable, CaseIterable, Sendable {
     }
 
     private static let securityPattern = #"(?i)\b(security (alert|notice|warning)|new (sign-?in|login|device)|sign-?in (attempt|from|on)|suspicious (activity|sign-?in|login)|unusual (activity|sign-?in|login)|someone (signed|logged|tried)|password (was |has been )(changed|reset)|password changed|account (locked|suspended|compromised)|critical security|was (added|removed) (to|from) your account)\b"#
-    private static let accessPattern = #"(?i)\b(verification code|security code|one-?time (pass(code|word)|code)|login code|sign-?in (code|link)|magic link|verify your (email|account|identity)|confirm your (email|account)|reset (your )?password|password reset|temporary (access )?code|access code|\b2fa\b|two-?factor)\b"#
+    private static let accessPattern = #"(?i)\b(verification code|security code|one-?time (pass(code|word)|code)|login code|sign-?in (code|link)|magic link|verify your (email|account|identity)|confirm your (email|account)|reset (your )?password|password reset|temporary (access )?code|access code|\b2fa\b|two-?factor|otp|bestätigungscode|sicherheitscode|code de (vérification|confirmation|sécurité)|código de (verificación|verificação|seguridad|segurança)|যাচাইকরণ কোড|ওটিপি)\b|認証コード|確認コード|ワンタイムパスワード|인증 ?번호|인증 ?코드|확인 ?코드|验证码|驗證碼"#
 
     /// Urgent right now; back to its usual place once it isn't.
     static func isTimeSensitive(_ thread: Correspondence, now: Date) -> Bool {
@@ -139,6 +142,8 @@ public enum InboxCategory: String, Codable, CaseIterable, Sendable {
     static func isTransactional(_ thread: Correspondence) -> Bool {
         transactionalMemo.value(thread.subject) {
             thread.subject.patternRange(transactionalPattern) != nil || thread.subject.patternRange(accessPattern) != nil
+                // A receipt or delivery in any of the app's languages.
+                || thread.subject.matchesAny(MailDigest.receiptCue) || thread.subject.matchesAny(MailDigest.shippingCue)
         }
     }
     private static let transactionalMemo = Memo<String, Bool>()
@@ -146,7 +151,16 @@ public enum InboxCategory: String, Codable, CaseIterable, Sendable {
 
     /// Selling, said in the subject: what Gmail's Promotions catches, and
     /// what it misses when a shop's offer arrives as an "update".
-    private static let promotionalPattern = #"(?i)(\b\d{1,3}\s?% off\b|\b(up to|extra|save|get) \$\d+|\b(up to|extra|save) \d{1,3}%|\$\d+ off\b|\bspend \$\d+|\b(flash|semi-annual|annual|holiday|black friday|cyber monday|clearance|end of season|warehouse|parking lot|summer|fall|winter|spring) sale\b|\bsale (ends|starts|is on|now)\b|\bon sale\b|\b(special|exclusive|limited|best|exclusive member|personal) (offers?|deals?)\b|\b(daily|weekly|digital|insider|holiday|today's) deals?\b|\bdeals? (end|ends|of the)\b|\bfree (shipping|delivery|gift)\b|\blast chance\b|\b(ends|ending) (tonight|today|tomorrow|soon|at midnight|sunday)\b|\blimited[- ]time\b|\bshop (now|the (sale|collection|look))\b|\b(promo|coupon|discount) code\b|\bcoupons?\b|\bbogo\b|\bbuy one,? get one\b|\bdoorbusters?\b|\bnew arrivals\b|\bjust dropped\b|\bgift guide\b|\b(picked|chosen|selected) (just )?for you\b|\byou may also like\b|\bdon'?t miss (out|this)\b|\b(points|rewards) (expire|are expiring)\b|\bprice drop\b|\bonly \$\d+)"#
+    /// Money in a subject: any currency sign, or "Tk", "Rs", "INR", "BDT".
+    private static let money = #"(\p{Sc}\s?|\b(tk|rs|inr|bdt)\.?\s?)"#
+
+    private static let promotionalPattern = #"(?i)(\b\d{1,3}\s?% off\b|\b(up to|extra|save|get) "# + money + #"\d+|\b(up to|extra|save) \d{1,3}%|"# + money + #"\d+ off\b|\bspend "# + money + #"\d+|\b(flash|semi-annual|annual|holiday|black friday|cyber monday|clearance|end of season|warehouse|parking lot|summer|fall|winter|spring) sale\b|\bsale (ends|starts|is on|now)\b|\bon sale\b|\b(special|exclusive|limited|best|exclusive member|personal) (offers?|deals?)\b|\b(daily|weekly|digital|insider|holiday|today's) deals?\b|\bdeals? (end|ends|of the)\b|\bfree (shipping|delivery|gift)\b|\blast chance\b|\b(ends|ending) (tonight|today|tomorrow|soon|at midnight|sunday)\b|\blimited[- ]time\b|\bshop (now|the (sale|collection|look))\b|\b(promo|coupon|discount) code\b|\bcoupons?\b|\bbogo\b|\bbuy one,? get one\b|\bdoorbusters?\b|\bnew arrivals\b|\bjust dropped\b|\bgift guide\b|\b(picked|chosen|selected) (just )?for you\b|\byou may also like\b|\bdon'?t miss (out|this)\b|\b(points|rewards) (expire|are expiring)\b|\bprice drop\b|\bonly "# + money + #"\d+)"#
+        // Regional sales: Boxing Day, Singles' Day (11.11), Eid, Diwali,
+        // Pohela Boishakh, Australia's EOFY and Click Frenzy, an autumn sale.
+        + #"|(?i)\b(boxing day|singles'? day|(11\.11|12\.12) (sale|deals?|offers?)|double (11|eleven)|eid (sale|offer|deals?|collection)|diwali (sale|offer|deals?|dhamaka)|pohela boishakh|boishakhi (offer|sale)|eofy|click frenzy|autumn sale|great indian festival|big billion days)\b|双11|雙11|双十一|雙十一"#
+        // Sale words in other languages: "Rabatt", "Angebot", "soldes",
+        // "oferta", "セール", "할인", "折扣", "ছাড়".
+        + #"|(?i)(\d{1,3}\s?%\s?(rabatt|de (réduction|remise|descuento|desconto)|dto|off)|\b(rabatt|angebot(e)?|sonderangebot|schlussverkauf|soldes|promos?|réduction|oferta(s)?|rebajas|descuento|desconto|liquidação|promoção|ছাড়|অফার)\b|セール|割引|クーポン|할인|쿠폰|특가|折扣|优惠|優惠|促销|促銷|满减|滿減|\d{1,2}\s?折)"#
 
     static func looksPromotional(_ subject: String) -> Bool {
         promotionalMemo.value(subject) { subject.patternRange(promotionalPattern) != nil }

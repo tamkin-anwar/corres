@@ -441,8 +441,11 @@ final class OutboxService {
         }
         if let account = sendingAccount {
             do {
+                // An earlier attempt may have gone. A check that couldn't be
+                // made isn't "not sent": it throws, and the email stays
+                // failed rather than risk going twice.
                 if checkForExistingSendFirst,
-                   let existing = try? await client.findMessage(rfc822MessageID: Self.rfc822MessageID(for: id), account: account) {
+                   let existing = try await client.findMessage(rfc822MessageID: Self.rfc822MessageID(for: id), account: account) {
                     realThreadID = existing
                 } else {
                     realThreadID = try await sendViaGmailWithRetry(draft: draft, thread: thread, account: account, id: id)
@@ -467,15 +470,23 @@ final class OutboxService {
         // sent: the real sender, recipients and message id (see
         // `Correspondence.started`).
         var sentCopy: Correspondence?
-        if thread == nil, let realThreadID,
+        let isPlaceholder = realThreadID?.providerID.hasPrefix("outlook-sent-") == true
+        if thread == nil, let realThreadID, !isPlaceholder,
            let messages = try? await client.fetchThreadMessages(threadId: realThreadID.providerID, account: realThreadID.account) {
             sentCopy = messages.last { $0.isFromAccountOwner } ?? messages.last
+        }
+        // A stand-in keeps the Message-ID it went with, so a sync can find
+        // the real copy and swap it in, even if Corres quits before the
+        // swap below (`GmailSyncService.repairSentPlaceholders`).
+        if thread == nil, let realThreadID, isPlaceholder {
+            sentCopy = Correspondence.started(by: draft, id: realThreadID, sentAt: .now, sentCopy: nil, attention: .quiet, reason: "",
+                                              messageIdHeader: Self.rfc822MessageID(for: id))
         }
         await store.send(draft, realThreadID: realThreadID, sentCopy: sentCopy)
         // Outlook hadn't filed it yet when asked: a stand-in row holds its
         // place, swapped for the real conversation once it's there, or
         // the next sync would add that as a second row.
-        if let realThreadID, realThreadID.providerID.hasPrefix("outlook-sent-") {
+        if let realThreadID, isPlaceholder {
             let messageID = Self.rfc822MessageID(for: id)
             Task { await self.replacePlaceholder(realThreadID, messageID: messageID) }
         }
@@ -635,9 +646,15 @@ final class OutboxService {
                 // has a message with this exact attempt's Message-ID, the
                 // earlier try actually landed and this returns its thread
                 // instead of sending a real duplicate.
-                if let existing = try? await client.findMessage(rfc822MessageID: Self.rfc822MessageID(for: id), account: account) {
-                    return existing
+                // A check that fails is no answer: the earlier try may have
+                // gone, so it stays failed instead of going again.
+                let existing: ThreadID?
+                do {
+                    existing = try await client.findMessage(rfc822MessageID: Self.rfc822MessageID(for: id), account: account)
+                } catch {
+                    throw lastError
                 }
+                if let existing { return existing }
                 // Exponential backoff, plus jitter so a burst of sends that
                 // all failed for the same reason (a brief outage) don't all
                 // retry in lockstep and hit Gmail again at the exact same

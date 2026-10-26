@@ -10,8 +10,11 @@ final class WatchMailStore: NSObject {
     static let shared = WatchMailStore()
 
     private(set) var snapshot: WatchLink.Snapshot
-    /// Done on the wrist, gone from the list before the iPhone confirms.
-    private(set) var done: Set<String> = []
+    /// Done on the wrist, gone from the list before the iPhone confirms:
+    /// kept until a snapshot no longer has it, or for ten minutes, so one
+    /// the iPhone made before it heard doesn't bring it back.
+    private(set) var done: [String: Date] = [:]
+    private static let doneLimit: TimeInterval = 10 * 60
     private static let savedKey = "corres.watchSnapshot"
 
     override init() {
@@ -42,9 +45,14 @@ final class WatchMailStore: NSObject {
         isSample: true, updatedAt: .now)
     #endif
 
-    var needsYou: [WatchLink.Mail] { snapshot.needsYou.filter { !done.contains($0.key) } }
-    var waiting: [WatchLink.Mail] { snapshot.waiting.filter { !done.contains($0.key) } }
+    var needsYou: [WatchLink.Mail] { snapshot.needsYou.filter { done[$0.key] == nil } }
+    var waiting: [WatchLink.Mail] { snapshot.waiting.filter { done[$0.key] == nil } }
     var hasHeardFromPhone: Bool { snapshot.updatedAt != .distantPast }
+
+    /// Not heard from the iPhone for a few hours (`WatchFace.staleAfter`).
+    func isStale(at date: Date) -> Bool {
+        hasHeardFromPhone && date.timeIntervalSince(snapshot.updatedAt) > WatchFace.staleAfter
+    }
 
     func start() {
         guard WCSession.isSupported() else { return }
@@ -58,7 +66,8 @@ final class WatchMailStore: NSObject {
         // just handled here.
         guard snapshot.updatedAt > self.snapshot.updatedAt || !hasHeardFromPhone else { return }
         self.snapshot = snapshot
-        done = []
+        let listed = Set((snapshot.needsYou + snapshot.waiting).map(\.key))
+        done = done.filter { key, at in listed.contains(key) && Date.now.timeIntervalSince(at) < Self.doneLimit }
         if let data = WatchLink.encode(snapshot) { UserDefaults.standard.set(data, forKey: Self.savedKey) }
         updateFace()
     }
@@ -81,7 +90,7 @@ final class WatchMailStore: NSObject {
     func send(_ command: WatchLink.Command) -> Bool {
         switch command {
         case .handled, .archive:
-            done.insert(command.key)
+            done[command.key] = .now
             updateFace()
         case .markRead, .reply: break
         }

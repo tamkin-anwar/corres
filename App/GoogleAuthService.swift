@@ -259,7 +259,7 @@ final class GoogleAuthService {
     /// stored below is the one that actually carries them.
     func signIn(hint: String? = nil) async {
         guard let presenter = Self.rootViewController() else {
-            errorMessage = "Couldn't find a window to present sign-in from."
+            errorMessage = String(localized: "Couldn't find a window to present sign-in from.")
             return
         }
         isSigningIn = true
@@ -268,7 +268,7 @@ final class GoogleAuthService {
             let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presenter, hint: hint,
                                                                    additionalScopes: Self.gmailScopes)
             guard let email = result.user.profile?.email, !email.isEmpty else {
-                errorMessage = "Couldn't connect Gmail. Try again."
+                errorMessage = String(localized: "Couldn't connect Gmail. Try again.")
                 return
             }
             // Only the first account's name is kept, for the Brief's
@@ -284,7 +284,7 @@ final class GoogleAuthService {
             // Without modify, reading works but read/unread, archive, trash,
             // flags, and labels all fail — say so now, not on the first tap.
             if !Set(result.user.grantedScopes ?? []).contains(Self.modifyScope) {
-                errorMessage = "Corres can read \(email) but wasn't allowed to manage it, so marking read, archiving, and flagging won't work. Reconnect and leave every Gmail permission checked."
+                errorMessage = String(localized: "Corres can read \(email) but wasn't allowed to manage it, so marking read, archiving, and flagging won't work. Reconnect and leave every Gmail permission checked.")
             }
             await GoogleTokenProvider.shared.store(refreshToken: result.user.refreshToken.tokenString, for: email)
             if !accounts.contains(where: { $0.email == email }) {
@@ -298,7 +298,7 @@ final class GoogleAuthService {
             // Cancellation is not an error worth surfacing: the user changed
             // their mind, and that is a normal outcome, not a failure.
             if nsError.domain != "com.google.GIDSignIn" || nsError.code != GIDSignInError.canceled.rawValue {
-                errorMessage = "Couldn't connect Gmail. Try again."
+                errorMessage = String(localized: "Couldn't connect Gmail. Try again.")
             }
         }
     }
@@ -328,9 +328,9 @@ final class GoogleAuthService {
         } catch MicrosoftSignIn.SignInError.cancelled {
             // Changed their mind: nothing to say.
         } catch MicrosoftSignIn.SignInError.notConfigured {
-            errorMessage = "Outlook sign-in isn't set up in this build yet."
+            errorMessage = String(localized: "Outlook sign-in isn't set up in this build yet.")
         } catch {
-            errorMessage = "Couldn't connect Outlook. Try again."
+            errorMessage = String(localized: "Couldn't connect Outlook. Try again.")
         }
     }
 

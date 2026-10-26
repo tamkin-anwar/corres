@@ -74,7 +74,7 @@ struct SnoozeSheet: View {
                             .datePickerStyle(.graphical)
                             .tint(CorresPalette.accent)
                     }
-                    Button(target.map { "Snooze until \(Self.describe($0))" } ?? "Snooze") {
+                    Button(target.map { String(localized: "Snooze until \(Self.describe($0))") } ?? String(localized: "Snooze")) {
                         if let target { finish(target) }
                     }
                     .buttonStyle(CorresButtonStyle())
@@ -99,7 +99,8 @@ struct SnoozeSheet: View {
     private var typedField: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Type a time").eyebrow()
-            TextField("in 3 days at 9am", text: $phrase)
+            // Examples in the phone's language, ones Corres understands.
+            TextField(String(localized: "tomorrow at 9am"), text: $phrase)
                 .font(.title3)
                 .focused($fieldFocused)
                 .submitLabel(.done)
@@ -107,7 +108,8 @@ struct SnoozeSheet: View {
                 .autocorrectionDisabled()
                 .onSubmit { if let parsed { finish(parsed) } }
                 .onChange(of: phrase) { if !phrase.isEmpty { pickingDate = false } }
-            Text(parsed.map(Self.describe) ?? (phrase.isEmpty ? "Try \u{201C}tomorrow evening\u{201D} or \u{201C}next friday\u{201D}" : "Not sure when that is"))
+            Text(parsed.map(Self.describe) ?? (phrase.isEmpty ? String(localized: "Try \u{201C}tomorrow evening\u{201D} or \u{201C}next friday\u{201D}")
+                                                                 : String(localized: "Not sure when that is")))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(parsed == nil ? CorresPalette.tertiary : CorresPalette.accent)
                 .contentTransition(.opacity)

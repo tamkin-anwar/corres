@@ -895,15 +895,18 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         #corres-root.designed { line-height: normal; }
         /* Quoted mail in mail from people, as Mail draws it. */
         #corres-root.plain .gmail_quote, #corres-root.plain .corres-quote { color: rgba(128, 128, 128, 1); }
-        #corres-root.plain blockquote[type="cite"] { margin: 8px 0; padding: 0 0 0 12px;
-          border-left: 2px solid rgba(128, 128, 128, 0.45); color: rgba(128, 128, 128, 1) !important; }
-        .corres-plain-text { font: inherit; }
+        #corres-root.plain blockquote[type="cite"] { margin: 8px 0; padding: 0; padding-inline-start: 12px;
+          border-inline-start: 2px solid rgba(128, 128, 128, 0.45); color: rgba(128, 128, 128, 1) !important; }
+        /* Arabic, Hebrew, Persian or Urdu text reads right to left, line by
+           line: each paragraph takes its direction from its own first
+           letters, so an English quote under an Arabic reply stays left. */
+        .corres-plain-text { font: inherit; unicode-bidi: plaintext; text-align: start; }
         /* A wide table in mail from people scrolls sideways on its own
            rather than shrinking the whole message (`sizingScript`). */
         .corres-scroll { overflow-x: auto; max-width: 100%; }
         /* Quoted history, folded behind a button (`sizingScript`). */
         .corres-folded { display: none !important; }
-        .corres-fold { margin: 14px 0 10px; line-height: 1; text-align: left; }
+        .corres-fold { margin: 14px 0 10px; line-height: 1; text-align: start; }
         .corres-fold a { display: inline-block; border-radius: 11px; text-decoration: none !important;
           padding: 2px 14px 9px; font: 600 20px/1 -apple-system; letter-spacing: 2px;
           color: rgba(128, 128, 128, 1) !important; background: rgba(128, 128, 128, 0.16) !important; }
@@ -918,7 +921,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         [height="100%"], [style*="height:100%"], [style*="height: 100%"], [style*="vh"] {
           height: auto !important; min-height: 0 !important; }
         \(styles)
-        </style></head><body><div id="corres-root" class="\(rootClass)">\(html)</div></body></html>
+        </style></head><body><div id="corres-root" class="\(rootClass)"\(rootClass == "plain" ? " dir=\"auto\"" : "")>\(html)</div></body></html>
         """
     }
 
@@ -1141,7 +1144,8 @@ struct HTMLMessageBody: PlatformViewRepresentable {
             // A flight or tracking number (see `sizingScript`).
             if url.host == HTMLMessageBody.placeholderBaseURL?.host, url.path == Self.detectedItemPath,
                let text = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "text" })?.value {
-                if let target = DetectedItems.destination(forMisc: text) { LinkOpener.open(target) }
+                let context = await emailText(in: webView)
+                if let target = DetectedItems.destination(forMisc: text, context: context) { LinkOpener.open(target) }
                 return .cancel
             }
             // An embedded frame loading itself, or a jump within the email
@@ -1193,13 +1197,21 @@ struct HTMLMessageBody: PlatformViewRepresentable {
             guard let found = try? await webView.evaluateJavaScript(script, in: nil, contentWorld: .defaultClient) as? [String],
                   found.count == 2 else { return }
             let text = found[1].trimmingCharacters(in: .whitespacesAndNewlines)
-            if let target = Self.destination(forDetected: found[0], text: text) { LinkOpener.open(target) }
+            let context = await emailText(in: webView)
+            if let target = Self.destination(forDetected: found[0], text: text, context: context) { LinkOpener.open(target) }
+        }
+
+        /// The email's words, which say which carrier a plain tracking
+        /// number is with ("Your FedEx shipment").
+        private func emailText(in webView: WKWebView) async -> String? {
+            try? await webView.evaluateJavaScript("(document.body.innerText || '').slice(0, 20000)",
+                                                  in: nil, contentWorld: .defaultClient) as? String
         }
 
         /// Where a detected item goes: an address to Maps, a phone number
         /// to a call, a date to that day in Calendar, a flight to its
         /// status, a parcel to its carrier's tracking page.
-        static func destination(forDetected type: String, text: String) -> URL? {
+        static func destination(forDetected type: String, text: String, context: String? = nil) -> URL? {
             switch type {
             case "address":
                 var components = URLComponents(string: "https://maps.apple.com/")
@@ -1215,7 +1227,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
             // Flight and tracking numbers come through as "misc" (and as
             // their own types on some versions of iOS).
             case "misc", "flight-information", "flight-number", "tracking-number", "parcel-tracking":
-                return DetectedItems.destination(forMisc: text)
+                return DetectedItems.destination(forMisc: text, context: context)
             default:
                 return nil
             }

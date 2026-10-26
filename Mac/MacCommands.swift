@@ -14,6 +14,9 @@ struct MacActions {
     let perform: (MacAction) -> Void
     /// How many conversations they'd act on.
     var selectionCount = 1
+    /// The main window's: Go To or Do, the mailboxes and the rest of its
+    /// own act here, not by way of `MacWindows.perform`.
+    var isMain = false
 }
 
 /// The main window, opened from outside it: a notification clicked, or a
@@ -24,10 +27,49 @@ enum MacWindows {
     static var openWindow: OpenWindowAction?
     /// Set while the main window is on screen.
     static var mainIsOpen = false
+    /// The main window's actions, while it's open.
+    private static var mainActions: ((MacAction) -> Void)?
+    /// Asked for before the main window was up: done as it appears.
+    private static var waiting: [MacAction] = []
 
+    /// Opens the main window, or brings it in front of a compose or
+    /// conversation window.
     static func showMain() {
-        if !mainIsOpen { openWindow?(id: "main") }
+        openWindow?(id: "main")
         NSApplication.shared.activate()
+    }
+
+    /// One of the main window's own actions (Go To or Do, a mailbox,
+    /// Keyboard Shortcuts, Send Diagnostics), chosen while another window,
+    /// or none, is in front: the main window comes forward and does it.
+    static func perform(_ action: MacAction) {
+        showMain()
+        if mainIsOpen, let mainActions { mainActions(action) } else { waiting.append(action) }
+    }
+
+    /// The main window, as it appears: anything asked for meanwhile is done.
+    static func mainAppeared(_ perform: @escaping (MacAction) -> Void) {
+        mainIsOpen = true
+        mainActions = perform
+        let queued = waiting
+        waiting = []
+        // Once it's on screen, so a sheet has a window to show on.
+        Task { for action in queued { perform(action) } }
+    }
+
+    static func mainDisappeared() {
+        mainIsOpen = false
+        mainActions = nil
+    }
+
+    /// Undo Send: the email isn't sent, and opens again in a compose
+    /// window to change, as Mail does.
+    static func undoSend(_ outbox: OutboxService) {
+        outbox.undo()
+        guard let draft = outbox.takeShelved() else { return }
+        let handoff = UUID()
+        MacComposeHandoff.drafts[handoff] = draft
+        openWindow?(value: ComposeRequest(kind: draft.kind, handoff: handoff))
     }
 }
 
@@ -181,9 +223,9 @@ struct MacCommands: Commands {
             .keyboardShortcut("n", modifiers: .command)
         }
         CommandGroup(after: .help) {
-            Button("Keyboard Shortcuts") { actions?.perform(.shortcuts) }
+            Button("Keyboard Shortcuts") { inMain(.shortcuts) }
                 .keyboardShortcut("/", modifiers: .command)
-            Button("Send Diagnostics…") { actions?.perform(.sendDiagnostics) }
+            Button("Send Diagnostics…") { inMain(.sendDiagnostics) }
         }
         // Mail's and Safari's Bigger and Smaller: the email you're reading,
         // and the text around it (`MacScaledFont`, `MacListScale`).
@@ -209,20 +251,21 @@ struct MacCommands: Commands {
                 .disabled(noSelection)
         }
         CommandMenu("Mailbox") {
-            Button("Go To or Do…") { actions?.perform(.commandPalette) }
+            Button("Go To or Do…") { inMain(.commandPalette) }
                 .keyboardShortcut("k", modifiers: .command)
             Divider()
-            Button("Get New Mail") { actions?.perform(.getMail) }
+            // From any window, or none, without bringing one forward.
+            Button("Get New Mail") { MacServices.shared.getNewMail() }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
             Divider()
-            Button("Needs You") { actions?.perform(.show(.needsYou)) }.keyboardShortcut("1", modifiers: .command)
-            Button("Waiting") { actions?.perform(.show(.waiting)) }.keyboardShortcut("2", modifiers: .command)
-            Button("Primary") { actions?.perform(.show(.primary)) }.keyboardShortcut("3", modifiers: .command)
-            Button("Everything") { actions?.perform(.show(.filter(MailFilter.everything.rawValue))) }
+            Button("Needs You") { inMain(.show(.needsYou)) }.keyboardShortcut("1", modifiers: .command)
+            Button("Waiting") { inMain(.show(.waiting)) }.keyboardShortcut("2", modifiers: .command)
+            Button("Primary") { inMain(.show(.primary)) }.keyboardShortcut("3", modifiers: .command)
+            Button("Everything") { inMain(.show(.filter(MailFilter.everything.rawValue))) }
                 .keyboardShortcut("4", modifiers: .command)
             Divider()
             // Mail's message filter, and its shortcut.
-            Button("Unread Only") { actions?.perform(.toggleUnreadOnly) }
+            Button("Unread Only") { inMain(.toggleUnreadOnly) }
                 .keyboardShortcut("l", modifiers: .command)
         }
         CommandMenu("Message") {
@@ -267,6 +310,44 @@ struct MacCommands: Commands {
                 Button("Open in New Window") { actions?.perform(.openInWindow) }.keyboardShortcut("o", modifiers: .command)
             }
             .disabled(noSelection)
+        }
+    }
+
+    /// The main window's own: there when it's in front, otherwise it comes
+    /// forward first (a compose window, Settings or nothing in front).
+    private func inMain(_ action: MacAction) {
+        if let actions, actions.isMain { actions.perform(action) } else { MacWindows.perform(action) }
+    }
+}
+
+/// Format, as in Mail: Show Fonts, Bold, Italic and Underline for what
+/// you're writing. Not SwiftUI's own Format menu, whose Bigger and Smaller
+/// took ⌘+ and ⌘- from View › Bigger and Smaller.
+struct MacFormatCommands: Commands {
+    var body: some Commands {
+        CommandMenu("Format") {
+            Button("Show Fonts") { NSFontManager.shared.orderFrontFontPanel(nil) }
+                .keyboardShortcut("t", modifiers: .command)
+            Divider()
+            Button("Bold") { Self.toggle(.boldFontMask) }
+                .keyboardShortcut("b", modifiers: .command)
+            Button("Italic") { Self.toggle(.italicFontMask) }
+                .keyboardShortcut("i", modifiers: .command)
+            Button("Underline") { NSApp.sendAction(#selector(NSText.underline(_:)), to: nil, from: nil) }
+                .keyboardShortcut("u", modifiers: .command)
+        }
+    }
+
+    /// On, or off when what's selected has it already. The font manager
+    /// reads the trait from the sender's tag, as from the standard menu item.
+    @MainActor private static func toggle(_ trait: NSFontTraitMask) {
+        let fonts = NSFontManager.shared
+        let sender = NSMenuItem()
+        sender.tag = Int(trait.rawValue)
+        if let font = fonts.selectedFont, fonts.traits(of: font).contains(trait) {
+            fonts.removeFontTrait(sender)
+        } else {
+            fonts.addFontTrait(sender)
         }
     }
 }

@@ -5,6 +5,12 @@ struct MailListView: View {
 
     var body: some View {
         List {
+            // A quiet iPhone (off, or out of reach for hours): said, so old
+            // mail isn't taken for what's there now.
+            if store.isStale(at: .now) {
+                Text("Updated \(store.snapshot.updatedAt.formatted(.relative(presentation: .named)))")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
             if !store.hasHeardFromPhone {
                 Text("Open Corres on your iPhone to see your mail here.")
                     .font(.footnote).foregroundStyle(.secondary)

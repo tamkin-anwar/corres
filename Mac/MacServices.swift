@@ -12,6 +12,10 @@ import UserNotifications
 /// instant arrival, and new mail notifies as it lands.
 @MainActor @Observable
 final class MacServices {
+    /// One for the app: the app delegate starts it at launch, before (or
+    /// without) any window.
+    static let shared = MacServices()
+
     let store: MailStore
     let sync: GmailSyncService
     let auth: GoogleAuthService
@@ -30,11 +34,13 @@ final class MacServices {
 
     private var checkLoop: Task<Void, Never>?
     private var launched = false
+    /// What `observe` keeps running.
+    @ObservationIgnored private var observers: [AnyObject] = []
     /// While Corres runs: what you do in Gmail, Outlook or Mail shows here
     /// within this, and new mail on services without push for us sooner.
     private static let checkInterval: Duration = .seconds(20)
 
-    init() {
+    private init() {
         HangReporter.step("setup began")
         let (container, inMemory) = Self.makeModelContainer()
         HangReporter.step("storage opened")
@@ -117,6 +123,7 @@ final class MacServices {
     func launch() async {
         guard !launched else { return }
         launched = true
+        startObserving()
         HangReporter.shared.start()
         HangReporter.step("window up")
         CrashCollector.shared.start()
@@ -292,6 +299,37 @@ final class MacServices {
         }
     }
 
+    /// What follows a sync, and what the widgets, Spotlight and the Dock
+    /// show: watched here rather than by the main window, so it all goes
+    /// on with no window open (Corres runs on in the menu bar).
+    private func startObserving() {
+        observe({ [unowned self] in sync.lastCompletedSync }) { [unowned self] _ in afterSync() }
+        observe({ [unowned self] in sync.lastChange }) { [unowned self] _ in afterChange() }
+        observe({ [unowned self] in store.revision }, initial: true) { [unowned self] _ in
+            SpotlightIndex.shared.scheduleUpdate { [store] in store.searchableThreads }
+            // The desktop widgets and the Dock show what's on this Mac.
+            WidgetBridge.scheduleUpdate { [store] in store.threads }
+        }
+        observe({ [unowned self] in WidgetBridge.locks(connected: !auth.accounts.isEmpty, entitlements: entitlements) },
+                initial: true) { [unowned self] locked in
+            WidgetBridge.isLocked = locked
+            WidgetBridge.update(from: store.threads)
+        }
+        // At most one reload each half second: a first sync saves a hundred
+        // batches, and each reload redraws the lists.
+        observe({ [unowned self] in sync.syncProgress }) { [unowned self] _ in SyncBatchRefresh.schedule(store) }
+    }
+
+    /// SwiftUI's onChange, for the app rather than a view: `changed` runs
+    /// each time what `read` returns changes, and once at the start when
+    /// `initial`.
+    private func observe<Value: Equatable>(_ read: @escaping @MainActor () -> Value, initial: Bool = false,
+                                           _ changed: @escaping @MainActor (Value) -> Void) {
+        let observer = Observer(read: read, changed: changed)
+        observers.append(observer)
+        observer.start(initial: initial)
+    }
+
     func accountsChanged() {
         watchIMAP()
         ServerRules.shared.schedule()
@@ -365,6 +403,60 @@ final class MacServices {
                 fatalError("Couldn't create any Corres store, including in memory: \(error)")
             }
             return (fallback, true)
+        }
+    }
+}
+
+/// One value `MacServices.observe` watches, through Observation.
+@MainActor
+private final class Observer<Value: Equatable> {
+    private let read: @MainActor () -> Value
+    private let changed: @MainActor (Value) -> Void
+    private var last: Value?
+
+    init(read: @escaping @MainActor () -> Value, changed: @escaping @MainActor (Value) -> Void) {
+        self.read = read
+        self.changed = changed
+    }
+
+    func start(initial: Bool) {
+        let value = track()
+        last = value
+        if initial { changed(value) }
+    }
+
+    /// Reads it, and asks to hear about the next change.
+    private func track() -> Value {
+        withObservationTracking { read() } onChange: { [weak self] in
+            Task { @MainActor in self?.fire() }
+        }
+    }
+
+    private func fire() {
+        let value = track()
+        guard value != last else { return }
+        last = value
+        changed(value)
+    }
+}
+
+/// Shows each batch a sync saves, at most one reload each half second: the
+/// first batch at once, the last one always, the ones between folded
+/// together.
+@MainActor
+private enum SyncBatchRefresh {
+    private static var running: Task<Void, Never>?
+    private static var again = false
+
+    static func schedule(_ store: MailStore) {
+        guard running == nil else { again = true; return }
+        running = Task {
+            repeat {
+                again = false
+                await store.refresh()
+                try? await Task.sleep(for: .milliseconds(500))
+            } while again
+            running = nil
         }
     }
 }

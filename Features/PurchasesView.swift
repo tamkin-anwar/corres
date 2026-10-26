@@ -68,8 +68,9 @@ struct PurchasesView: View {
                 .prefix(200)
             return snapshot.map { thread, kind -> Item in
                 let text = thread.body.isEmpty ? thread.excerpt : thread.body
-                let glance = MailDigest.glance(text: text, subject: thread.subject, kind: kind)
-                let amount = glance?.facts.first { fact in fact.value.contains(where: { "$£€¥₹৳".contains($0) }) || fact.label == "Amount" }?.value
+                let glance = MailDigest.glance(text: text, subject: thread.subject, kind: kind, html: thread.htmlBody)
+                // Any currency, however it's written: "500円", "Tk 1,250", "R$ 89,90".
+                let amount = glance?.facts.first { fact in MailDigest.isAmount(fact.value) || fact.label == "Amount" }?.value
                 var stage = PurchaseStage.from(status: glance?.status, isAlert: glance?.isAlert ?? false)
                 // A delivery more than two weeks ago is just an order now.
                 if stage == .delivered, thread.receivedAt < .now.addingTimeInterval(-14 * 86_400) { stage = .ordered }

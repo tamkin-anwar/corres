@@ -40,7 +40,8 @@ final class MailIndexer {
     /// horizon, or until `budget` pages have been read this run. Returns
     /// whether anything new was saved, for the caller to refresh the lists.
     @discardableResult
-    func run(accounts: [String], repository: any MailRepository, budget: Int = 60) async -> Bool {
+    func run(accounts: [String], repository: any MailRepository, budget: Int = 60,
+             stillWanted: @escaping @MainActor (String) -> Bool = { _ in true }) async -> Bool {
         guard !running else { return false }
         running = true
         defer { running = false }
@@ -67,6 +68,11 @@ final class MailIndexer {
                     continue
                 }
                 pagesLeft -= 1
+                // Removed while the page loaded: its mail mustn't come back.
+                guard stillWanted(stream.account) else {
+                    streams.removeAll { $0.account == stream.account }
+                    continue
+                }
                 let inserted = (try? await repository.upsert(page.items, isInitialSync: true)) ?? 0
                 anySaved = anySaved || inserted > 0
                 state.count += page.items.count

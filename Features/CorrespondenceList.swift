@@ -1,6 +1,35 @@
 import SwiftUI
 import TipKit
 
+/// Waits for `task` up to `limit`: what it returned, or nil if it's still
+/// going (it carries on). A task group can't do this, since it waits for
+/// every child, so awaiting the task inside one waited for all of it.
+@MainActor
+func waitBriefly<T: Sendable>(for task: Task<T, Never>, upTo limit: Duration) async -> T? {
+    let once = OnceFlag()
+    return await withCheckedContinuation { continuation in
+        let timer = Task { @MainActor in
+            // Cancelled: the task finished first.
+            guard (try? await Task.sleep(for: limit)) != nil else { return }
+            if once.claim() { continuation.resume(returning: nil) }
+        }
+        Task { @MainActor in
+            let value = await task.value
+            timer.cancel()
+            if once.claim() { continuation.resume(returning: value) }
+        }
+    }
+}
+
+/// True the first time it's claimed, false after.
+@MainActor private final class OnceFlag {
+    private var claimed = false
+    func claim() -> Bool {
+        defer { claimed = true }
+        return !claimed
+    }
+}
+
 /// Which account an email in All Inboxes came from: the account's name,
 /// and its colour when colour coding is on (Settings → the account).
 /// A flat, dense row in the Mail/Spark list anatomy: unread dot, a round
@@ -49,8 +78,8 @@ struct CorrespondenceRow: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     // Your own latest message: who it went to, never your
                     // name (or theirs as if they'd written to you).
-                    Text(sentTo.map { "To: \($0)" }
-                         ?? (thread.isFromAccountOwner ? "To: \(thread.counterpartName())" : nil)
+                    Text(sentTo.map { String(localized: "To: \($0)") }
+                         ?? (thread.isFromAccountOwner ? String(localized: "To: \(thread.counterpartName())") : nil)
                          ?? thread.sender)
                         .font(.body.weight(thread.isUnread ? .semibold : .medium))
                         .foregroundStyle(thread.isUnread ? CorresPalette.ink : CorresPalette.secondary)
@@ -289,6 +318,8 @@ struct CorrespondenceList: View {
             let serverMatches: Int
             /// A search's matches arriving.
             let searchFound: Int
+            /// The Daily Brief is showing, so its card is worth building.
+            let brief: Bool
         }
         var key: Key?
         var rows: [Correspondence] = []
@@ -301,6 +332,8 @@ struct CorrespondenceList: View {
         var waitingCount = 0
         var longestWait: String?
         var pendingSenders = 0
+        /// On the Needs You split with the Daily Brief on: today's card.
+        var brief = TodayBrief.empty
         /// Searching: the best few matches, shown above the rest.
         var top: [Correspondence] = []
         /// Built with hidden rows still in; `rows` leaves out `hidden`.
@@ -321,7 +354,8 @@ struct CorrespondenceList: View {
         let key = RowsCache.Key(revision: store.contentRevision, minute: Int(Date.now.timeIntervalSince1970 / 60),
                                 account: accountFilter, accounts: accountsRevision, destination: kind,
                                 search: appliedSearch, filter: mailFilter, unreadOnly: filtersUnread,
-                                serverMatches: serverMatches.count, searchFound: searchFound)
+                                serverMatches: serverMatches.count, searchFound: searchFound,
+                                brief: showsBrief)
         let hidden = store.hiddenIDs
         if cache.key == key, cache.hidden == hidden { return cache }
         if cache.key != key {
@@ -346,6 +380,8 @@ struct CorrespondenceList: View {
                                                        all: auth?.accounts.map(\.email) ?? [], by: \.id.account)
                 cache.pendingSenders = Set(pending.compactMap(\.senderEmail)).count
             }
+            cache.brief = key.brief ? buildBrief(needsYou: filtersUnread
+                ? MailQuery.prioritized(scopedThreads, attention: .needsYou) : full) : .empty
         }
         // A swipe only hides a row: filter what's built, don't rebuild.
         let built = hidden.isEmpty ? cache.full : cache.full.filter { !hidden.contains($0.id) }
@@ -506,6 +542,8 @@ struct CorrespondenceList: View {
                                     onOpenMail: { mailFilter = .primary }, openMailTitle: String(localized: "Show Primary"))
                             .frame(minHeight: 440)
                     } else {
+                        if showsBrief, !visibleBrief.isEmpty { todayBrief }
+                        if showsBriefTip, briefTipShown { briefTip }
                         if destination == .mail, kind == .needsYou { needsYouShortcuts }
                         if results.isEmpty {
                             emptyState
@@ -554,6 +592,13 @@ struct CorrespondenceList: View {
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { listWidth = $0 }
             .scrollContentBackground(.hidden)
             .background(CorresPalette.canvas)
+            // The Daily Brief's offer takes a row only while TipKit would show it.
+            .task(id: showsBriefTip) {
+                guard showsBriefTip else { briefTipShown = false; return }
+                for await shows in DailyBriefTip().shouldDisplayUpdates {
+                    withAnimation(.snappy) { briefTipShown = shows }
+                }
+            }
             // VoiceOver's rotor: straight to the next unread or flagged email.
             .accessibilityRotor("Unread") {
                 ForEach(results.filter(\.isUnread)) { thread in
@@ -677,12 +722,7 @@ struct CorrespondenceList: View {
             _ = await sync?.syncAll(accounts: accounts)
             await store.load()
         }
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask { await syncing.value }
-            group.addTask { try? await Task.sleep(for: .seconds(6)) }
-            await group.next()
-            group.cancelAll()
-        }
+        _ = await waitBriefly(for: syncing, upTo: .seconds(6))
     }
 
     /// `searchPresented`, reading the mail's text ahead as Search opens
@@ -1157,6 +1197,109 @@ struct CorrespondenceList: View {
         .trailingFade()
         .overlay(alignment: .bottom) { Hairline() }
         .sensoryFeedback(.selection, trigger: mailFilter)
+    }
+
+    // MARK: - Daily Brief
+
+    @AppStorage(CorresSettings.briefKey) private var briefOn = false
+    @AppStorage(CorresSettings.briefDoneDayKey) private var briefDoneDay = ""
+
+    /// Settings → Sorting → Daily Brief, on Needs You (Mail's split, or
+    /// the iPad sidebar's), with Pro, not searching, and not put away for
+    /// today with Done for Today.
+    private var showsBrief: Bool {
+        briefOn && kind == .needsYou && (destination == .mail || destination == .needsYou) && !needsYouLocked
+            && appliedSearch.trimmingCharacters(in: .whitespaces).isEmpty
+            && briefDoneDay != CorresSettings.briefDay()
+    }
+
+    /// Where the Brief would be, while it's off: the one-time offer.
+    private var showsBriefTip: Bool {
+        !briefOn && kind == .needsYou && (destination == .mail || destination == .needsYou) && !needsYouLocked
+            && appliedSearch.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    @State private var briefTipShown = false
+
+    private var briefTip: some View {
+        let tip = DailyBriefTip()
+        return TipView(tip) { action in
+            if action.id == DailyBriefTip.showAction {
+                withAnimation(.snappy) { briefOn = true }
+                tip.invalidate(reason: .actionPerformed)
+            } else {
+                tip.invalidate(reason: .tipClosed)
+            }
+        }
+        .tipBackground(CorresPalette.surface)
+        .padding(.horizontal, CorresSpace.page).padding(.top, 8).padding(.bottom, 2)
+        .readableWidth()
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Built with the rows (once per change to the mail, or a minute
+    /// passing), from the same Needs You list, so it never scans the
+    /// mailbox on a redraw. Deliveries look only at today's mail.
+    private func buildBrief(needsYou: [Correspondence]) -> TodayBrief {
+        let now = Date.now
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: now)
+        let shipping = scopedThreads.lazy
+            .filter { $0.receivedAt >= startOfToday && $0.attention != .handled && $0.mailKind == .shipping }
+            .map { thread -> (thread: Correspondence, status: String?) in
+                let text = thread.body.isEmpty ? thread.excerpt : thread.body
+                return (thread, MailDigest.glance(text: text, subject: thread.subject, kind: .shipping)?.status)
+            }
+        let deliveries = TodayBrief.arriving(from: Array(shipping)) {
+            ($0.senderEmail.flatMap(BrandLogos.domain(of:)) ?? $0.sender).lowercased()
+        }
+        return TodayBrief.make(needsYou: needsYou, deliveries: deliveries, now: now, calendar: calendar,
+                               isMeeting: Self.isMeeting, isPerson: { !$0.looksAutomated && !$0.isFromAccountOwner })
+    }
+
+    /// An invitation (it carries an .ics) or an appointment, class or
+    /// flight: something that happens at a time, not a task.
+    private static func isMeeting(_ thread: Correspondence) -> Bool {
+        if thread.attachments.contains(where: {
+            $0.mimeType.lowercased().hasPrefix("text/calendar") || $0.filename.lowercased().hasSuffix(".ics") }) { return true }
+        if thread.id.account == "sample", SampleCorrespondence.invitation(for: thread) != nil { return true }
+        return MailSignals.isEvent(thread.subject + "\n" + thread.excerpt)
+    }
+
+    /// What a swipe or a check already took away stays away at once.
+    private var visibleBrief: TodayBrief {
+        let brief = rows.brief
+        let hidden = store.hiddenIDs
+        guard !hidden.isEmpty, brief.top.contains(where: { hidden.contains($0.id) }) else { return brief }
+        return TodayBrief(due: brief.due, overdue: brief.overdue, meetings: brief.meetings, deliveries: brief.deliveries,
+                          replies: brief.replies, top: brief.top.filter { !hidden.contains($0.id) })
+    }
+
+    private var todayBrief: some View {
+        TodayBriefCard(brief: visibleBrief, onOpen: openFromBrief, onHandled: handleFromBrief)
+            .padding(.horizontal, CorresSpace.page).padding(.top, 8).padding(.bottom, 2)
+            .readableWidth()
+            .frame(maxWidth: .infinity)
+            .transition(.opacity)
+    }
+
+    /// Beside the list on iPad; pushed on iPhone, as a row would be.
+    private func openFromBrief(_ thread: Correspondence) {
+        let route = ConversationRoute(id: thread.id, orderedIDs: rows.ids.contains(thread.id) ? rows.ids : [thread.id])
+        if let splitSelection {
+            splitSelection.wrappedValue = route
+        } else {
+            router.pending = .thread(thread.id)
+        }
+    }
+
+    /// Handled, as the list's swipe does it: out of view at once, with Undo.
+    private func handleFromBrief(_ thread: Correspondence) {
+        withAnimation(.snappy(duration: 0.3)) { store.hide(thread.id) }
+        Task {
+            await threadActions?.setAttention(.handled, for: thread)
+            store.unhide(thread.id)
+        }
     }
 
     /// Above the Needs You split: replies you're owed, and new senders to

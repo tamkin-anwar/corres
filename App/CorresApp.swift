@@ -233,7 +233,7 @@ struct ConversationWindow: View {
         NavigationStack {
             ConversationView(store: delegate.store, outbox: delegate.outbox, threadActions: delegate.threadActions,
                              labelDirectory: delegate.labelDirectory, unsubscribeService: delegate.unsubscribeService,
-                             route: ConversationRoute(id: id, orderedIDs: [id]))
+                             auth: delegate.auth, route: ConversationRoute(id: id, orderedIDs: [id]))
         }
         .environment(delegate.mailIntelligence)
         .environment(delegate.router)

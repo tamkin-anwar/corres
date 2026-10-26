@@ -250,3 +250,6 @@
 /* No comment provided by engineer. */
 "You're waiting on their reply" = "আপনি তাদের উত্তরের অপেক্ষায়";
 
+
+/* Alert title for a push when the notification extension can't fill in the email in time (title-loc-key from the push relay and iCloud watcher). */
+"New email" = "নতুন ইমেইল";

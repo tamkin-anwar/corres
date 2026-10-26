@@ -89,7 +89,7 @@ public struct MailTemplate: Codable, Hashable, Identifiable, Sendable {
 
     static func fill(_ text: String, name: String?) -> String {
         let full = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let first = full.split(separator: " ").first.map(String.init) ?? ""
+        let first = Person.firstName(of: full)
         var result = text
         for (token, value) in [(firstNameToken, first), (nameToken, full)] {
             if value.isEmpty {

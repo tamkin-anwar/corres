@@ -20,12 +20,22 @@ struct WatchFace: Codable, Equatable {
         defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(WatchFace.self, from: $0) }
     }
 
-    /// Saves it; true when it changed, so the face needs drawing again.
+    /// Older than this, the face and the app say when they last heard
+    /// from the iPhone, rather than show old numbers as if they were new.
+    static let staleAfter: TimeInterval = 3 * 3600
+
+    func isStale(at date: Date) -> Bool { date.timeIntervalSince(updatedAt) > Self.staleAfter }
+
+    /// Saves it, every time, so when it was last heard is always kept;
+    /// true when the face needs drawing again: what it shows changed, it
+    /// was showing as out of date, or the time moved on enough to matter.
     @discardableResult
     func save() -> Bool {
-        guard Self.load().map({ $0.needsYou != needsYou || $0.waiting != waiting || $0.firstSender != firstSender }) ?? true else { return false }
+        let saved = Self.load()
         Self.defaults.set(try? JSONEncoder().encode(self), forKey: Self.key)
-        return true
+        guard let saved else { return true }
+        return saved.needsYou != needsYou || saved.waiting != waiting || saved.firstSender != firstSender
+            || saved.isStale(at: .now) || updatedAt.timeIntervalSince(saved.updatedAt) > 30 * 60
     }
 
     /// "Maya" from "Maya Chen": the face has room for a first name.

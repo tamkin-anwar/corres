@@ -3266,3 +3266,463 @@
 
 /* No comment provided by engineer. */
 "Reply from your Apple Watch" = "Réponse depuis votre Apple Watch";
+
+/* Alert title for a push when the notification extension can't fill in the email in time (title-loc-key from the push relay and iCloud watcher). */
+"New email" = "Nouvel e-mail";
+
+
+/* No comment provided by engineer. */
+"Sample mail" = "E-mails d’exemple";
+
+/* No comment provided by engineer. */
+"Loading the full email…" = "Chargement de l’e-mail complet…";
+
+/* No comment provided by engineer. */
+"To: %@" = "À : %@";
+
+/* No comment provided by engineer. */
+"In 1 Day" = "Dans 1 jour";
+
+/* No comment provided by engineer. */
+"In 3 Days" = "Dans 3 jours";
+
+/* No comment provided by engineer. */
+"In 1 Week" = "Dans 1 semaine";
+
+/* No comment provided by engineer. */
+"New mail notifies the moment it arrives. Corres's server keeps this account's app-specific password, sealed so only its mail watcher can open it, and never reads or stores your email. Turn this off to delete it." = "Les nouveaux e-mails sont notifiés dès leur arrivée. Le serveur de Corres conserve le mot de passe pour app de ce compte, scellé pour que seul son outil de surveillance du courrier puisse l’ouvrir, et ne lit ni ne stocke jamais vos e-mails. Désactivez cette option pour le supprimer.";
+
+/* No comment provided by engineer. */
+"iCloud tells only Apple Mail the moment mail arrives. Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email." = "iCloud ne prévient qu’Apple Mail dès qu’un e-mail arrive. Sans cette option, Corres vérifie quand iOS le permet, généralement dans l’heure, et instantanément quand l’app est ouverte. Activez-la et le serveur de Corres surveille votre boîte de réception pour vous ; il ne lit ni ne stocke jamais vos e-mails.";
+
+/* No comment provided by engineer. */
+"Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email." = "Sans cette option, Corres vérifie quand iOS le permet, généralement dans l’heure, et instantanément quand l’app est ouverte. Activez-la et le serveur de Corres surveille votre boîte de réception pour vous ; il ne lit ni ne stocke jamais vos e-mails.";
+
+/* No comment provided by engineer. */
+"Turn on notifications for Corres first, in Settings > Notifications." = "Activez d’abord les notifications de Corres, dans Réglages > Notifications.";
+
+/* No comment provided by engineer. */
+"Couldn't reach Corres's server. Try again in a moment." = "Impossible de joindre le serveur de Corres. Réessayez dans un instant.";
+
+/* No comment provided by engineer. */
+"Key Details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. Summaries are written on this %@ and checked against the email: every name, number and date has to be in it. Summaries are part of Corres Pro." = "Détails clés : l’état et les montants d’un reçu ou d’une facture, la date d’une livraison et ce qu’un long e-mail attend de vous, lus directement dans l’e-mail. Les résumés sont rédigés sur votre %@ et vérifiés par rapport à l’e-mail : chaque nom, chiffre et date doit y figurer. Les résumés font partie de Corres Pro.";
+
+/* No comment provided by engineer. */
+"Key Details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. Summaries need Apple Intelligence, and are part of Corres Pro." = "Détails clés : l’état et les montants d’un reçu ou d’une facture, la date d’une livraison et ce qu’un long e-mail attend de vous, lus directement dans l’e-mail. Les résumés nécessitent Apple Intelligence et font partie de Corres Pro.";
+
+/* No comment provided by engineer. */
+"Google asks once for permission to change this setting for %@. Corres asks only now, not when you sign in." = "Google demande une seule fois l’autorisation de modifier ce réglage pour %@. Corres ne la demande que maintenant, pas lors de la connexion.";
+
+/* No comment provided by engineer. */
+"Google didn’t give Corres permission. Make sure you pick %@ and tick the Gmail settings box." = "Google n’a pas donné l’autorisation à Corres. Choisissez bien %@ et cochez la case des réglages Gmail.";
+
+/* No comment provided by engineer. */
+"Off. No automatic replies." = "Désactivée. Aucune réponse automatique.";
+
+/* No comment provided by engineer. */
+"On. %@ will reply from %@ until %@." = "Activée. %@ répondra du %@ au %@.";
+
+/* No comment provided by engineer. */
+"On. %@ will reply from %@." = "Activée. %@ répondra à partir du %@.";
+
+/* No comment provided by engineer. */
+"Couldn't save. Try again." = "Enregistrement impossible. Réessayez.";
+
+/* No comment provided by engineer. */
+"%lld messages, including “%@”" = "%lld messages, dont « %@ »";
+
+/* No comment provided by engineer. */
+"Allowed %@" = "Expéditeur autorisé : %@";
+
+/* No comment provided by engineer. */
+"Blocked %@" = "Expéditeur bloqué : %@";
+
+/* No comment provided by engineer. */
+"Allowed 1 sender" = "1 expéditeur autorisé";
+
+/* No comment provided by engineer. */
+"Allowed %lld senders" = "%lld expéditeurs autorisés";
+
+/* No comment provided by engineer. */
+"Blocked 1 sender" = "1 expéditeur bloqué";
+
+/* No comment provided by engineer. */
+"Blocked %lld senders" = "%lld expéditeurs bloqués";
+
+/* No comment provided by engineer. */
+"Allowing everyone from %@" = "Tous les expéditeurs de %@ sont autorisés";
+
+/* No comment provided by engineer. */
+"Blocking everyone from %@" = "Tous les expéditeurs de %@ sont bloqués";
+
+/* No comment provided by engineer. */
+"%@ is allowed" = "Expéditeur autorisé : %@";
+
+/* No comment provided by engineer. */
+"%@ is allowed. Their email is back in Mail." = "Expéditeur autorisé : %@. Son e-mail est de retour dans Messagerie.";
+
+/* No comment provided by engineer. */
+"%@ is allowed. Their %lld emails are back in Mail." = "Expéditeur autorisé : %@. Ses %lld e-mails sont de retour dans Messagerie.";
+
+/* No comment provided by engineer. */
+"%@ is blocked. You can allow them here any time." = "Expéditeur bloqué : %@. Vous pouvez l’autoriser ici à tout moment.";
+
+/* No comment provided by engineer. */
+"Unsubscribed from %@" = "Désabonnement de %@ effectué";
+
+/* No comment provided by engineer. */
+"Finish unsubscribing on their page" = "Terminez le désabonnement sur leur page";
+
+/* No comment provided by engineer. */
+"Nothing in your mail answers that." = "Rien dans vos e-mails ne répond à cela.";
+
+/* No comment provided by engineer. */
+"Couldn't find the answer in your mail. These came closest." = "Impossible de trouver la réponse dans vos e-mails. Voici les plus proches.";
+
+/* No comment provided by engineer. */
+"Couldn't remove this account's mail from your %@. Try again." = "Impossible de supprimer les e-mails de ce compte de votre %@. Réessayez.";
+
+/* No comment provided by engineer. */
+"Couldn't remove sample data. Try again." = "Impossible de supprimer les données d'exemple. Réessayez.";
+
+/* No comment provided by engineer. */
+"Couldn't update these senders. Try again." = "Impossible de mettre à jour ces expéditeurs. Réessayez.";
+
+/* No comment provided by engineer. */
+"Couldn't update this sender. Try again." = "Impossible de mettre à jour cet expéditeur. Réessayez.";
+
+/* No comment provided by engineer. */
+"Couldn't remember this sender. Try again." = "Impossible de mémoriser cet expéditeur. Réessayez.";
+
+/* No comment provided by engineer. */
+"Couldn't remember this unsubscribe. Try again." = "Impossible de mémoriser ce désabonnement. Réessayez.";
+
+/* No comment provided by engineer. */
+"Your message couldn't be sent. Nothing was sent. Try again." = "Votre message n'a pas pu être envoyé. Rien n'a été envoyé. Réessayez.";
+
+/* No comment provided by engineer. */
+"Couldn't update this conversation. Try again." = "Impossible de mettre à jour cette conversation. Réessayez.";
+
+/* No comment provided by engineer. */
+"The change couldn't be saved. Your conversation is unchanged. Try again." = "La modification n'a pas pu être enregistrée. Votre conversation est inchangée. Réessayez.";
+
+/* No comment provided by engineer. */
+"Couldn't find a window to present sign-in from." = "Impossible de trouver une fenêtre pour afficher la connexion.";
+
+/* No comment provided by engineer. */
+"Couldn't connect Gmail. Try again." = "Impossible de connecter Gmail. Réessayez.";
+
+/* No comment provided by engineer. */
+"Corres can read %@ but wasn't allowed to manage it, so marking read, archiving, and flagging won't work. Reconnect and leave every Gmail permission checked." = "Corres peut lire %@ mais n'a pas été autorisé à le gérer : marquer comme lu, archiver et signaler ne fonctionneront pas. Reconnectez-le en laissant toutes les autorisations Gmail cochées.";
+
+/* No comment provided by engineer. */
+"Outlook sign-in isn't set up in this build yet." = "La connexion Outlook n'est pas encore configurée dans cette version.";
+
+/* No comment provided by engineer. */
+"Couldn't connect Outlook. Try again." = "Impossible de connecter Outlook. Réessayez.";
+
+/* No comment provided by engineer. */
+"Couldn't unsubscribe. Try again." = "Impossible de se désabonner. Réessayez.";
+
+/* No comment provided by engineer. */
+"Notifications need permission in %@ to turn on." = "Les notifications doivent être autorisées dans %@ pour être activées.";
+
+/* No comment provided by engineer. */
+"Dictation needs microphone and speech recognition access. You can allow it in the Settings app under Corres." = "La dictée a besoin d'accéder au micro et à la reconnaissance vocale. Vous pouvez l'autoriser dans l'app Réglages, sous Corres.";
+
+/* No comment provided by engineer. */
+"On-device dictation isn't available for this language yet." = "La dictée sur l'appareil n'est pas encore disponible pour cette langue.";
+
+/* No comment provided by engineer. */
+"Dictation couldn't start. Try again." = "Impossible de lancer la dictée. Réessayez.";
+
+/* No comment provided by engineer. */
+"Couldn't sync your mail. Check your connection and try again." = "Impossible de synchroniser vos e-mails. Vérifiez votre connexion et réessayez.";
+
+/* No comment provided by engineer. */
+"Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage." = "Corres n'a pas pu ouvrir son stockage local habituel et fonctionne pour l'instant uniquement en mémoire. Rien ne sera enregistré une fois l'app fermée. Redémarrez Corres. Si cela se reproduit, votre appareil manque peut-être d'espace de stockage.";
+
+/* Daily Brief */
+"Done for Today" = "Terminé pour aujourd’hui";
+
+/* Daily Brief */
+"Hides today's summary until tomorrow." = "Masque le résumé du jour jusqu’à demain.";
+
+/* Daily Brief */
+"Collapsed" = "Replié";
+
+/* Daily Brief */
+"Expanded" = "Déplié";
+
+/* Daily Brief */
+"Shows today's items." = "Affiche les éléments du jour.";
+
+/* Daily Brief */
+"Hides today's items." = "Masque les éléments du jour.";
+
+/* Daily Brief */
+"Good morning." = "Bonjour.";
+
+/* Daily Brief */
+"Good morning, %@." = "Bonjour, %@.";
+
+/* Daily Brief */
+"Good afternoon." = "Bon après-midi.";
+
+/* Daily Brief */
+"Good afternoon, %@." = "Bon après-midi, %@.";
+
+/* Daily Brief */
+"Good evening." = "Bonsoir.";
+
+/* Daily Brief */
+"Good evening, %@." = "Bonsoir, %@.";
+
+/* Daily Brief */
+"1 overdue" = "1 en retard";
+
+/* Daily Brief */
+"%lld overdue" = "%lld en retard";
+
+/* Daily Brief */
+"1 due today" = "1 à rendre aujourd’hui";
+
+/* Daily Brief */
+"%lld due today" = "%lld à rendre aujourd’hui";
+
+/* Daily Brief */
+"1 event today" = "1 événement aujourd’hui";
+
+/* Daily Brief */
+"%lld events today" = "%lld événements aujourd’hui";
+
+/* Daily Brief */
+"1 delivery" = "1 livraison";
+
+/* Daily Brief */
+"%lld deliveries" = "%lld livraisons";
+
+/* Daily Brief */
+"1 reply you owe" = "1 réponse attendue";
+
+/* Daily Brief */
+"%lld replies you owe" = "%lld réponses attendues";
+
+/* Daily Brief */
+"Mark Handled" = "Marquer comme traité";
+
+/* Daily Brief */
+"Due today" = "À rendre aujourd’hui";
+
+/* Daily Brief */
+"Event" = "Événement";
+
+/* Daily Brief */
+"Delivery" = "Livraison";
+
+/* Daily Brief */
+"Reply owed" = "Réponse attendue";
+
+/* Daily Brief */
+"Was due %@" = "Prévu pour %@";
+
+/* Daily Brief */
+"Due %@" = "Pour %@";
+
+/* Daily Brief */
+"Today at %@" = "Aujourd’hui à %@";
+
+/* Daily Brief */
+"Arriving today" = "Arrive aujourd’hui";
+
+/* Daily Brief */
+"Wrote today" = "Écrit aujourd’hui";
+
+/* Daily Brief */
+"Wrote yesterday" = "Écrit hier";
+
+/* Daily Brief */
+"Wrote %lld days ago" = "Écrit il y a %lld jours";
+
+/* Daily Brief */
+"Today's summary hidden until tomorrow." = "Résumé du jour masqué jusqu’à demain.";
+
+/* Daily Brief */
+"Daily Brief" = "Point du jour";
+
+/* Daily Brief */
+"Show a short summary of today at the top of Needs You." = "Affiche un court résumé de la journée en haut de Pour vous.";
+
+/* Daily Brief */
+"Your Brief" = "Votre point";
+
+/* Daily Brief tip */
+"Today at a glance" = "Votre journée en un coup d’œil";
+
+/* Daily Brief tip */
+"See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings." = "Voyez ce qui est à rendre, les réunions et les livraisons du jour en haut de Pour vous. Vous pouvez changer cela dans Réglages.";
+
+/* Daily Brief tip */
+"Show Today's Brief" = "Afficher le point du jour";
+
+/* No comment provided by engineer. */
+"%@ Morning" = "%@ matin";
+
+/* No comment provided by engineer. */
+"Scheduled reply held" = "Réponse programmée suspendue";
+
+/* No comment provided by engineer. */
+"%@ replied to “%@” before it was sent. Open Corres to send it anyway or change it." = "%1$@ a répondu à « %2$@ » avant l'envoi. Ouvrez Corres pour l'envoyer quand même ou la modifier.";
+
+/* No comment provided by engineer. */
+"Ready to send" = "Prêt à envoyer";
+
+/* No comment provided by engineer. */
+"Your email" = "Votre e-mail";
+
+/* No comment provided by engineer. */
+"“%@” is waiting. Open Corres to send it." = "« %@ » est en attente. Ouvrez Corres pour l'envoyer.";
+
+/* No comment provided by engineer. */
+"No reply from %@" = "Pas de réponse de %@";
+
+/* No comment provided by engineer. */
+"“%@”: follow up?" = "« %@ » : relancer ?";
+
+/* No comment provided by engineer. */
+"On %@, %@ wrote:" = "Le %1$@, %2$@ a écrit :";
+
+/* No comment provided by engineer. */
+"tomorrow at 9am" = "demain à 9h";
+
+/* No comment provided by engineer. */
+"Try “tomorrow evening” or “next friday”" = "Essayez « demain soir » ou « vendredi prochain »";
+
+/* No comment provided by engineer. */
+"Not sure when that is" = "Moment non reconnu";
+
+/* No comment provided by engineer. */
+"Open Yahoo Account Security below and sign in." = "Ouvrez Sécurité du compte Yahoo ci-dessous et connectez-vous.";
+
+/* No comment provided by engineer. */
+"Choose Generate app password." = "Choisissez Générer un mot de passe d'app.";
+
+/* No comment provided by engineer. */
+"Name it Corres, then copy the password." = "Nommez-le Corres, puis copiez le mot de passe.";
+
+/* No comment provided by engineer. */
+"Open AOL Account Security below and sign in." = "Ouvrez Sécurité du compte AOL ci-dessous et connectez-vous.";
+
+/* No comment provided by engineer. */
+"Open Fastmail below and sign in." = "Ouvrez Fastmail ci-dessous et connectez-vous.";
+
+/* No comment provided by engineer. */
+"Make a new app password with access to IMAP and SMTP." = "Créez un mot de passe d'app avec accès à IMAP et SMTP.";
+
+/* No comment provided by engineer. */
+"Open Zoho Accounts below and sign in." = "Ouvrez Zoho Accounts ci-dessous et connectez-vous.";
+
+/* No comment provided by engineer. */
+"Choose App Passwords, then Generate New Password." = "Choisissez Mots de passe d'app, puis Générer un nouveau mot de passe.";
+
+/* No comment provided by engineer. */
+"Open Yandex ID below and sign in." = "Ouvrez Yandex ID ci-dessous et connectez-vous.";
+
+/* No comment provided by engineer. */
+"Create an app password for Mail." = "Créez un mot de passe d'app pour Mail.";
+
+/* No comment provided by engineer. */
+"Copy the password." = "Copiez le mot de passe.";
+
+/* No comment provided by engineer. */
+"Open your AT&T account below and sign in." = "Ouvrez votre compte AT&T ci-dessous et connectez-vous.";
+
+/* No comment provided by engineer. */
+"Under Sign-in info, choose Secure mail key, then Add secure mail key." = "Dans Sign-in info, choisissez Secure mail key, puis Add secure mail key.";
+
+/* No comment provided by engineer. */
+"Name it Corres, then copy the key." = "Nommez-la Corres, puis copiez la clé.";
+
+/* No comment provided by engineer. */
+"In GMX on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off." = "Dans GMX sur le web, activez l'accès IMAP dans Paramètres, POP3 & IMAP s'il est désactivé.";
+
+/* No comment provided by engineer. */
+"In Mail.com on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off." = "Dans Mail.com sur le web, activez l'accès IMAP dans Paramètres, POP3 & IMAP s'il est désactivé.";
+
+/* No comment provided by engineer. */
+"In Yahoo! JAPAN Mail on the web, open Settings, then IMAP/POP/SMTP Access." = "Dans Yahoo! JAPAN Mail sur le web, ouvrez Paramètres, puis Accès IMAP/POP/SMTP.";
+
+/* No comment provided by engineer. */
+"Allow access from services other than Yahoo! JAPAN, and set IMAP, POP and SMTP to Use." = "Autorisez l'accès depuis d'autres services que Yahoo! JAPAN et réglez IMAP, POP et SMTP sur Utiliser.";
+
+/* No comment provided by engineer. */
+"If your Yahoo! JAPAN ID has no password yet, set one, then use it here." = "Si votre Yahoo! JAPAN ID n'a pas encore de mot de passe, définissez-en un, puis utilisez-le ici.";
+
+/* No comment provided by engineer. */
+"Open QQ Mail below and sign in." = "Ouvrez QQ Mail ci-dessous et connectez-vous.";
+
+/* No comment provided by engineer. */
+"In Settings, Account and Security, turn on IMAP/SMTP, then generate an authorization code." = "Dans Paramètres, Compte et sécurité, activez IMAP/SMTP, puis générez un code d'autorisation.";
+
+/* No comment provided by engineer. */
+"Copy the 16-character code and use it as the password." = "Copiez le code de 16 caractères et utilisez-le comme mot de passe.";
+
+/* No comment provided by engineer. */
+"Open %@ below and sign in." = "Ouvrez %@ ci-dessous et connectez-vous.";
+
+/* No comment provided by engineer. */
+"In Settings, POP3/SMTP/IMAP, turn on IMAP/SMTP, then add an authorization code." = "Dans Paramètres, POP3/SMTP/IMAP, activez IMAP/SMTP, puis ajoutez un code d'autorisation.";
+
+/* No comment provided by engineer. */
+"Copy the code and use it as the password. It's shown only once." = "Copiez le code et utilisez-le comme mot de passe. Il ne s'affiche qu'une fois.";
+
+/* No comment provided by engineer. */
+"In Naver Mail on the web, open Settings, then POP3/IMAP Settings, and set IMAP/SMTP to Use." = "Dans Naver Mail sur le web, ouvrez Paramètres, puis Paramètres POP3/IMAP, et réglez IMAP/SMTP sur Utiliser.";
+
+/* No comment provided by engineer. */
+"In your Naver account's security settings, turn on 2-step verification and make an app password." = "Dans les réglages de sécurité de votre compte Naver, activez la validation en deux étapes et créez un mot de passe d'app.";
+
+/* No comment provided by engineer. */
+"Copy the app password and use it here." = "Copiez le mot de passe d'app et utilisez-le ici.";
+
+/* No comment provided by engineer. */
+"HEY doesn't let other mail apps read its mail, so it can't be added to Corres." = "HEY ne laisse pas les autres apps de messagerie lire ses e-mails, il ne peut donc pas être ajouté à Corres.";
+
+/* No comment provided by engineer. */
+"Proton Mail can only be read by other apps through Proton Mail Bridge, which runs on a computer, so it can't be added on iPhone." = "Proton Mail ne peut être lu par d'autres apps que via Proton Mail Bridge, qui fonctionne sur un ordinateur. Il ne peut donc pas être ajouté sur iPhone.";
+
+/* Calendar suggestion title for a flight booking */
+"Flight" = "Vol";
+
+/* Calendar suggestion title when a hotel booking has no name */
+"Hotel" = "Hôtel";
+
+/* Calendar suggestion title for a hotel stay; the hotel's name */
+"Stay at %@" = "Séjour : %@";
+
+/* Calendar suggestion title for a restaurant booking with no name */
+"Reservation" = "Réservation";
+
+/* Purchases card label for an order number */
+"Order" = "Commande";
+
+/* Ask list heading */
+"1 email with attachments" = "1 e-mail avec pièces jointes";
+
+/* Ask list heading */
+"%lld emails with attachments" = "%lld e-mails avec pièces jointes";
+
+/* Ask list heading */
+"1 receipt" = "1 reçu";
+
+/* Ask list heading */
+"%lld receipts" = "%lld reçus";
+
+/* Ask list heading */
+"1 package" = "1 colis";
+
+/* Ask list heading */
+"%lld packages" = "%lld colis";
+
+/* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
+"%@ from %@" = "%1$@ de %2$@";

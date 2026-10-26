@@ -23,11 +23,11 @@ final class DictationService {
     func start() async {
         guard !isListening else { return }
         guard await Self.authorize() else {
-            errorMessage = "Dictation needs microphone and speech recognition access. You can allow it in the Settings app under Corres."
+            errorMessage = String(localized: "Dictation needs microphone and speech recognition access. You can allow it in the Settings app under Corres.")
             return
         }
         guard let recognizer, recognizer.isAvailable, recognizer.supportsOnDeviceRecognition else {
-            errorMessage = "On-device dictation isn't available for this language yet."
+            errorMessage = String(localized: "On-device dictation isn't available for this language yet.")
             return
         }
         do {
@@ -56,7 +56,7 @@ final class DictationService {
             })
         } catch {
             finish()
-            errorMessage = "Dictation couldn't start. Try again."
+            errorMessage = String(localized: "Dictation couldn't start. Try again.")
         }
     }
 

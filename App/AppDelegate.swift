@@ -73,7 +73,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // shows for every other save failure) rather than inventing a
         // second, separate banner mechanism just for this one case.
         if usedInMemoryFallback {
-            mailStore.errorMessage = "Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage."
+            mailStore.errorMessage = String(localized: "Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage.")
         }
         sync = GmailSyncService(repository: repository)
         auth = authService
@@ -226,7 +226,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             // not only when Corres is next opened.
             await outbox.retryFailedQuietly()
             await FollowUps.shared.check(store: store)
-            await pushService.renewWatch(accounts: auth.accounts.map(\.email))
+            // Twice a day at most, as at launch: every background refresh
+            // used to renew each Gmail watch and re-register with the relay.
+            await pushService.renewWatchIfDue(accounts: auth.accounts.map(\.email))
             task.setTaskCompleted(success: true)
         }
         // Ignoring the expiration handler damages this task's standing

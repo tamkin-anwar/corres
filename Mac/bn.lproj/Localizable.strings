@@ -2355,3 +2355,335 @@
 "It's removed from Drafts too." = "এটি খসড়া থেকেও সরানো হবে।";
 
 "These attachments couldn't come along: %@" = "এই সংযুক্তিগুলো সঙ্গে পাঠানো যায়নি: %@";
+
+/* Alert title for a push when the notification extension can't fill in the email in time (title-loc-key from the push relay and iCloud watcher). */
+"New email" = "নতুন ইমেইল";
+
+
+/* No comment provided by engineer. */
+"Google asks once for permission to change this setting for %@. Corres asks only now, not when you sign in." = "%@-এর এই সেটিং বদলানোর জন্য Google একবার অনুমতি চায়। Corres শুধু এখনই চায়, সাইন ইন করার সময় নয়।";
+
+/* No comment provided by engineer. */
+"Google didn’t give Corres permission. Make sure you pick %@ and tick the Gmail settings box." = "Google Corres-কে অনুমতি দেয়নি। %@ বেছে নিন আর Gmail সেটিংসের বাক্সে টিক দিন।";
+
+/* No comment provided by engineer. */
+"Off. No automatic replies." = "বন্ধ। কোনো স্বয়ংক্রিয় উত্তর যাবে না।";
+
+/* No comment provided by engineer. */
+"On. %@ will reply from %@ until %@." = "চালু। %@ %@ থেকে %@ পর্যন্ত উত্তর দেবে।";
+
+/* No comment provided by engineer. */
+"On. %@ will reply from %@." = "চালু। %@ %@ থেকে উত্তর দেবে।";
+
+/* No comment provided by engineer. */
+"Couldn't save. Try again." = "সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"%lld messages, including “%@”" = "%lldটি মেসেজ, “%@”সহ";
+
+/* No comment provided by engineer. */
+"Allowed %@" = "%@-কে অনুমতি দেওয়া হয়েছে";
+
+/* No comment provided by engineer. */
+"Blocked %@" = "%@-কে ব্লক করা হয়েছে";
+
+/* No comment provided by engineer. */
+"Allowed 1 sender" = "1 জন প্রেরককে অনুমতি দেওয়া হয়েছে";
+
+/* No comment provided by engineer. */
+"Allowed %lld senders" = "%lld জন প্রেরককে অনুমতি দেওয়া হয়েছে";
+
+/* No comment provided by engineer. */
+"Blocked 1 sender" = "1 জন প্রেরককে ব্লক করা হয়েছে";
+
+/* No comment provided by engineer. */
+"Blocked %lld senders" = "%lld জন প্রেরককে ব্লক করা হয়েছে";
+
+/* No comment provided by engineer. */
+"Allowing everyone from %@" = "%@ থেকে সবাইকে অনুমতি দেওয়া হচ্ছে";
+
+/* No comment provided by engineer. */
+"Blocking everyone from %@" = "%@ থেকে সবাইকে ব্লক করা হচ্ছে";
+
+/* No comment provided by engineer. */
+"%@ is allowed" = "%@-কে অনুমতি দেওয়া হয়েছে";
+
+/* No comment provided by engineer. */
+"%@ is allowed. Their email is back in Mail." = "%@-কে অনুমতি দেওয়া হয়েছে। তাদের ইমেইল আবার মেইল-এ ফিরেছে।";
+
+/* No comment provided by engineer. */
+"%@ is allowed. Their %lld emails are back in Mail." = "%@-কে অনুমতি দেওয়া হয়েছে। তাদের %lldটি ইমেইল আবার মেইল-এ ফিরেছে।";
+
+/* No comment provided by engineer. */
+"%@ is blocked. You can allow them here any time." = "%@-কে ব্লক করা হয়েছে। এখানে যেকোনো সময় আবার অনুমতি দিতে পারেন।";
+
+/* No comment provided by engineer. */
+"Unsubscribed from %@" = "%@ থেকে আনসাবস্ক্রাইব করা হয়েছে";
+
+/* No comment provided by engineer. */
+"Finish unsubscribing on their page" = "তাদের পেজে আনসাবস্ক্রাইব শেষ করুন";
+
+/* No comment provided by engineer. */
+"Nothing in your mail answers that." = "আপনার মেইলে এর কোনো উত্তর নেই।";
+
+/* No comment provided by engineer. */
+"Couldn't find the answer in your mail. These came closest." = "আপনার মেইলে উত্তরটি পাওয়া যায়নি। এগুলো সবচেয়ে কাছাকাছি।";
+
+/* No comment provided by engineer. */
+"Couldn't remove this account's mail from your %@. Try again." = "আপনার %@ থেকে এই অ্যাকাউন্টের মেইল সরানো যায়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Couldn't remove sample data. Try again." = "নমুনা ডেটা সরানো যায়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Couldn't update these senders. Try again." = "এই প্রেরকদের আপডেট করা যায়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Couldn't update this sender. Try again." = "এই প্রেরককে আপডেট করা যায়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Couldn't remember this sender. Try again." = "এই প্রেরককে মনে রাখা যায়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Couldn't remember this unsubscribe. Try again." = "এই আনসাবস্ক্রাইব মনে রাখা যায়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Your message couldn't be sent. Nothing was sent. Try again." = "আপনার মেসেজ পাঠানো যায়নি। কিছুই পাঠানো হয়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Couldn't update this conversation. Try again." = "এই কথোপকথন আপডেট করা যায়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"The change couldn't be saved. Your conversation is unchanged. Try again." = "পরিবর্তনটি সংরক্ষণ করা যায়নি। আপনার কথোপকথন অপরিবর্তিত আছে। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Couldn't find a window to present sign-in from." = "সাইন-ইন দেখানোর জন্য কোনো উইন্ডো পাওয়া যায়নি।";
+
+/* No comment provided by engineer. */
+"Couldn't connect Gmail. Try again." = "Gmail সংযুক্ত করা যায়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Corres can read %@ but wasn't allowed to manage it, so marking read, archiving, and flagging won't work. Reconnect and leave every Gmail permission checked." = "Corres %@ পড়তে পারে, কিন্তু এটি পরিচালনা করার অনুমতি পায়নি, তাই পঠিত চিহ্নিত করা, আর্কাইভ করা ও ফ্ল্যাগ দেওয়া কাজ করবে না। আবার সংযুক্ত করুন এবং Gmail-এর সব অনুমতি চালু রাখুন।";
+
+/* No comment provided by engineer. */
+"Outlook sign-in isn't set up in this build yet." = "এই বিল্ডে Outlook সাইন-ইন এখনো সেট আপ করা হয়নি।";
+
+/* No comment provided by engineer. */
+"Couldn't connect Outlook. Try again." = "Outlook সংযুক্ত করা যায়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Couldn't unsubscribe. Try again." = "আনসাবস্ক্রাইব করা যায়নি। আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Notifications need permission in %@ to turn on." = "নোটিফিকেশন চালু করতে %@-এ অনুমতি দিতে হবে।";
+
+/* No comment provided by engineer. */
+"Couldn't sync your mail. Check your connection and try again." = "আপনার মেইল সিঙ্ক করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।";
+
+
+/* No comment provided by engineer. */
+"Sending “%@”" = "“%@” পাঠানো হচ্ছে";
+
+/* No comment provided by engineer. */
+"Couldn't Open Draft" = "খসড়া খোলা যায়নি";
+
+/* No comment provided by engineer. */
+"Check your connection and try again." = "আপনার সংযোগ দেখে আবার চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Bold" = "বোল্ড";
+
+/* No comment provided by engineer. */
+"Italic" = "ইটালিক";
+
+/* No comment provided by engineer. */
+"Underline" = "নিচে দাগ";
+
+/* No comment provided by engineer. */
+"Conversation Moved" = "কথোপকথন সরানো হয়েছে";
+
+/* No comment provided by engineer. */
+"It was archived, deleted or moved. Undo brings it back." = "এটি আর্কাইভ করা, মুছে ফেলা বা সরানো হয়েছে। “ফিরিয়ে নিন” দিয়ে এটি ফিরে আসবে।";
+
+/* No comment provided by engineer. */
+"Format" = "ফরম্যাট";
+
+/* No comment provided by engineer. */
+"Show Fonts" = "ফন্ট দেখান";
+
+/* No comment provided by engineer. */
+"%@ Morning" = "%@ সকাল";
+
+/* No comment provided by engineer. */
+"Scheduled reply held" = "নির্ধারিত উত্তর আটকে রাখা হয়েছে";
+
+/* No comment provided by engineer. */
+"%@ replied to “%@” before it was sent. Open Corres to send it anyway or change it." = "পাঠানোর আগেই %1$@ “%2$@”-এর উত্তর দিয়েছেন। তবুও পাঠাতে বা বদলাতে Corres খুলুন।";
+
+/* No comment provided by engineer. */
+"Ready to send" = "পাঠানোর জন্য তৈরি";
+
+/* No comment provided by engineer. */
+"Your email" = "আপনার ইমেইল";
+
+/* No comment provided by engineer. */
+"“%@” is waiting. Open Corres to send it." = "“%@” অপেক্ষায় আছে। পাঠাতে Corres খুলুন।";
+
+/* No comment provided by engineer. */
+"No reply from %@" = "%@ এখনও উত্তর দেননি";
+
+/* No comment provided by engineer. */
+"“%@”: follow up?" = "“%@”: আবার খোঁজ নেবেন?";
+
+/* No comment provided by engineer. */
+"On %@, %@ wrote:" = "%1$@ তারিখে %2$@ লিখেছেন:";
+
+/* No comment provided by engineer. */
+"tomorrow at 9am" = "আগামীকাল সকাল ৯টা";
+
+/* No comment provided by engineer. */
+"Try “tomorrow evening” or “next friday”" = "“আগামীকাল সন্ধ্যায়” বা “আগামী শুক্রবার” লিখে দেখুন";
+
+/* No comment provided by engineer. */
+"Not sure when that is" = "সময়টা বোঝা গেল না";
+
+/* No comment provided by engineer. */
+"Open Yahoo Account Security below and sign in." = "নিচে Yahoo অ্যাকাউন্ট সিকিউরিটি খুলে সাইন ইন করুন।";
+
+/* No comment provided by engineer. */
+"Choose Generate app password." = "Generate app password বেছে নিন।";
+
+/* No comment provided by engineer. */
+"Name it Corres, then copy the password." = "নাম দিন Corres, তারপর পাসওয়ার্ডটি কপি করুন।";
+
+/* No comment provided by engineer. */
+"Open AOL Account Security below and sign in." = "নিচে AOL অ্যাকাউন্ট সিকিউরিটি খুলে সাইন ইন করুন।";
+
+/* No comment provided by engineer. */
+"Open Fastmail below and sign in." = "নিচে Fastmail খুলে সাইন ইন করুন।";
+
+/* No comment provided by engineer. */
+"Make a new app password with access to IMAP and SMTP." = "IMAP ও SMTP অ্যাক্সেসসহ একটি নতুন অ্যাপ পাসওয়ার্ড তৈরি করুন।";
+
+/* No comment provided by engineer. */
+"Open Zoho Accounts below and sign in." = "নিচে Zoho Accounts খুলে সাইন ইন করুন।";
+
+/* No comment provided by engineer. */
+"Choose App Passwords, then Generate New Password." = "App Passwords বেছে নিন, তারপর Generate New Password।";
+
+/* No comment provided by engineer. */
+"Open Yandex ID below and sign in." = "নিচে Yandex ID খুলে সাইন ইন করুন।";
+
+/* No comment provided by engineer. */
+"Create an app password for Mail." = "মেইলের জন্য একটি অ্যাপ পাসওয়ার্ড তৈরি করুন।";
+
+/* No comment provided by engineer. */
+"Copy the password." = "পাসওয়ার্ডটি কপি করুন।";
+
+/* No comment provided by engineer. */
+"Open your AT&T account below and sign in." = "নিচে আপনার AT&T অ্যাকাউন্ট খুলে সাইন ইন করুন।";
+
+/* No comment provided by engineer. */
+"Under Sign-in info, choose Secure mail key, then Add secure mail key." = "Sign-in info-তে Secure mail key বেছে নিন, তারপর Add secure mail key।";
+
+/* No comment provided by engineer. */
+"Name it Corres, then copy the key." = "নাম দিন Corres, তারপর কী-টি কপি করুন।";
+
+/* No comment provided by engineer. */
+"In GMX on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off." = "ওয়েবে GMX-এ IMAP অ্যাক্সেস বন্ধ থাকলে Settings, POP3 & IMAP থেকে চালু করুন।";
+
+/* No comment provided by engineer. */
+"In Mail.com on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off." = "ওয়েবে Mail.com-এ IMAP অ্যাক্সেস বন্ধ থাকলে Settings, POP3 & IMAP থেকে চালু করুন।";
+
+/* No comment provided by engineer. */
+"In Yahoo! JAPAN Mail on the web, open Settings, then IMAP/POP/SMTP Access." = "ওয়েবে Yahoo! JAPAN Mail-এ Settings খুলুন, তারপর IMAP/POP/SMTP Access।";
+
+/* No comment provided by engineer. */
+"Allow access from services other than Yahoo! JAPAN, and set IMAP, POP and SMTP to Use." = "Yahoo! JAPAN ছাড়া অন্য সার্ভিস থেকে অ্যাক্সেসের অনুমতি দিন, আর IMAP, POP ও SMTP সবগুলো Use করে দিন।";
+
+/* No comment provided by engineer. */
+"If your Yahoo! JAPAN ID has no password yet, set one, then use it here." = "আপনার Yahoo! JAPAN ID-তে এখনও পাসওয়ার্ড না থাকলে একটি সেট করুন, তারপর এখানে দিন।";
+
+/* No comment provided by engineer. */
+"Open QQ Mail below and sign in." = "নিচে QQ Mail খুলে সাইন ইন করুন।";
+
+/* No comment provided by engineer. */
+"In Settings, Account and Security, turn on IMAP/SMTP, then generate an authorization code." = "Settings-এর Account and Security-তে IMAP/SMTP চালু করে একটি অথরাইজেশন কোড তৈরি করুন।";
+
+/* No comment provided by engineer. */
+"Copy the 16-character code and use it as the password." = "১৬ অক্ষরের কোডটি কপি করে পাসওয়ার্ড হিসেবে দিন।";
+
+/* No comment provided by engineer. */
+"Open %@ below and sign in." = "নিচে %@ খুলে সাইন ইন করুন।";
+
+/* No comment provided by engineer. */
+"In Settings, POP3/SMTP/IMAP, turn on IMAP/SMTP, then add an authorization code." = "Settings-এর POP3/SMTP/IMAP-এ IMAP/SMTP চালু করে একটি অথরাইজেশন কোড যোগ করুন।";
+
+/* No comment provided by engineer. */
+"Copy the code and use it as the password. It's shown only once." = "কোডটি কপি করে পাসওয়ার্ড হিসেবে দিন। এটি শুধু একবারই দেখানো হয়।";
+
+/* No comment provided by engineer. */
+"In Naver Mail on the web, open Settings, then POP3/IMAP Settings, and set IMAP/SMTP to Use." = "ওয়েবে Naver Mail-এ Settings খুলুন, তারপর POP3/IMAP Settings-এ IMAP/SMTP Use করে দিন।";
+
+/* No comment provided by engineer. */
+"In your Naver account's security settings, turn on 2-step verification and make an app password." = "আপনার Naver অ্যাকাউন্টের সিকিউরিটি সেটিংসে ২-ধাপের যাচাই চালু করে একটি অ্যাপ পাসওয়ার্ড তৈরি করুন।";
+
+/* No comment provided by engineer. */
+"Copy the app password and use it here." = "অ্যাপ পাসওয়ার্ডটি কপি করে এখানে দিন।";
+
+/* No comment provided by engineer. */
+"HEY doesn't let other mail apps read its mail, so it can't be added to Corres." = "HEY অন্য মেইল অ্যাপকে তার মেইল পড়তে দেয় না, তাই এটি Corres-এ যোগ করা যায় না।";
+
+/* No comment provided by engineer. */
+"Proton Mail can only be read by other apps through Proton Mail Bridge, which runs on a computer, so it can't be added on iPhone." = "অন্য অ্যাপ শুধু কম্পিউটারে চলা Proton Mail Bridge দিয়েই Proton Mail পড়তে পারে, তাই iPhone-এ এটি যোগ করা যায় না।";
+
+/* No comment provided by engineer. */
+"Tonight at %@" = "আজ রাত %@";
+
+/* No comment provided by engineer. */
+"Tomorrow at %@" = "আগামীকাল %@";
+
+/* No comment provided by engineer. */
+"Tomorrow at 8am, next friday, in 3 days" = "আগামীকাল সকাল ৮টা, আগামী শুক্রবার, ৩ দিন পরে";
+
+/* No comment provided by engineer. */
+"(no subject)" = "(বিষয় নেই)";
+
+/* Calendar suggestion title for a flight booking */
+"Flight" = "ফ্লাইট";
+
+/* Calendar suggestion title when a hotel booking has no name */
+"Hotel" = "হোটেল";
+
+/* Calendar suggestion title for a hotel stay; the hotel's name */
+"Stay at %@" = "%@-এ থাকা";
+
+/* Calendar suggestion title for a restaurant booking with no name */
+"Reservation" = "রিজার্ভেশন";
+
+/* Calendar suggestion title when an event has no name */
+"Event" = "ইভেন্ট";
+
+/* Purchases card label for an order number */
+"Order" = "অর্ডার";
+
+/* Ask list heading */
+"1 email with attachments" = "সংযুক্তিসহ 1টি ইমেইল";
+
+/* Ask list heading */
+"%lld emails with attachments" = "সংযুক্তিসহ %lldটি ইমেইল";
+
+/* Ask list heading */
+"1 receipt" = "1টি রসিদ";
+
+/* Ask list heading */
+"%lld receipts" = "%lldটি রসিদ";
+
+/* Ask list heading */
+"1 package" = "1টি পার্সেল";
+
+/* Ask list heading */
+"%lld packages" = "%lldটি পার্সেল";
+
+/* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
+"%@ from %@" = "%2$@ থেকে %1$@";

@@ -13,6 +13,37 @@ struct UnreadOnlyTip: Tip {
     var rules: [Rule] { #Rule(Self.opened) { $0.donations.count >= 5 } }
 }
 
+/// The Daily Brief is off until turned on, and almost nobody changes a
+/// default: on Needs You, once you've used Corres on three different days,
+/// one offer to show it. Shown once; Not Now puts it away for good.
+struct DailyBriefTip: Tip {
+    /// Donated at most once a calendar day (`noteDayOpened`).
+    static let dayOpened = Tips.Event(id: "dayOpened")
+    static let showAction = "showBrief"
+    static let notNowAction = "notNow"
+    private static let lastDayKey = "corres.tips.lastDayOpened"
+
+    var title: Text { Text("Today at a glance") }
+    var message: Text? {
+        Text("See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings.")
+    }
+    var image: Image? { Image(systemName: "sun.max") }
+    var rules: [Rule] { #Rule(Self.dayOpened) { $0.donations.count >= 3 } }
+    var options: [any TipOption] { [MaxDisplayCount(1)] }
+    var actions: [Action] {
+        [Action(id: Self.showAction, title: String(localized: "Show Today's Brief")),
+         Action(id: Self.notNowAction, title: String(localized: "Not Now"))]
+    }
+
+    /// Counts the day Corres is opened, once per day in this time zone.
+    @MainActor static func noteDayOpened() async {
+        let today = CorresSettings.briefDay()
+        guard UserDefaults.standard.string(forKey: lastDayKey) != today else { return }
+        UserDefaults.standard.set(today, forKey: lastDayKey)
+        await dayOpened.donate()
+    }
+}
+
 enum CorresTips {
     /// At launch. Screenshots and sample-mail runs never show tips.
     static func start() {
@@ -21,5 +52,6 @@ enum CorresTips {
             Tips.hideAllTipsForTesting()
         }
         try? Tips.configure([.displayFrequency(.daily)])
+        Task { await DailyBriefTip.noteDayOpened() }
     }
 }

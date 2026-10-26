@@ -54,39 +54,68 @@ enum MailServerDiscovery {
 
     static let yahoo = service("Yahoo Mail", imap: "imap.mail.yahoo.com", smtp: "smtp.mail.yahoo.com", appPassword: true,
                                url: "https://login.yahoo.com/account/security/app-passwords",
-                               steps: ["Open Yahoo Account Security below and sign in.", "Choose Generate app password.",
-                                       "Name it Corres, then copy the password."])
+                               steps: [String(localized: "Open Yahoo Account Security below and sign in."), String(localized: "Choose Generate app password."),
+                                       String(localized: "Name it Corres, then copy the password.")])
     static let aol = service("AOL Mail", imap: "imap.aol.com", smtp: "smtp.aol.com", appPassword: true,
                              url: "https://login.aol.com/account/security/app-passwords",
-                             steps: ["Open AOL Account Security below and sign in.", "Choose Generate app password.",
-                                     "Name it Corres, then copy the password."])
+                             steps: [String(localized: "Open AOL Account Security below and sign in."), String(localized: "Choose Generate app password."),
+                                     String(localized: "Name it Corres, then copy the password.")])
     static let fastmail = service("Fastmail", imap: "imap.fastmail.com", smtp: "smtp.fastmail.com", appPassword: true,
                                   url: "https://app.fastmail.com/settings/security/apps/new",
-                                  steps: ["Open Fastmail below and sign in.", "Make a new app password with access to IMAP and SMTP.",
-                                          "Name it Corres, then copy the password."])
+                                  steps: [String(localized: "Open Fastmail below and sign in."), String(localized: "Make a new app password with access to IMAP and SMTP."),
+                                          String(localized: "Name it Corres, then copy the password.")])
     static let zoho = service("Zoho Mail", imap: "imap.zoho.com", smtp: "smtp.zoho.com", appPassword: true,
                               url: "https://accounts.zoho.com/home#security/app_password",
-                              steps: ["Open Zoho Accounts below and sign in.", "Choose App Passwords, then Generate New Password.",
-                                      "Name it Corres, then copy the password."])
+                              steps: [String(localized: "Open Zoho Accounts below and sign in."), String(localized: "Choose App Passwords, then Generate New Password."),
+                                      String(localized: "Name it Corres, then copy the password.")])
     static let yandex = service("Yandex Mail", imap: "imap.yandex.com", smtp: "smtp.yandex.com", appPassword: true,
                                 url: "https://id.yandex.com/security/app-passwords",
-                                steps: ["Open Yandex ID below and sign in.", "Create an app password for Mail.",
-                                        "Copy the password."])
+                                steps: [String(localized: "Open Yandex ID below and sign in."), String(localized: "Create an app password for Mail."),
+                                        String(localized: "Copy the password.")])
     static let att = service("AT&T Mail", imap: "imap.mail.att.net", smtp: "smtp.mail.att.net", appPassword: true,
                              url: "https://www.att.com/acctmgmt/signin",
-                             steps: ["Open your AT&T account below and sign in.", "Under Sign-in info, choose Secure mail key, then Add secure mail key.",
-                                     "Name it Corres, then copy the key."])
+                             steps: [String(localized: "Open your AT&T account below and sign in."), String(localized: "Under Sign-in info, choose Secure mail key, then Add secure mail key."),
+                                     String(localized: "Name it Corres, then copy the key.")])
     static let gmxCom = service("GMX", imap: "imap.gmx.com", smtp: "mail.gmx.com", port: 587, appPassword: false,
-                                steps: ["In GMX on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off."])
+                                steps: [String(localized: "In GMX on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off.")])
     static let gmxNet = service("GMX", imap: "imap.gmx.net", smtp: "mail.gmx.net", port: 587, appPassword: false,
-                                steps: ["In GMX on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off."])
+                                steps: [String(localized: "In GMX on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off.")])
     static let mailCom = service("Mail.com", imap: "imap.mail.com", smtp: "smtp.mail.com", port: 587, appPassword: false,
-                                 steps: ["In Mail.com on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off."])
+                                 steps: [String(localized: "In Mail.com on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off.")])
+    // Asia's own services. Server names checked against each provider's
+    // help pages and Thunderbird's ISPDB (October 2026).
+    static let yahooJapan = service("Yahoo! JAPAN Mail", imap: "imap.mail.yahoo.co.jp", smtp: "smtp.mail.yahoo.co.jp", appPassword: false,
+                                    steps: [String(localized: "In Yahoo! JAPAN Mail on the web, open Settings, then IMAP/POP/SMTP Access."),
+                                            String(localized: "Allow access from services other than Yahoo! JAPAN, and set IMAP, POP and SMTP to Use."),
+                                            String(localized: "If your Yahoo! JAPAN ID has no password yet, set one, then use it here.")])
+    static let qq = service("QQ Mail", imap: "imap.qq.com", smtp: "smtp.qq.com", appPassword: true,
+                            url: "https://wx.mail.qq.com/",
+                            steps: [String(localized: "Open QQ Mail below and sign in."),
+                                    String(localized: "In Settings, Account and Security, turn on IMAP/SMTP, then generate an authorization code."),
+                                    String(localized: "Copy the 16-character code and use it as the password.")])
+    private static func netEase(_ name: String, domain: String) -> Service {
+        service(name, imap: "imap.\(domain)", smtp: "smtp.\(domain)", appPassword: true, url: "https://mail.\(domain)/",
+                steps: [String(localized: "Open \(name) below and sign in."),
+                        String(localized: "In Settings, POP3/SMTP/IMAP, turn on IMAP/SMTP, then add an authorization code."),
+                        String(localized: "Copy the code and use it as the password. It's shown only once.")])
+    }
+    static let mail163 = netEase("163 Mail", domain: "163.com")
+    static let mail126 = netEase("126 Mail", domain: "126.com")
+    static let yeah = netEase("Yeah Mail", domain: "yeah.net")
+    static let naver = service("Naver Mail", imap: "imap.naver.com", smtp: "smtp.naver.com", appPassword: true,
+                               steps: [String(localized: "In Naver Mail on the web, open Settings, then POP3/IMAP Settings, and set IMAP/SMTP to Use."),
+                                       String(localized: "In your Naver account's security settings, turn on 2-step verification and make an app password."),
+                                       String(localized: "Copy the app password and use it here.")])
 
     static let known: [String: Service] = {
         var map: [String: Service] = [:]
         for d in ["yahoo.com", "ymail.com", "rocketmail.com", "yahoo.co.uk", "yahoo.ca", "yahoo.com.au", "yahoo.co.in",
-                  "yahoo.fr", "yahoo.de", "yahoo.es", "yahoo.it", "yahoo.co.jp"] { map[d] = yahoo }
+                  "yahoo.fr", "yahoo.de", "yahoo.es", "yahoo.it"] { map[d] = yahoo }
+        // Yahoo! JAPAN is its own company with its own servers.
+        for d in ["yahoo.co.jp", "ymail.ne.jp"] { map[d] = yahooJapan }
+        map["qq.com"] = qq
+        map["163.com"] = mail163; map["126.com"] = mail126; map["yeah.net"] = yeah
+        map["naver.com"] = naver
         for d in ["aol.com", "aim.com", "love.com", "games.com", "wow.com"] { map[d] = aol }
         for d in ["fastmail.com", "fastmail.fm", "fastmail.us", "fastmail.co.uk", "sent.com", "messagingengine.com"] { map[d] = fastmail }
         for d in ["zoho.com", "zohomail.com", "zoho.eu", "zoho.in"] { map[d] = zoho }
@@ -111,7 +140,7 @@ enum MailServerDiscovery {
         if outlookDomains.contains(domain) { return .useSignIn(.microsoft) }
         if icloudDomains.contains(domain) { return .useSignIn(.icloud) }
         if protonDomains.contains(domain) { return .unsupported(protonNote) }
-        if domain == "hey.com" { return .unsupported("HEY doesn't let other mail apps read its mail, so it can't be added to Corres.") }
+        if domain == "hey.com" { return .unsupported(String(localized: "HEY doesn't let other mail apps read its mail, so it can't be added to Corres.")) }
         if let service = known[domain] { return .candidates([service.server], service: service) }
 
         // A custom domain: where its mail goes says who hosts it.
@@ -148,7 +177,9 @@ enum MailServerDiscovery {
         return await autoconfig("https://autoconfig.thunderbird.net/v1.1/\(base)", address: address)
     }
 
-    static let protonNote = "Proton Mail can only be read by other apps through Proton Mail Bridge, which runs on a computer, so it can't be added on iPhone."
+    static var protonNote: String {
+        String(localized: "Proton Mail can only be read by other apps through Proton Mail Bridge, which runs on a computer, so it can't be added on iPhone.")
+    }
 
     /// example.co.uk from mx1.mail.example.co.uk; example.com from mx.example.com.
     static func baseDomain(_ host: String) -> String {

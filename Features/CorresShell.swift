@@ -58,6 +58,9 @@ struct CorresShell: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     /// The conversation open in the split layout's detail column.
     @State private var splitRoute: ConversationRoute?
+    /// The conversation open in the narrow layout, and how deep in Mail's
+    /// stack it sits, so it stays open when the window widens.
+    @State private var narrowRoute: NarrowRoute?
     @State private var paths: [Destination: NavigationPath] = [:]
     @Environment(AppRouter.self) private var router
     @Environment(AskService.self) private var ask
@@ -65,6 +68,10 @@ struct CorresShell: View {
     @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
     @State private var showingPaywall = false
     @AppStorage("corres.paywallOffered") private var paywallOffered = false
+    /// The first-account trial offer, waiting for Settings to close.
+    @State private var trialOfferWaiting = false
+    /// The paywall showing is that offer, so it counts once it's on screen.
+    @State private var offeringTrial = false
 
     /// Pro screens lock only for real accounts once StoreKit has answered;
     /// sample mail stays fully open so people can try everything first.
@@ -108,6 +115,43 @@ struct CorresShell: View {
         }
     }
 
+    /// Keeps your place when the layout changes width. Narrow, the list
+    /// picked in the sidebar becomes Mail's Needs You split, or Waiting on
+    /// top of Mail, and the open conversation stays open both ways. A
+    /// sidebar list left selected used to freeze Mail when narrow: its
+    /// tabs, swipes and new mail did nothing.
+    private func carryAcross(to size: UserInterfaceSizeClass?) {
+        if size == .regular {
+            splitRoute = narrowRoute?.route
+            narrowRoute = nil
+            return
+        }
+        let wide = selection
+        let open = splitRoute
+        selection = .mail
+        if wide == .needsYou, !requiresPro { mailFilter = .needsYou }
+        var path = NavigationPath()
+        if wide == .waiting { path.append(Destination.waiting) }
+        if let open { path.append(open) }
+        paths[.mail] = path
+        narrowRoute = open.map { NarrowRoute(route: $0, depth: path.count) }
+    }
+
+    /// Offers the trial once, right after the first account is connected.
+    /// That happens in Settings, and a sheet asked for while Settings is
+    /// still up never shows, so it waits for Settings to close. It used to
+    /// count as offered anyway, so it never came.
+    private func offerTrialIfDue() {
+        guard requiresPro, !paywallOffered else { return }
+        if showingSettings || showingAccounts || showingWelcome {
+            trialOfferWaiting = true
+            return
+        }
+        trialOfferWaiting = false
+        offeringTrial = true
+        showingPaywall = true
+    }
+
     /// A new email to someone (from their person card).
     func write(to address: String) {
         composeDraft = Draft(kind: .new, to: address, subject: "")
@@ -120,6 +164,22 @@ struct CorresShell: View {
         // Opened cold (from Search or a notification): the mail isn't
         // loaded yet, so the conversation waits until it is.
         if case .thread = target, store.state == .idle || store.state == .loading { return }
+        // A sheet in the way (Settings, Screener, the account switcher, the
+        // paywall) closes first: the conversation used to open hidden under
+        // it, and Compose couldn't show at all, so the request was lost.
+        if showingSettings || showingScreener || showingAccounts || showingPaywall {
+            settingsAfterAccounts = false
+            showingSettings = false
+            showingScreener = false
+            showingAccounts = false
+            showingPaywall = false
+            Task { @MainActor in
+                // A sheet asked for while another is still closing never shows.
+                if target.opensCompose { try? await Task.sleep(for: .milliseconds(600)) } else { await Task.yield() }
+                handle(target)
+            }
+            return
+        }
         router.pending = nil
         switch target {
         case .destination(let destination):
@@ -255,6 +315,15 @@ struct CorresShell: View {
             await ShareBridge.update(auth: auth, people: people, threads: store.threads)
         }
         .onChange(of: router.pending) { _, target in handle(target) }
+        // Rotating an iPhone or resizing an iPad window swaps the layouts.
+        .onChange(of: sizeClass) { _, size in carryAcross(to: size) }
+        // Back out of the conversation: nothing to carry across any more.
+        .onChange(of: paths[.mail]?.count ?? 0) { _, depth in
+            if let narrowRoute, depth < narrowRoute.depth { self.narrowRoute = nil }
+        }
+        // A conversation asked for while the mail was still loading opens
+        // once it's here.
+        .onChange(of: store.state) { _, state in if state == .loaded { handle(router.pending) } }
         // Without Pro, Corres opens on Primary: Needs You stays one tap
         // along to look at, never a lock in your face each time you open it.
         .onChange(of: requiresPro, initial: true) { _, locked in
@@ -266,15 +335,15 @@ struct CorresShell: View {
         .onChange(of: requiresPro) { _, locked in
             guard locked else { return }
             if selection != .mail { selection = .mail }
-            if !paywallOffered {
-                paywallOffered = true
-                showingPaywall = true
-            }
+            offerTrialIfDue()
         }
         .task {
             if !hasExplored { showingWelcome = true }
             HangReporter.step("first frame")
-            if store.state == .idle { await store.load() }
+            // AppDelegate may have started the first load already: this
+            // joins it, so a widget, Spotlight or Handoff link that opened
+            // Corres isn't dropped while the mail is still being read.
+            if store.state == .idle || store.state == .loading { await store.load() }
             handle(router.pending)
             #if DEBUG
             // Screenshots: -OpenThread sample-N opens that sample email.
@@ -310,6 +379,8 @@ struct CorresShell: View {
             if settingsAfterAccounts {
                 settingsAfterAccounts = false
                 showingSettings = true
+            } else if trialOfferWaiting {
+                offerTrialIfDue()
             }
         }) {
             AccountSwitcher(store: store, auth: auth, selection: $accountFilter) {
@@ -334,13 +405,16 @@ struct CorresShell: View {
             }
             }
         }
-        .sheet(isPresented: $showingSettings) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService, unsubscriber: unsubscribeService) }
+        .sheet(isPresented: $showingSettings, onDismiss: { if trialOfferWaiting { offerTrialIfDue() } }) { PreferencesView(store: store, auth: auth, sync: sync, pushService: pushService, unsubscriber: unsubscribeService) }
         .sheet(isPresented: $showingScreener) { ScreenerView(store: store) }
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall, onDismiss: { offeringTrial = false }) {
+            PaywallView()
+                .onAppear { if offeringTrial { paywallOffered = true } }
+        }
         .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, auth: auth, draft: draft,
                                                                      sourceThread: draft.threadID.flatMap { store.thread($0) })
             .environment(\.proUnlocked, !requiresPro) }
-        .fullScreenCover(isPresented: $showingWelcome) {
+        .fullScreenCover(isPresented: $showingWelcome, onDismiss: { if trialOfferWaiting { offerTrialIfDue() } }) {
             WelcomeView {
                 hasExplored = true
                 showingWelcome = false
@@ -394,7 +468,7 @@ struct CorresShell: View {
             set: { if !$0 { store.errorMessage = nil } }
         )) {
             Button("OK", role: .cancel) { store.errorMessage = nil }
-        } message: { Text(store.errorMessage ?? "Try again.") }
+        } message: { Text(store.errorMessage ?? String(localized: "Try again.")) }
         .alert("Couldn't Finish That", isPresented: Binding(
             get: { threadActions.errorMessage != nil },
             set: { if !$0 { threadActions.errorMessage = nil } }
@@ -412,7 +486,7 @@ struct CorresShell: View {
             } else {
                 Button("OK", role: .cancel) { threadActions.errorMessage = nil }
             }
-        } message: { Text(threadActions.errorMessage ?? "Try again.") }
+        } message: { Text(threadActions.errorMessage ?? String(localized: "Try again.")) }
         // Reconnect can start from the action-failure alert above, outside
         // Preferences, so its outcome has to be visible here too.
         .alert("Account Connection", isPresented: Binding(
@@ -420,13 +494,13 @@ struct CorresShell: View {
             set: { if !$0 { auth.errorMessage = nil } }
         )) {
             Button("OK", role: .cancel) { auth.errorMessage = nil }
-        } message: { Text(auth.errorMessage ?? "Try again.") }
+        } message: { Text(auth.errorMessage ?? String(localized: "Try again.")) }
         .alert("Couldn't Turn On Notifications", isPresented: Binding(
             get: { pushService.errorMessage != nil },
             set: { if !$0 { pushService.errorMessage = nil } }
         )) {
             Button("OK", role: .cancel) { pushService.errorMessage = nil }
-        } message: { Text(pushService.errorMessage ?? "Try again.") }
+        } message: { Text(pushService.errorMessage ?? String(localized: "Try again.")) }
     }
 
     @State private var bannerDrag: CGFloat = 0
@@ -450,14 +524,19 @@ struct CorresShell: View {
             HStack(spacing: 10) {
                 Image(systemName: removal.kind.systemImage)
                     .foregroundStyle(CorresPalette.secondary)
+                // A long "Moved to" label or large text wraps inside the
+                // screen, so Undo is never pushed off it.
                 Text(removal.title).font(.subheadline.weight(.medium))
+                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 Button("Undo") { threadActions.undoRemoval() }
                     .font(.subheadline.weight(.semibold))
                     .padding(.leading, 4)
+                    .fixedSize()
             }
-            .padding(.horizontal, 18).frame(minHeight: 44)
-            .corresGlass(in: Capsule())
-            .fixedSize()
+            .padding(.horizontal, 18).padding(.vertical, 6).frame(minHeight: 44)
+            .corresGlass(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .frame(maxWidth: 380)
+            .padding(.horizontal, CorresSpace.page)
             // Follows the finger vertically; a flick up or down puts it away
             // (the archive or delete goes through, as if the time ran out).
             .offset(y: bannerDrag)
@@ -517,10 +596,11 @@ struct CorresShell: View {
                         .font(.subheadline.weight(.medium)).lineLimit(1)
                     Text(shelved.isSavedToGmail ? "Saved to Drafts" : shelved.couldNotSave ? "Kept on this \(Device.name)" : "Saving to Drafts\u{2026}")
                         .font(.caption).foregroundStyle(CorresPalette.secondary)
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 }
-                .frame(maxWidth: 200, alignment: .leading)
                 Button("Open") { composeDraft = outbox.takeShelved() }
                     .font(.subheadline.weight(.semibold))
+                    .fixedSize()
                 Button { outbox.clearShelf() } label: {
                     Image(systemName: "xmark").font(.caption.weight(.semibold)).foregroundStyle(CorresPalette.secondary)
                         .frame(width: 28, height: 28)
@@ -528,9 +608,12 @@ struct CorresShell: View {
                 .accessibilityLabel("Put away. It stays in Drafts.")
             }
             .padding(.leading, 16).padding(.trailing, 8).frame(minHeight: 48)
-            .corresGlass(in: Capsule())
-            .fixedSize()
+            .corresGlass(in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             .onTapGesture { composeDraft = outbox.takeShelved() }
+            // About as wide as it used to be at most, and never wider than
+            // the screen at large text sizes, so Open stays on it.
+            .frame(maxWidth: 350)
+            .padding(.horizontal, CorresSpace.page)
             .accessibilityElement(children: .contain)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         }
@@ -586,7 +669,8 @@ struct CorresShell: View {
     /// It's on screen whenever that tab is; it used to count as never on
     /// screen, so its rows never updated (a swiped row sprang back).
     private func destinationContent(for destination: Destination, pushedOnto host: Destination? = nil) -> some View {
-        let isActive = selection == (host ?? destination)
+        // Narrow, Mail is the only list, so it's always the one in use.
+        let isActive = sizeClass != .regular || selection == (host ?? destination)
         switch store.displayState {
         case .idle, .loading:
             // The launch screen's own mark, at the same size and centered
@@ -648,7 +732,9 @@ struct CorresShell: View {
                     let _ = HangReporter.startOpening("\(route.id.account)|\(route.id.providerID)")
                     ConversationView(store: store, outbox: outbox, threadActions: threadActions,
                                     labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
-                                    route: route)
+                                    auth: auth, route: route) { shown in
+                        narrowRoute = NarrowRoute(route: shown, depth: paths[.mail]?.count ?? 0)
+                    }
                 }
                 .modifier(MailboxDestinations(shell: self))
                 // Waiting, opened from the row above Needs You or a link.
@@ -722,7 +808,7 @@ struct CorresShell: View {
                 if let splitRoute {
                     ConversationView(store: store, outbox: outbox, threadActions: threadActions,
                                     labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
-                                    route: splitRoute)
+                                    auth: auth, route: splitRoute)
                         .id(splitRoute)
                 } else {
                     ContentUnavailableView {
@@ -799,12 +885,12 @@ struct CorresShell: View {
             Button { showingAccounts = true } label: { avatar }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Accounts and settings")
-                .accessibilityValue(accountFilter.map(AccountPreferences.nickname(for:)) ?? "All Inboxes")
+                .accessibilityValue(accountFilter.map(AccountPreferences.nickname(for:)) ?? String(localized: "All Inboxes"))
         } else {
             Button { showingSettings = true } label: { avatar }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Account and settings")
-                .accessibilityValue(displayedAccount ?? "Sample mail")
+                .accessibilityValue(displayedAccount ?? String(localized: "Sample mail"))
         }
     }
 
@@ -876,6 +962,22 @@ private struct MailboxDestinations: ViewModifier {
                 }
             }
     }
+}
+
+private extension AppRouter.Target {
+    /// Opens Compose, which is a sheet of its own.
+    var opensCompose: Bool {
+        switch self {
+        case .compose, .composeTo, .draft: true
+        default: false
+        }
+    }
+}
+
+/// A conversation open in the narrow layout, `depth` deep in Mail's stack.
+private struct NarrowRoute {
+    let route: ConversationRoute
+    let depth: Int
 }
 
 /// The iCloud account asking for a new password, as a sheet item.

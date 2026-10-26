@@ -54,7 +54,7 @@ final class PushNotificationService {
     func enableAll(accounts: [String]) async {
         let center = UNUserNotificationCenter.current()
         guard let granted = try? await center.requestAuthorization(options: [.alert, .badge, .sound]), granted else {
-            errorMessage = "Notifications need permission in \(Device.settingsName) to turn on."
+            errorMessage = String(localized: "Notifications need permission in \(Device.settingsName) to turn on.")
             return
         }
         isEnabled = true
@@ -441,8 +441,15 @@ final class PushNotificationService {
         } else {
             (_, response) = try await URLSession.shared.data(for: request)
         }
-        if path.hasSuffix("icloud"), let status = (response as? HTTPURLResponse)?.statusCode, !(200..<300).contains(status) {
+        let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+        if path.hasSuffix("icloud"), !(200..<300).contains(status) {
             throw ICloudInstantError.unavailable
+        }
+        // The relay turned the registration down (or wasn't there): not
+        // renewed, so the next launch or refresh tries again instead of
+        // counting it done for the next twelve hours.
+        if path == "register" || path == "register-graph", !(200..<300).contains(status) {
+            throw GmailAPIClient.ClientError.badResponse(statusCode: status)
         }
     }
 }

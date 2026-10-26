@@ -7,12 +7,14 @@ import Foundation
 public enum MailSignals {
     /// The writer's own words, without the quoted history below them.
     public static func ownText(_ body: String) -> String {
-        var kept: [Substring] = []
-        for line in body.split(separator: "\n", omittingEmptySubsequences: false) {
+        var kept: [String] = []
+        let lines = body.components(separatedBy: "\n")
+        for (index, line) in lines.enumerated() {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.hasPrefix(">") { continue }
-            if trimmed.patternRange(#"^On .+ wrote:$"#) != nil { break }
-            if trimmed.hasPrefix("-----Original Message-----") || trimmed.hasPrefix("---------- Forwarded message") { break }
+            // "On … wrote:", "Am … schrieb:", "…写道：", an Outlook "From: /
+            // Sent:" block, "-----Original Message-----" (`QuoteDetector`).
+            if QuoteDetector.startsQuote(lines, at: index) { break }
             // A legal notice ("If you have received this email in error,
             // please reply…") asks nothing of the reader.
             if trimmed.patternRange(legalNoticePattern) != nil { break }
@@ -55,56 +57,225 @@ public enum MailSignals {
     public static let protectiveMarkingLine = #"(?i)^[\[\-–— ]*(official(-sensitive)?|unclassified|(classification|sensitivity): ?(official|public|internal|general|confidential)( use)?)[\]\-–— ]*$"#
 
     /// Phrases that ask the reader for something even without a question
-    /// mark ("Let me know", "Please confirm").
-    private static let requestPattern = #"(?i)\b(can|could|would|will) you\b|\blet me know\b|\bplease (confirm|advise|review|send|reply|respond|approve|sign|share|rsvp|let)\b|\bwhat do you think\b|\byour thoughts\b|\bany (update|news)\b|\bare you (free|available|around)\b|\bwhen (works|would work|are you)\b|\bget back to me\b|\blooking forward to (hearing|your reply)\b|\brsvp\b"#
+    /// mark ("Let me know", "Please confirm"), in English and the app's
+    /// other languages: "bitte bestätigen", "merci de confirmer", "por favor
+    /// confirme", "me avise", "ご確認ください", "확인 부탁드립니다", "请确认",
+    /// "জানাবেন". Japanese and Korean often ask without a question mark
+    /// ("…でしょうか", "…주시겠어요"). "Please find attached" in any language
+    /// ("veuillez trouver ci-joint", "请查收") asks nothing.
+    ///
+    /// One pattern per language: as one long alternation, the regular
+    /// expression engine tried every phrase at every letter and took
+    /// thirty times as long.
+    static let requestPatterns: [String] = [
+        #"(?i)\b(can|could|would|will) you\b|\blet me know\b|\bplease (confirm|advise|review|send|reply|respond|approve|sign|share|rsvp|let)\b|\bwhat do you think\b|\byour thoughts\b|\bany (update|news)\b|\bare you (free|available|around)\b|\bwhen (works|would work|are you)\b|\bget back to me\b|\blooking forward to (hearing|your reply)\b|\brsvp\b"#,
+        // German
+        #"(?i)\b(bitte (um )?(bestätig|rückmeld|antwort|melde|prüf|schick|send|unterschreib|teil)\w*|(können|könnten|würden) sie|(kannst|könntest|würdest) du|lass(t)? (mich|uns) wissen|geben sie (mir|uns) bescheid|gib (mir|uns) bescheid|ich bitte um|was meinst du|was meinen sie)\b"#,
+        // French
+        #"(?i)\b(merci de (confirmer|me |nous |valider|vérifier|signer|répondre|revenir)|(pouvez|pourriez)-vous|(peux|pourrais)-tu|veuillez (confirmer|me |nous |répondre|signer|valider)|(tenez|tiens)-moi au courant|(faites|fais)-moi savoir|(dites|dis)-moi|qu'en (penses-tu|pensez-vous)|dans l'attente de (votre|ta) réponse)\b"#,
+        // Spanish
+        #"(?i)\b(por favor,? (confirm|respond|revis|env[ií]|firm|avís|avis|indic)\w*|(puede|puedes|podría|podrías) (confirmar|enviar|revisar|decirme|avisarme|indicarme)|me (avisas|confirmas|dices)|avísame|avíseme|confírmame|confírmeme|quedo (atento|atenta|a la espera) (a|de) (su|tu) respuesta|qué (te|le) parece)\b"#,
+        // Portuguese
+        #"(?i)\b(por favor,? (confirm|respond|revis|envi|assin|avis|me (avise|diga|informe))\w*|(pode|poderia|podes|você pode) (confirmar|enviar|revisar|me)|me (avise|avisa|confirme|diga|informe)|aguardo (o |a )?(seu|sua) (retorno|resposta|confirmação)|fico no aguardo|o que (acha|você acha))\b"#,
+    ]
+
+    /// Bengali, Japanese, Korean and Chinese, read only when the text has
+    /// those scripts in it.
+    static let requestPatternsOtherScripts: [String] = [
+        // Bengali
+        #"\b(জানাবেন|জানান|জানাও|জানাবে|নিশ্চিত করুন|অনুগ্রহ করে|দয়া করে|পাঠাবেন|পারবেন কি|পারবে কি|উত্তর দিন|কী মনে করেন)"#,
+        // Japanese, Korean and Chinese
+        #"ご確認(ください|下さい|お願い|の上|いただけ)|ご(返信|連絡|回答|検討|対応)(ください|下さい|お願い|いただけ)|お知らせ(ください|下さい)|教えて(ください|下さい|いただけ)|いただけ(ます|ません)か|でしょうか|お返事(ください|お待ち)|확인 ?부탁|확인해 ?주(세요|시겠|실)|(회신|답장|검토|연락) ?부탁|알려 ?주(세요|시겠|실)|연락 ?주(세요|십시오)|주시겠어요|주실 수 있(나요|을까요|으신가요)|가능할까요|어떠세요|어떻습니까|请(确认|回复|告知|尽快|提供|您确认|您回复)|請(確認|回覆|告知|盡快|提供)|麻(烦|煩)(你|您)|能否|可否|可以吗|可以嗎|盼复|盼覆|期待(你|您)的(回复|回覆)|你觉得呢|您觉得|您覺得"#,
+    ]
 
     /// Whether the writer asks the reader something: a real question or a
     /// request. Links are removed first, since their query strings carry
-    /// question marks.
+    /// question marks. A question mark in any script counts: full-width
+    /// "？" (Chinese, Japanese) and Arabic-script "؟" too.
     public static func asksSomething(_ text: String) -> Bool {
         let own = ownText(text).replacingPattern(#"https?://\S+"#, with: "")
-        if own.patternRange(#"[\p{L}\p{N})"'’]\s?\?"#) != nil { return true }
-        return own.patternRange(requestPattern) != nil
+        if own.patternRange(#"[\p{L}\p{N})"'’」』]\s?[?？؟]"#) != nil { return true }
+        if own.matchesAny(requestPatterns) { return true }
+        return own.unicodeScalars.contains { $0.value >= 0x0980 } && own.matchesAny(requestPatternsOtherScripts)
     }
 
     /// Words that make a date a deadline when they come right before it:
-    /// "due Friday", "by Oct 3", "RSVP by the 12th". Deliberately tight;
-    /// a date on its own ("Posted Sep 3") is not a deadline.
-    private static let deadlineLeadIn = #"(?i)\b(due|by|before|until|no later than|deadline(\s+is)?:?|expires?|expiring|rsvp(\s+by)?|respond by|reply by|closes?)\s*(on\s+|the\s+)?$"#
+    /// "due Friday", "by Oct 3", "RSVP by the 12th", "Due: 12 Nov", and the
+    /// same in the app's other languages: "bis zum", "fällig am", "avant
+    /// le", "au plus tard", "antes del", "vence el", "até", "prazo". Chinese,
+    /// Japanese, Korean and Bengali deadlines are read with their dates
+    /// (`LocalDates`). Deliberately tight; a date on its own ("Posted Sep
+    /// 3") is not a deadline.
+    static let leadInWords = #"due|by|before|until|no later than|deadline(\s+is)?|expires?|expiring|rsvp(\s+by)?|respond by|reply by|closes?|bis( zum| spätestens)?|spätestens( am| bis)?|fällig( am| bis)?|frist( bis)?|zahlbar bis|avant( le)?|d'ici( le)?|au plus tard( le)?|jusqu'au|date limite|échéance|dû le|antes del?|hasta el|a más tardar( el)?|fecha límite|vence( el| em)?|vencimento|até( o dia| dia)?|prazo( até)?|data limite"#
+    private static let deadlineLeadIn = #"(?i)\b("# + leadInWords + #")\s*:?\s*(on\s+|the\s+|le\s+|el\s+|am\s+|dem\s+|o\s+)?$"#
+    /// The same words at the start of what the date detector found: it
+    /// takes them into the date ("due November 5, 2026" came back as today,
+    /// lasting until the 5th), so the commonest bill wording never set a
+    /// deadline.
+    private static let leadInAtStart = #"(?i)^(("# + leadInWords + #")\s*:?\s*)+(on\s+|the\s+|le\s+|el\s+|am\s+|dem\s+|o\s+)?(?=\S)"#
+    /// A deadline in Chinese, Japanese, Korean or Bengali is said before
+    /// the date ("期限：", "截止日期：", "마감", "শেষ তারিখ") or after it
+    /// ("11月12日まで", "11월 12일까지", "11月12日前", "১২ নভেম্বরের মধ্যে").
+    static let localLeadIn = #"(期限|締め?切り?日?|締切日?|支払期限|お支払い期限|期日|마감(일)?|기한|납부 ?기한|截止(日期|时间|時間)?|最晚|最迟|最遲|请于|請於|于|於|শেষ তারিখ)\s?[:：は은는이]?\s?$"#
+    static let localLeadOut = #"^\s?(\([^)]{1,4}\)|（[^）]{1,4}）)?\s?(ের|এর)?\s?(まで|迄|까지|前|之前|以前|মধ্যে)"#
 
     /// The earliest upcoming deadline the message names, within `horizon`.
     /// Relative dates ("by Friday") resolve against now, so this is meant
-    /// for mail read as it arrives.
-    public static func deadline(in text: String, now: Date = .now, horizon: TimeInterval = 45 * 86_400) -> Date? {
+    /// for mail read as it arrives. `senderEmail` says how the sender
+    /// writes a date like 03/11/2026 (`numericDateOrder`).
+    public static func deadline(in text: String, now: Date = .now, horizon: TimeInterval = 45 * 86_400,
+                                senderEmail: String? = nil) -> Date? {
         let own = String(ownText(text).prefix(4_000))
-        guard !own.isEmpty,
-              let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else { return nil }
-        let ns = own as NSString
-        var earliest: Date?
-        for match in detector.matches(in: own, range: NSRange(location: 0, length: ns.length)) {
-            guard let date = match.date,
-                  date > now.addingTimeInterval(-3_600), date < now.addingTimeInterval(horizon) else { continue }
-            let start = max(0, match.range.location - 32)
-            let before = ns.substring(with: NSRange(location: start, length: match.range.location - start))
-            guard before.patternRange(deadlineLeadIn) != nil else { continue }
-            if earliest.map({ date < $0 }) ?? true { earliest = date }
-        }
-        return earliest
+        guard !own.isEmpty else { return nil }
+        return dates(in: own, senderEmail: senderEmail, now: now)
+            .filter { $0.isDeadline && $0.date > now.addingTimeInterval(-3_600) && $0.date < now.addingTimeInterval(horizon) }
+            .map(\.date).min()
     }
 
     /// For automated mail about an appointment, bill or signature, any date
     /// in the next few days is the one that matters, however it's worded:
     /// "Your appointment is tomorrow at 9:00 AM" has no "by" or "due" in
     /// it. Promotions never get here (see `InboxClassifier`).
-    public static func timeSensitiveDate(in text: String, now: Date = .now, within: TimeInterval = 3 * 86_400) -> Date? {
-        if let due = deadline(in: text, now: now, horizon: within) { return due }
-        guard isObligation(text),
-              let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else { return nil }
+    public static func timeSensitiveDate(in text: String, now: Date = .now, within: TimeInterval = 3 * 86_400,
+                                         senderEmail: String? = nil) -> Date? {
+        if let due = deadline(in: text, now: now, horizon: within, senderEmail: senderEmail) { return due }
+        guard isObligation(text) else { return nil }
         let own = String(ownText(text).prefix(4_000))
-        return detector.matches(in: own, range: NSRange(location: 0, length: (own as NSString).length))
-            .compactMap(\.date)
+        return dates(in: own, senderEmail: senderEmail, now: now).map(\.date)
             .filter { $0 > now.addingTimeInterval(-3_600) && $0 < now.addingTimeInterval(within) }
             .min()
+    }
+
+    struct FoundDate { let date: Date; let isDeadline: Bool }
+
+    /// Every date the text names, each read once: Apple's date detector
+    /// for the languages it reads, with its two slips put right (a lead-in
+    /// word taken into the date, and a numeric date read the reader's way
+    /// rather than the writer's), and `LocalDates` for Chinese, Japanese,
+    /// Korean and Bengali dates, which it doesn't read at all.
+    static func dates(in own: String, senderEmail: String?, now: Date) -> [FoundDate] {
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else { return [] }
+        let ns = own as NSString
+        let order = numericDateOrder(senderEmail: senderEmail, text: own)
+        var found: [FoundDate] = []
+        for match in detector.matches(in: own, range: NSRange(location: 0, length: ns.length)) {
+            var range = match.range
+            var date = match.date
+            var leadIn = false
+            // "due November 5, 2026": read the date again without "due".
+            for _ in 0..<2 {
+                let phrase = ns.substring(with: range)
+                guard let lead = phrase.patternRange(leadInAtStart) else { break }
+                let skip = phrase[..<lead.upperBound].utf16.count
+                let rest = NSRange(location: range.location + skip, length: range.length - skip)
+                guard rest.length > 0, let again = detector.firstMatch(in: own, range: rest) else { date = nil; break }
+                range = again.range
+                date = again.date
+                leadIn = true
+            }
+            guard var date else { continue }
+            switch numericReading(of: ns.substring(with: range), detected: date, order: order) {
+            case .notNumeric: break
+            case .date(let written): date = written
+            // 03/11/2026 from someone whose way of writing dates is unknown:
+            // the 3rd of November or March the 11th. Better no deadline
+            // than the wrong one.
+            case .ambiguous: continue
+            }
+            let start = max(0, range.location - 32)
+            let before = ns.substring(with: NSRange(location: start, length: range.location - start))
+            found.append(FoundDate(date: date, isDeadline: leadIn || before.patternRange(deadlineLeadIn) != nil))
+        }
+        let digits = MailDigest.asciiDigits(own) as NSString
+        for local in LocalDates.find(in: own, now: now) where local.hasDay {
+            let start = max(0, local.range.location - 12)
+            let before = digits.substring(with: NSRange(location: start, length: local.range.location - start))
+            let afterStart = local.range.location + local.range.length
+            let after = digits.substring(with: NSRange(location: afterStart, length: min(14, digits.length - afterStart)))
+            let isDeadline = before.patternRange(localLeadIn) != nil || after.patternRange(localLeadOut) != nil
+                || before.patternRange(deadlineLeadIn) != nil
+            found.append(FoundDate(date: local.date, isDeadline: isDeadline))
+        }
+        return found
+    }
+
+    // MARK: Numeric dates
+
+    /// How a sender writes a numeric date like 03/11/2026.
+    public enum DateOrder: Sendable, Equatable { case dayFirst, monthFirst }
+
+    /// A numeric date: "03/11/2026", "3/11", "12.11.2026", "12-11-2026".
+    /// Dots and dashes count only with a year, so a time ("7.15pm") or a
+    /// range ("12-15 Nov") is never read as one.
+    private static let numericDatePattern = #"(?<![\d/.\-])(\d{1,2})(?:/(\d{1,2})(?:/(\d{4}|\d{2}))?|([.\-])(\d{1,2})\4(\d{4}|\d{2}))(?![\d/])"#
+
+    /// Where people write the day first (most of the world: the UK,
+    /// Ireland, Bangladesh, India, Australia, New Zealand, South Africa,
+    /// Europe, Latin America) and where the month comes first (the US, its
+    /// government and universities, the Philippines, and the year-first
+    /// countries, whose dates without a year read month/day: Japan's
+    /// "11/3" is the 3rd of November). Generic endings (.com) say nothing.
+    static let dayFirstEndings: Set<String> = [
+        "uk", "ie", "bd", "in", "pk", "lk", "np", "au", "nz", "za", "sg", "my", "hk", "ae", "sa", "qa", "eg", "ng",
+        "ke", "gh", "de", "fr", "es", "it", "pt", "br", "nl", "be", "at", "ch", "se", "no", "dk", "fi", "pl", "cz",
+        "ru", "tr", "gr", "mx", "ar", "cl", "pe", "id", "vn", "th", "il", "ro", "hu", "ua",
+    ]
+    static let monthFirstEndings: Set<String> = ["us", "gov", "edu", "mil", "ph", "jp", "cn", "kr", "tw"]
+
+    /// How this email writes numeric dates: settled by another date in it
+    /// that can only be read one way ("13/11/2026" is day first), else by
+    /// where the sender writes from. Nil when neither says.
+    static func numericDateOrder(senderEmail: String?, text: String) -> DateOrder? {
+        let ns = text as NSString
+        if let regex = PatternCache.shared.regex(numericDatePattern, caseInsensitive: false) {
+            for match in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+                // Only full dates: "24/7" and "50/50" are not dates.
+                guard match.range(at: 3).location != NSNotFound || match.range(at: 6).location != NSNotFound else { continue }
+                let first = Int(ns.substring(with: match.range(at: 1))) ?? 0
+                let secondRange = match.range(at: 2).location != NSNotFound ? match.range(at: 2) : match.range(at: 5)
+                let second = Int(ns.substring(with: secondRange)) ?? 0
+                if first > 12, (1...12).contains(second) { return .dayFirst }
+                if second > 12, (1...12).contains(first), second <= 31 { return .monthFirst }
+            }
+        }
+        guard let host = senderEmail?.split(separator: "@").last?.lowercased(),
+              let ending = host.split(separator: ".").last.map(String.init) else { return nil }
+        if dayFirstEndings.contains(ending) { return .dayFirst }
+        if monthFirstEndings.contains(ending) { return .monthFirst }
+        return nil
+    }
+
+    enum NumericReading: Equatable { case notNumeric, ambiguous, date(Date) }
+
+    /// A detected date that is numbers only, read the writer's way. Dots
+    /// are always day first (no one writes 11.12.2026 for November 12th).
+    /// Ambiguous when both numbers could be the month and `order` is nil.
+    static func numericReading(of phrase: String, detected: Date, order: DateOrder?,
+                               calendar: Calendar = .current) -> NumericReading {
+        let ns = phrase as NSString
+        guard let regex = PatternCache.shared.regex(numericDatePattern, caseInsensitive: false),
+              let match = regex.firstMatch(in: phrase, range: NSRange(location: 0, length: ns.length)) else { return .notNumeric }
+        let slashed = match.range(at: 2).location != NSNotFound
+        let first = Int(ns.substring(with: match.range(at: 1))) ?? 0
+        let second = Int(ns.substring(with: match.range(at: slashed ? 2 : 5))) ?? 0
+        let yearRange = match.range(at: slashed ? 3 : 6)
+        let dayFirst: Bool
+        if !slashed { dayFirst = true }
+        else if first == second { dayFirst = true }
+        else if first > 12 { dayFirst = true }
+        else if second > 12 { dayFirst = false }
+        else if let order { dayFirst = order == .dayFirst }
+        else { return .ambiguous }
+        let (day, month) = dayFirst ? (first, second) : (second, first)
+        guard (1...12).contains(month), (1...31).contains(day) else { return .notNumeric }
+        var parts = calendar.dateComponents([.year, .hour, .minute], from: detected)
+        if yearRange.location != NSNotFound, let written = Int(ns.substring(with: yearRange)) {
+            parts.year = written < 100 ? 2000 + written : written
+        }
+        parts.month = month
+        parts.day = day
+        guard let date = calendar.date(from: parts), calendar.component(.day, from: date) == day else { return .notNumeric }
+        return .date(date)
     }
 
     /// Automated mail that carries a real obligation for this person: a
@@ -122,15 +293,39 @@ public enum MailSignals {
     /// reader, yet brought both into Needs You.
     public static func isObligation(_ text: String) -> Bool {
         let lower = String(text.prefix(obligationOpening)).lowercased()
-        let action = #"\b(payment (is )?(due|failed|declined|overdue)|past due|amount due|due (date|on|by)|pay (by|now|your)|bill (is )?(due|ready)|balance (is )?due|invoice (is )?due|sign (by|the|your|here)|signature (requested|required|needed)|please sign|verify (your|by)|action (is )?required|expires? (on|in|soon|today|tomorrow)|expiring|renew (by|before|now)|appointment|check-in|reservation|rsvp|deadline)\b"#
-        // Marketing urgency is a sale, not an obligation: "LAST CHANCE,
-        // your rewards points expire tomorrow".
-        let notice = #"\b(last chance|don.?t miss|limited time|(points|rewards?) (expire|are expiring)|ends (today|tonight|soon)|\d+% off|will be (charged|billed|renewed) (automatically|monthly|annually)|(automatically|auto-?) ?(charged|billed|renews?)|thank(s| you) for (your )?(payment|order|purchase)|payment (received|confirmed|successful)|receipt|welcome to)\b"#
-        guard lower.patternRange(action) != nil else { return false }
+        guard lower.matchesAny(obligationAction) else { return false }
         // An appointment or reservation reminder stays even if it thanks you.
-        let reminder = lower.patternRange(#"\b(appointment|reservation|check-in|rsvp)\b"#) != nil
-        return reminder || lower.patternRange(notice) == nil
+        return lower.patternRange(reminderWords) != nil || !lower.matchesAny(marketingNotice)
     }
+
+    /// What the reader has to do, in English and the app's other
+    /// languages: "Zahlung fällig", "à régler avant", "fecha de
+    /// vencimiento", "boleto vence", "お支払い期限", "납부 기한", "缴费截止",
+    /// "পরিশোধের শেষ তারিখ".
+    static let obligationAction: [String] = [
+        #"\b(payment (is )?(due|failed|declined|overdue)|past due|amount due|due (date|on|by)|pay (by|now|your)|bill (is )?(due|ready)|balance (is )?due|invoice (is )?due|sign (by|the|your|here)|signature (requested|required|needed)|please sign|verify (your|by)|action (is )?required|expires? (on|in|soon|today|tomorrow)|expiring|renew (by|before|now)|appointment|check-in|reservation|rsvp|deadline)\b"#,
+        #"\b(zahlung (ist )?fällig|fällig (am|bis)|zahlbar bis|bitte (bezahlen|überweisen|unterschreiben)|zahlungserinnerung|mahnung|unterschrift erforderlich|ihr termin|terminerinnerung|handlungsbedarf|läuft (am|bald) ab)\b"#,
+        #"\b(paiement (dû|en retard|refusé)|à (payer|régler) avant|date d'échéance|facture (due|à payer)|veuillez (payer|régler|signer)|signature requise|votre rendez-vous|votre réservation|action requise|expire (le|bientôt))\b"#,
+        #"\b(pago (pendiente|vencido|rechazado)|fecha de vencimiento|vence el|por favor (pague|firme)|firma requerida|(su|tu) cita|(su|tu) reserva|acción requerida|caduca (el|pronto))\b"#,
+        #"\b(pagamento (pendente|vencido|recusado)|data de vencimento|vence em|boleto|por favor,? (pague|assine)|assinatura (necessária|pendente)|sua consulta|seu agendamento|sua reserva|ação necessária|expira (em|hoje|amanhã))\b"#,
+        #"\b(পরিশোধের শেষ তারিখ|বিল পরিশোধ|বকেয়া|স্বাক্ষর করুন|অ্যাপয়েন্টমেন্ট|মেয়াদ শেষ)\b"#,
+        #"お支払い期限|支払期限|お支払いのお願い|ご請求|請求書|署名(をお願い|が必要)|ご予約|ご来院|受診|要対応|有効期限|납부 ?기한|결제 ?기한|청구서|미납|연체|서명(이 필요|을 요청| 요청)|예약|진료|조치(가)? 필요|만료|付款截止|缴费|繳費|到期|逾期|账单|帳單|请签署|請簽署|预约|預約|就诊|就診|需要(处理|處理)"#,
+    ]
+
+    /// A reminder of something booked, which stays even when it thanks you.
+    static let reminderWords = #"\b(appointment|reservation|check-in|rsvp|termin|rendez-vous|réservation|cita|reserva|consulta|agendamento|অ্যাপয়েন্টমেন্ট)\b|ご予約|ご来院|예약|진료|预约|預約|就诊|就診"#
+
+    /// Marketing urgency is a sale, not an obligation: "LAST CHANCE, your
+    /// rewards points expire tomorrow", "Letzte Chance", "期間限定". Nor is
+    /// a receipt, a welcome or an autopay notice.
+    static let marketingNotice: [String] = [
+        #"\b(last chance|don.?t miss|limited time|(points|rewards?) (expire|are expiring)|ends (today|tonight|soon)|\d+% off|will be (charged|billed|renewed) (automatically|monthly|annually)|(automatically|auto-?) ?(charged|billed|renews?)|thank(s| you) for (your )?(payment|order|purchase)|payment (received|confirmed|successful)|receipt|welcome to)\b"#,
+        #"\b(letzte chance|nur heute|\d+ ?% rabatt|wird automatisch (abgebucht|verlängert)|(vielen )?dank für ihre (zahlung|bestellung)|zahlung (erhalten|bestätigt)|quittung|willkommen (bei|zu))\b"#,
+        #"\b(dernière chance|offre limitée|sera (prélevé|renouvelé) automatiquement|merci pour votre (paiement|commande|achat)|paiement (reçu|confirmé)|bienvenue (chez|sur|à))\b"#,
+        #"\b(última (oportunidad|chance)|tiempo limitado|por tempo limitado|se (cobrará|renovará) automáticamente|gracias por (su|tu) (pago|compra|pedido)|pago (recibido|confirmado)|será (cobrado|renovado) automaticamente|obrigad[oa] pel[oa] (seu |sua )?(pagamento|compra|pedido)|pagamento (recebido|confirmado)|recibo|bienvenid[oa] a|bem-vind[oa] (a|ao|à))\b"#,
+        #"\b(শেষ সুযোগ|সীমিত সময়|স্বয়ংক্রিয়ভাবে|(পেমেন্টের|কেনাকাটার|অর্ডারের) জন্য ধন্যবাদ|পেমেন্ট সফল|রসিদ|স্বাগতম)\b"#,
+        #"最後のチャンス|期間限定|自動(更新|引き落とし)|ご(購入|注文|入金)ありがとう|お支払いありがとう|領収書|へようこそ|ポイント.{0,6}失効|마지막 기회|기간 한정|자동 ?(결제|갱신)|(결제|구매|주문)해 주셔서 감사|영수증|오신 것을 환영|포인트.{0,6}소멸|最后机会|最後機會|限时|限時|自动(续费|扣款)|自動(續費|扣款)|感谢您的(付款|购买|订单|支付)|感謝您的(付款|購買|訂單|支付)|(付款|支付)成功|收据|收據|欢迎(加入|使用|来到)|歡迎(加入|使用|來到)|积分.{0,6}过期"#,
+    ]
 
     /// About something that happens on a day (an appointment, a class, a
     /// flight), not something to get done by one (a bill, a signature).
@@ -139,30 +334,77 @@ public enum MailSignals {
     /// after the event. A missed payment is different, and stays overdue.
     public static func isEvent(_ text: String) -> Bool {
         let lower = text.lowercased()
-        let event = #"\b(appointments?|reservations?|check-?in|meeting|class(es)?|session|visit|interview|webinar|flight|booking|lesson|tour|consultation|exam|screening|event|concert|show(time)?|game|ceremony)\b"#
-        let task = #"\b(payment|pay (by|now|your)|bill|invoice|balance|amount due|past due|sign(ature)?|renew|expir|submit|application|form)\b"#
-        return lower.patternRange(event) != nil && lower.patternRange(task) == nil
+        let event = [#"\b(appointments?|reservations?|check-?in|meeting|class(es)?|session|visit|interview|webinar|flight|booking|lesson|tour|consultation|exam|screening|event|concert|show(time)?|game|ceremony|termin|besprechung|sitzung|flug|reservierung|buchung|veranstaltung|rendez-vous|réunion|réservation|entretien|cita|reunión|vuelo|reserva|entrevista|consulta|reunião|voo|agendamento|evento|événement|অ্যাপয়েন্টমেন্ট|মিটিং|সভা|ফ্লাইট|বুকিং|সাক্ষাৎকার)\b"#, #"予約|会議|打ち合わせ|面接|フライト|搭乗|診察|예약|회의|미팅|면접|항공편|진료|预约|預約|会议|會議|面试|面試|航班|就诊|就診"#]
+        let task = [#"\b(payment|pay (by|now|your)|bill|invoice|balance|amount due|past due|sign(ature)?|renew|expir|submit|application|form|zahlung|rechnung|bezahlen|unterschr\w*|paiement|facture|signer|pago|factura|firma|pagamento|fatura|boleto|assinatura|পেমেন্ট|বিল|স্বাক্ষর)\b"#, #"支払|請求|署名|결제|납부|청구|서명|付款|缴费|繳費|账单|帳單|签署|簽署"#]
+        return lower.matchesAny(event) && !lower.matchesAny(task)
     }
 
     /// Something has gone wrong that only you can fix, date or not: a
     /// payment that failed, a card declined, an account on hold. Said up
-    /// top, like any obligation.
+    /// top, like any obligation, in any of the app's languages.
     public static func isFailure(_ text: String) -> Bool {
         let lower = String(text.prefix(obligationOpening)).lowercased()
-        return lower.patternRange(#"\b(payment (has |was )?(failed|declined|unsuccessful)|unable to process your (recent )?(\w+ )?payment|card (was |has been )?declined|(account|subscription|service) (is |has been )?(suspended|on hold|locked|past due))\b"#) != nil
+        return lower.matchesAny(failurePattern)
     }
 
+    static let failurePattern: [String] = [
+
+        #"\b(payment (has |was )?(failed|declined|unsuccessful)|unable to process your (recent )?(\w+ )?payment|card (was |has been )?declined|(account|subscription|service) (is |has been )?(suspended|on hold|locked|past due))\b"#,
+
+        #"\b(zahlung (ist |wurde )?(fehlgeschlagen|abgelehnt)|(karte|kreditkarte) (wurde )?abgelehnt|(konto|abonnement) (wurde |ist )?gesperrt|abbuchung (ist )?fehlgeschlagen|lastschrift [^.]{0,20}(zurückgegeben|fehlgeschlagen))\b"#,
+
+        #"\b((le )?paiement (a )?échoué|échec (du|de votre) paiement|paiement (a été )?refusé|carte (a été )?refusée|compte (est |a été )?(suspendu|bloqué))\b"#,
+
+        #"\b((el )?pago (ha )?(fallado|sido rechazado)|pago rechazado|no (hemos podido|pudimos) procesar (su|tu) pago|tarjeta rechazada|cuenta (suspendida|bloqueada))\b"#,
+
+        #"\b(pagamento (falhou|foi recusado|recusado|não aprovado)|não (foi possível|conseguimos) processar (o )?seu pagamento|cartão recusado|conta (suspensa|bloqueada))\b"#,
+
+        #"\b(পেমেন্ট ব্যর্থ|লেনদেন ব্যর্থ|কার্ড প্রত্যাখ্যাত|অ্যাকাউন্ট স্থগিত)\b"#,
+
+        #"お支払いに失敗|決済(に失敗|エラー|できませんでした)|カード.{0,10}(拒否|ご利用いただけません)|アカウント.{0,6}(停止|ロック)|결제(에)? ?실패|결제가 거절|카드.{0,6}거절|계정.{0,6}(정지|잠김|잠금)|(付款|支付|扣款)失(败|敗)|卡.{0,6}被拒|(账户|帳戶).{0,6}(冻结|凍結|停用|锁定|鎖定)"#,
+
+    ]
+
     /// A payment asked of you, with its amount, date or not: "payment in
-    /// the amount of $188.00 is required to complete your application".
-    /// Said up top. Not a receipt, an autopay notice, or a reminder that
-    /// thanks you if you've already paid.
+    /// the amount of $188.00 is required to complete your application",
+    /// "offener Betrag", "montant à payer", "ご請求金額", "청구 금액",
+    /// "应付金额". Said up top. Not a receipt, an autopay notice, or a
+    /// reminder that thanks you if you've already paid.
     public static func isPaymentRequest(_ text: String) -> Bool {
         let lower = String(text.prefix(obligationOpening)).lowercased()
-        guard lower.patternRange(#"\b(payment (request(ed)?|(in the amount of [^.]{1,40} )?(is )?required)|please (make|submit) (a |your )?payment|(amount|balance) (is )?(now )?due)\b"#) != nil,
+        guard lower.matchesAny(paymentRequestPattern),
               lower.patternRange(MailDigest.amountPattern) != nil
         else { return false }
-        return lower.patternRange(#"\b(if you('ve| have) already paid|thank(s| you) for your payment|payment (received|confirmed|successful)|autopay|automatic payment)\b"#) == nil
+        return !lower.matchesAny(alreadyPaidPattern)
     }
+
+    static let paymentRequestPattern: [String] = [
+
+        #"\b(payment (request(ed)?|(in the amount of [^.]{1,40} )?(is )?required)|please (make|submit) (a |your )?payment|(amount|balance) (is )?(now )?due)\b"#,
+
+        #"\b(zahlungsaufforderung|bitte (bezahlen|überweisen) sie|(offener|ausstehender|fälliger) betrag|betrag (ist )?fällig)\b"#,
+
+        #"\b(demande de paiement|montant (dû|à payer)|solde (dû|à payer)|veuillez (effectuer|procéder au) (le |votre )?paiement)\b"#,
+
+        #"\b(solicitud de pago|(importe|monto) (pendiente|a pagar)|saldo pendiente|por favor realice (el|su) pago)\b"#,
+
+        #"\b(solicitação de pagamento|valor (em aberto|a pagar|devido)|saldo devedor|por favor,? (efetue|realize) o pagamento)\b"#,
+
+        #"\b(পরিশোধ করুন|বকেয়া পরিমাণ|প্রদেয় পরিমাণ|পেমেন্ট অনুরোধ)\b"#,
+
+        #"お支払いのお願い|ご請求金額|お支払い金額|請求金額|お振込み?のお願い|결제 요청|납부 요청|청구 금액|납부하실 금액|결제하실 금액|付款(请求|請求)|请付款|請付款|(应付|應付)金额|應付金額|待(付款|支付)|请缴纳|請繳納"#,
+
+    ]
+
+    static let alreadyPaidPattern: [String] = [
+
+        #"\b(if you('ve| have) already paid|thank(s| you) for your payment|payment (received|confirmed|successful)|autopay|automatic payment)\b"#,
+
+        #"\b(bereits (bezahlt|überwiesen)|dank für ihre zahlung|lastschrift|déjà (payé|réglé)|merci pour votre paiement|prélèvement automatique|ya (ha|has) pagado|gracias por (su|tu) pago|domiciliación|já (pagou|efetuou|foi pago)|débito automático|ইতিমধ্যে পরিশোধ)\b"#,
+
+        #"お支払い済み|支払い済み|自動引き落とし|口座振替|이미 (결제|납부)|자동이체|已(付款|支付|繳費|缴费)|自动扣款|自動扣款"#,
+
+    ]
 
     /// How much of an email's start states its obligation, in characters:
     /// the subject and the first few sentences.
@@ -176,6 +418,104 @@ public enum MailSignals {
             return lower != account.lowercased()
                 && lower.patternRange(Correspondence.automatedLocalPart) == nil
         }
+    }
+}
+
+/// Dates as Chinese, Japanese, Korean and Bengali mail writes them, which
+/// Apple's date detector doesn't read: "2026年11月12日", "11月12日(木)
+/// 15時", "11월 12일 오후 3시", "11月12日下午3点半", "১২ নভেম্বর ২০২৬
+/// সকাল ১০টায়". Times alone ("15時", "오후 3시") too, for an event whose day
+/// is said elsewhere.
+enum LocalDates {
+    struct Found: Equatable {
+        let date: Date
+        let hasDay: Bool
+        let hasTime: Bool
+        /// In the text with its digits made ASCII (same length).
+        let range: NSRange
+    }
+
+    static let datePattern = #"(?:(\d{4})\s?[年년]\s?)?(\d{1,2})\s?[月월]\s?(\d{1,2})\s?[日일号號]"#
+    static let bengaliMonths = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর",
+                                "অক্টোবর", "নভেম্বর", "ডিসেম্বর"]
+    /// "মে" (May) never as the start of a longer word ("মেইল").
+    static let bengaliPattern = #"(\d{1,2})\s?("# + bengaliMonths.joined(separator: "|") + #")(?!\p{L})(?:,?\s?(\d{4}))?"#
+    /// A clock time: "15:30", "15時", "午後3時半", "下午3点", "오후 3시 30분",
+    /// "সকাল ১০টায়". Not "3時間" or "2시간" (hours, not a time), and not the
+    /// Bengali counting word in "৫টা বই" (five books).
+    static let timePattern = #"(午前|午後|上午|下午|中午|晚上|早上|凌晨|오전|오후|সকাল|দুপুর|বিকাল|বিকেল|সন্ধ্যা|রাত)?\s?(\d{1,2})\s?(?:[:：]\s?(\d{2})|([時时點点](?!間|间)|시(?!간)|টা(?=য|\s?বাজে))\s?(?:(\d{1,2})\s?[分분]|(半))?)"#
+
+    static func find(in source: String, now: Date, calendar: Calendar = .current) -> [Found] {
+        let digits = MailDigest.asciiDigits(source)
+        let ns = digits as NSString
+        guard digits.contains(where: { !$0.isASCII }),
+              let dates = PatternCache.shared.regex(datePattern + "|" + bengaliPattern, caseInsensitive: false),
+              let times = PatternCache.shared.regex(timePattern, caseInsensitive: false) else { return [] }
+        func number(_ match: NSTextCheckingResult, _ group: Int) -> Int? {
+            let range = match.range(at: group)
+            return range.location == NSNotFound ? nil : Int(ns.substring(with: range))
+        }
+        func text(_ match: NSTextCheckingResult, _ group: Int) -> String {
+            match.range(at: group).location == NSNotFound ? "" : ns.substring(with: match.range(at: group))
+        }
+        func clock(_ match: NSTextCheckingResult) -> (hour: Int, minute: Int)? {
+            guard var hour = number(match, 2) else { return nil }
+            let minute = number(match, 3) ?? number(match, 5) ?? (match.range(at: 6).location != NSNotFound ? 30 : 0)
+            let marker = text(match, 1)
+            if ["午後", "下午", "晚上", "오후", "বিকাল", "বিকেল", "সন্ধ্যা", "রাত"].contains(marker), hour < 12 { hour += 12 }
+            // "3시", "3点" with no morning or afternoon word: a meeting at
+            // three is in the afternoon.
+            if marker.isEmpty || marker == "দুপুর", !text(match, 4).isEmpty, (1...6).contains(hour) { hour += 12 }
+            guard (0...23).contains(hour), (0...59).contains(minute) else { return nil }
+            return (hour, minute)
+        }
+        var found: [Found] = []
+        var used: [NSRange] = []
+        for match in dates.matches(in: digits, range: NSRange(location: 0, length: ns.length)) {
+            let month: Int, day: Int, year: Int?
+            if match.range(at: 2).location != NSNotFound {
+                (month, day, year) = (number(match, 2) ?? 0, number(match, 3) ?? 0, number(match, 1))
+            } else {
+                let name = ns.substring(with: match.range(at: 5))
+                (month, day, year) = ((bengaliMonths.firstIndex(of: name) ?? -1) + 1, number(match, 4) ?? 0, number(match, 6))
+            }
+            guard (1...12).contains(month), (1...31).contains(day) else { continue }
+            // A time just after it: "11月12日(木) 15時", "11월 12일 오후 3시".
+            var range = match.range
+            var time: (hour: Int, minute: Int)?
+            let tail = NSRange(location: NSMaxRange(match.range), length: min(16, ns.length - NSMaxRange(match.range)))
+            if let next = times.firstMatch(in: digits, range: tail),
+               ns.substring(with: NSRange(location: tail.location, length: next.range.location - tail.location))
+                .allSatisfy({ !$0.isNumber && !$0.isNewline }),
+               let parsed = clock(next) {
+                time = parsed
+                range = NSUnionRange(range, next.range)
+            }
+            var parts = DateComponents(year: year ?? calendar.component(.year, from: now), month: month, day: day,
+                                       hour: time?.hour ?? 12, minute: time?.minute ?? 0)
+            guard var date = calendar.date(from: parts), calendar.component(.day, from: date) == day else { continue }
+            // No year: the next one, once this year's has long passed.
+            if year == nil, date < now.addingTimeInterval(-60 * 86_400) {
+                parts.year = (parts.year ?? 0) + 1
+                date = calendar.date(from: parts) ?? date
+            }
+            found.append(Found(date: date, hasDay: true, hasTime: time != nil, range: range))
+            used.append(range)
+        }
+        for match in times.matches(in: digits, range: NSRange(location: 0, length: ns.length)) {
+            // CJK and Bengali clock words only; "15:30" alone is the
+            // detector's.
+            guard match.range(at: 3).location == NSNotFound,
+                  !used.contains(where: { NSIntersectionRange($0, match.range).length > 0 }),
+                  // "以下3点" is three points: a Chinese 点 alone is a time
+                  // only with 上午/下午 or minutes ("下午3点", "3点半").
+                  !(["点", "點"].contains(text(match, 4)) && text(match, 1).isEmpty && match.range(at: 5).location == NSNotFound
+                    && match.range(at: 6).location == NSNotFound),
+                  let time = clock(match),
+                  let date = calendar.date(bySettingHour: time.hour, minute: time.minute, second: 0, of: now) else { continue }
+            found.append(Found(date: date, hasDay: false, hasTime: true, range: match.range))
+        }
+        return found
     }
 }
 
@@ -217,20 +557,27 @@ public enum EventFinder {
     // MARK: Structured data
 
     public static func fromStructuredData(_ html: String, now: Date = .now) -> EventSuggestion? {
+        structuredItems(in: html).compactMap(suggestion(from:))
+            .filter { $0.start > now.addingTimeInterval(-3_600) }
+            .min { $0.start < $1.start }
+    }
+
+    /// Every schema.org item the sender embedded for mail apps (JSON-LD),
+    /// `@graph` lists opened up.
+    static func structuredItems(in html: String) -> [[String: Any]] {
+        guard html.range(of: "application/ld+json", options: .caseInsensitive) != nil else { return [] }
         let pattern = #"(?is)<script[^>]*type\s*=\s*["']application/ld\+json["'][^>]*>(.*?)</script>"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
         let ns = html as NSString
-        var found: [EventSuggestion] = []
+        var items: [[String: Any]] = []
         for match in regex.matches(in: html, range: NSRange(location: 0, length: ns.length)) {
             let json = ns.substring(with: match.range(at: 1))
             guard let data = json.data(using: .utf8),
                   let object = try? JSONSerialization.jsonObject(with: data) else { continue }
-            let items = (object as? [[String: Any]]) ?? [(object as? [String: Any])].compactMap { $0 }
-            for item in items.flatMap(flattenGraph) {
-                if let event = suggestion(from: item), event.start > now.addingTimeInterval(-3_600) { found.append(event) }
-            }
+            let found = (object as? [[String: Any]]) ?? [(object as? [String: Any])].compactMap { $0 }
+            items += found.flatMap(flattenGraph)
         }
-        return found.min { $0.start < $1.start }
+        return items
     }
 
     private static func flattenGraph(_ item: [String: Any]) -> [[String: Any]] {
@@ -253,20 +600,20 @@ public enum EventFinder {
             let from = (flight["departureAirport"] as? [String: Any])?["iataCode"] as? String
             let to = (flight["arrivalAirport"] as? [String: Any])?["iataCode"] as? String
             let route = [from, to].compactMap { $0 }.joined(separator: " → ")
-            let title = ["Flight", [airline, number].filter { !$0.isEmpty }.joined(separator: " "), route]
+            let title = [String(localized: "Flight"), [airline, number].filter { !$0.isEmpty }.joined(separator: " "), route]
                 .filter { !$0.isEmpty }.joined(separator: " ")
             let airport = (flight["departureAirport"] as? [String: Any])?["name"] as? String
             return EventSuggestion(title: title, start: departs, end: date(flight["arrivalTime"]),
                                    location: airport, confirmation: confirmation)
         case "LodgingReservation":
             guard let checkin = date(item["checkinTime"] ?? item["checkinDate"]) else { return nil }
-            let name = (reservationFor?["name"] as? String) ?? "Hotel"
-            return EventSuggestion(title: "Stay at \(name)", start: checkin, end: date(item["checkoutTime"] ?? item["checkoutDate"]),
+            let name = (reservationFor?["name"] as? String) ?? String(localized: "Hotel")
+            return EventSuggestion(title: String(localized: "Stay at \(name)"), start: checkin, end: date(item["checkoutTime"] ?? item["checkoutDate"]),
                                    location: place(reservationFor?["address"]) ?? place(reservationFor),
                                    confirmation: confirmation)
         case "FoodEstablishmentReservation":
             guard let time = date(item["startTime"] ?? item["startDate"]) else { return nil }
-            let name = (reservationFor?["name"] as? String) ?? "Reservation"
+            let name = (reservationFor?["name"] as? String) ?? String(localized: "Reservation")
             return EventSuggestion(title: name, start: time, end: date(item["endTime"]),
                                    location: place(reservationFor?["address"]) ?? place(reservationFor),
                                    confirmation: confirmation)
@@ -274,7 +621,7 @@ public enum EventFinder {
             // Event, EventReservation and other reservations with a start.
             guard type.hasSuffix("Event") || type.hasSuffix("Reservation"),
                   let start = date(subject["startDate"] ?? item["startTime"] ?? item["startDate"]) else { return nil }
-            let name = subject["name"] as? String ?? "Event"
+            let name = subject["name"] as? String ?? String(localized: "Event")
             return EventSuggestion(title: name, start: start, end: date(subject["endDate"] ?? item["endTime"]),
                                    location: place(subject["location"]), confirmation: confirmation)
         }
@@ -327,22 +674,38 @@ public enum EventFinder {
         func text(_ key: String) -> String? {
             fields[key]?.value.replacingOccurrences(of: "\\,", with: ",").replacingOccurrences(of: "\\n", with: " ")
         }
-        return EventSuggestion(title: text("SUMMARY") ?? "Event", start: start, end: icsDate(fields["DTEND"]),
+        return EventSuggestion(title: text("SUMMARY") ?? String(localized: "Event"), start: start, end: icsDate(fields["DTEND"]),
                                location: text("LOCATION").flatMap { $0.isEmpty ? nil : $0 })
     }
 
     // MARK: Wording
 
-    private static let eventWords = #"appointment|reservation|booking|meeting|interview|flight|check-in|event|dinner|lunch|call|webinar|session|visit|consultation|class|concert|show"#
+    /// What an event is called, in English and the app's other languages
+    /// ("Termin", "rendez-vous", "cita", "reunião", "মিটিং"); with word
+    /// boundaries.
+    private static let eventWords = #"appointment|reservation|booking|meeting|interview|flight|check-in|event|dinner|lunch|call|webinar|session|visit|consultation|class|concert|show|termin|besprechung|sitzung|treffen|veranstaltung|flug|reservierung|buchung|vorstellungsgespräch|rendez-vous|réunion|vol|réservation|entretien|dîner|déjeuner|événement|webinaire|cita|reunión|vuelo|reserva|entrevista|cena|almuerzo|evento|reunião|voo|consulta|jantar|almoço|agendamento|অ্যাপয়েন্টমেন্ট|মিটিং|সভা|ফ্লাইট|বুকিং|সাক্ষাৎকার|অনুষ্ঠান"#
+    /// The same in Chinese, Japanese and Korean, which have no spaces to
+    /// mark a word's edge.
+    private static let cjkEventWords = #"予約|会議|打ち合わせ|ミーティング|面接|フライト|搭乗|診察|イベント|説明会|예약|회의|미팅|면접|항공편|진료|행사|약속|预约|預約|会议|會議|面试|面試|航班|活动|活動|聚餐|晚宴|见面|見面"#
+
+    /// A clock time in what the date detector found: "3:30", "3pm",
+    /// "noon", and the European ways, "15 Uhr", "15h30", "15h".
+    private static let clockPattern = #"\d:\d\d|\d[.:]\d\d\s?(am|pm)\b|\d\s?(am|pm)\b|noon|\d\s?uhr\b|\d{1,2}\s?h(\d\d)?\b|mittag|midi\b|mediodía|meio-dia"#
+    /// A day in it: a weekday or month name in the app's Latin-script
+    /// languages, a numeric date (not "7.15pm"), or today/tomorrow.
+    private static let dayPattern = #"\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\b\d{1,4}[/-]\d{1,2}\b|\b\d{1,2}\.\d{1,2}\.\d{2,4}\b|\b(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|lunes|martes|miércoles|jueves|viernes|sábado|domingo|segunda|terça|quarta|quinta|sexta)\b|\b(januar|februar|märz|mai|juni|juli|oktober|dezember|janvier|février|mars|avril|juin|juillet|août|septembre|octobre|novembre|décembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|janeiro|fevereiro|março|maio|junho|julho|setembro|outubro|novembro|dezembro)\b|"# + relativeDayPattern
+    private static let relativeDayPattern = #"\b(today|tonight|tomorrow|heute|morgen|aujourd'hui|demain|hoy|mañana|hoje|amanhã)\b"#
 
     /// The earliest upcoming date with a clock time in the next three
     /// months. Relative days ("tomorrow", "Friday") resolve against today,
     /// so they only count in mail that arrived today; explicit dates
-    /// always do. A range ("2:45–3:30 PM") sets the end.
+    /// always do. A range ("2:45–3:30 PM") sets the end. Dates in Chinese,
+    /// Japanese, Korean and Bengali ("11月12日 15時", "11월 12일 오후 3시")
+    /// are read by `LocalDates`.
     public static func fromWording(_ text: String, subject: String, receivedAt: Date, now: Date = .now) -> EventSuggestion? {
         let own = String(MailSignals.ownText(text).prefix(6_000))
         let all = subject + "\n" + own
-        guard all.patternRange("(?i)\\b(" + eventWords + ")\\b") != nil,
+        guard all.patternRange("(?i)\\b(" + eventWords + ")\\b|" + cjkEventWords) != nil,
               let dates = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else { return nil }
         let arrivedToday = Calendar.current.isDate(receivedAt, inSameDayAs: now)
         let ns = own as NSString
@@ -351,10 +714,17 @@ public enum EventFinder {
         // its own ("doors open 19:15", "7.15pm") comes back as today at that
         // time, so a meeting on Thursday the 15th showed as today at 19:15.
         struct Found { let date: Date; let duration: TimeInterval; let hasTime: Bool; let hasDay: Bool }
-        let found = dates.matches(in: own, range: NSRange(location: 0, length: ns.length)).compactMap { match -> Found? in
-            guard let date = match.date else { return nil }
+        let order = MailSignals.numericDateOrder(senderEmail: nil, text: own)
+        var found = dates.matches(in: own, range: NSRange(location: 0, length: ns.length)).compactMap { match -> Found? in
+            guard var date = match.date else { return nil }
             let phrase = ns.substring(with: match.range).lowercased()
-            let hasTime = phrase.patternRange(#"\d:\d\d|\d[.:]\d\d\s?(am|pm)\b|\d\s?(am|pm)\b|noon"#) != nil
+            let hasTime = phrase.patternRange(clockPattern) != nil
+            // 03/11 read the writer's way, or not at all.
+            switch MailSignals.numericReading(of: phrase, detected: date, order: order) {
+            case .notNumeric: break
+            case .date(let written): date = written
+            case .ambiguous: return nil
+            }
             // A day: a weekday or month name, a numeric date (not "7.15pm"),
             // or today/tomorrow.
             // In any language: a time alone comes back as today (or
@@ -364,12 +734,14 @@ public enum EventFinder {
             // alone as today by the clock, whatever `now` is.
             let dayOffset = calendar.dateComponents([.day], from: calendar.startOfDay(for: Date()),
                                                     to: calendar.startOfDay(for: date)).day ?? 0
-            let hasDay = dayOffset > 1 || dayOffset < 0
-                || phrase.patternRange(#"\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\b\d{1,4}[/-]\d{1,2}\b|\b\d{1,2}\.\d{1,2}\.\d{2,4}\b|\b(today|tonight|tomorrow)\b"#) != nil
+            let hasDay = dayOffset > 1 || dayOffset < 0 || phrase.patternRange(dayPattern) != nil
             // "Tomorrow" in an email from days ago isn't tomorrow now.
-            let isRelative = phrase.patternRange(#"\b(today|tonight|tomorrow)\b"#) != nil
+            let isRelative = phrase.patternRange(relativeDayPattern) != nil
             if isRelative, !arrivedToday { return nil }
             return Found(date: date, duration: match.duration, hasTime: hasTime, hasDay: hasDay)
+        }
+        found += LocalDates.find(in: own, now: now).map {
+            Found(date: $0.date, duration: 0, hasTime: $0.hasTime, hasDay: $0.hasDay)
         }
         let window = { (date: Date) in date > now && date < now.addingTimeInterval(92 * 86_400) }
         // Day and time together.

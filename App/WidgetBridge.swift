@@ -1,3 +1,6 @@
+#if os(macOS)
+import AppKit
+#endif
 import Foundation
 import UserNotifications
 import WidgetKit
@@ -58,7 +61,11 @@ enum WidgetBridge {
         let since: Date?
 
         @MainActor static func current(_ threads: [Correspondence]) -> BadgeInputs {
-            let kind = CorresSettings.badge
+            // Free with no Pro, where Needs You is locked: counting a list you
+            // can't open would be a number with nowhere to go, so the badge
+            // counts unread Primary mail instead, as Mail does with its inbox.
+            let chosen = CorresSettings.badge
+            let kind: CorresSettings.Badge = chosen == .needsYou && WidgetBridge.isLocked ? .primary : chosen
             let accounts = UserDefaults.standard.stringArray(forKey: "corres.connectedAccounts") ?? []
             let hidden = Set(accounts.filter { !AccountPreferences.showsInAllInboxes($0) })
             var overrides: [ThreadID: InboxCategory] = [:]
@@ -119,8 +126,14 @@ enum WidgetBridge {
     private static func apply(_ built: Built) {
         if built.badge != lastBadge {
             lastBadge = built.badge
+            #if os(macOS)
+            // The Dock icon, by the same rules as the iPhone's: the only
+            // place the Mac sets it, and it needs no notification permission.
+            NSApplication.shared.dockTile.badgeLabel = built.badge > 0 ? "\(built.badge)" : nil
+            #else
             // iOS ties badges to notification permission; shows once allowed.
             UNUserNotificationCenter.current().setBadgeCount(built.badge)
+            #endif
         }
         var snapshot = built.snapshot
         snapshot.isLocked = isLocked && !snapshot.isSample

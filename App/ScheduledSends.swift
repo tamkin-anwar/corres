@@ -175,8 +175,8 @@ final class ScheduledSends {
         items[index].heldBecauseReplied = true
         save()
         let content = UNMutableNotificationContent()
-        content.title = "Scheduled reply held"
-        content.body = "\(sender) replied to \u{201C}\(item.draft.subject)\u{201D} before it was sent. Open Corres to send it anyway or change it."
+        content.title = String(localized: "Scheduled reply held")
+        content.body = String(localized: "\(sender) replied to \u{201C}\(item.draft.subject)\u{201D} before it was sent. Open Corres to send it anyway or change it.")
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: Self.reminderID(item.id), content: content, trigger: nil))
     }
 
@@ -190,8 +190,9 @@ final class ScheduledSends {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: [Self.reminderID(item.id)])
         let content = UNMutableNotificationContent()
-        content.title = "Ready to send"
-        content.body = "\u{201C}\(item.draft.subject.isEmpty ? "Your email" : item.draft.subject)\u{201D} is waiting. Open Corres to send it."
+        content.title = String(localized: "Ready to send")
+        let subject = item.draft.subject.isEmpty ? String(localized: "Your email") : item.draft.subject
+        content.body = String(localized: "\u{201C}\(subject)\u{201D} is waiting. Open Corres to send it.")
         content.userInfo = ["destination": "scheduled"]
         let fire = max(item.sendAt.addingTimeInterval(3 * 60).timeIntervalSinceNow, 5)
         center.add(UNNotificationRequest(identifier: Self.reminderID(item.id), content: content,
@@ -223,8 +224,9 @@ final class ScheduledSends {
     // MARK: Suggested times
 
     /// The times offered on Send, as Mail and Spark offer them: this
-    /// evening (before 5 PM), tomorrow at the start of your day, Monday
-    /// morning from Friday on.
+    /// evening (before 5 PM), tomorrow at the start of your day, and the
+    /// first working day after the weekend from the day before it (Monday
+    /// from Friday on in most places, Sunday from Thursday in Bangladesh).
     static func suggestions(now: Date = .now,
                             morningHour: Int = UserDefaults.standard.object(forKey: CorresSettings.morningHourKey) as? Int ?? 8)
         -> [(title: String, date: Date)] {
@@ -232,17 +234,15 @@ final class ScheduledSends {
         var result: [(String, Date)] = []
         let hour = calendar.component(.hour, from: now)
         if hour < 17, let evening = calendar.date(bySettingHour: 18, minute: 0, second: 0, of: now) {
-            result.append(("This Evening", evening))
+            result.append((String(localized: "This Evening"), evening))
         }
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
            let morning = calendar.date(bySettingHour: morningHour, minute: 0, second: 0, of: tomorrow) {
-            result.append(("Tomorrow Morning", morning))
+            result.append((String(localized: "Tomorrow Morning"), morning))
         }
-        let weekday = calendar.component(.weekday, from: now) // 1 Sunday … 7 Saturday
-        if [6, 7, 1].contains(weekday),
-           let monday = calendar.nextDate(after: now, matching: DateComponents(weekday: 2), matchingPolicy: .nextTime),
-           let morning = calendar.date(bySettingHour: morningHour, minute: 0, second: 0, of: monday) {
-            result.append(("Monday Morning", morning))
+        if let workday = TimePhrase.workWeekStartForSendLater(now: now, calendar: calendar),
+           let morning = calendar.date(bySettingHour: morningHour, minute: 0, second: 0, of: workday) {
+            result.append((String(localized: "\(morning.formatted(.dateTime.weekday(.wide))) Morning"), morning))
         }
         return result
     }

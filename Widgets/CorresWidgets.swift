@@ -64,10 +64,12 @@ struct SnapshotProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SnapshotEntry>) -> Void) {
-        let entry = SnapshotEntry(date: .now, snapshot: WidgetSnapshot.load() ?? .placeholder)
-        // A fallback refresh in case the app hasn't run for a while, so
-        // relative times ("2h") stay roughly right.
-        completion(Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(30 * 60))))
+        let snapshot = WidgetSnapshot.load() ?? .placeholder
+        // One entry each quarter hour, each with its own "2h", so the times
+        // move on without the app; then a fresh look in case it hasn't run.
+        let now = Date.now
+        let entries = (0..<8).map { SnapshotEntry(date: now.addingTimeInterval(Double($0) * 15 * 60), snapshot: snapshot) }
+        completion(Timeline(entries: entries, policy: .atEnd))
     }
 }
 
@@ -123,7 +125,7 @@ struct NeedsYouWidget: Widget {
         StaticConfiguration(kind: "corres.needsYou", provider: SnapshotProvider()) { entry in
             ListWidgetView(title: String(localized: "Needs You"), count: entry.snapshot.needsYouCount, items: entry.snapshot.needsYou,
                            emptyText: String(localized: "Nothing in Needs You"), showsReason: true, destination: "needs-you",
-                           isSample: entry.snapshot.isSample, isLocked: entry.snapshot.isLocked == true)
+                           isSample: entry.snapshot.isSample, isLocked: entry.snapshot.isLocked == true, now: entry.date)
         }
         .configurationDisplayName("Needs You")
         .description("The conversations that ask something of you, with the reason for each.")
@@ -136,7 +138,7 @@ struct WaitingWidget: Widget {
         StaticConfiguration(kind: "corres.waiting", provider: SnapshotProvider()) { entry in
             ListWidgetView(title: String(localized: "Waiting"), count: entry.snapshot.waitingCount, items: entry.snapshot.waiting,
                            emptyText: String(localized: "Nothing in Waiting"), showsReason: false, destination: "waiting",
-                           isSample: entry.snapshot.isSample, isLocked: entry.snapshot.isLocked == true)
+                           isSample: entry.snapshot.isSample, isLocked: entry.snapshot.isLocked == true, now: entry.date)
         }
         .configurationDisplayName("Waiting")
         .description("Conversations waiting on someone else's reply.")
@@ -155,6 +157,8 @@ struct ListWidgetView: View {
     @Environment(\.widgetFamily) private var family
 
     var isLocked = false
+    /// The entry's moment, for "2h": each entry in the timeline says it as of its own time.
+    var now = Date.now
 
     var body: some View {
         Group {
@@ -279,7 +283,10 @@ struct ListWidgetView: View {
                     if let due = item.dueLabel {
                         Text(due).font(.caption2.weight(.semibold)).foregroundStyle(WidgetPalette.accent)
                     } else {
-                        Text(item.receivedAt.formatted(.relative(presentation: .numeric, unitsStyle: .narrow)))
+                        // As of the entry's moment: moved by however far ahead
+                        // of it this is drawn, then said relative to now.
+                        Text(min(item.receivedAt.addingTimeInterval(Date.now.timeIntervalSince(now)), .now)
+                            .formatted(.relative(presentation: .numeric, unitsStyle: .narrow)))
                             .font(.caption2).foregroundStyle(WidgetPalette.tertiary)
                     }
                 }

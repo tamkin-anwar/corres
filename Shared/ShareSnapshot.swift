@@ -66,12 +66,21 @@ enum ShareOutbox {
     }
 
     /// Everything waiting, removed from the queue as it's handed over.
+    /// Only what was read: a file that can't be read yet (the device still
+    /// locked) stays for next time, and one that reads but doesn't decode
+    /// is set aside as ".unreadable" instead of deleted, so an email you
+    /// wrote is never thrown away unseen.
     static func takeAll() -> [Draft] {
         guard let folder,
               let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil) else { return [] }
         return files.filter { $0.pathExtension == "json" }.compactMap { file in
-            defer { try? FileManager.default.removeItem(at: file) }
-            return (try? Data(contentsOf: file)).flatMap { try? JSONDecoder().decode(Draft.self, from: $0) }
+            guard let data = try? Data(contentsOf: file) else { return nil }
+            guard let draft = try? JSONDecoder().decode(Draft.self, from: data) else {
+                try? FileManager.default.moveItem(at: file, to: file.deletingPathExtension().appendingPathExtension("unreadable"))
+                return nil
+            }
+            try? FileManager.default.removeItem(at: file)
+            return draft
         }
     }
 }

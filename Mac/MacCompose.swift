@@ -44,6 +44,9 @@ struct MacComposeView: View {
     @State private var highlighted = 0
     /// As it opened: nothing is saved until it's changed from this.
     @State private var opened: Draft?
+    /// A new email, reply or forward, not one continued from Drafts, Send
+    /// Later or the last launch: only these take a default From address.
+    @State private var isFresh = false
     /// The save to Drafts waiting for a pause in typing.
     @State private var saveTask: Task<Void, Never>?
     @State private var confirmDelete = false
@@ -176,6 +179,7 @@ struct MacComposeView: View {
         return value.to != opened.to || (value.cc ?? "") != (opened.cc ?? "") || (value.bcc ?? "") != (opened.bcc ?? "")
             || value.subject != opened.subject || value.body != opened.body
             || value.attachments.map(\.id) != opened.attachments.map(\.id)
+            || (value.fromAccount ?? "") != (opened.fromAccount ?? "") || value.fromAddress != opened.fromAddress
     }
 
     /// The latest words to Drafts now, if they haven't gone yet.
@@ -183,7 +187,14 @@ struct MacComposeView: View {
         saveTask?.cancel()
         guard MacComposeDrafts.shared.needsSaving(draft.id) else { return }
         MacComposeDrafts.shared.savingToServer(draft.id)
-        services.outbox.autosave(draft, replyingTo: replyingTo)
+        let outbox = services.outbox, saving = draft
+        outbox.autosave(saving, replyingTo: replyingTo)
+        // Its server draft noted on this Mac as soon as the save lands, so
+        // after a crash the copy here updates that draft, not a second one.
+        Task {
+            _ = await outbox.finishDraftSaves(timeout: .seconds(60))
+            if let serverID = outbox.savedDraftID(for: saving) { MacComposeDrafts.shared.noteServerID(serverID, for: saving.id) }
+        }
     }
 
     /// Untouched and never saved: closed without asking.
@@ -386,14 +397,19 @@ struct MacComposeView: View {
 
     /// New mail from the account's default send-as address; a reply from
     /// the address of yours it was sent to. Only when nothing's been picked.
+    /// Not for a draft continued from elsewhere: nil there means it was
+    /// written from the account's own address.
     private func chooseDefaultAddress() {
-        guard draft.fromAddress == nil, !fromAccount.isEmpty else { return }
+        guard isFresh, draft.fromAddress == nil, !fromAccount.isEmpty else { return }
         let directory = SendAsDirectory.shared
         let pick = replyingTo.flatMap { directory.address(for: fromAccount, answering: $0) }
             ?? (draft.kind == .new ? directory.defaultAddress(for: fromAccount) : nil)
         guard let pick, !pick.isPrimary else { return }
         draft.fromAddress = pick.email
         draft.fromName = pick.name.isEmpty ? nil : pick.name
+        // Corres's choice, not a change of yours to save.
+        opened?.fromAddress = draft.fromAddress
+        opened?.fromName = draft.fromName
     }
 
     // MARK: Signature
@@ -431,8 +447,8 @@ struct MacComposeView: View {
             // Swapped in place.
         } else if !text.isEmpty {
             let body = inserter.textView?.string ?? draft.body
-            let quote = body.range(of: #"\n\nOn .+ wrote:\n"#, options: .regularExpression)
-            let offset = quote.map { body.utf16.distance(from: body.startIndex, to: $0.lowerBound) } ?? (body as NSString).length
+            let quote = QuoteDetector.quoteStart(in: body)
+            let offset = quote.map { body.utf16.distance(from: body.startIndex, to: $0) } ?? (body as NSString).length
             inserter.insert("\n\n" + text, at: offset)
         }
         signatureText = text
@@ -470,8 +486,10 @@ struct MacComposeView: View {
         guard !loaded else { return }
         if let handoff = request.handoff, let whole = MacComposeHandoff.drafts.removeValue(forKey: handoff) {
             draft = whole
+            isFresh = MacComposeHandoff.fresh.remove(handoff) != nil
             replyingTo = whole.threadID.flatMap { services.store.thread($0) }
             fromAccount = whole.fromAccount ?? accounts.first ?? ""
+            draft.fromAccount = fromAccount.isEmpty ? nil : fromAccount
             let signature = CorresSettings.signature(for: fromAccount, reply: whole.kind != .new)
             signatureText = !signature.isEmpty && whole.body.contains(signature) ? signature : ""
             showsCc = !(whole.cc ?? "").isEmpty || !(whole.bcc ?? "").isEmpty
@@ -490,6 +508,7 @@ struct MacComposeView: View {
             draft.fromAccount = request.account
             draft.gmailDraftID = request.serverDraftID
         }
+        isFresh = request.serverDraftID == nil
         // Settings › Composing › Send new mail from, for a new email.
         let preferred = CorresSettings.defaultFromAccount.flatMap { accounts.contains($0) ? $0 : nil }
         let account = draft.fromAccount ?? replyingTo?.id.account ?? preferred ?? accounts.first ?? ""
@@ -527,20 +546,24 @@ struct MacComposeView: View {
     @State private var choosingTime = false
     @State private var chosenTime = Calendar.current.date(byAdding: .hour, value: 1, to: .now) ?? .now
 
-    /// Mail's own choices: tonight, tomorrow morning, and Monday.
+    /// Mail's own choices: tonight, tomorrow morning, and the first working
+    /// day after the weekend (Monday in most places, Sunday in Bangladesh)
+    /// unless that's tomorrow, in the Mac's own language and clock.
     private var sendLaterPresets: [(title: String, date: Date)] {
         let calendar = Calendar.current
         let now = Date.now
         var presets: [(String, Date)] = []
+        func time(_ date: Date) -> String { date.formatted(date: .omitted, time: .shortened) }
         if let tonight = calendar.date(bySettingHour: 21, minute: 0, second: 0, of: now), tonight > now.addingTimeInterval(1_800) {
-            presets.append(("Tonight at 9:00 PM", tonight))
+            presets.append((String(localized: "Tonight at \(time(tonight))"), tonight))
         }
         if let morning = calendar.date(byAdding: .day, value: 1, to: now).flatMap({ calendar.date(bySettingHour: 8, minute: 0, second: 0, of: $0) }) {
-            presets.append(("Tomorrow at 8:00 AM", morning))
+            presets.append((String(localized: "Tomorrow at \(time(morning))"), morning))
         }
-        if let monday = calendar.nextDate(after: now, matching: DateComponents(hour: 8, weekday: 2), matchingPolicy: .nextTime),
-           !calendar.isDateInTomorrow(monday) {
-            presets.append(("Monday at 8:00 AM", monday))
+        let workday = TimePhrase.nextWorkWeekStart(after: now, calendar: calendar)
+        if calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: workday).day ?? 8 <= 7,
+           let morning = calendar.date(bySettingHour: 8, minute: 0, second: 0, of: workday) {
+            presets.append((String(localized: "\(morning.formatted(.dateTime.weekday(.wide))) at \(time(morning))"), morning))
         }
         return presets
     }
@@ -636,20 +659,33 @@ final class MacComposeDrafts {
     private var entries: [UUID: Entry] = [:]
     private var writeTask: Task<Void, Never>?
     private var restored = false
+    /// Windows closed this launch: once Drafts on the server has them,
+    /// they aren't opened again, even if Corres quits before that's known.
+    private var closed: Set<UUID> = []
     /// Set as Corres quits: windows closing then are kept to open again.
     var isQuitting = false
 
-    private static var fileURL: URL? {
+    /// One at a time, in order, away from the main thread.
+    nonisolated private static let writes = DispatchQueue(label: "studio.anwarcreative.corres.composeDrafts", qos: .utility)
+
+    nonisolated private static var folder: URL? {
         guard let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
         let folder = support.appendingPathComponent(Bundle.main.bundleIdentifier ?? "Corres", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        return folder.appendingPathComponent("ComposeDrafts.json")
+        return folder
+    }
+
+    nonisolated private static var fileURL: URL? { folder?.appendingPathComponent("ComposeDrafts.json") }
+    /// Each attachment's bytes in a file of its own, named by its id and
+    /// written once: the list itself only says which.
+    nonisolated private static var attachmentsFolder: URL? {
+        folder?.appendingPathComponent("ComposeAttachments", isDirectory: true)
     }
 
     private init() {
         if let url = Self.fileURL, let data = try? Data(contentsOf: url),
            let saved = try? JSONDecoder().decode([Entry].self, from: data) {
-            entries = Dictionary(saved.map { ($0.draft.id, $0) }, uniquingKeysWith: { $1 })
+            entries = Dictionary(saved.map { ($0.draft.id, Self.withAttachmentData($0)) }, uniquingKeysWith: { $1 })
         }
     }
 
@@ -677,8 +713,16 @@ final class MacComposeDrafts {
         scheduleWrite()
     }
 
+    /// A save to Drafts landed: its server draft, kept with the copy here.
+    func noteServerID(_ serverID: String, for id: UUID) {
+        guard let entry = entries[id], entry.draft.gmailDraftID != serverID else { return }
+        entries[id]?.draft.gmailDraftID = serverID
+        scheduleWrite()
+    }
+
     /// Sent, scheduled, deleted, or closed with nothing written.
     func forget(_ id: UUID) {
+        closed.remove(id)
         guard entries.removeValue(forKey: id) != nil else { return }
         scheduleWrite()
     }
@@ -686,8 +730,10 @@ final class MacComposeDrafts {
     /// Closed: the copy here goes once Drafts on the server has it, and
     /// stays, to open again, if it couldn't be saved there.
     func forgetOnceSaved(_ draft: Draft, outbox: OutboxService) {
+        closed.insert(draft.id)
         Task {
             _ = await outbox.finishDraftSaves(timeout: .seconds(60))
+            // Quitting meanwhile: `noteSavedDrafts` decides.
             guard !isQuitting else { return }
             if outbox.savedDraftID(for: draft) != nil || draft.gmailDraftID != nil, entries[draft.id]?.needsSaving != true {
                 forget(draft.id)
@@ -710,12 +756,15 @@ final class MacComposeDrafts {
 
     /// After the saves: each one's server draft, so the next launch
     /// updates it rather than saving a second; still marked to save if
-    /// the server never had it.
+    /// the server never had it. A window already closed whose draft the
+    /// server has doesn't open again.
     func noteSavedDrafts(from outbox: OutboxService) {
         for (id, entry) in entries {
-            if let serverID = outbox.savedDraftID(for: entry.draft) {
+            let serverID = outbox.savedDraftID(for: entry.draft) ?? entry.draft.gmailDraftID
+            if let serverID {
                 entries[id]?.draft.gmailDraftID = serverID
-            } else if entry.draft.gmailDraftID == nil {
+                if closed.contains(id), !entry.needsSaving { entries[id] = nil }
+            } else {
                 entries[id]?.needsSaving = true
             }
         }
@@ -727,18 +776,60 @@ final class MacComposeDrafts {
         writeTask = Task {
             try? await Task.sleep(for: .seconds(1))
             guard !Task.isCancelled else { return }
-            writeNow()
+            writeTask = nil
+            // A copy of the list as it is now, written in the background.
+            let snapshot = Array(entries.values)
+            Self.writes.async { Self.write(snapshot) }
         }
     }
 
+    /// Written before this returns, after any write already on its way
+    /// (quitting).
     func writeNow() {
         writeTask?.cancel()
         writeTask = nil
-        guard let url = Self.fileURL else { return }
-        if entries.isEmpty {
-            try? FileManager.default.removeItem(at: url)
-        } else if let data = try? JSONEncoder().encode(Array(entries.values)) {
-            try? data.write(to: url, options: .atomic)
+        let snapshot = Array(entries.values)
+        Self.writes.sync { Self.write(snapshot) }
+    }
+
+    nonisolated private static func write(_ entries: [Entry]) {
+        guard let url = fileURL, let attachments = attachmentsFolder else { return }
+        let files = FileManager.default
+        guard !entries.isEmpty else {
+            try? files.removeItem(at: url)
+            try? files.removeItem(at: attachments)
+            return
         }
+        try? files.createDirectory(at: attachments, withIntermediateDirectories: true)
+        var referenced = Set<String>()
+        let listed = entries.map { entry in
+            var entry = entry
+            entry.draft.attachments = entry.draft.attachments.map { file in
+                let name = file.id.uuidString
+                referenced.insert(name)
+                let path = attachments.appendingPathComponent(name)
+                if !files.fileExists(atPath: path.path) { try? file.data.write(to: path, options: .atomic) }
+                return PendingAttachment(id: file.id, filename: file.filename, mimeType: file.mimeType, data: Data())
+            }
+            return entry
+        }
+        if let data = try? JSONEncoder().encode(listed) { try? data.write(to: url, options: .atomic) }
+        // Attachments no longer in any draft go.
+        for name in (try? files.contentsOfDirectory(atPath: attachments.path)) ?? [] where !referenced.contains(name) {
+            try? files.removeItem(at: attachments.appendingPathComponent(name))
+        }
+    }
+
+    /// Its attachments' bytes, read back from their files. One saved by
+    /// an earlier version carries them in the list itself.
+    nonisolated private static func withAttachmentData(_ entry: Entry) -> Entry {
+        guard let attachments = attachmentsFolder, entry.draft.attachments.contains(where: \.data.isEmpty) else { return entry }
+        var entry = entry
+        entry.draft.attachments = entry.draft.attachments.compactMap { file in
+            guard file.data.isEmpty else { return file }
+            guard let data = try? Data(contentsOf: attachments.appendingPathComponent(file.id.uuidString)) else { return nil }
+            return PendingAttachment(id: file.id, filename: file.filename, mimeType: file.mimeType, data: data)
+        }
+        return entry
     }
 }

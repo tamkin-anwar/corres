@@ -156,7 +156,8 @@ final class AskService {
                 // Corres's own words, never the model's, when there's no
                 // answer: what it writes then is what went wrong.
                 answerFound = false
-                answer = seen.isEmpty ? "Nothing in your mail answers that." : "Couldn't find the answer in your mail. These came closest."
+                answer = seen.isEmpty ? String(localized: "Nothing in your mail answers that.")
+                    : String(localized: "Couldn't find the answer in your mail. These came closest.")
                 sources = Array(seen.prefix(4)).map(Source.init)
             }
         } catch {
@@ -223,8 +224,9 @@ final class AskService {
                 && InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated) == nil
         }
         func firstName(_ thread: Correspondence) -> String? {
-            guard let first = thread.sender.split(separator: " ").first.map(String.init),
-                  first.count >= 2, first.allSatisfy({ $0.isLetter || $0 == "-" || $0 == "'" }),
+            // "Md. Rahim Uddin" is "Rahim", "王伟" stays whole.
+            let first = Person.firstName(of: thread.sender)
+            guard first.count >= 2, first.allSatisfy({ $0.isLetter || $0 == "-" || $0 == "'" }),
                   !ownNames.contains(first.lowercased()) else { return nil }
             // "TAMKIN" reads as "Tamkin".
             return first == first.uppercased() ? first.capitalized : first

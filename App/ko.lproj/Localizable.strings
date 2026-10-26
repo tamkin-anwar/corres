@@ -3266,3 +3266,463 @@
 
 /* No comment provided by engineer. */
 "Reply from your Apple Watch" = "Apple Watch에서 보낸 답장";
+
+/* Alert title for a push when the notification extension can't fill in the email in time (title-loc-key from the push relay and iCloud watcher). */
+"New email" = "새 이메일";
+
+
+/* No comment provided by engineer. */
+"Sample mail" = "샘플 메일";
+
+/* No comment provided by engineer. */
+"Loading the full email…" = "전체 이메일을 불러오는 중…";
+
+/* No comment provided by engineer. */
+"To: %@" = "받는 사람: %@";
+
+/* No comment provided by engineer. */
+"In 1 Day" = "1일 후";
+
+/* No comment provided by engineer. */
+"In 3 Days" = "3일 후";
+
+/* No comment provided by engineer. */
+"In 1 Week" = "1주 후";
+
+/* No comment provided by engineer. */
+"New mail notifies the moment it arrives. Corres's server keeps this account's app-specific password, sealed so only its mail watcher can open it, and never reads or stores your email. Turn this off to delete it." = "새 메일이 도착하는 즉시 알립니다. Corres 서버는 이 계정의 앱 전용 암호를 메일 감시 기능만 열 수 있도록 봉인해 보관하며, 메일을 읽거나 저장하지 않습니다. 이 기능을 끄면 암호가 삭제됩니다.";
+
+/* No comment provided by engineer. */
+"iCloud tells only Apple Mail the moment mail arrives. Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email." = "iCloud는 메일이 도착하는 즉시 Apple Mail에만 알립니다. 이 기능이 없으면 Corres는 iOS가 허용할 때(보통 1시간 이내) 확인하고, 열려 있는 동안에는 즉시 확인합니다. 켜면 Corres 서버가 받은 편지함을 대신 지켜보며, 메일을 읽거나 저장하지 않습니다.";
+
+/* No comment provided by engineer. */
+"Without this, Corres checks when iOS lets it, usually within the hour, and instantly while it's open. Turn it on and Corres's server watches your Inbox for you; it never reads or stores your email." = "이 기능이 없으면 Corres는 iOS가 허용할 때(보통 1시간 이내) 확인하고, 열려 있는 동안에는 즉시 확인합니다. 켜면 Corres 서버가 받은 편지함을 대신 지켜보며, 메일을 읽거나 저장하지 않습니다.";
+
+/* No comment provided by engineer. */
+"Turn on notifications for Corres first, in Settings > Notifications." = "먼저 설정 > 알림에서 Corres의 알림을 켜세요.";
+
+/* No comment provided by engineer. */
+"Couldn't reach Corres's server. Try again in a moment." = "Corres 서버에 연결할 수 없습니다. 잠시 후 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Key Details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. Summaries are written on this %@ and checked against the email: every name, number and date has to be in it. Summaries are part of Corres Pro." = "주요 정보: 영수증이나 청구서의 상태와 금액, 배송 날짜, 긴 이메일이 요청하는 내용을 이메일에서 바로 읽어 옵니다. 요약은 이 %@에서 작성되고 이메일과 대조됩니다. 모든 이름, 숫자, 날짜가 이메일에 있어야 합니다. 요약은 Corres Pro에 포함됩니다.";
+
+/* No comment provided by engineer. */
+"Key Details: a receipt's or bill's status and amounts, a delivery's date, and what a long email asks of you, read straight from the email. Summaries need Apple Intelligence, and are part of Corres Pro." = "주요 정보: 영수증이나 청구서의 상태와 금액, 배송 날짜, 긴 이메일이 요청하는 내용을 이메일에서 바로 읽어 옵니다. 요약에는 Apple Intelligence가 필요하며 Corres Pro에 포함됩니다.";
+
+/* No comment provided by engineer. */
+"Google asks once for permission to change this setting for %@. Corres asks only now, not when you sign in." = "Google은 %@의 이 설정을 변경할 권한을 한 번만 요청합니다. Corres는 로그인할 때가 아니라 지금만 요청합니다.";
+
+/* No comment provided by engineer. */
+"Google didn’t give Corres permission. Make sure you pick %@ and tick the Gmail settings box." = "Google에서 Corres에 권한을 주지 않았습니다. %@을(를) 선택하고 Gmail 설정 상자를 체크하세요.";
+
+/* No comment provided by engineer. */
+"Off. No automatic replies." = "끔. 자동 응답을 보내지 않습니다.";
+
+/* No comment provided by engineer. */
+"On. %@ will reply from %@ until %@." = "켬. %@에서 %@부터 %@까지 답장합니다.";
+
+/* No comment provided by engineer. */
+"On. %@ will reply from %@." = "켬. %@에서 %@부터 답장합니다.";
+
+/* No comment provided by engineer. */
+"Couldn't save. Try again." = "저장할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"%lld messages, including “%@”" = "메시지 %lld개, “%@” 포함";
+
+/* No comment provided by engineer. */
+"Allowed %@" = "%@ 허용됨";
+
+/* No comment provided by engineer. */
+"Blocked %@" = "%@ 차단됨";
+
+/* No comment provided by engineer. */
+"Allowed 1 sender" = "보낸 사람 1명 허용됨";
+
+/* No comment provided by engineer. */
+"Allowed %lld senders" = "보낸 사람 %lld명 허용됨";
+
+/* No comment provided by engineer. */
+"Blocked 1 sender" = "보낸 사람 1명 차단됨";
+
+/* No comment provided by engineer. */
+"Blocked %lld senders" = "보낸 사람 %lld명 차단됨";
+
+/* No comment provided by engineer. */
+"Allowing everyone from %@" = "%@의 모든 보낸 사람을 허용합니다";
+
+/* No comment provided by engineer. */
+"Blocking everyone from %@" = "%@의 모든 보낸 사람을 차단합니다";
+
+/* No comment provided by engineer. */
+"%@ is allowed" = "%@ 허용됨";
+
+/* No comment provided by engineer. */
+"%@ is allowed. Their email is back in Mail." = "%@ 허용됨. 이메일이 메일로 돌아왔습니다.";
+
+/* No comment provided by engineer. */
+"%@ is allowed. Their %lld emails are back in Mail." = "%@ 허용됨. 이메일 %lld개가 메일로 돌아왔습니다.";
+
+/* No comment provided by engineer. */
+"%@ is blocked. You can allow them here any time." = "%@ 차단됨. 여기에서 언제든지 허용할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"Unsubscribed from %@" = "%@ 수신 거부됨";
+
+/* No comment provided by engineer. */
+"Finish unsubscribing on their page" = "상대방 페이지에서 수신 거부를 완료하세요";
+
+/* No comment provided by engineer. */
+"Nothing in your mail answers that." = "메일에서 그에 대한 답을 찾을 수 없습니다.";
+
+/* No comment provided by engineer. */
+"Couldn't find the answer in your mail. These came closest." = "메일에서 답을 찾지 못했습니다. 가장 가까운 결과입니다.";
+
+/* No comment provided by engineer. */
+"Couldn't remove this account's mail from your %@. Try again." = "이 %@에서 이 계정의 메일을 제거할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Couldn't remove sample data. Try again." = "샘플 데이터를 제거할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Couldn't update these senders. Try again." = "이 발신자들을 업데이트할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Couldn't update this sender. Try again." = "이 발신자를 업데이트할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Couldn't remember this sender. Try again." = "이 발신자를 기억할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Couldn't remember this unsubscribe. Try again." = "이 수신 거부를 기록할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Your message couldn't be sent. Nothing was sent. Try again." = "메시지를 보낼 수 없습니다. 아무것도 보내지지 않았습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Couldn't update this conversation. Try again." = "이 대화를 업데이트할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"The change couldn't be saved. Your conversation is unchanged. Try again." = "변경 사항을 저장할 수 없습니다. 대화는 그대로입니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Couldn't find a window to present sign-in from." = "로그인 화면을 표시할 윈도우를 찾을 수 없습니다.";
+
+/* No comment provided by engineer. */
+"Couldn't connect Gmail. Try again." = "Gmail을 연결할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Corres can read %@ but wasn't allowed to manage it, so marking read, archiving, and flagging won't work. Reconnect and leave every Gmail permission checked." = "Corres가 %@을(를) 읽을 수는 있지만 관리 권한을 받지 못해 읽음으로 표시, 보관, 깃발 표시가 작동하지 않습니다. 다시 연결하고 모든 Gmail 권한을 선택한 상태로 두세요.";
+
+/* No comment provided by engineer. */
+"Outlook sign-in isn't set up in this build yet." = "이 빌드에는 아직 Outlook 로그인이 설정되지 않았습니다.";
+
+/* No comment provided by engineer. */
+"Couldn't connect Outlook. Try again." = "Outlook을 연결할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Couldn't unsubscribe. Try again." = "수신 거부할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Notifications need permission in %@ to turn on." = "알림을 켜려면 %@에서 권한을 허용해야 합니다.";
+
+/* No comment provided by engineer. */
+"Dictation needs microphone and speech recognition access. You can allow it in the Settings app under Corres." = "받아쓰기를 사용하려면 마이크 및 음성 인식 접근 권한이 필요합니다. 설정 앱의 Corres에서 허용할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"On-device dictation isn't available for this language yet." = "이 언어에서는 아직 기기 내 받아쓰기를 사용할 수 없습니다.";
+
+/* No comment provided by engineer. */
+"Dictation couldn't start. Try again." = "받아쓰기를 시작할 수 없습니다. 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Couldn't sync your mail. Check your connection and try again." = "메일을 동기화할 수 없습니다. 연결 상태를 확인하고 다시 시도하세요.";
+
+/* No comment provided by engineer. */
+"Corres couldn't open its usual local storage and is running in memory only right now. Nothing will be saved once you close the app. Restart Corres. If this keeps happening, your device may be low on storage." = "Corres가 평소 사용하는 로컬 저장 공간을 열 수 없어 지금은 메모리에서만 실행 중입니다. 앱을 닫으면 아무것도 저장되지 않습니다. Corres를 다시 시작하세요. 이 문제가 계속되면 기기의 저장 공간이 부족할 수 있습니다.";
+
+/* Daily Brief */
+"Done for Today" = "오늘은 여기까지";
+
+/* Daily Brief */
+"Hides today's summary until tomorrow." = "오늘의 요약을 내일까지 숨깁니다.";
+
+/* Daily Brief */
+"Collapsed" = "접힘";
+
+/* Daily Brief */
+"Expanded" = "펼쳐짐";
+
+/* Daily Brief */
+"Shows today's items." = "오늘의 항목을 보여줍니다.";
+
+/* Daily Brief */
+"Hides today's items." = "오늘의 항목을 숨깁니다.";
+
+/* Daily Brief */
+"Good morning." = "좋은 아침입니다.";
+
+/* Daily Brief */
+"Good morning, %@." = "%@님, 좋은 아침입니다.";
+
+/* Daily Brief */
+"Good afternoon." = "안녕하세요.";
+
+/* Daily Brief */
+"Good afternoon, %@." = "%@님, 안녕하세요.";
+
+/* Daily Brief */
+"Good evening." = "좋은 저녁입니다.";
+
+/* Daily Brief */
+"Good evening, %@." = "%@님, 좋은 저녁입니다.";
+
+/* Daily Brief */
+"1 overdue" = "기한 지남 1개";
+
+/* Daily Brief */
+"%lld overdue" = "기한 지남 %lld개";
+
+/* Daily Brief */
+"1 due today" = "오늘 마감 1개";
+
+/* Daily Brief */
+"%lld due today" = "오늘 마감 %lld개";
+
+/* Daily Brief */
+"1 event today" = "오늘 일정 1개";
+
+/* Daily Brief */
+"%lld events today" = "오늘 일정 %lld개";
+
+/* Daily Brief */
+"1 delivery" = "배송 1개";
+
+/* Daily Brief */
+"%lld deliveries" = "배송 %lld개";
+
+/* Daily Brief */
+"1 reply you owe" = "답장할 메일 1개";
+
+/* Daily Brief */
+"%lld replies you owe" = "답장할 메일 %lld개";
+
+/* Daily Brief */
+"Mark Handled" = "처리됨으로 표시";
+
+/* Daily Brief */
+"Due today" = "오늘 마감";
+
+/* Daily Brief */
+"Event" = "일정";
+
+/* Daily Brief */
+"Delivery" = "배송";
+
+/* Daily Brief */
+"Reply owed" = "답장 필요";
+
+/* Daily Brief */
+"Was due %@" = "%@ 마감이었음";
+
+/* Daily Brief */
+"Due %@" = "%@ 마감";
+
+/* Daily Brief */
+"Today at %@" = "오늘 %@";
+
+/* Daily Brief */
+"Arriving today" = "오늘 도착 예정";
+
+/* Daily Brief */
+"Wrote today" = "오늘 받음";
+
+/* Daily Brief */
+"Wrote yesterday" = "어제 받음";
+
+/* Daily Brief */
+"Wrote %lld days ago" = "%lld일 전에 받음";
+
+/* Daily Brief */
+"Today's summary hidden until tomorrow." = "오늘의 요약을 내일까지 숨겼습니다.";
+
+/* Daily Brief */
+"Daily Brief" = "데일리 브리핑";
+
+/* Daily Brief */
+"Show a short summary of today at the top of Needs You." = "나에게 필요 맨 위에 오늘의 짧은 요약을 보여줍니다.";
+
+/* Daily Brief */
+"Your Brief" = "나의 브리핑";
+
+/* Daily Brief tip */
+"Today at a glance" = "오늘 한눈에 보기";
+
+/* Daily Brief tip */
+"See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings." = "나에게 필요 맨 위에서 마감, 오늘 일정, 배송을 확인하세요. 설정에서 변경할 수 있습니다.";
+
+/* Daily Brief tip */
+"Show Today's Brief" = "오늘의 브리핑 보기";
+
+/* No comment provided by engineer. */
+"%@ Morning" = "%@ 아침";
+
+/* No comment provided by engineer. */
+"Scheduled reply held" = "예약된 답장 보류됨";
+
+/* No comment provided by engineer. */
+"%@ replied to “%@” before it was sent. Open Corres to send it anyway or change it." = "보내기 전에 %1$@ 님이 “%2$@”에 답장했습니다. Corres를 열어 그대로 보내거나 수정하세요.";
+
+/* No comment provided by engineer. */
+"Ready to send" = "보낼 준비 완료";
+
+/* No comment provided by engineer. */
+"Your email" = "내 이메일";
+
+/* No comment provided by engineer. */
+"“%@” is waiting. Open Corres to send it." = "“%@”이(가) 대기 중입니다. Corres를 열어 보내세요.";
+
+/* No comment provided by engineer. */
+"No reply from %@" = "%@ 님의 답장 없음";
+
+/* No comment provided by engineer. */
+"“%@”: follow up?" = "“%@”: 다시 연락할까요?";
+
+/* No comment provided by engineer. */
+"On %@, %@ wrote:" = "%1$@, %2$@ 작성:";
+
+/* No comment provided by engineer. */
+"tomorrow at 9am" = "내일 오전 9시";
+
+/* No comment provided by engineer. */
+"Try “tomorrow evening” or “next friday”" = "“내일 저녁”이나 “다음 주 금요일”처럼 입력해 보세요";
+
+/* No comment provided by engineer. */
+"Not sure when that is" = "언제인지 알 수 없어요";
+
+/* No comment provided by engineer. */
+"Open Yahoo Account Security below and sign in." = "아래의 Yahoo 계정 보안을 열고 로그인하세요.";
+
+/* No comment provided by engineer. */
+"Choose Generate app password." = "앱 비밀번호 생성을 선택하세요.";
+
+/* No comment provided by engineer. */
+"Name it Corres, then copy the password." = "이름을 Corres로 정한 다음 비밀번호를 복사하세요.";
+
+/* No comment provided by engineer. */
+"Open AOL Account Security below and sign in." = "아래의 AOL 계정 보안을 열고 로그인하세요.";
+
+/* No comment provided by engineer. */
+"Open Fastmail below and sign in." = "아래의 Fastmail을 열고 로그인하세요.";
+
+/* No comment provided by engineer. */
+"Make a new app password with access to IMAP and SMTP." = "IMAP과 SMTP에 접근할 수 있는 새 앱 비밀번호를 만드세요.";
+
+/* No comment provided by engineer. */
+"Open Zoho Accounts below and sign in." = "아래의 Zoho Accounts를 열고 로그인하세요.";
+
+/* No comment provided by engineer. */
+"Choose App Passwords, then Generate New Password." = "앱 비밀번호를 선택한 다음 새 비밀번호 생성을 선택하세요.";
+
+/* No comment provided by engineer. */
+"Open Yandex ID below and sign in." = "아래의 Yandex ID를 열고 로그인하세요.";
+
+/* No comment provided by engineer. */
+"Create an app password for Mail." = "메일용 앱 비밀번호를 만드세요.";
+
+/* No comment provided by engineer. */
+"Copy the password." = "비밀번호를 복사하세요.";
+
+/* No comment provided by engineer. */
+"Open your AT&T account below and sign in." = "아래의 AT&T 계정을 열고 로그인하세요.";
+
+/* No comment provided by engineer. */
+"Under Sign-in info, choose Secure mail key, then Add secure mail key." = "Sign-in info에서 Secure mail key를 선택한 다음 Add secure mail key를 선택하세요.";
+
+/* No comment provided by engineer. */
+"Name it Corres, then copy the key." = "이름을 Corres로 정한 다음 키를 복사하세요.";
+
+/* No comment provided by engineer. */
+"In GMX on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off." = "웹의 GMX에서 IMAP 접근이 꺼져 있다면 설정, POP3 & IMAP에서 켜세요.";
+
+/* No comment provided by engineer. */
+"In Mail.com on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off." = "웹의 Mail.com에서 IMAP 접근이 꺼져 있다면 설정, POP3 & IMAP에서 켜세요.";
+
+/* No comment provided by engineer. */
+"In Yahoo! JAPAN Mail on the web, open Settings, then IMAP/POP/SMTP Access." = "웹의 Yahoo! JAPAN 메일에서 설정을 열고 IMAP/POP/SMTP 액세스를 여세요.";
+
+/* No comment provided by engineer. */
+"Allow access from services other than Yahoo! JAPAN, and set IMAP, POP and SMTP to Use." = "Yahoo! JAPAN 이외 서비스의 액세스를 허용하고 IMAP, POP, SMTP를 모두 사용으로 설정하세요.";
+
+/* No comment provided by engineer. */
+"If your Yahoo! JAPAN ID has no password yet, set one, then use it here." = "Yahoo! JAPAN ID에 아직 비밀번호가 없다면 설정한 뒤 여기에 입력하세요.";
+
+/* No comment provided by engineer. */
+"Open QQ Mail below and sign in." = "아래의 QQ 메일을 열고 로그인하세요.";
+
+/* No comment provided by engineer. */
+"In Settings, Account and Security, turn on IMAP/SMTP, then generate an authorization code." = "설정의 계정 및 보안에서 IMAP/SMTP를 켠 다음 인증 코드를 생성하세요.";
+
+/* No comment provided by engineer. */
+"Copy the 16-character code and use it as the password." = "16자리 코드를 복사해 비밀번호로 사용하세요.";
+
+/* No comment provided by engineer. */
+"Open %@ below and sign in." = "아래의 %@을(를) 열고 로그인하세요.";
+
+/* No comment provided by engineer. */
+"In Settings, POP3/SMTP/IMAP, turn on IMAP/SMTP, then add an authorization code." = "설정의 POP3/SMTP/IMAP에서 IMAP/SMTP를 켠 다음 인증 코드를 추가하세요.";
+
+/* No comment provided by engineer. */
+"Copy the code and use it as the password. It's shown only once." = "코드를 복사해 비밀번호로 사용하세요. 코드는 한 번만 표시됩니다.";
+
+/* No comment provided by engineer. */
+"In Naver Mail on the web, open Settings, then POP3/IMAP Settings, and set IMAP/SMTP to Use." = "웹의 네이버 메일에서 환경설정을 열고 POP3/IMAP 설정에서 IMAP/SMTP를 사용함으로 바꾸세요.";
+
+/* No comment provided by engineer. */
+"In your Naver account's security settings, turn on 2-step verification and make an app password." = "네이버 계정의 보안 설정에서 2단계 인증을 켜고 애플리케이션 비밀번호를 만드세요.";
+
+/* No comment provided by engineer. */
+"Copy the app password and use it here." = "애플리케이션 비밀번호를 복사해 여기에 입력하세요.";
+
+/* No comment provided by engineer. */
+"HEY doesn't let other mail apps read its mail, so it can't be added to Corres." = "HEY는 다른 메일 앱이 메일을 읽을 수 없게 하므로 Corres에 추가할 수 없습니다.";
+
+/* No comment provided by engineer. */
+"Proton Mail can only be read by other apps through Proton Mail Bridge, which runs on a computer, so it can't be added on iPhone." = "Proton Mail은 컴퓨터에서 실행되는 Proton Mail Bridge를 통해서만 다른 앱에서 읽을 수 있으므로 iPhone에서는 추가할 수 없습니다.";
+
+/* Calendar suggestion title for a flight booking */
+"Flight" = "항공편";
+
+/* Calendar suggestion title when a hotel booking has no name */
+"Hotel" = "호텔";
+
+/* Calendar suggestion title for a hotel stay; the hotel's name */
+"Stay at %@" = "%@ 숙박";
+
+/* Calendar suggestion title for a restaurant booking with no name */
+"Reservation" = "예약";
+
+/* Purchases card label for an order number */
+"Order" = "주문";
+
+/* Ask list heading */
+"1 email with attachments" = "첨부 파일이 있는 이메일 1개";
+
+/* Ask list heading */
+"%lld emails with attachments" = "첨부 파일이 있는 이메일 %lld개";
+
+/* Ask list heading */
+"1 receipt" = "영수증 1개";
+
+/* Ask list heading */
+"%lld receipts" = "영수증 %lld개";
+
+/* Ask list heading */
+"1 package" = "택배 1개";
+
+/* Ask list heading */
+"%lld packages" = "택배 %lld개";
+
+/* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
+"%@ from %@" = "%2$@님이 보낸 %1$@";

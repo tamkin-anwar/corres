@@ -106,3 +106,53 @@ struct MIMETests {
         #expect(m.plainText == "Hi")
     }
 }
+
+/// Charset labels read as the larger encoding senders actually write.
+struct CharsetTests {
+    func parse(_ text: String, body: Data) -> ParsedMessage {
+        var raw = Data(text.utf8)
+        raw.append(body)
+        return MIMEParser.parse(raw)
+    }
+
+    @Test func chineseLabelledGB2312ReadsGB18030Characters() {
+        // "镕" is in GBK/GB18030 but not GB2312.
+        let text = "朱镕基你好"
+        let gb18030 = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue)))
+        let body = text.data(using: gb18030)!
+        let m = parse("Content-Type: text/plain; charset=gb2312\r\n\r\n", body: body)
+        #expect(m.plainText == text)
+    }
+
+    @Test func koreanLabelledEUCKRReadsCP949() {
+        // "똠" is in code page 949 but not in EUC-KR's KS X 1001 set.
+        let text = "똠방각하 안녕하세요"
+        let cp949 = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.dosKorean.rawValue)))
+        let body = text.data(using: cp949)!
+        for label in ["euc-kr", "ks_c_5601-1987"] {
+            #expect(parse("Content-Type: text/plain; charset=\(label)\r\n\r\n", body: body).plainText == text)
+        }
+    }
+
+    @Test func japaneseLabelledShiftJISReadsCP932() {
+        // "①" and "髙" are Windows additions to Shift_JIS.
+        let text = "①髙橋様"
+        let cp932 = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.dosJapanese.rawValue)))
+        let body = text.data(using: cp932)!
+        #expect(parse("Content-Type: text/plain; charset=shift_jis\r\n\r\n", body: body).plainText == text)
+    }
+
+    @Test func latin1ReadsWindows1252Quotes() {
+        // 0x93/0x94 are curly quotes and 0x80 the euro sign in Windows-1252.
+        let body = Data([0x93, 0x48, 0x69, 0x94, 0x20, 0x80, 0x35])
+        #expect(parse("Content-Type: text/plain; charset=iso-8859-1\r\n\r\n", body: body).plainText == "\u{201C}Hi\u{201D} €5")
+    }
+
+    @Test func encodedWordsUseTheSameMapping() {
+        let cp949 = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.dosKorean.rawValue)))
+        let word = "똠방".data(using: cp949)!.base64EncodedString()
+        #expect(MIMEWords.decode("=?ks_c_5601-1987?B?\(word)?=") == "똠방")
+        #expect(Charset.encoding(named: "\"GB2312\"") != nil)
+        #expect(Charset.encoding(named: "us-ascii") == .utf8)
+    }
+}

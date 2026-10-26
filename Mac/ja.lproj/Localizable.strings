@@ -2355,3 +2355,335 @@
 "It's removed from Drafts too." = "下書きからも削除されます。";
 
 "These attachments couldn't come along: %@" = "次の添付ファイルは一緒に送れませんでした: %@";
+
+/* Alert title for a push when the notification extension can't fill in the email in time (title-loc-key from the push relay and iCloud watcher). */
+"New email" = "新着メール";
+
+
+/* No comment provided by engineer. */
+"Google asks once for permission to change this setting for %@. Corres asks only now, not when you sign in." = "Googleは%@のこの設定を変更する許可を一度だけ求めます。Corresが尋ねるのは今だけで、サインイン時には尋ねません。";
+
+/* No comment provided by engineer. */
+"Google didn’t give Corres permission. Make sure you pick %@ and tick the Gmail settings box." = "GoogleからCorresに許可が与えられませんでした。%@を選び、Gmailの設定のチェックボックスをオンにしてください。";
+
+/* No comment provided by engineer. */
+"Off. No automatic replies." = "オフ。自動応答は送信されません。";
+
+/* No comment provided by engineer. */
+"On. %@ will reply from %@ until %@." = "オン。%@が%@から%@まで返信します。";
+
+/* No comment provided by engineer. */
+"On. %@ will reply from %@." = "オン。%@が%@から返信します。";
+
+/* No comment provided by engineer. */
+"Couldn't save. Try again." = "保存できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"%lld messages, including “%@”" = "%lld件のメッセージ、「%@」など";
+
+/* No comment provided by engineer. */
+"Allowed %@" = "%@を許可しました";
+
+/* No comment provided by engineer. */
+"Blocked %@" = "%@をブロックしました";
+
+/* No comment provided by engineer. */
+"Allowed 1 sender" = "1人の差出人を許可しました";
+
+/* No comment provided by engineer. */
+"Allowed %lld senders" = "%lld人の差出人を許可しました";
+
+/* No comment provided by engineer. */
+"Blocked 1 sender" = "1人の差出人をブロックしました";
+
+/* No comment provided by engineer. */
+"Blocked %lld senders" = "%lld人の差出人をブロックしました";
+
+/* No comment provided by engineer. */
+"Allowing everyone from %@" = "%@からのすべての差出人を許可します";
+
+/* No comment provided by engineer. */
+"Blocking everyone from %@" = "%@からのすべての差出人をブロックします";
+
+/* No comment provided by engineer. */
+"%@ is allowed" = "%@を許可しました";
+
+/* No comment provided by engineer. */
+"%@ is allowed. Their email is back in Mail." = "%@を許可しました。メールは「メール」に戻りました。";
+
+/* No comment provided by engineer. */
+"%@ is allowed. Their %lld emails are back in Mail." = "%@を許可しました。%lld件のメールが「メール」に戻りました。";
+
+/* No comment provided by engineer. */
+"%@ is blocked. You can allow them here any time." = "%@をブロックしました。ここでいつでも許可できます。";
+
+/* No comment provided by engineer. */
+"Unsubscribed from %@" = "%@の配信を停止しました";
+
+/* No comment provided by engineer. */
+"Finish unsubscribing on their page" = "相手のページで配信停止を完了してください";
+
+/* No comment provided by engineer. */
+"Nothing in your mail answers that." = "メールの中にその答えになるものはありません。";
+
+/* No comment provided by engineer. */
+"Couldn't find the answer in your mail. These came closest." = "メールの中に答えが見つかりませんでした。最も近いものはこちらです。";
+
+/* No comment provided by engineer. */
+"Couldn't remove this account's mail from your %@. Try again." = "この%@からこのアカウントのメールを削除できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Couldn't remove sample data. Try again." = "サンプルデータを削除できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Couldn't update these senders. Try again." = "これらの差出人を更新できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Couldn't update this sender. Try again." = "この差出人を更新できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Couldn't remember this sender. Try again." = "この差出人を記憶できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Couldn't remember this unsubscribe. Try again." = "この配信停止を記録できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Your message couldn't be sent. Nothing was sent. Try again." = "メッセージを送信できませんでした。何も送信されていません。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Couldn't update this conversation. Try again." = "このスレッドを更新できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"The change couldn't be saved. Your conversation is unchanged. Try again." = "変更を保存できませんでした。スレッドは変更されていません。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Couldn't find a window to present sign-in from." = "サインイン画面を表示するウインドウが見つかりませんでした。";
+
+/* No comment provided by engineer. */
+"Couldn't connect Gmail. Try again." = "Gmailに接続できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Corres can read %@ but wasn't allowed to manage it, so marking read, archiving, and flagging won't work. Reconnect and leave every Gmail permission checked." = "Corresは%@を読み取れますが、管理する権限がないため、開封済みにする、アーカイブ、フラグを付ける操作が使えません。もう一度接続し、Gmailの権限をすべてオンのままにしてください。";
+
+/* No comment provided by engineer. */
+"Outlook sign-in isn't set up in this build yet." = "このビルドではOutlookのサインインがまだ設定されていません。";
+
+/* No comment provided by engineer. */
+"Couldn't connect Outlook. Try again." = "Outlookに接続できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Couldn't unsubscribe. Try again." = "配信を停止できませんでした。もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Notifications need permission in %@ to turn on." = "通知をオンにするには、%@で許可が必要です。";
+
+/* No comment provided by engineer. */
+"Couldn't sync your mail. Check your connection and try again." = "メールを同期できませんでした。接続を確認して、もう一度お試しください。";
+
+
+/* No comment provided by engineer. */
+"Sending “%@”" = "「%@」を送信中";
+
+/* No comment provided by engineer. */
+"Couldn't Open Draft" = "下書きを開けませんでした";
+
+/* No comment provided by engineer. */
+"Check your connection and try again." = "接続を確認して、もう一度お試しください。";
+
+/* No comment provided by engineer. */
+"Bold" = "太字";
+
+/* No comment provided by engineer. */
+"Italic" = "斜体";
+
+/* No comment provided by engineer. */
+"Underline" = "下線";
+
+/* No comment provided by engineer. */
+"Conversation Moved" = "会話は移動されました";
+
+/* No comment provided by engineer. */
+"It was archived, deleted or moved. Undo brings it back." = "アーカイブ、削除、または移動されました。「取り消す」で元に戻せます。";
+
+/* No comment provided by engineer. */
+"Format" = "フォーマット";
+
+/* No comment provided by engineer. */
+"Show Fonts" = "フォントを表示";
+
+/* No comment provided by engineer. */
+"%@ Morning" = "%@の朝";
+
+/* No comment provided by engineer. */
+"Scheduled reply held" = "予約した返信を保留しました";
+
+/* No comment provided by engineer. */
+"%@ replied to “%@” before it was sent. Open Corres to send it anyway or change it." = "送信前に%1$@さんが「%2$@」に返信しました。Corresを開いて、このまま送信するか内容を変更してください。";
+
+/* No comment provided by engineer. */
+"Ready to send" = "送信の準備ができました";
+
+/* No comment provided by engineer. */
+"Your email" = "あなたのメール";
+
+/* No comment provided by engineer. */
+"“%@” is waiting. Open Corres to send it." = "「%@」が送信待ちです。Corresを開いて送信してください。";
+
+/* No comment provided by engineer. */
+"No reply from %@" = "%@さんから返信がありません";
+
+/* No comment provided by engineer. */
+"“%@”: follow up?" = "「%@」：フォローアップしますか？";
+
+/* No comment provided by engineer. */
+"On %@, %@ wrote:" = "%1$@、%2$@のメール:";
+
+/* No comment provided by engineer. */
+"tomorrow at 9am" = "明日 9時";
+
+/* No comment provided by engineer. */
+"Try “tomorrow evening” or “next friday”" = "「明日の夜」や「来週の金曜」のように入力できます";
+
+/* No comment provided by engineer. */
+"Not sure when that is" = "いつのことか分かりません";
+
+/* No comment provided by engineer. */
+"Open Yahoo Account Security below and sign in." = "下の「Yahooアカウントのセキュリティ」を開いてサインインします。";
+
+/* No comment provided by engineer. */
+"Choose Generate app password." = "「アプリパスワードを生成」を選びます。";
+
+/* No comment provided by engineer. */
+"Name it Corres, then copy the password." = "名前を「Corres」にして、パスワードをコピーします。";
+
+/* No comment provided by engineer. */
+"Open AOL Account Security below and sign in." = "下の「AOLアカウントのセキュリティ」を開いてサインインします。";
+
+/* No comment provided by engineer. */
+"Open Fastmail below and sign in." = "下のFastmailを開いてサインインします。";
+
+/* No comment provided by engineer. */
+"Make a new app password with access to IMAP and SMTP." = "IMAPとSMTPにアクセスできる新しいアプリパスワードを作成します。";
+
+/* No comment provided by engineer. */
+"Open Zoho Accounts below and sign in." = "下のZoho Accountsを開いてサインインします。";
+
+/* No comment provided by engineer. */
+"Choose App Passwords, then Generate New Password." = "「アプリパスワード」を選び、「新しいパスワードを生成」を選びます。";
+
+/* No comment provided by engineer. */
+"Open Yandex ID below and sign in." = "下のYandex IDを開いてサインインします。";
+
+/* No comment provided by engineer. */
+"Create an app password for Mail." = "メール用のアプリパスワードを作成します。";
+
+/* No comment provided by engineer. */
+"Copy the password." = "パスワードをコピーします。";
+
+/* No comment provided by engineer. */
+"Open your AT&T account below and sign in." = "下のAT&Tアカウントを開いてサインインします。";
+
+/* No comment provided by engineer. */
+"Under Sign-in info, choose Secure mail key, then Add secure mail key." = "「Sign-in info」で「Secure mail key」を選び、「Add secure mail key」を選びます。";
+
+/* No comment provided by engineer. */
+"Name it Corres, then copy the key." = "名前を「Corres」にして、キーをコピーします。";
+
+/* No comment provided by engineer. */
+"In GMX on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off." = "Web版のGMXで、「設定」の「POP3 & IMAP」からIMAPアクセスがオフならオンにします。";
+
+/* No comment provided by engineer. */
+"In Mail.com on the web, turn on IMAP access under Settings, POP3 & IMAP, if it's off." = "Web版のMail.comで、「設定」の「POP3 & IMAP」からIMAPアクセスがオフならオンにします。";
+
+/* No comment provided by engineer. */
+"In Yahoo! JAPAN Mail on the web, open Settings, then IMAP/POP/SMTP Access." = "Web版のYahoo!メールで設定を開き、「IMAP/POP/SMTPアクセス」を開きます。";
+
+/* No comment provided by engineer. */
+"Allow access from services other than Yahoo! JAPAN, and set IMAP, POP and SMTP to Use." = "「Yahoo! JAPAN公式サービス以外からのアクセス」を「許可する」にし、IMAP、POP、SMTPをすべて「利用する」にします。";
+
+/* No comment provided by engineer. */
+"If your Yahoo! JAPAN ID has no password yet, set one, then use it here." = "Yahoo! JAPAN IDにパスワードがまだない場合は設定し、ここで使います。";
+
+/* No comment provided by engineer. */
+"Open QQ Mail below and sign in." = "下のQQメールを開いてサインインします。";
+
+/* No comment provided by engineer. */
+"In Settings, Account and Security, turn on IMAP/SMTP, then generate an authorization code." = "「設定」の「アカウントとセキュリティ」でIMAP/SMTPをオンにし、認証コードを生成します。";
+
+/* No comment provided by engineer. */
+"Copy the 16-character code and use it as the password." = "16文字のコードをコピーし、パスワードとして使います。";
+
+/* No comment provided by engineer. */
+"Open %@ below and sign in." = "下の%@を開いてサインインします。";
+
+/* No comment provided by engineer. */
+"In Settings, POP3/SMTP/IMAP, turn on IMAP/SMTP, then add an authorization code." = "「設定」の「POP3/SMTP/IMAP」でIMAP/SMTPをオンにし、認証コードを追加します。";
+
+/* No comment provided by engineer. */
+"Copy the code and use it as the password. It's shown only once." = "コードをコピーし、パスワードとして使います。コードは一度しか表示されません。";
+
+/* No comment provided by engineer. */
+"In Naver Mail on the web, open Settings, then POP3/IMAP Settings, and set IMAP/SMTP to Use." = "Web版のNaverメールで「環境設定」を開き、「POP3/IMAP設定」でIMAP/SMTPを「使用する」にします。";
+
+/* No comment provided by engineer. */
+"In your Naver account's security settings, turn on 2-step verification and make an app password." = "Naverアカウントのセキュリティ設定で2段階認証をオンにし、アプリパスワードを作成します。";
+
+/* No comment provided by engineer. */
+"Copy the app password and use it here." = "アプリパスワードをコピーし、ここで使います。";
+
+/* No comment provided by engineer. */
+"HEY doesn't let other mail apps read its mail, so it can't be added to Corres." = "HEYは他のメールアプリからメールを読めないため、Corresには追加できません。";
+
+/* No comment provided by engineer. */
+"Proton Mail can only be read by other apps through Proton Mail Bridge, which runs on a computer, so it can't be added on iPhone." = "Proton Mailは、コンピュータで動作するProton Mail Bridgeを通してしか他のアプリから読めないため、iPhoneでは追加できません。";
+
+/* No comment provided by engineer. */
+"Tonight at %@" = "今夜 %@";
+
+/* No comment provided by engineer. */
+"Tomorrow at %@" = "明日 %@";
+
+/* No comment provided by engineer. */
+"Tomorrow at 8am, next friday, in 3 days" = "明日 8時、来週の金曜、3日後";
+
+/* No comment provided by engineer. */
+"(no subject)" = "(件名なし)";
+
+/* Calendar suggestion title for a flight booking */
+"Flight" = "フライト";
+
+/* Calendar suggestion title when a hotel booking has no name */
+"Hotel" = "ホテル";
+
+/* Calendar suggestion title for a hotel stay; the hotel's name */
+"Stay at %@" = "%@に宿泊";
+
+/* Calendar suggestion title for a restaurant booking with no name */
+"Reservation" = "予約";
+
+/* Calendar suggestion title when an event has no name */
+"Event" = "予定";
+
+/* Purchases card label for an order number */
+"Order" = "注文";
+
+/* Ask list heading */
+"1 email with attachments" = "添付ファイル付きのメール1件";
+
+/* Ask list heading */
+"%lld emails with attachments" = "添付ファイル付きのメール%lld件";
+
+/* Ask list heading */
+"1 receipt" = "領収書1件";
+
+/* Ask list heading */
+"%lld receipts" = "領収書%lld件";
+
+/* Ask list heading */
+"1 package" = "荷物1件";
+
+/* Ask list heading */
+"%lld packages" = "荷物%lld件";
+
+/* Ask list heading: what was found, and the person it's from ("3 receipts from Maya") */
+"%@ from %@" = "%2$@からの%1$@";

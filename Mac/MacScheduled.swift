@@ -153,4 +153,7 @@ struct MacScheduledDetail: View {
 @MainActor
 enum MacComposeHandoff {
     static var drafts: [UUID: Draft] = [:]
+    /// Handed over new (a reply Siri wrote), not continued: these take a
+    /// default From address as any new email does.
+    static var fresh: Set<UUID> = []
 }

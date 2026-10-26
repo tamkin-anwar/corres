@@ -40,7 +40,14 @@ struct IMAPMailClient: Sendable {
         /// flags, to put right anything that drifted from the server (a
         /// change made here that the server refused).
         var flagsReportedAt: Date?
+        /// When this cursor was made. Nil in cursors saved before it was kept.
+        var at: Date?
     }
+
+    /// New in a folder but dated well before the last pass: moved back
+    /// into the Inbox elsewhere, not just received. An hour's margin, for
+    /// a sender whose clock runs behind (the date is the sender's).
+    static let returnedMargin: TimeInterval = 60 * 60
 
     /// The last cursor each account's sync was handed back, this launch
     /// (a hash: only compared). A pass starting from any other may have
@@ -63,7 +70,7 @@ struct IMAPMailClient: Sendable {
             let folders = try await session.folders()
             // Everything listed is stored with the flags it has now, so
             // there's nothing older to report.
-            var cursor = Cursor(folders: [:], known: [:], flags: [:], flagsReportedAt: .now)
+            var cursor = Cursor(folders: [:], known: [:], flags: [:], flagsReportedAt: .now, at: .now)
             var all: [MessageSummary] = []
             for (path, count) in [(folders.inbox, Self.firstInboxCount), (folders.sent, Self.firstSentCount)] {
                 guard let path else { continue }
@@ -99,6 +106,7 @@ struct IMAPMailClient: Sendable {
             if let sent = folders.sent, start.folders[sent] == nil { throw ClientError.historyExpired }
             var cursor = start
             var newIDs: [String] = []
+            var returnedIDs = Set<String>()
             var changes: [RemoteMessageChange] = []
             // Every known message is reported whatever it has, and every
             // folder looked at even if its counter says nothing moved:
@@ -129,6 +137,13 @@ struct IMAPMailClient: Sendable {
                             .filter { $0.uid >= newFrom }
                         await IMAPCache.shared.keep(fresh, uidValidity: selected.uidValidity, account: account)
                         newIDs += fresh.map { Self.key($0, uidValidity: selected.uidValidity) }
+                        // A new UID for mail you already had (moved back
+                        // from the Archive or a folder): baseline, as
+                        // Gmail's restored mail is, never a new sender.
+                        if let last = start.at {
+                            returnedIDs.formUnion(fresh.filter { ($0.date ?? .now) < last.addingTimeInterval(-Self.returnedMargin) }
+                                .map { Self.key($0, uidValidity: selected.uidValidity) })
+                        }
                         known = Self.known(fresh, keeping: known)
                         // Stored just now with these flags: nothing to
                         // report for them unless they change.
@@ -180,9 +195,12 @@ struct IMAPMailClient: Sendable {
                 }
             }
             if reportAll { cursor.flagsReportedAt = .now }
+            // Moved on only when something came in: a pass that changed
+            // nothing gives back the same cursor, so it isn't saved again.
+            if !newIDs.isEmpty || start.at == nil { cursor.at = .now }
             let encoded = try Self.encode(cursor)
             await IssuedCursors.shared.issue(encoded, for: account)
-            return GmailAPIClient.SyncPlan(messageIDs: newIDs, historyId: encoded, remoteChanges: changes)
+            return GmailAPIClient.SyncPlan(messageIDs: newIDs, baselineMessageIDs: returnedIDs, historyId: encoded, remoteChanges: changes)
         }
     }
 
@@ -229,7 +247,10 @@ struct IMAPMailClient: Sendable {
         }
         let folders = await IMAPSessions.shared.folders(for: account)
         let items = ids.compactMap { id in found[id].map { map($0, key: id, account: account, folders: folders, body: nil) } }
-        return (items, ids.filter { found[$0] == nil })
+        // Every folder answered, so a message not among the answers is gone
+        // (expunged, moved, or its folder renumbered), not failed: retried,
+        // it would fail on every pass forever.
+        return (items, [])
     }
 
     func fetchSummary(ids: [String], account: String) async throws -> [Correspondence] {
@@ -244,24 +265,25 @@ struct IMAPMailClient: Sendable {
         let summaries = try await fetchMetadataSummaries(ids: ids, account: account)
         return try await IMAPSessions.shared.with(account) { session in
             var items: [Correspondence] = []
-            var failed: [String] = []
             for (path, keys) in Dictionary(grouping: ids.compactMap(Self.parse), by: \.path) {
                 let selected = try await session.connection.select(path)
+                // A key from before the folder was renumbered is gone, not
+                // failed: it could never be fetched by that number again.
                 let current = keys.filter { $0.uidValidity == selected.uidValidity }
-                failed += keys.filter { $0.uidValidity != selected.uidValidity }.map(\.raw)
                 // Twenty to a command: one round trip a batch, and short
                 // enough that an archive or an open waits a moment at most.
                 for batch in current.chunked(into: 20) {
                     let raws = try await session.connection.fetchMessages(uids: batch.map(\.uid))
                     for key in batch {
-                        guard let summary = summaries[key.raw], let raw = raws[key.uid] else { failed.append(key.raw); continue }
+                        // Not returned: the server no longer has it.
+                        guard let summary = summaries[key.raw], let raw = raws[key.uid] else { continue }
                         let parsed = MIMEParser.parse(raw)
                         await IMAPCache.shared.keepBody(parsed, for: key.raw, account: account)
                         items.append(map(summary, key: key.raw, account: account, folders: session.cachedFolders, body: parsed))
                     }
                 }
             }
-            return (items, failed)
+            return (items, [])
         }
     }
 
@@ -376,30 +398,44 @@ struct IMAPMailClient: Sendable {
             throw ClientError.refused(statusCode: code, reason: nil, message: why)
         }
         // Sent now; what follows is filing, and must never turn a delivered
-        // email into a "Couldn't send".
-        // Some services (Yahoo, AOL) file mail sent through them themselves;
-        // iCloud and most others don't. A copy goes in only if the server
-        // hasn't put one there, so Sent never shows it twice. Off the send's
-        // path: the email is already on its way.
-        let messageID = Self.messageID(ofMessage: outgoing)
-        let copy = Data(outgoing.utf8)
-        Task.detached {
-            if messageID != nil { try? await Task.sleep(for: .seconds(2)) }
+        // email into a "Couldn't send". Done before returning, not left to
+        // run on its own: the Share extension and a send from a notification
+        // end moments after this returns, and a copy never filed can't be
+        // found again (a retry would send twice, and the conversation would
+        // be looked for in every folder on each sync).
+        await Self.fileInSent(Data(outgoing.utf8), messageID: Self.messageID(ofMessage: outgoing), account: account)
+        // The conversation it belongs to, the same id sync gives it.
+        return threadId ?? Self.conversation(ofMessage: outgoing) ?? ""
+    }
+
+    /// Files a copy of a sent email in Sent. Some services (Yahoo, AOL)
+    /// file mail sent through them themselves, a moment later; iCloud and
+    /// most others don't. So iCloud's copy goes in at once, and for any
+    /// other server Sent is checked again after a moment before Corres adds
+    /// one, so it never shows twice. A try that fails goes once more.
+    private static func fileInSent(_ copy: Data, messageID: String?, account: String) async {
+        let serverMayFile = MailAccounts.provider(for: account) != .icloud
+        for attempt in 0..<2 {
             do {
                 try await IMAPSessions.shared.with(account) { session in
                     guard let sent = try await session.folders().sent else { return }
-                    if let messageID {
-                        try await session.connection.select(sent)
-                        if try await !session.connection.search(messageID: messageID).isEmpty { return }
+                    // A second try asks too: the first may have filed it
+                    // before its answer was lost.
+                    if let messageID, serverMayFile || attempt > 0 {
+                        for pause in serverMayFile ? [0.0, 1.0] : [0.0] {
+                            if pause > 0 { try await Task.sleep(for: .seconds(pause)) }
+                            try await session.connection.select(sent)
+                            if try await !session.connection.search(messageID: messageID).isEmpty { return }
+                        }
                     }
                     _ = try await session.connection.append(copy, to: sent, flags: ["\\Seen"])
                 }
+                return
             } catch {
                 IMAPSessions.log.error("Sent, but not filed in Sent: \(String(describing: error), privacy: .public)")
+                if attempt == 0 { try? await Task.sleep(for: .milliseconds(500)) }
             }
         }
-        // The conversation it belongs to, the same id sync gives it.
-        return threadId ?? Self.conversation(ofMessage: outgoing) ?? ""
     }
 
     /// A raw message's conversation, by the rule `conversation(for:)` uses
@@ -690,7 +726,7 @@ struct IMAPMailClient: Sendable {
                 // "Notes" is where iCloud kept notes before the Notes app
                 // moved them; Apple Mail hides it too.
                 .filter { $0.role == nil && $0.isSelectable && $0.path != "Notes" }
-                .map { GmailUserLabel(id: "folder:\($0.path)", name: $0.path.replacingOccurrences(of: String($0.delimiter ?? "/"), with: " / ")) }
+                .map { GmailUserLabel(id: "folder:\($0.path)", name: $0.displayPath.replacingOccurrences(of: String($0.delimiter ?? "/"), with: " / ")) }
         }
     }
 
@@ -725,7 +761,7 @@ struct IMAPMailClient: Sendable {
         return GmailAPIClient.build(
             account: account, threadID: Self.conversation(for: m), messageID: key,
             sender: sender, senderEmail: senderEmail, organization: GmailAPIClient.organization(fromEmail: senderEmail),
-            subject: m.subject.isEmpty ? "(no subject)" : m.subject, excerpt: excerpt,
+            subject: m.subject.isEmpty ? String(localized: "(no subject)") : m.subject, excerpt: excerpt,
             body: plain, htmlBody: html, messageIdHeader: m.messageID,
             receivedAt: m.date ?? .now, isUnread: !m.isSeen,
             labelIds: Self.labels(flags: m.flags, folder: m.folder, folders: folders, hasUnsubscribe: mailto != nil || url != nil),

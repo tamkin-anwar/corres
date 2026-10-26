@@ -43,6 +43,18 @@ extension Substring {
 }
 
 extension String {
+    /// Whether any of `patterns` matches. Rules in several languages are
+    /// kept one pattern per language: joined into one alternation, the
+    /// engine tries every phrase at every letter, many times slower.
+    func matchesAny(_ patterns: [String]) -> Bool {
+        patterns.contains { patternRange($0) != nil }
+    }
+
+    /// The earliest match of any of `patterns`.
+    func firstPatternRange(_ patterns: [String]) -> Range<String.Index>? {
+        patterns.compactMap { patternRange($0) }.min { $0.lowerBound < $1.lowerBound }
+    }
+
     /// `replacingOccurrences(of: pattern, with:, options: .regularExpression)`
     /// with the pattern compiled once (`PatternCache`). `template` uses $1.
     func replacingPattern(_ pattern: String, with template: String, caseInsensitive: Bool = false) -> String {

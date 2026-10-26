@@ -106,16 +106,26 @@ final class NotificationService: UNNotificationServiceExtension, @unchecked Send
             NotifyPolicy.setGmailCursor(history, for: account)
             return nil
         }
-        guard let found = try? await GmailAPIClient().newInboxMessageIDs(since: since, account: account) else {
-            NotifyPolicy.setGmailCursor(history, for: account)
-            return nil
-        }
-        NotifyPolicy.setGmailCursor(found.historyId ?? history, for: account)
+        // Moved on before asking Gmail, not after: two pushes close
+        // together each run this, and both read the same starting point,
+        // found the same email and showed it twice. Now the second asks
+        // from where the first left off.
+        advanceGmailCursor(to: history, for: account)
+        guard let found = try? await GmailAPIClient().newInboxMessageIDs(since: since, account: account) else { return nil }
+        advanceGmailCursor(to: found.historyId ?? history, for: account)
         let fresh = found.ids.filter { !NotifyPolicy.wasShown($0) }
         // Gmail ids grow with time: the last is the newest.
         guard let newest = fresh.max() else { return nil }
-        for id in fresh where id != newest { NotifyPolicy.markShown(id) }
+        // Claimed before it's fetched, so another push can't show it too.
+        for id in fresh { NotifyPolicy.markShown(id) }
         return await fill(account: account, messageID: newest)
+    }
+
+    /// Only forward: a push that was slower to arrive mustn't send the
+    /// cursor back over mail another one already showed.
+    private static func advanceGmailCursor(to history: String, for account: String) {
+        if let current = NotifyPolicy.gmailCursor(for: account).flatMap(UInt64.init), let next = UInt64(history), next <= current { return }
+        NotifyPolicy.setGmailCursor(history, for: account)
     }
 
     private static func fill(account: String, messageID: String) async -> Filled? {

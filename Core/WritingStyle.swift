@@ -59,7 +59,7 @@ public struct WritingStyle: Codable, Sendable, Equatable {
             if let greeting = reply.greeting { greetings[greeting, default: 0] += 1 } else { noGreeting += 1 }
             if let closing = reply.signOff { signOffs[closing, default: 0] += 1 }
             lengths.append(wordCount(reply.body))
-            if reply.body.contains("!") { exclaiming += 1 }
+            if reply.body.contains("!") || reply.body.contains("！") { exclaiming += 1 }
             if let letter = reply.body.first(where: \.isLetter), letter.isLowercase { lowercase += 1 }
             if let code = NLLanguageRecognizer.dominantLanguage(for: reply.body)?.rawValue { languages[code, default: 0] += 1 }
         }
@@ -139,9 +139,14 @@ public struct WritingStyle: Codable, Sendable, Equatable {
 
     /// Mail you wrote to a person, not a forward, a code or a message an
     /// app sent from your address.
+    /// Counted in words, not spaces: Chinese and Japanese replies have
+    /// none ("好的，我周五前发给你。"), and were all left out. A run over 40
+    /// characters is a link or a code, except in those languages, where
+    /// it's a sentence.
     static func isPersonal(_ words: String) -> Bool {
         let tokens = words.split(whereSeparator: \.isWhitespace)
-        guard tokens.count >= 3, !words.hasPrefix("-"), !tokens.contains(where: { $0.count > 40 }) else { return false }
+        guard wordCount(words) >= 3, !words.hasPrefix("-"),
+              !tokens.contains(where: { $0.count > 40 && !$0.contains(where: MailDigest.isUnspaced) }) else { return false }
         let lower = words.lowercased()
         return !["forwarded message", "begin forwarded", "do_not_delete", "unsubscribe"].contains { lower.contains($0) }
     }
@@ -149,7 +154,8 @@ public struct WritingStyle: Codable, Sendable, Equatable {
     /// The greeting for someone, with their first name in place.
     public func greeting(for name: String) -> String? {
         guard let greeting else { return nil }
-        let first = name.split(separator: " ").first.map(String.init) ?? ""
+        // "Md. Rahim Uddin" is "Rahim"; "王伟" stays whole (`Person.firstName`).
+        let first = Person.firstName(of: name)
         if greeting.contains("{name}") {
             guard !first.isEmpty else { return greeting.replacingOccurrences(of: " {name}", with: "") }
             return greeting.replacingOccurrences(of: "{name}", with: first)
@@ -185,6 +191,9 @@ public struct WritingStyle: Codable, Sendable, Equatable {
     /// signature and "Sent from my iPhone" taken off.
     public static func ownWords(in text: String, signature: String? = nil) -> String {
         var words = text.replacingOccurrences(of: "\r\n", with: "\n")
+        // "On … wrote:" and its forms in every language, an Outlook header
+        // block, "-----Original Message-----" (`QuoteDetector`).
+        if let start = QuoteDetector.quoteStart(in: words) { words = String(words[..<start]) }
         for pattern in quoteStarts {
             if let range = words.patternRange(pattern, caseInsensitive: true) { words = String(words[..<range.lowerBound]) }
         }
@@ -243,10 +252,14 @@ public struct WritingStyle: Codable, Sendable, Equatable {
         "regards", "kind regards", "warm regards", "warmly", "cheers", "talk soon", "speak soon", "see you", "love",
         "sincerely", "take care", "thx", "ty", "best wishes", "with thanks",
         "danke", "viele grüße", "liebe grüße", "merci", "cordialement", "gracias", "saludos", "obrigado", "obrigada", "abraços",
+        "mit freundlichen grüßen", "freundliche grüße", "beste grüße", "grüße", "bien à vous", "bien cordialement",
+        "atentamente", "un saludo", "un abrazo", "atenciosamente", "att", "abs",
+        "よろしくお願いします", "よろしくお願いいたします", "よろしくお願い致します", "감사합니다", "고맙습니다",
+        "谢谢", "謝謝", "此致", "祝好", "ধন্যবাদ", "শুভেচ্ছান্তে",
     ]
 
     static func isClosing(_ line: String) -> Bool {
-        let bare = line.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ",.!-– "))
+        let bare = line.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ",.!-– ，。！、"))
         return closingWords.contains(bare) && line.split(separator: " ").count <= 4
     }
 

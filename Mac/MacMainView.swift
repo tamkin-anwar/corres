@@ -28,25 +28,25 @@ struct MacMainView: View {
     @Environment(\.undoManager) private var undoManager
     /// What Edit › Undo is registered against, for the pill's Undo.
     @State private var mailUndo = MailUndoTarget()
+    /// A draft from Drafts that couldn't be fetched whole to continue.
+    @State private var draftOpenFailed = false
 
     private var store: MailStore { services.store }
-    private var dockCount: Int {
-        guard services.entitlements.isPro || accounts.isEmpty else { return 0 }
-        return store.overview().needsYou.count
-    }
     private var actions: ThreadActionService { services.threadActions }
     private var accounts: [String] { services.auth.accounts.map(\.email) }
 
     var body: some View {
         window
             // Edit › Undo (⌘Z) takes back what the pill offers, while it does.
-            .onChange(of: actions.pendingRemoval?.id ?? actions.lastChange?.id, initial: true) { registerMailUndo() }
+            .onChange(of: [services.outbox.pending?.id, actions.pendingRemoval?.id, actions.lastChange?.id], initial: true) {
+                registerMailUndo()
+            }
             .onAppear {
-                MacWindows.mainIsOpen = true
                 MacWindows.openWindow = openWindow
+                MacWindows.mainAppeared { perform($0) }
                 reopenUnsentDrafts()
             }
-            .onDisappear { MacWindows.mainIsOpen = false }
+            .onDisappear { MacWindows.mainDisappeared() }
     }
 
     /// Half the text's growth: at twice the size, columns half as wide again.
@@ -54,7 +54,7 @@ struct MacMainView: View {
 
     @ViewBuilder
     private var window: some View {
-        let rows = visibleRows()
+        let shown = visible()
         NavigationSplitView(columnVisibility: $columns) {
             MacSidebar(services: services, model: model, onDrop: drop)
                 .macTextSize()
@@ -63,7 +63,7 @@ struct MacMainView: View {
         } content: {
             // Wider as the text grows (View › Bigger), so a row still
             // shows who it's from and what it's about.
-            listColumn(rows)
+            listColumn(shown)
                 .macTextSize()
                 .navigationSplitViewColumnWidth(min: (320 * columnGrowth).rounded(), ideal: (400 * columnGrowth).rounded(),
                                                 max: (560 * columnGrowth).rounded())
@@ -100,7 +100,7 @@ struct MacMainView: View {
                 perform(.snooze(date), on: threads)
             }
         }
-        .focusedSceneValue(\.macActions, MacActions(perform: { perform($0) }, selectionCount: model.selection.count))
+        .focusedSceneValue(\.macActions, MacActions(perform: { perform($0) }, selectionCount: model.selection.count, isMain: true))
         .onChange(of: model.selection) { _, selection in if filtersUnread { keptRead.formUnion(selection) } }
         // The next few after the one you're on, and the top of a mailbox,
         // read ahead: arrowing down shows each at once.
@@ -112,25 +112,8 @@ struct MacMainView: View {
         }
         .onChange(of: model.mailbox) { keptRead = [] }
         .onChange(of: unreadOnly) { keptRead = [] }
-        // What needs you, on the Dock icon.
-        .onChange(of: dockCount, initial: true) { _, count in
-            NSApplication.shared.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
-        }
-        .onChange(of: services.sync.lastCompletedSync) { services.afterSync() }
-        .onChange(of: services.sync.lastChange) { services.afterChange() }
-        .onChange(of: store.revision, initial: true) {
-            SpotlightIndex.shared.scheduleUpdate { [store] in store.searchableThreads }
-            // The desktop widgets show what's on this Mac.
-            WidgetBridge.scheduleUpdate { [store] in store.threads }
-        }
-        .onChange(of: WidgetBridge.locks(connected: !accounts.isEmpty, entitlements: services.entitlements),
-                  initial: true) { _, locked in
-            WidgetBridge.isLocked = locked
-            WidgetBridge.update(from: store.threads)
-        }
-        // At most one reload each half second: a first sync saves a hundred
-        // batches, and each reload redraws the lists.
-        .onChange(of: services.sync.syncProgress) { SyncBatchRefresh.schedule(store) }
+        // What follows a sync, the widgets, Spotlight and the Dock badge
+        // are MacServices' own (`startObserving`), window or not.
         // A notification, a widget or a corres:// link asking for a place.
         #if DEBUG
         // App Store screenshots: -ShowMailbox needsYou|waiting|everything,
@@ -160,6 +143,7 @@ struct MacMainView: View {
             case .draft(let draft):
                 let handoff = UUID()
                 MacComposeHandoff.drafts[handoff] = draft
+                if draft.gmailDraftID == nil { MacComposeHandoff.fresh.insert(handoff) }
                 openWindow(value: ComposeRequest(kind: draft.kind, handoff: handoff))
             case .search(let words):
                 model.search = words
@@ -197,21 +181,19 @@ struct MacMainView: View {
         unreadOnly && model.search.isEmpty
     }
 
-    private func visibleRows() -> [MacRow] {
-        let rows = model.rows(store: store, accounts: accounts, remote: services.remote, serverMatches: serverMatches)
-        guard filtersUnread else { return rows }
-        let kept = rows.filter { row in
-            guard let thread = row.thread else { return true }
-            return thread.isUnread || keptRead.contains(thread.id) || model.selection.contains(thread.id)
-        }
-        // A heading ("Due soon") with nothing under it goes too.
-        return kept.enumerated().filter { index, row in
-            row.thread != nil || (index + 1 < kept.count && kept[index + 1].thread != nil)
-        }.map(\.element)
+    /// The rows on screen and their counts, kept by the model until the
+    /// mail, the mailbox or Unread Only changes, not worked out again on
+    /// every change of selection.
+    private func visible() -> MacMailboxModel.Visible {
+        model.visible(store: store, accounts: accounts, remote: services.remote, serverMatches: serverMatches,
+                      unreadOnly: filtersUnread, kept: keptRead)
     }
 
-    private func listColumn(_ rows: [MacRow]) -> some View {
-        VStack(spacing: 0) {
+    private func visibleRows() -> [MacRow] { visible().rows }
+
+    private func listColumn(_ shown: MacMailboxModel.Visible) -> some View {
+        let rows = shown.rows
+        return VStack(spacing: 0) {
             if services.ask.phase != .idle, !model.search.isEmpty {
                 askCard
             }
@@ -242,8 +224,13 @@ struct MacMainView: View {
             }
         }
         .navigationTitle(model.search.isEmpty ? model.mailbox.title : String(localized: "Search"))
-        .navigationSubtitle(subtitle(rows))
+        .navigationSubtitle(subtitle(shown))
         .background(CorresPalette.canvas)
+        .alert("Couldn't Open Draft", isPresented: $draftOpenFailed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Check your connection and try again.")
+        }
     }
 
     private var serverMatches: Set<ThreadID> {
@@ -252,12 +239,11 @@ struct MacMainView: View {
         return services.sync.serverMatches
     }
 
-    private func subtitle(_ rows: [MacRow]) -> String {
-        let count = rows.compactMap(\.thread).count
+    private func subtitle(_ shown: MacMailboxModel.Visible) -> String {
+        let count = shown.count, unread = shown.unread
         if !model.search.isEmpty && services.sync.isSearchingRemote { return String(localized: "Searching your accounts…") }
         if services.isGettingNewMail { return String(localized: "Checking for mail…") }
         if count == 0 { return "" }
-        let unread = rows.compactMap(\.thread).filter(\.isUnread).count
         return unread > 0 ? String(localized: "\(count) conversations, \(unread) unread") : String(localized: "\(count) conversations")
     }
 
@@ -484,6 +470,11 @@ struct MacMainView: View {
             .corresGlass(in: Capsule())
             .padding(.bottom, 18)
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+        } else if let sending = services.outbox.pending {
+            // Undo Send: it opens again in a compose window.
+            undoPill(String(localized: "Sending \u{201C}\(sending.subjectPreview)\u{201D}"), systemImage: "paperplane") {
+                MacWindows.undoSend(services.outbox)
+            }
         } else if let pending = actions.pendingRemoval {
             undoPill(pending.title, systemImage: pending.kind.systemImage) { actions.undoRemoval() }
         } else if let change = actions.lastChange {
@@ -495,6 +486,11 @@ struct MacMainView: View {
     private func registerMailUndo() {
         guard let undoManager else { return }
         undoManager.removeAllActions(withTarget: mailUndo)
+        // An email waiting out Undo Send comes first.
+        if services.outbox.pending != nil {
+            MacUndoSend.register(services.outbox, in: undoManager, target: mailUndo)
+            return
+        }
         guard let title = actions.pendingRemoval?.title ?? actions.lastChange?.title else { return }
         let actions = actions
         undoManager.registerUndo(withTarget: mailUndo) { _ in
@@ -665,7 +661,8 @@ struct MacMainView: View {
             guard let thread = selected.first else { return }
             open(thread)
         case .undo:
-            if actions.pendingRemoval != nil { actions.undoRemoval() } else { actions.undoLastChange() }
+            if services.outbox.pending != nil { MacWindows.undoSend(services.outbox) }
+            else if actions.pendingRemoval != nil { actions.undoRemoval() } else { actions.undoLastChange() }
         case .commandPalette:
             showingPalette = true
         case .shortcuts:
@@ -747,13 +744,47 @@ struct MacMainView: View {
     /// opens in its own window.
     private func open(_ thread: Correspondence) {
         if model.mailbox.remoteKind == .drafts {
-            openWindow(value: ComposeRequest(kind: .new, to: thread.toRecipients.joined(separator: ", "),
-                                             subject: thread.subject, body: thread.body,
-                                             account: thread.id.account,
-                                             serverDraftID: services.remote.draftID(for: thread.id)))
+            Task { await continueDraft(thread) }
         } else {
             openWindow(value: thread.id)
         }
+    }
+
+    /// A draft continues whole, as on the iPhone: its full text, its Cc,
+    /// and the conversation it answers, so it sends threaded. Outlook and
+    /// IMAP list drafts with a preview only, and saving that would have
+    /// replaced the draft with its first line.
+    private func continueDraft(_ item: Correspondence) async {
+        let account = item.id.account
+        let client = MailClient()
+        var message = item
+        if MailAccounts.provider(for: account) != .google, let messageID = message.latestMessageID {
+            guard let full = try? await client.fetchFull(ids: [messageID], account: account).items.first else {
+                draftOpenFailed = true
+                return
+            }
+            message = full
+        }
+        // Without its conversation, a reply draft would go out as a new,
+        // unthreaded email: say so rather than open it wrong.
+        guard let conversation = try? await client.fetchThreadMessages(threadId: message.id.providerID, account: account) else {
+            draftOpenFailed = true
+            return
+        }
+        let answered = conversation.last { !$0.labelIds.contains("DRAFT") }
+        var draft = Draft(kind: answered == nil ? .new : .reply, threadID: answered?.id, fromAccount: account,
+                          to: message.toRecipients.joined(separator: ", "),
+                          cc: message.ccRecipients.isEmpty ? nil : message.ccRecipients.joined(separator: ", "),
+                          subject: [String(localized: "(no subject)"), "(no subject)"].contains(message.subject) ? "" : message.subject, body: message.body)
+        draft.gmailDraftID = services.remote.draftID(for: item.id)
+        if let answered {
+            draft.inReplyTo = answered.messageIdHeader
+            // Kept to hand, so Compose finds the conversation it answers.
+            if store.thread(answered.id) == nil { store.keepBrowsed([answered]) }
+        }
+        let handoff = UUID()
+        MacComposeHandoff.drafts[handoff] = draft
+        openWindow(value: ComposeRequest(kind: draft.kind, handoff: handoff))
     }
 
     private func compose(_ kind: Draft.Kind, _ thread: Correspondence) {
@@ -767,12 +798,16 @@ struct MacMainView: View {
             perform(.trash); return true
         }
         if key.keyCode == MessageListKey.returnKey { perform(.openInWindow); return true }
+        // Caps Lock, the keypad and the fn key aren't modifiers here, and
+        // with Caps Lock on, E is still e.
+        let modifiers = key.modifiers.subtracting([.capsLock, .numericPad, .function])
+        let characters = key.modifiers.contains(.capsLock) ? key.characters.lowercased() : key.characters
         // Space pages through the open email, Shift-Space back, as in Mail.
-        if key.keyCode == MessageListKey.space, key.modifiers.subtracting(.shift).isEmpty {
-            return MacReadingScroll.page(down: !key.modifiers.contains(.shift), beside: NSApp.keyWindow?.firstResponder as? NSView)
+        if key.keyCode == MessageListKey.space, modifiers.subtracting(.shift).isEmpty {
+            return MacReadingScroll.page(down: !modifiers.contains(.shift), beside: NSApp.keyWindow?.firstResponder as? NSView)
         }
-        guard key.modifiers.subtracting(.shift).isEmpty else { return false }
-        switch key.characters {
+        guard modifiers.subtracting(.shift).isEmpty else { return false }
+        switch characters {
         case "e", "y": perform(.archive)
         case "#": perform(.trash)
         case "r": perform(.reply)
@@ -885,6 +920,41 @@ struct MacMainView: View {
 /// What the mail's Undo is registered against in the window's undo manager.
 final class MailUndoTarget {}
 
+/// Undo Send, in any window: the pill while an email waits to go, and
+/// Edit › Undo (⌘Z) taking it back.
+@MainActor
+enum MacUndoSend {
+    static func register(_ outbox: OutboxService, in undoManager: UndoManager, target: MailUndoTarget) {
+        undoManager.registerUndo(withTarget: target) { _ in
+            MainActor.assumeIsolated { MacWindows.undoSend(outbox) }
+        }
+        undoManager.setActionName(String(localized: "Send"))
+    }
+
+    /// For a window with no pill of its own (a conversation in its own
+    /// window): what's sending, with Undo.
+    struct Pill: View {
+        let outbox: OutboxService
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        var body: some View {
+            if let sending = outbox.pending {
+                HStack(spacing: 12) {
+                    Label(String(localized: "Sending \u{201C}\(sending.subjectPreview)\u{201D}"), systemImage: "paperplane")
+                        .lineLimit(1)
+                    Button("Undo") { MacWindows.undoSend(outbox) }.buttonStyle(.borderless)
+                        .foregroundStyle(CorresPalette.accent)
+                }
+                .macFont(.callout)
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                .corresGlass(in: Capsule())
+                .padding(.bottom, 18)
+                .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+    }
+}
+
 /// An NSMenuItem that runs a closure.
 final class ClosureMenuItem: NSMenuItem {
     private let handler: () -> Void
@@ -946,27 +1016,6 @@ private struct MacNotices: ViewModifier {
         case .notAllowed: Text("Corres doesn't have access to Reminders. You can allow it in System Settings > Privacy & Security > Reminders.")
         case .failed: Text("Reminders didn't save it. Try again.")
         default: Text("Click the link in the reminder to come back to this email.")
-        }
-    }
-}
-
-/// Shows each batch a sync saves, at most one reload each half second: the
-/// first batch at once, the last one always, the ones between folded
-/// together. Shared by every window.
-@MainActor
-private enum SyncBatchRefresh {
-    private static var running: Task<Void, Never>?
-    private static var again = false
-
-    static func schedule(_ store: MailStore) {
-        guard running == nil else { again = true; return }
-        running = Task {
-            repeat {
-                again = false
-                await store.refresh()
-                try? await Task.sleep(for: .milliseconds(500))
-            } while again
-            running = nil
         }
     }
 }

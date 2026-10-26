@@ -47,7 +47,7 @@ final class CloudSync {
         CorresSettings.defaultReplyKey, CorresSettings.remoteImagesKey, CorresSettings.confirmTrashKey,
         CorresSettings.markReadOnOpenKey, CorresSettings.openLinksKey, CorresSettings.summariesKey,
         CorresSettings.keyDetailsKey, CorresSettings.previewLinesKey, CorresSettings.tabsAtBottomKey, CorresSettings.tabsPinnedKey, CorresSettings.showAvatarsKey,
-        CorresSettings.badgeKey, "corres.lessons", "corres.signatures",
+        CorresSettings.badgeKey, CorresSettings.briefKey, "corres.lessons", "corres.signatures",
         "corres.trailingShortSwipeAction", "corres.trailingLongSwipeAction",
         "corres.leadingShortSwipeAction", "corres.leadingLongSwipeAction",
         Organizer.rulesKey, Organizer.templatesKey, Organizer.searchesKey, Organizer.mutedKey,
@@ -84,9 +84,15 @@ final class CloudSync {
     private let defaults = UserDefaults.standard
     private(set) var marks: [String: Mark] = [:]
     private(set) var decisions: [String: Decision] = [:]
-    /// While a change from another device is being applied here, so it
-    /// isn't recorded again as a change of this device's own.
+    /// While settings from another device are being applied here, so they
+    /// aren't recorded again as a change of this device's own.
     private(set) var isApplying = false
+    /// The conversations and senders a mark or decision from another
+    /// device is being applied to right now. Only those: applying takes a
+    /// while, and a move or pin you make meanwhile on anything else is
+    /// still yours and has to be recorded.
+    private var applyingThreads: Set<ThreadID> = []
+    private var applyingSenders: Set<String> = []
     private weak var store: MailStore?
     private static let log = Logger(subsystem: "studio.anwarcreative.corres", category: "cloud")
     private static let markChunk = 600
@@ -145,7 +151,7 @@ final class CloudSync {
     }
 
     func recordDecision(_ decision: SenderDecision, sender: String, account: String) {
-        guard !isApplying, account != "sample" else { return }
+        guard !isApplying, !applyingSenders.contains(sender.lowercased()), account != "sample" else { return }
         decisions[sender.lowercased()] = Decision(decision: decision.rawValue, account: account, at: .now)
         let remote: [String: Decision] = load("decisions") ?? [:]
         for (other, decision) in remote where (decisions[other]?.at ?? .distantPast) < decision.at { decisions[other] = decision }
@@ -153,7 +159,7 @@ final class CloudSync {
     }
 
     private func update(_ id: ThreadID, _ change: (inout Mark) -> Void) {
-        guard !isApplying, id.account != "sample" else { return }
+        guard !isApplying, !applyingThreads.contains(id), id.account != "sample" else { return }
         let key = Self.key(id)
         var mark = marks[key] ?? Mark(at: .now)
         change(&mark)
@@ -245,11 +251,11 @@ final class CloudSync {
     /// Brings the conversations and senders here in line with the marks.
     func apply() async {
         guard let store else { return }
-        isApplying = true
-        defer { isApplying = false }
         var changed = 0
         for thread in store.threadsIncludingHidden {
             guard let mark = marks[Self.key(thread.id)] else { continue }
+            applyingThreads.insert(thread.id)
+            defer { applyingThreads.remove(thread.id) }
             if let raw = mark.attention, let attention = Attention(rawValue: raw), thread.attention != attention,
                mark.messageID == nil || mark.messageID == thread.latestMessageID {
                 await store.update(thread.id, to: attention); changed += 1
@@ -269,7 +275,9 @@ final class CloudSync {
         for (sender, decision) in decisions {
             guard let wanted = SenderDecision(rawValue: decision.decision),
                   let current = pendingBySender[sender]?.first?.1, current != wanted else { continue }
+            applyingSenders.insert(sender)
             await store.approveOrBlock(wanted, sender: sender, account: decision.account); changed += 1
+            applyingSenders.remove(sender)
         }
         if changed > 0 { Self.log.info("Applied \(changed) changes from your other devices") }
     }

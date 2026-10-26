@@ -198,7 +198,7 @@ struct ScreenerView: View {
                 }
             }
             Text(group.messageCount == 1 ? group.latestSubject
-                                          : "\(group.messageCount) messages, including \u{201C}\(group.latestSubject)\u{201D}")
+                                          : String(localized: "\(group.messageCount) messages, including \u{201C}\(group.latestSubject)\u{201D}"))
                 .font(.subheadline).foregroundStyle(CorresPalette.ink).lineLimit(2)
             HStack(spacing: 10) {
                 Button {
@@ -295,7 +295,8 @@ struct ScreenerView: View {
         let sender = Sender(email: group.senderEmail, account: group.account)
         Task {
             await store.setSenderDecision(decision, senders: [(sender.email, sender.account)])
-            undo = Undo(message: "\(decision == .approved ? "Allowed" : "Blocked") \(group.sender)", senders: [sender], domain: nil)
+            undo = Undo(message: decision == .approved ? String(localized: "Allowed \(group.sender)") : String(localized: "Blocked \(group.sender)"),
+                        senders: [sender], domain: nil)
         }
     }
 
@@ -303,8 +304,13 @@ struct ScreenerView: View {
         let senders = shown.map { Sender(email: $0.senderEmail, account: $0.account) }
         Task {
             await store.setSenderDecision(decision, senders: senders.map { ($0.email, $0.account) })
-            undo = Undo(message: "\(decision == .approved ? "Allowed" : "Blocked") \(senders.count) senders",
-                        senders: senders, domain: nil)
+            let message = switch (decision == .approved, senders.count == 1) {
+            case (true, true): String(localized: "Allowed 1 sender")
+            case (true, false): String(localized: "Allowed \(senders.count) senders")
+            case (false, true): String(localized: "Blocked 1 sender")
+            case (false, false): String(localized: "Blocked \(senders.count) senders")
+            }
+            undo = Undo(message: message, senders: senders, domain: nil)
         }
     }
 
@@ -312,7 +318,8 @@ struct ScreenerView: View {
         Task {
             let decided = await store.setDomainRule(domain, decision)
             rules = CorresSettings.domainRules
-            undo = Undo(message: "\(decision == .approved ? "Allowing" : "Blocking") everyone from \(domain)",
+            undo = Undo(message: decision == .approved ? String(localized: "Allowing everyone from \(domain)")
+                                                       : String(localized: "Blocking everyone from \(domain)"),
                         senders: decided.map { Sender(email: $0.email, account: $0.account) }, domain: domain)
         }
     }

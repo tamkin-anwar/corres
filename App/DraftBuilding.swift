@@ -1,8 +1,8 @@
 import Foundation
 
 /// Replies, reply-alls and forwards, built the same way on iPhone, iPad
-/// and Mac: the right people, "Re:" or "Fwd:", and the email quoted below
-/// with the attribution Gmail and Mail write.
+/// and Mac: the right people, one "Re:" or "Fwd:" (never "Re: AW:"), and
+/// the email quoted below with the attribution Gmail and Mail write.
 extension Correspondence {
     func draft(kind: Draft.Kind) -> Draft {
         // Blank lines stay as ">" so the quoted email keeps its paragraphs.
@@ -13,22 +13,23 @@ extension Correspondence {
         // Corres itself looks for when hiding quoted history in a thread.
         let when = receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().year().hour().minute())
         let who = senderEmail.map { "\(sender) <\($0)>" } ?? sender
-        let quoted = "\n\nOn \(when), \(who) wrote:\n\(quotedLines.joined(separator: "\n"))"
+        let attribution = String(localized: "On \(when), \(who) wrote:")
+        let quoted = "\n\n\(attribution)\n\(quotedLines.joined(separator: "\n"))"
         switch kind {
         case .new:
             return Draft(kind: .new, to: "", subject: "")
         case .reply:
             return Draft(kind: kind, threadID: id, fromAccount: id.account, to: replyAddresses.joined(separator: ", "),
-                         subject: subject.hasPrefix("Re: ") ? subject : "Re: \(subject)",
+                         subject: MailSubject.reply(subject),
                          body: quoted)
         case .replyAll:
             return Draft(kind: kind, threadID: id, fromAccount: id.account, to: replyAddresses.joined(separator: ", "),
                          cc: replyAllCc.isEmpty ? nil : replyAllCc.joined(separator: ", "),
-                         subject: subject.hasPrefix("Re: ") ? subject : "Re: \(subject)",
+                         subject: MailSubject.reply(subject),
                          body: quoted)
         case .forward:
             return Draft(kind: .forward, threadID: id, fromAccount: id.account, to: "",
-                         subject: subject.hasPrefix("Fwd: ") ? subject : "Fwd: \(subject)",
+                         subject: MailSubject.forward(subject),
                          body: quoted)
         }
     }
@@ -62,9 +63,10 @@ extension Draft {
     /// The signature above the quoted email, or at the end of a new one.
     static func adding(signature: String, to body: String) -> String {
         guard !signature.isEmpty, !body.contains(signature) else { return body }
-        if let quote = body.patternRange(#"\n\nOn .+ wrote:\n"#) {
+        // Above the quote, whatever language its "wrote:" line is in.
+        if let quote = QuoteDetector.quoteStart(in: body) {
             var result = body
-            result.insert(contentsOf: "\n\n" + signature, at: quote.lowerBound)
+            result.insert(contentsOf: "\n\n" + signature, at: quote)
             return result
         }
         return body + "\n\n" + signature

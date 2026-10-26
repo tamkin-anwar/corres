@@ -56,6 +56,12 @@ final class MacRemoteMailboxes {
     }
 
     private var pages: [Source: Page] = [:]
+    /// Archived, deleted or moved from each mailbox, and when: left out of
+    /// what a load in flight brings back, until a refresh that starts once
+    /// the server has had the change (`settled`).
+    @ObservationIgnored private var removed: [Source: [ThreadID: Date]] = [:]
+    /// Undo's few seconds, and time for the server to take the change.
+    private static let settled: TimeInterval = 30
     private(set) var loading: Set<Source> = []
     private let client = MailClient()
 
@@ -66,6 +72,7 @@ final class MacRemoteMailboxes {
     func draftID(for id: ThreadID) -> String? { pages[.kind(.drafts)]?.drafts[id] }
 
     func refresh(_ source: Source, accounts: [String], store: MailStore) async {
+        removed[source] = removed[source]?.filter { Date.now.timeIntervalSince($0.value) < Self.settled }
         pages[source] = Page(items: pages[source]?.items ?? [])
         // Sample mail only: nothing on a server to fetch.
         if accounts.isEmpty { pages[source]?.loadedOnce = true; return }
@@ -122,13 +129,16 @@ final class MacRemoteMailboxes {
             }
         }
         store.keepBrowsed(fetched)
-        var merged = replacing ? [] : page.items
+        // What's here now, not as it was when this load began: something
+        // removed meanwhile stays gone.
+        let gone = removed[source] ?? [:]
+        var merged = replacing ? [] : (pages[source]?.items ?? page.items).filter { gone[$0.id] == nil }
         let known = Set(merged.map(\.id))
-        for item in fetched.sorted(by: { $0.receivedAt > $1.receivedAt }) where !known.contains(item.id) {
+        for item in fetched.sorted(by: { $0.receivedAt > $1.receivedAt }) where !known.contains(item.id) && gone[item.id] == nil {
             merged.append(item)
         }
         // A failed refresh keeps what was on screen.
-        if replacing && failed && fetched.isEmpty { merged = page.items }
+        if replacing && failed && fetched.isEmpty { merged = (pages[source]?.items ?? page.items).filter { gone[$0.id] == nil } }
         page.items = merged
         page.drafts.merge(drafts) { $1 }
         page.loadedOnce = true
@@ -138,6 +148,12 @@ final class MacRemoteMailboxes {
 
     /// Gone from view at once after an archive, delete or move.
     func remove(_ ids: Set<ThreadID>) {
-        for source in pages.keys { pages[source]?.items.removeAll { ids.contains($0.id) } }
+        let now = Date.now
+        for source in pages.keys {
+            // Noted only where it was: one moved to Trash still shows there.
+            let here = ids.intersection(pages[source]?.items.map(\.id) ?? [])
+            pages[source]?.items.removeAll { here.contains($0.id) }
+            for id in here { removed[source, default: [:]][id] = now }
+        }
     }
 }

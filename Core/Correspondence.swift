@@ -352,10 +352,18 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     static func isRemoteImageOnly(body: String, html: String) -> Bool {
         // Counted only up to 8: splitting a whole newsletter into words to
         // learn it has more than seven was a real cost on every refresh.
+        // Each Chinese, Japanese or Thai letter counts as one: written
+        // without spaces, a colleague's whole note ("王总，附件是报价单，请
+        // 查收。") was one "word", so with a logo in the signature it read
+        // as an image-only flyer and went to bulk.
         var words = 0
         var inWord = false
         for ch in body {
-            if ch.isWhitespace || ch.isNewline { inWord = false } else if !inWord {
+            if ch.isWhitespace || ch.isNewline { inWord = false } else if MailDigest.isUnspaced(ch) {
+                inWord = false
+                words += 1
+                if words >= 8 { return false }
+            } else if !inWord {
                 inWord = true
                 words += 1
                 if words >= 8 { return false }
@@ -462,12 +470,14 @@ extension Correspondence {
     /// the draft, as yours: an earlier version used the recipient as the
     /// sender, so a new email showed as received from them, "To you", next
     /// to the real one.
+    /// `messageIdHeader`: the Message-ID it went with, kept on a stand-in
+    /// so the real copy can be found by it later.
     public static func started(by draft: Draft, id: ThreadID, sentAt: Date, sentCopy: Correspondence?,
-                               attention: Attention, reason: String) -> Correspondence {
+                               attention: Attention, reason: String, messageIdHeader: String? = nil) -> Correspondence {
         var started = sentCopy ?? Correspondence(
             id: id, sender: "You", senderEmail: id.account, organization: "",
             subject: draft.subject.trimmingCharacters(in: .whitespacesAndNewlines),
-            excerpt: draft.body, body: draft.body, receivedAt: sentAt, dueAt: nil,
+            excerpt: draft.body, body: draft.body, messageIdHeader: messageIdHeader, receivedAt: sentAt, dueAt: nil,
             reason: reason, attention: attention, isUnread: false, labelIds: ["SENT"],
             toRecipients: Self.addresses(draft.to), ccRecipients: Self.addresses(draft.cc ?? ""))
         started.reason = reason
@@ -770,6 +780,62 @@ public struct RemoteMessageChange: Sendable, Equatable {
     }
 }
 
+/// Messages a sync couldn't fetch, kept to try again on later passes, each
+/// with how many passes failed it and since when. One that keeps failing
+/// is let go after a few tries or a few days: kept forever, it was asked
+/// for on every 20-second check, and each check looked like a change that
+/// reloaded the whole mailbox. Pure, so it can be tested.
+public struct MissedMessages: Codable, Equatable, Sendable {
+    public struct Entry: Codable, Equatable, Sendable {
+        public var attempts: Int
+        public var since: Date
+
+        public init(attempts: Int, since: Date) {
+            self.attempts = attempts
+            self.since = since
+        }
+    }
+
+    public static let maxAttempts = 5
+    public static let maxAge: TimeInterval = 3 * 86_400
+    /// Bounded, so a pass that failed hundreds can't grow it without end.
+    public static let maxTracked = 200
+
+    public private(set) var entries: [String: Entry]
+
+    public init(entries: [String: Entry] = [:]) {
+        self.entries = entries
+    }
+
+    /// What to ask for again, oldest first.
+    public var ids: [String] {
+        entries.sorted { ($0.value.since, $0.key) < ($1.value.since, $1.key) }.map(\.key)
+    }
+
+    public var isEmpty: Bool { entries.isEmpty }
+
+    /// After a pass. `failed` is everything it couldn't fetch; `tried` the
+    /// ids from this list it really asked for again (not when the whole
+    /// request failed, offline say). One tried that failed again counts
+    /// another try, one newly failed starts at one, and anything not in
+    /// `failed` arrived or is gone. Past `maxAttempts` or `maxAge` an id
+    /// is let go; past `maxTracked`, the newest are kept.
+    public func after(failed: Set<String>, tried: Set<String>, now: Date) -> MissedMessages {
+        var next: [String: Entry] = [:]
+        for id in failed {
+            var entry = entries[id] ?? Entry(attempts: 0, since: now)
+            if entries[id] == nil || tried.contains(id) { entry.attempts += 1 }
+            guard entry.attempts < Self.maxAttempts, now.timeIntervalSince(entry.since) <= Self.maxAge else { continue }
+            next[id] = entry
+        }
+        if next.count > Self.maxTracked {
+            let kept = next.sorted { ($0.value.since, $0.key) > ($1.value.since, $1.key) }.prefix(Self.maxTracked)
+            next = Dictionary(uniqueKeysWithValues: kept.map { ($0.key, $0.value) })
+        }
+        return MissedMessages(entries: next)
+    }
+}
+
 /// Decides where a freshly-synced message starts, before any on-device AI
 /// looks at it. Needs You is opt-in, not the default: every reference
 /// client that does this well (Gmail's Primary tab, Apple Mail's Primary
@@ -869,12 +935,32 @@ public enum InboxClassifier {
 
     /// Free mail services, shared by unrelated people: never a company
     /// rule's domain.
-    public static let personalDomains: Set<String> = [
-        "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com", "msn.com",
-        "icloud.com", "me.com", "mac.com", "yahoo.com", "ymail.com", "aol.com", "proton.me",
-        "protonmail.com", "pm.me", "zoho.com", "gmx.com", "gmx.net", "mail.com", "yandex.com",
-        "hotmail.co.uk", "yahoo.co.uk", "btinternet.com", "outlook.co.uk", "live.co.uk",
-    ]
+    public static let personalDomains: Set<String> = {
+        var domains: Set<String> = [
+            "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com", "msn.com",
+            "icloud.com", "me.com", "mac.com", "yahoo.com", "ymail.com", "aol.com", "proton.me",
+            "protonmail.com", "pm.me", "zoho.com", "gmx.com", "gmx.net", "mail.com", "yandex.com",
+            "hotmail.co.uk", "yahoo.co.uk", "btinternet.com", "outlook.co.uk", "live.co.uk",
+            // China, Korea, Japan, India.
+            "qq.com", "foxmail.com", "163.com", "126.com", "yeah.net", "sina.com", "sina.cn", "sohu.com", "aliyun.com",
+            "naver.com", "daum.net", "hanmail.net", "kakao.com", "nate.com",
+            "yahoo.co.jp", "docomo.ne.jp", "ezweb.ne.jp", "au.com", "softbank.ne.jp", "i.softbank.jp", "ymobile.ne.jp",
+            "rediffmail.com",
+            // Europe, Australia, Canada, the UK, Russia.
+            "web.de", "gmx.de", "gmx.at", "gmx.ch", "t-online.de", "freenet.de", "orange.fr", "wanadoo.fr", "free.fr",
+            "laposte.net", "sfr.fr", "libero.it", "virgilio.it", "tiscali.it", "bigpond.com", "bigpond.net.au",
+            "optusnet.com.au", "rogers.com", "shaw.ca", "sympatico.ca", "telus.net", "sky.com", "virginmedia.com",
+            "talktalk.net", "yandex.ru", "mail.ru", "rambler.ru",
+        ]
+        // Outlook, Hotmail, Live and Yahoo in each country they serve.
+        let countries = ["co.uk", "com.au", "ca", "de", "fr", "es", "it", "nl", "be", "at", "ch", "se", "dk", "no",
+                         "fi", "ie", "pt", "com.br", "com.mx", "com.ar", "co.in", "in", "co.jp", "jp", "co.kr", "kr",
+                         "com.sg", "sg", "com.my", "com.ph", "co.id", "co.za", "co.nz", "com.hk", "com.tw", "com.bd", "pl"]
+        for brand in ["outlook", "hotmail", "live", "yahoo"] {
+            for country in countries { domains.insert(brand + "." + country) }
+        }
+        return domains
+    }()
 
     /// The domain a company rule would cover for this address, or nil for
     /// a free mail service. Subdomains count as the company's own
@@ -886,7 +972,9 @@ public enum InboxClassifier {
         guard !personalDomains.contains(host) else { return nil }
         let parts = host.split(separator: ".").map(String.init)
         guard parts.count >= 2 else { return nil }
-        let secondLevel = ["co", "com", "org", "net", "ac", "gov", "edu"]
+        // Japan's "co.jp", "ne.jp", "or.jp", "go.jp"; Latin America's
+        // "gob.mx"; "nic.in"; "res.in".
+        let secondLevel = ["co", "com", "org", "net", "ac", "gov", "edu", "ne", "or", "go", "gob", "nic", "res"]
         let keep = parts.count >= 3 && parts[parts.count - 1].count == 2 && secondLevel.contains(parts[parts.count - 2]) ? 3 : 2
         let domain = parts.suffix(keep).joined(separator: ".")
         return personalDomains.contains(domain) ? nil : domain
@@ -1374,21 +1462,61 @@ struct SearchText: Sendable {
     private var text: String
 
     init(_ text: String) {
-        self.text = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+        self.text = Self.folded(text)
         self.text.makeContiguousUTF8()
     }
 
     /// Several fields as one, each folded on its own and kept apart by a
     /// character no search contains, so a word never runs across two.
     init(_ parts: [String]) {
-        text = parts.map { $0.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current) }
-            .joined(separator: "\u{1F}")
+        text = parts.map(Self.folded).joined(separator: "\u{1F}")
         text.makeContiguousUTF8()
+    }
+
+    /// Case, width ("ｶﾀｶﾅ" and "カタカナ", "ＡＢＣ" and "ABC") and, in Latin,
+    /// Greek and Cyrillic, accents folded. Other scripts keep their marks:
+    /// there they are letters, not accents. "が" is not "か", and a
+    /// Bengali or Hindi vowel sign changes the word; folded away, a search
+    /// for one matched the other.
+    static func folded(_ text: String) -> String {
+        let all: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive, .widthInsensitive]
+        guard text.unicodeScalars.contains(where: isOtherScript) else {
+            return text.folding(options: all, locale: .current)
+        }
+        // Case and width for all of it, then only the combining accents
+        // Latin, Greek and Cyrillic use, which is what Foundation's
+        // accent folding takes away there. Other scripts' marks stay.
+        let caseAndWidth = text.folding(options: [.caseInsensitive, .widthInsensitive], locale: .current)
+        // Most often there's no accented Latin letter at all to fold.
+        guard text.unicodeScalars.contains(where: { (0x80..<0x0530).contains($0.value) || (0x1D00...0x1FFF).contains($0.value) }) else {
+            return caseAndWidth
+        }
+        let decomposed = caseAndWidth.decomposedStringWithCanonicalMapping.unicodeScalars
+            .filter { !isCombiningAccent($0) }
+        return String(String.UnicodeScalarView(decomposed)).precomposedStringWithCanonicalMapping
+    }
+
+    private static func isCombiningAccent(_ scalar: Unicode.Scalar) -> Bool {
+        switch scalar.value {
+        case 0x0300...0x036F, 0x1AB0...0x1AFF, 0x1DC0...0x1DFF, 0x20D0...0x20FF, 0xFE20...0xFE2F: true
+        default: false
+        }
     }
 
     /// Never true for nothing, as `localizedStandardContains("")` isn't.
     func contains(_ other: SearchText) -> Bool {
         !other.text.isEmpty && text.bytesContain(other.text)
+    }
+
+    /// A letter or mark of a script whose marks are letters: not Latin,
+    /// Greek, Cyrillic (or their full-width forms), nor Hebrew and Arabic,
+    /// whose vowel points people leave out when they search. ASCII,
+    /// punctuation, symbols and emoji are none.
+    private static func isOtherScript(_ scalar: Unicode.Scalar) -> Bool {
+        switch scalar.value {
+        case 0..<0x0530, 0x0590...0x06FF, 0x1D00...0x2BFF, 0x3000...0x303F, 0xFE00...0xFE0F, 0xFF01...0xFF5E, 0x1F000...: false
+        default: true
+        }
     }
 }
 

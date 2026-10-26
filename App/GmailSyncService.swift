@@ -122,6 +122,7 @@ final class GmailSyncService {
     private func searchPages(_ pages: [(account: String, query: String, token: String?)], generation: Int) async -> Bool {
         await withTaskGroup(of: (account: String, query: String, next: String?, found: [ThreadID], inserted: Bool).self) { group in
             for page in pages {
+                let removal = removalCount(page.account)
                 group.addTask {
                     guard let result = try? await self.client.searchPage(query: page.query, account: page.account, pageToken: page.token) else {
                         return (page.account, page.query, nil, [], false)
@@ -129,7 +130,8 @@ final class GmailSyncService {
                     // Approved, not screened: these are older messages you
                     // went looking for, not someone writing to you for the
                     // first time.
-                    let inserted = result.items.isEmpty ? 0 : (try? await self.repository.upsert(result.items, isInitialSync: true)) ?? 0
+                    let inserted = result.items.isEmpty ? 0
+                        : (try? await self.upsert(result.items, isInitialSync: true, account: page.account, removal: removal)) ?? 0
                     return (page.account, page.query, result.nextPageToken, result.items.map(\.id), inserted > 0)
                 }
             }
@@ -203,17 +205,23 @@ final class GmailSyncService {
             wantsAnotherPass.insert(account)
             return await current.value
         }
+        let removal = removalCount(account)
         let task = Task { @MainActor () -> Bool in
-            var succeeded = await self.syncOneLocked(account: account)
-            while self.wantsAnotherPass.remove(account) != nil {
-                succeeded = await self.syncOneLocked(account: account) || succeeded
+            var succeeded = await self.syncOneLocked(account: account, removal: removal)
+            // Removed meanwhile: no further pass, which would list its mail
+            // again and save a cursor for an account that's gone.
+            while self.isCurrent(account, removal), self.wantsAnotherPass.remove(account) != nil {
+                succeeded = await self.syncOneLocked(account: account, removal: removal) || succeeded
             }
             // No suspension between the last check above and this, so a
             // caller can't join a pass that has already finished.
             self.running[account] = nil
-            // Removed while this ran: whatever it saved goes, and the flag
-            // doesn't outlive it to trip up the account added back later.
-            if self.retired.remove(account) != nil { self.dropCursor(for: account) }
+            // Removed while this ran: whatever cursor it saved goes.
+            if !self.isCurrent(account, removal) {
+                self.dropCursor(for: account)
+                self.changedAccounts.remove(account)
+                return false
+            }
             if succeeded {
                 if self.changedAccounts.remove(account) != nil { self.lastChange = .now }
                 self.lastCompletedSync = .now
@@ -235,7 +243,7 @@ final class GmailSyncService {
     /// filled in afterwards by `backfillContent`, off this path, so a
     /// silent-push sync inside iOS's short background window never waits on
     /// them.
-    private func syncOneLocked(account: String) async -> Bool {
+    private func syncOneLocked(account: String, removal: Int) async -> Bool {
         do {
             let (plan, isFullListing) = try await planSync(account: account)
             var stillMissing = Set<String>()
@@ -244,7 +252,13 @@ final class GmailSyncService {
             for chunk in plan.messageIDs.chunked(into: GmailAPIClient.batchSize) {
                 let fetched = try await client.fetchMetadata(ids: chunk, account: account)
                 stillMissing.formUnion(fetched.failedIDs)
-                try await repository.upsert(fetched.items, isInitialSync: isFullListing)
+                // Older mail that turned up again (moved back into the
+                // Inbox elsewhere) is baseline, as restored mail is below.
+                let isReturned = { (item: Correspondence) in item.latestMessageID.map { plan.baselineMessageIDs.contains($0) } ?? false }
+                let returned = fetched.items.filter(isReturned)
+                let arrived = returned.isEmpty ? fetched.items : fetched.items.filter { !isReturned($0) }
+                try await upsert(arrived, isInitialSync: isFullListing, account: account, removal: removal)
+                if !returned.isEmpty { try await upsert(returned, isInitialSync: true, account: account, removal: removal) }
                 if isFullListing { listed += fetched.items }
                 syncProgress += 1
             }
@@ -255,29 +269,39 @@ final class GmailSyncService {
             if !plan.restoredMessageIDs.isEmpty {
                 let restored = try await client.fetchMessages(ids: plan.restoredMessageIDs, account: account)
                 stillMissing.formUnion(restored.failedIDs)
-                try await repository.upsert(restored.items, isInitialSync: true)
+                try await upsert(restored.items, isInitialSync: true, account: account, removal: removal)
             }
 
             // After upsert, so a message that arrived and was then archived
             // elsewhere within the same window ends up removed, not re-added.
+            try ensureCurrent(account, removal)
             try await repository.applyRemoteChanges(plan.remoteChanges)
             // Every listed message accounted for, or a missing one would
             // look deleted.
-            if isFullListing, stillMissing.isEmpty { try await reconcile(account: account, listed: listed) }
+            if isFullListing, stillMissing.isEmpty {
+                try ensureCurrent(account, removal)
+                try await reconcile(account: account, listed: listed)
+            }
 
             // Ids a previous sync couldn't fetch, retried here independent
             // of the cursor/history window: by now the cursor has already
             // moved past the point where the ordinary sync path would ever
             // offer them again (see `GmailAPIClient.SyncPlan`).
-            let previouslyMissed = missedMessageIDs(for: account)
-            if isFullListing || !plan.messageIDs.isEmpty || !plan.restoredMessageIDs.isEmpty
-                || !plan.remoteChanges.isEmpty || !previouslyMissed.isEmpty {
+            let missed = missedMessages(for: account)
+            let previouslyMissed = missed.ids
+            var tried = Set<String>()
+            if isFullListing || !plan.messageIDs.isEmpty || !plan.restoredMessageIDs.isEmpty || !plan.remoteChanges.isEmpty {
                 changedAccounts.insert(account)
             }
             if !previouslyMissed.isEmpty {
+                try ensureCurrent(account, removal)
                 if let retried = try? await client.fetchMessages(ids: previouslyMissed, account: account) {
-                    try await repository.upsert(retried.items, isInitialSync: isFullListing)
+                    try await upsert(retried.items, isInitialSync: isFullListing, account: account, removal: removal)
                     stillMissing.formUnion(retried.failedIDs)
+                    tried = Set(previouslyMissed)
+                    // Only a retry that brought something in is a change;
+                    // one that found nothing again isn't worth a reload.
+                    if !retried.items.isEmpty { changedAccounts.insert(account) }
                 } else {
                     // The retry call itself failed outright (e.g. a token
                     // refresh failure) — keep every previously-missed id
@@ -299,24 +323,24 @@ final class GmailSyncService {
             // ids than the retry list holds: moving the cursor would drop
             // the overflow for good, so the cursor stays put and the next
             // sync plans the same window again.
-            if retired.remove(account) != nil {
-                dropCursor(for: account)
-                return false
-            }
-            let missedOverflow = stillMissing.count > Self.maxTrackedMissedIDs
+            try ensureCurrent(account, removal)
+            let missedOverflow = stillMissing.count > MissedMessages.maxTracked
             if let historyId = plan.historyId, !missedOverflow {
                 setHistoryCursor(historyId, for: account)
             }
             if isFullListing, !missedOverflow {
                 setOlderInboxPageToken(plan.olderInboxPageToken, for: account)
             }
-            setMissedMessageIDs(stillMissing, for: account)
-            if !isFullListing { await backfillSentIfNeeded(account: account) }
+            setMissedMessages(missed.after(failed: stillMissing, tried: tried, now: .now), for: account)
+            if !isFullListing { await backfillSentIfNeeded(account: account, removal: removal) }
             else { defaults.set(true, forKey: Self.sentBackfillKey(for: account)) }
-            await repairSentPlaceholders(account: account)
+            await repairSentPlaceholders(account: account, removal: removal)
             errorMessage = nil
             health[account] = AccountHealth(lastSuccess: .now, problem: nil)
             return true
+        } catch is AccountRemoved {
+            // Removed mid-pass: nothing to report, and nothing more saved.
+            return false
         } catch {
             Logger(subsystem: "studio.anwarcreative.corres", category: "sync")
                 .error("Sync failed (\(MailAccounts.provider(for: account).title, privacy: .public)): \(String(describing: error), privacy: .public)")
@@ -332,7 +356,7 @@ final class GmailSyncService {
             if case GmailAPIClient.ClientError.refused(_, let reason?, _) = error, GmailAPIClient.rateLimitReasons.contains(reason) {
                 return false
             }
-            errorMessage = "Couldn't sync your mail. Check your connection and try again."
+            errorMessage = String(localized: "Couldn't sync your mail. Check your connection and try again.")
             health[account, default: AccountHealth()].problem = Self.describe(error, account: account)
             return false
         }
@@ -399,9 +423,10 @@ final class GmailSyncService {
         defer { isBackfilling = false }
         guard let pending = try? await repository.threadsAwaitingContent(limit: Self.backfillLimit) else { return }
         for (account, accountThreads) in Dictionary(grouping: pending, by: \.id.account) {
+            let removal = removalCount(account)
             let ids = accountThreads.compactMap(\.latestMessageID)
             for chunk in ids.chunked(into: GmailAPIClient.batchSize) {
-                guard let fetched = try? await client.fetchFull(ids: chunk, account: account) else { break }
+                guard let fetched = try? await client.fetchFull(ids: chunk, account: account), isCurrent(account, removal) else { break }
                 if (try? await repository.applyLoadedContent(fetched.items)) ?? 0 > 0 { syncProgress += 1 }
             }
         }
@@ -421,6 +446,7 @@ final class GmailSyncService {
             let key = "corres.inboxVerified.\(account.lowercased())"
             let last = defaults.object(forKey: key) as? Date ?? .distantPast
             guard Date.now.timeIntervalSince(last) > Self.verifyInterval, running[account] == nil else { continue }
+            let removal = removalCount(account)
             var listed: [Correspondence] = []
             var token: String?
             var complete = true
@@ -435,9 +461,9 @@ final class GmailSyncService {
             }
             // Only what was read in one go: a page missing in the middle
             // would make the mail on it look gone.
-            guard complete, !listed.isEmpty else { continue }
+            guard complete, !listed.isEmpty, isCurrent(account, removal) else { continue }
             do {
-                try await confirmAgainstInbox(account: account, listed: listed)
+                try await confirmAgainstInbox(account: account, listed: listed, removal: removal)
                 defaults.set(Date.now, forKey: key)
                 syncProgress += 1
             } catch {
@@ -452,7 +478,7 @@ final class GmailSyncService {
     /// in Trash or Spam, it goes; no clear answer, it stays as it is. A
     /// listing can come back short (a message the server failed to send),
     /// and that mustn't remove mail you still have.
-    private func confirmAgainstInbox(account: String, listed: [Correspondence]) async throws {
+    private func confirmAgainstInbox(account: String, listed: [Correspondence], removal: Int) async throws {
         try await repository.applyRemoteChanges(listed.compactMap { item in
             item.latestMessageID.map { RemoteMessageChange(threadID: item.id, messageID: $0, currentLabelIds: item.labelIds, removed: false) }
         })
@@ -474,6 +500,7 @@ final class GmailSyncService {
                                                    currentLabelIds: discarded ? nil : item.labelIds, removed: discarded))
             }
         }
+        try ensureCurrent(account, removal)
         try await repository.applyRemoteChanges(changes)
         if !changes.isEmpty {
             Logger(subsystem: "studio.anwarcreative.corres", category: "sync")
@@ -489,7 +516,11 @@ final class GmailSyncService {
     /// server. Returns whether anything new was saved.
     @discardableResult
     func indexOlderMail(accounts: [String]) async -> Bool {
-        let saved = await MailIndexer.shared.run(accounts: accounts, repository: repository)
+        let started = Dictionary(accounts.map { ($0, removalCount($0)) }, uniquingKeysWith: { first, _ in first })
+        let saved = await MailIndexer.shared.run(accounts: accounts, repository: repository) { [weak self] account in
+            guard let self, let removal = started[account] else { return false }
+            return self.isCurrent(account, removal)
+        }
         if saved { syncProgress += 1 }
         return saved
     }
@@ -518,6 +549,7 @@ final class GmailSyncService {
     }
 
     private func loadOlder(account: String, known: Set<String>) async -> Bool {
+        let removal = removalCount(account)
         var pageToken = olderInboxPageToken(for: account)
         var newIDs: [String] = []
         var pagesScanned = 0
@@ -532,10 +564,11 @@ final class GmailSyncService {
             for chunk in newIDs.chunked(into: GmailAPIClient.batchSize) {
                 let fetched = try await client.fetchMetadata(ids: chunk, account: account)
                 // Older mail predates anything the Screener should hold.
-                try await repository.upsert(fetched.items, isInitialSync: true)
+                try await upsert(fetched.items, isInitialSync: true, account: account, removal: removal)
                 anyLoaded = anyLoaded || !fetched.items.isEmpty
                 syncProgress += 1
             }
+            try ensureCurrent(account, removal)
             setOlderInboxPageToken(pageToken, for: account)
         } catch {
             return anyLoaded
@@ -553,13 +586,36 @@ final class GmailSyncService {
     /// full sync rather than resuming a previous account's history.
     func clearCursor(for account: String?) {
         guard let account else { return }
-        // Removed mid-sync: that pass mustn't save its cursor afterwards,
-        // or adding the account back would start past mail it no longer has.
-        if running[account] != nil { retired.insert(account) }
+        // Removed mid-sync (or mid older mail, bodies, search, Inbox check):
+        // that work stops before saving anything more, and no further pass
+        // follows, or its mail would come back and adding the account back
+        // would start past mail it no longer has.
+        removals[account, default: 0] += 1
+        wantsAnotherPass.remove(account)
         dropCursor(for: account)
     }
 
-    private var retired: Set<String> = []
+    /// How many times each account has been removed this launch. Work for
+    /// an account notes it when it starts, and stops once it changes.
+    private var removals: [String: Int] = [:]
+    private struct AccountRemoved: Error {}
+
+    private func removalCount(_ account: String) -> Int { removals[account, default: 0] }
+    private func isCurrent(_ account: String, _ removal: Int) -> Bool { removals[account, default: 0] == removal }
+
+    private func ensureCurrent(_ account: String, _ removal: Int) throws {
+        guard isCurrent(account, removal) else { throw AccountRemoved() }
+    }
+
+    /// Saves mail for an account that's still here. The check and the save
+    /// go together on the main actor, so a removal can't slip between them
+    /// and have this put the mail back after it was deleted.
+    @discardableResult
+    private func upsert(_ items: [Correspondence], isInitialSync: Bool, account: String, removal: Int) async throws -> Int {
+        try ensureCurrent(account, removal)
+        guard !items.isEmpty else { return 0 }
+        return try await repository.upsert(items, isInitialSync: isInitialSync)
+    }
 
     private func dropCursor(for account: String) {
         defaults.removeObject(forKey: Self.cursorKey(for: account))
@@ -568,6 +624,7 @@ final class GmailSyncService {
         fileCursorsRead.insert(account)
         CursorFiles.remove(account)
         defaults.removeObject(forKey: Self.missedIDsKey(for: account))
+        defaults.removeObject(forKey: Self.missedKey(for: account))
         defaults.removeObject(forKey: Self.olderTokenKey(for: account))
         defaults.removeObject(forKey: Self.olderExhaustedKey(for: account))
     }
@@ -590,23 +647,53 @@ final class GmailSyncService {
     /// Gmail's own copy: no message id, and (in builds before 5) the
     /// recipient shown as the sender. Each is replaced by the real message,
     /// once; upsert always lets the real copy replace a placeholder.
-    private func repairSentPlaceholders(account: String) async {
+    ///
+    /// A new Outlook email Graph hadn't filed when asked keeps a stand-in
+    /// ("outlook-sent-…") with the Message-ID Corres stamped on it. That's
+    /// looked up here, so the stand-in gives way even after Corres quit
+    /// before the outbox could swap it.
+    ///
+    /// Each is tried at most every few minutes, and given up after a few
+    /// days, so a copy that never turns up isn't asked about forever.
+    private func repairSentPlaceholders(account: String, removal: Int) async {
         guard let threads = try? await repository.threadsWithoutMessageID(account: account) else { return }
-        let broken = threads.filter { $0.lastSentAt != nil }
+        let now = Date.now
+        let broken = threads.filter { thread in
+            guard let sent = thread.lastSentAt, now.timeIntervalSince(sent) < Self.placeholderGiveUp else { return false }
+            return now.timeIntervalSince(placeholderTried[thread.id] ?? .distantPast) > Self.placeholderRetry
+        }
         for thread in broken.prefix(20) {
+            guard isCurrent(account, removal) else { return }
+            placeholderTried[thread.id] = now
+            if thread.id.providerID.hasPrefix("outlook-sent-") {
+                guard let messageID = thread.messageIdHeader,
+                      let real = try? await client.findMessage(rfc822MessageID: messageID, account: account),
+                      let messages = try? await client.fetchThreadMessages(threadId: real.providerID, account: account),
+                      let sent = messages.last(where: \.isFromAccountOwner) ?? messages.last,
+                      (try? await upsert([sent], isInitialSync: true, account: account, removal: removal)) != nil else { continue }
+                try? await repository.remove(thread.id)
+                placeholderTried[thread.id] = nil
+                changedAccounts.insert(account)
+                continue
+            }
             guard let messages = try? await client.fetchThreadMessages(threadId: thread.id.providerID, account: account),
                   let latest = messages.last else { continue }
-            _ = try? await repository.upsert([latest], isInitialSync: true)
+            _ = try? await upsert([latest], isInitialSync: true, account: account, removal: removal)
         }
     }
 
-    private func backfillSentIfNeeded(account: String) async {
+    private static let placeholderRetry: TimeInterval = 5 * 60
+    private static let placeholderGiveUp: TimeInterval = 7 * 86_400
+    private var placeholderTried: [ThreadID: Date] = [:]
+
+    private func backfillSentIfNeeded(account: String, removal: Int) async {
         guard !defaults.bool(forKey: Self.sentBackfillKey(for: account)),
               let ids = try? await client.listRecentSent(account: account) else { return }
         for chunk in ids.chunked(into: GmailAPIClient.batchSize) {
             guard let fetched = try? await client.fetchMetadata(ids: chunk, account: account),
-                  (try? await repository.upsert(fetched.items, isInitialSync: true)) != nil else { return }
+                  (try? await upsert(fetched.items, isInitialSync: true, account: account, removal: removal)) != nil else { return }
         }
+        guard isCurrent(account, removal) else { return }
         defaults.set(true, forKey: Self.sentBackfillKey(for: account))
         syncProgress += 1
     }
@@ -720,29 +807,33 @@ final class GmailSyncService {
         }
     }
 
-    private func missedMessageIDs(for account: String) -> [String] {
-        defaults.stringArray(forKey: Self.missedIDsKey(for: account)) ?? []
+    /// The ids a pass couldn't fetch, with how often each was tried (see
+    /// `MissedMessages`). A plain list saved by an earlier build counts as
+    /// tried once, from now.
+    private func missedMessages(for account: String) -> MissedMessages {
+        if let data = defaults.data(forKey: Self.missedKey(for: account)),
+           let saved = try? JSONDecoder().decode(MissedMessages.self, from: data) {
+            return saved
+        }
+        let old = defaults.stringArray(forKey: Self.missedIDsKey(for: account)) ?? []
+        return MissedMessages(entries: Dictionary(old.map { ($0, MissedMessages.Entry(attempts: 1, since: .now)) },
+                                                  uniquingKeysWith: { first, _ in first }))
     }
 
-    /// Bounded, not unlimited: a message that's still failing after many
-    /// syncs in a row (a real Gmail-side 404, say — deleted before this
-    /// ever managed to fetch it, not just unlucky timing) would otherwise
-    /// be retried forever, at the cost of one wasted API call per sync
-    /// indefinitely. `Set` has no defined iteration order, so this can't
-    /// honestly claim to drop the *oldest* entries past the cap — only
-    /// that the set never grows past a hard ceiling regardless of which
-    /// ids that leaves in it; anything genuinely still recoverable
-    /// succeeds within the first few retries anyway, well under this cap.
-    private static let maxTrackedMissedIDs = 200
-
-    private func setMissedMessageIDs(_ ids: Set<String>, for account: String) {
-        let key = Self.missedIDsKey(for: account)
-        guard !ids.isEmpty else {
-            defaults.removeObject(forKey: key)
+    /// Written only when it changed: every write tells the whole app
+    /// settings changed, and this runs every 20 seconds.
+    private func setMissedMessages(_ missed: MissedMessages, for account: String) {
+        if defaults.object(forKey: Self.missedIDsKey(for: account)) != nil { defaults.removeObject(forKey: Self.missedIDsKey(for: account)) }
+        let key = Self.missedKey(for: account)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        guard !missed.isEmpty, let data = try? encoder.encode(missed) else {
+            if defaults.object(forKey: key) != nil { defaults.removeObject(forKey: key) }
             return
         }
-        defaults.set(Array(ids.prefix(Self.maxTrackedMissedIDs)), forKey: key)
+        if defaults.data(forKey: key) != data { defaults.set(data, forKey: key) }
     }
 
+    private static func missedKey(for account: String) -> String { "corres.sync.missedMessages.\(account)" }
     private static func missedIDsKey(for account: String) -> String { "corres.gmail.missedMessageIDs.\(account)" }
 }

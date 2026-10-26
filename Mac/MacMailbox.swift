@@ -106,7 +106,11 @@ final class MacMailboxModel {
     var selection: Set<ThreadID> = []
 
     private var cacheKey: CacheKey?
-    private var cachedRows: [MacRow] = []
+    private var cachedRows: [MacRow] = [] { didSet { rowsVersion &+= 1 } }
+    /// Bumped each time the rows are made again, for `visible`.
+    @ObservationIgnored private var rowsVersion = 0
+    @ObservationIgnored private var visibleKey: VisibleKey?
+    @ObservationIgnored private var visibleCache = Visible()
     /// Finds a search's matches, away from the main thread in a large
     /// mailbox; `searchFound` changes when they arrive.
     @ObservationIgnored private let searcher = MailSearch()
@@ -122,6 +126,20 @@ final class MacMailboxModel {
         let accounts: [String]
         let serverMatches: Set<ThreadID>
         let searchFound: Int
+    }
+
+    /// The rows on screen, and how many conversations and unread ones
+    /// they hold, for the window's subtitle.
+    struct Visible {
+        var rows: [MacRow] = []
+        var count = 0
+        var unread = 0
+    }
+
+    private struct VisibleKey: Equatable {
+        let version: Int
+        let unreadOnly: Bool
+        let kept: Set<ThreadID>
     }
 
     init() {
@@ -156,6 +174,33 @@ final class MacMailboxModel {
         cachedRows = rows
         cacheKey = key
         return cachedRows
+    }
+
+    /// The rows less what Unread Only leaves out, which is never what's
+    /// selected or was read with it on (`kept`), with their counts. Made
+    /// once per change to the rows or the filter: a full mailbox is
+    /// thousands of rows, and the selection changes with every arrow key.
+    func visible(store: MailStore, accounts: [String], remote: MacRemoteMailboxes, serverMatches: Set<ThreadID>,
+                 unreadOnly: Bool, kept: Set<ThreadID>) -> Visible {
+        let rows = rows(store: store, accounts: accounts, remote: remote, serverMatches: serverMatches)
+        let kept = unreadOnly ? kept.union(selection) : []
+        let key = VisibleKey(version: rowsVersion, unreadOnly: unreadOnly, kept: kept)
+        if key == visibleKey { return visibleCache }
+        var shown = rows
+        if unreadOnly {
+            let unreadOrKept = rows.filter { row in
+                guard let thread = row.thread else { return true }
+                return thread.isUnread || kept.contains(thread.id)
+            }
+            // A heading ("Due soon") with nothing under it goes too.
+            shown = unreadOrKept.enumerated().filter { index, row in
+                row.thread != nil || (index + 1 < unreadOrKept.count && unreadOrKept[index + 1].thread != nil)
+            }.map(\.element)
+        }
+        let threads = shown.compactMap(\.thread)
+        visibleCache = Visible(rows: shown, count: threads.count, unread: threads.reduce(0) { $0 + ($1.isUnread ? 1 : 0) })
+        visibleKey = key
+        return visibleCache
     }
 
     var selectedThreads: [Correspondence] {

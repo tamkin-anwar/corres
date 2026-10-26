@@ -51,7 +51,7 @@ enum BriefNotifier {
 
         Task.detached(priority: .utility) {
             let content = UNMutableNotificationContent()
-            content.title = "Your Brief"
+            content.title = String(localized: "Your Brief")
             content.body = body
             content.userInfo = ["destination": "brief"]
             content.interruptionLevel = .passive

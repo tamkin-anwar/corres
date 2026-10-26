@@ -349,16 +349,16 @@ struct SendersView: View {
     private func allow(_ sender: SenderSummary) {
         Task {
             await store.approveSender(sender.email, account: sender.account)
-            show(sender.decision == .blocked
-                 ? "\(sender.name) is allowed. Their \(sender.count == 1 ? "email is" : "\(sender.count) emails are") back in Mail."
-                 : "\(sender.name) is allowed")
+            show(sender.decision != .blocked ? String(localized: "\(sender.name) is allowed")
+                 : sender.count == 1 ? String(localized: "\(sender.name) is allowed. Their email is back in Mail.")
+                 : String(localized: "\(sender.name) is allowed. Their \(sender.count) emails are back in Mail."))
         }
     }
 
     private func block(_ sender: SenderSummary, quietly: Bool = false) {
         Task {
             await store.blockSender(sender.email, account: sender.account)
-            if !quietly { show("\(sender.name) is blocked. You can allow them here any time.") }
+            if !quietly { show(String(localized: "\(sender.name) is blocked. You can allow them here any time.")) }
         }
     }
 
@@ -368,7 +368,7 @@ struct SendersView: View {
                 .max(by: { $0.receivedAt < $1.receivedAt }) else { return }
         Task {
             let outcome = await unsubscriber.unsubscribe(from: latest, store: store)
-            show(outcome == .done ? "Unsubscribed from \(sender.name)" : "Finish unsubscribing on their page")
+            show(outcome == .done ? String(localized: "Unsubscribed from \(sender.name)") : String(localized: "Finish unsubscribing on their page"))
         }
     }
 

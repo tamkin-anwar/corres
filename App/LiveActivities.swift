@@ -50,7 +50,8 @@ enum LiveActivities {
     static func recipient(_ field: String) -> String {
         let people = PeopleIndex.entries(in: field).compactMap(PeopleIndex.parse)
         guard let first = people.first else { return String(localized: "your recipient") }
-        let name = first.name.isEmpty ? first.email : (first.name.split(separator: " ").first.map(String.init) ?? first.name)
+        // "Md. Rahim Uddin" reads "Rahim"; "王伟" stays whole.
+        let name = first.name.isEmpty ? first.email : Person.firstName(of: first.name)
         return people.count > 1 ? "\(name) +\(people.count - 1)" : name
     }
 
@@ -87,21 +88,28 @@ enum LiveActivities {
         let today = threads
             .filter { $0.receivedAt >= startOfToday && $0.receivedAt < startOfTomorrow && $0.id.account != "sample" && $0.mailKind == .shipping }
             .sorted { $0.receivedAt < $1.receivedAt }
+        let running = Activity<DeliveryActivity>.activities
+        let runningKeys = Set(running.map(\.attributes.threadKey))
         var latest: [String: (thread: Correspondence, delivered: Bool)] = [:]
         for thread in today {
             let key = "\(thread.id.entityKey)|\(thread.latestMessageID ?? thread.subject)|\(thread.body.utf8.count)|\(thread.excerpt.utf8.count)"
             let status = statuses.value(key) {
                 let text = thread.body.isEmpty ? thread.excerpt : thread.body
-                return MailDigest.glance(text: text, subject: thread.subject, kind: .shipping)?.status
+                return MailDigest.glance(text: text, subject: thread.subject, kind: .shipping, html: thread.htmlBody)?.status
             }
             let store = (thread.senderEmail.flatMap(BrandLogos.domain(of:)) ?? thread.sender).lowercased()
             if status == "Out for delivery" {
                 latest[store] = (thread, false)
-            } else if status == "Delivered", let earlier = latest[store] {
-                latest[store] = (earlier.thread, true)
+            } else if status == "Delivered" {
+                if let earlier = latest[store] {
+                    latest[store] = (earlier.thread, true)
+                } else if runningKeys.contains(thread.id.entityKey) {
+                    // "Delivered" arrived in the same conversation as "Out
+                    // for delivery": its newest message now says Delivered.
+                    latest[store] = (thread, true)
+                }
             }
         }
-        let running = Activity<DeliveryActivity>.activities
         for activity in running {
             let match = latest.values.first { $0.thread.id.entityKey == activity.attributes.threadKey }
             if match?.delivered == true, !activity.content.state.delivered {
@@ -112,8 +120,7 @@ enum LiveActivities {
             }
         }
         guard canStart else { return }
-        let keys = Set(running.map(\.attributes.threadKey))
-        for (_, entry) in latest where !entry.delivered && !keys.contains(entry.thread.id.entityKey) {
+        for (_, entry) in latest where !entry.delivered && !runningKeys.contains(entry.thread.id.entityKey) {
             let thread = entry.thread
             let link = MailReminders.link(to: thread.id) ?? WidgetSnapshot.url(for: "mail")
             let from = thread.organization.isEmpty ? thread.sender : thread.organization
@@ -160,13 +167,10 @@ enum LiveActivities {
     }
     #endif
 
+    /// The delivery company, by the sender's domain or the email's words
+    /// (see `DetectedItems.carrierName`).
     private static func carrier(in thread: Correspondence) -> String? {
-        let text = (thread.subject + " " + thread.body).lowercased()
-        for (word, name) in [("ups", "UPS"), ("usps", "USPS"), ("fedex", "FedEx"), ("dhl", "DHL"), ("royal mail", "Royal Mail"),
-                             ("amazon logistics", "Amazon")] where text.range(of: "\\b\(word)\\b", options: .regularExpression) != nil {
-            return name
-        }
-        return nil
+        DetectedItems.carrierName(in: thread.subject + " " + thread.body, senderEmail: thread.senderEmail)
     }
 }
 #endif

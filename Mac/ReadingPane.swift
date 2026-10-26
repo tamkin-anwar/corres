@@ -544,7 +544,8 @@ struct ReadingPane: View {
     private var imagesNotice: some View {
         HStack(spacing: 10) {
             Image(systemName: "photo").foregroundStyle(CorresPalette.secondary)
-            let trackers = thread.htmlBody.map(HTMLMessageBody.trackerCount(in:)) ?? 0
+            // Worked out once per message, not on every redraw.
+            let trackers = thread.htmlBody.map { HTMLMessageBody.analysis(of: $0).trackers } ?? 0
             Text(trackers == 1 ? "Images hidden, and 1 tracker blocked"
                  : trackers > 1 ? "Images hidden, and \(trackers) trackers blocked"
                               : "Images hidden to protect your privacy")
@@ -721,17 +722,30 @@ struct MacAttachmentChip: View {
         guard let url = await download() else { return }
         let destination: URL?
         if toDownloads {
-            destination = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first?
-                .appendingPathComponent(url.lastPathComponent)
+            destination = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+                .map { Self.unusedName(url.lastPathComponent, in: $0) }
         } else {
             let panel = NSSavePanel()
             panel.nameFieldStringValue = url.lastPathComponent
             destination = panel.runModal() == .OK ? panel.url : nil
         }
         guard let destination else { return }
-        try? FileManager.default.removeItem(at: destination)
+        // Save As has asked about replacing; Downloads never replaces.
+        if !toDownloads { try? FileManager.default.removeItem(at: destination) }
         if (try? FileManager.default.copyItem(at: url, to: destination)) != nil, toDownloads {
             NSWorkspace.shared.activateFileViewerSelecting([destination])
         }
+    }
+
+    /// "invoice.pdf", or "invoice 2.pdf" when that's taken, as Safari
+    /// names a second download of the same file.
+    private static func unusedName(_ name: String, in folder: URL) -> URL {
+        let base = (name as NSString).deletingPathExtension, ext = (name as NSString).pathExtension
+        var candidate = folder.appendingPathComponent(name), number = 1
+        while FileManager.default.fileExists(atPath: candidate.path) {
+            number += 1
+            candidate = folder.appendingPathComponent(ext.isEmpty ? "\(base) \(number)" : "\(base) \(number).\(ext)")
+        }
+        return candidate
     }
 }

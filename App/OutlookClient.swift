@@ -29,8 +29,14 @@ struct OutlookClient: Sendable {
 
     // MARK: Sync
 
-    /// The cursor is both folders' delta links, as JSON.
-    private struct Cursor: Codable { var inbox: String; var sent: String }
+    /// The cursor is both folders' delta links, as JSON, and when they
+    /// were taken (nil in cursors saved before it was kept).
+    private struct Cursor: Codable { var inbox: String; var sent: String; var at: Date? }
+
+    /// Mail older than the last pass that turns up in a delta was moved
+    /// back into the Inbox elsewhere, not just received. A margin for mail
+    /// that arrived as that pass ran.
+    private static let returnedMargin: TimeInterval = 15 * 60
 
     func planFullListing(account: String) async throws -> GmailAPIClient.SyncPlan {
         let since = Self.isoDate(Date.now.addingTimeInterval(-Double(Self.initialInboxDays) * 86_400))
@@ -40,7 +46,7 @@ struct OutlookClient: Sendable {
         let messages = (inbox.messages + sent.messages).filter { $0.removed == nil }
             .sorted { ($0.receivedDate ?? .distantPast) > ($1.receivedDate ?? .distantPast) }
         await OutlookCache.shared.keep(messages, account: account)
-        let cursor = try JSONEncoder().encode(Cursor(inbox: inbox.deltaLink, sent: sent.deltaLink))
+        let cursor = try JSONEncoder().encode(Cursor(inbox: inbox.deltaLink, sent: sent.deltaLink, at: .now))
         return GmailAPIClient.SyncPlan(messageIDs: messages.map(\.id), historyId: String(data: cursor, encoding: .utf8),
                                        olderInboxPageToken: "\(Self.base)/me/mailFolders/inbox/messages?$select=id&$top=100&$orderby=receivedDateTime+desc&$filter=receivedDateTime+lt+\(since)")
     }
@@ -69,9 +75,15 @@ struct OutlookClient: Sendable {
             return RemoteMessageChange(threadID: ThreadID(account: account, providerID: conversation), messageID: message.id,
                                        currentLabelIds: Self.labels(for: message, folders: folders), removed: false)
         }
-        let next = try JSONEncoder().encode(Cursor(inbox: inbox.deltaLink, sent: sent.deltaLink))
-        return GmailAPIClient.SyncPlan(messageIDs: current.map(\.id), historyId: String(data: next, encoding: .utf8),
-                                       remoteChanges: remote)
+        // Moved back into the Inbox elsewhere: mail you already had, saved
+        // as baseline (never a new sender for the Screener), as Gmail's
+        // restored mail is.
+        let returned = cursor.at.map { last in
+            Set(current.filter { ($0.receivedDate ?? .now) < last.addingTimeInterval(-Self.returnedMargin) }.map(\.id))
+        } ?? []
+        let next = try JSONEncoder().encode(Cursor(inbox: inbox.deltaLink, sent: sent.deltaLink, at: .now))
+        return GmailAPIClient.SyncPlan(messageIDs: current.map(\.id), baselineMessageIDs: returned,
+                                       historyId: String(data: next, encoding: .utf8), remoteChanges: remote)
     }
 
     /// One delta round: every page until Graph hands back the next delta link.
@@ -147,8 +159,7 @@ struct OutlookClient: Sendable {
     func fetchThreadMessages(threadId: String, account: String) async throws -> [Correspondence] {
         let escaped = threadId.replacingOccurrences(of: "'", with: "''")
         let filter = "conversationId eq '\(escaped)'".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let page: GraphPage<GraphMessage> = try await getJSON("\(Self.base)/me/messages?$select=id&$filter=\(filter)&$top=50", account: account)
-        let ids = page.value.map(\.id)
+        let ids = try await allPages("\(Self.base)/me/messages?$select=id&$filter=\(filter)&$top=50", account: account).map(\.id)
         return try await fetchMessages(ids: ids, account: account).items.sorted { $0.receivedAt < $1.receivedAt }
     }
 
@@ -392,8 +403,22 @@ struct OutlookClient: Sendable {
     private func conversation(_ threadId: String, account: String) async throws -> [GraphMessage] {
         let escaped = threadId.replacingOccurrences(of: "'", with: "''")
         let filter = "conversationId eq '\(escaped)'".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let page: GraphPage<GraphMessage> = try await getJSON("\(Self.base)/me/messages?$select=id,parentFolderId,categories&$filter=\(filter)&$top=100", account: account)
-        return page.value
+        return try await allPages("\(Self.base)/me/messages?$select=id,parentFolderId,categories&$filter=\(filter)&$top=100", account: account)
+    }
+
+    /// Every page of a listing, following Graph's next links: a long
+    /// conversation is more than one page, and an action on only the first
+    /// left the rest behind. Capped, so a listing can't run on forever.
+    private func allPages(_ url: String, account: String, maxPages: Int = 20) async throws -> [GraphMessage] {
+        var next: String? = url
+        var messages: [GraphMessage] = []
+        for _ in 0..<maxPages {
+            guard let current = next else { break }
+            let page: GraphPage<GraphMessage> = try await getJSON(current, account: account)
+            messages += page.value
+            next = page.nextLink
+        }
+        return messages
     }
 
     // MARK: Settings
@@ -587,7 +612,7 @@ struct OutlookClient: Sendable {
         return GmailAPIClient.build(
             account: account, threadID: message.conversationId ?? message.id, messageID: message.id,
             sender: sender, senderEmail: senderEmail, organization: GmailAPIClient.organization(fromEmail: senderEmail),
-            subject: (message.subject ?? "").isEmpty ? "(no subject)" : message.subject!, excerpt: (message.bodyPreview ?? "").previewText,
+            subject: (message.subject ?? "").isEmpty ? String(localized: "(no subject)") : message.subject!, excerpt: (message.bodyPreview ?? "").previewText,
             body: full ? plain : (message.bodyPreview ?? ""), htmlBody: html,
             messageIdHeader: message.internetMessageId?.trimmingCharacters(in: CharacterSet(charactersIn: "<>")),
             receivedAt: message.receivedDate ?? .now, isUnread: message.isRead == false,
@@ -644,8 +669,17 @@ struct OutlookClient: Sendable {
     // MARK: HTTP
 
     private func token(_ account: String) async throws -> String {
-        do { return try await OutlookTokenProvider.shared.accessToken(for: account) }
-        catch { throw ClientError.notSignedIn }
+        do {
+            return try await OutlookTokenProvider.shared.accessToken(for: account)
+        } catch let error as URLError {
+            // Offline is not signed out: sends retry, and sync doesn't ask
+            // you to reconnect.
+            throw error
+        } catch OutlookTokenProvider.TokenError.unavailable(let statusCode) {
+            throw ClientError.badResponse(statusCode: statusCode)
+        } catch {
+            throw ClientError.notSignedIn
+        }
     }
 
     private func get(_ url: String, account: String, extraHeaders: [String: String] = [:]) async throws -> (Data, Int) {
@@ -765,33 +799,56 @@ struct OutlookClient: Sendable {
         }
     }
 
+    /// Messages by id, four to a $batch like changes (Graph runs a batch's
+    /// requests at once and allows about four at a time per mailbox). Each
+    /// answer is read on its own: one 404 or 429 in a batch used to fail
+    /// every message in it. A message deleted meanwhile (404) is dropped,
+    /// as Gmail's are; a throttled one waits as Graph asks and goes again.
     private func batchGet(_ ids: [String], fields: String, account: String, expandAttachments: Bool = false) async throws -> (found: [String: GraphMessage], failed: [String]) {
         var found: [String: GraphMessage] = [:]
         var failed: [String] = []
         let expand = expandAttachments ? "&$expand=attachments($select=id,name,contentType,size,isInline)" : ""
-        for chunk in ids.chunked(into: Self.batchLimit) {
-            let payload: [String: Any] = ["requests": chunk.enumerated().map { index, id in
-                ["id": "\(index)", "method": "GET", "url": "/me/messages/\(id)?$select=\(fields)\(expand)",
-                 "headers": ["Prefer": "IdType=\"ImmutableId\", outlook.body-content-type=\"html\""]] as [String: Any]
-            }]
-            var request = URLRequest(url: URL(string: "\(Self.base)/$batch")!)
-            request.httpMethod = "POST"
-            request.setValue("Bearer \(try await token(account))", forHTTPHeaderField: "Authorization")
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-            let (data, status) = try await perform(request, account: account)
-            try Self.check(status, data)
-            let responses = (try? JSONDecoder().decode(BatchMessages.self, from: data))?.responses ?? []
-            var answered = Set<Int>()
-            for response in responses {
-                guard let index = Int(response.id), chunk.indices.contains(index) else { continue }
-                answered.insert(index)
-                if let message = response.body, (200..<300).contains(response.status) { found[chunk[index]] = message }
-                else { failed.append(chunk[index]) }
+        for chunk in ids.chunked(into: Self.changeBatchLimit) {
+            var pending = chunk
+            for attempt in 0..<4 {
+                let payload: [String: Any] = ["requests": pending.enumerated().map { index, id in
+                    ["id": "\(index)", "method": "GET", "url": "/me/messages/\(id)?$select=\(fields)\(expand)",
+                     "headers": ["Prefer": "IdType=\"ImmutableId\", outlook.body-content-type=\"html\""]] as [String: Any]
+                }]
+                var request = URLRequest(url: URL(string: "\(Self.base)/$batch")!)
+                request.httpMethod = "POST"
+                request.setValue("Bearer \(try await token(account))", forHTTPHeaderField: "Authorization")
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+                let (data, status) = try await perform(request, account: account)
+                try Self.check(status, data)
+                // No answer at all (a reply that didn't decode) counts as
+                // failed, so the next sync tries again instead of moving past.
+                guard let responses = (try? JSONDecoder().decode(BatchMessages.self, from: data))?.responses else { break }
+                var answered = Set<Int>()
+                var throttled: [String] = []
+                var wait = 0.0
+                for response in responses {
+                    guard let index = Int(response.id), pending.indices.contains(index) else { continue }
+                    answered.insert(index)
+                    let id = pending[index]
+                    if let message = response.body, (200..<300).contains(response.status) {
+                        found[id] = message
+                    } else if response.status == 404 {
+                        continue
+                    } else if response.status == 429 || response.status == 503 || response.status == 504 {
+                        throttled.append(id)
+                        wait = max(wait, response.retryAfter ?? Double(1 << attempt))
+                    } else {
+                        failed.append(id)
+                    }
+                }
+                failed += pending.indices.filter { !answered.contains($0) }.map { pending[$0] }
+                pending = throttled
+                if pending.isEmpty || attempt == 3 { break }
+                try await Task.sleep(for: .seconds(min(wait, 30)))
             }
-            // No answer at all (a reply that didn't decode) counts as
-            // failed, so the next sync tries again instead of moving past.
-            failed += chunk.indices.filter { !answered.contains($0) }.map { chunk[$0] }
+            failed += pending
         }
         return (found, failed)
     }
@@ -944,7 +1001,29 @@ private struct BatchResponse: Decodable {
 }
 
 private struct BatchMessages: Decodable {
-    struct Item: Decodable { let id: String; let status: Int; let body: GraphMessage? }
+    struct Item: Decodable {
+        let id: String
+        let status: Int
+        let headers: [String: String]?
+        let body: GraphMessage?
+
+        enum CodingKeys: String, CodingKey { case id, status, headers, body }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(String.self, forKey: .id)
+            status = try container.decode(Int.self, forKey: .status)
+            headers = try? container.decode([String: String].self, forKey: .headers)
+            // An error's body is Graph's error, not a message: read only an
+            // answer that succeeded, so one failure can't spoil the rest.
+            body = (200..<300).contains(status) ? try? container.decode(GraphMessage.self, forKey: .body) : nil
+        }
+
+        /// Graph's Retry-After, in seconds, whatever case it came in.
+        var retryAfter: Double? {
+            headers?.first { $0.key.lowercased() == "retry-after" }.flatMap { Double($0.value) }
+        }
+    }
     let responses: [Item]
 }
 
@@ -988,16 +1067,28 @@ private struct AutoReplyEnvelope: Decodable {
 /// them, so most need no second request.
 actor OutlookCache {
     static let shared = OutlookCache()
-    private var messages: [String: GraphMessage] = [:]
+    private static let limit = 4_000
+    /// Each message with when it came (a running count), so a full cache
+    /// lets go of what has waited longest.
+    private var messages: [String: (order: Int, message: GraphMessage)] = [:]
+    private var nextOrder = 0
 
     func keep(_ items: [GraphMessage], account: String) {
-        for item in items { messages[account + "|" + item.id] = item }
-        if messages.count > 4_000 { messages.removeAll() }
+        for item in items {
+            messages[account + "|" + item.id] = (nextOrder, item)
+            nextOrder += 1
+        }
+        guard messages.count > Self.limit else { return }
+        // Down to three quarters full, oldest first, never what just came:
+        // clearing everything threw away the delta the sync was about to use.
+        let keeping = max(Self.limit * 3 / 4, items.count)
+        let oldest = messages.sorted { $0.value.order < $1.value.order }.prefix(messages.count - keeping)
+        for (key, _) in oldest { messages[key] = nil }
     }
 
     func take(_ ids: [String], account: String) -> [String: GraphMessage] {
         var found: [String: GraphMessage] = [:]
-        for id in ids { if let item = messages.removeValue(forKey: account + "|" + id) { found[id] = item } }
+        for id in ids { if let item = messages.removeValue(forKey: account + "|" + id) { found[id] = item.message } }
         return found
     }
 }

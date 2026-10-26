@@ -2,14 +2,14 @@
   "name": "corres-push-relay",
   "version": "1.0.0",
   "private": true,
-  "description": "Content-blind Gmail-to-APNs push relay for Corres. Never sees message content: Gmail's Pub/Sub notification carries only an account address and a historyId, and this forwards a silent wake-up push telling the app to sync for itself.",
+  "description": "Content-blind push relay for Corres (Gmail, Outlook, and the records the iCloud watcher reads). Never sees message content: notices carry only an account address and a historyId or message id, and this forwards a wake-up push, plus an alert naming only the account and message where the app asked for one.",
   "main": "index.js",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "deploy": "gcloud functions deploy corres-push-relay --gen2 --runtime=nodejs20 --region=us-central1 --source=. --entry-point=corresPushRelay --trigger-http --allow-unauthenticated --set-secrets=APNS_AUTH_KEY=corres-apns-auth-key:latest --set-env-vars=APNS_KEY_ID=$APNS_KEY_ID,APNS_TEAM_ID=$APNS_TEAM_ID,APNS_BUNDLE_ID=$APNS_BUNDLE_ID,ICLOUD_KEY_VERSION=$ICLOUD_KEY_VERSION,APP_ATTEST_ENFORCE=${APP_ATTEST_ENFORCE:-0}",
-    "deploy:graph": "gcloud functions deploy corres-push-relay-graph --gen2 --runtime=nodejs20 --region=us-central1 --source=. --entry-point=corresPushRelayGraph --trigger-http --allow-unauthenticated --set-secrets=APNS_AUTH_KEY=corres-apns-auth-key:latest --set-env-vars=APNS_KEY_ID=$APNS_KEY_ID,APNS_TEAM_ID=$APNS_TEAM_ID,APNS_BUNDLE_ID=$APNS_BUNDLE_ID",
+    "deploy": "gcloud functions deploy corres-push-relay --gen2 --runtime=nodejs20 --region=us-central1 --source=. --entry-point=corresPushRelay --trigger-http --allow-unauthenticated --set-secrets=APNS_AUTH_KEY=corres-apns-auth-key:latest --set-env-vars=APNS_KEY_ID=$APNS_KEY_ID,APNS_TEAM_ID=$APNS_TEAM_ID,APNS_BUNDLE_ID=$APNS_BUNDLE_ID,ICLOUD_KEY_VERSION=$ICLOUD_KEY_VERSION,APP_ATTEST_ENFORCE=${APP_ATTEST_ENFORCE:-0},ICLOUD_MAX_WATCHES=${ICLOUD_MAX_WATCHES:-2000}",
+    "deploy:graph": "gcloud functions deploy corres-push-relay-graph --gen2 --runtime=nodejs20 --region=us-central1 --source=. --entry-point=corresPushRelayGraph --trigger-http --allow-unauthenticated --min-instances=1 --set-secrets=APNS_AUTH_KEY=corres-apns-auth-key:latest --set-env-vars=APNS_KEY_ID=$APNS_KEY_ID,APNS_TEAM_ID=$APNS_TEAM_ID,APNS_BUNDLE_ID=$APNS_BUNDLE_ID",
     "deploy:pubsub": "gcloud functions deploy corres-push-relay-pubsub --gen2 --runtime=nodejs20 --region=us-central1 --source=. --entry-point=corresPushRelayPubSub --trigger-http --no-allow-unauthenticated --set-secrets=APNS_AUTH_KEY=corres-apns-auth-key:latest --set-env-vars=APNS_KEY_ID=$APNS_KEY_ID,APNS_TEAM_ID=$APNS_TEAM_ID,APNS_BUNDLE_ID=$APNS_BUNDLE_ID"
   },
   "dependencies": {

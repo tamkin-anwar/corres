@@ -1,11 +1,14 @@
-// Corres push relay. One job only: forward Gmail's "something changed" ping
-// to the right device via APNs. It never sees message content: Gmail's
-// Pub/Sub notification for a mailbox change carries only { emailAddress,
-// historyId }, and the push this sends is silent (content-available only,
-// no alert text), so the actual subject/sender/body is fetched and shown
-// entirely on-device, the same as any other sync. See Docs/Architecture.md's
-// "Push notifications" entry for why this exists and what it deliberately
-// does not do.
+// Corres push relay: forwards "something changed" from Gmail (Pub/Sub) and
+// Outlook (Microsoft Graph) to the right device via APNs, and keeps the
+// records the iCloud watcher reads. It never sees message content: Gmail's
+// notice carries only { emailAddress, historyId }, Graph's only a message
+// id. Every device gets a silent wake-up (content-available) so Corres
+// syncs for itself; where the app asked for it, a visible alert too, which
+// names only the account and the message id (or Gmail's historyId). Its
+// title is the localization key "New email" and its body the address;
+// the notification extension fetches the email on the device and fills
+// in the sender and subject. See README.md and Docs/Architecture.md's
+// "Push notifications" entry.
 const functions = require('@google-cloud/functions-framework');
 const { Firestore } = require('@google-cloud/firestore');
 const { KeyManagementServiceClient } = require('@google-cloud/kms');
@@ -121,14 +124,21 @@ function apnsSession(environment) {
   return { session, reused: false };
 }
 
-async function apnsRequest(environment, deviceToken, headers, payload) {
-  const first = await apnsAttempt(environment, deviceToken, headers, payload);
+// `timeoutMs`: how long one attempt may take. The Outlook path, which
+// Microsoft wants answered within about three seconds, passes a shorter
+// one and doesn't retry after a timeout.
+const APNS_TIMEOUT_MS = 10_000;
+const GRAPH_APNS_TIMEOUT_MS = 2_500;
+
+async function apnsRequest(environment, deviceToken, headers, payload, timeoutMs = APNS_TIMEOUT_MS) {
+  const first = await apnsAttempt(environment, deviceToken, headers, payload, timeoutMs);
   if (first.status !== 0 || !first.reused) return first;
+  if (first.reason === 'Timeout' && timeoutMs < APNS_TIMEOUT_MS) return first;
   dropSession(environment);
-  return apnsAttempt(environment, deviceToken, headers, payload);
+  return apnsAttempt(environment, deviceToken, headers, payload, timeoutMs);
 }
 
-function apnsAttempt(environment, deviceToken, headers, payload) {
+function apnsAttempt(environment, deviceToken, headers, payload, timeoutMs = APNS_TIMEOUT_MS) {
   return new Promise((resolve) => {
     let settled = false;
     const done = (result) => { if (!settled) { settled = true; resolve(result); } };
@@ -149,7 +159,7 @@ function apnsAttempt(environment, deviceToken, headers, payload) {
       return done({ status: 0, reason: 'ConnectionError', reused });
     }
     request.setEncoding('utf8');
-    request.setTimeout(10_000, () => { request.close(); done({ status: 0, reason: 'Timeout', reused }); });
+    request.setTimeout(timeoutMs, () => { request.close(); done({ status: 0, reason: 'Timeout', reused }); });
     request.on('error', () => done({ status: 0, reason: 'StreamError', reused }));
     let status = 0;
     let body = '';
@@ -165,55 +175,69 @@ function apnsAttempt(environment, deviceToken, headers, payload) {
   });
 }
 
-function sendSilentPush(deviceToken, environment) {
+function sendSilentPush(deviceToken, environment, timeoutMs) {
   return apnsRequest(environment, deviceToken, { 'apns-push-type': 'background', 'apns-priority': '5' },
-    { aps: { 'content-available': 1 } });
+    { aps: { 'content-available': 1 } }, timeoutMs);
 }
 
 // A visible alert for one new email, filled in on the iPhone by Corres's
 // notification extension: the push names only the account and the
 // message, never anything from it. "New email" is what shows if the
-// extension can't fetch it in time. Priority 10, and not throttled the way
+// extension can't fetch it in time: sent as a localization key, so iOS
+// shows it in the person's language from the app's Localizable.strings
+// (builds without the key show the key itself). Priority 10, and not throttled the way
 // background pushes are, so it arrives as fast as the service's own app.
 // For Gmail, whose notice names no message, `historyId` replaces
 // `messageId`: the extension asks Gmail itself what's new since then, and
 // stays silent if nothing is (Apple's notification filtering).
-function sendAlertPush(deviceToken, environment, emailAddress, messageId, historyId) {
+function sendAlertPush(deviceToken, environment, emailAddress, messageId, historyId, timeoutMs) {
   return apnsRequest(environment, deviceToken, {
     'apns-push-type': 'alert',
     'apns-priority': '10',
     'apns-collapse-id': crypto.createHash('sha256').update(messageId || `${emailAddress}:${historyId}`).digest('hex').slice(0, 64),
   }, {
-    aps: { alert: { title: 'New email', body: emailAddress }, sound: 'default', 'mutable-content': 1 },
+    aps: { alert: { 'title-loc-key': 'New email', body: emailAddress }, sound: 'default', 'mutable-content': 1 },
     account: emailAddress,
     ...(messageId ? { message: messageId } : { gmailHistory: String(historyId) }),
-  });
+  }, timeoutMs);
 }
 
 // Wakes one registered device through the server its token belongs to.
-// A token Apple says is gone (410 Unregistered, after an app is deleted)
-// is forgotten; one that fails on its server is tried on the other, in
-// case it was registered wrongly, and the record is corrected.
-async function wakeDevice(doc, alert) {
+// A token Apple says is gone (410 Unregistered, after an app is deleted,
+// or BadDeviceToken on both servers) is forgotten; one that fails on its
+// server is tried on the other, in case it was registered wrongly, and the
+// record is corrected. Never throws: a failed write is only logged, so one
+// device can't fail a whole notice and get it redelivered to everyone.
+async function wakeDevice(doc, alert, timeoutMs) {
   const known = doc.data().apnsEnvironment;
   const order = APNS_ENVIRONMENTS.includes(known)
     ? [known, ...APNS_ENVIRONMENTS.filter((e) => e !== known)]
     : APNS_ENVIRONMENTS;
+  let badEverywhere = true;
   for (const environment of order) {
     const { status, reason } = alert
-      ? await sendAlertPush(doc.id, environment, alert.emailAddress, alert.messageId, alert.historyId)
-      : await sendSilentPush(doc.id, environment);
+      ? await sendAlertPush(doc.id, environment, alert.emailAddress, alert.messageId, alert.historyId, timeoutMs)
+      : await sendSilentPush(doc.id, environment, timeoutMs);
     if (status === 200) {
-      if (environment !== known) await doc.ref.set({ apnsEnvironment: environment }, { merge: true });
+      if (environment !== known) await quietly(doc.ref.set({ apnsEnvironment: environment }, { merge: true }));
       return;
     }
     if (status === 410) {
-      await doc.ref.delete();
+      await quietly(doc.ref.delete());
       return;
     }
     // Only a wrong-server token is worth trying elsewhere; anything else
     // (throttling, a network error) will be the same on both.
-    if (reason !== 'BadDeviceToken') return;
+    if (reason !== 'BadDeviceToken') { badEverywhere = false; return; }
+  }
+  if (badEverywhere) await quietly(doc.ref.delete());
+}
+
+async function quietly(promise) {
+  try {
+    await promise;
+  } catch (error) {
+    console.log('write failed', error && error.message);
   }
 }
 
@@ -241,6 +265,55 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Firestore document growth from repeated `register` calls against the same
 // device token, whether malicious or just a client-side bug looping.
 const MAX_EMAIL_ADDRESSES_PER_DEVICE = 50;
+// Outlook subscriptions one device can hold (one per account; an older one
+// for the same account is deleted when a new one is registered).
+const MAX_GRAPH_SUBSCRIPTIONS_PER_DEVICE = 50;
+// iCloud watches in all, across every device: each one is an IMAP
+// connection the single watcher instance holds open.
+const MAX_ICLOUD_WATCHES = Number(process.env.ICLOUD_MAX_WATCHES) || 2000;
+
+// Typed checks: a JSON array of one string passes RegExp.test (it's turned
+// into that string), so every field is checked to be a string first.
+function matches(value, pattern) {
+  return typeof value === 'string' && pattern.test(value);
+}
+
+// Absent, or a well formed address. False for anything else.
+function optionalEmail(value) {
+  return value === undefined || value === null || value === '' || matches(value, EMAIL_PATTERN);
+}
+
+// ---- Best-effort rate limits ----------------------------------------------
+// In memory, per instance, so only a brake on one busy caller, not a real
+// limit (Cloud Armor in front of the function is that; see README). The
+// caller's address is the last X-Forwarded-For entry, the one Google's
+// front end adds; anything before it is whatever the caller sent.
+const rateWindows = new Map(); // "route|ip" → { start, count }
+const RATE_WINDOW_MS = 60_000;
+
+function clientIP(req) {
+  const forwarded = String(req.get('x-forwarded-for') || '').split(',').map((s) => s.trim()).filter(Boolean);
+  return forwarded.length ? forwarded[forwarded.length - 1] : (req.ip || 'unknown');
+}
+
+// True (and a 429 sent) when this address has used up its calls for the minute.
+function rateLimited(req, res, route, limit) {
+  const now = Date.now();
+  if (rateWindows.size > 20_000) {
+    for (const [key, window] of rateWindows) if (now - window.start >= RATE_WINDOW_MS) rateWindows.delete(key);
+    if (rateWindows.size > 20_000) rateWindows.clear();
+  }
+  const key = `${route}|${clientIP(req)}`;
+  let window = rateWindows.get(key);
+  if (!window || now - window.start >= RATE_WINDOW_MS) {
+    window = { start: now, count: 0 };
+    rateWindows.set(key, window);
+  }
+  window.count += 1;
+  if (window.count <= limit) return false;
+  res.status(429).set('Retry-After', '60').send('Too many requests');
+  return true;
+}
 
 // App Attest routes and checks.
 
@@ -256,8 +329,11 @@ function keyDocID(keyId) {
 
 // 32 random bytes, good for one use within five minutes. Stored by its
 // hash, so the database never holds a usable challenge. Unused ones are
-// cleared by Firestore's TTL policy on `expiresAt` (see README).
+// cleared by Firestore's TTL policy on `expiresAt` (see README). Each
+// register or unregister call takes one, so a phone with many accounts
+// asks for several at once; 60 a minute per address is far above that.
 async function handleAttestChallenge(req, res) {
+  if (rateLimited(req, res, '/attest-challenge', 60)) return;
   if (req.body && req.body.purpose === 'attest' && !APP_ATTEST_NEW_KEYS) {
     res.status(503).send('New App Attest keys are paused');
     return;
@@ -411,15 +487,13 @@ async function handleRegister(req, res) {
     res.status(400).send('emailAddress and deviceToken are required');
     return;
   }
-  if (!DEVICE_TOKEN_PATTERN.test(deviceToken) || !EMAIL_PATTERN.test(emailAddress)) {
+  if (!matches(deviceToken, DEVICE_TOKEN_PATTERN) || !matches(emailAddress, EMAIL_PATTERN)) {
     res.status(400).send('emailAddress or deviceToken is malformed');
     return;
   }
   const attest = await appAttestGate(req, res, '/register');
   if (!attest) return;
-  const existing = await devices.doc(deviceToken).get();
-  const currentCount = (existing.exists && existing.data().emailAddresses) ? existing.data().emailAddresses.length : 0;
-  if (currentCount >= MAX_EMAIL_ADDRESSES_PER_DEVICE) {
+  if (await atAccountCap(deviceToken, emailAddress)) {
     res.status(429).send('Too many accounts registered for this device');
     return;
   }
@@ -438,6 +512,14 @@ async function handleRegister(req, res) {
   res.status(204).send();
 }
 
+// Whether this device already has the most accounts it may, not counting
+// this one (registering an account again is always fine).
+async function atAccountCap(deviceToken, emailAddress) {
+  const existing = await devices.doc(deviceToken).get();
+  const current = (existing.exists && Array.isArray(existing.data().emailAddresses)) ? existing.data().emailAddresses : [];
+  return current.length >= MAX_EMAIL_ADDRESSES_PER_DEVICE && !current.includes(emailAddress);
+}
+
 // With `emailAddress`, removes just that one account from the device's
 // list (disconnecting a single account while others stay connected); the
 // document itself is left in place even if the list becomes empty, since an
@@ -445,11 +527,16 @@ async function handleRegister(req, res) {
 // deleting it isn't necessary for correctness. Without `emailAddress`
 // (turning notifications off entirely), the whole device record is removed.
 async function handleUnregister(req, res) {
-  const { deviceToken, emailAddress } = req.body || {};
-  if (!deviceToken || !DEVICE_TOKEN_PATTERN.test(deviceToken)) {
+  const { deviceToken } = req.body || {};
+  if (!matches(deviceToken, DEVICE_TOKEN_PATTERN)) {
     res.status(400).send('deviceToken is required and must be a valid device token');
     return;
   }
+  if (!optionalEmail(req.body.emailAddress)) {
+    res.status(400).send('emailAddress is malformed');
+    return;
+  }
+  const emailAddress = req.body.emailAddress || null;
   const attest = await appAttestGate(req, res, '/unregister');
   if (!attest) return;
   if (emailAddress) {
@@ -479,7 +566,7 @@ async function handleUnregister(req, res) {
 // handled independently and the endpoint always acknowledges.
 async function handlePubSub(req, res) {
   const dataBase64 = req.body && req.body.message && req.body.message.data;
-  if (!dataBase64) {
+  if (typeof dataBase64 !== 'string' || !dataBase64) {
     res.status(204).send();
     return;
   }
@@ -491,20 +578,37 @@ async function handlePubSub(req, res) {
     res.status(204).send();
     return;
   }
-  if (emailAddress) {
-    const matches = await devices.where('emailAddresses', 'array-contains', emailAddress).get();
-    await Promise.all(matches.docs.map((doc) => {
+  if (!matches(emailAddress, EMAIL_PATTERN)) {
+    res.status(204).send();
+    return;
+  }
+  if (!(typeof historyId === 'string' && /^\d{1,20}$/.test(historyId)) && !(Number.isSafeInteger(historyId) && historyId > 0)) {
+    historyId = null;
+  }
+  try {
+    const found = await devices.where('emailAddresses', 'array-contains', emailAddress).get();
+    const results = await Promise.allSettled(found.docs.map((doc) => {
       const alerting = historyId && (doc.data().gmailAlertAccounts || []).includes(emailAddress);
       return wakeDevice(doc, alerting ? { emailAddress, historyId } : undefined);
     }));
+    logRejected('pubsub', results);
+  } catch (error) {
+    console.log('pubsub failed', error && error.message);
   }
+  // Always acknowledged: a retry would wake every device again.
   res.status(204).send();
+}
+
+function logRejected(route, results) {
+  const failed = results.filter((r) => r.status === 'rejected');
+  if (failed.length) console.log(`${route}: ${failed.length} wake-ups failed`, failed[0].reason && failed[0].reason.message);
 }
 
 const SUBSCRIPTION_ID_PATTERN = /^[A-Za-z0-9-]{8,128}$/;
 // Graph message ids: base64url-ish, a few hundred characters at most.
 const MESSAGE_ID_PATTERN = /^[A-Za-z0-9+/=_-]{8,512}$/;
 const CLIENT_STATE_PATTERN = /^[0-9a-f]{32,128}$/i;
+const GRAPH_RECORD_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 
 function hash(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
@@ -512,21 +616,35 @@ function hash(value) {
 
 // The app made an Outlook subscription with Graph itself (Graph checked
 // this relay's URL as it did); it tells the relay which account that
-// subscription watches and its secret, and which device to wake.
+// subscription watches and its secret, and which device to wake. The
+// subscription record keeps that device, so Graph's notices for it wake
+// only this device (each device makes its own subscription). An older
+// subscription for the same account and device is deleted, so its
+// notices, still coming until it expires at Microsoft, wake nothing.
 async function handleRegisterGraph(req, res) {
   const { subscriptionId, clientState, emailAddress, deviceToken } = req.body || {};
-  if (!subscriptionId || !clientState || !emailAddress || !deviceToken
-      || !SUBSCRIPTION_ID_PATTERN.test(subscriptionId) || !CLIENT_STATE_PATTERN.test(clientState)
-      || !EMAIL_PATTERN.test(emailAddress) || !DEVICE_TOKEN_PATTERN.test(deviceToken)) {
+  if (!matches(subscriptionId, SUBSCRIPTION_ID_PATTERN) || !matches(clientState, CLIENT_STATE_PATTERN)
+      || !matches(emailAddress, EMAIL_PATTERN) || !matches(deviceToken, DEVICE_TOKEN_PATTERN)) {
     res.status(400).send('subscriptionId, clientState, emailAddress and deviceToken are required and must be well formed');
     return;
   }
-  await graphSubscriptions.doc(subscriptionId).set({
-    emailAddress, deviceToken, clientStateHash: hash(clientState), updatedAt: Firestore.FieldValue.serverTimestamp(),
-  });
+  if (rateLimited(req, res, '/register-graph', 60)) return;
+  const attest = await appAttestGate(req, res, '/register-graph');
+  if (!attest) return;
+  const [held, atCap] = await Promise.all([
+    graphSubscriptions.where('deviceToken', '==', deviceToken).get(),
+    atAccountCap(deviceToken, emailAddress),
+  ]);
+  const others = held.docs.filter((doc) => doc.data().emailAddress !== emailAddress);
+  if (atCap || others.length >= MAX_GRAPH_SUBSCRIPTIONS_PER_DEVICE) {
+    res.status(429).send('Too many accounts registered for this device');
+    return;
+  }
+  // The device first, so a notice that arrives in between finds it.
   // "alerts": "1" from builds whose notification extension shows each new
   // email itself; anything else (older builds, notifications off for the
-  // account) keeps the quiet background wake-up only.
+  // account) keeps the quiet background wake-up only. The device record's
+  // App Attest fields are left to /register, which the app signs.
   const alerts = req.body.alerts === '1';
   await devices.doc(deviceToken).set({
     emailAddresses: Firestore.FieldValue.arrayUnion(emailAddress),
@@ -534,6 +652,16 @@ async function handleRegisterGraph(req, res) {
     updatedAt: Firestore.FieldValue.serverTimestamp(),
     ...environmentFrom(req.body),
   }, { merge: true });
+  // `expiresAt` lets Firestore's TTL policy clear records nobody renews
+  // (see README): Graph's mail subscriptions last under three days, and
+  // the app renews them well before that.
+  await graphSubscriptions.doc(subscriptionId).set({
+    emailAddress, deviceToken, clientStateHash: hash(clientState), updatedAt: Firestore.FieldValue.serverTimestamp(),
+    expiresAt: Firestore.Timestamp.fromMillis(Date.now() + GRAPH_RECORD_LIFETIME_MS),
+    ...attestFields(attest),
+  });
+  const replaced = held.docs.filter((doc) => doc.id !== subscriptionId && doc.data().emailAddress === emailAddress);
+  await Promise.all(replaced.map((doc) => quietly(doc.ref.delete())));
   res.status(204).send();
 }
 
@@ -541,9 +669,9 @@ async function handleRegisterGraph(req, res) {
 // checks the URL by sending a validationToken, echoed back as plain text
 // within 10 seconds. After that each notification names its subscription
 // and carries the secret the app chose (clientState): only a match wakes
-// the account's devices, so a guessed URL can't push anything. Like the
-// Gmail path, nothing about the message itself is read or kept, and the
-// endpoint always answers 202 so Graph doesn't retry.
+// the subscription's own device, so a guessed URL can't push anything.
+// Like the Gmail path, nothing about the message itself is read or kept,
+// and the endpoint always answers 202 so Graph doesn't retry.
 async function handleGraph(req, res) {
   const validationToken = req.query && req.query.validationToken;
   if (validationToken) {
@@ -551,37 +679,69 @@ async function handleGraph(req, res) {
     res.status(200).send(String(validationToken));
     return;
   }
-  const notifications = (req.body && Array.isArray(req.body.value)) ? req.body.value.slice(0, 100) : [];
-  // Each account, and the new messages Graph named for it (only ids).
-  const accounts = new Map();
-  for (const notification of notifications) {
-    const { subscriptionId, clientState, resourceData } = notification || {};
-    if (!subscriptionId || !clientState || !SUBSCRIPTION_ID_PATTERN.test(subscriptionId)) continue;
-    const doc = await graphSubscriptions.doc(subscriptionId).get();
-    if (!doc.exists || doc.data().clientStateHash !== hash(String(clientState))) continue;
-    const emailAddress = doc.data().emailAddress;
-    if (!accounts.has(emailAddress)) accounts.set(emailAddress, new Set());
+  try {
+    await wakeForGraph((req.body && Array.isArray(req.body.value)) ? req.body.value.slice(0, 100) : []);
+  } catch (error) {
+    console.log('graph failed', error && error.message);
+  }
+  res.status(202).send();
+}
+
+async function wakeForGraph(notifications) {
+  const valid = notifications.filter((n) => n && matches(n.subscriptionId, SUBSCRIPTION_ID_PATTERN)
+    && (typeof n.clientState === 'string' || typeof n.clientState === 'number'));
+  if (valid.length === 0) return;
+  // Every subscription in one read: Microsoft expects an answer within
+  // about three seconds.
+  const ids = [...new Set(valid.map((n) => n.subscriptionId))];
+  const docs = await firestore.getAll(...ids.map((id) => graphSubscriptions.doc(id)));
+  const subscriptions = new Map(docs.filter((doc) => doc.exists).map((doc) => [doc.id, doc.data()]));
+  // Each target (one device and account, or, for a record from before
+  // records kept their device, every device of the account), and the new
+  // messages Graph named for it (only ids).
+  const targets = new Map();
+  for (const notification of valid) {
+    const subscription = subscriptions.get(notification.subscriptionId);
+    if (!subscription || subscription.clientStateHash !== hash(String(notification.clientState))) continue;
+    const { emailAddress } = subscription;
+    if (typeof emailAddress !== 'string') continue;
+    const deviceToken = matches(subscription.deviceToken, DEVICE_TOKEN_PATTERN) ? subscription.deviceToken : null;
+    const key = `${deviceToken || '*'}|${emailAddress}`;
+    if (!targets.has(key)) targets.set(key, { emailAddress, deviceToken, subscriptionId: notification.subscriptionId, messageIds: new Set() });
     // Only new mail alerts. Read, flagged, moved or deleted elsewhere
     // ("updated", "deleted") only wakes Corres quietly to catch up.
-    const messageId = resourceData && resourceData.id;
+    const messageId = notification.resourceData && notification.resourceData.id;
     const isNew = (notification.changeType || 'created') === 'created';
-    if (isNew && typeof messageId === 'string' && MESSAGE_ID_PATTERN.test(messageId)) accounts.get(emailAddress).add(messageId);
+    if (isNew && matches(messageId, MESSAGE_ID_PATTERN)) targets.get(key).messageIds.add(messageId);
   }
-  // Everything in parallel: Microsoft expects an answer within about three
-  // seconds, and the reply waits for the pushes (a Cloud Function may lose
-  // its CPU once it has answered, so the work can't run after it).
-  await Promise.all([...accounts].map(async ([emailAddress, messageIds]) => {
-    const matches = await devices.where('emailAddresses', 'array-contains', emailAddress).get();
-    await Promise.all(matches.docs.map(async (device) => {
-      const alerting = (device.data().alertAccounts || []).includes(emailAddress);
+  // Everything in parallel, with a short APNs timeout: the reply waits for
+  // the pushes (a Cloud Function may lose its CPU once it has answered, so
+  // the work can't run after it).
+  const results = await Promise.allSettled([...targets.values()].map(async (target) => {
+    let found;
+    if (target.deviceToken) {
+      const device = await devices.doc(target.deviceToken).get();
+      // The device turned notifications off (its record is gone, and so
+      // is this subscription's use) or no longer has the account.
+      if (!device.exists) {
+        await quietly(graphSubscriptions.doc(target.subscriptionId).delete());
+        return;
+      }
+      if (!(device.data().emailAddresses || []).includes(target.emailAddress)) return;
+      found = [device];
+    } else {
+      found = (await devices.where('emailAddresses', 'array-contains', target.emailAddress).get()).docs;
+    }
+    await Promise.allSettled(found.map(async (device) => {
+      const alerting = (device.data().alertAccounts || []).includes(target.emailAddress);
       const alerts = alerting
-        ? [...messageIds].slice(0, 10).map((messageId) => wakeDevice(device, { emailAddress, messageId }))
+        ? [...target.messageIds].slice(0, 10).map((messageId) => wakeDevice(device, { emailAddress: target.emailAddress, messageId }, GRAPH_APNS_TIMEOUT_MS))
         : [];
       // The quiet wake-up too, so Corres syncs in the background as before.
-      await Promise.all([...alerts, wakeDevice(device)]);
+      await Promise.allSettled([...alerts, wakeDevice(device, undefined, GRAPH_APNS_TIMEOUT_MS)]);
     }));
   }));
-  res.status(202).send();
+  logRejected('graph', results);
 }
 
 function watchID(emailAddress, deviceToken) {
@@ -606,55 +766,108 @@ async function handleICloudKey(req, res) {
 
 // Turns instant alerts on for one iCloud account on one device. The
 // password arrives sealed (RSA-OAEP, base64); a wrong or forged one just
-// fails to sign in at the watcher, which then deletes it.
+// fails to sign in at the watcher, which then deletes it. The watcher
+// keys each IMAP connection by its server and user name, and only wakes
+// devices whose own password signed in, so a record naming someone else's
+// address with another server or a wrong password can't silence or fake
+// their alerts.
 const HOST_PATTERN = /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 const SEALED_PATTERN = /^[A-Za-z0-9+/=]{300,700}$/;
+const ICLOUD_HOST = 'imap.mail.me.com';
+const ICLOUD_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
+
+// How many watches there are in all, counted at most once a minute per
+// instance (an aggregation query, one read per thousand records).
+let watchCount = { value: 0, at: 0 };
+async function icloudWatchCount() {
+  if (Date.now() - watchCount.at > 60_000) {
+    const snapshot = await icloudWatches.count().get();
+    watchCount = { value: snapshot.data().count, at: Date.now() };
+  }
+  return watchCount.value;
+}
+
 async function handleRegisterICloud(req, res) {
-  const { emailAddress, deviceToken, sealedPassword } = req.body || {};
-  if (!emailAddress || !deviceToken || !sealedPassword || !EMAIL_PATTERN.test(emailAddress)
-      || !DEVICE_TOKEN_PATTERN.test(deviceToken) || !SEALED_PATTERN.test(sealedPassword)) {
+  const body = req.body || {};
+  const { emailAddress, deviceToken, sealedPassword } = body;
+  if (!matches(emailAddress, EMAIL_PATTERN) || !matches(deviceToken, DEVICE_TOKEN_PATTERN)
+      || !matches(sealedPassword, SEALED_PATTERN)) {
     res.status(400).send('emailAddress, deviceToken and sealedPassword are required and must be well formed');
     return;
   }
-  const existing = await icloudWatches.where('deviceToken', '==', deviceToken).get();
-  const others = existing.docs.filter((doc) => doc.data().emailAddress !== emailAddress.toLowerCase());
-  if (others.length >= 10) {
-    res.status(429).send('Too many iCloud accounts for this device');
+  // Another IMAP account names its own server; iCloud's is the default,
+  // and the only one an iCloud address may name. Only a public host name
+  // on the IMAP-over-TLS port: never an address or a local name, so the
+  // watcher can't be pointed inside a network.
+  const optional = (value) => value === undefined || value === null || value === '';
+  if (!(optional(body.imapHost) || typeof body.imapHost === 'string')
+      || !(optional(body.imapPort) || typeof body.imapPort === 'string' || typeof body.imapPort === 'number')
+      || !(optional(body.username) || typeof body.username === 'string')
+      || !(optional(body.alerts) || typeof body.alerts === 'string')) {
+    res.status(400).send('imapHost, imapPort, username and alerts must be strings');
     return;
   }
-  // Another IMAP account names its own server; iCloud's is the default.
-  // Only a public host name on the IMAP-over-TLS port: never an address or
-  // a local name, so the watcher can't be pointed inside a network.
-  const imapHost = String(req.body.imapHost || 'imap.mail.me.com').toLowerCase();
-  const imapPort = Number(req.body.imapPort || 993);
-  const username = String(req.body.username || emailAddress);
+  const address = emailAddress.toLowerCase();
+  const imapHost = (body.imapHost || ICLOUD_HOST).toLowerCase();
+  const imapPort = Number(body.imapPort || 993);
+  const username = body.username || emailAddress;
   if (!HOST_PATTERN.test(imapHost) || /^[\d.]+$/.test(imapHost) || imapHost.endsWith('.local')
       || imapHost.endsWith('.internal') || !(imapPort === 993) || username.length > 254) {
     res.status(400).send('imapHost must be a public host name on port 993');
     return;
   }
-  await icloudWatches.doc(watchID(emailAddress, deviceToken)).set({
-    emailAddress: emailAddress.toLowerCase(),
+  if (ICLOUD_DOMAINS.has(address.split('@').pop()) && imapHost !== ICLOUD_HOST) {
+    res.status(400).send(`iCloud addresses are watched on ${ICLOUD_HOST}`);
+    return;
+  }
+  if (rateLimited(req, res, '/register-icloud', 30)) return;
+  const attest = await appAttestGate(req, res, '/register-icloud');
+  if (!attest) return;
+  const ref = icloudWatches.doc(watchID(emailAddress, deviceToken));
+  const [existing, current] = await Promise.all([
+    icloudWatches.where('deviceToken', '==', deviceToken).get(),
+    ref.get(),
+  ]);
+  const others = existing.docs.filter((doc) => doc.data().emailAddress !== address);
+  if (others.length >= 10) {
+    res.status(429).send('Too many iCloud accounts for this device');
+    return;
+  }
+  if (!current.exists && await icloudWatchCount() >= MAX_ICLOUD_WATCHES) {
+    console.log('icloud watches full');
+    res.status(503).send('Instant iCloud notifications are full right now');
+    return;
+  }
+  await ref.set({
+    emailAddress: address,
     imapHost,
     imapPort,
     username,
     deviceToken,
     sealedPassword,
-    alerts: req.body.alerts !== '0',
+    alerts: body.alerts !== '0',
     failures: 0,
     updatedAt: Firestore.FieldValue.serverTimestamp(),
-    ...environmentFrom(req.body),
+    ...attestFields(attest),
+    ...environmentFrom(body),
   });
+  if (!current.exists) watchCount.value += 1;
   res.status(204).send();
 }
 
 async function handleUnregisterICloud(req, res) {
-  const { emailAddress, deviceToken } = req.body || {};
-  if (!deviceToken || !DEVICE_TOKEN_PATTERN.test(deviceToken)) {
+  const { deviceToken } = req.body || {};
+  if (!matches(deviceToken, DEVICE_TOKEN_PATTERN)) {
     res.status(400).send('deviceToken is required');
     return;
   }
-  await deleteICloudWatches(deviceToken, emailAddress);
+  if (!optionalEmail(req.body.emailAddress)) {
+    res.status(400).send('emailAddress is malformed');
+    return;
+  }
+  const attest = await appAttestGate(req, res, '/unregister-icloud');
+  if (!attest) return;
+  await deleteICloudWatches(deviceToken, req.body.emailAddress || null);
   res.status(204).send();
 }
 

@@ -67,9 +67,10 @@ public struct Invitation: Equatable, Sendable {
               let mailto = organizer.range(of: "mailto:", options: .caseInsensitive) else { return nil }
         let email = String(organizer[mailto.upperBound...]).trimmingCharacters(in: .whitespaces).lowercased()
         let summary = ICalendar.text(value("SUMMARY") ?? "Event")
+        let defined = ICalendar.definedZones(in: lines)
         func date(_ found: String?) -> (date: Date, allDay: Bool)? {
             guard let found, let colon = found.firstIndex(of: ":") else { return nil }
-            return ICalendar.date(String(found[found.index(after: colon)...]), params: String(found[..<colon]))
+            return ICalendar.date(String(found[found.index(after: colon)...]), params: String(found[..<colon]), zones: defined)
         }
         let starts = date(start)
         var ends = date(line("DTEND")).map(\.date)
@@ -177,7 +178,8 @@ enum ICalendar {
     }
 
     /// A date or date-time with its parameters (`DTSTART;TZID=...`).
-    static func date(_ value: String, params: String) -> (date: Date, allDay: Bool)? {
+    /// `zones` are the file's own VTIMEZONE definitions (`definedZones`).
+    static func date(_ value: String, params: String, zones: [String: TimeZone] = [:]) -> (date: Date, allDay: Bool)? {
         let value = value.trimmingCharacters(in: .whitespaces)
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -192,21 +194,122 @@ enum ICalendar {
         } else {
             formatter.dateFormat = "yyyyMMdd'T'HHmmss"
             formatter.timeZone = params.range(of: "TZID=", options: .caseInsensitive).flatMap { found in
-                zone(String(params[found.upperBound...].prefix { $0 != ";" }))
+                zone(String(params[found.upperBound...].prefix { $0 != ";" }), defined: zones)
             } ?? .current
         }
         return formatter.date(from: value).map { ($0, false) }
     }
 
-    static func zone(_ name: String) -> TimeZone? {
+    /// A TZID as calendars write it: an IANA name ("Europe/London"), a
+    /// Windows name ("AUS Central Standard Time"), Outlook's display name
+    /// ("(UTC+09:30) Darwin"), or a name the file defines itself in a
+    /// VTIMEZONE (`defined`). Names are matched whole: a loose match once
+    /// read "AUS Central Standard Time" as Chicago's "Central".
+    static func zone(_ name: String, defined: [String: TimeZone] = [:]) -> TimeZone? {
         let name = name.trimmingCharacters(in: CharacterSet(charactersIn: "\" "))
         if let zone = TimeZone(identifier: name) { return zone }
-        if let mapped = windowsZones[name], let zone = TimeZone(identifier: mapped) { return zone }
-        // "(UTC-05:00) Eastern Time (US & Canada)" and the like.
-        if let match = windowsZones.first(where: { name.localizedCaseInsensitiveContains($0.key.replacingOccurrences(of: " Standard Time", with: "")) }) {
-            return TimeZone(identifier: match.value)
+        if let mapped = windowsZones[name] ?? windowsZones.first(where: { $0.key.caseInsensitiveCompare(name) == .orderedSame })?.value,
+           let zone = TimeZone(identifier: mapped) {
+            return zone
         }
-        return nil
+        if let zone = displayNameZone(name) { return zone }
+        return defined[name]
+    }
+
+    /// "(UTC-05:00) Eastern Time (US & Canada)", "(UTC+05:45) Kathmandu",
+    /// "(GMT+10:00) Canberra, Melbourne, Sydney": the offset, and the zone
+    /// with that offset whose city or region the rest names, so daylight
+    /// saving still applies; otherwise just the offset.
+    static func displayNameZone(_ name: String) -> TimeZone? {
+        guard let match = name.patternRange(#"^\((?:UTC|GMT)\s*(?:([+\-−])\s*(\d{1,2})(?::?(\d{2}))?)?\)"#) else { return nil }
+        let prefix = String(name[match])
+        let sign = prefix.contains("-") || prefix.contains("−") ? -1 : 1
+        let numbers = prefix.split(whereSeparator: { !$0.isNumber }).compactMap { Int($0) }
+        let offset = sign * ((numbers.first ?? 0) * 3600 + (numbers.dropFirst().first ?? 0) * 60)
+        let rest = name[match.upperBound...].lowercased()
+        let reference = Date(timeIntervalSince1970: 1_768_000_000)
+        func standardOffset(_ zone: TimeZone) -> Int {
+            zone.secondsFromGMT(for: reference) - Int(zone.daylightSavingTimeOffset(for: reference))
+        }
+        for (words, identifier) in displayNames where rest.contains(words) {
+            if let zone = TimeZone(identifier: identifier), standardOffset(zone) == offset { return zone }
+        }
+        for identifier in Set(windowsZones.values).sorted() {
+            guard let zone = TimeZone(identifier: identifier), standardOffset(zone) == offset,
+                  let city = identifier.split(separator: "/").last?.replacingOccurrences(of: "_", with: " ").lowercased(),
+                  city.count > 2, rest.contains(city) else { continue }
+            return zone
+        }
+        return TimeZone(secondsFromGMT: offset)
+    }
+
+    /// Regions in Windows display names that aren't a zone's city.
+    private static let displayNames: [(String, String)] = [
+        ("eastern time (us", "America/New_York"), ("central time (us", "America/Chicago"),
+        ("mountain time (us", "America/Denver"), ("pacific time (us", "America/Los_Angeles"),
+        ("alaska", "America/Anchorage"), ("hawaii", "Pacific/Honolulu"), ("arizona", "America/Phoenix"),
+        ("atlantic time", "America/Halifax"), ("newfoundland", "America/St_Johns"), ("saskatchewan", "America/Regina"),
+        ("dublin", "Europe/London"), ("amsterdam", "Europe/Berlin"), ("brussels", "Europe/Paris"),
+        ("new delhi", "Asia/Kolkata"), ("sri jayawardenepura", "Asia/Colombo"), ("beijing", "Asia/Shanghai"),
+        ("osaka", "Asia/Tokyo"), ("canberra", "Australia/Sydney"), ("wellington", "Pacific/Auckland"),
+        ("astana", "Asia/Almaty"), ("islamabad", "Asia/Karachi"), ("kuala lumpur", "Asia/Singapore"),
+        ("hanoi", "Asia/Bangkok"), ("jakarta", "Asia/Bangkok"), ("abu dhabi", "Asia/Dubai"),
+    ]
+
+    /// The zones a file defines itself (`BEGIN:VTIMEZONE`), by TZID, for
+    /// names nothing else knows. A zone without daylight saving is its
+    /// standard offset; one with it is the Windows zone with the same
+    /// standard and daylight offsets, so the change dates still apply.
+    static func definedZones(in lines: [String]) -> [String: TimeZone] {
+        var zones: [String: TimeZone] = [:]
+        var index = 0
+        while index < lines.count {
+            guard lines[index].uppercased().hasPrefix("BEGIN:VTIMEZONE") else { index += 1; continue }
+            var tzid: String?
+            var section = ""
+            var standard: Int?
+            var daylight: Int?
+            index += 1
+            while index < lines.count, !lines[index].uppercased().hasPrefix("END:VTIMEZONE") {
+                let line = lines[index]
+                let upper = line.uppercased()
+                if upper.hasPrefix("TZID"), let colon = line.firstIndex(of: ":") {
+                    tzid = String(line[line.index(after: colon)...]).trimmingCharacters(in: .whitespaces)
+                } else if upper.hasPrefix("BEGIN:STANDARD") { section = "standard" }
+                else if upper.hasPrefix("BEGIN:DAYLIGHT") { section = "daylight" }
+                else if upper.hasPrefix("TZOFFSETTO:"), let seconds = offset(String(line.dropFirst("TZOFFSETTO:".count))) {
+                    if section == "daylight" { daylight = seconds } else if standard == nil { standard = seconds }
+                }
+                index += 1
+            }
+            guard let tzid, let standard else { continue }
+            if let daylight, daylight != standard {
+                let reference = Date(timeIntervalSince1970: 1_768_000_000)
+                let summer = Date(timeIntervalSince1970: 1_784_000_000)
+                let preferred = ["America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Halifax",
+                                 "Europe/London", "Europe/Berlin", "Europe/Bucharest", "Australia/Sydney", "Australia/Adelaide",
+                                 "Pacific/Auckland"]
+                let candidates = preferred + Set(windowsZones.values).subtracting(preferred).sorted()
+                let match = candidates.compactMap(TimeZone.init(identifier:)).first { zone in
+                    let offsets = Set([zone.secondsFromGMT(for: reference), zone.secondsFromGMT(for: summer)])
+                    return offsets == [standard, daylight]
+                }
+                zones[tzid] = match ?? TimeZone(secondsFromGMT: standard)
+            } else {
+                zones[tzid] = TimeZone(secondsFromGMT: standard)
+            }
+        }
+        return zones
+    }
+
+    /// "+0930", "-0500", "+053000".
+    private static func offset(_ value: String) -> Int? {
+        let value = value.trimmingCharacters(in: .whitespaces)
+        guard let sign = value.first, sign == "+" || sign == "-" else { return nil }
+        let digits = Array(value.dropFirst())
+        guard digits.count >= 4, let hours = Int(String(digits[0..<2])), let minutes = Int(String(digits[2..<4])) else { return nil }
+        let seconds = digits.count >= 6 ? Int(String(digits[4..<6])) ?? 0 : 0
+        return (sign == "-" ? -1 : 1) * (hours * 3600 + minutes * 60 + seconds)
     }
 
     /// "PT1H30M", "P1D".
@@ -305,5 +408,52 @@ enum ICalendar {
         "Korea Standard Time": "Asia/Seoul", "AUS Eastern Standard Time": "Australia/Sydney",
         "E. Australia Standard Time": "Australia/Brisbane", "Cen. Australia Standard Time": "Australia/Adelaide",
         "W. Australia Standard Time": "Australia/Perth", "New Zealand Standard Time": "Pacific/Auckland",
+        "AUS Central Standard Time": "Australia/Darwin", "Tasmania Standard Time": "Australia/Hobart",
+        "Aus Central W. Standard Time": "Australia/Eucla", "Lord Howe Standard Time": "Australia/Lord_Howe",
+        "Nepal Standard Time": "Asia/Kathmandu", "Sri Lanka Standard Time": "Asia/Colombo",
+        "Myanmar Standard Time": "Asia/Yangon", "Afghanistan Standard Time": "Asia/Kabul", "Iran Standard Time": "Asia/Tehran",
+        "West Asia Standard Time": "Asia/Tashkent", "Central Asia Standard Time": "Asia/Almaty",
+        "Qyzylorda Standard Time": "Asia/Qyzylorda", "Ekaterinburg Standard Time": "Asia/Yekaterinburg",
+        "Omsk Standard Time": "Asia/Omsk", "N. Central Asia Standard Time": "Asia/Novosibirsk",
+        "Altai Standard Time": "Asia/Barnaul", "Tomsk Standard Time": "Asia/Tomsk",
+        "North Asia Standard Time": "Asia/Krasnoyarsk", "W. Mongolia Standard Time": "Asia/Hovd",
+        "North Asia East Standard Time": "Asia/Irkutsk", "Ulaanbaatar Standard Time": "Asia/Ulaanbaatar",
+        "Malay Peninsula Standard Time": "Asia/Singapore", "Transbaikal Standard Time": "Asia/Chita",
+        "Yakutsk Standard Time": "Asia/Yakutsk", "North Korea Standard Time": "Asia/Pyongyang",
+        "Vladivostok Standard Time": "Asia/Vladivostok", "West Pacific Standard Time": "Pacific/Port_Moresby",
+        "Magadan Standard Time": "Asia/Magadan", "Sakhalin Standard Time": "Asia/Sakhalin",
+        "Russia Time Zone 3": "Europe/Samara", "Russia Time Zone 10": "Asia/Srednekolymsk",
+        "Russia Time Zone 11": "Asia/Kamchatka", "Bougainville Standard Time": "Pacific/Bougainville",
+        "Norfolk Standard Time": "Pacific/Norfolk", "Central Pacific Standard Time": "Pacific/Guadalcanal",
+        "Fiji Standard Time": "Pacific/Fiji", "Chatham Islands Standard Time": "Pacific/Chatham",
+        "Tonga Standard Time": "Pacific/Tongatapu", "Samoa Standard Time": "Pacific/Apia",
+        "Line Islands Standard Time": "Pacific/Kiritimati", "Dateline Standard Time": "Etc/GMT+12",
+        "UTC-11": "Etc/GMT+11", "UTC-09": "Etc/GMT+9", "UTC-08": "Etc/GMT+8", "UTC-02": "Etc/GMT+2",
+        "UTC+12": "Etc/GMT-12", "UTC+13": "Etc/GMT-13",
+        "Aleutian Standard Time": "America/Adak", "Marquesas Standard Time": "Pacific/Marquesas",
+        "Yukon Standard Time": "America/Whitehorse", "Pacific Standard Time (Mexico)": "America/Tijuana",
+        "Mountain Standard Time (Mexico)": "America/Mazatlan", "Central America Standard Time": "America/Guatemala",
+        "Easter Island Standard Time": "Pacific/Easter", "Eastern Standard Time (Mexico)": "America/Cancun",
+        "US Eastern Standard Time": "America/Indiana/Indianapolis", "Haiti Standard Time": "America/Port-au-Prince",
+        "Cuba Standard Time": "America/Havana", "Turks And Caicos Standard Time": "America/Grand_Turk",
+        "Paraguay Standard Time": "America/Asuncion", "Venezuela Standard Time": "America/Caracas",
+        "Central Brazilian Standard Time": "America/Cuiaba", "SA Western Standard Time": "America/La_Paz",
+        "Pacific SA Standard Time": "America/Santiago", "Tocantins Standard Time": "America/Araguaina",
+        "SA Eastern Standard Time": "America/Cayenne", "Greenland Standard Time": "America/Nuuk",
+        "Montevideo Standard Time": "America/Montevideo", "Magallanes Standard Time": "America/Punta_Arenas",
+        "Saint Pierre Standard Time": "America/Miquelon", "Bahia Standard Time": "America/Bahia",
+        "Mid-Atlantic Standard Time": "Etc/GMT+2", "Azores Standard Time": "Atlantic/Azores",
+        "Cape Verde Standard Time": "Atlantic/Cape_Verde", "Morocco Standard Time": "Africa/Casablanca",
+        "W. Central Africa Standard Time": "Africa/Lagos", "Namibia Standard Time": "Africa/Windhoek",
+        "Sao Tome Standard Time": "Africa/Sao_Tome", "Libya Standard Time": "Africa/Tripoli",
+        "Sudan Standard Time": "Africa/Khartoum", "South Sudan Standard Time": "Africa/Juba",
+        "E. Africa Standard Time": "Africa/Nairobi", "Mauritius Standard Time": "Indian/Mauritius",
+        "Kaliningrad Standard Time": "Europe/Kaliningrad", "Belarus Standard Time": "Europe/Minsk",
+        "Volgograd Standard Time": "Europe/Volgograd", "Astrakhan Standard Time": "Europe/Astrakhan",
+        "Saratov Standard Time": "Europe/Saratov", "Jordan Standard Time": "Asia/Amman",
+        "Middle East Standard Time": "Asia/Beirut", "Syria Standard Time": "Asia/Damascus",
+        "West Bank Standard Time": "Asia/Hebron", "Arabic Standard Time": "Asia/Baghdad",
+        "Azerbaijan Standard Time": "Asia/Baku", "Georgian Standard Time": "Asia/Tbilisi",
+        "Caucasus Standard Time": "Asia/Yerevan",
     ]
 }

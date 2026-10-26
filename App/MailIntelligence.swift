@@ -79,6 +79,8 @@ final class MailIntelligence {
     /// before shows its summary instantly, even after a relaunch.
     private(set) var insights: [String: Insight] = [:]
     private(set) var inFlight: Set<String> = []
+    /// The ones whose summary is being written right now (`isPreparing`).
+    private(set) var summarizing: Set<String> = []
     private var isPrewarming = false
     private var saveTask: Task<Void, Never>?
 
@@ -116,8 +118,11 @@ final class MailIntelligence {
         return insight
     }
 
+    /// Only while a summary is really being written: a short email, or a
+    /// device without Apple Intelligence, gets none, and showing "In short"
+    /// with a spinner first made the email jump up when it went away.
     func isPreparing(_ thread: Correspondence) -> Bool {
-        inFlight.contains(Self.key(for: thread))
+        summarizing.contains(Self.key(for: thread))
     }
 
     private static func key(for thread: Correspondence) -> String {
@@ -171,6 +176,8 @@ final class MailIntelligence {
             guard let summary, isConversation || !MailDigest.restatesOpening(summary, of: latest.text) else { return nil }
             return summary
         }
+        if wantsSummary, isAvailable { summarizing.insert(key) }
+        defer { summarizing.remove(key) }
         guard isAvailable, #available(iOS 26.0, macOS 26.0, *),
               let result = await generate(thread: thread, messages: readable, kind: kind, isConversation: isConversation,
                                           source: source, wantsSummary: wantsSummary) else {

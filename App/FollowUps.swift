@@ -36,8 +36,8 @@ final class FollowUps {
         save()
         // In case Corres doesn't run around then: the reminder still comes.
         let content = UNMutableNotificationContent()
-        content.title = "No reply from \(recipient)"
-        content.body = "\u{201C}\(subject)\u{201D}: follow up?"
+        content.title = String(localized: "No reply from \(recipient)")
+        content.body = String(localized: "\u{201C}\(subject)\u{201D}: follow up?")
         content.userInfo = ["account": threadID.account, "thread": threadID.providerID]
         content.categoryIdentifier = PushNotificationService.messageCategory
         UNUserNotificationCenter.current().add(UNNotificationRequest(
@@ -64,7 +64,7 @@ final class FollowUps {
                 let day = reminder.sentAt.formatted(.dateTime.weekday(.wide))
                 if let messageID = thread.latestMessageID {
                     await store.applySemanticTriage(thread.id, from: thread.attention, to: .needsYou,
-                                                    reason: "No reply from \(reminder.recipient) since \(day). Follow up?",
+                                                    reason: String(localized: "No reply from \(reminder.recipient) since \(day). Follow up?"),
                                                     messageID: messageID)
                 }
                 continue

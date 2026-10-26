@@ -319,4 +319,20 @@ enum CorresSettings {
     static func notifies(for account: String) -> Bool {
         defaults.object(forKey: accountNotificationsKey(for: account)) as? Bool ?? true
     }
+
+    /// Settings → Sorting → Daily Brief: the Today card at the top of Needs
+    /// You. Off until turned on; follows you to your other devices.
+    static let briefKey = "corres.dailyBrief"
+    static var brief: Bool { defaults.bool(forKey: briefKey) }
+    /// The day "Done for today" was tapped ("2026-10-25", this device's
+    /// calendar): the card stays away until the next day.
+    static let briefDoneDayKey = "corres.dailyBrief.doneDay"
+    /// The card folded down to its header, on this device.
+    static let briefCollapsedKey = "corres.dailyBrief.collapsed"
+
+    /// Today as the Brief's done-day stamp, in this device's time zone.
+    static func briefDay(_ date: Date = .now, calendar: Calendar = .current) -> String {
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+    }
 }

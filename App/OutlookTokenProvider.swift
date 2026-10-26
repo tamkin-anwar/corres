@@ -10,7 +10,11 @@ import Foundation
 actor OutlookTokenProvider {
     static let shared = OutlookTokenProvider()
 
-    enum TokenError: Error { case noRefreshToken, noClientID, refreshFailed }
+    enum TokenError: Error {
+        case noRefreshToken, noClientID, refreshFailed
+        /// Microsoft was busy or down (429, 5xx): try again, still signed in.
+        case unavailable(statusCode: Int)
+    }
 
     /// What Corres asks for: read and organize mail, send it, change
     /// mailbox settings (Out of Office), and stay signed in.
@@ -82,7 +86,11 @@ actor OutlookTokenProvider {
         request.httpBody = params.map { "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: allowed) ?? $0.value)" }
             .joined(separator: "&").data(using: .utf8)
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode else { throw TokenError.refreshFailed }
+        guard let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode else {
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            if status == 429 || (500...599).contains(status) { throw TokenError.unavailable(statusCode: status) }
+            throw TokenError.refreshFailed
+        }
         return try JSONDecoder().decode(TokenResponse.self, from: data)
     }
 }

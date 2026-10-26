@@ -22,7 +22,12 @@ struct ConversationView: View {
     let threadActions: ThreadActionService
     let labelDirectory: LabelDirectory
     let unsubscribeService: UnsubscribeService
+    /// For replies: your own addresses, send-as and Gmail's name lookup.
+    let auth: GoogleAuthService?
     let orderedIDs: [ThreadID]
+    /// Told which conversation is showing, when it opens and on Next or
+    /// Previous, so the window can keep it open if it changes width.
+    let onShow: ((ConversationRoute) -> Void)?
     @State private var currentID: ThreadID
     @State private var composeDraft: Draft?
     @State private var htmlHeight: CGFloat = 200
@@ -38,6 +43,9 @@ struct ConversationView: View {
     /// True while a forward's attachments download, so the button shows
     /// it's working instead of seeming to do nothing.
     @State private var preparingForward = false
+    /// True while a reply waits for the full email it quotes: said on
+    /// screen, and a second tap doesn't open a second Compose.
+    @State private var preparingReply = false
     /// A forward whose attachments didn't all download: said before it
     /// opens, rather than sent on short without a word.
     @State private var forwardMissing: (draft: Draft, missing: [String])?
@@ -48,13 +56,16 @@ struct ConversationView: View {
     @Environment(\.displayScale) private var displayScale
 
     init(store: MailStore, outbox: OutboxService, threadActions: ThreadActionService,
-        labelDirectory: LabelDirectory, unsubscribeService: UnsubscribeService, route: ConversationRoute) {
+        labelDirectory: LabelDirectory, unsubscribeService: UnsubscribeService, auth: GoogleAuthService? = nil,
+        route: ConversationRoute, onShow: ((ConversationRoute) -> Void)? = nil) {
         self.store = store
         self.outbox = outbox
         self.threadActions = threadActions
         self.labelDirectory = labelDirectory
         self.unsubscribeService = unsubscribeService
+        self.auth = auth
         self.orderedIDs = route.orderedIDs
+        self.onShow = onShow
         self._currentID = State(initialValue: route.id)
     }
 
@@ -256,7 +267,7 @@ struct ConversationView: View {
                     set: { if !$0 { unsubscribeService.errorMessage = nil } }
                 )) {
                     Button("OK", role: .cancel) { unsubscribeService.errorMessage = nil }
-                } message: { Text(unsubscribeService.errorMessage ?? "Try again.") }
+                } message: { Text(unsubscribeService.errorMessage ?? String(localized: "Try again.")) }
             } else {
                 ContentUnavailableView {
                     EmptyTitle("Conversation unavailable", systemImage: "text.bubble")
@@ -266,19 +277,22 @@ struct ConversationView: View {
         .background(CorresPalette.readingPage(colorSchemeForPage))
         .environment(\.onReadingPage, true)
         .overlay(alignment: .top) {
-            if preparingForward {
+            if preparingForward || preparingReply {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
-                    Text("Adding attachments…").font(.footnote.weight(.medium))
+                    Text(preparingForward ? String(localized: "Adding attachments…") : String(localized: "Loading the full email…"))
+                        .font(.footnote.weight(.medium))
                 }
                 .padding(.horizontal, 14).padding(.vertical, 9)
                 .corresGlass(in: Capsule())
                 .padding(.top, 8)
                 .transition(.move(edge: .top).combined(with: .opacity))
-                .accessibilityLabel("Adding attachments to the forward")
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(preparingForward ? String(localized: "Adding attachments to the forward") : String(localized: "Loading the full email…"))
             }
         }
         .animation(.snappy(duration: 0.25), value: preparingForward)
+        .animation(.snappy(duration: 0.25), value: preparingReply)
         .alert(forwardMissing.map { $0.missing.count == 1 ? String(localized: "One attachment couldn't be added")
                    : String(localized: "\($0.missing.count) attachments couldn't be added") } ?? "",
                isPresented: Binding(get: { forwardMissing != nil }, set: { if !$0 { forwardMissing = nil } })) {
@@ -296,7 +310,7 @@ struct ConversationView: View {
             if let thread = store.thread(currentID) { Handoff.describe(activity, thread) }
         }
         .sheet(item: $composeDraft) { draft in
-            ComposeView(store: store, outbox: outbox, draft: draft,
+            ComposeView(store: store, outbox: outbox, auth: auth, draft: draft,
                         sourceThread: store.thread(currentID))
         }
         .confirmationDialog("Move this conversation to Trash?",
@@ -318,7 +332,14 @@ struct ConversationView: View {
             // Keep the list underneath scrolled to the conversation you're
             // on while it's hidden, so going back shows it already in place.
             router.returnAnchor = currentID
+            // iPad: the list highlights the one you moved to, so tapping
+            // the one you left opens it again.
+            if let splitSelection, splitSelection.wrappedValue?.id != currentID {
+                splitSelection.wrappedValue = ConversationRoute(id: currentID, orderedIDs: orderedIDs)
+            }
+            onShow?(ConversationRoute(id: currentID, orderedIDs: orderedIDs))
         }
+        .onAppear { onShow?(ConversationRoute(id: currentID, orderedIDs: orderedIDs)) }
         // Opening a conversation is itself the signal that it's been seen,
         // the same behavior every real mail client already has.
         // Keyed on the latest message too, so a reply landing while the
@@ -922,7 +943,10 @@ struct ConversationView: View {
             return
         }
         guard !thread.isBodyLoaded else { return open(thread) }
+        guard !preparingReply else { return }
+        preparingReply = true
         Task {
+            defer { preparingReply = false }
             await threadActions.loadContent(for: thread)
             open(store.thread(thread.id) ?? thread)
         }

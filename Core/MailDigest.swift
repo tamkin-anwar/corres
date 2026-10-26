@@ -132,22 +132,10 @@ public enum MailDigest {
 
     /// "On Mon, Sep 28 … wrote:" (often wrapped over two or three lines by
     /// Gmail), Outlook's "From: / Sent:" block, its underscore rule, and
-    /// forwarded or original-message markers.
+    /// forwarded or original-message markers, in every language mail apps
+    /// write them (`QuoteDetector`).
     private static func startsQuotedHistory(_ lines: [String], at index: Int) -> Bool {
-        let line = lines[index].trimmingCharacters(in: .whitespaces)
-        if line.hasPrefix("-----Original Message") || line.hasPrefix("---------- Forwarded message")
-            || line.hasPrefix("Begin forwarded message") || line.patternRange(#"^_{10,}$"#) != nil {
-            return true
-        }
-        if line.patternRange(#"^On .{4,}"#) != nil {
-            let window = lines[index..<min(lines.count, index + 3)].joined(separator: " ")
-            if window.patternRange(#"^\s*On .{4,}?\bwrote:"#) != nil { return true }
-        }
-        if line.patternRange(#"^\*?From:\*?\s"#) != nil {
-            let next = lines[(index + 1)..<min(lines.count, index + 4)].joined(separator: "\n")
-            if next.patternRange(#"(?m)^\s*\*?(Sent|Date|To|Subject):"#) != nil { return true }
-        }
-        return false
+        QuoteDetector.startsQuote(lines, at: index)
     }
 
     /// Lines that end what's worth reading: legal disclaimers sit at the bottom.
@@ -171,9 +159,53 @@ public enum MailDigest {
         return result.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    public static func wordCount(_ text: String) -> Int {
-        text.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).filter { $0.contains(where: \.isLetter) || $0.contains(where: \.isNumber) }.count
+    /// Words as a reader counts them, in any script. Chinese, Japanese and
+    /// Thai put no spaces between words, so by spaces a whole paragraph was
+    /// one "word": a long Chinese email never got a summary, and a short
+    /// one with a signature logo read as an image-only flyer. There each
+    /// character counts for part of a word: about 1.7 Han or kana
+    /// characters, or 3.5 Thai letters, to a word, the averages for those
+    /// languages. Korean spaces its words, so it counts as written.
+    public static func wordCount(_ text: some StringProtocol) -> Int {
+        var words = 0
+        var inWord = false, wordHasContent = false
+        var unspaced = 0.0
+        for character in text {
+            if character.isWhitespace {
+                if inWord, wordHasContent { words += 1 }
+                inWord = false; wordHasContent = false
+                continue
+            }
+            if let weight = unspacedWeight(character) {
+                unspaced += weight
+                continue
+            }
+            inWord = true
+            if character.isLetter || character.isNumber { wordHasContent = true }
+        }
+        if inWord, wordHasContent { words += 1 }
+        return words + Int(unspaced.rounded())
     }
+
+    /// How much of a word one character of a language written without
+    /// spaces is, or nil for every other script.
+    static func unspacedWeight(_ character: Character) -> Double? {
+        guard let scalar = character.unicodeScalars.first, scalar.value >= 0x0E00 else { return nil }
+        switch scalar.value {
+        case 0x3040...0x30FF, 0x31F0...0x31FF, 0x3400...0x4DBF, 0x4E00...0x9FFF, 0xF900...0xFAFF, 0xFF66...0xFF9F,
+             0x20000...0x2FA1F:
+            return 0.6
+        case 0x0E00...0x0EFF, 0x1000...0x109F, 0x1780...0x17FF:
+            // Thai, Lao, Myanmar, Khmer.
+            return 0.3
+        default:
+            return nil
+        }
+    }
+
+    /// Whether `character` is in a script written without spaces between
+    /// words (Chinese, Japanese, Thai).
+    static func isUnspaced(_ character: Character) -> Bool { unspacedWeight(character) != nil }
 
     public static func isWorthSummarizing(_ cleanedText: String) -> Bool {
         wordCount(cleanedText) >= minimumWords
@@ -184,7 +216,10 @@ public enum MailDigest {
     /// meaning words (word roots, so "booking" matches "book"), against the
     /// opening of the email.
     public static func restatesOpening(_ summary: String, of text: String, openingWords: Int = 70) -> Bool {
-        let opening = text.split(whereSeparator: \.isWhitespace).prefix(openingWords).joined(separator: " ")
+        // Chinese and Japanese have no spaces to count by: about 1.7
+        // characters a word (`wordCount`).
+        let opening = text.contains(where: isUnspaced) ? String(text.prefix(openingWords * 2))
+            : text.split(whereSeparator: \.isWhitespace).prefix(openingWords).joined(separator: " ")
         let openingRoots = roots(in: opening)
         let words = contentWords(in: summary)
         guard words.count >= 3 else { return true }
@@ -200,19 +235,19 @@ public enum MailDigest {
                             looksAutomated: Bool, hasEvent: Bool, labelIds: [String] = []) -> Kind {
         // A code email is short and says so up top; a newsletter with
         // "code:" somewhere in a story is not one. Counted only to 301.
-        var words = 0, inWord = false
-        for ch in text where words <= 300 {
-            if ch.isWhitespace { inWord = false } else if !inWord { inWord = true; words += 1 }
-        }
+        // Counted over the start only: enough for 300 words in any script.
+        let words = wordCount(text.prefix(4_000))
         if words <= 300, verificationCode(in: subject + "\n" + text.prefix(400)) != nil { return .code }
         if labelIds.contains("CATEGORY_PROMOTIONS") { return .newsletter }
         // The subject says what an email is; its body only does near the
         // top of a short one. A newsletter's article about deliveries or
         // "your order" isn't a receipt (Morning Brew, TLDR, LinkedIn were).
         let opening = subject + "\n" + (wordCount(text) <= 300 ? String(text.prefix(400)) : "")
-        if opening.patternRange(shippingCue) != nil { return .shipping }
-        if opening.patternRange(receiptCue) != nil { return .receipt }
-        if hasEvent || subject.patternRange(#"(?i)^(invitation|updated invitation|accepted|declined):"#) != nil {
+        if opening.matchesAny(shippingCue) { return .shipping }
+        if opening.matchesAny(receiptCue) { return .receipt }
+        // Calendar invitations and replies, as Google Calendar and Outlook
+        // title them in each language.
+        if hasEvent || subject.patternRange(#"(?i)^(invitation|updated invitation|accepted|declined|einladung|aktualisierte einladung|angenommen|abgelehnt|invitation mise à jour|accepté|refusé|invitación|invitación actualizada|aceptado|rechazado|convite|convite atualizado|aceito|recusado|招待|更新された招待|承諾|辞退|초대|업데이트된 초대|수락|거절|邀请|更新的邀请|已接受|已拒绝|আমন্ত্রণ)\s?[:：]"#) != nil {
             return .invite
         }
         if !isBulk && !looksAutomated { return .personal }
@@ -223,18 +258,59 @@ public enum MailDigest {
         return isBulk && wordCount(text) > 120 ? .newsletter : .notification
     }
 
-    private static let shippingCue = #"(?i)\b(has shipped|have shipped|out for delivery|was delivered|been delivered|tracking (number|#)|on (its|the) way|estimated delivery|arriving (today|tomorrow|on)|picked up)\b"#
-    private static let receiptCue = #"(?i)\b(receipt|order (confirmation|confirmed|number|#|summary)|your order|invoice|payment (received|confirmation|confirmed|of|failed|declined|request|reminder)|payment (has|was) (failed|declined)|you paid|amount (paid|charged|due)|total charged|has been charged|billing statement|transaction|your (ride|trip) (with|to|on)|rent payment|statement is (ready|available)|bill is ready)\b"#
+    /// A delivery, in English and the app's other languages: "wurde
+    /// versandt", "en cours de livraison", "ha sido enviado", "saiu para
+    /// entrega", "発送しました", "배송 중", "已发货", "ডেলিভারি করা হয়েছে".
+    /// Never a bare "enviado", which is also "sent" ("Enviado desde mi
+    /// iPhone").
+    static let shippingCue: [String] = [
+        #"(?i)\b(has shipped|have shipped|out for delivery|was delivered|been delivered|tracking (number|#)|on (its|the) way|estimated delivery|arriving (today|tomorrow|on)|picked up)\b"#,
+        #"(?i)\b((wurde|ist|wird) (versandt|verschickt|versendet|zugestellt)|ist unterwegs|in zustellung|zustellung (heute|morgen)|sendungsverfolgung|sendungsnummer|voraussichtliche (lieferung|zustellung))\b"#,
+        #"(?i)\b((a été|est) (expédiée?s?|livrée?s?)|en cours de (livraison|acheminement)|numéro de suivi|livraison prévue|colis (expédié|livré|en route))\b"#,
+        #"(?i)\b((ha sido|fue) (enviado|entregado)|pedido (enviado|entregado)|en camino|en reparto|número de seguimiento|entrega (estimada|prevista))\b"#,
+        #"(?i)\b((foi|já foi) (enviado|entregue|despachado)|pedido (enviado|entregue)|a caminho|saiu para entrega|(código|número) de rastreamento|código de rastreio|previsão de entrega)\b"#,
+        #"(?i)\b(পাঠানো হয়েছে|ডেলিভারি করা হয়েছে|ডেলিভারির পথে|পৌঁছে গেছে|ট্র্যাকিং নম্বর)\b"#,
+        #"(?i)発送(しました|済み|のお知らせ|完了)|出荷(しました|完了|のお知らせ)|配達(完了|中|予定)|お届け(予定|しました|完了)|追跡番号|お問い合わせ伝票番号|배송(이)? ?(시작|중|완료|출발)|배달 ?완료|발송(되었|완료)|운송장 ?번호|송장 ?번호|도착 ?예정|已(发货|發貨|签收|簽收|送达|送達)|派送中|派件中|(运单|運單|快递单|快遞單)号|预计送达|預計送達"#,
+    ]
+
+    /// A receipt, an order or a bill, in English and the app's other
+    /// languages: "Rechnung", "Bestellbestätigung", "votre commande",
+    /// "confirmación de pedido", "nota fiscal", "領収書", "주문 확인",
+    /// "订单确认", "রসিদ".
+    static let receiptCue: [String] = [
+        #"(?i)\b(receipt|order (confirmation|confirmed|number|#|summary)|your order|invoice|payment (received|confirmation|confirmed|of|failed|declined|request|reminder)|payment (has|was) (failed|declined)|you paid|amount (paid|charged|due)|total charged|has been charged|billing statement|transaction|your (ride|trip) (with|to|on)|rent payment|statement is (ready|available)|bill is ready)\b"#,
+        #"(?i)\b(rechnung|quittung|bestellbestätigung|ihre bestellung|bestellnummer|zahlungsbestätigung|zahlung (erhalten|eingegangen|fehlgeschlagen)|zahlungserinnerung|kontoauszug)\b"#,
+        #"(?i)\b(votre reçu|reçu de paiement|facture|confirmation de (commande|paiement)|votre commande|numéro de commande|paiement (reçu|confirmé|refusé)|relevé)\b"#,
+        #"(?i)\b(recibo|factura|confirmación de (pedido|pago|compra)|(tu|su) pedido|número de pedido|pago (recibido|confirmado|rechazado)|estado de cuenta)\b"#,
+        #"(?i)\b(fatura|nota fiscal|confirmação (do|de) (pedido|pagamento|compra)|seu pedido|número do pedido|pagamento (recebido|confirmado|aprovado|recusado)|comprovante|extrato)\b"#,
+        #"(?i)\b(রসিদ|অর্ডার নিশ্চিত|অর্ডার নম্বর|পেমেন্ট সফল|পেমেন্ট ব্যর্থ|লেনদেন|বিল)\b"#,
+        #"(?i)領収書|請求書|ご注文(確認|内容|ありがとう)|注文番号|お支払い(完了|確認|金額)|決済完了|ご請求|ご利用明細|영수증|주문 ?(확인|번호|내역)|결제(가|에)? ?(완료|금액|내역|실패)|청구서|이용 ?내역|收据|收據|发票|發票|(订单|訂單)(确认|確認|号|號|编号|編號)|(支付|付款)(成功|失败|失敗)|账单|帳單|交易"#,
+    ]
 
     // MARK: - Facts
 
     /// A one-time code: 4 to 8 digits (or a short letter/digit mix) close
     /// to words that say it's a code.
+    /// A one-time code's words, in English (with India's "OTP" and "one
+    /// time password") and the app's other languages: "Bestätigungscode",
+    /// "code de vérification", "código de verificación", "código de
+    /// verificação", "認証コード", "인증번호", "验证码", "যাচাইকরণ কোড".
+    static let codeCue: [String] = [
+        #"(?i)\b(verification|security|login|log-in|sign[- ]?in|one[- ]time|2fa|two-factor|access|authentication|otp)\s+(code|pin|passcode)\b|\byour (code|passcode|pin|otp) is\b|\bcode:\s|\botp\b|\bone[- ]time[- ]pass(word|code)\b"#,
+        #"(?i)\b(bestätigungscode|sicherheitscode|verifizierungscode|anmeldecode|einmalcode|code de (vérification|confirmation|sécurité|connexion)|código de (verificación|verificação|seguridad|segurança|acceso|acesso|confirmación|confirmação)|codice di verifica|verificatiecode|যাচাইকরণ কোড|যাচাই কোড|ওটিপি)\b"#,
+        #"(?i)認証コード|確認コード|ワンタイムパスワード|セキュリティコード|인증 ?번호|인증 ?코드|확인 ?코드|보안 ?코드|验证码|驗證碼|校验码|校驗碼|动态密码|動態密碼"#,
+    ]
+
     public static func verificationCode(in text: String) -> String? {
-        let pattern = #"(?i)\b(verification|security|login|log-in|sign[- ]?in|one[- ]time|2fa|two-factor|access|authentication|otp)\s+(code|pin|passcode)\b|\byour (code|passcode|pin) is\b|\bcode:\s"#
-        guard let cue = text.patternRange(pattern) else { return nil }
+        // "482913 is your OTP for…", as Indian and Bangladeshi banks write it.
+        if let before = text.patternRange(#"(?i)(?<![\d.,])\d{4,8}(?=\s+is\s+(your|the)\s+(otp|one[- ]time|verification|security|login)\b)"#) {
+            return String(text[before])
+        }
+        guard let cue = text.firstPatternRange(codeCue) else { return nil }
         let window = text[cue.lowerBound..<(text.index(cue.upperBound, offsetBy: 120, limitedBy: text.endIndex) ?? text.endIndex)]
-        guard let match = window.patternRange(#"\b(?=[A-Z0-9-]*\d)[A-Z0-9]{3,4}-?[A-Z0-9]{2,4}\b|\b\d{4,8}\b"#) else { return nil }
+        // Digits right after a CJK word have no word boundary ("验证码
+        // 482913"), so the digits are bounded by what isn't a digit.
+        guard let match = window.patternRange(#"\b(?=[A-Z0-9-]*\d)[A-Z0-9]{3,4}-?[A-Z0-9]{2,4}\b|(?<![\d.,])\d{4,8}(?![\d.,]?\d)"#) else { return nil }
         return String(window[match])
     }
 
@@ -245,12 +321,19 @@ public enum MailDigest {
     /// symbol (Unicode's whole currency category: $ € £ ¥ ৳ ₹ ₦ ₱ ₩ …) or
     /// ISO code (every one iOS knows, plus "Tk" and "Rs"), before or after
     /// a number in any grouping style.
+    /// The currency written as a word after the number counts too: "500円",
+    /// "5,000원", "88元", "20块", "1,250 টাকা", "৳1,250", "Rs. 1,500/-" (the
+    /// Indian and Bangladeshi "only" mark), "RMB 300".
     static let amountPattern: String = {
-        let codes = (Locale.Currency.isoCurrencies.map(\.identifier) + ["Tk", "Rs", "Tsh", "Ksh"]).joined(separator: "|")
+        let codes = (Locale.Currency.isoCurrencies.map(\.identifier) + ["Tk", "Rs", "Tsh", "Ksh", "RMB"]).joined(separator: "|")
         let number = #"\d(?:[\d.,'\u00A0\u202F]*\d)?"#
-        return #"\p{Sc}\s?"# + number + #"|\b(?:"# + codes + #")\.?\s?"# + number
-            + #"|"# + number + #"\s?(?:\p{Sc}|\b(?:"# + codes + #")\b)"#
+        let words = #"円|원|元|块|塊|人民币|人民幣|টাকা|রুপি|/-"#
+        return #"\p{Sc}\s?"# + number + #"(?:/-)?|\b(?:"# + codes + #")\.?\s?"# + number + #"(?:/-)?"#
+            + #"|"# + number + #"\s?(?:\p{Sc}|\b(?:"# + codes + #")\b|"# + words + #")"#
     }()
+
+    /// Whether `text` is an amount of money, in any currency and form.
+    public static func isAmount(_ text: String) -> Bool { text.patternRange(amountPattern) != nil }
 
     public static func facts(in text: String) -> [String] {
         let source = String(text.prefix(8_000))
@@ -282,14 +365,10 @@ public enum MailDigest {
     /// as Gmail and Outlook do. Only your own words count: the quoted
     /// email you're replying to often mentions its own attachments.
     public static func mentionsAttachment(_ body: String) -> Bool {
-        var own = body
-        if let quote = own.patternRange(#"\n\s*On .{4,200}wrote:\s*\n"#) {
-            own = String(own[..<quote.lowerBound])
-        }
-        own = own.split(separator: "\n", omittingEmptySubsequences: false)
-            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix(">") }
-            .joined(separator: "\n")
-        return own.patternRange(#"(?i)\b(attached|attaching|attachments?|enclosed|pfa|please find (the )?(attached|enclosed))\b"#) != nil
+        let own = QuoteDetector.ownPart(of: body)
+        // "Anbei", "ci-joint", "adjunto", "em anexo", "添付", "첨부", "附件",
+        // "সংযুক্ত" in the app's other languages.
+        return own.patternRange(#"(?i)\b(attached|attaching|attachments?|enclosed|pfa|please find (the )?(attached|enclosed)|anbei|angehängt|im anhang|ci-joint|pièces? jointes?|en pièce jointe|adjunto|adjunta|en el adjunto|em anexo|segue anexo|anexado|সংযুক্ত)\b|添付|첨부|附件"#) != nil
             && own.patternRange(#"(?i)\b(no|without( an?)?|forgot (the|to)) attach"#) == nil
     }
 
@@ -322,8 +401,10 @@ public enum MailDigest {
             if let stem = calendarStems[lower], !lowerSource.contains(stem) { unsupported.append(String(word)) }
             if relativeDays.contains(lower), !containsWord(lower, in: lowerSource) { unsupported.append(String(word)) }
         }
-        // Names: capitalized words not starting a sentence.
-        let sentences = summary.split(whereSeparator: { ".!?;:\n".contains($0) })
+        // Names: capitalized words not starting a sentence. Not in German,
+        // where every noun is capitalized ("Rechnung", "Termin").
+        let sentences = NLLanguageRecognizer.dominantLanguage(for: summary) == .german ? []
+            : summary.split(whereSeparator: { ".!?;:\n".contains($0) })
         for sentence in sentences {
             let tokens = sentence.split(separator: " ").map { $0.trimmingCharacters(in: .punctuationCharacters) }
             for token in tokens.dropFirst() where token.count >= 3 {
@@ -389,7 +470,7 @@ public enum MailDigest {
     static let minimumClaimWords = 2
 
     private static func claims(in text: String) -> [String] {
-        text.components(separatedBy: CharacterSet(charactersIn: ".!?;\n•"))
+        text.components(separatedBy: CharacterSet(charactersIn: ".!?;\n•。！？；।"))
             .flatMap { $0.components(separatedBy: " — ") }
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
@@ -416,7 +497,7 @@ public enum MailDigest {
     private static func contentWords(in claim: String) -> [ContentWord] {
         var words: [ContentWord] = []
         tagWords(in: claim) { word, lemma, tag in
-            guard [.noun, .verb, .adjective].contains(tag), word.count >= 3,
+            guard [.noun, .verb, .adjective].contains(tag), word.count >= minimumLength(of: word),
                   !word.contains(where: \.isNumber),
                   !describingWords.contains(word), !describingWords.contains(lemma ?? word),
                   // Days and dates have their own check above.
@@ -438,9 +519,26 @@ public enum MailDigest {
         }
     }
 
+    /// The shortest word worth judging: two characters in Chinese,
+    /// Japanese and Korean, where a word is one to three characters
+    /// ("合同", "确认"); three elsewhere.
+    static func minimumLength(of word: String) -> Int {
+        word.contains(where: { isUnspaced($0) || $0.unicodeScalars.first.map { (0xAC00...0xD7A3).contains($0.value) } == true }) ? 2 : 3
+    }
+
     /// What a summary says about an email rather than from it: the act of
-    /// writing ("asks", "reminds"), the reader, and the email itself.
+    /// writing ("asks", "reminds"), the reader, and the email itself, in
+    /// English and the app's other languages.
     private static let describingWords: Set<String> = [
+        // German, French, Spanish, Portuguese
+        "bittet", "fragt", "erinnert", "schreibt", "teilt", "mitteilung", "möchte", "sagt", "informiert", "schickt",
+        "sendet", "e-mail", "nachricht", "demande", "rappelle", "écrit", "indique", "informe", "souhaite", "envoie",
+        "partage", "propose", "courriel", "pide", "pregunta", "recuerda", "escribe", "dice", "informa", "quiere",
+        "envía", "comparte", "correo", "mensaje", "pede", "pergunta", "lembra", "escreve", "diz", "quer", "envia",
+        "compartilha", "mensagem",
+        // Chinese and Bengali
+        "请求", "询问", "詢問", "提醒", "告知", "表示", "希望", "发送", "發送", "邮件", "郵件", "信息", "消息",
+        "অনুরোধ", "জানিয়েছেন", "বলেছেন", "পাঠিয়েছেন", "ইমেইল",
         "ask", "asks", "asked", "request", "requests", "requested", "want", "wants", "wanted", "need", "needs",
         "needed", "remind", "reminds", "reminder", "say", "says", "said", "tell", "tells", "told", "mention",
         "mentions", "note", "notes", "share", "shares", "shared", "send", "sends", "sent", "let", "lets", "know",
@@ -515,7 +613,11 @@ public enum MailDigest {
                 .map(String.init).filter { !filler.contains($0) && calendarStems[$0] == nil }
         }
         let words = content(point)
-        let letterWords = words.filter { $0.count >= 3 && $0.allSatisfy(\.isLetter) }.count
+        // Chinese or Japanese runs on without spaces: counted by `wordCount`.
+        let letterWords = words.reduce(0) { total, word in
+            if word.contains(where: isUnspaced) { return total + wordCount(word) }
+            return total + (word.count >= 3 && word.allSatisfy(\.isLetter) ? 1 : 0)
+        }
         let hasFigure = point.contains(where: \.isNumber)
         // A real word with a figure ("Tax $0.87 on Sep 27"), else three.
         guard letterWords >= (hasFigure ? 1 : 3) else { return false }
@@ -632,7 +734,10 @@ public enum MailDigest {
     }
 
     /// Real sentences: greetings, pleasantries, sign-offs, bare link labels
-    /// and fragments dropped.
+    /// and fragments dropped. A sentence ends at ". ! ?" before a space, and
+    /// at the full stops of other scripts wherever they are: Chinese and
+    /// Japanese "。！？" (no space follows them), Bengali and Hindi "।",
+    /// Arabic-script "؟".
     static func sentences(in text: String) -> [String] {
         let pieces = text.split(separator: "\n").flatMap { line -> [String] in
             let line = String(line)
@@ -642,6 +747,8 @@ public enum MailDigest {
                 current.append(character)
                 let next = line.index(after: index)
                 if ".!?".contains(character), next == line.endIndex || line[next] == " " {
+                    result.append(current); current = ""
+                } else if "。！？।؟".contains(character) {
                     result.append(current); current = ""
                 }
             }

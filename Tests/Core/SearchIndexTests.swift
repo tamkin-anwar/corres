@@ -99,11 +99,13 @@ struct SearchIndexTests {
                                   latestMessageID: "m1", receivedAt: now, dueAt: nil, reason: "", attention: .quiet,
                                   toRecipients: ["bjørn@example.no"], ccRecipients: ["Ünal@example.tr"])
         for query in ["renee", "RENÉE", "atelier.fr", "ono", "quarterly", "numbers", "CAFE FERME", "\"le cafe\"",
-                      "bjørn", "unal", "to:ünal", "from:dubois", "from:ono", "full", "Ｆｕｌｌ", "fermé lundi",
+                      "bjørn", "unal", "to:ünal", "from:dubois", "from:ono", "Ｆｕｌｌ", "fermé lundi",
                       "bjorn", "cafe\u{301}", "\"cafe est\"", "\"fermé.\"", "quarterly lundi renee unal"] {
             let terms = MailQuery.SearchTerms(query)
             #expect(terms.matches(item) == oldMatches(terms, item), "\(query)")
         }
+        // Width folds now, as it does in Mail: "full" finds "Ｆｕｌｌ".
+        #expect(MailQuery.SearchTerms("full").matches(item))
     }
 
     @Test func aChangedMessageIsReadAgain() {

@@ -70,13 +70,15 @@ struct DocumentScanner: UIViewControllerRepresentable {
             parent.dismiss()
         }
 
-        /// Each page at its own size, US Letter width at most.
+        /// Each page at its own shape, no bigger than the paper used where
+        /// you are: US Letter in the US, A4 everywhere else.
         nonisolated static func pdf(from pages: [UIImage]) -> Data? {
             guard !pages.isEmpty else { return nil }
-            let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 612, height: 792))
+            let paper = Locale.current.measurementSystem == .us ? CGSize(width: 612, height: 792) : CGSize(width: 595, height: 842)
+            let renderer = UIGraphicsPDFRenderer(bounds: CGRect(origin: .zero, size: paper))
             return renderer.pdfData { context in
                 for page in pages {
-                    let scale = min(612 / page.size.width, 792 / page.size.height)
+                    let scale = min(paper.width / page.size.width, paper.height / page.size.height)
                     let size = CGSize(width: page.size.width * scale, height: page.size.height * scale)
                     context.beginPage(withBounds: CGRect(origin: .zero, size: size), pageInfo: [:])
                     page.draw(in: CGRect(origin: .zero, size: size))

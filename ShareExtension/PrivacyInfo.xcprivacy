@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>NSPrivacyTracking</key><false/>
+<key>NSPrivacyTrackingDomains</key><array/>
+<!-- Corres's share extension. It sends mail through the person's own mail
+     provider and nothing to Corres's servers, so it collects no data.
+     Settings: its own UserDefaults (Outlook ids, CA92.1) and the App Group
+     it shares with the app (accounts and servers, 1C8F.1). -->
+<key>NSPrivacyCollectedDataTypes</key><array/>
+<key>NSPrivacyAccessedAPITypes</key><array><dict>
+<key>NSPrivacyAccessedAPIType</key><string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+<key>NSPrivacyAccessedAPITypeReasons</key><array><string>CA92.1</string><string>1C8F.1</string></array>
+</dict></array>
+</dict></plist>

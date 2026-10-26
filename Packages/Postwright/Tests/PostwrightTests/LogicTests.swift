@@ -182,3 +182,44 @@ struct CapabilityTests {
         #expect(Capabilities(["QRESYNC"]).condstore)
     }
 }
+
+/// Folder names in IMAP's modified UTF-7, and folders in other languages.
+struct FolderNameTests {
+    @Test func decodesModifiedUTF7() {
+        #expect(ModifiedUTF7.decode("Entw&APw-rfe") == "Entwürfe")
+        #expect(ModifiedUTF7.decode("&U9dP4Xux-") == "受信箱")
+        #expect(ModifiedUTF7.decode("&XfJT0ZAB-") == "已发送")
+        #expect(ModifiedUTF7.decode("&vPSwuLpUx3zVaA-") == "보낸메일함")
+        #expect(ModifiedUTF7.decode("&CaoJzQmwCccJsAm,CaQ-") == "প্রেরিত")
+        #expect(ModifiedUTF7.decode("&AMk-l&AOk-ments envoy&AOk-s") == "Éléments envoyés")
+        #expect(ModifiedUTF7.decode("&2D3eAA-") == "😀")
+        #expect(ModifiedUTF7.decode("R&-D") == "R&D")
+        #expect(ModifiedUTF7.decode("Plain") == "Plain")
+        // Not modified UTF-7 (a UTF-8 server): left as it is.
+        #expect(ModifiedUTF7.decode("R&D Notes") == "R&D Notes")
+    }
+
+    @Test func displayNamesAreDecodedButThePathIsKept() {
+        let folder = Folder(path: "Archiv/Entw&APw-rfe", delimiter: "/", attributes: [])
+        #expect(folder.path == "Archiv/Entw&APw-rfe")
+        #expect(folder.name == "Entwürfe")
+        #expect(folder.displayPath == "Archiv / Entwürfe")
+        #expect(folder.role == .drafts)
+    }
+
+    @Test func rolesFromNamesInOtherLanguages() {
+        let cases: [(String, FolderRole)] = [
+            ("Gesendet", .sent), ("Gesendete Elemente", .sent), ("Papierkorb", .trash), ("Entw&APw-rfe", .drafts),
+            ("Envoy&AOk-s", .sent), ("Corbeille", .trash), ("Brouillons", .drafts),
+            ("Enviados", .sent), ("Papelera", .trash), ("Borradores", .drafts),
+            ("Itens Enviados", .sent), ("Lixeira", .trash), ("Rascunhos", .drafts),
+            ("&kAFP4W4IMH8-", .sent), ("&MLQw33ux-", .trash), ("&Tgtm+DBN-", .drafts),
+            ("&XfJT0ZAB-", .sent), ("&XfJSIJZk-", .trash), ("&g0l6Pw-", .drafts),
+            ("&vPSwuLpUx3zVaA-", .sent), ("&1zTJwNG1-", .trash), ("&x4TC3Lz0rQDVaA-", .drafts),
+            ("&CaoJzQmwCccJsAm,CaQ-", .sent),
+        ]
+        for (path, role) in cases {
+            #expect(Folder(path: path, delimiter: "/", attributes: []).role == role, "\(path) \(Folder(path: path, delimiter: "/", attributes: []).name)")
+        }
+    }
+}

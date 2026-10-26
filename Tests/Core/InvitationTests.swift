@@ -106,4 +106,79 @@ struct InvitationTests {
         #expect(ICalendar.repeats("FREQ=MONTHLY") == "Every month")
         #expect(ICalendar.zone("\"W. Europe Standard Time\"")?.identifier == "Europe/Berlin")
     }
+
+    // MARK: Time zones around the world
+
+    @Test func windowsZoneNamesMatchWhole() {
+        #expect(ICalendar.zone("AUS Central Standard Time")?.identifier == "Australia/Darwin")
+        #expect(ICalendar.zone("Cen. Australia Standard Time")?.identifier == "Australia/Adelaide")
+        #expect(ICalendar.zone("Tasmania Standard Time")?.identifier == "Australia/Hobart")
+        #expect(ICalendar.zone("Nepal Standard Time")?.identifier == "Asia/Kathmandu")
+        #expect(ICalendar.zone("Sri Lanka Standard Time")?.identifier == "Asia/Colombo")
+        #expect(ICalendar.zone("Myanmar Standard Time")?.identifier == "Asia/Yangon")
+        #expect(ICalendar.zone("Bangladesh Standard Time")?.identifier == "Asia/Dhaka")
+        #expect(ICalendar.zone("Central Standard Time")?.identifier == "America/Chicago")
+        // Never a loose match: an unknown name with "Central" in it isn't Chicago.
+        #expect(ICalendar.zone("Some Central Zone") == nil)
+    }
+
+    @Test func everyWindowsZoneIsARealZone() {
+        for (name, identifier) in ICalendar.windowsZones {
+            #expect(TimeZone(identifier: identifier) != nil, "\(name) → \(identifier)")
+        }
+    }
+
+    @Test func outlookDisplayNamesUseTheirOffset() {
+        #expect(ICalendar.zone("(UTC-05:00) Eastern Time (US & Canada)")?.identifier == "America/New_York")
+        #expect(ICalendar.zone("(UTC-06:00) Central Time (US & Canada)")?.identifier == "America/Chicago")
+        #expect(ICalendar.zone("(UTC+09:30) Darwin")?.identifier == "Australia/Darwin")
+        #expect(ICalendar.zone("(UTC+10:00) Canberra, Melbourne, Sydney")?.identifier == "Australia/Sydney")
+        #expect(ICalendar.zone("(UTC+06:00) Dhaka")?.identifier == "Asia/Dhaka")
+        #expect(ICalendar.zone("(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi")?.identifier == "Asia/Kolkata")
+        // A place Corres doesn't know: the offset itself.
+        #expect(ICalendar.zone("(UTC+05:45) Somewhere")?.secondsFromGMT() == 5 * 3600 + 45 * 60)
+    }
+
+    @Test func zonesTheFileDefinesItself() {
+        let ics = """
+        BEGIN:VCALENDAR\r
+        METHOD:REQUEST\r
+        BEGIN:VTIMEZONE\r
+        TZID:Customized Time Zone\r
+        BEGIN:STANDARD\r
+        DTSTART:16010101T000000\r
+        TZOFFSETFROM:+0930\r
+        TZOFFSETTO:+0930\r
+        END:STANDARD\r
+        END:VTIMEZONE\r
+        BEGIN:VEVENT\r
+        ORGANIZER;CN=Sam:mailto:sam@example.com.au\r
+        DTSTART;TZID=Customized Time Zone:20261020T090000\r
+        DURATION:PT1H\r
+        UID:abc\r
+        SUMMARY:Catch-up\r
+        END:VEVENT\r
+        END:VCALENDAR\r
+        """
+        let invite = Invitation.parse(ics)!
+        // 9 AM at UTC+9:30 is 23:30 UTC the day before.
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        #expect(invite.start.map { utc.dateComponents([.day, .hour, .minute], from: $0) } == DateComponents(day: 19, hour: 23, minute: 30))
+
+        let daylight = ICalendar.definedZones(in: ICalendar.unfold("""
+        BEGIN:VTIMEZONE
+        TZID:My Zone
+        BEGIN:STANDARD
+        TZOFFSETFROM:-0400
+        TZOFFSETTO:-0500
+        END:STANDARD
+        BEGIN:DAYLIGHT
+        TZOFFSETFROM:-0500
+        TZOFFSETTO:-0400
+        END:DAYLIGHT
+        END:VTIMEZONE
+        """))
+        #expect(daylight["My Zone"]?.identifier == "America/New_York")
+    }
 }

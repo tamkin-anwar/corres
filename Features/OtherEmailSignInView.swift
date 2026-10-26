@@ -47,7 +47,7 @@ struct OtherEmailSignInView: View {
                                  : "Your mail server stopped accepting the password Corres has. Enter it again.")
                                 .font(.subheadline).foregroundStyle(CorresPalette.secondary)
                         } else {
-                            Text(service.map { "Connect \($0.name)" } ?? "Add an Email Account").font(.title3.weight(.semibold))
+                            Text(service.map { String(localized: "Connect \($0.name)") } ?? String(localized: "Add an Email Account")).font(.title3.weight(.semibold))
                             Text("Enter your address and Corres finds your mail server for you.")
                                 .font(.subheadline).foregroundStyle(CorresPalette.secondary)
                         }

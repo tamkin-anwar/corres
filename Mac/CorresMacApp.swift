@@ -9,7 +9,7 @@ import SwiftUI
 @main
 struct CorresMacApp: App {
     @NSApplicationDelegateAdaptor(MacAppDelegate.self) private var appDelegate
-    @State private var services = MacServices()
+    @State private var services = MacServices.shared
     @State private var model = MacMailboxModel()
     @AppStorage("corres.appearance") private var appearance = "system"
     @AppStorage(MacMenuBarSetting.key) private var inMenuBar = true
@@ -25,7 +25,6 @@ struct CorresMacApp: App {
                 .tint(CorresPalette.accent)
                 .preferredColorScheme(colorScheme)
                 .frame(minWidth: 900, minHeight: 560)
-                .task { await services.launch() }
                 .onOpenURL { url in
                     if !services.router.open(url) { GIDSignIn.sharedInstance.handle(url) }
                 }
@@ -41,8 +40,8 @@ struct CorresMacApp: App {
         .defaultSize(width: 1280, height: 820)
         .commands {
             MacCommands()
-            // Format › Font: Bold, Italic, Underline, Bigger, Smaller.
-            TextFormattingCommands()
+            // Format: Show Fonts, Bold, Italic, Underline.
+            MacFormatCommands()
         }
 
         // Written only when it really changes. macOS reports the item as
@@ -104,10 +103,33 @@ private struct MacConversationWindow: View {
     let model: MacMailboxModel
     @State private var snoozing = false
     @State private var reminderOutcome: MailReminders.Outcome?
+    @State private var sendUndo = MailUndoTarget()
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.undoManager) private var undoManager
 
     var body: some View {
+        content
+            // A reply sent from here can be taken back from here.
+            .overlay(alignment: .bottom) { MacUndoSend.Pill(outbox: services.outbox) }
+            .onChange(of: services.outbox.pending?.id, initial: true) {
+                guard let undoManager else { return }
+                undoManager.removeAllActions(withTarget: sendUndo)
+                if services.outbox.pending != nil { MacUndoSend.register(services.outbox, in: undoManager, target: sendUndo) }
+            }
+            // Gone for good (deleted, or moved by a sync), not just waiting
+            // out Undo: the window goes too.
+            .onChange(of: isGone, initial: true) { if isGone { dismiss() } }
+    }
+
+    /// Not in your mail any more, nor hidden while Undo is offered.
+    private var isGone: Bool {
+        let store = services.store
+        return store.state == .loaded && !store.hiddenIDs.contains(id) && store.thread(id) == nil
+    }
+
+    @ViewBuilder
+    private var content: some View {
         if let thread = services.store.thread(id) {
             ReadingPane(thread: thread, services: services) { kind in
                 openWindow(value: ComposeRequest(kind: kind, thread: thread.id))
@@ -129,7 +151,40 @@ private struct MacConversationWindow: View {
                     Text("Reminders didn't save it. Try again.")
                 }
             }
+        } else if services.store.hiddenIDs.contains(id) {
+            // Archived or deleted elsewhere, and Undo still on offer.
+            ContentUnavailableView {
+                EmptyTitle("Conversation Moved", systemImage: "tray")
+            } description: {
+                Text("It was archived, deleted or moved. Undo brings it back.")
+            } actions: {
+                if services.threadActions.pendingRemoval?.threads.contains(where: { $0.id == id }) == true {
+                    Button("Undo") { services.threadActions.undoRemoval() }
+                }
+            }
+            .focusedSceneValue(\.macActions, MacActions(perform: { perform($0) }, selectionCount: 0))
+        } else {
+            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    /// With no conversation to act on: what doesn't need one.
+    private func perform(_ action: MacAction) {
+        switch action {
+        case .compose: openWindow(value: ComposeRequest(kind: .new))
+        case .undo: undo()
+        case .getMail: services.getNewMail()
+        case .show, .toggleUnreadOnly, .commandPalette, .shortcuts, .search, .sendDiagnostics, .next, .previous:
+            MacWindows.perform(action)
+        default: break
+        }
+    }
+
+    /// Undo Send first, then whatever the main window's pill offers.
+    private func undo() {
+        let actions = services.threadActions
+        if services.outbox.pending != nil { MacWindows.undoSend(services.outbox) }
+        else if actions.pendingRemoval != nil { actions.undoRemoval() } else { actions.undoLastChange() }
     }
 
     private func perform(_ action: MacAction, on thread: Correspondence) {
@@ -160,15 +215,15 @@ private struct MacConversationWindow: View {
         case .print:
             MacPrinter.print(services.store.thread(thread.id) ?? thread, in: NSApp.keyWindow)
         case .undo:
-            if actions.pendingRemoval != nil { actions.undoRemoval() } else { actions.undoLastChange() }
+            undo()
         case .getMail:
             services.getNewMail()
         case .show(let mailbox):
             model.mailbox = mailbox
             MacWindows.showMain()
         case .toggleUnreadOnly, .commandPalette, .shortcuts, .search, .sendDiagnostics, .next, .previous:
-            // The main window's own.
-            MacWindows.showMain()
+            // The main window's own: it comes forward and does it.
+            MacWindows.perform(action)
         case .openInWindow:
             break
         }

@@ -30,9 +30,12 @@ actor GmailQuotaGate {
     }
 
     /// Waits until `units` can be spent for `account` in the background budget.
+    /// Returns at once if the task is cancelled (a search typed over, a
+    /// load that timed out): the fetch after it fails on its own, and a
+    /// cancelled sleep returns immediately, so waiting on would spin.
     func reserve(_ units: Int, for account: String) async {
         let cost = min(Double(units), Self.capacity)
-        while true {
+        while !Task.isCancelled {
             if let until = pausedUntil[account], until > clock.now {
                 try? await Task.sleep(until: until, clock: clock)
                 continue

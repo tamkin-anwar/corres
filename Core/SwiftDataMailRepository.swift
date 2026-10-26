@@ -264,17 +264,28 @@ public actor SwiftDataMailRepository: MailRepository {
             let models = try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { chunk.contains($0.compositeID) }))
             for model in models where byID[model.compositeID] == nil { byID[model.compositeID] = model }
         }
+        // Known only by the message: Outlook reports a removal with nothing
+        // but the message's id. Found in a few fetches too: a mailbox
+        // tidied elsewhere can report hundreds.
+        var byMessage: [String: PersistedCorrespondence] = [:]
+        for (account, messageChanges) in Dictionary(grouping: changes.filter { $0.threadID.providerID.isEmpty }, by: \.threadID.account) {
+            let messageIDs = Array(Set(messageChanges.map(\.messageID)))
+            for start in stride(from: 0, to: messageIDs.count, by: 500) {
+                let chunk: [String?] = messageIDs[start..<min(start + 500, messageIDs.count)].map { Optional($0) }
+                let models = try modelContext.fetch(FetchDescriptor<PersistedCorrespondence>(
+                    predicate: #Predicate { $0.account == account && chunk.contains($0.latestMessageID) }))
+                for model in models {
+                    guard let messageID = model.latestMessageID else { continue }
+                    let key = account + "|" + messageID
+                    if byMessage[key] == nil { byMessage[key] = model }
+                }
+            }
+        }
         var changed = 0
         for change in changes {
             let found: PersistedCorrespondence?
             if change.threadID.providerID.isEmpty {
-                // Known only by the message: Outlook reports a removal
-                // with nothing but the message's id. Rare, so one fetch each.
-                let account = change.threadID.account
-                let messageID: String? = change.messageID
-                var descriptor = FetchDescriptor<PersistedCorrespondence>(predicate: #Predicate { $0.account == account && $0.latestMessageID == messageID })
-                descriptor.fetchLimit = 1
-                found = try modelContext.fetch(descriptor).first
+                found = byMessage[change.threadID.account + "|" + change.messageID]
             } else {
                 found = byID[PersistedCorrespondence.compositeID(account: change.threadID.account,
                                                                  providerID: change.threadID.providerID)]
@@ -282,6 +293,9 @@ public actor SwiftDataMailRepository: MailRepository {
             // Removed by an earlier change in this same batch: nothing left to do.
             guard let model = found, !model.isDeleted, model.latestMessageID == change.messageID else { continue }
             if change.removed {
+                // Its HTML goes with it, as `remove` does, or the store
+                // keeps every removed message's body for good.
+                if let content = try content(model.compositeID) { modelContext.delete(content) }
                 modelContext.delete(model)
                 changed += 1
             } else if let labels = change.currentLabelIds, labels != model.labelIds {
@@ -435,8 +449,9 @@ public actor SwiftDataMailRepository: MailRepository {
                                                        imageOnly: model.htmlImageOnly)
             let bulk = InboxClassifier.bulkKind(labelIds: model.labelIds, looksAutomated: automated)
             if recent {
-                due = bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text, now: now)
-                    : bulk == nil ? MailSignals.deadline(in: text, now: now) : nil
+                // The sender says how to read 03/11/2026 (`numericDateOrder`).
+                due = bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text, now: now, senderEmail: model.senderEmail)
+                    : bulk == nil ? MailSignals.deadline(in: text, now: now, senderEmail: model.senderEmail) : nil
             }
             let copied = Correspondence.isCopiedOnly(account: model.account, to: model.toRecipients, cc: model.ccRecipients)
             (attention, reason) = InboxClassifier.initialAttention(
@@ -604,6 +619,18 @@ public actor SwiftDataMailRepository: MailRepository {
                 // placeholder forever.
                 guard let incomingMessageID = item.latestMessageID, incomingMessageID != existing.latestMessageID,
                       item.receivedAt >= existing.receivedAt || existing.latestMessageID == nil else { continue }
+                // The same email under a new id: an IMAP message's id is its
+                // folder and number, which change when it's listed again or
+                // moved back into the Inbox. It takes the new id and where
+                // it is now, and keeps how you'd sorted it (Handled, Waiting).
+                if Self.isSameMessage(incoming: item, existingMessageID: existing.latestMessageID,
+                                      existingHeader: existing.messageIdHeader) {
+                    existing.latestMessageID = incomingMessageID
+                    existing.labelIds = item.labelIds
+                    existing.isUnread = item.isUnread
+                    changed = true
+                    continue
+                }
                 let isFromAccountOwner = item.isFromAccountOwner
                 existing.sender = item.sender
                 existing.senderEmail = item.senderEmail
@@ -747,6 +774,16 @@ public actor SwiftDataMailRepository: MailRepository {
     }
 
     static func senderKey(account: String, senderEmail: String) -> String { "\(account)|\(senderEmail)" }
+
+    /// The message already stored, under a different id: both carry the
+    /// same Message-ID header. Not for a copy Corres saved itself (no id
+    /// yet), which always gives way to the real one in full.
+    static func isSameMessage(incoming: Correspondence, existingMessageID: String?, existingHeader: String?) -> Bool {
+        guard existingMessageID != nil, let header = incoming.messageIdHeader, !header.isEmpty,
+              let existingHeader else { return false }
+        return header.trimmingCharacters(in: CharacterSet(charactersIn: "<> ")).lowercased()
+            == existingHeader.trimmingCharacters(in: CharacterSet(charactersIn: "<> ")).lowercased()
+    }
 
     /// Everyone this account has written to, keyed like `senderKey` (with
     /// the address lowercased), from threads whose latest message is the

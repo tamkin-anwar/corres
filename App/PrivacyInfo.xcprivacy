@@ -22,8 +22,15 @@
 <key>NSPrivacyCollectedDataTypePurposes</key><array><string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string></array>
 </dict>
 </array>
+<!-- Settings: the app's own UserDefaults (CA92.1) and the App Group it
+     shares with its extensions and widgets (1C8F.1). File dates: only of
+     files in its own container, such as the company logo cache's age
+     (C617.1). -->
 <key>NSPrivacyAccessedAPITypes</key><array><dict>
 <key>NSPrivacyAccessedAPIType</key><string>NSPrivacyAccessedAPICategoryUserDefaults</string>
-<key>NSPrivacyAccessedAPITypeReasons</key><array><string>CA92.1</string></array>
+<key>NSPrivacyAccessedAPITypeReasons</key><array><string>CA92.1</string><string>1C8F.1</string></array>
+</dict><dict>
+<key>NSPrivacyAccessedAPIType</key><string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+<key>NSPrivacyAccessedAPITypeReasons</key><array><string>C617.1</string></array>
 </dict></array>
 </dict></plist>

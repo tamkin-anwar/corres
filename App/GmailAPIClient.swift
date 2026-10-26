@@ -35,6 +35,10 @@ struct GmailAPIClient {
     /// those by id on later syncs.
     struct SyncPlan {
         let messageIDs: [String]
+        /// Of `messageIDs`, mail older than the last pass that turned up
+        /// again (moved back into the Inbox elsewhere, or listed again
+        /// under a new id): saved as baseline, never screened as new.
+        var baselineMessageIDs: Set<String> = []
         /// Moved back into the Inbox elsewhere (un-archived, restored from
         /// Trash), which Gmail reports as a label change, not a new message.
         var restoredMessageIDs: [String] = []
@@ -942,7 +946,7 @@ struct GmailAPIClient {
         let headers = Dictionary((message.payload?.headers ?? []).map { ($0.name.lowercased(), $0.value) },
                                   uniquingKeysWith: { first, _ in first })
         let (sender, senderEmail) = Self.parseFrom(headers["from"] ?? "")
-        let subject = headers["subject"] ?? "(no subject)"
+        let subject = headers["subject"] ?? String(localized: "(no subject)")
         let organization = Self.organization(fromEmail: senderEmail)
         let receivedAt = message.internalDate.flatMap { Double($0) }.map { Date(timeIntervalSince1970: $0 / 1000) } ?? .now
         let isUnread = (message.labelIds ?? []).contains("UNREAD")
@@ -1000,7 +1004,8 @@ struct GmailAPIClient {
         let fromYou = senderEmail.lowercased() == account.lowercased()
         let bulk = InboxClassifier.bulkKind(labelIds: labelIds, looksAutomated: automated)
         let deadline = fromYou ? nil
-            : (bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text) : bulk == nil ? MailSignals.deadline(in: text) : nil)
+            : (bulk?.isPromotable == true ? MailSignals.timeSensitiveDate(in: text, senderEmail: senderEmail)
+               : bulk == nil ? MailSignals.deadline(in: text, senderEmail: senderEmail) : nil)
         var (attention, reason) = InboxClassifier.initialAttention(
             isUnread: isUnread, labelIds: labelIds, looksAutomated: automated, receivedAt: receivedAt,
             isCopiedOnly: Correspondence.isCopiedOnly(account: account, to: toRecipients, cc: ccRecipients),

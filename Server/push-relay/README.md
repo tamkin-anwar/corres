@@ -1,6 +1,8 @@
 # Corres push relay
 
-What this is and why it exists: [Docs/Architecture.md](../../Docs/Architecture.md)'s "Push notifications" entry. Short version: Gmail can only deliver change notifications to a server you own (there is no client-only path), and this is the smallest server that could do that job. It never sees message content: Gmail's notification is just `{ emailAddress, historyId }`, and this relay only ever forwards a silent, contentless wake-up push telling the app to sync for itself.
+What this is and why it exists: [Docs/Architecture.md](../../Docs/Architecture.md)'s "Push notifications" entry. Short version: Gmail and Outlook can only deliver change notifications to a server you own (there is no client-only path), and this is the smallest server that could do that job. It never sees message content: Gmail's notification is just `{ emailAddress, historyId }` and Microsoft Graph's names a subscription and a message id.
+
+What it sends: every registered device gets a silent wake-up (`content-available`, priority 5) so Corres syncs for itself. Where the app asked for alerts (`alerts: "1"` for Outlook and iCloud, `gmailAlerts: "1"` for Gmail once Apple grants notification filtering), it also sends a visible alert (`mutable-content`, priority 10) whose title is the localization key `"New email"` (`title-loc-key`, shown in the person's language from the app's `Localizable.strings`), whose body is the account's address, and which carries only the account and the message id (or Gmail's `historyId`). The notification extension fetches the email on the device and replaces that text with the sender and subject. Nothing from a message passes through here.
 
 Everything below is a one-time setup. None of it can be done from inside this repo alone; it needs your own Google Cloud project and Apple Developer account.
 
@@ -28,16 +30,22 @@ From this directory:
 export APNS_KEY_ID=<the Key ID from step 2>
 export APNS_TEAM_ID=<your Apple Developer Team ID>
 export APNS_BUNDLE_ID=studio.anwarcreative.corres
-export APNS_PRODUCTION=false   # true only for an App Store / TestFlight build
+export ICLOUD_KEY_VERSION=<the iCloud watcher's KMS key version>
 npm run deploy
 ```
+
+There is no production/development switch: each device says which APNs server its token belongs to (`apnsEnvironment`) when it registers, and devices registered before that are tried on production, then development, and the one that works is kept.
 
 This deploys one HTTP Cloud Function (`corres-push-relay`) with these routes:
 - `POST /register`: called by the app once a device grants notification permission, once per connected account. A `devices` document is keyed by device token and holds an `emailAddresses` array, not a single email: Corres supports multiple simultaneously-connected accounts (Batch 29), and one device can be registered for several accounts' pushes at once.
 - `POST /unregister`: called with just a `deviceToken` when notifications are turned off entirely (removes the whole device record), or with `deviceToken` + `emailAddress` when a single account is disconnected while others stay connected (removes just that account from the list).
-- `POST /attest-challenge` and `POST /attest`: App Attest, which lets the two routes above check that a call comes from a genuine Corres. See "App Attest (monitor mode)" below.
+- `POST /attest-challenge` and `POST /attest`: App Attest, which lets the routes check that a call comes from a genuine Corres. See "App Attest (monitor mode)" below.
+- `POST /register-graph`: an Outlook subscription the app made with Microsoft Graph itself: its id, a hash of its secret (`clientState`), the account, and the device. Graph's notices for that subscription wake only that device (each device makes its own subscription). An older subscription for the same account and device is deleted.
+- `POST /icloud-key`, `POST /register-icloud`, `POST /unregister-icloud`: instant iCloud alerts. The app seals the app-specific password to the watcher's KMS key; the record keeps the address, server, user name and device for `Server/icloud-watcher`. An iCloud address (`icloud.com`, `me.com`, `mac.com`) may only name `imap.mail.me.com`.
 
-Both routes stay `--allow-unauthenticated`: there is no user-login system in Corres to authenticate these calls against, so they have to stay reachable by any anonymous app install. Real input validation (device-token/email format, a cap on how many accounts one device token can register) closes off the cheapest abuse, but this is *not* authentication on its own. App Attest is (see "App Attest (monitor mode)" below), once enforcement is turned on.
+`npm run deploy:graph` deploys `corres-push-relay-graph`, Microsoft Graph's notification target, with one instance kept warm (`--min-instances=1`), since Microsoft wants an answer within about three seconds. It reads every named subscription in one Firestore call and gives each APNs request 2.5 seconds.
+
+These routes stay `--allow-unauthenticated`: there is no user-login system in Corres to authenticate these calls against, so they have to stay reachable by any anonymous app install. Real input validation (device-token/email format, a cap on how many accounts one device token can register) closes off the cheapest abuse, but this is *not* authentication on its own. App Attest is (see "App Attest (monitor mode)" below), once enforcement is turned on.
 
 Note the deployed function's URL; it's the base URL the app needs.
 
@@ -94,20 +102,22 @@ Set `PushNotificationService.relayBaseURL` and `.pubsubTopicName` (in `App/PushN
 
 ## What this deliberately does not do
 
-- No message content ever passes through this service, in either direction. The push it sends carries no alert text, subject, sender, or body, `content-available` only. The app fetches and displays the real content itself, on-device, exactly like any other sync.
+- No message content ever passes through this service, in either direction. A push carries at most the account's address, a message id or `historyId`, and the `"New email"` key; never a subject, sender or body. The app fetches and displays the real content itself, on-device.
 - No Gmail OAuth token ever reaches this service. The app itself calls `users.watch` (it already holds the token for every other Gmail API call); this relay only needs to know which device token belongs to which email address to route Gmail's contentless ping.
 - Does not renew Gmail's watch subscription on its own. `users.watch` expires after 7 days; the app renews it at launch. An account that isn't opened for a week silently stops getting push until the next launch, a known, accepted gap, not a bug (see Docs/Architecture.md).
-- Does not yet *require* proof that a `/register`/`/unregister` call came from a genuine Corres install. It checks for that proof (App Attest, below) and records the result, but in monitor mode it still accepts calls without it. Until enforcement is on, the format validation and per-device registration cap remain the only barrier to a scripted caller.
+- Does not yet *require* proof that a call came from a genuine Corres install. It checks for that proof (App Attest, below) and records the result, but in monitor mode it still accepts calls without it. Until enforcement is on, the format validation, the caps and the best-effort rate limits below remain the only barrier to a scripted caller.
 
 ## App Attest (monitor mode)
 
-`/register` and `/unregister` can now carry proof that the call comes from a genuine, unmodified Corres on real Apple hardware, using Apple's App Attest ([Establishing your app's integrity](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity), [Validating apps that connect to your server](https://developer.apple.com/documentation/devicecheck/validating-apps-that-connect-to-your-server)). The checks live in `appattest.js`; the routes in `index.js`.
+`/register`, `/unregister`, `/register-graph`, `/register-icloud` and `/unregister-icloud` can carry proof that the call comes from a genuine, unmodified Corres on real Apple hardware, using Apple's App Attest ([Establishing your app's integrity](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity), [Validating apps that connect to your server](https://developer.apple.com/documentation/devicecheck/validating-apps-that-connect-to-your-server)). The checks live in `appattest.js`; the routes in `index.js`.
 
 How it works:
 
 1. Once per install, the app makes a key in the Secure Enclave (`DCAppAttestService.generateKey`), asks `POST /attest-challenge` for a one-time challenge (32 random bytes, good for five minutes, stored only as a hash in `attestChallenges`), and has Apple attest the key over `SHA256(challenge)`.
 2. `POST /attest` with `{ keyId, attestation, challenge }` verifies all of Apple's steps: the certificate chain up to the pinned Apple App Attestation Root CA, the nonce in the leaf's `1.2.840.113635.100.8.2` extension equal to `SHA256(authData || SHA256(challenge))`, `SHA256(public key) == keyId`, the RP ID hash equal to `SHA256("7GGTC43CG8.studio.anwarcreative.corres")` (or the Mac debug build's `.debug` App ID), counter 0, aaguid `appattest` (production) or `appattestdevelop`, credential id equal to the key id, and on macOS the key's access policy. The public key, a zero counter, the environment and Apple's receipt are kept in `attestKeys`, keyed by the key id. A key already on file is never replaced.
 3. Each later `register`/`unregister` gets a fresh challenge, puts it in the body as `attestChallenge`, and signs the exact body bytes: headers `Corres-Attest-Key` and `Corres-Attest-Assertion`. The relay checks the challenge (single use), the signature against the stored key over `SHA256(authenticatorData || SHA256(body))`, the RP ID, and that the counter went up, then stores the new counter.
+
+The apps on TestFlight today (builds 35 and 36) sign only `/register` and `/unregister`, so the other three log `allowed unattested, none` for now. Their result goes on the Outlook subscription or iCloud watch record, never on the device record, so it can't hide whether `/register` was attested.
 
 Monitor mode (the default): every checked call is logged on one line (`app attest /register: ok` or `app attest /register: allowed unattested, <reason>`), the device record gets `attested`, `attestReason`, `attestKeyId` and `attestCheckedAt`, and the call goes through either way. Reasons: `none` (no proof sent: an older build, the Simulator, a Mac without App Attest, or a key still being attested), `unknown-key`, `bad-challenge`, `bad-signature`, `replayed-counter`, `wrong-app`, `malformed`. The answer carries a `Corres-Attest-Result` header; on `unknown-key` the app makes and attests a new key. On the app side every failure (no support, no network, an Apple or relay error, Apple throttling) sends the call as before, so nobody loses notifications.
 
@@ -123,11 +133,49 @@ Turning enforcement on, once the logs and device records show every current buil
 APP_ATTEST_ENFORCE=1 npm run deploy
 ```
 
-Unattested `register`/`unregister` calls then get 401. Back to monitor mode with a plain `npm run deploy` (the script sets `APP_ATTEST_ENFORCE=0` unless told otherwise). Keep in mind before switching it on: devices that can't attest (the Simulator, and Macs, where `isSupported` is false today) would lose notifications, so enforcement for them needs a decision first.
+Unattested calls to the gated routes then get 401 (`/register-graph` and the iCloud routes too, so the app would have to sign those first). Back to monitor mode with a plain `npm run deploy` (the script sets `APP_ATTEST_ENFORCE=0` unless told otherwise). Keep in mind before switching it on: devices that can't attest (the Simulator, and Macs, where `isSupported` is false today) would lose notifications, so enforcement for them needs a decision first.
 
 Other switches, set with `gcloud functions deploy corres-push-relay --update-env-vars=...`:
 - `APP_ATTEST_NEW_KEYS=0` stops handing out challenges for new keys, so apps back off from Apple's attestation servers if Apple ever throttles Corres. Signed calls with existing keys keep working.
 - `APP_ATTEST_DEVELOPMENT=0` refuses keys made in Apple's development environment. The iOS app's entitlement asks for production keys in every build, so this should only catch builds signed without it.
+
+## Limits, rate limits and cleanup
+
+Caps (checked on every registration):
+- 50 accounts per device (`/register` and `/register-graph`; registering an account the device already has is always fine), 50 Outlook subscriptions per device, 10 iCloud accounts per device.
+- `ICLOUD_MAX_WATCHES` (default 2000) iCloud watches in all: past it, `/register-icloud` answers 503 for new watches. The count is an aggregation query, refreshed at most once a minute per instance. Set the same value on the watcher (its `npm run deploy` passes `ICLOUD_MAX_WATCHES` too), which holds back any watch past it.
+
+Rate limits: `/attest-challenge` 60, `/register-graph` 60 and `/register-icloud` 30 calls a minute per caller address, answered with 429. They live in each instance's memory, so they only slow one busy caller; they are not a real limit. The caller's address is the last `X-Forwarded-For` entry (the one Google's front end adds).
+
+The real fix for flooding is Cloud Armor in front of the function: an external Application Load Balancer with a serverless NEG for `corres-push-relay`, a security policy with a rate-based ban rule, and ingress limited to the load balancer:
+
+```bash
+gcloud compute network-endpoint-groups create corres-relay-neg --region=us-central1 \
+  --network-endpoint-type=serverless --cloud-run-service=corres-push-relay
+gcloud compute security-policies create corres-relay-armor
+gcloud compute security-policies rules create 1000 --security-policy=corres-relay-armor \
+  --expression="true" --action=rate-based-ban --rate-limit-threshold-count=120 \
+  --rate-limit-threshold-interval-sec=60 --ban-duration-sec=600 --conform-action=allow \
+  --exceed-action=deny-429 --enforce-on-key=IP
+# Then a backend service with the NEG and --security-policy=corres-relay-armor, a URL map,
+# an HTTPS proxy and forwarding rule, and the app pointed at the load balancer's address.
+# Last, add --ingress-settings=internal-and-gclb to the deploy script, so the function's
+# own URL stops answering the internet directly.
+```
+
+Cleanup:
+- A device token APNs calls gone (410, or `BadDeviceToken` on both servers) deletes the device record, or the iCloud watch at the watcher.
+- Outlook subscription records carry `expiresAt` (a week after the last registration; Graph's mail subscriptions last under three days and the app renews them well before). One-time setup, so Firestore clears the ones nobody renews:
+
+```bash
+gcloud firestore fields ttls update expiresAt --collection-group=graphSubscriptions --enable-ttl
+```
+
+- Records written before this change have no `expiresAt` and stay until their device renews (which adds it) or unregisters.
+
+## iCloud watcher
+
+`Server/icloud-watcher` holds one IMAP IDLE connection per real login (server, port and user name), not per address, and wakes only devices whose own password has signed in to that login (the one that opened the connection, one with the same password, or one that signed in once on its own). So a record naming someone else's address with another server or a wrong password can't take over their connection or send alerts to their devices. A record whose password the server refuses three times is deleted. Its own `failures` writes don't make it reconnect; only a new password or login does, and at most 10 sign-ins run at once.
 
 ## Gmail alerts while Corres is closed (waiting on Apple)
 

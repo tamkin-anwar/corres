@@ -47,7 +47,7 @@ struct OutOfOfficeView: View {
                 Section {
                     Button("Allow Corres to Change Out of Office") { Task { await allow() } }
                 } footer: {
-                    Text(message ?? "Google asks once for permission to change this setting for \(account). Corres asks only now, not when you sign in.")
+                    Text(message ?? String(localized: "Google asks once for permission to change this setting for \(account). Corres asks only now, not when you sign in."))
                 }
             case .failed:
                 Section {
@@ -141,7 +141,7 @@ struct OutOfOfficeView: View {
         if await auth.grantSettings(for: account) {
             await load()
         } else {
-            message = "Google didn\u{2019}t give Corres permission. Make sure you pick \(account) and tick the Gmail settings box."
+            message = String(localized: "Google didn\u{2019}t give Corres permission. Make sure you pick \(account) and tick the Gmail settings box.")
         }
     }
 
@@ -159,11 +159,13 @@ struct OutOfOfficeView: View {
         do {
             try await client.setVacation(updated, account: account)
             vacation = updated
-            message = updated.enableAutoReply
-                ? "On. \(service) will reply from \(start.formatted(date: .abbreviated, time: .shortened))\(hasEnd ? " until \(end.formatted(date: .abbreviated, time: .shortened))" : "")."
-                : "Off. No automatic replies."
+            let from = start.formatted(date: .abbreviated, time: .shortened)
+            let until = end.formatted(date: .abbreviated, time: .shortened)
+            message = !updated.enableAutoReply ? String(localized: "Off. No automatic replies.")
+                : hasEnd ? String(localized: "On. \(service) will reply from \(from) until \(until).")
+                : String(localized: "On. \(service) will reply from \(from).")
         } catch {
-            message = "Couldn't save. Try again."
+            message = String(localized: "Couldn't save. Try again.")
         }
     }
 }

@@ -28,16 +28,36 @@ enum WidgetHandoff {
         return route
     }
 
+    /// Each tap is a small file of its own: the widget and the app never
+    /// read and rewrite one shared list at the same moment, which could
+    /// lose a tap made while the app was taking the others.
+    private static var handledFolder: URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WidgetSnapshot.appGroup)?
+            .appendingPathComponent("WidgetHandled", isDirectory: true)
+    }
+
     static func markHandled(_ id: String) {
-        var ids = defaults?.stringArray(forKey: handledKey) ?? []
-        if !ids.contains(id) { ids.append(id) }
-        defaults?.set(ids, forKey: handledKey)
+        guard let folder = handledFolder else { return }
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try? Data(id.utf8).write(to: folder.appendingPathComponent(UUID().uuidString), options: .atomic)
     }
 
     /// "account|thread" ids marked Handled from a widget since last time.
     static func takeHandled() -> [String] {
-        let ids = defaults?.stringArray(forKey: handledKey) ?? []
-        defaults?.removeObject(forKey: handledKey)
+        // Taps saved by an earlier version, in the old shared list.
+        var ids = defaults?.stringArray(forKey: handledKey) ?? []
+        if !ids.isEmpty { defaults?.removeObject(forKey: handledKey) }
+        guard let folder = handledFolder,
+              let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil,
+                                                                       options: .skipsHiddenFiles) else { return ids }
+        for file in files {
+            // Read, then removed: a tap saved meanwhile is a new file, left
+            // for next time.
+            guard let data = try? Data(contentsOf: file) else { continue }
+            try? FileManager.default.removeItem(at: file)
+            let id = String(decoding: data, as: UTF8.self)
+            if !id.isEmpty, !ids.contains(id) { ids.append(id) }
+        }
         return ids
     }
 }

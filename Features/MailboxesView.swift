@@ -610,7 +610,8 @@ struct DraftsView: View {
                 Button { Task { await open(item) } } label: {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(item.message.toRecipients.isEmpty ? "No recipients" : "To: " + item.message.toRecipients.joined(separator: ", "))
+                            Text(item.message.toRecipients.isEmpty ? String(localized: "No recipients")
+                                 : String(localized: "To: \(item.message.toRecipients.joined(separator: ", "))"))
                                 .font(.body.weight(.medium)).foregroundStyle(CorresPalette.ink).lineLimit(1)
                             Text(item.message.subject.isEmpty ? String(localized: "(no subject)") : item.message.subject)
                                 .font(.subheadline).foregroundStyle(CorresPalette.ink).lineLimit(1)
@@ -717,7 +718,7 @@ struct DraftsView: View {
         var draft = Draft(kind: answered == nil ? .new : .reply, threadID: answered?.id, fromAccount: account,
                           to: message.toRecipients.joined(separator: ", "),
                           cc: message.ccRecipients.isEmpty ? nil : message.ccRecipients.joined(separator: ", "),
-                          subject: message.subject == "(no subject)" ? "" : message.subject, body: message.body)
+                          subject: [String(localized: "(no subject)"), "(no subject)"].contains(message.subject) ? "" : message.subject, body: message.body)
         draft.gmailDraftID = item.draftID
         replyingTo = answered
         composing = draft

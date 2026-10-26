@@ -143,10 +143,8 @@ public enum MIMEParser {
 
         var text: String {
             let data = decodedBody
-            let charset = parameter("charset", of: "Content-Type")?.lowercased() ?? "utf-8"
-            let cf = CFStringConvertIANACharSetNameToEncoding(charset as CFString)
-            if cf != kCFStringEncodingInvalidId,
-               let s = String(data: data, encoding: String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(cf))) {
+            let charset = parameter("charset", of: "Content-Type") ?? "utf-8"
+            if let encoding = Charset.encoding(named: charset), let s = String(data: data, encoding: encoding) {
                 return s
             }
             return String(data: data, encoding: .utf8) ?? String(decoding: data, as: UTF8.self)
@@ -208,8 +206,7 @@ public enum MIMEParser {
                     bytes.append(b); chars = chars.dropFirst(2)
                 } else { bytes.append(c) }
             }
-            let cf = CFStringConvertIANACharSetNameToEncoding(String(pieces[0]).lowercased() as CFString)
-            let enc = cf == kCFStringEncodingInvalidId ? .utf8 : String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(cf))
+            let enc = Charset.encoding(named: String(pieces[0])) ?? .utf8
             return String(data: Data(bytes), encoding: enc) ?? String(decoding: bytes, as: UTF8.self)
         }
 
