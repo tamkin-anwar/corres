@@ -344,12 +344,13 @@ final class MailStore {
     }
     private static let firstScreen = 300
 
-    /// When sample mail is dated from. App Store screenshots show 9:41, so
+    /// When sample mail is dated from. App Store and website screenshots
+    /// show 9:57 (the owner's birth time, our own small signature), so
     /// there the mail arrives that morning, whatever time they're taken.
     static var sampleNow: Date {
         guard EntitlementStore.isScreenshotMode,
-              let morning = Calendar.current.date(bySettingHour: 9, minute: 41, second: 0, of: .now) else { return .now }
-        // Before 9:41 it's yesterday's, so nothing arrives in the future.
+              let morning = Calendar.current.date(bySettingHour: 9, minute: 57, second: 0, of: .now) else { return .now }
+        // Before 9:57 it's yesterday's, so nothing arrives in the future.
         return morning > .now ? morning.addingTimeInterval(-86_400) : morning
     }
 

@@ -3,8 +3,9 @@
 Made 2026-10-22 for every store language. Sample mail only, never real mail.
 
 1. Build the debug iPhone app (and Mac app) and install it on the
-   "Corres L10n" simulator; set its status bar to 9:41
-   (`xcrun simctl status_bar <id> override --time 9:41 ...`).
+   "Corres L10n" simulator; set its status bar to 9:57 with a full battery
+   that isn't charging (`xcrun simctl status_bar <id> override --time 9:57
+   --batteryState discharging --batteryLevel 100`). Never the charging bolt.
 2. `capture-iphone.sh`: Needs You, Everything, a reply (`-SampleReplies
    -OpenThread sample-0`) and the bottom tabs, in each language, into
    /tmp/claude-501/shots/loc. Check for splash frames (tiny files) and

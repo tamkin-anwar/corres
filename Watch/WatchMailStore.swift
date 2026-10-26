@@ -31,9 +31,10 @@ final class WatchMailStore: NSObject {
 
     #if DEBUG
     /// The same people as the iPhone's sample mail, at fixed times this
-    /// morning, so screenshots read the same on every run.
+    /// morning before 9:57 (the screenshots' time), so they read the same
+    /// on every run.
     static let sample: WatchLink.Snapshot = {
-        let morning = Calendar.current.date(bySettingHour: 9, minute: 41, second: 0, of: .now) ?? .now
+        let morning = Calendar.current.date(bySettingHour: 9, minute: 57, second: 0, of: .now) ?? .now
         func ago(_ minutes: Double) -> Date { morning.addingTimeInterval(-minutes * 60) }
         return WatchLink.Snapshot(
             needsYou: [
