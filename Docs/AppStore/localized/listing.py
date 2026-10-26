@@ -51,6 +51,7 @@ L["ja"] = dict(
      "下書き、あとで送信、送信の取り消し、テンプレート、返信がないときのリマインダー。",
      "複数の署名、別の送信アドレス、太字、リスト、リンク。",
      "返信の候補と書き直し（Corres Pro）は、送信済みメールから学んだあなたの挨拶、結び、長さで書かれます。あなたが送るまで何も送信されません。",
+     "Siriに頼んで、Corresでメールを書く、送る、探すことができます。",
      "どのアプリからでも共有ボタンでメールを書けます。"]),
    ("作成", [
      "下書き、あとで送信、送信の取り消し、テンプレート、返信がないときのリマインダー。",
@@ -83,7 +84,7 @@ L["ja"] = dict(
      "リモート画像とトラッキングピクセルは許可するまでブロックされ、配信停止はワンクリックです。",
      "広告はありません。データが販売されたり、AIの学習に使われたりすることはありません。"])),
  ],
- pro=("無料とPro", "メールは無料です。すべてのアカウントで閲覧、作成、検索、整理ができます。Corres Proでは「要対応」「返信待ち」、検索での回答、要約、返信の候補が使えます。Proは無料トライアルから始まり、その後は月額または年額で自動更新されます。期間終了の24時間前までに{cancel}でキャンセルしない限り更新されます。買い切りは1回限りの購入です。",
+ pro=("無料とPro", "メールは無料です。すべてのアカウントで閲覧、作成、検索、整理ができます。Corres Proでは「要対応」「返信待ち」、検索での回答、要約、返信の候補が使えます。Proは無料トライアルから始まり、その後は月額または年額で自動更新されます。期間終了の24時間前までに{cancel}でキャンセルしない限り更新されます。",
       {"ios": "iPhoneの設定", "mac": "Apple Accountの設定"}),
  terms="利用規約", privacy="プライバシー",
 )
@@ -135,6 +136,7 @@ L["zh-Hans"] = dict(
      "草稿、稍后发送、撤销发送、模板，以及无人回复时的提醒。",
      "多个签名、其他发件地址，以及粗体、列表和链接。",
      "建议回复和改写（Corres Pro）会沿用你的问候语、结尾和篇幅，这些都从你发出的邮件中学习。在你发送之前，什么都不会发出。",
+     "让 Siri 在 Corres 中撰写、发送或查找邮件。",
      "在任何 App 中都能通过共享按钮写邮件。"]),
    ("写邮件", [
      "草稿、稍后发送、撤销发送、模板，以及无人回复时的提醒。",
@@ -167,7 +169,7 @@ L["zh-Hans"] = dict(
      "远程图片和追踪像素在你允许前一律拦截，退订只需点按一下。",
      "没有广告。你的数据绝不会被出售或用于训练 AI。"])),
  ],
- pro=("免费与 Pro", "“邮件”免费：可阅读、撰写、搜索和整理所有账户。Corres Pro 新增“需要你”、“等待中”、搜索中的回答、摘要和建议回复。Pro 从免费试用开始，之后按月或按年自动续订，除非你在当期结束前至少 24 小时在{cancel}中取消。终身版为一次性购买。",
+ pro=("免费与 Pro", "“邮件”免费：可阅读、撰写、搜索和整理所有账户。Corres Pro 新增“需要你”、“等待中”、搜索中的回答、摘要和建议回复。Pro 从免费试用开始，之后按月或按年自动续订，除非你在当期结束前至少 24 小时在{cancel}中取消。",
       {"ios": "iPhone 的“设置”", "mac": "Apple 账户设置"}),
  terms="条款", privacy="隐私",
 )
@@ -211,6 +213,7 @@ L["de-DE"] = dict(
      "Entwürfe, Später senden, Senden widerrufen, Vorlagen und eine Erinnerung, wenn niemand antwortet.",
      "Mehrere Signaturen, weitere Absenderadressen sowie Fett, Listen und Links.",
      "Antwortvorschläge und Umformulierungen mit Corres Pro, in deinem Stil, gelernt aus deinen gesendeten E-Mails. Nichts wird gesendet, bevor du es sendest.",
+     "Bitte Siri, in Corres eine E-Mail zu schreiben, zu senden oder zu finden.",
      "Schreib eine E-Mail aus jeder App über die Teilen-Taste."]),
    ("SCHREIBEN", [
      "Entwürfe, Später senden, Senden widerrufen, Vorlagen und eine Erinnerung, wenn niemand antwortet.",
@@ -242,7 +245,7 @@ L["de-DE"] = dict(
      "Externe Bilder und Tracking-Pixel bleiben blockiert, bis du sie erlaubst, und Abmelden ist ein Klick.",
      "Keine Werbung. Deine Daten werden nie verkauft oder zum Trainieren von KI verwendet."])),
  ],
- pro=("KOSTENLOS UND PRO", "„E-Mail“ ist kostenlos: lesen, schreiben, suchen und ordnen in jedem Account. Corres Pro bietet „Braucht dich“, „Wartet“, Antworten in der Suche, Zusammenfassungen und Antwortvorschläge. Pro beginnt mit einem kostenlosen Test und verlängert sich dann monatlich oder jährlich, sofern du nicht mindestens 24 Stunden vor Ende des Zeitraums in {cancel} kündigst. „Dauerhaft“ ist ein einmaliger Kauf.",
+ pro=("KOSTENLOS UND PRO", "„E-Mail“ ist kostenlos: lesen, schreiben, suchen und ordnen in jedem Account. Corres Pro bietet „Braucht dich“, „Wartet“, Antworten in der Suche, Zusammenfassungen und Antwortvorschläge. Pro beginnt mit einem kostenlosen Test und verlängert sich dann monatlich oder jährlich, sofern du nicht mindestens 24 Stunden vor Ende des Zeitraums in {cancel} kündigst.",
       {"ios": "den Einstellungen deines iPhone", "mac": "den Einstellungen deines Apple Accounts"}),
  terms="Nutzungsbedingungen", privacy="Datenschutz",
 )
@@ -294,6 +297,7 @@ L["ko"] = dict(
      "임시 저장, 나중에 보내기, 보내기 취소, 템플릿, 답장이 없을 때 알림.",
      "여러 서명, 다른 보내는 주소, 굵게, 목록, 링크.",
      "추천 답장과 다시 쓰기(Corres Pro)는 보낸 메일에서 배운 나의 인사말, 맺음말, 길이를 따릅니다. 직접 보내기 전에는 아무것도 전송되지 않습니다.",
+     "Siri에게 Corres에서 이메일을 쓰거나 보내거나 찾아 달라고 하세요.",
      "어느 앱에서든 공유 버튼으로 이메일을 쓸 수 있습니다."]),
    ("작성", [
      "임시 저장, 나중에 보내기, 보내기 취소, 템플릿, 답장이 없을 때 알림.",
@@ -326,7 +330,7 @@ L["ko"] = dict(
      "원격 이미지와 추적 픽셀은 허용할 때까지 차단되고, 수신 거부는 한 번 클릭이면 됩니다.",
      "광고가 없습니다. 데이터를 판매하거나 AI 학습에 사용하지 않습니다."])),
  ],
- pro=("무료와 Pro", "메일은 무료입니다. 모든 계정에서 읽고, 쓰고, 검색하고, 정리하세요. Corres Pro는 '나에게 필요', '대기 중', 검색의 답변, 요약, 추천 답장을 추가합니다. Pro는 무료 체험으로 시작해 이후 월간 또는 연간으로 자동 갱신되며, 기간 종료 최소 24시간 전에 {cancel}에서 취소하지 않으면 갱신됩니다. 평생 이용권은 1회 구입입니다.",
+ pro=("무료와 Pro", "메일은 무료입니다. 모든 계정에서 읽고, 쓰고, 검색하고, 정리하세요. Corres Pro는 '나에게 필요', '대기 중', 검색의 답변, 요약, 추천 답장을 추가합니다. Pro는 무료 체험으로 시작해 이후 월간 또는 연간으로 자동 갱신되며, 기간 종료 최소 24시간 전에 {cancel}에서 취소하지 않으면 갱신됩니다.",
       {"ios": "iPhone 설정", "mac": "Apple 계정 설정"}),
  terms="이용 약관", privacy="개인정보 처리방침",
 )
@@ -369,7 +373,8 @@ L["fr-FR"] = dict(
   (("RÉDACTION", [
      "Brouillons, Envoyer plus tard, Annuler l’envoi, modèles, et un rappel si personne ne répond.",
      "Plusieurs signatures, d’autres adresses d’envoi, et gras, listes et liens.",
-     "Réponses suggérées et reformulations avec Corres Pro, dans votre style, apprises de vos e-mails envoyés. Rien n’est envoyé tant que vous ne l’envoyez pas."]),
+     "Réponses suggérées et reformulations avec Corres Pro, dans votre style, apprises de vos e-mails envoyés. Rien n’est envoyé tant que vous ne l’envoyez pas.",
+     "Demandez à Siri d’écrire, d’envoyer ou de trouver un e-mail dans Corres."]),
    ("RÉDACTION", [
      "Brouillons, Envoyer plus tard, Annuler l’envoi, modèles, et un rappel si personne ne répond.",
      "Plusieurs signatures, d’autres adresses d’envoi, et gras, listes et liens.",
@@ -400,7 +405,7 @@ L["fr-FR"] = dict(
      "Les images distantes et les pixels de suivi sont bloqués jusqu’à ce que vous les autorisiez, et le désabonnement se fait d’un clic.",
      "Aucune publicité. Vos données ne sont jamais vendues ni utilisées pour entraîner une IA."])),
  ],
- pro=("GRATUIT ET PRO", "Messagerie est gratuite : lire, écrire, rechercher et organiser tous vos comptes. Corres Pro ajoute Pour vous, En attente, les réponses dans la recherche, les résumés et les réponses suggérées. Pro commence par un essai gratuit, puis se renouvelle chaque mois ou chaque année, sauf résiliation au moins 24 heures avant la fin de la période, dans {cancel}. La formule À vie est un achat unique.",
+ pro=("GRATUIT ET PRO", "Messagerie est gratuite : lire, écrire, rechercher et organiser tous vos comptes. Corres Pro ajoute Pour vous, En attente, les réponses dans la recherche, les résumés et les réponses suggérées. Pro commence par un essai gratuit, puis se renouvelle chaque mois ou chaque année, sauf résiliation au moins 24 heures avant la fin de la période, dans {cancel}.",
       {"ios": "les Réglages de votre iPhone", "mac": "les réglages de votre compte Apple"}),
  terms="Conditions", privacy="Confidentialité",
 )
@@ -446,6 +451,7 @@ L["es-ES"] = dict(
      "Borradores, Enviar más tarde, Deshacer envío, plantillas y un recordatorio si nadie responde.",
      "Varias firmas, otras direcciones de envío, y negrita, listas y enlaces.",
      "Con Corres Pro, respuestas sugeridas y reescrituras con tu saludo, tu despedida y tu extensión, aprendidos de tus correos enviados. No se envía nada hasta que tú lo envías.",
+     "Pide a Siri que escriba, envíe o busque un correo en Corres.",
      "Escribe un correo desde el botón Compartir de cualquier app."]),
    ("ESCRIBIR", [
      "Borradores, Enviar más tarde, Deshacer envío, plantillas y un recordatorio si nadie responde.",
@@ -477,7 +483,7 @@ L["es-ES"] = dict(
      "Las imágenes remotas y los píxeles de rastreo se bloquean hasta que los permites, y darse de baja es un clic.",
      "Sin anuncios. Tus datos nunca se venden ni se usan para entrenar IA."])),
  ],
- pro=("GRATIS Y PRO", "Correo es gratis: lee, escribe, busca y organiza todas tus cuentas. Corres Pro añade Te necesita, En espera, respuestas en la búsqueda, resúmenes y respuestas sugeridas. Pro empieza con una prueba gratuita y después se renueva cada mes o cada año, salvo que canceles al menos 24 horas antes del final del periodo en {cancel}. Vitalicio es una compra única.",
+ pro=("GRATIS Y PRO", "Correo es gratis: lee, escribe, busca y organiza todas tus cuentas. Corres Pro añade Te necesita, En espera, respuestas en la búsqueda, resúmenes y respuestas sugeridas. Pro empieza con una prueba gratuita y después se renueva cada mes o cada año, salvo que canceles al menos 24 horas antes del final del periodo en {cancel}.",
       {"ios": "los Ajustes de tu iPhone", "mac": "los ajustes de tu cuenta de Apple"}),
  terms="Condiciones", privacy="Privacidad",
 )
@@ -525,6 +531,7 @@ L["pt-BR"] = dict(
      "Rascunhos, Enviar depois, Desfazer envio, modelos e um lembrete se ninguém responder.",
      "Várias assinaturas, outros endereços de envio, e negrito, listas e links.",
      "Com o Corres Pro, respostas sugeridas e reescritas com sua saudação, sua despedida e seu tamanho de texto, aprendidos com os e-mails que você enviou. Nada é enviado até você enviar.",
+     "Peça à Siri para escrever, enviar ou encontrar um e-mail no Corres.",
      "Escreva um e-mail pelo botão Compartilhar de qualquer app."]),
    ("ESCRITA", [
      "Rascunhos, Enviar depois, Desfazer envio, modelos e um lembrete se ninguém responder.",
@@ -556,7 +563,7 @@ L["pt-BR"] = dict(
      "Imagens remotas e pixels de rastreamento ficam bloqueados até você permitir, e descadastrar é um clique.",
      "Sem anúncios. Seus dados nunca são vendidos nem usados para treinar IA."])),
  ],
- pro=("GRÁTIS E PRO", "O E-mail é grátis: leia, escreva, busque e organize todas as contas. O Corres Pro adiciona Precisa de Você, Aguardando, respostas na busca, resumos e respostas sugeridas. O Pro começa com um teste gratuito e depois renova todo mês ou todo ano, a menos que você cancele pelo menos 24 horas antes do fim do período, {cancel}. O Vitalício é uma compra única.",
+ pro=("GRÁTIS E PRO", "O E-mail é grátis: leia, escreva, busque e organize todas as contas. O Corres Pro adiciona Precisa de Você, Aguardando, respostas na busca, resumos e respostas sugeridas. O Pro começa com um teste gratuito e depois renova todo mês ou todo ano, a menos que você cancele pelo menos 24 horas antes do fim do período, {cancel}.",
       {"ios": "nos Ajustes do seu iPhone", "mac": "nos ajustes da sua Conta Apple"}),
  terms="Termos", privacy="Privacidade",
 )
@@ -609,6 +616,7 @@ L["bn-BD"] = dict(
      "খসড়া, পরে পাঠান, পাঠানো ফিরিয়ে নিন, টেমপ্লেট, আর কেউ উত্তর না দিলে রিমাইন্ডার।",
      "একাধিক স্বাক্ষর, অন্য ঠিকানা থেকে পাঠানো, আর বোল্ড, তালিকা ও লিংক।",
      "Corres Pro-তে প্রস্তাবিত উত্তর আর নতুন করে লেখা হয় আপনার নিজের সম্ভাষণ, বিদায় সম্ভাষণ আর দৈর্ঘ্যে, আপনার পাঠানো ইমেইল থেকে শেখা। আপনি না পাঠানো পর্যন্ত কিছুই যায় না।",
+     "Siri-কে বলুন Corres-এ ইমেইল লিখতে, পাঠাতে বা খুঁজে দিতে।",
      "যেকোনো অ্যাপের শেয়ার বোতাম থেকে ইমেইল লিখুন।"]),
    ("লেখা", [
      "খসড়া, পরে পাঠান, পাঠানো ফিরিয়ে নিন, টেমপ্লেট, আর কেউ উত্তর না দিলে রিমাইন্ডার।",
@@ -641,7 +649,7 @@ L["bn-BD"] = dict(
      "দূরের ছবি আর ট্র্যাকিং পিক্সেল আপনি অনুমতি না দেওয়া পর্যন্ত বন্ধ থাকে, আর আনসাবস্ক্রাইব এক ক্লিকে।",
      "কোনো বিজ্ঞাপন বা ট্র্যাকিং নেই। আপনার ডেটা কখনো বিক্রি হয় না, AI প্রশিক্ষণেও ব্যবহার হয় না।"])),
  ],
- pro=("বিনামূল্যে আর Pro", "মেইল বিনামূল্যে: প্রতিটি অ্যাকাউন্টে পড়ুন, লিখুন, খুঁজুন আর সাজান। Corres Pro যোগ করে আপনার করণীয়, অপেক্ষায়, সার্চে উত্তর, সারসংক্ষেপ আর প্রস্তাবিত উত্তর। Pro শুরু হয় বিনামূল্যে ট্রায়াল দিয়ে, তারপর মাসিক বা বার্ষিকভাবে নিজে থেকে নবায়ন হয়, যদি না মেয়াদ শেষ হওয়ার অন্তত 24 ঘণ্টা আগে {cancel} বাতিল করেন। আজীবন একবারের কেনাকাটা।",
+ pro=("বিনামূল্যে আর Pro", "মেইল বিনামূল্যে: প্রতিটি অ্যাকাউন্টে পড়ুন, লিখুন, খুঁজুন আর সাজান। Corres Pro যোগ করে আপনার করণীয়, অপেক্ষায়, সার্চে উত্তর, সারসংক্ষেপ আর প্রস্তাবিত উত্তর। Pro শুরু হয় বিনামূল্যে ট্রায়াল দিয়ে, তারপর মাসিক বা বার্ষিকভাবে নিজে থেকে নবায়ন হয়, যদি না মেয়াদ শেষ হওয়ার অন্তত 24 ঘণ্টা আগে {cancel} বাতিল করেন।",
       {"ios": "আপনার iPhone-এর সেটিংসে", "mac": "আপনার Apple Account-এর সেটিংসে"}),
  terms="শর্তাবলি", privacy="গোপনীয়তা",
 )
@@ -685,7 +693,6 @@ for loc, d in L.items():
     assert ", " not in e["keywords"]
     for p in ("ios", "mac"):
         assert len(e[p]["description"]) <= 4000, (loc, p, len(e[p]["description"]))
-        assert "Siri" not in e[p]["description"], (loc, p)
         assert len(e[p]["promotionalText"]) <= 170, (loc, p, len(e[p]["promotionalText"]))
         assert "—" not in e[p]["description"]
     out[loc] = e

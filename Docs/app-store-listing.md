@@ -82,6 +82,7 @@ macOS:
 > • Suggested replies and rewrites with Corres Pro, in your own greeting, sign-off and length, learned from email you've sent. Nothing is sent until you send it.
 >
 > BEYOND THE APP
+> • Ask Siri to write, send or find an email.
 > • Widgets, Control Center and Shortcuts, plus Live Activities for Send Later and deliveries on the way.
 >
 > APPLE WATCH
@@ -105,18 +106,22 @@ macOS:
 > • No ads and no tracking. Your data is never sold or used to train AI.
 >
 > FREE AND PRO
-> Mail is free: read, write, search and organize every account. Corres Pro adds Needs You, Waiting, answers in Search, summaries and suggested replies. Pro starts with a free trial, then renews monthly or yearly unless you cancel at least 24 hours before the end of the period, in your iPhone's Settings. Lifetime is a one-time purchase.
+> Mail is free: read, write, search and organize every account. Corres Pro adds Needs You, Waiting, answers in Search, summaries and suggested replies. Pro starts with a free trial, then renews monthly or yearly unless you cancel at least 24 hours before the end of the period, in your iPhone's Settings.
 >
 > Terms: https://anwarcreativestudio.com/corres/terms/
 > Privacy: https://anwarcreativestudio.com/corres/privacy/
 
-(3,971 characters. Proposed 2026-10-25, not yet in App Store Connect.)
+(3,982 characters. Proposed 2026-10-25, not yet in App Store Connect.)
 
 Owner decisions, 2026-10-25, applied to iOS and Mac in every language:
 
 - No prices anywhere in the descriptions; the auto-renew terms stay.
-- No Siri claim until it's tested on a device. Shortcuts, Control Center,
-  widgets and Live Activities stay (one bullet in BEYOND THE APP).
+- Siri is back (2026-10-25): the owner confirmed Siri works with Corres on a
+  device. iOS only: "Ask Siri to write, send or find an email" in BEYOND THE
+  APP in English and in Writing in the other languages. Shortcuts, Control
+  Center, widgets and Live Activities stay.
+- No Lifetime in the descriptions: Lifetime is only for gifting through
+  redeem codes and isn't mentioned publicly (2026-10-25).
 - Pro features are marked as Pro (App Review Guideline 2.3.2): the Needs
   You and Waiting heading says (CORRES PRO); "With Corres Pro" on asking a
   question in Search and on the Apple Watch's Needs You bullet; "with
@@ -205,12 +210,12 @@ Changes from the 2026-10-22 text:
 > • No ads and no tracking. Your data is never sold or used to train AI.
 >
 > FREE AND PRO
-> Mail is free: read, write, search and organize every account. Corres Pro adds Needs You, Waiting, answers in Search, summaries and suggested replies. Pro starts with a free trial, then renews monthly or yearly unless you cancel at least 24 hours before the end of the period, in your Apple Account settings. Lifetime is a one-time purchase.
+> Mail is free: read, write, search and organize every account. Corres Pro adds Needs You, Waiting, answers in Search, summaries and suggested replies. Pro starts with a free trial, then renews monthly or yearly unless you cancel at least 24 hours before the end of the period, in your Apple Account settings.
 >
 > Terms: https://anwarcreativestudio.com/corres/terms/
 > Privacy: https://anwarcreativestudio.com/corres/privacy/
 
-(3,948 characters.) The iOS text with Mac wording, plus "A real Mac app"
+(3,915 characters.) The iOS text with Mac wording, plus "A real Mac app"
 (now also: keeps working from the menu bar with no window open, build 38).
 Undo Send is in Writing on the Mac too, which became true with Mac build
 38. Still no instant-alert claim on the Mac, and no Apple Watch, widgets or
@@ -302,7 +307,8 @@ which checks Apple's limits. The 2026-10-25 update, in every language:
 - New senders: the four First Emails choices.
 - Writing: templates and suggested replies in your own style (the Mac
   keeps three bullets; Undo Send there is now true). The Siri bullet was
-  added and then removed the same day, until Siri is tested on a device.
+  removed until Siri was tested on a device, then restored the same day
+  once the owner confirmed it works (iOS only).
 - Pro marked as in English: (Corres Pro) on the Needs You and Waiting
   heading, and a short Corres Pro marker on asking in Search, suggested
   replies, the Apple Watch's Needs You bullet and the Apple Intelligence
@@ -314,9 +320,9 @@ which checks Apple's limits. The 2026-10-25 update, in every language:
   the search filter examples and the Home Screen search bullet, and merge
   the two new-sender bullets; French on iPhone also drops "Write an email
   from the Share button".
-- Lengths (iOS / Mac): ja 2,122 / 2,095, zh-Hans 1,712 / 1,700, de 3,892 /
-  3,898, ko 2,322 / 2,277, fr 3,917 / 3,993, es 3,914 / 3,858, pt-BR
-  3,920 / 3,868, bn 3,873 / 3,936. French "par rapport à l'e-mail" became
+- Lengths (iOS / Mac): ja 2,146 / 2,080, zh-Hans 1,733 / 1,690, de 3,931 /
+  3,861, ko 2,348 / 2,259, fr 3,954 / 3,955, es 3,946 / 3,827, pt-BR
+  3,958 / 3,836, bn 3,908 / 3,912. French "par rapport à l'e-mail" became
   "avec l'e-mail" to keep the Mac text under 4,000.
 - French keywords: "concentration" is now "focus", to get under 100 bytes.
 
