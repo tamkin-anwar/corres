@@ -356,7 +356,7 @@ struct CorrespondenceList: View {
                                 search: appliedSearch, filter: mailFilter, unreadOnly: filtersUnread,
                                 serverMatches: serverMatches.count, searchFound: searchFound,
                                 brief: showsBrief)
-        let hidden = store.hiddenIDs
+        let hidden = store.hiddenFromLists
         if cache.key == key, cache.hidden == hidden { return cache }
         if cache.key != key {
             // Unread Only keeps what it already showed, until you change
@@ -1269,7 +1269,7 @@ struct CorrespondenceList: View {
     /// What a swipe or a check already took away stays away at once.
     private var visibleBrief: TodayBrief {
         let brief = rows.brief
-        let hidden = store.hiddenIDs
+        let hidden = store.hiddenFromLists
         guard !hidden.isEmpty, brief.top.contains(where: { hidden.contains($0.id) }) else { return brief }
         return TodayBrief(due: brief.due, overdue: brief.overdue, meetings: brief.meetings, deliveries: brief.deliveries,
                           replies: brief.replies, top: brief.top.filter { !hidden.contains($0.id) })

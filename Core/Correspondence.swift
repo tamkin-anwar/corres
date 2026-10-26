@@ -1211,27 +1211,51 @@ public enum MailQuery {
     public static func prioritized(_ threads: [Correspondence], attention: Attention,
                                    now: Date = .now, dueHorizon: TimeInterval = 3 * 86_400) -> [Correspondence] {
         let base = filter(threads, attention: attention, now: now)
+        // Sorted by what decides the order, read once per conversation,
+        // then the conversations put in that order: sorting them whole
+        // moved every one of them around, several times, on each change
+        // to the mail. The same order, ties included (the sort is stable).
         switch attention {
         case .needsYou:
             let horizon = now.addingTimeInterval(dueHorizon)
-            return base.sorted {
-                if $0.isPinned != $1.isPinned { return $0.isPinned }
-                let a = $0.dueAt.flatMap { $0 <= horizon ? $0 : nil }
-                let b = $1.dueAt.flatMap { $0 <= horizon ? $0 : nil }
-                switch (a, b) {
-                case let (a?, b?) where a != b: return a < b
+            let keys = base.map { thread in
+                PriorityKey(pinned: thread.isPinned, due: thread.dueAt.flatMap { $0 <= horizon ? $0 : nil },
+                            date: thread.receivedAt)
+            }
+            return base.indices.sorted { i, j in
+                let a = keys[i], b = keys[j]
+                if a.pinned != b.pinned { return a.pinned }
+                switch (a.due, b.due) {
+                case let (x?, y?) where x != y: return x < y
                 case (.some, nil): return true
                 case (nil, .some): return false
-                default: return $0.receivedAt > $1.receivedAt
+                default: return a.date > b.date
                 }
-            }
+            }.map { base[$0] }
         case .waiting:
-            return base.sorted {
-                if $0.isPinned != $1.isPinned { return $0.isPinned }
-                return $0.waitingReference < $1.waitingReference
-            }
+            let keys = base.map { (pinned: $0.isPinned, since: $0.waitingReference) }
+            return base.indices.sorted { i, j in
+                if keys[i].pinned != keys[j].pinned { return keys[i].pinned }
+                return keys[i].since < keys[j].since
+            }.map { base[$0] }
         default:
             return base
+        }
+    }
+
+    private struct PriorityKey {
+        let pinned: Bool
+        let due: Date?
+        let date: Date
+    }
+
+    /// The same as `filter` with no search, without putting them in order:
+    /// for counting, where sorting the whole mailbox bought nothing.
+    public static func unordered(_ threads: [Correspondence], attention: Attention? = nil, now: Date = .now) -> [Correspondence] {
+        let hideSnoozed = attention != nil
+        return threads.filter { item in
+            (!hideSnoozed || !item.isSnoozed(at: now)) && !item.isScreenedOut
+                && (attention == nil || item.attention(at: now) == attention)
         }
     }
 
@@ -1442,16 +1466,25 @@ public enum MailQuery {
     /// than the threads themselves: a thread is a large value, and moving
     /// thousands of them around was most of the cost of a sort.
     static func sortedNewestFirst(_ threads: [Correspondence]) -> [Correspondence] {
-        let keys = threads.map { (pinned: $0.isPinned, date: $0.receivedAt) }
-        func before(_ a: Int, _ b: Int) -> Bool {
-            if keys[a].pinned != keys[b].pinned { return keys[a].pinned }
-            if keys[a].date == keys[b].date { return threads[a].id.providerID < threads[b].id.providerID }
-            return keys[a].date > keys[b].date
+        // The keys side by side with each conversation's place, sorted
+        // as they are: looking each up through the list on every
+        // comparison was most of the time a mailbox took to sort.
+        let keys = threads.indices.map { NewestKey(pinned: threads[$0].isPinned, date: threads[$0].receivedAt.timeIntervalSinceReferenceDate, index: $0) }
+        func before(_ a: NewestKey, _ b: NewestKey) -> Bool {
+            if a.pinned != b.pinned { return a.pinned }
+            if a.date == b.date { return threads[a.index].id.providerID < threads[b.index].id.providerID }
+            return a.date > b.date
         }
         // Often already in order (the store keeps it close to this), in
         // which case there's nothing to move at all.
-        if threads.indices.dropFirst().allSatisfy({ !before($0, $0 - 1) }) { return threads }
-        return threads.indices.sorted(by: before).map { threads[$0] }
+        if keys.indices.dropFirst().allSatisfy({ !before(keys[$0], keys[$0 - 1]) }) { return threads }
+        return keys.sorted(by: before).map { threads[$0.index] }
+    }
+
+    private struct NewestKey {
+        let pinned: Bool
+        let date: Double
+        let index: Int
     }
 }
 

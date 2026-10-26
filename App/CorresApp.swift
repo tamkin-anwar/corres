@@ -52,7 +52,7 @@ struct CorresApp: App {
                     await WKWebViewPool.shared.prewarm()
                     // People to suggest, ready before the first Compose.
                     let accounts = appDelegate.auth.accounts.map(\.email)
-                    appDelegate.people.update(from: appDelegate.store.threads, accounts: accounts)
+                    await appDelegate.people.updateInBackground(from: appDelegate.store.threads, accounts: accounts)
                     await appDelegate.people.backfillIfNeeded(accounts: accounts)
                 }
                 // One place covers every foreground sync path (pull-to-refresh
@@ -71,7 +71,7 @@ struct CorresApp: App {
                     // and each account's Sent history once.
                     Task {
                         let accounts = appDelegate.auth.accounts.map(\.email)
-                        appDelegate.people.update(from: appDelegate.store.threads, accounts: accounts)
+                        await appDelegate.people.updateInBackground(from: appDelegate.store.threads, accounts: accounts)
                         await appDelegate.people.backfillIfNeeded(accounts: accounts)
                     }
                     Task {

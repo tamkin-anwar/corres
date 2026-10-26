@@ -155,6 +155,9 @@ final class MacServices {
         HangReporter.step("accounts restored")
         await loading.value
         HangReporter.finish("launch")
+        #if DEBUG
+        await stressSyncIfAsked()
+        #endif
         // Web views ready before the first email is opened, as on iPhone.
         Task {
             try? await Task.sleep(for: .seconds(1))
@@ -176,6 +179,34 @@ final class MacServices {
         startChecking()
         await startNotifications()
     }
+
+    #if DEBUG
+    /// Measuring the first minute after launch with no server:
+    /// `-stressSync N` saves N batches of 50 changed conversations (2 of
+    /// them with new mail) the way a first sync does, a quarter second
+    /// apart, each reloaded as `syncProgress` reloads, then runs what a
+    /// sync that brought mail runs after (`launch`, `afterSync`,
+    /// `afterChange`). Use with -SampleMailOnly -stressThreads N
+    /// -stressAccount, which keeps it all in memory.
+    private func stressSyncIfAsked() async {
+        let args = ProcessInfo.processInfo.arguments
+        guard args.contains("-SampleMailOnly"), let flag = args.firstIndex(of: "-stressSync"), flag + 1 < args.count,
+              let batches = Int(args[flag + 1]) else { return }
+        try? await Task.sleep(for: .seconds(2))
+        FileHandle.standardError.write(Data("stress sync start \(ProcessInfo.processInfo.systemUptime)\n".utf8))
+        HangReporter.note("stress sync \(batches) batches")
+        for _ in 0..<batches {
+            await store.stressSyncBatch(50, arriving: 2)
+            SyncBatchRefresh.schedule(store)
+            try? await Task.sleep(for: .milliseconds(250))
+        }
+        await store.load()
+        await semanticTriage.triageIfNeeded(store: store)
+        afterSync()
+        afterChange()
+        FileHandle.standardError.write(Data("stress sync end \(ProcessInfo.processInfo.systemUptime)\n".utf8))
+    }
+    #endif
 
     /// New-mail notifications, and the pushes that wake Corres the moment
     /// mail changes: asked for once accounts are here, as Mail does on
@@ -274,7 +305,7 @@ final class MacServices {
         Task { await CloudSync.shared.apply() }
         Task {
             let accounts = auth.accounts.map(\.email)
-            people.update(from: store.threads, accounts: accounts)
+            await people.updateInBackground(from: store.threads, accounts: accounts)
             await people.backfillIfNeeded(accounts: accounts)
         }
         Task {

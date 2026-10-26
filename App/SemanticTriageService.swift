@@ -105,6 +105,9 @@ final class SemanticTriageService {
     }
 
     private func runPass(store: MailStore, only ids: Set<ThreadID>?) async {
+        // Results reach the lists a few at a time while the pass runs, and
+        // all of them by the time it returns.
+        defer { store.showTriaged() }
         let now = Date.now
         await recheckPromotions(store: store, only: ids)
         // Newest first: what just arrived is what the person is about to

@@ -22,8 +22,10 @@ struct PurchasesView: View {
 
     var body: some View {
         let stages: [PurchaseStage] = [.problem, .onTheWay, .delivered, .ordered]
+        // Archived or deleted since the list was read (`MailStore.removedIDs`).
+        let removed = store.removedIDs
         let groups: [(PurchaseStage, [Item])] = stages.compactMap { stage in
-            let matching = items.filter { $0.stage == stage }
+            let matching = items.filter { $0.stage == stage && !removed.contains($0.id) }
             return matching.isEmpty ? nil : (stage, matching)
         }
         List {
@@ -41,7 +43,7 @@ struct PurchasesView: View {
         .background(CorresPalette.canvas)
         .navigationTitle("Purchases")
         .overlay {
-            if loaded && items.isEmpty {
+            if loaded && items.allSatisfy({ store.removedIDs.contains($0.id) }) {
                 ContentUnavailableView {
                     EmptyTitle("No Purchases", systemImage: "bag")
                 } description: {

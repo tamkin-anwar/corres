@@ -438,6 +438,8 @@
 		9446B571AB8C1727F45ABFFF /* WatchWidgets/PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 66D5C3FA7B3545BF513C9CF4 /* WatchWidgets/PrivacyInfo.xcprivacy */; };
 		E473A2EE723C49D2F994A5B8 /* Core/TodayBrief.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6606016CBD76A537F5BC2EE /* Core/TodayBrief.swift */; };
 		6A90C33A5F433FC1FB5A5226 /* Features/TodayBriefCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E432604343A76D3AF0752810 /* Features/TodayBriefCard.swift */; };
+		59308FAE1166C14E00EE81F8 /* Core/ListExclusion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059E2C067356EE947366FFDB /* Core/ListExclusion.swift */; };
+		379C128F007FEEBFC0C2CB1D /* Core/ListExclusion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059E2C067356EE947366FFDB /* Core/ListExclusion.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -876,6 +878,7 @@
 		66D5C3FA7B3545BF513C9CF4 /* WatchWidgets/PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = WatchWidgets/PrivacyInfo.xcprivacy; sourceTree = SOURCE_ROOT; };
 		F6606016CBD76A537F5BC2EE /* Core/TodayBrief.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/TodayBrief.swift; sourceTree = SOURCE_ROOT; };
 		E432604343A76D3AF0752810 /* Features/TodayBriefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TodayBriefCard.swift; sourceTree = SOURCE_ROOT; };
+		059E2C067356EE947366FFDB /* Core/ListExclusion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ListExclusion.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1170,6 +1173,7 @@
 				66D5C3FA7B3545BF513C9CF4 /* WatchWidgets/PrivacyInfo.xcprivacy */,
 				F6606016CBD76A537F5BC2EE /* Core/TodayBrief.swift */,
 				E432604343A76D3AF0752810 /* Features/TodayBriefCard.swift */,
+				059E2C067356EE947366FFDB /* Core/ListExclusion.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1654,6 +1658,7 @@
 				C421F237DC7B00751C88011F /* Core/ServerRulePlan.swift in Sources */,
 				30850E852349A80C3703F5C2 /* App/AccountRemoval.swift in Sources */,
 				E4EA1E050D08A802787E6060 /* Core/SyncMerge.swift in Sources */,
+				379C128F007FEEBFC0C2CB1D /* Core/ListExclusion.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1814,6 +1819,7 @@
 				42B5A93E1788E971B393FA7D /* Core/SyncMerge.swift in Sources */,
 				E473A2EE723C49D2F994A5B8 /* Core/TodayBrief.swift in Sources */,
 				6A90C33A5F433FC1FB5A5226 /* Features/TodayBriefCard.swift in Sources */,
+				59308FAE1166C14E00EE81F8 /* Core/ListExclusion.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

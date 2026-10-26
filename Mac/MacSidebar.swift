@@ -131,17 +131,30 @@ struct MacSidebar: View {
     private var waitingCount: Int { store.overview().waitingCount }
     /// Counted once per change to the mail, not on every redraw (a drag
     /// over the sidebar redraws it as it moves).
+    /// The waiting senders are found once per change to the mail; a
+    /// conversation hidden for Undo is only left out of them.
     private final class SendersCount {
         var revision: Int?
+        var pending: [(id: ThreadID, email: String)] = []
+        var hidden: Set<ThreadID>?
         var count = 0
     }
     @State private var sendersCount = SendersCount()
 
     private var newSendersCount: Int {
         let cache = sendersCount
-        if cache.revision != store.revision {
-            cache.count = Set(store.pendingSenderThreads.compactMap(\.senderEmail)).count
-            cache.revision = store.revision
+        if cache.revision != store.contentRevision {
+            cache.pending = store.listedIncludingHidden.compactMap { thread in
+                guard thread.senderDecision == .pending, let email = thread.senderEmail else { return nil }
+                return (thread.id, email)
+            }
+            cache.revision = store.contentRevision
+            cache.hidden = nil
+        }
+        let hidden = store.hiddenFromLists
+        if cache.hidden != hidden {
+            cache.count = Set(cache.pending.lazy.filter { !hidden.contains($0.id) }.map(\.email)).count
+            cache.hidden = hidden
         }
         return cache.count
     }

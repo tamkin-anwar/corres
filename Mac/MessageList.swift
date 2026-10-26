@@ -7,7 +7,15 @@ import SwiftUI
 /// more). Native selection, type-to-move, Shift and Command clicks, and
 /// rows that slide away when archived.
 struct MessageList: NSViewRepresentable {
-    let rows: [MacRow]
+    /// Compared by `version` alone: SwiftUI compared the rows whole, every
+    /// conversation in them, each time the window redrew.
+    struct Rows: Equatable {
+        let version: Int
+        let items: [MacRow]
+        static func == (a: Rows, b: Rows) -> Bool { a.version == b.version }
+    }
+    let list: Rows
+    var rows: [MacRow] { list.items }
     let showsReasons: Bool
     let accountColors: [String: NSColor]
     @Binding var selection: Set<ThreadID>
@@ -69,10 +77,12 @@ struct MessageList: NSViewRepresentable {
     final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
         var parent: MessageList
         weak var table: MessageTableView?
-        private var rows: [MacRow] = []
+        private var rows: [MacRow] = [] { didSet { positions = nil } }
         /// Each row's id and what it shows, kept beside `rows` so an update
         /// compares a few fields per row, not every conversation whole.
-        private var keys: [String] = []
+        private var keys: [RowKey] = []
+        /// Where each conversation is in `rows`, made when first asked.
+        private var positions: [ThreadID: Int]?
         private var looks: [RowLook?] = []
         /// What every row's height hangs on: Bigger or Smaller, and whether
         /// the list shows reasons.
@@ -111,7 +121,9 @@ struct MessageList: NSViewRepresentable {
             } else if !Self.sameStorage(rows, newRows) {
                 update(table, to: newRows)
             }
-            let wanted = IndexSet(rows.indices.filter { rows[$0].thread.map { selection.contains($0.id) } ?? false })
+            // Looked up by id: going through every row copied each
+            // conversation out whole, on every change.
+            let wanted = IndexSet(selection.compactMap { (positions ?? makePositions())[$0] })
             if table.selectedRowIndexes != wanted {
                 withSelectionHeld { table.selectRowIndexes(wanted, byExtendingSelection: false) }
                 // Only when the selection itself changed (a key, the next
@@ -183,6 +195,16 @@ struct MessageList: NSViewRepresentable {
             if let anchor { restore(anchor, in: table) }
         }
 
+        private func makePositions() -> [ThreadID: Int] {
+            var made: [ThreadID: Int] = [:]
+            made.reserveCapacity(rows.count)
+            for (index, row) in rows.enumerated() {
+                if let id = row.threadID, made[id] == nil { made[id] = index }
+            }
+            positions = made
+            return made
+        }
+
         private func withSelectionHeld(_ body: () -> Void) {
             applyingSelection = true
             defer { applyingSelection = false }
@@ -191,7 +213,7 @@ struct MessageList: NSViewRepresentable {
 
         /// The first row in view that stays in the list, and how far it
         /// sits from the top; nil when the list is scrolled to the very top.
-        private func topAnchor(_ table: NSTableView, leaving removed: IndexSet) -> (key: String, offset: CGFloat)? {
+        private func topAnchor(_ table: NSTableView, leaving removed: IndexSet) -> (key: RowKey, offset: CGFloat)? {
             guard let clip = table.enclosingScrollView?.contentView else { return nil }
             var visible = clip.bounds
             visible.origin.y += clip.contentInsets.top
@@ -205,7 +227,7 @@ struct MessageList: NSViewRepresentable {
         }
 
         /// Scrolls so the anchored row sits where it was.
-        private func restore(_ anchor: (key: String, offset: CGFloat), in table: NSTableView) {
+        private func restore(_ anchor: (key: RowKey, offset: CGFloat), in table: NSTableView) {
             guard let scroll = table.enclosingScrollView, let row = keys.firstIndex(of: anchor.key) else { return }
             let clip = scroll.contentView
             var bounds = clip.bounds
@@ -221,10 +243,11 @@ struct MessageList: NSViewRepresentable {
             a.count == b.count && a.withUnsafeBufferPointer { a in b.withUnsafeBufferPointer { a.baseAddress == $0.baseAddress } }
         }
 
-        private static func key(_ row: MacRow) -> String {
+        /// A row's identity, made without building a string per row.
+        private static func key(_ row: MacRow) -> RowKey {
             switch row {
-            case .group(let title): "group:" + title
-            case .thread(let thread): thread.id.account + "|" + thread.id.providerID
+            case .group(let title): .group(title)
+            case .thread(let thread): .thread(thread.id)
             }
         }
 
@@ -356,6 +379,12 @@ private struct RowLook: Equatable {
     }
 }
 
+/// A row of the message list, by what it is rather than what it shows.
+enum RowKey: Hashable {
+    case group(String)
+    case thread(ThreadID)
+}
+
 /// The table edits that turn one list of row ids into the next: removals
 /// at their old positions, then moves one at a time, then insertions at
 /// their new positions. Nil when an id repeats, which no diff can place.
@@ -369,10 +398,10 @@ struct RowEdits {
     /// Few enough edits to apply one by one.
     private(set) var isSmall = false
 
-    init?(from old: [String], to new: [String]) {
-        var oldIndex: [String: Int] = [:]
+    init?<Key: Hashable>(from old: [Key], to new: [Key]) {
+        var oldIndex: [Key: Int] = [:]
         for (index, key) in old.enumerated() where oldIndex.updateValue(index, forKey: key) != nil { return nil }
-        var newKeys = Set<String>()
+        var newKeys = Set<Key>()
         for key in new where !newKeys.insert(key).inserted { return nil }
         removed = IndexSet(old.indices.filter { !newKeys.contains(old[$0]) })
         inserted = IndexSet(new.indices.filter { oldIndex[new[$0]] == nil })
@@ -380,7 +409,7 @@ struct RowEdits {
         // removals are done.
         let kept = new.filter { oldIndex[$0] != nil }
         var current = old.filter { newKeys.contains($0) }
-        var position: [String: Int] = [:]
+        var position: [Key: Int] = [:]
         for (index, key) in current.enumerated() { position[key] = index }
         // The most rows already in the right order stay; the rest move.
         let stays = Self.longestRising(kept.compactMap { position[$0] })

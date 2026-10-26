@@ -19,7 +19,12 @@ final class MailStore {
     private(set) var listedThreads: [Correspondence] = []
     /// Removed from view the instant Archive/Trash is tapped, before Gmail
     /// is told, so Undo can bring them straight back.
-    private(set) var hiddenIDs: Set<ThreadID> = [] { didSet { if !holdingRevision { revision &+= 1 } } }
+    private(set) var hiddenIDs: Set<ThreadID> = [] {
+        didSet {
+            if !holdingRevision { revision &+= 1 }
+            updateHiddenFromLists()
+        }
+    }
     @ObservationIgnored private var holdingRevision = false
     /// Where each conversation is in `allThreads`: `thread(_:)` is asked
     /// many times a redraw, and searched 5,000 conversations each time.
@@ -104,7 +109,25 @@ final class MailStore {
     /// Bumped when the mail itself changes, not when a row is only hidden
     /// for Undo: a swipe then filters the rows a list already has instead
     /// of sorting the whole mailbox again inside the row's animation.
-    private(set) var contentRevision = 0
+    private(set) var contentRevision = 0 {
+        // Lists built from here on hold none of the removed ones.
+        didSet { if !removedIDs.isEmpty { removedIDs = [] } }
+    }
+    /// Archived or deleted once Undo passed, while they were hidden: gone
+    /// from the mail, but still in lists built before (`contentRevision`
+    /// isn't bumped for them, since nothing on screen changes). Left out
+    /// like hidden ones until the mail next changes. Every list rebuilt
+    /// for a removal nobody could see was a stall a few seconds after
+    /// each Archive or Delete.
+    private(set) var removedIDs: Set<ThreadID> = [] { didSet { updateHiddenFromLists() } }
+    /// What a list built at `contentRevision` leaves out: hidden for Undo,
+    /// or removed since it was built. Set only when it really changes, so
+    /// a removal finishing (hidden becoming removed) redraws nothing.
+    private(set) var hiddenFromLists: Set<ThreadID> = []
+    private func updateHiddenFromLists() {
+        let union = removedIDs.isEmpty ? hiddenIDs : hiddenIDs.union(removedIDs)
+        if union != hiddenFromLists { hiddenFromLists = union }
+    }
     /// Every conversation, hidden ones and archived copies included (see
     /// `contentRevision`).
     var threadsIncludingHidden: [Correspondence] { allThreads }
@@ -152,23 +175,50 @@ final class MailStore {
     }
 
     /// `account` nil is All Inboxes (`AccountPreferences.scope`).
+    /// Worked out over the whole mailbox once per change to the mail; a
+    /// row hidden for Undo (or removed since) is only taken off the counts,
+    /// so ⌘⌫ or a swipe doesn't sort and count every conversation again.
     func overview(account: String? = nil, all accounts: [String] = []) -> Overview {
         let minute = Int(Date.now.timeIntervalSince1970 / 60)
         let key = "\(account ?? "*")|\(accounts.joined(separator: ","))|\(UserDefaults.standard.integer(forKey: AccountPreferences.revisionKey))"
-        if let cached = overviews[key], cached.revision == revision, cached.minute == minute { return cached.value }
-        let scoped = AccountPreferences.scope(threads, account: account, all: accounts, by: \.id.account)
-        let inbox = MailQuery.filter(scoped)
+        let hidden = hiddenFromLists
+        if let cached = overviews[key], cached.revision == contentRevision, cached.minute == minute {
+            if cached.hidden == hidden { return cached.value }
+            let value = cached.base.leaving(hidden)
+            overviews[key]?.hidden = hidden
+            overviews[key]?.value = value
+            return value
+        }
+        let scoped = AccountPreferences.scope(listedThreads, account: account, all: accounts, by: \.id.account)
         let context = CategoryContextCache.context(self)
-        let value = Overview(
+        // Counted, so not sorted.
+        let unread = MailQuery.unordered(scoped).filter(\.isUnread)
+        let base = OverviewBase(
             needsYou: MailQuery.prioritized(scoped, attention: .needsYou),
-            waitingCount: MailQuery.filter(scoped, attention: .waiting).count,
-            unreadCount: inbox.reduce(0) { $0 + ($1.isUnread ? 1 : 0) },
-            primaryUnread: inbox.reduce(0) { $0 + ($1.isUnread && MailFilter.primary.includes($1, context: context) ? 1 : 0) })
+            waiting: MailQuery.unordered(scoped, attention: .waiting).map(\.id),
+            unread: unread.map(\.id),
+            primaryUnread: unread.filter { MailFilter.primary.includes($0, context: context) }.map(\.id))
+        let value = base.leaving(hidden)
         if overviews.count > 12 { overviews.removeAll() }
-        overviews[key] = (revision, minute, value)
+        overviews[key] = (contentRevision, minute, base, hidden, value)
         return value
     }
-    @ObservationIgnored private var overviews: [String: (revision: Int, minute: Int, value: Overview)] = [:]
+    @ObservationIgnored private var overviews: [String: (revision: Int, minute: Int, base: OverviewBase, hidden: Set<ThreadID>,
+                                                         value: Overview)] = [:]
+
+    /// The overview with every conversation in, hidden ones too.
+    private struct OverviewBase {
+        let needsYou: [Correspondence]
+        let waiting: [ThreadID]
+        let unread: [ThreadID]
+        let primaryUnread: [ThreadID]
+
+        func leaving(_ hidden: Set<ThreadID>) -> Overview {
+            func count(_ ids: [ThreadID]) -> Int { hidden.isEmpty ? ids.count : ids.reduce(0) { $0 + (hidden.contains($1) ? 0 : 1) } }
+            return Overview(needsYou: ListExclusion.threads(needsYou, leaving: hidden), waitingCount: count(waiting),
+                            unreadCount: count(unread), primaryUnread: count(primaryUnread))
+        }
+    }
 
     /// Address → the name its owner writes under, worked out once per
     /// change to the mail: rows ask it for every sent email on screen.
@@ -419,6 +469,9 @@ final class MailStore {
                   let providerID = id["providerID"] as? String,
                   let received = object["receivedAt"] as? Double else { continue }
             id["providerID"] = "\(providerID)-stress\(index)"
+            // -stressAccount: as an account's mail rather than sample mail,
+            // so what skips sample mail (triage, people, rules) runs on it.
+            if let at = arguments.firstIndex(of: "-stressAccount"), at + 1 < arguments.count { id["account"] = arguments[at + 1] }
             object["id"] = id
             object["receivedAt"] = received - Double(index + 1) * 3_600
             guard let copyData = try? JSONSerialization.data(withJSONObject: object),
@@ -427,6 +480,32 @@ final class MailStore {
         }
         _ = try? await repository.upsert(copies, isInitialSync: false)
         allThreads = (try? await repository.threads()) ?? allThreads
+    }
+
+    /// Measuring: what one batch a sync saves does to the store, with no
+    /// server: `count` padded conversations change (read or unread), and
+    /// `arriving` of them get a new message, saved as a sync saves them.
+    /// The caller reloads, as `syncProgress` does.
+    func stressSyncBatch(_ count: Int, arriving: Int) async {
+        let padded = allThreads.filter { $0.id.providerID.contains("-stress") }
+        guard !padded.isEmpty else { return }
+        let encoder = JSONEncoder(), decoder = JSONDecoder()
+        var changed: [Correspondence] = []
+        for index in 0..<min(count, padded.count) {
+            var thread = padded[Int.random(in: padded.indices)]
+            if index < arriving, let data = try? encoder.encode(thread),
+               var object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                object["receivedAt"] = Date.now.timeIntervalSinceReferenceDate
+                object["latestMessageID"] = UUID().uuidString
+                object["isUnread"] = true
+                if let copyData = try? JSONSerialization.data(withJSONObject: object),
+                   let copy = try? decoder.decode(Correspondence.self, from: copyData) { thread = copy }
+            } else {
+                thread.isUnread.toggle()
+            }
+            changed.append(thread)
+        }
+        _ = try? await repository.upsert(changed, isInitialSync: false)
     }
     #endif
 
@@ -557,13 +636,50 @@ final class MailStore {
     /// keeps whatever Gmail-unread-state-derived reason it already had,
     /// correct even if not yet refined, and gets naturally retried the next
     /// time `SemanticTriageService` finds it still untriaged.
+    ///
+    /// Shown a few at a time: three assessed at once each changed the mail
+    /// on its own, and every change rebuilt every list, count and badge,
+    /// several times a second through the first minutes after launch.
     func applySemanticTriage(_ id: ThreadID, from expected: Attention, to result: Attention,
                              reason: String?, messageID: String) async {
         guard let updated = try? await repository.applySemanticTriage(id, from: expected, to: result,
                                                                       reason: reason, messageID: messageID) else { return }
-        if let index = allThreads.firstIndex(where: { $0.id == updated.id }) {
-            allThreads[index] = updated
+        // Kept with what the list had then: anything that changes it in
+        // the meantime (a reload, a tap) already read the saved result.
+        if let index = positions[updated.id], allThreads.indices.contains(index), allThreads[index].id == updated.id {
+            triaged[updated.id] = (allThreads[index], updated)
         }
+        guard triageFlush == nil else { return }
+        triageFlush = Task { [weak self] in
+            try? await Task.sleep(for: Self.triageBatchDelay)
+            guard !Task.isCancelled else { return }
+            self?.showTriaged()
+        }
+    }
+
+    /// Triage results saved but not yet in the lists.
+    @ObservationIgnored private var triaged: [ThreadID: (before: Correspondence, after: Correspondence)] = [:]
+    @ObservationIgnored private var triageFlush: Task<Void, Never>?
+    private static let triageBatchDelay: Duration = .milliseconds(600)
+
+    /// Every triage result that came in since the last, in one change.
+    /// Also called once a triage pass ends, so whoever awaited it (what to
+    /// notify about after a push) reads the lists with every result in.
+    func showTriaged() {
+        triageFlush?.cancel()
+        triageFlush = nil
+        let updates = triaged
+        triaged = [:]
+        guard !updates.isEmpty else { return }
+        var threads = allThreads
+        var changed = false
+        for (id, update) in updates {
+            guard let index = positions[id], threads.indices.contains(index), threads[index].id == id,
+                  threads[index] == update.before else { continue }
+            threads[index] = update.after
+            changed = true
+        }
+        if changed { allThreads = threads }
     }
 
     /// A body fetched for a thread synced metadata-first. Not routed through
@@ -765,6 +881,7 @@ final class MailStore {
     /// meant hundreds of rebuilds while you kept working.
     func finishRemoval(removed: [ThreadID], kept: [ThreadID]) async {
         var gone = Set<ThreadID>()
+        var failed = false
         let saved = Set(allThreads.map(\.id))
         for id in removed {
             browsed[id] = nil
@@ -777,9 +894,23 @@ final class MailStore {
                 // A sync got there first and already removed it: done.
                 gone.insert(id)
             } catch {
+                failed = true
                 HangReporter.failure("remove a conversation", error)
                 errorMessage = String(localized: "Couldn't update this conversation. Try again.")
             }
+        }
+        // The usual case: everything removed was already out of view for
+        // Undo. The lists already read as they will, so nothing is built
+        // again; they keep leaving these out (`removedIDs`) until the mail
+        // next changes.
+        if kept.isEmpty, !failed, !gone.isEmpty, gone.isSubset(of: hiddenIDs) {
+            let held = holdingRevision
+            holdingRevision = true
+            allThreads.removeAll { gone.contains($0.id) }
+            removedIDs.formUnion(gone)
+            hiddenIDs.subtract(removed)
+            holdingRevision = held
+            return
         }
         asOneChange {
             if !gone.isEmpty { allThreads.removeAll { gone.contains($0.id) } }

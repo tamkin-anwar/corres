@@ -155,10 +155,25 @@ final class PeopleDirectory {
     /// Settings → Composing → Suggest from Contacts changed.
     func contactsSettingChanged() async { await loadContacts() }
 
-    /// Rebuilds from synced mail. Cheap; call when mail changes.
+    /// Rebuilds from synced mail, at once (Compose needs it now).
     func update(from threads: [Correspondence], accounts: [String]) {
+        updates &+= 1
         fromSynced = PeopleIndex.from(threads, accounts: Set(accounts.map { $0.lowercased() }))
     }
+
+    /// The same, worked out off the main thread: for after a sync, when
+    /// nobody is waiting on it. Going over every conversation's addresses
+    /// on the main thread was a stall after each sync that brought mail.
+    func updateInBackground(from threads: [Correspondence], accounts: [String]) async {
+        updates &+= 1
+        let started = updates
+        let mine = Set(accounts.map { $0.lowercased() })
+        let index = await Task.detached(priority: .utility) { PeopleIndex.from(threads, accounts: mine) }.value
+        // A newer update (from Compose, or a later sync) stands.
+        guard updates == started else { return }
+        fromSynced = index
+    }
+    @ObservationIgnored private var updates = 0
 
     /// Reads each account's recent Sent mail once, for who you write to.
     func backfillIfNeeded(accounts: [String]) async {

@@ -75,6 +75,8 @@ enum MacMailbox: Hashable, Codable {
         }
     }
 
+    var isSavedSearch: Bool { if case .saved = self { true } else { false } }
+
     /// Lists whose rows say why each one is there.
     var showsReasons: Bool { self == .needsYou || self == .waiting }
     /// Sorted by what each conversation asks of you, so moving one takes it out.
@@ -87,6 +89,13 @@ enum MacRow: Hashable {
     case thread(Correspondence)
 
     var thread: Correspondence? { if case .thread(let thread) = self { thread } else { nil } }
+    /// The conversation's id alone, without copying it out whole.
+    var threadID: ThreadID? {
+        switch self {
+        case .group: nil
+        case .thread(let thread): thread.id
+        }
+    }
 }
 
 /// What the main window shows: the sidebar's choice, the search, the rows
@@ -106,9 +115,24 @@ final class MacMailboxModel {
     var selection: Set<ThreadID> = []
 
     private var cacheKey: CacheKey?
-    private var cachedRows: [MacRow] = [] { didSet { rowsVersion &+= 1 } }
-    /// Bumped each time the rows are made again, for `visible`.
-    @ObservationIgnored private var rowsVersion = 0
+    /// The rows as built, hidden conversations still in where they're
+    /// left out after (`excluded`).
+    @ObservationIgnored private var builtRows: [MacRow] = []
+    /// What `cachedRows` leaves out of `builtRows`.
+    @ObservationIgnored private var excluded: Set<ThreadID> = []
+    /// Not compared when set: an observed array of rows was compared row
+    /// by row, every conversation whole, each time the list changed.
+    @ObservationIgnored private var cachedRows: [MacRow] = [] {
+        didSet {
+            rowsVersion &+= 1
+            rowIndex = nil
+        }
+    }
+    /// Bumped each time the rows are made again: what views watch, and
+    /// what `visible` keys on.
+    private var rowsVersion = 0
+    /// Where each conversation is in `cachedRows`, made when first asked.
+    @ObservationIgnored private var rowIndex: [ThreadID: Int]?
     @ObservationIgnored private var visibleKey: VisibleKey?
     @ObservationIgnored private var visibleCache = Visible()
     /// Finds a search's matches, away from the main thread in a large
@@ -119,6 +143,7 @@ final class MacMailboxModel {
 
     private struct CacheKey: Equatable {
         let revision: Int
+        /// Only for lists that can't leave hidden ones out after (search).
         let hidden: Set<ThreadID>
         let mailbox: MacMailbox
         let search: String
@@ -134,7 +159,10 @@ final class MacMailboxModel {
         var rows: [MacRow] = []
         var count = 0
         var unread = 0
+        /// Different each time the rows are made, for `MessageList`.
+        var version = 0
     }
+    @ObservationIgnored private var visibleVersion = 0
 
     private struct VisibleKey: Equatable {
         let version: Int
@@ -161,17 +189,36 @@ final class MacMailboxModel {
         // Mail on the server: as fetched, less anything just moved away.
         if query.isEmpty, let source = mailbox.remoteSource {
             let hidden = store.hiddenIDs
-            cachedRows = remote.items(source).filter { !hidden.contains($0.id) }.map(MacRow.thread)
+            let rows = remote.items(source).filter { !hidden.contains($0.id) }.map(MacRow.thread)
+            // A page from the server, so comparing is cheap; setting the
+            // same rows again would redraw the list each time.
+            if rows != cachedRows { cachedRows = rows }
             cacheKey = nil
             return cachedRows
         }
-        let key = CacheKey(revision: store.contentRevision, hidden: store.hiddenIDs, mailbox: mailbox, search: query,
-                           minute: Int(Date.now.timeIntervalSince1970 / 60), accounts: accounts, serverMatches: serverMatches,
-                           searchFound: searchFound)
-        if key == cacheKey { return cachedRows }
+        // Built with hidden conversations in, and those left out after, so
+        // Archive or Delete doesn't filter and sort the whole mailbox again.
+        // Search (and a saved one) picks its top results from what's
+        // shown, so it's built again.
+        let leavesOutAfter = query.isEmpty && !mailbox.isSavedSearch
+        let key = CacheKey(revision: store.contentRevision, hidden: leavesOutAfter ? [] : store.hiddenFromLists,
+                           mailbox: mailbox, search: query, minute: Int(Date.now.timeIntervalSince1970 / 60),
+                           accounts: accounts, serverMatches: serverMatches, searchFound: searchFound)
+        // Snoozed lists every snoozed conversation, hidden ones included,
+        // as it always has; only what's gone for good leaves it.
+        let leaving = leavesOutAfter ? (mailbox == .snoozed ? store.removedIDs : store.hiddenFromLists) : []
+        if key == cacheKey {
+            if leaving != excluded {
+                excluded = leaving
+                cachedRows = ListExclusion.rows(builtRows, leaving: leaving, id: \.threadID, pairedHeadings: mailbox == .needsYou)
+            }
+            return cachedRows
+        }
         // Still searching: the rows stay as they were until the matches arrive.
         guard let rows = build(store: store, query: query, accounts: accounts, serverMatches: serverMatches) else { return cachedRows }
-        cachedRows = rows
+        builtRows = rows
+        excluded = leaving
+        cachedRows = ListExclusion.rows(rows, leaving: leaving, id: \.threadID, pairedHeadings: mailbox == .needsYou)
         cacheKey = key
         return cachedRows
     }
@@ -194,17 +241,37 @@ final class MacMailboxModel {
             }
             // A heading ("Due soon") with nothing under it goes too.
             shown = unreadOrKept.enumerated().filter { index, row in
-                row.thread != nil || (index + 1 < unreadOrKept.count && unreadOrKept[index + 1].thread != nil)
+                row.threadID != nil || (index + 1 < unreadOrKept.count && unreadOrKept[index + 1].threadID != nil)
             }.map(\.element)
         }
-        let threads = shown.compactMap(\.thread)
-        visibleCache = Visible(rows: shown, count: threads.count, unread: threads.reduce(0) { $0 + ($1.isUnread ? 1 : 0) })
+        var count = 0, unread = 0
+        for row in shown {
+            guard case .thread(let thread) = row else { continue }
+            count += 1
+            if thread.isUnread { unread += 1 }
+        }
+        visibleVersion &+= 1
+        visibleCache = Visible(rows: shown, count: count, unread: unread, version: visibleVersion)
         visibleKey = key
         return visibleCache
     }
 
+    /// In list order. Looked up by id: going through every row copied each
+    /// conversation out whole, on every redraw of the reading pane.
     var selectedThreads: [Correspondence] {
-        cachedRows.compactMap(\.thread).filter { selection.contains($0.id) }
+        guard !selection.isEmpty else { return [] }
+        let index = rowIndex ?? makeRowIndex()
+        return selection.compactMap { index[$0] }.sorted().compactMap { cachedRows[$0].thread }
+    }
+
+    private func makeRowIndex() -> [ThreadID: Int] {
+        var index: [ThreadID: Int] = [:]
+        index.reserveCapacity(cachedRows.count)
+        for (position, row) in cachedRows.enumerated() {
+            if let id = row.threadID, index[id] == nil { index[id] = position }
+        }
+        rowIndex = index
+        return index
     }
 
     /// The selection's conversations, or, when they aren't in this list's
@@ -220,15 +287,18 @@ final class MacMailboxModel {
     /// `rows`: the ones on screen (less what Unread Only hides), so a
     /// hidden conversation isn't the one chosen.
     func neighbor(after ids: Set<ThreadID>, in rows: [MacRow]? = nil) -> ThreadID? {
-        let threads = (rows ?? cachedRows).compactMap(\.thread)
-        guard let last = threads.lastIndex(where: { ids.contains($0.id) }) else { return nil }
-        if let next = threads[(last + 1)...].first(where: { !ids.contains($0.id) }) { return next.id }
-        return threads[..<last].last(where: { !ids.contains($0.id) })?.id
+        // Ids only: copying every conversation out of its row took as long
+        // as the Delete itself.
+        let threads = (rows ?? cachedRows).compactMap(\.threadID)
+        guard let last = threads.lastIndex(where: { ids.contains($0) }) else { return nil }
+        if let next = threads[(last + 1)...].first(where: { !ids.contains($0) }) { return next }
+        return threads[..<last].last(where: { !ids.contains($0) })
     }
 
     /// nil while a search's matches are still being found.
     private func build(store: MailStore, query: String, accounts: [String], serverMatches: Set<ThreadID>) -> [MacRow]? {
-        let threads = store.threads
+        // Hidden ones in: `rows` leaves them out after.
+        let threads = store.listedIncludingHidden
         // Searching looks through everything, in every list, as Mail does.
         if !query.isEmpty {
             guard let matches = searchMatches(query, store: store, serverMatches: serverMatches) else { return nil }
@@ -251,7 +321,7 @@ final class MacMailboxModel {
         case .waiting:
             return MailQuery.prioritized(threads, attention: .waiting).map(MacRow.thread)
         case .newSenders:
-            return store.pendingSenderThreads.sorted { $0.receivedAt > $1.receivedAt }.map(MacRow.thread)
+            return threads.filter { $0.senderDecision == .pending }.sorted { $0.receivedAt > $1.receivedAt }.map(MacRow.thread)
         case .filter(let raw):
             let all = MailQuery.filter(threads)
             guard let filter = MailFilter(rawValue: raw), filter != .everything else { return all.map(MacRow.thread) }
@@ -270,7 +340,7 @@ final class MacMailboxModel {
         case .handled:
             return MailQuery.filter(threads).filter { $0.attention == .handled }.map(MacRow.thread)
         case .muted:
-            return store.searchableThreads.filter { Organizer.shared.isMuted($0.id) }
+            return store.threadsIncludingHidden.filter { Organizer.shared.isMuted($0.id) }
                 .sorted { $0.receivedAt > $1.receivedAt }.map(MacRow.thread)
         case .saved(let id):
             guard let saved = Organizer.shared.savedSearches.first(where: { $0.id.uuidString == id }) else { return [] }
@@ -288,8 +358,7 @@ final class MacMailboxModel {
                                          source: [store.contentRevision, Int(Date.now.timeIntervalSince1970 / 60)])
         guard let found = searcher.matches(for: request, in: { store.threadsIncludingHidden },
                                            onFound: { [weak self] in self?.searchFound &+= 1 }) else { return nil }
-        let hidden = store.hiddenIDs
-        return hidden.isEmpty ? found : found.filter { !hidden.contains($0.id) }
+        return ListExclusion.threads(found, leaving: store.hiddenFromLists)
     }
 }
 

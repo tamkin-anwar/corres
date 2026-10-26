@@ -206,7 +206,7 @@ struct MacMainView: View {
             } else if rows.isEmpty {
                 emptyState.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                MessageList(rows: rows, showsReasons: model.mailbox.showsReasons && model.search.isEmpty,
+                MessageList(list: .init(version: shown.version, items: rows), showsReasons: model.mailbox.showsReasons && model.search.isEmpty,
                             accountColors: accountColors, selection: $model.selection,
                             onOpen: { thread in open(thread) },
                             onKey: handleKey, menu: contextMenu,
@@ -558,6 +558,20 @@ struct MacMainView: View {
         if let thread = value("-SelectThread") {
             try? await Task.sleep(for: .milliseconds(300))
             model.selection = [ThreadID(account: "sample", providerID: thread)]
+        }
+        // Measuring: -stressTrash N selects the top conversation and moves
+        // it to Trash with ⌘⌫'s own path, every few seconds, N times.
+        if let count = value("-stressTrash").flatMap(Int.init) {
+            try? await Task.sleep(for: .seconds(Double(value("-stressTrashDelay").flatMap(Int.init) ?? 20)))
+            for _ in 0..<count {
+                guard let first = visibleRows().compactMap(\.thread).first else { break }
+                model.selection = [first.id]
+                try? await Task.sleep(for: .seconds(2))
+                FileHandle.standardError.write(Data("stress trash at \(ProcessInfo.processInfo.systemUptime) rows \(visibleRows().count)\n".utf8))
+                perform(.trash)
+                try? await Task.sleep(for: .seconds(8))
+            }
+            HangReporter.note("stress trash done")
         }
     }
     #endif

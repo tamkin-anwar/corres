@@ -232,7 +232,7 @@ final class Organizer {
         let threads = store.threads.filter { $0.id.account != "sample" }
         if seen.isEmpty {
             for thread in threads { if let id = thread.latestMessageID { seen[Self.key(thread.id)] = id } }
-            saveSeen()
+            saveSeen(keeping: threads)
             return
         }
         let active = rules.filter(\.isUsable)
@@ -256,7 +256,7 @@ final class Organizer {
                 if await perform(rule, on: thread, store: store, actions: actions) { toArchive.append(thread) }
             }
         }
-        if changed { saveSeen() }
+        if changed { saveSeen(keeping: threads) }
         actions.archiveQuietly(toArchive)
     }
 
@@ -273,12 +273,24 @@ final class Organizer {
         return rule.archive
     }
 
-    private func saveSeen() {
+    /// `current`: the mail the lists hold now. Past the limit, what's
+    /// gone from them is forgotten first; what's still here is kept, or
+    /// a mailbox bigger than the limit had its excess looked at again as
+    /// new on every reload (rules run again, the record saved again),
+    /// several times a second through a sync.
+    private func saveSeen(keeping current: [Correspondence]? = nil) {
         if seen.count > Self.maxSeen {
+            if let current {
+                let here = Set(current.map { Self.key($0.id) })
+                seen = seen.filter { here.contains($0.key) }
+            }
             // Oldest-looking first isn't knowable from a key; dropping any
             // excess only means a long-quiet conversation is looked at once
             // more, which a rule handles the same way.
-            seen = Dictionary(uniqueKeysWithValues: seen.prefix(Self.maxSeen).map { ($0.key, $0.value) })
+            let limit = max(Self.maxSeen, current?.count ?? 0)
+            if seen.count > limit {
+                seen = Dictionary(uniqueKeysWithValues: seen.prefix(limit).map { ($0.key, $0.value) })
+            }
         }
         UserDefaults.standard.set(seen, forKey: Self.seenKey)
     }
