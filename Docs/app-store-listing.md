@@ -111,7 +111,7 @@ macOS:
 > Terms: https://anwarcreativestudio.com/corres/terms/
 > Privacy: https://anwarcreativestudio.com/corres/privacy/
 
-(3,982 characters. Proposed 2026-10-25, not yet in App Store Connect.)
+(3,982 characters. In App Store Connect since 2026-10-25, through Scripts/asc-listing.mjs.)
 
 Owner decisions, 2026-10-25, applied to iOS and Mac in every language:
 
@@ -299,7 +299,7 @@ first email or its reply. Terminating the app returns to the face.
 
 Japanese, Simplified Chinese, German, Korean, French (France and Canada),
 Spanish (Spain and Mexico) and Brazilian Portuguese (plus Bangla, new
-below, not yet entered), set in App Store
+below), set in App Store
 Connect for iOS 1.0 and macOS 1.0 on 2026-10-20 and partly edited there on
 2026-10-22. `Docs/AppStore/localized/listing.py` is the source again as of
 2026-10-25: run `python3 listing.py listing.json` to rebuild `listing.json`,
@@ -334,7 +334,7 @@ listing below. These descriptions name no
 prices, because prices differ by storefront and the App Store shows its
 own. Screenshots are the English ones in every language.
 
-**Bangla (bn-BD)**, new 2026-10-25, not yet in App Store Connect. App
+**Bangla (bn-BD)**, new 2026-10-25, in App Store Connect the same day. App
 Store Connect added Bangla on 2026-03-31; its locale code is `bn-BD`
 (Apple's App Store Connect API page "Managing metadata in your app by
 using locale shortcodes" lists Bengali as bn-BD; the App Store
