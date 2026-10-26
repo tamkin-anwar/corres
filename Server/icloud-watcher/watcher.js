@@ -37,6 +37,9 @@ const MAX_WATCHES = Number(process.env.ICLOUD_MAX_WATCHES) || 2000;
 // Sign-ins at once: a restart doesn't open every connection in the same
 // second, which a mail server could take for abuse.
 const MAX_CONCURRENT_LOGINS = 10;
+// How long a connection may have been down and still have the mail that
+// came in meanwhile alerted once it's back (older than that, it's old news).
+const CATCH_UP_MS = 60 * 60 * 1000;
 
 const log = (...args) => console.log(new Date().toISOString(), ...args);
 
@@ -123,11 +126,16 @@ function apnsAttempt(environment, deviceToken, headers, payload) {
     let body = '';
     request.on('response', (h) => { status = h[':status']; });
     request.on('data', (c) => { body += c; });
-    request.on('end', () => {
+    const finish = () => {
       let reason = null;
       try { reason = body ? JSON.parse(body).reason : null; } catch { reason = null; }
-      done({ status, reason });
-    });
+      done(status ? { status, reason } : { status: 0, reason: 'StreamClosed', reused });
+    };
+    request.on('end', finish);
+    // A stream closed without an error or an end clears its own timeout:
+    // without this the push never settles, and every later alert for the
+    // login waits behind it in its queue.
+    request.on('close', finish);
     request.write(JSON.stringify(payload));
     request.end();
   });
@@ -237,7 +245,7 @@ async function connect(entry) {
       if (isStale(entry)) return;
       if (!entry.watches.has(watch.id)) continue;
       let password;
-      try { password = await withLoginSlot(() => unseal(watch.data.sealedPassword)); } catch { await fail(watch, true); continue; }
+      try { password = await withLoginSlot(() => unseal(watch.data.sealedPassword)); } catch (error) { await fail(watch, sealedWrongly(error)); continue; }
       if (isStale(entry)) return;
       const tag = passwordTag(password);
       const client = clientFor(entry, password);
@@ -268,32 +276,50 @@ async function connect(entry) {
       // The highest message number seen, not the count: a message deleted
       // on another device lowers the count without an EXISTS, so a count
       // check missed the next new mail, and sequence numbers shift.
-      let lastUid = Math.max(0, (Number(mailbox.uidNext) || 1) - 1);
+      let top = Math.max(0, (Number(mailbox.uidNext) || 1) - 1);
+      // A server that doesn't say UIDNEXT: the newest message's number
+      // instead, so the first new mail doesn't alert for old ones too.
+      if (!mailbox.uidNext && mailbox.exists) {
+        try { const newest = await client.fetchOne('*', { uid: true }, { uid: false }); if (newest) top = newest.uid; } catch { /* stays 0 */ }
+      }
+      // Mail that came in while the connection was down (found dead only
+      // after a few minutes, then backoff) is alerted now, if this is the
+      // same Inbox (UIDVALIDITY unchanged) and it wasn't down for long.
+      const validity = String(mailbox.uidValidity);
+      const seen = entry.seen;
+      const resume = seen && seen.validity === validity && Date.now() - seen.at < CATCH_UP_MS && seen.uid <= top;
+      let lastUid = resume ? seen.uid : top;
       // One EXISTS at a time: two close together would otherwise both
       // fetch from the same lastUid and alert for the same mail twice.
-      client.on('exists', () => {
+      const check = () => {
         entry.queue = entry.queue.then(async () => {
           if (entry.client !== client) return;
           // Only the numbers of what arrived: never a header or a body.
           const uids = [];
+          let fetched = true;
           try {
             for await (const message of client.fetch(`${lastUid + 1}:*`, { uid: true }, { uid: true })) {
               // "N:*" past the end still returns the last message: skip it.
               if (message.uid > lastUid) uids.push(message.uid);
             }
-          } catch { /* wake quietly anyway */ }
-          if (uids.length === 0) return;
+          } catch { fetched = false; }
+          // Couldn't ask: wake quietly anyway, so Corres syncs for itself.
+          if (uids.length === 0) { if (!fetched) await notify(entry, []); return; }
           lastUid = Math.max(lastUid, ...uids);
-          const validity = String(client.mailbox && client.mailbox.uidValidity);
+          entry.seen = { validity, uid: lastUid, at: Date.now() };
           await notify(entry, uids.slice(-10).map((uid) => `${validity}:${uid}:INBOX`));
         }).catch((e) => log('notify failed', e && e.message));
-      });
+      };
+      client.on('exists', check);
       client.on('close', () => {
         if (entry.client !== client) return;
+        entry.seen = { validity, uid: lastUid, at: Date.now() };
         entry.client = null;
         entry.tag = null;
         schedule(entry);
       });
+      entry.seen = { validity, uid: lastUid, at: Date.now() };
+      if (lastUid < top) check();
       log('watching', hashed(entry.login.key));
       verifyOthers(entry).catch((e) => log('verify failed', e && e.message));
       return;
@@ -302,6 +328,13 @@ async function connect(entry) {
   } finally {
     entry.starting = false;
   }
+}
+
+// Only KMS saying the ciphertext itself is bad (INVALID_ARGUMENT) counts
+// against a watch. KMS being busy, over quota or briefly unreachable must
+// not: three of those in a row would delete every watch it touched.
+function sealedWrongly(error) {
+  return Boolean(error && error.code === 3);
 }
 
 function verified(watch) {
@@ -322,7 +355,7 @@ async function verifyOthers(entry) {
         if (isVerified(watch) || !entry.watches.has(watch.id)) continue;
         const sealed = watch.data.sealedPassword;
         let password;
-        try { password = await withLoginSlot(() => unseal(sealed)); } catch { await fail(watch, true); continue; }
+        try { password = await withLoginSlot(() => unseal(sealed)); } catch (error) { await fail(watch, sealedWrongly(error)); continue; }
         if (entry.tag && crypto.timingSafeEqual(passwordTag(password), entry.tag)) {
           if (watch.data.sealedPassword === sealed) verified(watch);
           continue;

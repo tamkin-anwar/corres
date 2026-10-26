@@ -175,11 +175,16 @@ function apnsAttempt(environment, deviceToken, headers, payload, timeoutMs = APN
     let body = '';
     request.on('response', (h) => { status = h[':status']; });
     request.on('data', (chunk) => { body += chunk; });
-    request.on('end', () => {
+    const finish = () => {
       let reason = null;
       try { reason = body ? JSON.parse(body).reason : null; } catch { reason = null; }
-      done({ status, reason });
-    });
+      done(status ? { status, reason } : { status: 0, reason: 'StreamClosed', reused });
+    };
+    request.on('end', finish);
+    // A stream closed without an error or an end (the connection shut
+    // cleanly under it) clears its own timeout, so without this the push
+    // would never settle and the whole notice would hang until retried.
+    request.on('close', finish);
     request.write(JSON.stringify(payload));
     request.end();
   });
@@ -377,6 +382,7 @@ async function handleAttest(req, res) {
     res.status(400).send('keyId, attestation and challenge are required and must be well formed');
     return;
   }
+  if (rateLimited(req, res, '/attest', 30)) return;
   if (!(await consumeChallenge(challenge))) {
     console.log('app attest /attest: rejected, bad-challenge');
     res.status(401).send('Challenge is unknown, used or expired');
@@ -540,6 +546,7 @@ async function handleRegister(req, res) {
     res.status(400).send('emailAddress or deviceToken is malformed');
     return;
   }
+  if (rateLimited(req, res, '/register', 60)) return;
   const attest = await appAttestGate(req, res, '/register');
   if (!attest) return;
   if (await atAccountCap(deviceToken, emailAddress)) {
@@ -586,6 +593,7 @@ async function handleUnregister(req, res) {
     return;
   }
   const emailAddress = req.body.emailAddress || null;
+  if (rateLimited(req, res, '/unregister', 60)) return;
   const attest = await appAttestGate(req, res, '/unregister');
   if (!attest) return;
   if (emailAddress) {
@@ -914,6 +922,7 @@ async function handleUnregisterICloud(req, res) {
     res.status(400).send('emailAddress is malformed');
     return;
   }
+  if (rateLimited(req, res, '/unregister-icloud', 30)) return;
   const attest = await appAttestGate(req, res, '/unregister-icloud');
   if (!attest) return;
   await deleteICloudWatches(deviceToken, req.body.emailAddress || null);
