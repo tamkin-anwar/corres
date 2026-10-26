@@ -71,3 +71,16 @@ key id, never the key. `*.p8` is in `.gitignore` as a second guard.
    key ..." near the start. To be sure the key is doing the work, sign out
    of Xcode (Settings > Accounts) for that run.
 3. To go back to the Xcode account, move `~/.corres/asc.env` aside.
+
+## The listing, from the repo
+
+`node Scripts/asc-listing.mjs` uses the same key to keep App Store Connect's
+listing in step with `Docs/app-store-listing.md` (English) and
+`Docs/AppStore/localized/listing.json` (every other language):
+
+- `status`: what's there now, per platform and language (read-only).
+- `diff [locale]`: what `apply` would change, line by line (read-only).
+- `apply`: descriptions, keywords, promotional text and subtitles, for
+  versions that can still be edited. Nothing is submitted.
+- `watch-shots`: the Apple Watch screenshots, if that set is empty.
+- `iap`: the in-app purchases' settings (read-only).
