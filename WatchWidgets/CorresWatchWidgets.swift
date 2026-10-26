@@ -58,7 +58,8 @@ struct NeedsYouFaceView: View {
     let entry: NeedsYouEntry
     @Environment(\.widgetFamily) private var family
 
-    private var count: Int? { entry.face?.needsYou }
+    private var isLocked: Bool { entry.face?.isLocked == true }
+    private var count: Int? { isLocked ? nil : entry.face?.needsYou }
     private static let accent = Color(red: 0x8F / 255, green: 0xB4 / 255, blue: 0xE8 / 255)
 
     var body: some View {
@@ -86,7 +87,7 @@ struct NeedsYouFaceView: View {
         ZStack {
             AccessoryWidgetBackground()
             VStack(spacing: 0) {
-                Image(systemName: count == 0 ? "checkmark" : "envelope.fill")
+                Image(systemName: isLocked ? "lock.fill" : count == 0 ? "checkmark" : "envelope.fill")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(Self.accent)
                     .widgetAccentable()
@@ -107,11 +108,12 @@ struct NeedsYouFaceView: View {
     }
 
     private var inline: some View {
-        Label(inlineText, systemImage: count == 0 ? "checkmark.circle" : "envelope")
+        Label(inlineText, systemImage: isLocked ? "lock" : count == 0 ? "checkmark.circle" : "envelope")
     }
 
     private var inlineText: String {
-        switch count {
+        if isLocked { return String(localized: "Corres Pro") }
+        return switch count {
         case nil: String(localized: "Corres")
         case 0: String(localized: "Nothing needs you")
         case 1: String(localized: "1 needs you")
@@ -132,6 +134,8 @@ struct NeedsYouFaceView: View {
                 Text(count == 1 ? String(localized: "From \(first)") : String(localized: "From \(first) and \(count - 1) more"))
                     .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     .privacySensitive()
+            } else if isLocked {
+                Text("Corres Pro").font(.caption).foregroundStyle(.secondary)
             } else if count == 0 {
                 Text("You're all caught up").font(.caption).foregroundStyle(.secondary)
             } else {
@@ -145,7 +149,8 @@ struct NeedsYouFaceView: View {
     }
 
     private var spokenSummary: String {
-        switch count {
+        if isLocked { return String(localized: "Corres Pro") }
+        return switch count {
         case nil: String(localized: "Corres")
         case 0: String(localized: "Nothing needs you")
         case 1: String(localized: "1 email needs you")

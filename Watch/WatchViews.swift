@@ -14,6 +14,13 @@ struct MailListView: View {
             if !store.hasHeardFromPhone {
                 Text("Open Corres on your iPhone to see your mail here.")
                     .font(.footnote).foregroundStyle(.secondary)
+            } else if store.isLocked {
+                VStack(alignment: .leading, spacing: 4) {
+                    Image(systemName: "lock.fill").font(.title3).foregroundStyle(WatchPalette.accent)
+                    Text("Corres Pro").font(.headline)
+                    Text("Open Corres on your iPhone to start your free trial.").font(.footnote).foregroundStyle(.secondary)
+                }
+                .accessibilityElement(children: .combine)
             } else if store.needsYou.isEmpty && store.waiting.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Image(systemName: "checkmark.circle").font(.title3).foregroundStyle(WatchPalette.accent)

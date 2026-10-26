@@ -31,6 +31,10 @@ enum WatchLink {
         /// before these were sent.
         var needsYouCount: Int?
         var waitingCount: Int?
+        /// Needs You and Waiting are Corres Pro: without it the lists come
+        /// empty and the Watch says how to start the trial. Nil from a
+        /// build before this was sent.
+        var isLocked: Bool? = nil
 
         static let empty = Snapshot(needsYou: [], waiting: [], isSample: false, updatedAt: .distantPast)
     }

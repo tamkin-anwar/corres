@@ -34,13 +34,14 @@ final class WatchBridge: NSObject {
         pendingUpdate = Task {
             try? await Task.sleep(for: .seconds(2))
             guard !Task.isCancelled else { return }
-            send(Self.snapshot(from: threads()))
+            send(Self.snapshot(from: threads(), locked: WidgetBridge.isLocked))
         }
     }
 
     private func send(_ snapshot: WatchLink.Snapshot) {
         guard snapshot.needsYou != lastSent?.needsYou || snapshot.waiting != lastSent?.waiting
-                || snapshot.needsYouCount != lastSent?.needsYouCount || snapshot.waitingCount != lastSent?.waitingCount,
+                || snapshot.needsYouCount != lastSent?.needsYouCount || snapshot.waitingCount != lastSent?.waitingCount
+                || snapshot.isLocked != lastSent?.isLocked,
               let data = WatchLink.encode(snapshot) else { return }
         do {
             try WCSession.default.updateApplicationContext([WatchLink.snapshotKey: data])
@@ -65,7 +66,14 @@ final class WatchBridge: NSObject {
         Self.log.info("Sent the watch face \(face.count)")
     }
 
-    static func snapshot(from threads: [Correspondence], now: Date = .now) -> WatchLink.Snapshot {
+    /// `locked`: free, or Pro has lapsed, with a real account connected
+    /// (the widgets' rule, `WidgetBridge.locks`). Sample mail still shows.
+    static func snapshot(from threads: [Correspondence], locked: Bool = false, now: Date = .now) -> WatchLink.Snapshot {
+        let isSample = threads.allSatisfy { $0.id.account == "sample" }
+        if locked && !isSample {
+            return WatchLink.Snapshot(needsYou: [], waiting: [], isSample: false, updatedAt: now,
+                                      needsYouCount: 0, waitingCount: 0, isLocked: true)
+        }
         func mail(_ thread: Correspondence) -> WatchLink.Mail {
             let words = WritingStyle.ownWords(in: thread.body.isEmpty ? thread.excerpt : thread.body)
             return WatchLink.Mail(key: thread.id.entityKey, sender: thread.isFromAccountOwner ? thread.counterpartName() : thread.sender,
@@ -75,7 +83,7 @@ final class WatchBridge: NSObject {
         let allNeedsYou = MailQuery.prioritized(threads, attention: .needsYou)
         let allWaiting = MailQuery.prioritized(threads, attention: .waiting)
         return WatchLink.Snapshot(needsYou: allNeedsYou.prefix(25).map(mail), waiting: allWaiting.prefix(10).map(mail),
-                                  isSample: threads.allSatisfy { $0.id.account == "sample" }, updatedAt: now,
+                                  isSample: isSample, updatedAt: now,
                                   needsYouCount: allNeedsYou.count, waitingCount: allWaiting.count)
     }
 

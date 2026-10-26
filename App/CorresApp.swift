@@ -147,6 +147,7 @@ struct CorresApp: App {
                                                  entitlements: appDelegate.entitlements), initial: true) { _, locked in
                     WidgetBridge.isLocked = locked
                     WidgetBridge.update(from: appDelegate.store.threads)
+                    WatchBridge.shared.scheduleUpdate { [store = appDelegate.store] in store.threads }
                 }
         }
         // iPad: a conversation in a window of its own, beside your mail

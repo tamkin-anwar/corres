@@ -9,6 +9,8 @@ struct WatchFace: Codable, Equatable {
     var waiting: Int
     var firstSender: String?
     var updatedAt: Date
+    /// No Corres Pro on the iPhone: the face shows no count.
+    var isLocked: Bool? = nil
 
     static let placeholder = WatchFace(needsYou: 2, waiting: 1, firstSender: "Maya", updatedAt: .now)
 
@@ -35,6 +37,7 @@ struct WatchFace: Codable, Equatable {
         Self.defaults.set(try? JSONEncoder().encode(self), forKey: Self.key)
         guard let saved else { return true }
         return saved.needsYou != needsYou || saved.waiting != waiting || saved.firstSender != firstSender
+            || saved.isLocked != isLocked
             || saved.isStale(at: .now) || updatedAt.timeIntervalSince(saved.updatedAt) > 30 * 60
     }
 

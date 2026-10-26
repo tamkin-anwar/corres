@@ -64,6 +64,8 @@ final class WatchMailStore: NSObject {
     var needsYou: [WatchLink.Mail] { snapshot.needsYou.filter { done[$0.key] == nil } }
     var waiting: [WatchLink.Mail] { snapshot.waiting.filter { done[$0.key] == nil } }
     var hasHeardFromPhone: Bool { snapshot.updatedAt != .distantPast }
+    /// No Corres Pro on the iPhone: Needs You and Waiting aren't sent.
+    var isLocked: Bool { snapshot.isLocked == true }
 
     /// Not heard from the iPhone for a few hours (`WatchFace.staleAfter`).
     func isStale(at date: Date) -> Bool {
@@ -96,7 +98,8 @@ final class WatchMailStore: NSObject {
         let handledWaiting = snapshot.waiting.count - waiting.count
         let face = WatchFace(needsYou: max(0, (snapshot.needsYouCount ?? snapshot.needsYou.count) - handledNeedsYou),
                              waiting: max(0, (snapshot.waitingCount ?? snapshot.waiting.count) - handledWaiting),
-                             firstSender: needsYou.first.map { WatchFace.firstName($0.sender) }, updatedAt: snapshot.updatedAt)
+                             firstSender: needsYou.first.map { WatchFace.firstName($0.sender) }, updatedAt: snapshot.updatedAt,
+                             isLocked: isLocked ? true : nil)
         if face.save() { WidgetCenter.shared.reloadAllTimelines() }
     }
 
