@@ -13,6 +13,10 @@
 //                                              swapped one at a time to stay within Apple's 10)
 //   node Scripts/asc-listing.mjs tester-notes <build> <notes.txt>
 //                                              TestFlight's What to Test (en-US) for that build number
+//   node Scripts/asc-listing.mjs iap-note <product id> <note.txt> ["en-US description"]
+//                                              an in-app purchase's review note (and description)
+//   node Scripts/asc-listing.mjs review-notes [ios|mac <notes.txt>]
+//                                              App Review notes for the editable versions (prints, or sets one)
 //
 // Sources: English from Docs/app-store-listing.md, every other language
 // from Docs/AppStore/localized/listing.json (rebuild it with listing.py).
@@ -357,6 +361,41 @@ async function testerNotes() {
   console.log(`Build ${number}: What to Test set (${whatsNew.length} characters)`)
 }
 
-const run = { status, apply, diff, iap, shots, 'watch-shots': watchShots, 'replace-shots': replaceShots, 'tester-notes': testerNotes }[command]
+// An in-app purchase's App Review note, and optionally its en-US
+// description, from the repo.
+async function iapNote() {
+  const [productId, file, description] = process.argv.slice(3)
+  if (!productId || !file) throw new Error('Usage: iap-note <product id> <note.txt> ["description"]')
+  const reviewNote = readFileSync(file, 'utf8').trim()
+  const a = await app()
+  const p = (await all(`/v1/apps/${a.id}/inAppPurchasesV2?limit=50`)).find((x) => x.attributes.productId === productId)
+  if (!p) throw new Error(`No in-app purchase ${productId}`)
+  await api('PATCH', `/v2/inAppPurchases/${p.id}`, { data: { type: 'inAppPurchases', id: p.id, attributes: { reviewNote } } })
+  console.log(`${productId}: review note set (${reviewNote.length} characters)`)
+  if (description) {
+    const [loc] = (await all(`/v2/inAppPurchases/${p.id}/inAppPurchaseLocalizations`)).filter((l) => l.attributes.locale === 'en-US')
+    await api('PATCH', `/v1/inAppPurchaseLocalizations/${loc.id}`, { data: { type: 'inAppPurchaseLocalizations', id: loc.id, attributes: { description } } })
+    console.log(`${productId}: description set`)
+  }
+}
+
+// App Review notes on the editable versions: printed, or one platform's set
+// from a file.
+async function reviewNotes() {
+  const [which, file] = process.argv.slice(3)
+  const a = await app()
+  for (const v of await versions(a.id)) {
+    if (!editable.has(v.state)) continue
+    const platform = v.platform === 'MAC_OS' ? 'mac' : 'ios'
+    if (which && which !== platform) continue
+    const detail = (await api('GET', `/v1/appStoreVersions/${v.id}/appStoreReviewDetail`)).data
+    if (!file) { console.log(`== ${platform} ${v.version}\n${detail?.attributes?.notes ?? '(none)'}\n`); continue }
+    const notes = readFileSync(file, 'utf8').trim()
+    await api('PATCH', `/v1/appStoreReviewDetails/${detail.id}`, { data: { type: 'appStoreReviewDetails', id: detail.id, attributes: { notes } } })
+    console.log(`${platform} ${v.version}: review notes set (${notes.length} characters)`)
+  }
+}
+
+const run = { status, apply, diff, iap, shots, 'watch-shots': watchShots, 'replace-shots': replaceShots, 'tester-notes': testerNotes, 'iap-note': iapNote, 'review-notes': reviewNotes }[command]
 if (!run) { console.log('Usage: node Scripts/asc-listing.mjs status | diff [locale] | apply | watch-shots | shots | replace-shots <locale> <type> <png>... | tester-notes <build> <notes.txt>'); process.exit(1) }
 run().catch((err) => { console.error(err.message); process.exit(1) })

@@ -123,7 +123,10 @@ Owner decisions, 2026-10-25, applied to iOS and Mac in every language:
   which the Mac section already says, to stay under 4,000). Shortcuts, Control
   Center, widgets and Live Activities stay.
 - No Lifetime in the descriptions: Lifetime is only for gifting through
-  redeem codes and isn't mentioned publicly (2026-10-25).
+  offer codes and isn't mentioned publicly (2026-10-25). Since 2026-10-26
+  it's off the paywall too, and it goes to App Review with 1.0 (Apple's
+  first non-consumable must ship with an app version) so free offer codes
+  can be given from launch day. Its review note: `asc-listing.mjs iap-note`.
 - Pro features are marked as Pro (App Review Guideline 2.3.2): the Needs
   You and Waiting heading says (CORRES PRO); "With Corres Pro" on asking a
   question in Search and on the Apple Watch's Needs You bullet; "with
@@ -374,7 +377,7 @@ uses it there.
 >
 > Apple Watch: install Corres from the Watch app on the paired iPhone. The Watch shows what the iPhone sends it, so after "Explore Corres" it shows the same sample mail. Replies, Handled and Archive on the Watch are carried out by the iPhone.
 >
-> Corres Pro (Needs You, Waiting, answers in Search, summaries and suggested replies) is an auto-renewable subscription with a free trial, plus a Lifetime purchase; use a Sandbox account to test.
+> Corres Pro (Needs You, Waiting, answers in Search, summaries and suggested replies) is an auto-renewable subscription with a free trial; use a Sandbox account to test. Corres Pro Lifetime isn't sold on the paywall: we give it free to people we choose with offer codes, redeemed in Settings → Redeem Code.
 >
 > Calendar access is optional and only asked for when you tap Check Your Calendar on an invitation; it is read on the device to show whether you're free, and never leaves it.
 >
