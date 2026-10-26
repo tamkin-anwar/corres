@@ -51,7 +51,7 @@ macOS:
 
 > Corres opens on what needs you. Gmail, Outlook, iCloud and almost any other email account sit in one inbox, read and sorted on your iPhone and iPad. The emails that ask something of you come first, each with the reason it's there. The rest of your mail is one tap away, quiet until you're ready.
 >
-> NEEDS YOU AND WAITING
+> NEEDS YOU AND WAITING (CORRES PRO)
 > • Needs You holds the emails with a question, a decision or a deadline for you, grouped into Due soon and When you can.
 > • Waiting lists the emails you sent that haven't had a reply, and nudges you when it's time to follow up.
 > • The Daily Brief, if you turn it on: what's due today, today's events and deliveries on the way.
@@ -70,7 +70,7 @@ macOS:
 >
 > SEARCH THAT ANSWERS
 > • Search every account at once, archived mail included.
-> • Ask a question like "when is my flight?" and get the answer from your own mail.
+> • With Corres Pro, ask a question like "when is my flight?" and get the answer from your own mail.
 > • Find any conversation from Search on your Home Screen too.
 >
 > INVITATIONS
@@ -79,14 +79,13 @@ macOS:
 > WRITING
 > • Drafts, Send Later, Undo Send, templates, and a reminder if nobody replies.
 > • Several signatures, send-as addresses, and bold, lists and links.
-> • Suggested replies and rewrites in your own greeting, sign-off and length, learned from email you've sent. Nothing is sent until you send it.
+> • Suggested replies and rewrites with Corres Pro, in your own greeting, sign-off and length, learned from email you've sent. Nothing is sent until you send it.
 >
 > BEYOND THE APP
-> • Widgets, Control Center, and Live Activities for Send Later and deliveries on the way.
-> • Ask Siri to write, send or find an email, or use Corres in Shortcuts.
+> • Widgets, Control Center and Shortcuts, plus Live Activities for Send Later and deliveries on the way.
 >
 > APPLE WATCH
-> • What needs you and why, on your wrist and on your watch face.
+> • With Corres Pro, see what needs you and why, on your wrist and on your watch face.
 > • Reply by voice, Scribble or a ready answer, or mark it Handled. Replies go out through your iPhone.
 >
 > ANYWHERE
@@ -98,7 +97,7 @@ macOS:
 >
 > SMART ON EVERY IPHONE
 > • Needs You, its reasons, and key details like amounts, dates and order numbers work on every iPhone, with or without Apple Intelligence.
-> • With Apple Intelligence, Corres also writes summaries and suggested replies on the iPhone itself, checked against the email before you see them.
+> • With Apple Intelligence, Corres Pro also writes summaries and suggested replies on the iPhone itself, checked against the email before you see them.
 >
 > PRIVACY
 > • Your email goes from your provider straight to your iPhone. Our servers never receive it.
@@ -111,7 +110,19 @@ macOS:
 > Terms: https://anwarcreativestudio.com/corres/terms/
 > Privacy: https://anwarcreativestudio.com/corres/privacy/
 
-(3,956 characters. Proposed 2026-10-25, not yet in App Store Connect.)
+(3,971 characters. Proposed 2026-10-25, not yet in App Store Connect.)
+
+Owner decisions, 2026-10-25, applied to iOS and Mac in every language:
+
+- No prices anywhere in the descriptions; the auto-renew terms stay.
+- No Siri claim until it's tested on a device. Shortcuts, Control Center,
+  widgets and Live Activities stay (one bullet in BEYOND THE APP).
+- Pro features are marked as Pro (App Review Guideline 2.3.2): the Needs
+  You and Waiting heading says (CORRES PRO); "With Corres Pro" on asking a
+  question in Search and on the Apple Watch's Needs You bullet; "with
+  Corres Pro" on suggested replies in Writing; "Corres Pro also writes"
+  summaries and suggested replies in the Smart section. FREE AND PRO stays
+  the one place that lists everything.
 
 Changes from the 2026-10-22 text:
 
@@ -148,7 +159,7 @@ Changes from the 2026-10-22 text:
 > • Keeps working from the menu bar with no window open: new mail, the Dock badge, widgets and search stay current.
 > • One purchase covers Corres on iPhone, iPad and Mac.
 >
-> NEEDS YOU AND WAITING
+> NEEDS YOU AND WAITING (CORRES PRO)
 > • Needs You holds the emails with a question, a decision or a deadline for you, grouped into Due soon and When you can.
 > • Waiting lists the emails you sent that haven't had a reply, and nudges you when it's time to follow up.
 > • The Daily Brief, if you turn it on: what's due today, today's events and deliveries on the way.
@@ -166,7 +177,7 @@ Changes from the 2026-10-22 text:
 >
 > SEARCH THAT ANSWERS
 > • Search every account at once, archived mail included.
-> • Ask a question like "when is my flight?" and get the answer from your own mail.
+> • With Corres Pro, ask a question like "when is my flight?" and get the answer from your own mail.
 > • Find any conversation from Spotlight too.
 >
 > INVITATIONS
@@ -175,7 +186,7 @@ Changes from the 2026-10-22 text:
 > WRITING
 > • Drafts, Send Later, Undo Send, templates, and a reminder if nobody replies.
 > • Several signatures, send-as addresses, and bold, lists and links.
-> • Suggested replies and rewrites in your own greeting, sign-off and length, learned from email you've sent. Nothing is sent until you send it.
+> • Suggested replies and rewrites with Corres Pro, in your own greeting, sign-off and length, learned from email you've sent. Nothing is sent until you send it.
 >
 > ANYWHERE
 > • Archive, delete and flag with no connection. Your changes go through once you're back online.
@@ -186,7 +197,7 @@ Changes from the 2026-10-22 text:
 >
 > SMART ON EVERY MAC
 > • Needs You, its reasons, and key details like amounts, dates and order numbers work on every Mac, with or without Apple Intelligence.
-> • With Apple Intelligence, Corres also writes summaries and suggested replies on the Mac itself, checked against the email before you see them.
+> • With Apple Intelligence, Corres Pro also writes summaries and suggested replies on the Mac itself, checked against the email before you see them.
 >
 > PRIVACY
 > • Your email goes from your provider straight to your Mac. Our servers never receive it.
@@ -199,7 +210,7 @@ Changes from the 2026-10-22 text:
 > Terms: https://anwarcreativestudio.com/corres/terms/
 > Privacy: https://anwarcreativestudio.com/corres/privacy/
 
-(3,897 characters.) The iOS text with Mac wording, plus "A real Mac app"
+(3,948 characters.) The iOS text with Mac wording, plus "A real Mac app"
 (now also: keeps working from the menu bar with no window open, build 38).
 Undo Send is in Writing on the Mac too, which became true with Mac build
 38. Still no instant-alert claim on the Mac, and no Apple Watch, widgets or
@@ -279,7 +290,8 @@ first email or its reply. Terminating the app returns to the face.
 ## Other languages
 
 Japanese, Simplified Chinese, German, Korean, French (France and Canada),
-Spanish (Spain and Mexico) and Brazilian Portuguese, set in App Store
+Spanish (Spain and Mexico) and Brazilian Portuguese (plus Bangla, new
+below, not yet entered), set in App Store
 Connect for iOS 1.0 and macOS 1.0 on 2026-10-20 and partly edited there on
 2026-10-22. `Docs/AppStore/localized/listing.py` is the source again as of
 2026-10-25: run `python3 listing.py listing.json` to rebuild `listing.json`,
@@ -288,8 +300,13 @@ which checks Apple's limits. The 2026-10-25 update, in every language:
 - "one swipe away" is "one tap away" on iPhone (the swipe claim was wrong).
 - Rules that also run in Gmail and Outlook.
 - New senders: the four First Emails choices.
-- Writing: templates, suggested replies in your own style, and Siri on
-  iPhone (the Mac keeps three bullets; Undo Send there is now true).
+- Writing: templates and suggested replies in your own style (the Mac
+  keeps three bullets; Undo Send there is now true). The Siri bullet was
+  added and then removed the same day, until Siri is tested on a device.
+- Pro marked as in English: (Corres Pro) on the Needs You and Waiting
+  heading, and a short Corres Pro marker on asking in Search, suggested
+  replies, the Apple Watch's Needs You bullet and the Apple Intelligence
+  summaries bullet.
 - New Apple Watch section (iOS only) and a new worldwide section.
 - French and German drop Invitations, and now Spanish and Portuguese too,
   to stay under 4,000 characters. French, German, Spanish and Portuguese
@@ -297,14 +314,29 @@ which checks Apple's limits. The 2026-10-25 update, in every language:
   the search filter examples and the Home Screen search bullet, and merge
   the two new-sender bullets; French on iPhone also drops "Write an email
   from the Share button".
-- Lengths (iOS / Mac): ja 2,107 / 2,054, zh-Hans 1,686 / 1,658, de 3,897 /
-  3,843, ko 2,309 / 2,234, fr 3,931 / 3,949, es 3,912 / 3,809, pt-BR
-  3,919 / 3,815.
+- Lengths (iOS / Mac): ja 2,122 / 2,095, zh-Hans 1,712 / 1,700, de 3,892 /
+  3,898, ko 2,322 / 2,277, fr 3,917 / 3,993, es 3,914 / 3,858, pt-BR
+  3,920 / 3,868, bn 3,873 / 3,936. French "par rapport à l'e-mail" became
+  "avec l'e-mail" to keep the Mac text under 4,000.
 - French keywords: "concentration" is now "focus", to get under 100 bytes.
 
-Promotional texts and subtitles are unchanged. These descriptions name no
+Promotional texts and subtitles are unchanged, apart from the new Bangla
+listing below. These descriptions name no
 prices, because prices differ by storefront and the App Store shows its
 own. Screenshots are the English ones in every language.
+
+**Bangla (bn-BD)**, new 2026-10-25, not yet in App Store Connect. App
+Store Connect added Bangla on 2026-03-31; its locale code is `bn-BD`
+(Apple's App Store Connect API page "Managing metadata in your app by
+using locale shortcodes" lists Bengali as bn-BD; the App Store
+localizations page shows Bangla as an extra language in India). Name
+Corres, subtitle "যে মেইল জানে আপনার করণীয়" (25 characters), keywords
+`ইমেইল,ইনবক্স,উত্তর,ফলো-আপ,সারাংশ,ঘড়ি` (99 bytes; "মেইল" and "করণীয়"
+are left out because the subtitle has them). The text uses the app's own
+Bangla words (আপনার করণীয়, অপেক্ষায়, প্রধান, প্রচার, সামাজিক, আপডেট,
+শিগগির শেষ সময়, সময় পেলে, the four First Emails choices) and follows the
+other languages' layout, with the Mac menu bar bullet from English. Have a
+native speaker read it before it goes in.
 
 Japanese (171 bytes), Chinese (112) and Korean (132) keywords are over
 Apple's documented 100-byte limit but App Store Connect accepted them on
