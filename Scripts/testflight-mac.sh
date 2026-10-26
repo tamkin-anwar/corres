@@ -12,8 +12,12 @@
 # with the beta flag, checks the flag and the sandbox are really in,
 # exports for App Store Connect and uploads.
 # Usage:  Scripts/testflight-mac.sh
+# Requires your Apple ID signed in to Xcode, or an App Store Connect API
+# key (Docs/asc-api-key.md).
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# An App Store Connect API key, when one is set up (Docs/asc-api-key.md).
+source Scripts/asc-auth.sh
 
 PBX=Corres.xcodeproj/project.pbxproj
 current=$(grep -m1 -o 'CURRENT_PROJECT_VERSION = [0-9]*' "$PBX" | grep -o '[0-9]*$')
@@ -26,7 +30,7 @@ ARCHIVE="build/CorresMac-$version-$next-beta.xcarchive"
 rm -rf build/export-mac
 xcodebuild -project Corres.xcodeproj -scheme CorresMac -configuration Release \
   -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" \
-  -allowProvisioningUpdates archive -quiet \
+  -allowProvisioningUpdates "${ASC_AUTH[@]}" archive -quiet \
   OTHER_SWIFT_FLAGS='$(inherited) -D CORRES_BETA'
 
 APP="$ARCHIVE/Products/Applications/Corres.app"
@@ -42,7 +46,7 @@ if ! codesign -d --entitlements - "$APP" 2>/dev/null | grep -q 'com.apple.securi
 fi
 
 xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath build/export-mac \
-  -exportOptionsPlist Scripts/ExportOptions.plist -allowProvisioningUpdates
+  -exportOptionsPlist Scripts/ExportOptions.plist -allowProvisioningUpdates "${ASC_AUTH[@]}"
 
 git add "$PBX"
 git commit -qm "TestFlight beta build for Mac $version ($next)" || true

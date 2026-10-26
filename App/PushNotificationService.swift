@@ -318,7 +318,14 @@ final class PushNotificationService {
         #if targetEnvironment(simulator)
         return "development"
         #else
-        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+        // A Mac app's profile is Contents/embedded.provisionprofile; an
+        // iPhone's is embedded.mobileprovision. Same signed plist inside.
+        #if os(macOS)
+        let profileURL: URL? = Bundle.main.bundleURL.appendingPathComponent("Contents/embedded.provisionprofile")
+        #else
+        let profileURL: URL? = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision")
+        #endif
+        guard let url = profileURL,
               let raw = try? Data(contentsOf: url),
               let text = String(data: raw, encoding: .isoLatin1),
               let start = text.range(of: "<?xml"), let end = text.range(of: "</plist>"),
@@ -433,10 +440,19 @@ final class PushNotificationService {
         // so the relay wakes it through the right one.
         if path.hasPrefix("register") { body["apnsEnvironment"] = Self.apnsEnvironment }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        #if os(macOS)
+        // The Mac can't use App Attest, so its proof is a DeviceCheck token
+        // on every call the relay checks. Without one it goes as before.
+        if Self.deviceCheckedPaths.contains(path), let token = await Self.deviceCheckToken() {
+            request.setValue(token, forHTTPHeaderField: "Corres-Device-Check")
+        }
+        #endif
         // Proof this is a genuine Corres (App Attest) where the device can
         // give it; without it the call goes exactly as before.
         let response: URLResponse
-        if path == "register" || path == "unregister" {
+        // Every call the relay checks, so turning enforcement on later can't
+        // refuse Outlook or iCloud alerts from a genuine iPhone.
+        if Self.deviceCheckedPaths.contains(path) {
             response = try await AppAttest.shared.send(request, body: body)
         } else {
             (_, response) = try await URLSession.shared.data(for: request)
@@ -468,6 +484,22 @@ extension PushNotificationService {
     static let showsPushAlerts = true
     #else
     static let showsPushAlerts = false
+    #endif
+
+    /// The relay routes that check where a call comes from: signed with
+    /// App Attest on iPhone and iPad, with a DeviceCheck token on the Mac.
+    static let deviceCheckedPaths: Set<String> = ["register", "unregister", "register-graph", "register-icloud", "unregister-icloud"]
+
+    #if os(macOS)
+
+    /// A fresh DeviceCheck token (Apple's "DCDevice"): Apple's word, checked
+    /// by the relay with Apple, that the call comes from a real Apple device
+    /// running an app from our team. Each token is used once. Strictly best
+    /// effort: not supported, or any error, means no token.
+    nonisolated static func deviceCheckToken() async -> String? {
+        guard DCDevice.current.isSupported else { return nil }
+        return try? await DCDevice.current.generateToken().base64EncodedString()
+    }
     #endif
 }
 

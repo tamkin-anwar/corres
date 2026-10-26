@@ -39,7 +39,7 @@ There is no production/development switch: each device says which APNs server it
 This deploys one HTTP Cloud Function (`corres-push-relay`) with these routes:
 - `POST /register`: called by the app once a device grants notification permission, once per connected account. A `devices` document is keyed by device token and holds an `emailAddresses` array, not a single email: Corres supports multiple simultaneously-connected accounts (Batch 29), and one device can be registered for several accounts' pushes at once.
 - `POST /unregister`: called with just a `deviceToken` when notifications are turned off entirely (removes the whole device record), or with `deviceToken` + `emailAddress` when a single account is disconnected while others stay connected (removes just that account from the list).
-- `POST /attest-challenge` and `POST /attest`: App Attest, which lets the routes check that a call comes from a genuine Corres. See "App Attest (monitor mode)" below.
+- `POST /attest-challenge` and `POST /attest`: App Attest, which lets the routes check that a call comes from a genuine Corres. See "App Attest (monitor mode)" below. Macs send a DeviceCheck token instead; see "DeviceCheck for the Mac (monitor mode)".
 - `POST /register-graph`: an Outlook subscription the app made with Microsoft Graph itself: its id, a hash of its secret (`clientState`), the account, and the device. Graph's notices for that subscription wake only that device (each device makes its own subscription). An older subscription for the same account and device is deleted.
 - `POST /icloud-key`, `POST /register-icloud`, `POST /unregister-icloud`: instant iCloud alerts. The app seals the app-specific password to the watcher's KMS key; the record keeps the address, server, user name and device for `Server/icloud-watcher`. An iCloud address (`icloud.com`, `me.com`, `mac.com`) may only name `imap.mail.me.com`.
 
@@ -105,7 +105,7 @@ Set `PushNotificationService.relayBaseURL` and `.pubsubTopicName` (in `App/PushN
 - No message content ever passes through this service, in either direction. A push carries at most the account's address, a message id or `historyId`, and the `"New email"` key; never a subject, sender or body. The app fetches and displays the real content itself, on-device.
 - No Gmail OAuth token ever reaches this service. The app itself calls `users.watch` (it already holds the token for every other Gmail API call); this relay only needs to know which device token belongs to which email address to route Gmail's contentless ping.
 - Does not renew Gmail's watch subscription on its own. `users.watch` expires after 7 days; the app renews it at launch. An account that isn't opened for a week silently stops getting push until the next launch, a known, accepted gap, not a bug (see Docs/Architecture.md).
-- Does not yet *require* proof that a call came from a genuine Corres install. It checks for that proof (App Attest, below) and records the result, but in monitor mode it still accepts calls without it. Until enforcement is on, the format validation, the caps and the best-effort rate limits below remain the only barrier to a scripted caller.
+- Does not yet *require* proof that a call came from a genuine Corres install. It checks for that proof (App Attest, and DeviceCheck from Macs, below) and records the result, but in monitor mode it still accepts calls without it. Until enforcement is on, the format validation, the caps and the best-effort rate limits below remain the only barrier to a scripted caller.
 
 ## App Attest (monitor mode)
 
@@ -133,11 +133,65 @@ Turning enforcement on, once the logs and device records show every current buil
 APP_ATTEST_ENFORCE=1 npm run deploy
 ```
 
-Unattested calls to the gated routes then get 401 (`/register-graph` and the iCloud routes too, so the app would have to sign those first). Back to monitor mode with a plain `npm run deploy` (the script sets `APP_ATTEST_ENFORCE=0` unless told otherwise). Keep in mind before switching it on: devices that can't attest (the Simulator, and Macs, where `isSupported` is false today) would lose notifications, so enforcement for them needs a decision first.
+Calls to the gated routes that neither App Attest nor DeviceCheck (below) vouches for then get 401 (`/register-graph` and the iCloud routes too, so the iPhone app would have to sign those first). Back to monitor mode with a plain `npm run deploy` (the script sets `APP_ATTEST_ENFORCE=0` unless told otherwise). Run through the enforcement checklist below before switching it on.
 
 Other switches, set with `gcloud functions deploy corres-push-relay --update-env-vars=...`:
 - `APP_ATTEST_NEW_KEYS=0` stops handing out challenges for new keys, so apps back off from Apple's attestation servers if Apple ever throttles Corres. Signed calls with existing keys keep working.
 - `APP_ATTEST_DEVELOPMENT=0` refuses keys made in Apple's development environment. The iOS app's entitlement asks for production keys in every build, so this should only catch builds signed without it.
+
+## DeviceCheck for the Mac (monitor mode)
+
+Macs can't use App Attest: Apple says `DCAppAttestService.isSupported` is false on a Mac ([isSupported](https://developer.apple.com/documentation/devicecheck/dcappattestservice/issupported)), macOS 27 only adds it for full apps with the App Attest entitlement, and the Mac app doesn't have that entitlement. So the Mac proves itself with DeviceCheck instead ([DCDevice](https://developer.apple.com/documentation/devicecheck/dcdevice), macOS 10.15 and later; [server side](https://developer.apple.com/documentation/devicecheck/accessing-and-modifying-per-device-data)). The checks live in `devicecheck.js`.
+
+How it works:
+
+1. On every gated call (`/register`, `/unregister`, `/register-graph`, `/register-icloud`, `/unregister-icloud`) the Mac app asks `DCDevice.current.generateToken()` for a fresh token and sends it, base64, in the `Corres-Device-Check` header. Not supported, or any error, and the call goes without it, as before. iPhone and iPad builds never send it.
+2. When App Attest didn't already vouch for the call, the relay posts the token to Apple's `POST /v1/validate_device_token` with `device_token`, a random `transaction_id` and a millisecond `timestamp`, signed with an ES256 JWT (`kid` the DeviceCheck key's id, `iss` the team, `iat` now; the same kind of token APNs takes). Production (`api.devicecheck.apple.com`) first; a 400 there is tried once on the development server (`api.development.devicecheck.apple.com`), where tokens from builds run from Xcode belong.
+3. Apple's 200 means the token came from a real Apple device running an app signed by our team. The token's hash is then kept in `deviceCheckTokens` for a day; the same token sent again is refused (`replayed-token`), since Apple asks that each one be used once and the token isn't tied to the request the way an App Attest signature is.
+
+What gets recorded: next to the App Attest fields, the device record (or Outlook subscription, or iCloud watch) gets `deviceChecked`, `deviceCheckReason` and `deviceCheckEnvironment`. The log line gets a note only when the call carried a token: `app attest /register: allowed unattested, none; devicecheck ok, production`, `...; devicecheck failed, <reason>` or `...; devicecheck not configured`. The answer carries `Corres-Device-Check-Result`. Reasons: `none` (no token sent), `not-configured`, `malformed`, `invalid-token` (Apple doesn't know it), `replayed-token`, `apple-auth` (Apple refused our key: not enabled for DeviceCheck, or the wrong key id or team), `apple-unavailable` (Apple busy, down or slow past five seconds), `not-needed` (App Attest already vouched), `error`.
+
+If no DeviceCheck key is configured the relay logs `devicecheck not configured` once per instance and on each call that carries a token, never calls Apple, and behaves exactly as before.
+
+What DeviceCheck does not prove: that the app is unmodified, or which of our team's apps made the token. It's weaker than App Attest, but it's what Apple offers Macs, and it's what Firebase App Check uses on a Mac by default ([FIRAppCheck.h](https://github.com/firebase/firebase-ios-sdk/blob/main/FirebaseAppCheck/Sources/Public/FirebaseAppCheck/FIRAppCheck.h)).
+
+Turning it on:
+
+1. In the Apple Developer portal, Certificates, Identifiers & Profiles, Keys: either edit the existing APNs key and tick **DeviceCheck** (the same `.p8` keeps working for both), or create a new key with only **DeviceCheck** ticked and download its `.p8` once. A separate key can be revoked without touching push; the shared one is one less secret.
+2. A new key goes into Secret Manager (the shared APNs key is already there as `corres-apns-auth-key`):
+   ```bash
+   gcloud secrets create corres-devicecheck-key --data-file=AuthKey_XXXXXXXXXX.p8
+   gcloud secrets add-iam-policy-binding corres-devicecheck-key \
+     --member="serviceAccount:<the function's runtime service account>" \
+     --role="roles/secretmanager.secretAccessor"
+   ```
+   The runtime service account is the one `corres-apns-auth-key` already grants access to (`gcloud functions describe corres-push-relay --region=us-central1 --format="value(serviceConfig.serviceAccountEmail)"`).
+3. Deploy with the key's id (the team id comes from `APNS_TEAM_ID`):
+   ```bash
+   # A separate key:
+   DEVICECHECK_KEY_ID=<its Key ID> DEVICECHECK_SECRET=corres-devicecheck-key npm run deploy
+   # Or the APNs key with DeviceCheck ticked (the relay then reuses APNS_AUTH_KEY):
+   DEVICECHECK_KEY_ID=$APNS_KEY_ID npm run deploy
+   ```
+   Keep passing these on every later deploy: the script sets every variable each time, and leaving `DEVICECHECK_KEY_ID` out turns DeviceCheck off again.
+4. One-time, so Firestore clears used tokens on its own:
+   ```bash
+   gcloud firestore fields ttls update expiresAt --collection-group=deviceCheckTokens --enable-ttl
+   ```
+5. Check the logs for a Mac's `devicecheck ok, production`. `devicecheck failed, apple-auth` means the key isn't set up right.
+
+`DEVICECHECK_DEVELOPMENT=0` (in the same deploy) stops trying the development server, so only TestFlight and App Store builds pass.
+
+## Enforcement checklist
+
+Before `APP_ATTEST_ENFORCE=1 npm run deploy`:
+
+1. DeviceCheck is configured and the logs show `devicecheck ok` from Macs, not `not configured` or `apple-auth`.
+2. Every iPhone and iPad device record still in use has `attested: true`, and every Mac one has `deviceChecked: true`. Records with neither are builds that would lose notifications.
+3. The iPhone and iPad app signs `/register-graph`, `/register-icloud` and `/unregister-icloud` too (today it signs only `/register` and `/unregister`, so those three would get 401 on iOS). The Mac already sends DeviceCheck on all five.
+4. The app copes with a 401 (it keeps the registration as not done and tries again later) and the current TestFlight and App Store builds are the ones that send proof.
+5. Decide on the Simulator and Xcode builds: the Simulator can't attest or device check, so it would lose relay notifications. Development DeviceCheck tokens pass unless `DEVICECHECK_DEVELOPMENT=0`.
+6. Have `APP_ATTEST_NEW_KEYS` ready (Apple throttling) and remember that a plain `npm run deploy` goes back to monitor mode.
 
 ## Limits, rate limits and cleanup
 

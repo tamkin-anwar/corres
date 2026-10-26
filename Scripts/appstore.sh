@@ -7,8 +7,12 @@
 # project setting, an environment variable), so App Store customers can
 # never get Pro free.
 # Usage:  Scripts/appstore.sh
+# Requires your Apple ID signed in to Xcode, or an App Store Connect API
+# key (Docs/asc-api-key.md).
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# An App Store Connect API key, when one is set up (Docs/asc-api-key.md).
+source Scripts/asc-auth.sh
 
 PBX=Corres.xcodeproj/project.pbxproj
 if grep -q CORRES_BETA "$PBX"; then
@@ -27,7 +31,7 @@ ARCHIVE="build/Corres-$version-$next-appstore.xcarchive"
 rm -rf build/export
 xcodebuild -project Corres.xcodeproj -scheme Corres -configuration Release \
   -destination 'generic/platform=iOS' -archivePath "$ARCHIVE" \
-  -allowProvisioningUpdates archive -quiet
+  -allowProvisioningUpdates "${ASC_AUTH[@]}" archive -quiet
 
 BIN="$ARCHIVE/Products/Applications/Corres.app/Corres"
 # Read in full, not `grep -q`: with pipefail, -q stopping early reads as
@@ -40,7 +44,7 @@ if [[ "$markers" == *CORRES_BETA_BUILD* || "$markers" != *CORRES_APPSTORE_BUILD*
 fi
 
 xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath build/export \
-  -exportOptionsPlist Scripts/ExportOptions.plist -allowProvisioningUpdates
+  -exportOptionsPlist Scripts/ExportOptions.plist -allowProvisioningUpdates "${ASC_AUTH[@]}"
 
 git add "$PBX"
 git commit -qm "App Store build $version ($next)" || true

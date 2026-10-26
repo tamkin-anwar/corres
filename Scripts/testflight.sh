@@ -11,9 +11,12 @@
 # Steps: bumps the build number (app and widget stay in step), archives a
 # Release build with the beta flag, checks the flag is really in, uploads.
 # Usage:  Scripts/testflight.sh
-# Requires your Apple ID signed in to Xcode (Xcode > Settings > Accounts).
+# Requires your Apple ID signed in to Xcode (Xcode > Settings > Accounts),
+# or an App Store Connect API key (Docs/asc-api-key.md).
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# An App Store Connect API key, when one is set up (Docs/asc-api-key.md).
+source Scripts/asc-auth.sh
 
 PBX=Corres.xcodeproj/project.pbxproj
 current=$(grep -m1 -o 'CURRENT_PROJECT_VERSION = [0-9]*' "$PBX" | grep -o '[0-9]*$')
@@ -26,7 +29,7 @@ ARCHIVE="build/Corres-$version-$next-beta.xcarchive"
 rm -rf build/export
 xcodebuild -project Corres.xcodeproj -scheme Corres -configuration Release \
   -destination 'generic/platform=iOS' -archivePath "$ARCHIVE" \
-  -allowProvisioningUpdates archive -quiet \
+  -allowProvisioningUpdates "${ASC_AUTH[@]}" archive -quiet \
   OTHER_SWIFT_FLAGS='$(inherited) -D CORRES_BETA'
 
 BIN="$ARCHIVE/Products/Applications/Corres.app/Corres"
@@ -39,7 +42,7 @@ if [[ "$markers" != *CORRES_BETA_BUILD* ]]; then
 fi
 
 xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath build/export \
-  -exportOptionsPlist Scripts/ExportOptions.plist -allowProvisioningUpdates
+  -exportOptionsPlist Scripts/ExportOptions.plist -allowProvisioningUpdates "${ASC_AUTH[@]}"
 
 git add "$PBX"
 git commit -qm "TestFlight beta build $version ($next)" || true

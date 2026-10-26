@@ -6,3 +6,6 @@ xcuserdata/
 .DS_Store
 build/
 Docs/AppStore/localized-shots/
+
+# App Store Connect and other Apple keys never belong in the repo.
+*.p8

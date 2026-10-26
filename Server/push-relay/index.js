@@ -15,6 +15,7 @@ const { KeyManagementServiceClient } = require('@google-cloud/kms');
 const crypto = require('crypto');
 const http2 = require('http2');
 const appAttest = require('./appattest');
+const deviceCheck = require('./devicecheck');
 
 const firestore = new Firestore();
 const devices = firestore.collection('devices');
@@ -47,6 +48,15 @@ const APP_ATTEST_NEW_KEYS = process.env.APP_ATTEST_NEW_KEYS !== '0';
 // entitlement. TestFlight and App Store builds always make production keys.
 const APP_ATTEST_DEVELOPMENT = process.env.APP_ATTEST_DEVELOPMENT !== '0';
 const CHALLENGE_LIFETIME_MS = 5 * 60_000;
+
+// DeviceCheck (see devicecheck.js): the Mac's proof, since Macs can't use
+// App Attest. Set up when DEVICECHECK_KEY_ID and a key are configured
+// (see README); otherwise every Mac call logs "devicecheck not configured"
+// and goes as it did. Used tokens are kept by hash until `expiresAt`, so
+// one can't be sent twice.
+const DEVICECHECK = deviceCheck.configFrom(process.env);
+if (!DEVICECHECK) console.log('devicecheck not configured');
+const deviceCheckTokens = firestore.collection('deviceCheckTokens');
 
 // A device token belongs to one of Apple's two APNs servers: development
 // for a build run from Xcode, production for TestFlight and the App Store.
@@ -450,28 +460,67 @@ async function checkAssertion(req) {
   }
 }
 
-// One line per checked call, and in enforcement mode a 401 for anything
-// not attested. Returns false when the request was refused.
-async function appAttestGate(req, res, route) {
-  const result = await checkAssertion(req);
-  if (APP_ATTEST_ENFORCE && !result.attested) {
-    console.log(`app attest ${route}: rejected, ${result.reason}`);
-    res.status(401).set('Corres-Attest-Result', result.reason).send('App Attest required');
-    return null;
+// True the first time a DeviceCheck token's hash is seen, false after.
+// Firestore's TTL policy on `expiresAt` clears old ones (see README).
+async function markDeviceCheckTokenUsed(tokenHash, expiresAtMs) {
+  try {
+    await deviceCheckTokens.doc(tokenHash).create({ expiresAt: Firestore.Timestamp.fromMillis(expiresAtMs) });
+    return true;
+  } catch (error) {
+    if (error && error.code === 6) return false; // ALREADY_EXISTS
+    throw error;
   }
-  console.log(`app attest ${route}: ${result.attested ? 'ok' : `allowed unattested, ${result.reason}`}`);
-  // Lets the app notice the relay no longer knows its key and attest again.
-  res.set('Corres-Attest-Result', result.attested ? 'ok' : result.reason);
-  return result;
 }
 
-// What's kept on the device record: whether its last call was attested.
+// The Mac's DeviceCheck token (`Corres-Device-Check`), checked with Apple
+// only when App Attest didn't already vouch for the call.
+async function checkDeviceCheck(req, attested) {
+  const token = req.get('Corres-Device-Check');
+  if (attested) return { deviceChecked: false, reason: token ? 'not-needed' : 'none', sent: Boolean(token) };
+  const result = await deviceCheck.checkDeviceToken({ token, config: DEVICECHECK, markUsed: markDeviceCheckTokenUsed });
+  return { ...result, sent: Boolean(token) };
+}
+
+// Added to the log line only when the call carried a DeviceCheck token,
+// so iPhone and iPad lines read as before.
+function deviceCheckNote(device) {
+  if (!device.sent || device.reason === 'not-needed') return '';
+  if (device.reason === 'not-configured') return '; devicecheck not configured';
+  return device.deviceChecked ? `; devicecheck ok, ${device.environment}` : `; devicecheck failed, ${device.reason}`;
+}
+
+// One line per checked call, and in enforcement mode a 401 for anything
+// neither App Attest (iPhone, iPad) nor DeviceCheck (Mac) vouches for.
+// Returns null when the request was refused.
+async function appAttestGate(req, res, route) {
+  const result = await checkAssertion(req);
+  const device = await checkDeviceCheck(req, result.attested);
+  const note = deviceCheckNote(device);
+  if (APP_ATTEST_ENFORCE && !result.attested && !device.deviceChecked) {
+    console.log(`app attest ${route}: rejected, ${result.reason}${note}`);
+    res.status(401).set('Corres-Attest-Result', result.reason);
+    if (device.sent) res.set('Corres-Device-Check-Result', device.reason);
+    res.send('App Attest or DeviceCheck required');
+    return null;
+  }
+  console.log(`app attest ${route}: ${result.attested ? 'ok' : `allowed unattested, ${result.reason}`}${note}`);
+  // Lets the app notice the relay no longer knows its key and attest again.
+  res.set('Corres-Attest-Result', result.attested ? 'ok' : result.reason);
+  if (device.sent) res.set('Corres-Device-Check-Result', device.deviceChecked ? 'ok' : device.reason);
+  return { ...result, device };
+}
+
+// What's kept on the device record: whether its last call was attested
+// (App Attest) or device checked (DeviceCheck, from a Mac).
 function attestFields(result) {
   return {
     attested: result.attested,
     attestReason: result.reason,
     attestKeyId: result.keyId || null,
     attestCheckedAt: Firestore.FieldValue.serverTimestamp(),
+    deviceChecked: result.device.deviceChecked,
+    deviceCheckReason: result.device.reason,
+    deviceCheckEnvironment: result.device.environment || null,
   };
 }
 
