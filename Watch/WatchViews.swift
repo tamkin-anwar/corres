@@ -108,7 +108,12 @@ struct MailDetailView: View {
         }
         .redacted(reason: isLuminanceReduced ? .privacy : [])
         .navigationTitle(isLuminanceReduced ? "" : mail.sender)
-        .onAppear { if mail.isUnread { store.send(.markRead(key: mail.key)) } }
+        .onAppear {
+            if mail.isUnread { store.send(.markRead(key: mail.key)) }
+            #if DEBUG
+            if WatchMailStore.screenshotScreen == "reply" { replying = true }
+            #endif
+        }
         .sheet(isPresented: $replying) {
             ReplyView(store: store, mail: mail)
         }

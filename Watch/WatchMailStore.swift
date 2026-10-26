@@ -30,19 +30,35 @@ final class WatchMailStore: NSObject {
     }
 
     #if DEBUG
-    static let sample = WatchLink.Snapshot(
-        needsYou: [
-            WatchLink.Mail(key: "s|1", sender: "Maya Chen", subject: "The next chapter", reason: "Asks you to approve the direction",
-                           preview: "Hello,\n\nYour approval on the final direction is the last piece. Everything you need is here.\n\nWarmly,\nMaya",
-                           receivedAt: .now.addingTimeInterval(-3600), isUnread: true),
-            WatchLink.Mail(key: "s|2", sender: "Sofia Laurent", subject: "A place at the table", reason: "Asks you to confirm Thursday",
-                           preview: "Could you confirm Thursday's conversation?", receivedAt: .now.addingTimeInterval(-7200), isUnread: false),
-        ],
-        waiting: [
-            WatchLink.Mail(key: "s|3", sender: "James Okafor", subject: "Partnership proposal", reason: "",
-                           preview: "I will send the revised scope once our team has reviewed it.", receivedAt: .now.addingTimeInterval(-86_400), isUnread: false),
-        ],
-        isSample: true, updatedAt: .now)
+    /// The same people as the iPhone's sample mail, at fixed times this
+    /// morning, so screenshots read the same on every run.
+    static let sample: WatchLink.Snapshot = {
+        let morning = Calendar.current.date(bySettingHour: 9, minute: 41, second: 0, of: .now) ?? .now
+        func ago(_ minutes: Double) -> Date { morning.addingTimeInterval(-minutes * 60) }
+        return WatchLink.Snapshot(
+            needsYou: [
+                WatchLink.Mail(key: "s|1", sender: "Maya Chen", subject: "The next chapter", reason: "Asks you to approve the direction",
+                               preview: "Hello,\n\nYour approval on the final direction is the last piece. Everything you need is here.\n\nWarmly,\nMaya",
+                               receivedAt: ago(12), isUnread: true),
+                WatchLink.Mail(key: "s|2", sender: "Oliver Grant", subject: "A moment before we move forward", reason: "Waiting for your choice",
+                               preview: "Two options for the launch. One decision to make.", receivedAt: ago(38), isUnread: true),
+                WatchLink.Mail(key: "s|3", sender: "Sofia Laurent", subject: "A place at the table", reason: "Asks you to confirm Thursday",
+                               preview: "Could you confirm Thursday's conversation?", receivedAt: ago(64), isUnread: false),
+            ],
+            waiting: [
+                WatchLink.Mail(key: "s|4", sender: "James Okafor", subject: "Partnership proposal", reason: "",
+                               preview: "I will send the revised scope once our team has reviewed it.", receivedAt: ago(140), isUnread: false),
+            ],
+            isSample: true, updatedAt: .now)
+    }()
+
+    /// `-WatchScreen detail` or `-WatchScreen reply`: opens the first email,
+    /// or its reply, for screenshots.
+    static var screenshotScreen: String? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-WatchScreen"), index + 1 < arguments.count else { return nil }
+        return arguments[index + 1]
+    }
     #endif
 
     var needsYou: [WatchLink.Mail] { snapshot.needsYou.filter { done[$0.key] == nil } }

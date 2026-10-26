@@ -9,7 +9,7 @@ L["ja"] = dict(
  keywords="受信トレイ,メール,電子メール,優先,ニュースレター,要約,返信,フォローアップ,整理,集中,プライバシー,オフライン,迷惑メール",
  promo=("Gmail、Outlook、iCloudなどを1つの受信ボックスに。Corresはあなたへの用件から開き、その理由を示し、メールをiPhoneに保ちます。",
         "Gmail、Outlook、iCloudなどを1つの受信ボックスに。Corresはあなたへの用件から開き、その理由を示し、メールをMacに保ちます。"),
- intro=("Corresは「要対応」から開きます。Gmail、Outlook、iCloud、そのほかほとんどのメールアカウントを1つの受信ボックスにまとめ、iPhone上で読み、振り分けます。あなたに何かを求めるメールが先頭に並び、それぞれに理由が添えられます。ほかのメールはスワイプひとつ先で、準備ができるまで静かに待っています。",
+ intro=("Corresは「要対応」から開きます。Gmail、Outlook、iCloud、そのほかほとんどのメールアカウントを1つの受信ボックスにまとめ、iPhone上で読み、振り分けます。あなたに何かを求めるメールが先頭に並び、それぞれに理由が添えられます。ほかのメールはタップひとつ先で、準備ができるまで静かに待っています。",
         "Corresは「要対応」から開きます。Gmail、Outlook、iCloud、そのほかほとんどのメールアカウントを1つの受信ボックスにまとめ、Mac上で読み、振り分けます。あなたに何かを求めるメールが先頭に並び、それぞれに理由が添えられます。ほかのメールはクリックひとつ先で、準備ができるまで静かに待っています。"),
  sections=[
   (None, ("本物のMacアプリ", [
@@ -28,9 +28,10 @@ L["ja"] = dict(
      "Gmail、Google Workspace、Outlook.com、Microsoft 365、iCloudメールに加え、Yahoo、AOL、Fastmail、Zoho、職場のサーバもアドレスとパスワードだけで。",
      "メイン、プロモーション、ソーシャル、更新をCorresが振り分け、あなたが移したメールから学びます。",
      "アカウントごとに色、名前、署名、通知を設定できます。",
+     "ルールは届いたメールを振り分けます。GmailやOutlookの側でも動くので、Corresを閉じていても働きます。",
      "OutlookとiCloudの新着メールは数秒で通知されます。"]), "same-drop-last"),
   (("新しい差出人", [
-     "初めての人からのメールは、許可かブロックをするまで待機します。",
+     "初めての人からのメールの扱いは、「すべて確認する」「企業だけ確認する」「『新規』として表示」「すべて受け入れる」から選べます。",
      "会社ごとまとめて許可やブロックができ、気が変わったら取り消せます。"]), "same"),
   (("答えてくれる検索", [
      "すべてのアカウントをまとめて検索。アーカイブ済みのメールも含み、from:、has:attachment、is:unreadなどで絞り込めます。",
@@ -47,16 +48,27 @@ L["ja"] = dict(
      "あなたのタイムゾーンでの時刻、場所、参加するビデオ通話、その時間が空いているかがわかります。",
      "メールから承諾、未定、辞退を選び、クリックひとつでカレンダーに追加できます。"])),
   (("作成", [
-     "下書き、あとで送信、送信の取り消し、返信がないときのリマインダー。",
+     "下書き、あとで送信、送信の取り消し、テンプレート、返信がないときのリマインダー。",
      "複数の署名、別の送信アドレス、太字、リスト、リンク。",
-     "返信の候補と書き直し。あなたが送るまで何も送信されません。",
-     "どのアプリからでも共有ボタンでメールを書けます。"]), "same-drop-last"),
+     "返信の候補と書き直しは、送信済みメールから学んだあなたの挨拶、結び、長さで書かれます。あなたが送るまで何も送信されません。",
+     "Siriに頼んで、Corresでメールを書く、送る、探すことができます。",
+     "どのアプリからでも共有ボタンでメールを書けます。"]),
+   ("作成", [
+     "下書き、あとで送信、送信の取り消し、テンプレート、返信がないときのリマインダー。",
+     "複数の署名、別の送信アドレス、太字、リスト、リンク。",
+     "返信の候補と書き直しは、送信済みメールから学んだあなたの挨拶、結び、長さで書かれます。あなたが送るまで何も送信されません。"])),
   (("どこでも", [
      "電波がなくてもアーカイブ、削除、フラグ付けができます。変更はオンラインに戻ったときに反映されます。",
      "振り分け、スヌーズ、ピン、許可、ブロックはiCloudでほかのデバイスにも反映されます。メール自体は送られません。"]),
    ("どこでも", [
      "接続がなくてもアーカイブ、削除、フラグ付けができます。変更はオンラインに戻ったときに反映されます。",
      "振り分け、スヌーズ、ピン、許可、ブロックはiCloudでiPhone、iPad、Macの間で共有されます。メール自体は送られません。"])),
+  (("Apple Watch", [
+     "「要対応」のメールとその理由を、手首の上とウォッチフェイスで確認できます。",
+     "音声、スクリブル、用意された返事で返信するか、「対応済み」にできます。返信はiPhoneから送信されます。"]), None),
+  (("世界中で", [
+     "Corresは日本語、英語、簡体字中国語、韓国語、ドイツ語、フランス語、スペイン語、ポルトガル語、ベンガル語に対応しています。",
+     "期限、領収書、配達、確認コード、予定をこの9つの言語で読み取り、週末はお住まいの地域に合わせます。"]), "same"),
   (("どのiPhoneでもスマート", [
      "「要対応」とその理由、金額、日付、注文番号などの重要な情報は、どのiPhoneでも使えます。",
      "Apple Intelligenceがあれば、Corresは要約と返信の候補もiPhone上で作成し、表示する前にメールと照らし合わせて確認します。"]),
@@ -82,7 +94,7 @@ L["zh-Hans"] = dict(
  keywords="邮件,电子邮件,收件箱,优先,邮件管理,摘要,回复,跟进,筛选,专注,隐私,离线,订阅,邮箱",
  promo=("Gmail、Outlook、iCloud 等邮箱汇集在一个收件箱。Corres 先显示需要你处理的邮件并说明原因，你的邮件只保留在 iPhone 上。",
         "Gmail、Outlook、iCloud 等邮箱汇集在一个收件箱。Corres 先显示需要你处理的邮件并说明原因，你的邮件只保留在 Mac 上。"),
- intro=("Corres 打开时先显示需要你处理的邮件。Gmail、Outlook、iCloud 以及几乎所有其他邮件账户都在一个收件箱里，在你的 iPhone 上阅读和分类。向你提出请求的邮件排在最前，每封都附上原因。其余邮件就在轻扫之外，安静地等你准备好。",
+ intro=("Corres 打开时先显示需要你处理的邮件。Gmail、Outlook、iCloud 以及几乎所有其他邮件账户都在一个收件箱里，在你的 iPhone 上阅读和分类。向你提出请求的邮件排在最前，每封都附上原因。其余邮件轻点即达，安静地等你准备好。",
         "Corres 打开时先显示需要你处理的邮件。Gmail、Outlook、iCloud 以及几乎所有其他邮件账户都在一个收件箱里，在你的 Mac 上阅读和分类。向你提出请求的邮件排在最前，每封都附上原因。其余邮件就在一次点按之外，安静地等你准备好。"),
  sections=[
   (None, ("真正的 Mac App", [
@@ -101,9 +113,10 @@ L["zh-Hans"] = dict(
      "Gmail、Google Workspace、Outlook.com、Microsoft 365 和 iCloud 邮件，以及 Yahoo、AOL、Fastmail、Zoho 或工作服务器，只需地址和密码。",
      "Corres 将邮件分为主要、促销、社交和动态，并从你移动的邮件中学习。",
      "每个账户都有自己的颜色、名称、签名和通知设置。",
+     "规则会在邮件到达时自动整理，还能直接在 Gmail 和 Outlook 中运行，即使 Corres 关闭也照常生效。",
      "Outlook 和 iCloud 的新邮件几秒内就会通知你。"]), "same-drop-last"),
   (("新发件人", [
-     "陌生人的第一封邮件会等待，直到你允许或屏蔽。",
+     "陌生人的第一封邮件如何处理由你决定：全部先审核、只审核公司、显示并标为新，或全部接收。",
      "可一次允许或屏蔽整家公司，改变主意也能撤销。"]), "same"),
   (("会回答问题的搜索", [
      "一次搜索所有账户，包括已归档的邮件，支持 from:、has:attachment 和 is:unread 等筛选。",
@@ -120,16 +133,27 @@ L["zh-Hans"] = dict(
      "查看你所在时区的时间、地点、要加入的视频通话，以及你是否有空。",
      "直接在邮件中接受、待定或拒绝，点按一下即可添加到日历。"])),
   (("写邮件", [
-     "草稿、稍后发送、撤销发送，以及无人回复时的提醒。",
+     "草稿、稍后发送、撤销发送、模板，以及无人回复时的提醒。",
      "多个签名、其他发件地址，以及粗体、列表和链接。",
-     "建议回复和改写。在你发送之前，什么都不会发出。",
-     "在任何 App 中都能通过共享按钮写邮件。"]), "same-drop-last"),
+     "建议回复和改写会沿用你的问候语、结尾和篇幅，这些都从你发出的邮件中学习。在你发送之前，什么都不会发出。",
+     "让 Siri 在 Corres 中撰写、发送或查找邮件。",
+     "在任何 App 中都能通过共享按钮写邮件。"]),
+   ("写邮件", [
+     "草稿、稍后发送、撤销发送、模板，以及无人回复时的提醒。",
+     "多个签名、其他发件地址，以及粗体、列表和链接。",
+     "建议回复和改写会沿用你的问候语、结尾和篇幅，这些都从你发出的邮件中学习。在你发送之前，什么都不会发出。"])),
   (("随时随地", [
      "没有信号也能归档、删除和加旗标。恢复联网后，更改会自动完成。",
      "你的分类、稍后提醒、置顶、允许和屏蔽会通过 iCloud 同步到你的其他设备。你的邮件不会。"]),
    ("随时随地", [
      "没有网络也能归档、删除和加旗标。恢复联网后，更改会自动完成。",
      "你的分类、稍后提醒、置顶、允许和屏蔽会通过 iCloud 在 iPhone、iPad 和 Mac 之间同步。你的邮件不会。"])),
+  (("Apple Watch", [
+     "在手腕上和表盘上查看“需要你”的邮件及其原因。",
+     "用语音、随手写或现成的回复来回复，或标为“已处理”。回复通过你的 iPhone 发送。"]), None),
+  (("面向全球", [
+     "Corres 支持简体中文、英语、日语、韩语、德语、法语、西班牙语、葡萄牙语和孟加拉语。",
+     "截止日期、收据、快递、验证码和日程在这九种语言中都能识别，周末按你所在的地区计算。"]), "same"),
   (("每台 iPhone 都智能", [
      "“需要你”、其原因，以及金额、日期和订单号等关键信息，在每台 iPhone 上都能使用。",
      "有了 Apple 智能，Corres 还会在 iPhone 本机上生成摘要和建议回复，并在显示前对照邮件核实。"]),
@@ -155,7 +179,7 @@ L["de-DE"] = dict(
  keywords="posteingang,email,mail,priorität,newsletter,zusammenfassung,antworten,nachfassen,fokus,privat",
  promo=("Gmail, Outlook, iCloud und mehr in einem Eingang. Corres öffnet mit den E-Mails, die dich brauchen, sagt warum und hält deine E-Mails auf deinem iPhone.",
         "Gmail, Outlook, iCloud und mehr in einem Eingang. Corres öffnet mit den E-Mails, die dich brauchen, sagt warum und hält deine E-Mails auf deinem Mac."),
- intro=("Corres öffnet mit dem, was dich braucht. Gmail, Outlook, iCloud und fast jeder andere E-Mail-Account landen in einem Eingang, gelesen und sortiert auf deinem iPhone. Die E-Mails, die etwas von dir wollen, stehen oben, jeweils mit dem Grund. Der Rest wartet ein Streichen entfernt, ruhig, bis du so weit bist.",
+ intro=("Corres öffnet mit dem, was dich braucht. Gmail, Outlook, iCloud und fast jeder andere E-Mail-Account landen in einem Eingang, gelesen und sortiert auf deinem iPhone. Die E-Mails, die etwas von dir wollen, stehen oben, jeweils mit dem Grund. Der Rest wartet einen Tipp entfernt, ruhig, bis du so weit bist.",
         "Corres öffnet mit dem, was dich braucht. Gmail, Outlook, iCloud und fast jeder andere E-Mail-Account landen in einem Eingang, gelesen und sortiert auf deinem Mac. Die E-Mails, die etwas von dir wollen, stehen oben, jeweils mit dem Grund. Der Rest wartet einen Klick entfernt, ruhig, bis du so weit bist."),
  sections=[
   (None, ("EINE ECHTE MAC-APP", [
@@ -174,35 +198,38 @@ L["de-DE"] = dict(
      "Gmail, Google Workspace, Outlook.com, Microsoft 365 und iCloud Mail, dazu Yahoo, AOL, Fastmail, Zoho oder ein Server bei der Arbeit, nur mit Adresse und Passwort.",
      "Allgemein, Werbung, Soziale Netzwerke und Updates, sortiert von Corres, das aus den E-Mails lernt, die du bewegst.",
      "Jeder Account hat eigene Farbe, eigenen Namen, eigene Signaturen und Mitteilungen.",
+     "Regeln sortieren neue E-Mails und laufen auf Wunsch direkt in Gmail und Outlook, auch wenn Corres geschlossen ist.",
      "Neue E-Mails von Outlook und iCloud melden sich innerhalb von Sekunden."]), "same-drop-last"),
   (("NEUE ABSENDER", [
-     "Erste E-Mails von jemand Neuem warten, bis du erlaubst oder blockierst.",
-     "Erlaube oder blockiere eine ganze Firma auf einmal und mach es rückgängig, wenn du es dir anders überlegst."]), "same"),
+     "Du entscheidest, wie erste E-Mails von Neuen ankommen, und erlaubst oder blockierst eine ganze Firma auf einmal."]), "same"),
   (("SUCHE, DIE ANTWORTET", [
-     "Durchsuche alle Accounts auf einmal, archivierte E-Mails eingeschlossen, mit Filtern wie from:, has:attachment und is:unread.",
-     "Stell eine Frage wie „Wann geht mein Flug?“ und bekomm die Antwort aus deinen eigenen E-Mails.",
-     "Finde jede Konversation auch über die Suche auf dem Home-Bildschirm."]),
+     "Durchsuche alle Accounts auf einmal, archivierte E-Mails eingeschlossen.",
+     "Stell eine Frage wie „Wann geht mein Flug?“ und bekomm die Antwort aus deinen eigenen E-Mails."]),
    ("SUCHE, DIE ANTWORTET", [
-     "Durchsuche alle Accounts auf einmal, archivierte E-Mails eingeschlossen, mit Filtern wie from:, has:attachment und is:unread.",
+     "Durchsuche alle Accounts auf einmal, archivierte E-Mails eingeschlossen.",
      "Stell eine Frage wie „Wann geht mein Flug?“ und bekomm die Antwort aus deinen eigenen E-Mails.",
      "Finde jede Konversation auch über Spotlight."])),
-  (("EINLADUNGEN", [
-     "Sieh die Uhrzeit in deiner Zeitzone, den Ort, den Videoanruf zum Beitreten und ob du frei bist.",
-     "Zusagen, Vielleicht oder Absagen direkt in der E-Mail und mit einem Tipp in den Kalender."]),
-   ("EINLADUNGEN", [
-     "Sieh die Uhrzeit in deiner Zeitzone, den Ort, den Videoanruf zum Beitreten und ob du frei bist.",
-     "Zusagen, Vielleicht oder Absagen direkt in der E-Mail und mit einem Klick in den Kalender."])),
   (("SCHREIBEN", [
-     "Entwürfe, Später senden, Senden widerrufen und eine Erinnerung, wenn niemand antwortet.",
+     "Entwürfe, Später senden, Senden widerrufen, Vorlagen und eine Erinnerung, wenn niemand antwortet.",
      "Mehrere Signaturen, weitere Absenderadressen sowie Fett, Listen und Links.",
-     "Antwortvorschläge und Umformulierungen. Nichts wird gesendet, bevor du es sendest.",
-     "Schreib eine E-Mail aus jeder App über die Teilen-Taste."]), "same-drop-last"),
+     "Antwortvorschläge und Umformulierungen in deinem Stil, gelernt aus deinen gesendeten E-Mails. Nichts wird gesendet, bevor du es sendest.",
+     "Bitte Siri, in Corres eine E-Mail zu schreiben, zu senden oder zu finden.",
+     "Schreib eine E-Mail aus jeder App über die Teilen-Taste."]),
+   ("SCHREIBEN", [
+     "Entwürfe, Später senden, Senden widerrufen, Vorlagen und eine Erinnerung, wenn niemand antwortet.",
+     "Mehrere Signaturen, weitere Absenderadressen sowie Fett, Listen und Links.",
+     "Antwortvorschläge und Umformulierungen in deinem Stil, gelernt aus deinen gesendeten E-Mails. Nichts wird gesendet, bevor du es sendest."])),
   (("ÜBERALL", [
      "Archivieren, löschen und markieren ohne Netz. Deine Änderungen gehen durch, sobald du wieder online bist.",
      "Was du sortierst, erinnern lässt, anheftest, erlaubst und blockierst, folgt dir über iCloud auf deine anderen Geräte. Deine E-Mails nie."]),
    ("ÜBERALL", [
      "Archivieren, löschen und markieren ohne Verbindung. Deine Änderungen gehen durch, sobald du wieder online bist.",
      "Was du sortierst, erinnern lässt, anheftest, erlaubst und blockierst, folgt dir über iCloud zwischen iPhone, iPad und Mac. Deine E-Mails nie."])),
+  (("APPLE WATCH", [
+     "Was dich braucht und warum, am Handgelenk und auf dem Zifferblatt.",
+     "Antworte per Sprache, Kritzeln oder fertiger Antwort, oder markiere die E-Mail als erledigt. Gesendet wird über dein iPhone."]), None),
+  (("WELTWEIT", [
+     "Corres spricht neun Sprachen und versteht in jeder davon Fristen, Belege, Lieferungen, Einmalcodes und Termine. Das Wochenende richtet sich nach deiner Region."]), "same"),
   (("SMART AUF JEDEM IPHONE", [
      "„Braucht dich“, die Gründe dafür und wichtige Details wie Beträge, Termine und Bestellnummern funktionieren auf jedem iPhone.",
      "Mit Apple Intelligence schreibt Corres außerdem Zusammenfassungen und Antwortvorschläge, direkt auf dem iPhone, und prüft jede davon an der E-Mail, bevor du sie siehst."]),
@@ -228,7 +255,7 @@ L["ko"] = dict(
  keywords="이메일,메일,받은편지함,우선순위,뉴스레터,요약,답장,후속조치,정리,집중,개인정보,오프라인,스팸",
  promo=("Gmail, Outlook, iCloud 등을 하나의 받은 편지함에서. Corres는 나에게 필요한 메일부터 이유와 함께 보여주고, 메일은 iPhone에만 둡니다.",
         "Gmail, Outlook, iCloud 등을 하나의 받은 편지함에서. Corres는 나에게 필요한 메일부터 이유와 함께 보여주고, 메일은 Mac에만 둡니다."),
- intro=("Corres는 나에게 필요한 것부터 엽니다. Gmail, Outlook, iCloud를 비롯한 거의 모든 이메일 계정을 하나의 받은 편지함에 모아 iPhone에서 읽고 분류합니다. 나에게 무언가를 요청하는 메일이 이유와 함께 맨 위에 오고, 나머지 메일은 한 번 쓸어넘기면 닿는 곳에서 조용히 기다립니다.",
+ intro=("Corres는 나에게 필요한 것부터 엽니다. Gmail, Outlook, iCloud를 비롯한 거의 모든 이메일 계정을 하나의 받은 편지함에 모아 iPhone에서 읽고 분류합니다. 나에게 무언가를 요청하는 메일이 이유와 함께 맨 위에 오고, 나머지 메일은 한 번 탭하면 닿는 곳에서 조용히 기다립니다.",
         "Corres는 나에게 필요한 것부터 엽니다. Gmail, Outlook, iCloud를 비롯한 거의 모든 이메일 계정을 하나의 받은 편지함에 모아 Mac에서 읽고 분류합니다. 나에게 무언가를 요청하는 메일이 이유와 함께 맨 위에 오고, 나머지 메일은 한 번 클릭하면 닿는 곳에서 조용히 기다립니다."),
  sections=[
   (None, ("진짜 Mac 앱", [
@@ -247,9 +274,10 @@ L["ko"] = dict(
      "Gmail, Google Workspace, Outlook.com, Microsoft 365, iCloud 메일은 물론 Yahoo, AOL, Fastmail, Zoho, 회사 서버도 주소와 암호만으로.",
      "기본, 프로모션, 소셜, 업데이트로 Corres가 분류하고, 내가 옮긴 메일에서 배웁니다.",
      "계정마다 색상, 이름, 서명, 알림을 따로 설정합니다.",
+     "규칙이 도착한 메일을 분류하고, Gmail과 Outlook에서도 직접 실행되므로 Corres를 닫아 두어도 작동합니다.",
      "Outlook과 iCloud의 새로운 메일은 몇 초 안에 알림이 옵니다."]), "same-drop-last"),
   (("새 보낸 사람", [
-     "처음 보는 사람의 첫 이메일은 허용하거나 차단할 때까지 기다립니다.",
+     "처음 보는 사람의 첫 이메일을 받는 방식을 고르세요: 모두 먼저 확인, 회사만 확인, 새로 표시해서 보기, 모두 받기.",
      "회사 전체를 한 번에 허용하거나 차단하고, 마음이 바뀌면 되돌릴 수 있습니다."]), "same"),
   (("답을 주는 검색", [
      "보관된 메일을 포함해 모든 계정을 한 번에 검색하고, from:, has:attachment, is:unread 같은 필터를 사용하세요.",
@@ -266,16 +294,27 @@ L["ko"] = dict(
      "내 시간대 기준 시간, 장소, 참여할 화상 통화, 그 시간에 비어 있는지 확인하세요.",
      "메일에서 바로 수락, 미정, 거절하고, 한 번 클릭으로 캘린더에 추가합니다."])),
   (("작성", [
-     "임시 저장, 나중에 보내기, 보내기 취소, 답장이 없을 때 알림.",
+     "임시 저장, 나중에 보내기, 보내기 취소, 템플릿, 답장이 없을 때 알림.",
      "여러 서명, 다른 보내는 주소, 굵게, 목록, 링크.",
-     "추천 답장과 다시 쓰기. 직접 보내기 전에는 아무것도 전송되지 않습니다.",
-     "어느 앱에서든 공유 버튼으로 이메일을 쓸 수 있습니다."]), "same-drop-last"),
+     "추천 답장과 다시 쓰기는 보낸 메일에서 배운 나의 인사말, 맺음말, 길이를 따릅니다. 직접 보내기 전에는 아무것도 전송되지 않습니다.",
+     "Siri에게 Corres에서 이메일을 쓰거나 보내거나 찾아 달라고 하세요.",
+     "어느 앱에서든 공유 버튼으로 이메일을 쓸 수 있습니다."]),
+   ("작성", [
+     "임시 저장, 나중에 보내기, 보내기 취소, 템플릿, 답장이 없을 때 알림.",
+     "여러 서명, 다른 보내는 주소, 굵게, 목록, 링크.",
+     "추천 답장과 다시 쓰기는 보낸 메일에서 배운 나의 인사말, 맺음말, 길이를 따릅니다. 직접 보내기 전에는 아무것도 전송되지 않습니다."])),
   (("어디서나", [
      "신호가 없어도 보관, 삭제, 깃발 표시가 됩니다. 다시 온라인이 되면 변경 사항이 반영됩니다.",
      "분류, 다시 알림, 고정, 허용, 차단은 iCloud로 다른 기기에도 이어집니다. 메일 자체는 이동하지 않습니다."]),
    ("어디서나", [
      "연결이 없어도 보관, 삭제, 깃발 표시가 됩니다. 다시 온라인이 되면 변경 사항이 반영됩니다.",
      "분류, 다시 알림, 고정, 허용, 차단은 iCloud로 iPhone, iPad, Mac 사이에 이어집니다. 메일 자체는 이동하지 않습니다."])),
+  (("Apple Watch", [
+     "'나에게 필요'한 메일과 그 이유를 손목 위와 워치 페이스에서 확인하세요.",
+     "음성, 손글씨 또는 준비된 답장으로 답하거나 '처리됨'으로 표시하세요. 답장은 iPhone을 통해 보내집니다."]), None),
+  (("전 세계에서", [
+     "Corres는 한국어, 영어, 일본어, 중국어 간체, 독일어, 프랑스어, 스페인어, 포르투갈어, 벵골어를 지원합니다.",
+     "마감, 영수증, 배송, 인증 코드, 일정을 이 9개 언어 모두에서 알아보고, 주말은 사는 지역에 맞춥니다."]), "same"),
   (("모든 iPhone에서 스마트하게", [
      "'나에게 필요', 그 이유, 금액, 날짜, 주문 번호 같은 주요 정보는 모든 iPhone에서 작동합니다.",
      "Apple Intelligence가 있으면 Corres가 iPhone에서 직접 요약과 추천 답장도 작성하고, 보여주기 전에 메일과 대조해 확인합니다."]),
@@ -298,10 +337,10 @@ L["ko"] = dict(
 
 L["fr-FR"] = dict(
  subtitle="Le mail qui sait ce qui compte",
- keywords="boîte de réception,email,mail,priorité,newsletter,résumé,répondre,relance,tri,concentration,privé",
+ keywords="boîte de réception,email,mail,priorité,newsletter,résumé,répondre,relance,tri,focus,privé",
  promo=("Gmail, Outlook, iCloud et plus dans une seule boîte. Corres s’ouvre sur les e-mails qui vous attendent, dit pourquoi, et garde vos e-mails sur votre iPhone.",
         "Gmail, Outlook, iCloud et plus dans une seule boîte. Corres s’ouvre sur les e-mails qui vous attendent, dit pourquoi, et garde vos e-mails sur votre Mac."),
- intro=("Corres s’ouvre sur ce qui vous attend. Gmail, Outlook, iCloud et presque tous les autres comptes de messagerie réunis dans une seule boîte, lus et triés sur votre iPhone. Les e-mails qui vous demandent quelque chose passent en premier, chacun avec sa raison. Le reste attend à un balayage, au calme, jusqu’à ce que vous soyez prêt.",
+ intro=("Corres s’ouvre sur ce qui vous attend. Gmail, Outlook, iCloud et presque tous les autres comptes de messagerie réunis dans une seule boîte, lus et triés sur votre iPhone. Les e-mails qui vous demandent quelque chose passent en premier, chacun avec sa raison. Le reste attend à un toucher, au calme, jusqu’à ce que vous soyez prêt.",
         "Corres s’ouvre sur ce qui vous attend. Gmail, Outlook, iCloud et presque tous les autres comptes de messagerie réunis dans une seule boîte, lus et triés sur votre Mac. Les e-mails qui vous demandent quelque chose passent en premier, chacun avec sa raison. Le reste attend à un clic, au calme, jusqu’à ce que vous soyez prêt."),
  sections=[
   (None, ("UNE VRAIE APP MAC", [
@@ -320,35 +359,37 @@ L["fr-FR"] = dict(
      "Gmail, Google Workspace, Outlook.com, Microsoft 365 et iCloud Mail, plus Yahoo, AOL, Fastmail, Zoho ou un serveur professionnel avec simplement votre adresse et votre mot de passe.",
      "Principale, Promotions, Réseaux sociaux et Mises à jour, triés par Corres qui apprend des e-mails que vous déplacez.",
      "Chaque compte a sa couleur, son nom, ses signatures et ses notifications.",
+     "Les règles trient les e-mails à l’arrivée et peuvent tourner dans Gmail et Outlook, même Corres fermé.",
      "Les nouveaux e-mails Outlook et iCloud vous notifient en quelques secondes."]), "same-drop-last"),
   (("NOUVEAUX EXPÉDITEURS", [
-     "Les premiers e-mails d’une nouvelle personne attendent que vous l’autorisiez ou la bloquiez.",
-     "Autorisez ou bloquez toute une entreprise d’un coup, et annulez si vous changez d’avis."]), "same"),
+     "Choisissez comment arrivent les premiers e-mails d’une nouvelle personne, et autorisez ou bloquez toute une entreprise d’un coup."]), "same"),
   (("UNE RECHERCHE QUI RÉPOND", [
-     "Cherchez dans tous vos comptes à la fois, e-mails archivés compris, avec des filtres comme from:, has:attachment et is:unread.",
-     "Posez une question comme « quand est mon vol ? » et obtenez la réponse à partir de vos propres e-mails.",
-     "Retrouvez aussi n’importe quelle conversation depuis la recherche de l’écran d’accueil."]),
+     "Cherchez dans tous vos comptes à la fois, e-mails archivés compris.",
+     "Posez une question comme « quand est mon vol ? » et obtenez la réponse à partir de vos propres e-mails."]),
    ("UNE RECHERCHE QUI RÉPOND", [
-     "Cherchez dans tous vos comptes à la fois, e-mails archivés compris, avec des filtres comme from:, has:attachment et is:unread.",
+     "Cherchez dans tous vos comptes à la fois, e-mails archivés compris.",
      "Posez une question comme « quand est mon vol ? » et obtenez la réponse à partir de vos propres e-mails.",
      "Retrouvez aussi n’importe quelle conversation depuis Spotlight."])),
-  (("INVITATIONS", [
-     "Voyez l’heure dans votre fuseau horaire, le lieu, l’appel vidéo à rejoindre, et si vous êtes libre.",
-     "Acceptez, répondez Peut-être ou refusez depuis l’e-mail, et ajoutez-la au calendrier d’un toucher."]),
-   ("INVITATIONS", [
-     "Voyez l’heure dans votre fuseau horaire, le lieu, l’appel vidéo à rejoindre, et si vous êtes libre.",
-     "Acceptez, répondez Peut-être ou refusez depuis l’e-mail, et ajoutez-la au calendrier d’un clic."])),
   (("RÉDACTION", [
-     "Brouillons, Envoyer plus tard, Annuler l’envoi, et un rappel si personne ne répond.",
+     "Brouillons, Envoyer plus tard, Annuler l’envoi, modèles, et un rappel si personne ne répond.",
      "Plusieurs signatures, d’autres adresses d’envoi, et gras, listes et liens.",
-     "Réponses suggérées et reformulations. Rien n’est envoyé tant que vous ne l’envoyez pas.",
-     "Écrivez un e-mail depuis le bouton Partager de n’importe quelle app."]), "same-drop-last"),
+     "Réponses suggérées et reformulations dans votre style, appris de vos e-mails envoyés. Rien n’est envoyé tant que vous ne l’envoyez pas.",
+     "Demandez à Siri d’écrire, d’envoyer ou de trouver un e-mail dans Corres."]),
+   ("RÉDACTION", [
+     "Brouillons, Envoyer plus tard, Annuler l’envoi, modèles, et un rappel si personne ne répond.",
+     "Plusieurs signatures, d’autres adresses d’envoi, et gras, listes et liens.",
+     "Réponses suggérées et reformulations dans votre style, appris de vos e-mails envoyés. Rien n’est envoyé tant que vous ne l’envoyez pas."])),
   (("PARTOUT", [
      "Archivez, supprimez et signalez sans réseau. Vos changements sont appliqués dès votre retour en ligne.",
      "Ce que vous triez, rappelez plus tard, épinglez, autorisez et bloquez vous suit sur vos autres appareils via iCloud. Vos e-mails, jamais."]),
    ("PARTOUT", [
      "Archivez, supprimez et signalez sans connexion. Vos changements sont appliqués dès votre retour en ligne.",
      "Ce que vous triez, rappelez plus tard, épinglez, autorisez et bloquez vous suit entre iPhone, iPad et Mac via iCloud. Vos e-mails, jamais."])),
+  (("APPLE WATCH", [
+     "Ce qui vous attend et pourquoi, au poignet et sur le cadran.",
+     "Répondez à la voix, avec Griffonner ou une réponse toute prête, ou marquez-le comme traité. L’envoi passe par votre iPhone."]), None),
+  (("DANS LE MONDE ENTIER", [
+     "Corres parle neuf langues et comprend dans chacune échéances, reçus, livraisons, codes à usage unique et événements. Le week-end suit votre région."]), "same"),
   (("INTELLIGENT SUR TOUS LES IPHONE", [
      "Pour vous, ses raisons, et les détails clés comme les montants, les dates et les numéros de commande fonctionnent sur tous les iPhone.",
      "Avec Apple Intelligence, Corres rédige aussi des résumés et des réponses suggérées, sur l’iPhone lui-même, et vérifie chacun d’eux par rapport à l’e-mail avant de vous le montrer."]),
@@ -374,7 +415,7 @@ L["es-ES"] = dict(
  keywords="bandeja de entrada,correo,email,prioridad,boletín,resumen,responder,seguimiento,enfoque,privado",
  promo=("Gmail, Outlook, iCloud y más en una sola bandeja. Corres se abre en los correos que te necesitan, te dice por qué y mantiene tu correo en tu iPhone.",
         "Gmail, Outlook, iCloud y más en una sola bandeja. Corres se abre en los correos que te necesitan, te dice por qué y mantiene tu correo en tu Mac."),
- intro=("Corres se abre en lo que te necesita. Gmail, Outlook, iCloud y casi cualquier otra cuenta de correo en una sola bandeja, leída y clasificada en tu iPhone. Los correos que te piden algo van primero, cada uno con su motivo. El resto de tu correo espera a un deslizamiento, en calma hasta que estés listo.",
+ intro=("Corres se abre en lo que te necesita. Gmail, Outlook, iCloud y casi cualquier otra cuenta de correo en una sola bandeja, leída y clasificada en tu iPhone. Los correos que te piden algo van primero, cada uno con su motivo. El resto de tu correo espera a un toque, en calma hasta que estés listo.",
         "Corres se abre en lo que te necesita. Gmail, Outlook, iCloud y casi cualquier otra cuenta de correo en una sola bandeja, leída y clasificada en tu Mac. Los correos que te piden algo van primero, cada uno con su motivo. El resto de tu correo espera a un clic, en calma hasta que estés listo."),
  sections=[
   (None, ("UNA APP DE MAC DE VERDAD", [
@@ -393,9 +434,10 @@ L["es-ES"] = dict(
      "Gmail, Google Workspace, Outlook.com, Microsoft 365 e iCloud Mail, además de Yahoo, AOL, Fastmail, Zoho o un servidor del trabajo con solo tu dirección y contraseña.",
      "Principal, Promociones, Social y Novedades, clasificados por Corres, que aprende de los correos que mueves.",
      "Cada cuenta tiene su color, nombre, firmas y avisos.",
+     "Las reglas clasifican el correo al llegar y pueden funcionar en el propio Gmail y Outlook, incluso con Corres cerrado.",
      "El correo nuevo de Outlook e iCloud te avisa en segundos."]), "same-drop-last"),
   (("REMITENTES NUEVOS", [
-     "Los primeros correos de alguien nuevo esperan hasta que lo permitas o lo bloquees.",
+     "Elige cómo llegan los primeros correos de alguien nuevo: Revisar a todos, Revisar solo empresas, Mostrar como nuevo o Aceptar a todos.",
      "Permite o bloquea una empresa entera de una vez, y deshazlo si cambias de idea."]), "same"),
   (("UNA BÚSQUEDA QUE RESPONDE", [
      "Busca en todas las cuentas a la vez, correo archivado incluido, con filtros como from:, has:attachment e is:unread.",
@@ -405,23 +447,27 @@ L["es-ES"] = dict(
      "Busca en todas las cuentas a la vez, correo archivado incluido, con filtros como from:, has:attachment e is:unread.",
      "Haz una pregunta como «¿cuándo es mi vuelo?» y obtén la respuesta de tu propio correo.",
      "Encuentra cualquier conversación también desde Spotlight."])),
-  (("INVITACIONES", [
-     "Ve la hora en tu zona horaria, el lugar, la videollamada a la que unirte y si estás libre.",
-     "Acepta, responde Quizás o rechaza desde el correo, y añádela al calendario con un toque."]),
-   ("INVITACIONES", [
-     "Ve la hora en tu zona horaria, el lugar, la videollamada a la que unirte y si estás libre.",
-     "Acepta, responde Quizás o rechaza desde el correo, y añádela al calendario con un clic."])),
   (("ESCRIBIR", [
-     "Borradores, Enviar más tarde, Deshacer envío y un recordatorio si nadie responde.",
+     "Borradores, Enviar más tarde, Deshacer envío, plantillas y un recordatorio si nadie responde.",
      "Varias firmas, otras direcciones de envío, y negrita, listas y enlaces.",
-     "Respuestas sugeridas y reescrituras. No se envía nada hasta que tú lo envías.",
-     "Escribe un correo desde el botón Compartir de cualquier app."]), "same-drop-last"),
+     "Respuestas sugeridas y reescrituras con tu saludo, tu despedida y tu extensión, aprendidos de tus correos enviados. No se envía nada hasta que tú lo envías.",
+     "Pide a Siri que escriba, envíe o busque un correo en Corres.",
+     "Escribe un correo desde el botón Compartir de cualquier app."]),
+   ("ESCRIBIR", [
+     "Borradores, Enviar más tarde, Deshacer envío, plantillas y un recordatorio si nadie responde.",
+     "Varias firmas, otras direcciones de envío, y negrita, listas y enlaces.",
+     "Respuestas sugeridas y reescrituras con tu saludo, tu despedida y tu extensión, aprendidos de tus correos enviados. No se envía nada hasta que tú lo envías."])),
   (("EN CUALQUIER LUGAR", [
      "Archiva, elimina y marca sin cobertura. Tus cambios se aplican cuando vuelves a estar en línea.",
      "Lo que clasificas, pospones, fijas, permites y bloqueas te sigue a tus otros dispositivos con iCloud. Tu correo nunca."]),
    ("EN CUALQUIER LUGAR", [
      "Archiva, elimina y marca sin conexión. Tus cambios se aplican cuando vuelves a estar en línea.",
      "Lo que clasificas, pospones, fijas, permites y bloqueas te sigue entre iPhone, iPad y Mac con iCloud. Tu correo nunca."])),
+  (("APPLE WATCH", [
+     "Lo que te necesita y por qué, en la muñeca y en la esfera del reloj.",
+     "Responde por voz, con Garabatear o con una respuesta lista, o márcalo como resuelto. Las respuestas salen desde tu iPhone."]), None),
+  (("EN TODO EL MUNDO", [
+     "Corres habla nueve idiomas y en todos ellos entiende fechas límite, recibos, entregas, códigos de un solo uso y eventos. El fin de semana sigue tu región."]), "same"),
   (("INTELIGENTE EN CUALQUIER IPHONE", [
      "Te necesita, sus motivos y datos clave como importes, fechas y números de pedido funcionan en cualquier iPhone.",
      "Con Apple Intelligence, Corres también escribe resúmenes y respuestas sugeridas, en el propio iPhone, y comprueba cada uno con el correo antes de mostrártelo."]),
@@ -447,7 +493,7 @@ L["pt-BR"] = dict(
  keywords="caixa de entrada,email,correio,prioridade,newsletter,resumo,responder,acompanhar,foco,privado",
  promo=("Gmail, Outlook, iCloud e mais em uma só caixa. O Corres abre nos e-mails que precisam de você, diz por quê e mantém seus e-mails no seu iPhone.",
         "Gmail, Outlook, iCloud e mais em uma só caixa. O Corres abre nos e-mails que precisam de você, diz por quê e mantém seus e-mails no seu Mac."),
- intro=("O Corres abre no que precisa de você. Gmail, Outlook, iCloud e quase qualquer outra conta de e-mail em uma só caixa de entrada, lidos e classificados no seu iPhone. Os e-mails que pedem algo a você vêm primeiro, cada um com o motivo. O resto espera a um deslize, em silêncio até você estar pronto.",
+ intro=("O Corres abre no que precisa de você. Gmail, Outlook, iCloud e quase qualquer outra conta de e-mail em uma só caixa de entrada, lidos e classificados no seu iPhone. Os e-mails que pedem algo a você vêm primeiro, cada um com o motivo. O resto espera a um toque, em silêncio até você estar pronto.",
         "O Corres abre no que precisa de você. Gmail, Outlook, iCloud e quase qualquer outra conta de e-mail em uma só caixa de entrada, lidos e classificados no seu Mac. Os e-mails que pedem algo a você vêm primeiro, cada um com o motivo. O resto espera a um clique, em silêncio até você estar pronto."),
  sections=[
   (None, ("UM APP DE MAC DE VERDADE", [
@@ -466,9 +512,10 @@ L["pt-BR"] = dict(
      "Gmail, Google Workspace, Outlook.com, Microsoft 365 e E-mail do iCloud, além de Yahoo, AOL, Fastmail, Zoho ou um servidor do trabalho só com seu endereço e senha.",
      "Principal, Promoções, Social e Atualizações, classificados pelo Corres, que aprende com os e-mails que você move.",
      "Cada conta tem sua cor, nome, assinaturas e notificações.",
+     "Regras classificam os e-mails na chegada e podem rodar no próprio Gmail e Outlook, mesmo com o Corres fechado.",
      "E-mails novos do Outlook e do iCloud notificam você em segundos."]), "same-drop-last"),
   (("NOVOS REMETENTES", [
-     "Os primeiros e-mails de alguém novo esperam até você permitir ou bloquear.",
+     "Escolha como chegam os primeiros e-mails de alguém novo: Revisar todos, Revisar só empresas, Mostrar como novo ou Aceitar todos.",
      "Permita ou bloqueie uma empresa inteira de uma vez, e desfaça se mudar de ideia."]), "same"),
   (("UMA BUSCA QUE RESPONDE", [
      "Busque em todas as contas de uma vez, incluindo e-mails arquivados, com filtros como from:, has:attachment e is:unread.",
@@ -478,23 +525,27 @@ L["pt-BR"] = dict(
      "Busque em todas as contas de uma vez, incluindo e-mails arquivados, com filtros como from:, has:attachment e is:unread.",
      "Faça uma pergunta como “quando é meu voo?” e receba a resposta dos seus próprios e-mails.",
      "Encontre qualquer conversa também pelo Spotlight."])),
-  (("CONVITES", [
-     "Veja o horário no seu fuso, o local, a chamada de vídeo para entrar e se você está livre.",
-     "Aceite, responda Talvez ou recuse pelo e-mail, e adicione ao calendário com um toque."]),
-   ("CONVITES", [
-     "Veja o horário no seu fuso, o local, a chamada de vídeo para entrar e se você está livre.",
-     "Aceite, responda Talvez ou recuse pelo e-mail, e adicione ao calendário com um clique."])),
   (("ESCRITA", [
-     "Rascunhos, Enviar depois, Desfazer envio e um lembrete se ninguém responder.",
+     "Rascunhos, Enviar depois, Desfazer envio, modelos e um lembrete se ninguém responder.",
      "Várias assinaturas, outros endereços de envio, e negrito, listas e links.",
-     "Respostas sugeridas e reescritas. Nada é enviado até você enviar.",
-     "Escreva um e-mail pelo botão Compartilhar de qualquer app."]), "same-drop-last"),
+     "Respostas sugeridas e reescritas com sua saudação, sua despedida e seu tamanho de texto, aprendidos com os e-mails que você enviou. Nada é enviado até você enviar.",
+     "Peça à Siri para escrever, enviar ou encontrar um e-mail no Corres.",
+     "Escreva um e-mail pelo botão Compartilhar de qualquer app."]),
+   ("ESCRITA", [
+     "Rascunhos, Enviar depois, Desfazer envio, modelos e um lembrete se ninguém responder.",
+     "Várias assinaturas, outros endereços de envio, e negrito, listas e links.",
+     "Respostas sugeridas e reescritas com sua saudação, sua despedida e seu tamanho de texto, aprendidos com os e-mails que você enviou. Nada é enviado até você enviar."])),
   (("EM QUALQUER LUGAR", [
      "Arquive, apague e sinalize sem sinal. Suas alterações são aplicadas quando você volta a ficar online.",
      "O que você classifica, adia, fixa, permite e bloqueia acompanha você nos seus outros dispositivos pelo iCloud. Seus e-mails, nunca."]),
    ("EM QUALQUER LUGAR", [
      "Arquive, apague e sinalize sem conexão. Suas alterações são aplicadas quando você volta a ficar online.",
      "O que você classifica, adia, fixa, permite e bloqueia acompanha você entre iPhone, iPad e Mac pelo iCloud. Seus e-mails, nunca."])),
+  (("APPLE WATCH", [
+     "O que precisa de você e por quê, no pulso e no mostrador.",
+     "Responda por voz, com Rabiscar ou com uma resposta pronta, ou marque como resolvido. As respostas saem pelo seu iPhone."]), None),
+  (("NO MUNDO TODO", [
+     "O Corres fala nove idiomas e em todos eles entende prazos, recibos, entregas, códigos de uso único e eventos. O fim de semana segue a sua região."]), "same"),
   (("INTELIGENTE EM QUALQUER IPHONE", [
      "Precisa de Você, seus motivos e detalhes importantes como valores, datas e números de pedido funcionam em qualquer iPhone.",
      "Com a Apple Intelligence, o Corres também escreve resumos e respostas sugeridas, no próprio iPhone, e confere cada um com o e-mail antes de mostrar."]),
@@ -544,11 +595,16 @@ for loc, d in L.items():
              mac=dict(description=description(d, "mac"), promotionalText=d["promo"][1]))
     assert len(e["subtitle"]) <= 30, (loc, len(e["subtitle"]))
     assert len(e["keywords"]) <= 100, (loc, len(e["keywords"]))
+    # Apple's documented keyword limit is 100 bytes (UTF-8). Latin-script
+    # lists must fit; the Japanese, Chinese and Korean lists are longer in
+    # bytes but were accepted by App Store Connect on 2026-10-20.
+    if loc not in ("ja", "zh-Hans", "ko"):
+        assert len(e["keywords"].encode()) <= 100, (loc, len(e["keywords"].encode()))
     assert ", " not in e["keywords"]
     for p in ("ios", "mac"):
         assert len(e[p]["description"]) <= 4000
         assert len(e[p]["promotionalText"]) <= 170, (loc, p, len(e[p]["promotionalText"]))
         assert "—" not in e[p]["description"]
     out[loc] = e
-    print(loc, len(e["subtitle"]), len(e["keywords"]), len(e["ios"]["description"]), len(e["mac"]["description"]), len(e["ios"]["promotionalText"]))
+    print(loc, len(e["subtitle"]), len(e["keywords"]), len(e["keywords"].encode()), len(e["ios"]["description"]), len(e["mac"]["description"]), len(e["ios"]["promotionalText"]), len(e["mac"]["promotionalText"]))
 json.dump(out, open(sys.argv[1], "w"), ensure_ascii=False, indent=1)

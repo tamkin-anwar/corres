@@ -6,12 +6,25 @@ import SwiftUI
 struct CorresWatchApp: App {
     init() { WatchMailStore.shared.start() }
 
+    #if DEBUG
+    /// Screenshots: `-WatchScreen` opens the first email straight away.
+    @State private var path: [WatchLink.Mail] = WatchMailStore.screenshotScreen == nil
+        ? [] : Array(WatchMailStore.shared.needsYou.prefix(1))
+    #endif
+
     var body: some Scene {
         WindowGroup {
+            #if DEBUG
+            NavigationStack(path: $path) {
+                MailListView(store: WatchMailStore.shared)
+            }
+            .tint(WatchPalette.accent)
+            #else
             NavigationStack {
                 MailListView(store: WatchMailStore.shared)
             }
             .tint(WatchPalette.accent)
+            #endif
         }
     }
 }
