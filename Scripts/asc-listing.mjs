@@ -262,13 +262,13 @@ async function uploadShot(setId, path) {
 
 // Apple processes an upload after it's confirmed; wait until it has.
 async function processed(id) {
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 200; i++) {
     const state = (await api('GET', `/v1/appScreenshots/${id}`)).data.attributes.assetDeliveryState?.state
     if (state === 'COMPLETE') return
     if (state === 'FAILED') throw new Error(`App Store Connect couldn't process screenshot ${id}`)
     await new Promise((r) => setTimeout(r, 3000))
   }
-  throw new Error(`Screenshot ${id} still processing after 3 minutes`)
+  throw new Error(`Screenshot ${id} still processing after 10 minutes`)
 }
 
 // Mac sets live on the macOS version, everything else on iOS.

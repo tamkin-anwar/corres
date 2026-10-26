@@ -554,6 +554,10 @@ struct MacMainView: View {
                       replyIntents: ["Approve the direction", "Ask for one more round"]), on: maya)
         }
         if args.contains("-SettingsTab") { openSettings() }
+        if args.contains("-ShowPalette") {
+            try? await Task.sleep(for: .milliseconds(600))
+            showingPalette = true
+        }
         if let to = value("-ComposeTo") { openWindow(value: ComposeRequest(kind: .new, to: to)) }
         if let thread = value("-SelectThread") {
             try? await Task.sleep(for: .milliseconds(300))

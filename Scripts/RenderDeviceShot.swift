@@ -4,10 +4,12 @@
 // fills the bezel's transparent screen, found by walking out from the
 // middle of the image.
 //
-//   swift Scripts/RenderDeviceShot.swift <bezel.png> <screenshot.png> <out.png> [background #RRGGBB]
+//   swift Scripts/RenderDeviceShot.swift <bezel.png> <screenshot.png> <out.png> [background #RRGGBB] [fit]
 //
-// A screenshot whose shape doesn't match the screen (a Mac window on a
-// MacBook display) is centered on the background color, scaled to fit.
+// A screenshot whose shape doesn't match the screen, or any screenshot
+// given a fit below 1 (a Mac window, shadow and all, on a MacBook display), sits
+// on the background color at that share of the screen, centered below
+// the camera notch.
 import AppKit
 
 let args = CommandLine.arguments
@@ -61,7 +63,8 @@ let shotSize = shot.representations.first.map { CGSize(width: $0.pixelsWide, hei
 let clip = screen.insetBy(dx: -2, dy: -2)
 cg.addPath(CGPath(roundedRect: clip, cornerWidth: min(radius + 2, clip.width / 2), cornerHeight: min(radius + 2, clip.height / 2), transform: nil))
 cg.clip()
-let sameShape = abs(shotSize.width / shotSize.height - screen.width / screen.height) < 0.02
+let fit = args.count > 5 ? CGFloat(Double(args[5]) ?? 1) : 1
+let sameShape = fit >= 1 && abs(shotSize.width / shotSize.height - screen.width / screen.height) < 0.02
 if sameShape {
     // Slightly past the edges, under the bezel, so no hairline shows.
     shot.draw(in: screen.insetBy(dx: -2, dy: -2))
@@ -71,9 +74,12 @@ if sameShape {
     cg.setFillColor(NSColor(srgbRed: CGFloat((v >> 16) & 255) / 255, green: CGFloat((v >> 8) & 255) / 255,
                             blue: CGFloat(v & 255) / 255, alpha: 1).cgColor)
     cg.fill(screen.insetBy(dx: -2, dy: -2))
-    let scale = min(screen.width / shotSize.width, screen.height / shotSize.height)
+    let scale = min(screen.width / shotSize.width, screen.height / shotSize.height) * min(fit, 1)
     let size = CGSize(width: shotSize.width * scale, height: shotSize.height * scale)
-    shot.draw(in: CGRect(x: screen.midX - size.width / 2, y: screen.midY - size.height / 2, width: size.width, height: size.height))
+    // Centered in what's left below the top 4%, where a MacBook's notch is.
+    let below = screen.height * 0.96
+    shot.draw(in: CGRect(x: screen.midX - size.width / 2, y: screen.minY + (below - size.height) / 2,
+                         width: size.width, height: size.height))
 }
 cg.resetClip()
 NSImage(cgImage: bezel.cgImage!, size: NSSize(width: width, height: height))

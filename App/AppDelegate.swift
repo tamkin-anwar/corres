@@ -189,7 +189,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // Preferences handles the first-connection case itself): sample
         // threads from before that connection existed have no reason to
         // still be mixed into real mail.
-        if !accountEmails.isEmpty {
+        var keepsSample = false
+        #if DEBUG
+        // Screenshots: the made-up accounts show the sample mail.
+        keepsSample = SampleAccounts.isOn
+        #endif
+        if !accountEmails.isEmpty, !keepsSample {
             await store.deleteSampleDataIfPresent()
         }
         await outbox.resumeAfterRelaunch()

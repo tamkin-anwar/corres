@@ -265,10 +265,16 @@ a thread, Private by design. Re-render with
 `swift Scripts/RenderStoreShot.swift <capture> <out> "Headline." "Line under it."`
 from Simulator captures of fresh sample mail (status bar at 9:41).
 
-Mac (macOS App 1.0, uploaded 2026-10-19): five 2880 × 1800 in
-`Docs/AppStore/mac/` (Know what needs you, Every account one inbox, Ask your
-mail, Everything from the keyboard, Never lose a thread), captured from a
-debug build run with `-SampleMailOnly -ShowMailbox … -SelectThread sample-N`
+Mac (macOS App 1.0, retaken 2026-10-26 because the 2026-10-19 set still
+showed Unread in the sidebar): six 2880 × 1800 in `Docs/AppStore/mac/`
+(Know what needs you, Every account one inbox, Ask your mail, Everything
+from the keyboard, Never lose a thread, Replies that sound like you),
+captured from a debug build run with `-SampleMailOnly -CorresScreenshots
+-corres.appearance dark -ShowMailbox … -SelectThread sample-N` (plus
+`-SearchFor "…"`, `-ShowPalette` for ⌘K, `-SampleReplies`), with `TZ` set to
+a zone where it's just past 9:41 so the sample mail reads as this morning,
+and uploaded with `node Scripts/asc-listing.mjs replace-shots en-US
+APP_DESKTOP Docs/AppStore/mac/mac-*.png`
 (sample mail in memory, Spotlight off, so a real Corres on the same Mac is
 untouched). The window has to be on a regular desktop Space: macOS doesn't
 draw windows on another Space or a full-screen one. The Mac description is

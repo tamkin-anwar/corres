@@ -357,6 +357,15 @@ struct CorresShell: View {
                 try? await Task.sleep(for: .seconds(1.5))
                 router.pending = .thread(ThreadID(account: "sample", providerID: args[flag + 1]))
             }
+            // -ShowAccounts opens the account switcher; -Compose a new email.
+            if args.contains("-ShowAccounts") {
+                try? await Task.sleep(for: .seconds(1.5))
+                showingAccounts = true
+            }
+            if args.contains("-Compose") {
+                try? await Task.sleep(for: .seconds(1.5))
+                router.pending = .compose
+            }
             #endif
         }
     }
@@ -775,7 +784,7 @@ struct CorresShell: View {
                     .padding(.bottom, 6)
                 }
                 if auth.accounts.count > 1 {
-                    Section("Accounts") { accountMenu }
+                    Section("Accounts") { sidebarAccounts }
                 }
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 240)
@@ -836,30 +845,48 @@ struct CorresShell: View {
         }
     }
 
-    /// "All Inboxes" (every connected account merged, newest first; the
-    /// default) plus one row per account. Reached by tapping the screen's
-    /// title, the system's own place for switching what a screen shows.
+    /// The iPad sidebar's accounts: All Inboxes (every account merged,
+    /// newest first; the default), then each account in its colour, its
+    /// name with the address beneath, and a checkmark on the one shown.
     @ViewBuilder
-    private var accountMenu: some View {
-        Button {
-            accountFilter = nil
-        } label: {
-            if accountFilter == nil { Label("All Inboxes", systemImage: "checkmark") }
-            else { Label("All Inboxes", systemImage: "tray.2") }
+    private var sidebarAccounts: some View {
+        let emails = auth.accounts.map(\.email)
+        sidebarAccountRow(selected: accountFilter == nil, action: { accountFilter = nil }) {
+            Label("All Inboxes", systemImage: "tray.2")
         }
         ForEach(auth.accounts) { account in
-            Button {
-                accountFilter = account.email
-            } label: {
-                // Its name in Corres ("Work", "Gmail"), the address beneath.
-                if accountFilter == account.email {
-                    Label(AccountPreferences.nickname(for: account.email), systemImage: "checkmark")
-                } else {
-                    Text(AccountPreferences.nickname(for: account.email))
+            sidebarAccountRow(selected: accountFilter == account.email, action: { accountFilter = account.email }) {
+                Label {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(AccountPreferences.nickname(for: account.email))
+                        Text(account.email)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                } icon: {
+                    Image(systemName: "circle.fill")
+                        .imageScale(.small)
+                        .foregroundStyle(AccountPreferences.color(for: account.email, among: emails) ?? .secondary)
                 }
-                Text(account.email)
             }
         }
+    }
+
+    private func sidebarAccountRow(selected: Bool, action: @escaping () -> Void, @ViewBuilder label: () -> some View) -> some View {
+        Button(action: action) {
+            HStack {
+                label()
+                Spacer(minLength: 8)
+                if selected {
+                    Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityHidden(true)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     /// Whose face the account button shows: the account being viewed, or

@@ -20,20 +20,22 @@ tmp=$(mktemp -d)
 typeset -A bezel
 bezel[iphone-dark]="/Volumes/Bezel-iPhone-18/PNG/iPhone 18 Pro/iPhone 18 Pro - Black - Portrait.png"
 bezel[iphone-light]="/Volumes/Bezel-iPhone-18/PNG/iPhone 18 Pro/iPhone 18 Pro - Silver - Portrait.png"
-bezel[ipad-dark]="/Volumes/Bezel-iPad-Pro-(M5)/PNG/iPad Pro (M5) 13\" - Space Black - Landscape.png"
-bezel[ipad-light]="/Volumes/Bezel-iPad-Pro-(M5)/PNG/iPad Pro (M5) 13\" - Silver - Landscape.png"
+bezel[ipad-dark]="/Volumes/Bezel-iPad-Pro-(M5)/PNG/iPad Pro (M5) 13\" - Space Black - Portrait.png"
+bezel[ipad-light]="/Volumes/Bezel-iPad-Pro-(M5)/PNG/iPad Pro (M5) 13\" - Silver - Portrait.png"
 bezel[mac-dark]="/Volumes/Bezel-MacBook-Pro-M5/PNG/MacBook Pro M5 14-inch Space Black.png"
 bezel[mac-light]="/Volumes/Bezel-MacBook-Pro-M5/PNG/MacBook Pro M5 14-inch Silver.png"
 bezel[watch-dark]="/Volumes/Bezel-Apple-Watch-Series-11-2025/PNG/Sport Band/Apple Watch S11 - 46mm - Aluminum Jet Black + Sport Band Black.png"
 bezel[watch-light]="/Volumes/Bezel-Apple-Watch-Series-11-2025/PNG/Sport Band/Apple Watch S11 - 46mm - Aluminum Silver + Sport Band Purple Fog.png"
 # Web widths (2× the largest size the page draws them at).
-typeset -A width=(iphone 640 ipad 1400 mac 2000 watch 320)
-# The desktop behind a Mac window, matching the page.
+typeset -A width=(iphone 640 ipad 1000 mac 2000 watch 320)
+# The desktop behind a Mac window, matching the page, and how much of the
+# display the window takes (the rest is desktop, clear of the notch).
 typeset -A desk=(dark "#16171C" light "#DCDFE4")
+typeset -A fit=(iphone 1 ipad 1 mac 0.98 watch 1)
 
 render() { # kind mode capture name
   local kind=$1 mode=$2 capture=$3 name=$4
-  swift "$here/Scripts/RenderDeviceShot.swift" "${bezel[$kind-$mode]}" "$capture" "$tmp/$name-$mode.png" "${desk[$mode]}" >/dev/null
+  swift "$here/Scripts/RenderDeviceShot.swift" "${bezel[$kind-$mode]}" "$capture" "$tmp/$name-$mode.png" "${desk[$mode]}" ${fit[$kind]} >/dev/null
   cwebp -quiet -q 82 -alpha_q 90 -resize ${width[$kind]} 0 "$tmp/$name-$mode.png" -o "$out/$name-$mode.webp"
   echo "$name-$mode.webp $(( $(stat -f %z "$out/$name-$mode.webp") / 1024 )) KB"
 }
