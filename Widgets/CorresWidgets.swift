@@ -206,8 +206,32 @@ struct ListWidgetView: View {
         }
     }
 
-    /// Pro has lapsed: no mail shown, one clear way back.
+    /// Pro has lapsed: no mail shown, one clear way back. The Lock Screen
+    /// sizes get their own: the Home Screen card, squeezed into a circle or
+    /// one line, was cut to a few letters.
+    @ViewBuilder
     private var locked: some View {
+        switch family {
+        case .accessoryCircular:
+            ZStack {
+                AccessoryWidgetBackground()
+                Image(systemName: "lock.fill").font(.title3)
+            }
+            .accessibilityLabel("Corres Pro")
+        case .accessoryInline:
+            Label("Corres Pro", systemImage: "lock")
+        case .accessoryRectangular:
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Corres Pro").font(.headline).widgetAccentable()
+                Text("Open Corres to start your free trial.").font(.caption).lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        default:
+            lockedCard
+        }
+    }
+
+    private var lockedCard: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title.uppercased()).font(.caption2.weight(.semibold)).tracking(1.2).foregroundStyle(WidgetPalette.accent)
             Spacer(minLength: 0)

@@ -89,7 +89,15 @@ struct ComposeView: View {
     /// (Mail's two-step delete, so one stray tap never loses a recipient).
     @State private var selectedChip: (field: Field, index: Int)?
 
-    init(store: MailStore, outbox: OutboxService, auth: GoogleAuthService? = nil, draft: Draft, sourceThread: Correspondence?) {
+    /// Opened from where it was kept (the Draft pill, Send Later, Undo):
+    /// closing it unchanged keeps it. It was let go, the email with it.
+    private let reopened: Bool
+
+    init(store: MailStore, outbox: OutboxService, auth: GoogleAuthService? = nil, draft: Draft, sourceThread: Correspondence?,
+         reopened: Bool = false) {
+        // Already been in Compose (put aside, scheduled, undone), or
+        // written in the Share sheet.
+        self.reopened = reopened || draft.signatureAdded == true
         self.store = store
         self.outbox = outbox
         self.auth = auth
@@ -303,7 +311,7 @@ struct ComposeView: View {
             // Swiping Compose away never loses what you wrote: it's saved
             // and tucked away, as Gmail saves and Mail minimizes.
             .onDisappear {
-                if !isFinished, hasUnsavedChanges || draft.gmailDraftID != nil {
+                if !isFinished, hasUnsavedChanges || draft.gmailDraftID != nil || reopened {
                     outbox.shelve(draft, replyingTo: sourceThread)
                 }
             }
@@ -554,7 +562,9 @@ struct ComposeView: View {
         Task {
             let result = await intelligence.rewrite(text, tone: tone)
             rewriting = nil
-            guard let result else { return }
+            // Typed on while it was rewritten: those words stay. The
+            // rewrite replaced them, and Undo went back to before them too.
+            guard let result, ownText.text == text else { return }
             beforeRewrite = text
             draft.body = result + quote
             bodyRevision += 1
@@ -581,7 +591,7 @@ struct ComposeView: View {
 
     private func attemptDismiss() {
         // A saved draft always offers Delete too, not only once changed.
-        if hasUnsavedChanges || draft.gmailDraftID != nil { showingDiscardConfirmation = true } else { dismiss() }
+        if hasUnsavedChanges || draft.gmailDraftID != nil || reopened { showingDiscardConfirmation = true } else { dismiss() }
     }
 
     /// Optimistic: the sheet closes the instant Send is tapped, matching the

@@ -242,6 +242,8 @@ struct ArchiveMailIntent: AppIntent {
         guard !threads.isEmpty else { throw UpdateMailError.notFound }
         await actions.archive(threads)
         await actions.commitPendingRemoval()
+        // Turned away by the server: back in the list, and Siri says so.
+        guard !threads.contains(where: { store.thread($0.id) != nil }) else { throw UpdateMailError.notArchived }
         return .result()
     }
 }
@@ -258,6 +260,7 @@ struct DeleteMailIntent: AppIntent {
         guard !threads.isEmpty else { throw UpdateMailError.notFound }
         await actions.trash(threads)
         await actions.commitPendingRemoval()
+        guard !threads.contains(where: { store.thread($0.id) != nil }) else { throw UpdateMailError.notDeleted }
         return .result()
     }
 }
@@ -343,6 +346,7 @@ struct UpdateMailIntent: AppIntent {
             for thread in threads { await actions.reportSpam(thread, animated: false) }
             // Sent now: there's no Undo pill for Siri to wait out.
             await actions.commitPendingRemoval()
+            guard !threads.contains(where: { store.thread($0.id) != nil }) else { throw UpdateMailError.notReported }
         } else if isJunk == false {
             for thread in threads where thread.labelIds.contains("SPAM") {
                 guard await actions.moveToInbox(thread) else { throw UpdateMailError.notMoved }
@@ -383,7 +387,7 @@ struct UpdateMailIntent: AppIntent {
 
 /// What Siri says when a change to mail can't be made.
 enum UpdateMailError: Error, CustomLocalizedStringResourceConvertible {
-    case notFound, nothingToChange, notMoved
+    case notFound, nothingToChange, notMoved, notArchived, notDeleted, notReported
     case noSuchMailbox(String)
 
     var localizedStringResource: LocalizedStringResource {
@@ -391,6 +395,9 @@ enum UpdateMailError: Error, CustomLocalizedStringResourceConvertible {
         case .notFound: "Corres couldn't find that email."
         case .nothingToChange: "There was nothing to change."
         case .notMoved: "Couldn't move this conversation to the Inbox. Try again."
+        case .notArchived: "Couldn't archive this conversation. Try again."
+        case .notDeleted: "Couldn't move this conversation to Trash. Try again."
+        case .notReported: "Couldn't report this conversation as spam. Try again."
         case .noSuchMailbox(let name): "Corres can't move mail to \(name)."
         }
     }
