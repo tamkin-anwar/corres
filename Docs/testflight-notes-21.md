@@ -501,6 +501,26 @@ Something off? Settings > Send Diagnostics, or take a screenshot to send feedbac
 
 Corres for Mac 0.2.0 (42)
 
-A small build that keeps the Mac in step with iPhone build 41. Nothing new to try on the Mac; keep using Corres as usual.
+This build includes everything from build 40 too.
+
+The big ones
+- Siri and Shortcuts work with the main window closed. Corres opens it, and Siri says what really happened, including when a send didn't go through.
+- Deleting and archiving are much quicker in a big mailbox, with no stalls in the first minute after opening.
+- Safer sending. If Outlook is slow to answer while an email goes out, Corres checks before trying again, so nothing is sent twice. A big email no longer loses its copy in Sent.
+
+Also new
+- Reads mail from everywhere: taka and rupee amounts, Bengali and Arabic digits, Japanese and Korean dates, and older Japanese and Chinese encodings.
+- Automatic replies ("I'm out of the office") stay out of Needs You.
+- The Keyboard Shortcuts sheet is translated, and Compose has VoiceOver labels.
+
+Fixed
+- Unsubscribe works on the next newsletter, not only the first.
+- Suggested replies come from the address the email was sent to.
+- iCloud and other email: archive, delete and flag made offline go through once you're back, and a wrong password no longer locks you out by retrying.
+
+Please try
+1. Close the main window, then ask Siri to write an email.
+2. Delete a few emails in a row in a big mailbox.
+3. Unsubscribe from two newsletters, one after the other.
 
 Something off? Help > Send Diagnostics, or send feedback through TestFlight.
