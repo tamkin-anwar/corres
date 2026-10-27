@@ -362,3 +362,9 @@
 "Automatic reply." = "স্বয়ংক্রিয় উত্তর।";
 
 "Automatic reply. Kept out of Needs You." = "স্বয়ংক্রিয় উত্তর। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* The Share sheet: what is attached. */
+"1 attachment" = "1টি সংযুক্তি";
+
+/* The Share sheet: what is attached. */
+"%lld attachments" = "%lldটি সংযুক্তি";

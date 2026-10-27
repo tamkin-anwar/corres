@@ -362,3 +362,9 @@
 "Automatic reply." = "Réponse automatique.";
 
 "Automatic reply. Kept out of Needs You." = "Réponse automatique. Gardée hors de Pour vous.";
+
+/* The Share sheet: what is attached. */
+"1 attachment" = "1 pièce jointe";
+
+/* The Share sheet: what is attached. */
+"%lld attachments" = "%lld pièces jointes";

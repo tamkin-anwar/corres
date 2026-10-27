@@ -362,3 +362,9 @@
 "Automatic reply." = "自动回复。";
 
 "Automatic reply. Kept out of Needs You." = "自动回复。未放入“需要你”。";
+
+/* The Share sheet: what is attached. */
+"1 attachment" = "1 个附件";
+
+/* The Share sheet: what is attached. */
+"%lld attachments" = "%lld 个附件";

@@ -299,7 +299,7 @@ struct ShareComposeView: View {
                          ? (composer.photos.isEmpty
                             ? "\(bytes(composer.totalBytes)) is over \(MailAccounts.serviceTitle(for: composer.account ?? ""))\u{2019}s \(composer.provider.attachmentLimitText) limit. Remove something."
                             : "\(bytes(composer.totalBytes)) is over \(MailAccounts.serviceTitle(for: composer.account ?? ""))\u{2019}s \(composer.provider.attachmentLimitText) limit. Remove something or pick a smaller size.")
-                         : "\(composer.content.files.count == 1 ? "1 attachment" : "\(composer.content.files.count) attachments"), \(bytes(composer.totalBytes))")
+                         : "\(composer.content.files.count == 1 ? String(localized: "1 attachment") : String(localized: "\(composer.content.files.count) attachments")), \(bytes(composer.totalBytes))")
                         .font(.footnote)
                         .foregroundStyle(composer.isTooLarge ? CorresPalette.alert : CorresPalette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -338,7 +338,7 @@ struct ShareComposeView: View {
                             .font(.title2).foregroundStyle(CorresPalette.accent)
                         Text(file.filename).font(.caption2).foregroundStyle(CorresPalette.ink)
                             .lineLimit(2).multilineTextAlignment(.center)
-                        Text(bytes(file.data.count)).font(.caption2).foregroundStyle(CorresPalette.tertiary)
+                        Text(bytes(file.size)).font(.caption2).foregroundStyle(CorresPalette.tertiary)
                     }
                     .padding(8)
                     .frame(width: 110, height: 88)

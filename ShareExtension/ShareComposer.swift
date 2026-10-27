@@ -144,7 +144,7 @@ final class ShareComposer {
     var photos: [SharedContent.File] { content.files.filter(\.isImage) }
 
     var totalBytes: Int {
-        totals[photoSize] ?? content.files.reduce(0) { $0 + $1.data.count }
+        totals[photoSize] ?? content.files.reduce(0) { $0 + $1.size }
     }
 
     var isTooLarge: Bool { totalBytes > provider.attachmentLimit }
@@ -177,7 +177,7 @@ final class ShareComposer {
         let measured = await Task.detached(priority: .userInitiated) {
             var totals: [PhotoSize: Int] = [:]
             for size in PhotoSize.allCases {
-                totals[size] = files.reduce(0) { $0 + ($1.isImage ? size.resized($1.data).count : $1.data.count) }
+                totals[size] = files.reduce(0) { $0 + ($1.isImage ? size.resized($1.data).count : $1.size) }
             }
             return totals
         }.value
@@ -219,7 +219,9 @@ final class ShareComposer {
         if let signature = accounts.first(where: { $0.email == account })?.signature, !signature.isEmpty, !body.contains(signature) {
             body += "\n\n" + signature
         }
-        let attachments = content.files.map { file -> PendingAttachment in
+        // A file too big to read (`unreadSize`) can't go: Send stays off for
+        // it, and a saved draft is kept without it rather than with it empty.
+        let attachments = content.files.filter { $0.unreadSize == nil }.map { file -> PendingAttachment in
             guard file.isImage, photoSize != .actual else {
                 return PendingAttachment(filename: file.filename, mimeType: file.mimeType, data: file.data)
             }
@@ -230,6 +232,8 @@ final class ShareComposer {
         var draft = Draft(id: draftID, kind: .new, fromAccount: account, to: to.joined(separator: ", "),
                           cc: cc.isEmpty ? nil : cc.joined(separator: ", "), bcc: bcc.isEmpty ? nil : bcc.joined(separator: ", "),
                           subject: subject.trimmingCharacters(in: .whitespacesAndNewlines), body: body, attachments: attachments)
+        // Signed here already: opened in Compose from Send Later, it's kept as written.
+        draft.signatureAdded = true
         if let fromAddress, fromAddress != account {
             draft.fromAddress = fromAddress
             draft.fromName = fromName(fromAddress)
