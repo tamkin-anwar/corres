@@ -137,6 +137,7 @@ struct MacComposeView: View {
         .alert("Couldn't Attach", isPresented: Binding(get: { attachmentError != nil }, set: { if !$0 { attachmentError = nil } })) {
             Button("OK", role: .cancel) {}
         } message: { Text(attachmentError ?? "") }
+        .onAppear { MacComposeHandoff.live.insert(request.id) }
         .task {
             load()
             await carryForwardedAttachments()
@@ -160,6 +161,7 @@ struct MacComposeView: View {
         }
         .onDisappear {
             saveTask?.cancel()
+            MacComposeHandoff.closed(request)
             guard loaded, !sent else { return }
             let drafts = MacComposeDrafts.shared
             // Opened and closed untouched, with nothing waiting for Drafts.
@@ -193,7 +195,10 @@ struct MacComposeView: View {
         // after a crash the copy here updates that draft, not a second one.
         Task {
             _ = await outbox.finishDraftSaves(timeout: .seconds(60))
-            if let serverID = outbox.savedDraftID(for: saving) { MacComposeDrafts.shared.noteServerID(serverID, for: saving.id) }
+            if let serverID = outbox.savedDraftID(for: saving) {
+                MacComposeDrafts.shared.noteServerID(serverID, for: saving.id)
+                MacComposeHandoff.noteOpen(request, serverID: serverID)
+            }
         }
     }
 
@@ -206,11 +211,20 @@ struct MacComposeView: View {
         }
     }
 
+    /// Sent, scheduled or deleted: out of the Drafts list now, not at its
+    /// next visit, where it could be opened and sent again.
+    private func leaveDrafts() {
+        if let serverID = draft.gmailDraftID ?? services.outbox.savedDraftID(for: draft) {
+            services.remote.removeDraft(serverID: serverID)
+        }
+    }
+
     /// Gone from this window, this Mac and Drafts.
     private func deleteDraft() {
         sent = true
         saveTask?.cancel()
         MacComposeDrafts.shared.forget(draft.id)
+        leaveDrafts()
         services.outbox.discard(draft, replyingTo: replyingTo)
         dismiss()
     }
@@ -502,6 +516,7 @@ struct MacComposeView: View {
             focus = .body
             opened = draft
             loaded = true
+            if let serverID = draft.gmailDraftID { MacComposeHandoff.noteOpen(request, serverID: serverID) }
             return
         }
         if let id = request.thread, let thread = services.store.thread(id) {
@@ -542,6 +557,7 @@ struct MacComposeView: View {
         sent = true
         saveTask?.cancel()
         MacComposeDrafts.shared.forget(draft.id)
+        leaveDrafts()
         services.outbox.queueSend(draft, replyingTo: replyingTo)
         dismiss()
     }
@@ -604,6 +620,7 @@ struct MacComposeView: View {
         sent = true
         saveTask?.cancel()
         MacComposeDrafts.shared.forget(draft.id)
+        leaveDrafts()
         services.outbox.removeGmailDraft(of: draft, replyingTo: replyingTo)
         var scheduled = draft
         scheduled.gmailDraftID = nil

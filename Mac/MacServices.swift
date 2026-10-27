@@ -66,11 +66,21 @@ final class MacServices {
         Organizer.shared.attach(store: store, actions: threadActions, outbox: outbox)
         ServerRules.shared.attach(auth: auth)
         // Handled from a desktop widget, applied when Corres comes forward.
+        // The Dock's New Since Last Opened (chosen on the iPhone, it comes
+        // here through iCloud) counts from when you last left Corres, as on
+        // the iPhone. Never noted here, it counted nothing.
         NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
-            Task { @MainActor in OutboxService.isAway = true }
-        }
-        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
             Task { @MainActor in
+                OutboxService.isAway = true
+                UserDefaults.standard.set(Date.now, forKey: CorresSettings.lastLeftKey)
+            }
+        }
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [store] _ in
+            Task { @MainActor in
+                if CorresSettings.badge == .new {
+                    UserDefaults.standard.set(Date.now, forKey: CorresSettings.lastLeftKey)
+                    WidgetBridge.update(from: store.threads)
+                }
                 OutboxService.isAway = false
                 Organizer.shared.applyWidgetHandoffs()
                 ServerRules.shared.retryIfFailed()
@@ -247,6 +257,9 @@ final class MacServices {
         Task {
             await checkForMail()
             done?()
+            // Labels and folders too: fetched only at launch, a Mac opened
+            // offline had none in its sidebar until Corres was quit.
+            await labelDirectory.refreshIfConnected(accounts: auth.accounts.map(\.email))
         }
     }
 
@@ -371,7 +384,15 @@ final class MacServices {
     func accountsChanged() {
         watchIMAP()
         ServerRules.shared.schedule()
-        Task { await checkForMail() }
+        Task {
+            // The first account added in Settings: the sample mail goes
+            // before its mail arrives, as on the iPhone. It stayed in
+            // among the real mail until Corres was opened again.
+            if !auth.accounts.isEmpty { await store.deleteSampleDataIfPresent() }
+            await checkForMail()
+            // A new account's labels or folders, in the sidebar now.
+            await labelDirectory.refreshIfConnected(accounts: auth.accounts.map(\.email))
+        }
     }
 
     private func startChecking() {

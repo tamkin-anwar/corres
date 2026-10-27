@@ -666,6 +666,7 @@ struct MacAttachmentChip: View {
     @State private var working = false
     @State private var failed = false
     @State private var previewURL: URL?
+    @State private var saveFailed = false
 
     var body: some View {
         let kind = AttachmentKind(filename: file.filename, mimeType: file.mimeType)
@@ -699,12 +700,21 @@ struct MacAttachmentChip: View {
             Button("Save to Downloads") { Task { await save(toDownloads: true) } }
             Button("Save As…") { Task { await save(toDownloads: false) } }
         }
+        .alert("Couldn't Save", isPresented: $saveFailed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Couldn't save. Try again.")
+        }
     }
 
     private func download() async -> URL? {
+        // A folder of its own for each attachment in the message: two with
+        // the same name ("image.png", twice) opened the first for both.
+        let position = thread.attachments.firstIndex { $0.id == file.id } ?? 0
         let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Attachments", isDirectory: true)
             .appendingPathComponent(thread.latestMessageID ?? thread.id.providerID, isDirectory: true)
+            .appendingPathComponent(String(position), isDirectory: true)
         let safeName = file.filename.replacingOccurrences(of: "/", with: "-")
         let url = folder.appendingPathComponent(safeName.isEmpty ? "attachment" : safeName)
         if FileManager.default.fileExists(atPath: url.path) { return url }
@@ -741,9 +751,9 @@ struct MacAttachmentChip: View {
         guard let destination else { return }
         // Save As has asked about replacing; Downloads never replaces.
         if !toDownloads { try? FileManager.default.removeItem(at: destination) }
-        if (try? FileManager.default.copyItem(at: url, to: destination)) != nil, toDownloads {
-            NSWorkspace.shared.activateFileViewerSelecting([destination])
-        }
+        // Said, not silent: a save that didn't land looked like it had.
+        guard (try? FileManager.default.copyItem(at: url, to: destination)) != nil else { saveFailed = true; return }
+        if toDownloads { NSWorkspace.shared.activateFileViewerSelecting([destination]) }
     }
 
     /// "invoice.pdf", or "invoice 2.pdf" when that's taken, as Safari

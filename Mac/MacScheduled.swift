@@ -156,4 +156,27 @@ enum MacComposeHandoff {
     /// Handed over new (a reply Siri wrote), not continued: these take a
     /// default From address as any new email does.
     static var fresh: Set<UUID> = []
+    /// Compose windows open on a draft saved on the server, by that
+    /// draft's id: opening it again from Drafts brings its window forward
+    /// rather than a second one saving over it.
+    static var openDrafts: [String: ComposeRequest] = [:]
+    /// The compose windows on screen.
+    static var live: Set<UUID> = []
+
+    /// Its window is still open (a save can land after it closed).
+    static func noteOpen(_ request: ComposeRequest, serverID: String) {
+        guard live.contains(request.id) else { return }
+        openDrafts[serverID] = request
+    }
+
+    static func closed(_ request: ComposeRequest) {
+        live.remove(request.id)
+        openDrafts = openDrafts.filter { $0.value != request }
+    }
+
+    /// The window already open on this server draft, if there is one.
+    static func window(for serverID: String?) -> ComposeRequest? {
+        guard let serverID, let request = openDrafts[serverID], live.contains(request.id) else { return nil }
+        return request
+    }
 }

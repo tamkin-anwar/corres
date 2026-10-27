@@ -73,7 +73,9 @@ final class MacRemoteMailboxes {
 
     func refresh(_ source: Source, accounts: [String], store: MailStore) async {
         removed[source] = removed[source]?.filter { Date.now.timeIntervalSince($0.value) < Self.settled }
-        pages[source] = Page(items: pages[source]?.items ?? [])
+        // The drafts on screen keep their server ids meanwhile: one opened
+        // without its id was saved as a second draft, and Delete did nothing.
+        pages[source] = Page(items: pages[source]?.items ?? [], drafts: pages[source]?.drafts ?? [:])
         // Sample mail only: nothing on a server to fetch.
         if accounts.isEmpty { pages[source]?.loadedOnce = true; return }
         await loadMore(source, accounts: accounts, store: store, replacing: true)
@@ -144,6 +146,16 @@ final class MacRemoteMailboxes {
         page.loadedOnce = true
         page.failed = failed && fetched.isEmpty
         pages[source] = page
+    }
+
+    /// A draft sent, scheduled or deleted from its compose window: gone
+    /// from Drafts at once. It stayed listed until Drafts was opened
+    /// again, there to be opened and sent a second time.
+    func removeDraft(serverID: String) {
+        let source = Source.kind(.drafts)
+        guard let id = pages[source]?.drafts.first(where: { $0.value == serverID })?.key else { return }
+        pages[source]?.items.removeAll { $0.id == id }
+        removed[source, default: [:]][id] = .now
     }
 
     /// Gone from view at once after an archive, delete or move.
