@@ -385,6 +385,16 @@ struct MailSignalsTests {
         #expect(!MailSignals.isPaymentRequest("Thanks for your payment of $40.00."))
         #expect(!MailSignals.isPaymentRequest("Your automatic payment of $80 is scheduled."))
     }
+
+    /// A bill paid by AutoPay names a due date but asks nothing: it was
+    /// an obligation, and so in Needs You for the three days before it.
+    @Test func aBillOnAutoPayIsNoObligation() {
+        #expect(!MailSignals.isObligation("Your bill is ready. Amount due: $85.20 on Nov 5. AutoPay is scheduled for Nov 5."))
+        #expect(!MailSignals.isObligation("Your statement is ready. Amount due $45 by Nov 5. You're enrolled in AutoPay."))
+        #expect(MailSignals.isObligation("Your bill is ready. Amount due: $85.20 on Nov 5."))
+        // Offering AutoPay is not having it.
+        #expect(MailSignals.isObligation("Payment due Nov 5. Set up AutoPay so you never miss one."))
+    }
 }
 
 /// Tester feedback: a council email's signature survey and legal notice put

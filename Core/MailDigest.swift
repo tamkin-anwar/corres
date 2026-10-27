@@ -247,7 +247,7 @@ public enum MailDigest {
         // The subject says what an email is; its body only does near the
         // top of a short one. A newsletter's article about deliveries or
         // "your order" isn't a receipt (Morning Brew, TLDR, LinkedIn were).
-        let opening = subject + "\n" + (wordCount(text) <= 300 ? String(text.prefix(400)) : "")
+        let opening = MailSignals.oneBengaliSpelling(subject + "\n" + (wordCount(text) <= 300 ? String(text.prefix(400)) : ""))
         if opening.matchesAny(shippingCue) { return .shipping }
         if opening.matchesAny(receiptCue) { return .receipt }
         // Calendar invitations and replies, as Google Calendar and Outlook
@@ -301,14 +301,23 @@ public enum MailDigest {
     /// "code de vérification", "código de verificación", "código de
     /// verificação", "認証コード", "인증번호", "验证码", "যাচাইকরণ কোড".
     static let codeCue: [String] = [
-        #"(?i)\b(verification|security|login|log-in|sign[- ]?in|one[- ]time|2fa|two-factor|access|authentication|otp)\s+(code|pin|passcode)\b|\byour (code|passcode|pin|otp) is\b|\bcode:\s|\botp\b|\bone[- ]time[- ]pass(word|code)\b"#,
-        #"(?i)\b(bestätigungscode|sicherheitscode|verifizierungscode|anmeldecode|einmalcode|code de (vérification|confirmation|sécurité|connexion)|código de (verificación|verificação|seguridad|segurança|acceso|acesso|confirmación|confirmação)|codice di verifica|verificatiecode|যাচাইকরণ কোড|যাচাই কোড|ওটিপি)\b"#,
+        // A bare "Code:" (French writes "code :"), but never a shop's
+        // "Promo code: FALL25", which put a sale in Primary as a sign-in.
+        #"(?i)\b(verification|security|login|log-in|sign[- ]?in|one[- ]time|2fa|two-factor|access|authentication|otp)\s+(code|pin|passcode)\b|\byour (code|passcode|pin|otp) is\b|"#
+            + notASignInCode + #"\bcode\s?[:：]\s|\botp\b|\bone[- ]time[- ]pass(word|code)\b"#,
+        #"(?i)\b((tu|su|seu|sua|ihr|dein|votre|ton) (código|code) (es|é|lautet|ist|est)|bestätigungscode|sicherheitscode|verifizierungscode|anmeldecode|einmalcode|code de (vérification|confirmation|sécurité|connexion)|código de (verificación|verificação|seguridad|segurança|acceso|acesso|confirmación|confirmação)|codice di verifica|verificatiecode|যাচাইকরণ কোড|যাচাই কোড|ওটিপি)\b"#,
         #"(?i)認証コード|確認コード|ワンタイムパスワード|セキュリティコード|인증 ?번호|인증 ?코드|확인 ?코드|보안 ?코드|验证码|驗證碼|校验码|校驗碼|动态密码|動態密碼"#,
     ]
 
+    /// Codes that are no sign-in: a shop's discount, and the codes of an
+    /// address, a parcel or a booking ("ZIP code: 94105").
+    private static let notASignInCode = #"(?<!promo |promotional |promotion |discount |coupon |voucher |gift |card |referral |offer |reward |rewards |redemption |sale |bonus |zip |postal |post |area |country |tracking |booking |reservation |product |item |style )"#
+
     public static func verificationCode(in text: String) -> String? {
-        // "482913 is your OTP for…", as Indian and Bangladeshi banks write it.
-        if let before = text.patternRange(#"(?i)(?<![\d.,])\d{4,8}(?=\s+is\s+(your|the)\s+(otp|one[- ]time|verification|security|login)\b)"#) {
+        // "482913 is your OTP for…", as Indian and Bangladeshi banks write
+        // it, and "123456 is your Instagram code", "G-482913 is your Google
+        // verification code", with the service's name in between.
+        if let before = text.patternRange(#"(?i)(?<![\d.,])\d{4,8}(?=\s+is\s+(your|the)\s+([\p{L}\p{N}&'.-]+\s+){0,2}(otp|one[- ]time|verification|security|login|sign[- ]?in|confirmation|code|passcode)\b)"#) {
             return String(text[before])
         }
         guard let cue = text.firstPatternRange(codeCue) else { return nil }
@@ -343,11 +352,17 @@ public enum MailDigest {
     /// The currency written as a word after the number counts too: "500円",
     /// "5,000원", "88元", "20块", "1,250 টাকা", "৳1,250", "Rs. 1,500/-" (the
     /// Indian and Bangladeshi "only" mark), "RMB 300".
+    /// A dollar sign keeps the letters that say whose dollar it is: "R$"
+    /// (Brazil), "C$", "A$", "US$", "HK$". Without them, "R$ 1.250,00"
+    /// was handed on as "$ 1.250,00", in US dollars.
+    /// Thousands grouped with a space count whole: "1 250,00 €" (France,
+    /// and any amount once HTML's non-breaking space is a plain one) was
+    /// "250,00 €".
     static let amountPattern: String = {
         let codes = (Locale.Currency.isoCurrencies.map(\.identifier) + ["Tk", "Rs", "Tsh", "Ksh", "RMB"]).joined(separator: "|")
-        let number = #"\d(?:[\d.,'\u00A0\u202F]*\d)?"#
+        let number = #"(?:\d{1,3}(?:[ \u00A0\u202F]\d{3})+(?:[.,]\d{1,2})?(?!\d)|\d(?:[\d.,'\u00A0\u202F]*\d)?)"#
         let words = #"円|원|元|块|塊|人民币|人民幣|টাকা|রুপি|/-"#
-        return #"\p{Sc}\s?"# + number + #"(?:/-)?|\b(?:"# + codes + #")\.?\s?"# + number + #"(?:/-)?"#
+        return #"(?:(?<![\p{L}\p{N}])[A-Z]{1,3})?\p{Sc}\s?"# + number + #"(?:/-)?|\b(?:"# + codes + #")\.?\s?"# + number + #"(?:/-)?"#
             + #"|"# + number + #"\s?(?:\p{Sc}|\b(?:"# + codes + #")\b|"# + words + #")"#
     }()
 

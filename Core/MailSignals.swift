@@ -8,7 +8,7 @@ public enum MailSignals {
     /// The writer's own words, without the quoted history below them.
     public static func ownText(_ body: String) -> String {
         var kept: [String] = []
-        let lines = body.components(separatedBy: "\n")
+        let lines = oneBengaliSpelling(body).components(separatedBy: "\n")
         for (index, line) in lines.enumerated() {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.hasPrefix(">") { continue }
@@ -32,6 +32,16 @@ public enum MailSignals {
     /// signature or footer. Asks nothing of you that needs doing (tester
     /// feedback: a council's signature survey put mail in Needs You).
     private static let surveyPattern = #"(?i)\b(how (did we do|was (your|the) (experience|visit|stay|service|call|appointment)|would you rate|likely (are you|is it that you would) (to )?recommend|you found (our|the) (customer )?service)|rate (us|our service|your (experience|visit|interaction|call))|(take|complete|fill (in|out)|answer) (part in )?(our|a|this|the) (short |quick |brief |\d+[- ]minute )?(customer )?(survey|questionnaire|feedback form)|(customer|client) (satisfaction|experience|feedback) (survey|questionnaire)|feedback (survey|form|link)|we('d| would) (love|like) (to (hear|know|get) )?your (feedback|thoughts|views|opinion)s?|we('d| would) (love|like) to (hear|know) (how|what) you (found|thought)|tell us (how we did|what you think|about your experience)|share your (feedback|experience)|leave (us )?a review|click (on )?(the|this) link( below)? to (take part|participate|give (us )?(your )?feedback)|research\.net|surveymonkey|qualtrics|typeform|medallia|smartsurvey|surveygizmo|alchemer|forms\.office\.com|forms\.gle|feedbackify|trustpilot)\b"#
+
+    /// Bengali's য়, ড় and ঢ় are written two ways: one character (U+09DF,
+    /// U+09DC, U+09DD), or the letter with a dot below. The rules here are
+    /// written the second way, Unicode's normal form, so mail typed the
+    /// first way ("দয়া করে", "অ্যাপয়েন্টমেন্ট", "৫ জানুয়ারি") matched none
+    /// of them. Text without those characters is returned as it is.
+    static func oneBengaliSpelling(_ text: String) -> String {
+        guard text.unicodeScalars.contains(where: { (0x09DC...0x09DF).contains($0.value) }) else { return text }
+        return text.precomposedStringWithCanonicalMapping
+    }
 
     /// The text without its survey and feedback requests: each sentence (or
     /// line) that carries one goes.
@@ -89,6 +99,10 @@ public enum MailSignals {
         #"\b(জানাবেন|জানান|জানাও|জানাবে|নিশ্চিত করুন|অনুগ্রহ করে|দয়া করে|পাঠাবেন|পারবেন কি|পারবে কি|উত্তর দিন|কী মনে করেন)"#,
         // Japanese, Korean and Chinese
         #"ご確認(ください|下さい|お願い|の上|いただけ)|ご(返信|連絡|回答|検討|対応)(ください|下さい|お願い|いただけ)|お知らせ(ください|下さい)|教えて(ください|下さい|いただけ)|いただけ(ます|ません)か|でしょうか|お返事(ください|お待ち)|확인 ?부탁|확인해 ?주(세요|시겠|실)|(회신|답장|검토|연락) ?부탁|알려 ?주(세요|시겠|실)|연락 ?주(세요|십시오)|주시겠어요|주실 수 있(나요|을까요|으신가요)|가능할까요|어떠세요|어떻습니까|请(确认|回复|告知|尽快|提供|您确认|您回复)|請(確認|回覆|告知|盡快|提供)|麻(烦|煩)(你|您)|能否|可否|可以吗|可以嗎|盼复|盼覆|期待(你|您)的(回复|回覆)|你觉得呢|您觉得|您覺得"#,
+        // Asked to send, submit or sign something: "資料を送ってください",
+        // "보내 주시기 바랍니다", "请提交". Not "ご覧ください", "참고 바랍니다" or
+        // "请查收" (please see), which ask nothing.
+        #"(送って|送付して|提出して|返送して|記入して|署名して|共有して|返信して)(ください|下さい|もらえ|いただけ|頂け)|ご(提出|送付|記入|署名|返送|共有)(ください|下さい|をお願い|いただけ)|(보내|제출해|작성해|서명해|검토해|회신해|답장해|공유해|송부해) ?주(세요|십시오|시기 ?바랍니다)|(확인|회신|답장|검토|제출|작성|서명|송부) ?(해 ?주시기 ?)?바랍니다|[请請](发送|發送|提交|签字|簽字|签署|簽署|审核|審核|审阅|審閱|填写|填寫|答复|答覆|核对|核對)"#,
     ]
 
     /// Whether the writer asks the reader something: a real question or a
@@ -111,7 +125,7 @@ public enum MailSignals {
     /// "Automatic reply:", "Out of Office:", "Abwesenheitsnotiz", "Réponse
     /// automatique", "Respuesta automática", "自動応答", "자동 회신", "自动回复".
     public static func isAutoReply(_ text: String) -> Bool {
-        let subject = text.prefix { $0 != "\n" }
+        let subject = oneBengaliSpelling(String(text.prefix { $0 != "\n" }))
         return subject.patternRange(autoReplyPattern, caseInsensitive: true) != nil
     }
 
@@ -133,8 +147,10 @@ public enum MailSignals {
     /// le", "au plus tard", "antes del", "vence el", "até", "prazo". Chinese,
     /// Japanese, Korean and Bengali deadlines are read with their dates
     /// (`LocalDates`). Deliberately tight; a date on its own ("Posted Sep
-    /// 3") is not a deadline.
-    static let leadInWords = #"due|by|before|until|no later than|deadline(\s+is)?|expires?|expiring|rsvp(\s+by)?|respond by|reply by|closes?|bis( zum| spätestens)?|spätestens( am| bis)?|fällig( am| bis)?|frist( bis)?|zahlbar bis|avant( le)?|d'ici( le)?|au plus tard( le)?|jusqu'au|date limite|échéance|dû le|antes del?|hasta el|a más tardar( el)?|fecha límite|vence( el| em)?|vencimento|até( o dia| dia)?|prazo( até)?|data limite"#
+    /// 3") is not a deadline. Business English puts words between "by"
+    /// and the day ("by end of day Friday", "EOD tomorrow", "COB
+    /// Thursday"), which count too: they once set no deadline at all.
+    static let leadInWords = #"due|by|before|until|no later than|(the )?(end of (the )?(business )?day|end of business|close of business|eod|cob)|deadline(\s+is)?|expires?|expiring|rsvp(\s+by)?|respond by|reply by|closes?|bis( zum| spätestens)?|spätestens( am| bis)?|fällig( am| bis)?|frist( bis)?|zahlbar bis|avant( le)?|d'ici( le)?|au plus tard( le)?|jusqu'au|date limite|échéance|dû le|antes del?|hasta el|a más tardar( el)?|fecha límite|vence( el| em)?|vencimento|até( o dia| dia)?|prazo( até)?|data limite"#
     private static let deadlineLeadIn = #"(?i)\b("# + leadInWords + #")\s*:?\s*(on\s+|the\s+|le\s+|el\s+|am\s+|dem\s+|o\s+)?$"#
     /// The same words at the start of what the date detector found: it
     /// takes them into the date ("due November 5, 2026" came back as today,
@@ -149,7 +165,7 @@ public enum MailSignals {
     /// The same words before a numeric date, without "于"/"於" ("on"),
     /// which as often says when a meeting is as when something is due.
     static let numericLocalLeadIn = #"(期限|締め?切り?日?|締切日?|支払期限|お支払い期限|期日|마감(일)?|기한|납부 ?기한|截止(日期|时间|時間)?|最晚|最迟|最遲|请于|請於|শেষ তারিখ)\s?[:：は은는이]?\s?$"#
-    static let localLeadOut = #"^\s?(\([^)]{1,4}\)|（[^）]{1,4}）)?\s?(ের|এর|র)?\s?(まで|迄|까지|前|之前|以前|মধ্যে)"#
+    static let localLeadOut = #"^\s?(\([^)]{1,4}\)|（[^）]{1,4}）)?\s?(ের|এর|র|\x{09DF}ের|\x{09AF}\x{09BC}ের)?\s?(まで|迄|까지|前|之前|以前|মধ্যে)"#
 
     /// The earliest upcoming deadline the message names, within `horizon`.
     /// Relative dates ("by Friday", "tomorrow") resolve against today's
@@ -251,6 +267,12 @@ public enum MailSignals {
             let clock = Calendar.current.dateComponents([.hour, .minute], from: local.date)
             let midnight = local.hasTime && clock.hour == 0 && clock.minute == 0
             found.append(FoundDate(date: midnight ? local.date.addingTimeInterval(-60) : local.date, isDeadline: isDeadline))
+        }
+        // "金曜日までに", "내일까지", "周五前": by a day relative to today,
+        // which the date detector reads in English and Europe's languages
+        // only.
+        if relativeToday {
+            found += LocalDates.relativeDeadlines(in: own, now: now).map { FoundDate(date: $0, isDeadline: true) }
         }
         return found
     }
@@ -375,7 +397,7 @@ public enum MailSignals {
     /// "updates due on job numbers" in a news story said nothing to the
     /// reader, yet brought both into Needs You.
     public static func isObligation(_ text: String) -> Bool {
-        let lower = String(text.prefix(obligationOpening)).lowercased()
+        let lower = oneBengaliSpelling(String(text.prefix(obligationOpening))).lowercased()
         guard lower.matchesAny(obligationAction) else { return false }
         // An appointment or reservation reminder stays even if it thanks you.
         return lower.patternRange(reminderWords) != nil || !lower.matchesAny(marketingNotice)
@@ -402,7 +424,7 @@ public enum MailSignals {
     /// rewards points expire tomorrow", "Letzte Chance", "期間限定". Nor is
     /// a receipt, a welcome or an autopay notice.
     static let marketingNotice: [String] = [
-        #"\b(last chance|don.?t miss|limited time|(points|rewards?) (expire|are expiring)|ends (today|tonight|soon)|\d+% off|will be (charged|billed|renewed) (automatically|monthly|annually)|(automatically|auto-?) ?(charged|billed|renews?)|thank(s| you) for (your )?(payment|order|purchase)|payment (received|confirmed|successful)|receipt|welcome to)\b"#,
+        #"\b(last chance|don.?t miss|limited time|(points|rewards?) (expire|are expiring)|ends (today|tonight|soon)|\d+% off|will be (charged|billed|renewed) (automatically|monthly|annually)|(automatically|auto-?) ?(charged|billed|renews?)|thank(s| you) for (your )?(payment|order|purchase)|payment (received|confirmed|successful)|receipt|welcome to|auto-?pay (is )?(on|scheduled|set up|enabled|active)|(you're |you are )?enrolled in auto-?pay|automatic payment (is |has been )?scheduled|(will|is set to) be paid automatically)\b"#,
         #"\b(letzte chance|nur heute|\d+ ?% rabatt|wird automatisch (abgebucht|verlängert)|(vielen )?dank für ihre (zahlung|bestellung)|zahlung (erhalten|bestätigt)|quittung|willkommen (bei|zu))\b"#,
         #"\b(dernière chance|offre limitée|sera (prélevé|renouvelé) automatiquement|merci pour votre (paiement|commande|achat)|paiement (reçu|confirmé)|bienvenue (chez|sur|à))\b"#,
         #"\b(última (oportunidad|chance)|tiempo limitado|por tempo limitado|se (cobrará|renovará) automáticamente|gracias por (su|tu) (pago|compra|pedido)|pago (recibido|confirmado)|será (cobrado|renovado) automaticamente|obrigad[oa] pel[oa] (seu |sua )?(pagamento|compra|pedido)|pagamento (recebido|confirmado)|recibo|bienvenid[oa] a|bem-vind[oa] (a|ao|à))\b"#,
@@ -416,7 +438,7 @@ public enum MailSignals {
     /// Needs You by itself, the way Gmail's "Happening soon" cards drop off
     /// after the event. A missed payment is different, and stays overdue.
     public static func isEvent(_ text: String) -> Bool {
-        let lower = text.lowercased()
+        let lower = oneBengaliSpelling(text).lowercased()
         let event = [#"\b(appointments?|reservations?|check-?in|meeting|class(es)?|session|visit|interview|webinar|flight|booking|lesson|tour|consultation|exam|screening|event|concert|show(time)?|game|ceremony|termin|besprechung|sitzung|flug|reservierung|buchung|veranstaltung|rendez-vous|réunion|réservation|entretien|cita|reunión|vuelo|reserva|entrevista|consulta|reunião|voo|agendamento|evento|événement|অ্যাপয়েন্টমেন্ট|মিটিং|সভা|ফ্লাইট|বুকিং|সাক্ষাৎকার)\b"#, #"予約|会議|打ち合わせ|面接|フライト|搭乗|診察|예약|회의|미팅|면접|항공편|진료|预约|預約|会议|會議|面试|面試|航班|就诊|就診"#]
         let task = [#"\b(payment|pay (by|now|your)|bill|invoice|balance|amount due|past due|sign(ature)?|renew|expir|submit|application|form|zahlung|rechnung|bezahlen|unterschr\w*|paiement|facture|signer|pago|factura|firma|pagamento|fatura|boleto|assinatura|পেমেন্ট|বিল|স্বাক্ষর)\b"#, #"支払|請求|署名|결제|납부|청구|서명|付款|缴费|繳費|账单|帳單|签署|簽署"#]
         return lower.matchesAny(event) && !lower.matchesAny(task)
@@ -426,7 +448,7 @@ public enum MailSignals {
     /// payment that failed, a card declined, an account on hold. Said up
     /// top, like any obligation, in any of the app's languages.
     public static func isFailure(_ text: String) -> Bool {
-        let lower = String(text.prefix(obligationOpening)).lowercased()
+        let lower = oneBengaliSpelling(String(text.prefix(obligationOpening))).lowercased()
         return lower.matchesAny(failurePattern)
     }
 
@@ -454,7 +476,7 @@ public enum MailSignals {
     /// "应付金额". Said up top. Not a receipt, an autopay notice, or a
     /// reminder that thanks you if you've already paid.
     public static func isPaymentRequest(_ text: String) -> Bool {
-        let opening = String(text.prefix(obligationOpening))
+        let opening = oneBengaliSpelling(String(text.prefix(obligationOpening)))
         let lower = opening.lowercased()
         // The amount as written: currency codes are capitals ("BDT 2,500",
         // "Tk 1,250", "Rs 500"), and lowercased they were never found.
@@ -526,12 +548,73 @@ enum LocalDates {
     static let datePattern = #"(?:(\d{4})\s?[年년]\s?)?(\d{1,2})\s?[月월]\s?(\d{1,2})\s?[日일号號]"#
     static let bengaliMonths = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর",
                                 "অক্টোবর", "নভেম্বর", "ডিসেম্বর"]
-    /// "মে" (May) never as the start of a longer word ("মেইল").
-    static let bengaliPattern = #"(\d{1,2})\s?("# + bengaliMonths.joined(separator: "|") + #")(?!\p{L})(?:,?\s?(\d{4}))?"#
+    /// "মে" (May) never as the start of a longer word ("মেইল"), but with
+    /// its "of" ending: "৫ জানুয়ারির মধ্যে", "জুলাইয়ের", "মের" (by the 5th
+    /// of January), which a month ending in a vowel takes as a letter.
+    static let bengaliPattern = #"(\d{1,2})\s?("# + bengaliMonths.joined(separator: "|") + #")(?=(?:র|\x{09DF}ের|\x{09AF}\x{09BC}ের)?(?!\p{L}))(?:,?\s?(\d{4}))?"#
     /// A clock time: "15:30", "15時", "午後3時半", "下午3点", "오후 3시 30분",
     /// "সকাল ১০টায়", "রাতে ১২টার". Not "3時間" or "2시간" (hours, not a
     /// time). Midnight and noon as words too: "자정", "정오", "মধ্যরাত".
     static let timePattern = #"(?:(午前|午後|上午|下午|中午|晚上|早上|凌晨|오전|오후|낮|밤|저녁|아침|새벽|সকাল|দুপুর|বিকাল|বিকেল|সন্ধ্যা|রাত)(?:\x{09C7}|\x{09DF}|\x{09AF}\x{09BC})?)?\s?(\d{1,2})\s?(?:[:：]\s?(\d{2})|([時时點点](?!間|间)|시(?!간)|টা)\s?(?:(\d{1,2})\s?[分분]|(半))?)|(자정|정오|মধ্যরাত|মাঝরাত)"#
+
+    /// Han numerals reach here half read: `asciiDigits` turns "一" to "九"
+    /// into digits but leaves "十", so "十一月五日" (November 5th) was "十1月5日",
+    /// January 5th, and "十一点" one o'clock. A number right after one of
+    /// them is part of a bigger one, and not read at all.
+    static func followsHanNumeral(_ range: NSRange, in ns: NSString) -> Bool {
+        guard range.location != NSNotFound, range.location > 0 else { return false }
+        return "十百千拾".contains(ns.substring(with: NSRange(location: range.location - 1, length: 1)))
+    }
+
+    /// `nextDay`: midnight, which ends the day it's said with ("12일
+    /// 자정" is when the 12th turns into the 13th).
+    /// `original`: the text before `asciiDigits`, to tell a Han numeral.
+    static func clock(_ match: NSTextCheckingResult, in ns: NSString,
+                      original: NSString? = nil) -> (hour: Int, minute: Int, nextDay: Bool)? {
+        func number(_ group: Int) -> Int? {
+            let range = match.range(at: group)
+            return range.location == NSNotFound ? nil : Int(ns.substring(with: range))
+        }
+        func text(_ group: Int) -> String {
+            match.range(at: group).location == NSNotFound ? "" : ns.substring(with: match.range(at: group))
+        }
+        switch text(7) {
+        case "": break
+        case "정오": return (12, 0, false)
+        default: return (0, 0, true)
+        }
+        guard var hour = number(2), !followsHanNumeral(match.range(at: 2), in: ns) else { return nil }
+        let minute = number(3) ?? number(5) ?? (match.range(at: 6).location != NSNotFound ? 30 : 0)
+        let marker = text(1)
+        // "一時的に" (for a while) and "一时" are not one o'clock: an hour
+        // in Han numerals is a time only with a time of day ("午後三時") or
+        // minutes ("三時半").
+        let hourRange = match.range(at: 2)
+        if marker.isEmpty, match.range(at: 5).location == NSNotFound, match.range(at: 6).location == NSNotFound,
+           let original, NSMaxRange(hourRange) <= original.length,
+           original.substring(with: hourRange).unicodeScalars.contains(where: { (0x4E00...0x9FFF).contains($0.value) }) {
+            return nil
+        }
+        // "৫টা বই" is five books: a Bengali টা is a time with a time of
+        // day ("রাত ১২টার"), or alone as "৫টায়" or "৫টা বাজে".
+        if text(4) == "টা", marker.isEmpty {
+            let start = NSMaxRange(match.range(at: 4))
+            let after = ns.substring(with: NSRange(location: start, length: min(6, ns.length - start)))
+            let first = after.unicodeScalars.first
+            guard first == "\u{09AF}" || first == "\u{09DF}" || after.drop(while: { $0 == " " }).hasPrefix("বাজে") else { return nil }
+        }
+        // 12 at night is midnight ("밤 12시", "রাত ১২টা", "晚上12点"), and
+        // so is "24시"; 12 by day stays noon ("낮 12시", "오후 12시",
+        // "দুপুর ১২টা").
+        if ["밤", "রাত", "晚上"].contains(marker) && hour == 12 || hour == 24 && minute == 0 { return (0, minute, true) }
+        if marker == "새벽", hour == 12 { hour = 0 }
+        if ["午後", "下午", "晚上", "오후", "밤", "저녁", "বিকাল", "বিকেল", "সন্ধ্যা", "রাত"].contains(marker), hour < 12 { hour += 12 }
+        // "3시", "3点" with no morning or afternoon word: a meeting at
+        // three is in the afternoon.
+        if marker.isEmpty || marker == "দুপুর" || marker == "낮", !text(4).isEmpty, (1...6).contains(hour) { hour += 12 }
+        guard (0...23).contains(hour), (0...59).contains(minute) else { return nil }
+        return (hour, minute, false)
+    }
 
     static func find(in source: String, now: Date, calendar: Calendar = .current) -> [Found] {
         let digits = MailDigest.asciiDigits(source)
@@ -546,41 +629,12 @@ enum LocalDates {
         func text(_ match: NSTextCheckingResult, _ group: Int) -> String {
             match.range(at: group).location == NSNotFound ? "" : ns.substring(with: match.range(at: group))
         }
-        /// `nextDay`: midnight, which ends the day it's said with ("12일
-        /// 자정" is when the 12th turns into the 13th).
-        func clock(_ match: NSTextCheckingResult) -> (hour: Int, minute: Int, nextDay: Bool)? {
-            switch text(match, 7) {
-            case "": break
-            case "정오": return (12, 0, false)
-            default: return (0, 0, true)
-            }
-            guard var hour = number(match, 2) else { return nil }
-            let minute = number(match, 3) ?? number(match, 5) ?? (match.range(at: 6).location != NSNotFound ? 30 : 0)
-            let marker = text(match, 1)
-            // "৫টা বই" is five books: a Bengali টা is a time with a time of
-            // day ("রাত ১২টার"), or alone as "৫টায়" or "৫টা বাজে".
-            if text(match, 4) == "টা", marker.isEmpty {
-                let start = NSMaxRange(match.range(at: 4))
-                let after = ns.substring(with: NSRange(location: start, length: min(6, ns.length - start)))
-                let first = after.unicodeScalars.first
-                guard first == "\u{09AF}" || first == "\u{09DF}" || after.drop(while: { $0 == " " }).hasPrefix("বাজে") else { return nil }
-            }
-            // 12 at night is midnight ("밤 12시", "রাত ১২টা", "晚上12点"), and
-            // so is "24시"; 12 by day stays noon ("낮 12시", "오후 12시",
-            // "দুপুর ১২টা").
-            if ["밤", "রাত", "晚上"].contains(marker) && hour == 12 || hour == 24 && minute == 0 { return (0, minute, true) }
-            if marker == "새벽", hour == 12 { hour = 0 }
-            if ["午後", "下午", "晚上", "오후", "밤", "저녁", "বিকাল", "বিকেল", "সন্ধ্যা", "রাত"].contains(marker), hour < 12 { hour += 12 }
-            // "3시", "3点" with no morning or afternoon word: a meeting at
-            // three is in the afternoon.
-            if marker.isEmpty || marker == "দুপুর" || marker == "낮", !text(match, 4).isEmpty, (1...6).contains(hour) { hour += 12 }
-            guard (0...23).contains(hour), (0...59).contains(minute) else { return nil }
-            return (hour, minute, false)
-        }
+        func clock(_ match: NSTextCheckingResult) -> (hour: Int, minute: Int, nextDay: Bool)? { Self.clock(match, in: ns, original: source as NSString) }
         var found: [Found] = []
         var used: [NSRange] = []
         for match in dates.matches(in: digits, range: NSRange(location: 0, length: ns.length)) {
             let month: Int, day: Int, year: Int?
+            if followsHanNumeral(match.range(at: 2), in: ns) { continue }
             if match.range(at: 2).location != NSNotFound {
                 (month, day, year) = (number(match, 2) ?? 0, number(match, 3) ?? 0, number(match, 1))
             } else {
@@ -624,6 +678,91 @@ enum LocalDates {
                   var date = calendar.date(bySettingHour: time.hour, minute: time.minute, second: 0, of: now) else { continue }
             if time.nextDay { date = calendar.date(byAdding: .day, value: 1, to: date) ?? date }
             found.append(Found(date: date, hasDay: false, hasTime: true, range: match.range))
+        }
+        return found
+    }
+
+    // MARK: Relative deadlines
+
+    /// A day said relative to today in Japanese, Korean, Chinese or
+    /// Bengali: today, tomorrow, the day after, a weekday ("金曜日", "금요일",
+    /// "周五", "শুক্রবার"), or a weekday next week ("来週の月曜日", "다음 주
+    /// 월요일", "下周一").
+    static let relativeDayPattern = #"(来週の?\s?|다음\s?주\s?|下\s?(?:个|個)?\s?(?:周|週|星期|礼拜|禮拜))?(?:(本日|今日|明後日|明日|あさって|あした|あす|오늘|내일|모레|今天|后天|後天|明天)|([月火水木金土日])曜日?|([일월화수목금토])요일|(?:周|週|星期|礼拜|禮拜)([日天一二三四五六1-6]))|(?<![\p{L}\p{M}])(আজ(?:কের)?|আগামীকাল|পরশু|(রবি|সোম|মঙ্গল|বুধ|বৃহস্পতি|শুক্র|শনি)বার)"#
+
+    /// What makes it a deadline when it follows: "までに" (by; "まで" alone
+    /// is until: "金曜日まで休みます"), "中に" ("本日中に", by the end of
+    /// today), "까지", "之前", "前" (not "前往", to go to), "এর মধ্যে".
+    static let relativeLeadOut = #"^\s?(?:ের|এর|র)?\s?(?:までに|迄に|中に|까지|之前|以前|前(?![往进進来來去])|মধ্যে)"#
+
+    /// Deadlines a Japanese, Korean, Chinese or Bengali email gives by a
+    /// day relative to when it was written: "金曜日までにご返信ください",
+    /// "내일 오후 5시까지", "请于周五前回复", "শুক্রবারের মধ্যে", "期限：明日".
+    /// Only for mail written today, as with "by Friday" in English. A day
+    /// without a time is due at noon (as the date detector reads one),
+    /// and today's at its last minute.
+    static func relativeDeadlines(in source: String, now: Date, calendar: Calendar = .current) -> [Date] {
+        let digits = MailDigest.asciiDigits(source)
+        let ns = digits as NSString
+        guard digits.contains(where: { !$0.isASCII }),
+              let days = PatternCache.shared.regex(relativeDayPattern, caseInsensitive: false),
+              let times = PatternCache.shared.regex(timePattern, caseInsensitive: false) else { return [] }
+        let today = calendar.startOfDay(for: now)
+        let weekdays: [String: Int] = ["日": 1, "天": 1, "일": 1, "রবি": 1, "月": 2, "一": 2, "월": 2, "সোম": 2,
+                                       "火": 3, "二": 3, "화": 3, "মঙ্গল": 3, "水": 4, "三": 4, "수": 4, "বুধ": 4,
+                                       "木": 5, "四": 5, "목": 5, "বৃহস্পতি": 5, "金": 6, "五": 6, "금": 6, "শুক্র": 6,
+                                       "土": 7, "六": 7, "토": 7, "শনি": 7,
+                                       // "周五" reaches here as "周5" (`asciiDigits` reads Chinese numerals).
+                                       "1": 2, "2": 3, "3": 4, "4": 5, "5": 6, "6": 7]
+        func text(_ match: NSTextCheckingResult, _ group: Int) -> String {
+            match.range(at: group).location == NSNotFound ? "" : ns.substring(with: match.range(at: group))
+        }
+        var found: [Date] = []
+        for match in days.matches(in: digits, range: NSRange(location: 0, length: ns.length)) {
+            var day: Date?
+            switch text(match, 2) + text(match, 6) {
+            case "本日", "今日", "오늘", "今天", "আজ", "আজকের": day = today
+            case "明日", "あした", "あす", "내일", "明天", "আগামীকাল": day = calendar.date(byAdding: .day, value: 1, to: today)
+            case "明後日", "あさって", "모레", "后天", "後天", "পরশু": day = calendar.date(byAdding: .day, value: 2, to: today)
+            default:
+                guard let weekday = weekdays[text(match, 3) + text(match, 4) + text(match, 5) + text(match, 7)] else { continue }
+                // The coming one (today's, said on that day), or the one in
+                // the week after this.
+                var start = today
+                if !text(match, 1).isEmpty, let following = calendar.dateInterval(of: .weekOfYear, for: today)?.end {
+                    start = calendar.startOfDay(for: following)
+                }
+                let delta = (weekday - calendar.component(.weekday, from: start) + 7) % 7
+                day = calendar.date(byAdding: .day, value: delta, to: start)
+            }
+            guard let day else { continue }
+            // A time just after it: "明日の17時までに", "내일 오후 5시까지".
+            var end = NSMaxRange(match.range)
+            var time: (hour: Int, minute: Int, nextDay: Bool)?
+            let tail = NSRange(location: end, length: min(16, ns.length - end))
+            if let next = times.firstMatch(in: digits, range: tail),
+               ns.substring(with: NSRange(location: end, length: next.range.location - end))
+                .allSatisfy({ !$0.isNumber && !$0.isNewline && $0 != "。" && $0 != "." }),
+               let parsed = clock(next, in: ns, original: source as NSString) {
+                time = parsed
+                end = NSMaxRange(next.range)
+            }
+            let after = ns.substring(with: NSRange(location: end, length: min(10, ns.length - end)))
+            let start = max(0, match.range.location - 12)
+            let before = ns.substring(with: NSRange(location: start, length: match.range.location - start))
+            guard after.patternRange(relativeLeadOut) != nil || before.patternRange(MailSignals.numericLocalLeadIn) != nil else { continue }
+            let date: Date?
+            switch time {
+            // Midnight ends the day: due at its last minute.
+            case let time? where time.nextDay:
+                date = calendar.date(byAdding: .day, value: 1, to: day).map { $0.addingTimeInterval(-60) }
+            case let time?:
+                date = calendar.date(bySettingHour: time.hour, minute: time.minute, second: 0, of: day)
+            case nil:
+                date = day == today ? calendar.date(bySettingHour: 23, minute: 59, second: 0, of: day)
+                    : calendar.date(bySettingHour: 12, minute: 0, second: 0, of: day)
+            }
+            if let date { found.append(date) }
         }
         return found
     }
