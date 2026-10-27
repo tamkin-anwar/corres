@@ -789,7 +789,9 @@ struct MacMainView: View {
     /// Double-click or Return: a draft continues in Compose, anything else
     /// opens in its own window.
     private func open(_ thread: Correspondence) {
-        if model.mailbox.remoteKind == .drafts {
+        // Searching from Drafts lists conversations, not drafts: one opened
+        // as a draft became a reply to yourself with their words in it.
+        if model.mailbox.remoteKind == .drafts, model.search.isEmpty {
             Task { await continueDraft(thread) }
         } else {
             openWindow(value: thread.id)
