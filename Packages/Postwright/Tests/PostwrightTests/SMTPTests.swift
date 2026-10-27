@@ -185,6 +185,48 @@ struct SMTPTests {
         }
     }
 
+    /// Whether `work` ends within `limit`. If it doesn't, `unblock` lets
+    /// the stuck wait go so the test itself can end.
+    private func ends(within limit: Duration, unblock: @escaping @Sendable () -> Void,
+                      _ work: @escaping @Sendable () async -> Void) async -> Bool {
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask { await work(); return true }
+            group.addTask { try? await Task.sleep(for: limit); return false }
+            let first = await group.next() ?? false
+            if !first { unblock() }
+            group.cancelAll()
+            return first
+        }
+    }
+
+    /// A wait for the server's next line that is cancelled stops at once,
+    /// whether or not it had started waiting: it went on until a line
+    /// came or the server hung up.
+    @Test func aCancelledWaitForALineEnds() async {
+        let queue = LineQueue()
+        let ended = await ends(within: .seconds(3), unblock: { queue.close() }) {
+            let wait = Task { try await queue.next(timeout: .seconds(60)) }
+            try? await Task.sleep(for: .milliseconds(50))
+            wait.cancel()
+            _ = try? await wait.value
+        }
+        #expect(ended)
+    }
+
+    /// A timeout that comes before the wait has begun ends it too, and the
+    /// late wait takes no line meant for the next one.
+    @Test func aTimeoutBeforeTheWaitBeginsEndsIt() async throws {
+        let queue = LineQueue()
+        let ended = await ends(within: .seconds(5), unblock: { queue.close() }) {
+            for _ in 0..<300 {
+                await #expect(throws: SMTPClient.SMTPError.timedOut) { try await queue.next(timeout: .zero) }
+            }
+        }
+        #expect(ended)
+        queue.push("250 ok")
+        #expect(try await queue.next(timeout: .seconds(1)) == "250 ok")
+    }
+
     @Test func dotStuffing() {
         let out = String(decoding: SMTPClient.dotStuffed(Data("a\n.b\r\n..c".utf8)), as: UTF8.self)
         #expect(out == "a\r\n..b\r\n...c\r\n.\r\n")
