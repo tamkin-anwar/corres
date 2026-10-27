@@ -55,6 +55,25 @@ struct AskQueryTests {
         #expect(query.topic == .travel && query.person == nil && query.keywords.isEmpty)
     }
 
+    /// "Hier" is yesterday in French and here in German: told apart by the
+    /// question's other words, or by the reader's language when there
+    /// are none to go by.
+    @Test func hierIsYesterdayOnlyInFrench() {
+        let yesterday = DateInterval(start: calendar.startOfDay(for: now).addingTimeInterval(-86_400), duration: 86_400)
+        func range(_ question: String, _ languages: [String] = ["en-US"]) -> DateInterval? {
+            AskQuery(question, now: now, calendar: calendar, languages: languages).range
+        }
+        #expect(range("les factures reçues hier") == yesterday)
+        #expect(range("les mails d'hier") == yesterday)
+        #expect(range("Zeig mir die Rechnungen hier") == nil)
+        #expect(range("Was hat Maya hier geschrieben") == nil)
+        #expect(!AskQuery("Zeig mir die Rechnungen hier", now: now, calendar: calendar).keywords.contains("hier"))
+        // Nothing else to go by: the reader's language.
+        #expect(range("hier", ["de-DE", "en-US"]) == nil)
+        #expect(range("hier", ["fr-FR"]) == yesterday)
+        #expect(range("gestern", ["fr-FR"]) == yesterday)
+    }
+
     @Test func plainKeywordsStillWork() {
         let query = AskQuery("Denver hotel confirmation", now: now, calendar: calendar)
         #expect(query.keywords.contains("denver") && query.keywords.contains("confirmation"))
