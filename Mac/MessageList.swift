@@ -509,6 +509,47 @@ final class MessageTableView: NSTableView {
         super.keyDown(with: event)
     }
 
+    // MARK: Focus
+
+    private var keyObserver: NSObjectProtocol?
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        super.viewWillMove(toWindow: newWindow)
+        if let keyObserver { NotificationCenter.default.removeObserver(keyObserver) }
+        keyObserver = newWindow.map { window in
+            NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.takeFocusIfFree() }
+            }
+        }
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard let window else { return }
+        // The first list in a window (launch) takes the keyboard from
+        // anything but a field being typed in, as Mail's list does; later
+        // ones (back from Scheduled, or an empty mailbox) only when free,
+        // so arrowing through the sidebar stays in the sidebar.
+        takeFocusIfFree(firstInWindow: !Self.focusedWindows.contains(window))
+        Self.focusedWindows.add(window)
+    }
+
+    private static let focusedWindows = NSHashTable<NSWindow>.weakObjects()
+
+    /// Single keys (e, r, j, k) work from launch, as in Mail, without a
+    /// click into the list first: the list takes the keyboard when nothing
+    /// in its window has it. Never from a field you're typing in.
+    func takeFocusIfFree(firstInWindow: Bool = false) {
+        // Next turn: the window has finished setting itself up by then.
+        Task { @MainActor [weak self] in
+            guard let self, let window, !isHiddenOrHasHiddenAncestor else { return }
+            let current = window.firstResponder
+            let free = current == nil || current === window
+            guard free || firstInWindow && !(current is NSText) && !(current is NSTextField) else { return }
+            window.makeFirstResponder(self)
+        }
+    }
+
     override func menu(for event: NSEvent) -> NSMenu? {
         let row = self.row(at: convert(event.locationInWindow, from: nil))
         guard row >= 0 else { return nil }

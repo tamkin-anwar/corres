@@ -131,6 +131,19 @@ struct TimePhraseTests {
                    "내일 오전 9시": [25, 9], "내일 오후 2시 30분": [25, 14], "모레": [26, TimePhrase.morningHour]])
     }
 
+    /// 12 at night is midnight, the end of the day it's said with; 12 by
+    /// day stays noon.
+    @Test func midnightAndNoon() {
+        expectAll(["오늘 밤 12시": [25, 0], "내일 밤 12시": [26, 0], "자정": [25, 0], "내일 자정": [26, 0],
+                   "내일 밤 12시 30분": [26, 0], "내일 낮 12시": [25, 12], "내일 오후 12시": [25, 12], "내일 정오": [25, 12],
+                   "내일 밤 9시": [25, 21],
+                   "আজ রাত ১২টা": [25, 0], "আগামীকাল রাত ১২টায়": [26, 0], "মধ্যরাতে": [25, 0],
+                   "আগামীকাল দুপুর ১২টা": [25, 12], "আগামীকাল রাত ৯টায়": [25, 21],
+                   "明天晚上12点": [26, 0], "tonight at 12": [25, 0], "tomorrow at midnight": [26, 0],
+                   "tomorrow at noon": [25, 12]])
+        #expect(parts("내일 밤 12시 30분")?.minute == 30)
+    }
+
     @Test func chinese() {
         expectAll(["明天晚上": [25, 20], "3天后 上午9点": [27, 9], "下周五": [2, TimePhrase.morningHour],
                    "明天上午9点": [25, 9], "三天后": [27, TimePhrase.morningHour], "明天下午3点半": [25, 15],
