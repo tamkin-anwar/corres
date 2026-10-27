@@ -1,5 +1,26 @@
 import Foundation
 
+/// `LeftoverDrafts`, kept with the App Group: a large send from the Share
+/// extension can leave one too.
+enum LeftoverDraftLog {
+    private static let key = "corres.outlookLeftoverDrafts"
+    private static let lock = NSLock()
+
+    static var current: LeftoverDrafts { lock.withLock { read() } }
+
+    static func update(_ change: (inout LeftoverDrafts) -> Void) {
+        lock.withLock {
+            var leftovers = read()
+            change(&leftovers)
+            MailAccounts.groupDefaults.set(try? JSONEncoder().encode(leftovers), forKey: key)
+        }
+    }
+
+    private static func read() -> LeftoverDrafts {
+        MailAccounts.groupDefaults.data(forKey: key).flatMap { try? JSONDecoder().decode(LeftoverDrafts.self, from: $0) } ?? LeftoverDrafts()
+    }
+}
+
 /// Outlook (Microsoft Graph) behind the same calls as `GmailAPIClient`, so
 /// everything above it treats both alike. Graph's model is folders,
 /// read state, flags, Focused/Other and categories; Corres's is Gmail's
@@ -60,6 +81,9 @@ struct OutlookClient: Sendable {
         guard let data = cursorString.data(using: .utf8), let cursor = try? JSONDecoder().decode(Cursor.self, from: data) else {
             throw ClientError.historyExpired
         }
+        // Drafts a large send couldn't remove at the time, once Graph can
+        // say they never went. Nothing to ask when there are none.
+        await tidyLeftoverDrafts(account: account)
         let inbox = try await deltaRound(start: cursor.inbox, account: account)
         let sent = try await deltaRound(start: cursor.sent, account: account)
         let changed = inbox.messages + sent.messages
@@ -257,25 +281,42 @@ struct OutlookClient: Sendable {
 
     /// Sends with attachments too big for one request. `rawWithout` is the
     /// same email built without them.
+    ///
+    /// Each try makes its own draft, and one whose send had no clear answer
+    /// can't be deleted at once: Graph sends a draft after it answers (202
+    /// Accepted), and the sent copy keeps the draft's id, so deleting it
+    /// could delete the copy in Sent. Those are noted (`LeftoverDrafts`)
+    /// and dealt with once Graph shows whether it sent them: the next try
+    /// of the same email, or the next sync, deletes one still a draft and
+    /// leaves one that went.
     func sendLarge(rawWithout: String, attachments: [PendingAttachment], threadId: String?, account: String) async throws -> String {
+        let messageID = Self.messageID(inRaw: rawWithout)
+        if let messageID, let earlier = try await settleEarlierTries(of: messageID, account: account) {
+            return earlier
+        }
         let draftID = try await draftWithAttachments(rawWithout: rawWithout, attachments: attachments, account: account)
         do {
             try await change("POST", "\(Self.base)/me/messages/\(draftID)/send", body: nil, account: account, oncePastGateway: true)
         } catch ClientError.refused(let status, _, _) where status == 504 {
-            // May have gone: the draft stays (deleting it would delete the
-            // sent copy, which keeps its id), and the outbox looks for it
-            // by its Message-ID before trying again.
+            // May have gone: the draft stays for now, and the outbox looks
+            // for it by its Message-ID before trying again.
+            LeftoverDraftLog.update { $0.add(.init(account: account, draftID: draftID, messageID: messageID, sendAskedAt: .now)) }
             throw ClientError.badResponse(statusCode: 504)
         } catch let error as URLError {
-            // The same when the answer was lost on the way back.
+            if Self.neverLeft(error) {
+                await discardDraft(draftID, messageID: messageID, account: account)
+            } else {
+                // The answer was lost on the way back: as with a 504.
+                LeftoverDraftLog.update { $0.add(.init(account: account, draftID: draftID, messageID: messageID, sendAskedAt: .now)) }
+            }
             throw error
         } catch {
             // Not sent: the half-built draft goes, so a retry starts clean
             // and nothing is left behind in Drafts.
-            try? await deleteDraft(id: draftID, account: account)
+            await discardDraft(draftID, messageID: messageID, account: account)
             throw error
         }
-        if let messageID = Self.messageID(inRaw: rawWithout) {
+        if let messageID {
             for delay in [0.8, 1.6, 3.2] {
                 try? await Task.sleep(for: .seconds(delay))
                 if let found = try? await findMessage(rfc822MessageID: messageID, account: account) { return found.providerID }
@@ -303,10 +344,83 @@ struct OutlookClient: Sendable {
             }
         } catch {
             // A draft missing some attachments is no use to anyone.
-            try? await deleteDraft(id: draftID, account: account)
+            await discardDraft(draftID, messageID: Self.messageID(inRaw: rawWithout), account: account)
             throw error
         }
         return draftID
+    }
+
+    /// A draft that was never asked to send: deleted now, or, when that
+    /// fails too (the connection went), noted so a later try or sync does.
+    private func discardDraft(_ draftID: String, messageID: String?, account: String) async {
+        do {
+            try await deleteDraft(id: draftID, account: account)
+        } catch {
+            LeftoverDraftLog.update { $0.add(.init(account: account, draftID: draftID, messageID: messageID, sendAskedAt: nil)) }
+        }
+    }
+
+    /// The request never reached Outlook, so nothing was sent.
+    private static func neverLeft(_ error: URLError) -> Bool {
+        [.notConnectedToInternet, .dataNotAllowed, .internationalRoamingOff, .cannotFindHost,
+         .cannotConnectToHost, .dnsLookupFailed].contains(error.code)
+    }
+
+    /// Whether Graph still has a draft as a draft, and its conversation;
+    /// nil when it's gone.
+    private func draftState(_ draftID: String, account: String) async throws -> (isDraft: Bool, conversationId: String?)? {
+        do {
+            let message: GraphMessage = try await getJSON("\(Self.base)/me/messages/\(draftID)?$select=id,isDraft,conversationId", account: account)
+            return (message.isDraft ?? false, message.conversationId)
+        } catch ClientError.refused(let status, _, _) where status == 404 {
+            return nil
+        }
+    }
+
+    /// Drafts an earlier try of this same email left. One that went means
+    /// the email went: its conversation comes back and nothing is sent
+    /// again. One Graph may still be sending holds this try back (thrown as
+    /// a 504, which the outbox treats as "check again later"), so the email
+    /// never goes twice. One that can't have gone is deleted.
+    private func settleEarlierTries(of messageID: String, account: String) async throws -> String? {
+        let earlier = LeftoverDraftLog.current.entries(for: account).filter { $0.messageID == messageID }
+        for entry in earlier {
+            let state = try await draftState(entry.draftID, account: account)
+            switch LeftoverDrafts.action(for: entry, isDraft: state?.isDraft) {
+            case .forget:
+                LeftoverDraftLog.update { $0.remove(draftID: entry.draftID, account: account) }
+                if let state, !state.isDraft { return state.conversationId ?? "outlook-sent-\(UUID().uuidString)" }
+            case .delete:
+                try await deleteDraft(id: entry.draftID, account: account)
+                LeftoverDraftLog.update { $0.remove(draftID: entry.draftID, account: account) }
+            case .wait:
+                throw ClientError.badResponse(statusCode: 504)
+            }
+        }
+        return nil
+    }
+
+    /// Every leftover draft of an account that can be dealt with now, for
+    /// the sync to call: deleted when it's still a draft and can't be on
+    /// its way, forgotten when it went or is gone. Ones Graph may still be
+    /// sending aren't asked about until it's had time. Never throws: the
+    /// next sync tries again.
+    func tidyLeftoverDrafts(account: String) async {
+        let due = LeftoverDraftLog.current.entries(for: account).filter { entry in
+            entry.sendAskedAt.map { Date.now.timeIntervalSince($0) >= LeftoverDrafts.settleTime } ?? true
+        }
+        for entry in due {
+            // No answer (offline) isn't "gone".
+            let state: (isDraft: Bool, conversationId: String?)?
+            do { state = try await draftState(entry.draftID, account: account) } catch { continue }
+            switch LeftoverDrafts.action(for: entry, isDraft: state?.isDraft) {
+            case .forget: LeftoverDraftLog.update { $0.remove(draftID: entry.draftID, account: account) }
+            case .delete:
+                guard (try? await deleteDraft(id: entry.draftID, account: account)) != nil else { continue }
+                LeftoverDraftLog.update { $0.remove(draftID: entry.draftID, account: account) }
+            case .wait: continue
+            }
+        }
     }
 
     /// One large attachment, in 4 MB pieces (a multiple of 320 KB, as

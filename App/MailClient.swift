@@ -92,6 +92,14 @@ struct MailClient: Sendable {
             : try await gmail.findMessage(rfc822MessageID: rfc822MessageID, account: account)
     }
 
+    /// Retry tapped on a send whose server never said whether it took it
+    /// (SMTP): you've chosen to send it again. Gmail and Outlook keep their
+    /// sent copy, so asking them is answer enough (a large Outlook send
+    /// still waits for Graph to settle an earlier try, `sendLarge`).
+    func allowSendingAgain(rfc822MessageID: String, account: String) {
+        if isICloud(account) { icloud.allowSendingAgain(rfc822MessageID: rfc822MessageID, account: account) }
+    }
+
     @discardableResult
     func send(raw: String, threadId: String?, account: String) async throws -> String {
         isICloud(account) ? try await icloud.send(raw: raw, threadId: threadId, account: account) : isOutlook(account) ? try await outlook.send(raw: raw, threadId: threadId, account: account)

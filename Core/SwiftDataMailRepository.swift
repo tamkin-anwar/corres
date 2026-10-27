@@ -325,7 +325,18 @@ public actor SwiftDataMailRepository: MailRepository {
                                                                  providerID: change.threadID.providerID)]
             }
             // Removed by an earlier change in this same batch: nothing left to do.
-            guard let model = found, !model.isDeleted, model.latestMessageID == change.messageID else { continue }
+            guard let model = found, !model.isDeleted else { continue }
+            guard model.latestMessageID == change.messageID else {
+                // Read elsewhere, in a conversation whose latest is your own
+                // reply: their message, still unread here, is the only
+                // unread one, and its change names it, not your reply.
+                if let labels = change.currentLabelIds, !change.removed, !labels.contains("UNREAD"),
+                   model.isUnread, model.labelIds.contains("SENT"), !model.labelIds.contains("UNREAD") {
+                    model.isUnread = false
+                    changed += 1
+                }
+                continue
+            }
             if change.removed {
                 // Its HTML goes with it, as `remove` does, or the store
                 // keeps every removed message's body for good.

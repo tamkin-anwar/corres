@@ -440,6 +440,10 @@
 		6A90C33A5F433FC1FB5A5226 /* Features/TodayBriefCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E432604343A76D3AF0752810 /* Features/TodayBriefCard.swift */; };
 		59308FAE1166C14E00EE81F8 /* Core/ListExclusion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059E2C067356EE947366FFDB /* Core/ListExclusion.swift */; };
 		379C128F007FEEBFC0C2CB1D /* Core/ListExclusion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059E2C067356EE947366FFDB /* Core/ListExclusion.swift */; };
+		713E1D4D8EA1BFEAD0D9EEEC /* Core/SendSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B6F976E8C053BA9BB11B3D /* Core/SendSafety.swift */; };
+		15E36A14687EDFB7F41DBC9C /* Core/SendSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B6F976E8C053BA9BB11B3D /* Core/SendSafety.swift */; };
+		140F11C674AC8D91609B352A /* Core/SendSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B6F976E8C053BA9BB11B3D /* Core/SendSafety.swift */; };
+		55B992973FE916775D9D6AAA /* Core/SendSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B6F976E8C053BA9BB11B3D /* Core/SendSafety.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -879,6 +883,7 @@
 		F6606016CBD76A537F5BC2EE /* Core/TodayBrief.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/TodayBrief.swift; sourceTree = SOURCE_ROOT; };
 		E432604343A76D3AF0752810 /* Features/TodayBriefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TodayBriefCard.swift; sourceTree = SOURCE_ROOT; };
 		059E2C067356EE947366FFDB /* Core/ListExclusion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ListExclusion.swift; sourceTree = SOURCE_ROOT; };
+		34B6F976E8C053BA9BB11B3D /* Core/SendSafety.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/SendSafety.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1174,6 +1179,7 @@
 				F6606016CBD76A537F5BC2EE /* Core/TodayBrief.swift */,
 				E432604343A76D3AF0752810 /* Features/TodayBriefCard.swift */,
 				059E2C067356EE947366FFDB /* Core/ListExclusion.swift */,
+				34B6F976E8C053BA9BB11B3D /* Core/SendSafety.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1659,6 +1665,7 @@
 				30850E852349A80C3703F5C2 /* App/AccountRemoval.swift in Sources */,
 				E4EA1E050D08A802787E6060 /* Core/SyncMerge.swift in Sources */,
 				379C128F007FEEBFC0C2CB1D /* Core/ListExclusion.swift in Sources */,
+				15E36A14687EDFB7F41DBC9C /* Core/SendSafety.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1820,6 +1827,7 @@
 				E473A2EE723C49D2F994A5B8 /* Core/TodayBrief.swift in Sources */,
 				6A90C33A5F433FC1FB5A5226 /* Features/TodayBriefCard.swift in Sources */,
 				59308FAE1166C14E00EE81F8 /* Core/ListExclusion.swift in Sources */,
+				713E1D4D8EA1BFEAD0D9EEEC /* Core/SendSafety.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1869,6 +1877,7 @@
 				0F6031E618B242D5A00A5999 /* App/OutlookTokenProvider.swift in Sources */,
 				A1DA771E4AB7471196DFE162 /* Shared/MailAccounts.swift in Sources */,
 				7218669C3F294DDA919034B5 /* Core/AttachmentKind.swift in Sources */,
+				140F11C674AC8D91609B352A /* Core/SendSafety.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1924,6 +1933,7 @@
 				7664767E82E4419E93636653 /* Core/AttachmentKind.swift in Sources */,
 				335B9F134DCF4E609B98DD99 /* NotificationExtension/NotificationService.swift in Sources */,
 				A0E360F1D5BF4C4B803157F2 /* Shared/NotifyPolicy.swift in Sources */,
+				55B992973FE916775D9D6AAA /* Core/SendSafety.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
