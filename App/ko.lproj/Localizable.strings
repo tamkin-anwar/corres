@@ -2564,7 +2564,7 @@
 "Someone's first email waits in New Senders until you allow them. These still notify, marked “New sender”, and you can allow or block them right from the email. Blocked senders never notify." = "누군가의 첫 이메일은 허용할 때까지 '새 보낸 사람'에서 기다립니다. 이 메일도 '새 보낸 사람'으로 표시되어 알림이 오며, 이메일에서 바로 허용하거나 차단할 수 있습니다. 차단한 보낸 사람은 알림을 보내지 않습니다.";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "나만 해결할 수 있는 문제가 발생했습니다.";
+"A payment or account problem needs you." = "결제 또는 계정 문제로 조치가 필요합니다.";
 
 /* No comment provided by engineer. */
 "soon" = "곧";
@@ -3092,7 +3092,7 @@
 "You declined" = "거절함";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "방금 전달했습니다. 답장을 기다리는 중입니다.";
+"You forwarded this just now. Waiting for their reply." = "방금 전달했습니다. 답장을 기다리는 중입니다.";
 
 /* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "%2$@의 최근 %1$lld개를 열지 않았습니다.";
@@ -3107,7 +3107,7 @@
 "You read %@'s email within a minute." = "%@의 메일을 1분 안에 읽습니다.";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "방금 답장했습니다. 답장을 기다리는 중입니다.";
+"You replied just now. Waiting for their reply." = "방금 답장했습니다. 답장을 기다리는 중입니다.";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "답장했습니다. 남은 일이 없습니다.";
@@ -3122,7 +3122,7 @@
 "You sent this. Nothing pending." = "내가 보냈습니다. 남은 일이 없습니다.";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "내가 시작한 대화입니다. 답장을 기다리는 중입니다.";
+"You started this conversation. Waiting for a reply." = "내가 시작한 대화입니다. 답장을 기다리는 중입니다.";
 
 /* No comment provided by engineer. */
 "You weren't in To or Cc on this email, so you were Bcc'd or it was forwarded to you. Replying to all lets everyone see you had it." = "이 메일의 받는 사람이나 참조에 없으므로 숨은 참조로 받았거나 전달받은 것입니다. 전체 답장하면 모두가 내가 받았다는 것을 알게 됩니다.";

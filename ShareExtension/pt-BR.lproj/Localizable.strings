@@ -278,7 +278,7 @@
 "Social notification. Kept out of Needs You." = "Notificação social. Fora de Precisa de Você.";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "Algo falhou que só você pode resolver.";
+"A payment or account problem needs you." = "Um problema de pagamento ou de conta precisa de você.";
 
 /* No comment provided by engineer. */
 "Subject:" = "Assunto:";
@@ -326,10 +326,10 @@
 "You asked. No reply yet." = "Você perguntou. Ainda sem resposta.";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "Você acabou de encaminhar. Aguardando resposta.";
+"You forwarded this just now. Waiting for their reply." = "Você acabou de encaminhar. Aguardando resposta.";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "Você acabou de responder. Aguardando resposta.";
+"You replied just now. Waiting for their reply." = "Você acabou de responder. Aguardando resposta.";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "Você respondeu. Nada pendente.";
@@ -341,7 +341,7 @@
 "You sent this. Nothing pending." = "Você enviou isto. Nada pendente.";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "Você começou esta conversa. Aguardando resposta.";
+"You started this conversation. Waiting for a reply." = "Você começou esta conversa. Aguardando resposta.";
 
 /* No comment provided by engineer. */
 "You're copied, not asked." = "Você está em cópia, sem perguntas.";

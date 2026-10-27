@@ -1859,7 +1859,7 @@
 "Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden." = "El primer correo de alguien espera en Remitentes nuevos hasta que lo permitas, así solo ves correo de quien has dejado entrar. Los remitentes bloqueados siguen ocultos.";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "Algo falló que solo tú puedes arreglar.";
+"A payment or account problem needs you." = "Un problema con un pago o una cuenta te necesita.";
 
 /* No comment provided by engineer. */
 "Something Went Wrong" = "Algo salió mal";
@@ -2243,7 +2243,7 @@
 "You declined" = "Rechazaste";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "Acabas de reenviar esto. Esperando respuesta.";
+"You forwarded this just now. Waiting for their reply." = "Acabas de reenviar esto. Esperando respuesta.";
 
 /* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "No has abierto los últimos %lld de %@.";
@@ -2258,7 +2258,7 @@
 "You read %@'s email within a minute." = "Lees el correo de %@ en un minuto.";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "Acabas de responder. Esperando respuesta.";
+"You replied just now. Waiting for their reply." = "Acabas de responder. Esperando respuesta.";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "Respondiste. Nada pendiente.";
@@ -2273,7 +2273,7 @@
 "You sent this. Nothing pending." = "Enviaste esto. Nada pendiente.";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "Empezaste esta conversación. Esperando respuesta.";
+"You started this conversation. Waiting for a reply." = "Empezaste esta conversación. Esperando respuesta.";
 
 /* No comment provided by engineer. */
 "You're copied, not asked." = "Estás en copia, no te preguntan.";

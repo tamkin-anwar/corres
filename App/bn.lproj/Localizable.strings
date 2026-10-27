@@ -2564,7 +2564,7 @@
 "Someone's first email waits in New Senders until you allow them. These still notify, marked “New sender”, and you can allow or block them right from the email. Blocked senders never notify." = "কারো প্রথম ইমেইল নতুন প্রেরক-এ অপেক্ষা করে যতক্ষণ না আপনি অনুমতি দেন। এগুলো তবুও “নতুন প্রেরক” চিহ্নসহ নোটিফিকেশন দেয়, আর ইমেইল থেকেই অনুমতি দিতে বা ব্লক করতে পারেন। ব্লক করা প্রেরকরা কখনো নোটিফিকেশন দেয় না।";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "এমন কিছু ব্যর্থ হয়েছে যা শুধু আপনিই ঠিক করতে পারেন।";
+"A payment or account problem needs you." = "পেমেন্ট বা অ্যাকাউন্টের একটি সমস্যা আপনার দেখা দরকার।";
 
 /* No comment provided by engineer. */
 "soon" = "শিগগির";
@@ -3092,7 +3092,7 @@
 "You declined" = "আপনি প্রত্যাখ্যান করেছেন";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "আপনি এইমাত্র এটি ফরোয়ার্ড করেছেন। তাদের উত্তরের অপেক্ষায়।";
+"You forwarded this just now. Waiting for their reply." = "আপনি এইমাত্র এটি ফরোয়ার্ড করেছেন। তাদের উত্তরের অপেক্ষায়।";
 
 /* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "%2$@ থেকে আসা শেষ %1$lldটি আপনি খোলেননি।";
@@ -3107,7 +3107,7 @@
 "You read %@'s email within a minute." = "%@-এর ইমেইল আপনি এক মিনিটের মধ্যে পড়েন।";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "আপনি এইমাত্র উত্তর দিয়েছেন। তাদের উত্তরের অপেক্ষায়।";
+"You replied just now. Waiting for their reply." = "আপনি এইমাত্র উত্তর দিয়েছেন। তাদের উত্তরের অপেক্ষায়।";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "আপনি উত্তর দিয়েছেন। কিছু বাকি নেই।";
@@ -3122,7 +3122,7 @@
 "You sent this. Nothing pending." = "আপনি এটি পাঠিয়েছেন। কিছু বাকি নেই।";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "আপনি এই কথোপকথন শুরু করেছেন। উত্তরের অপেক্ষায়।";
+"You started this conversation. Waiting for a reply." = "আপনি এই কথোপকথন শুরু করেছেন। উত্তরের অপেক্ষায়।";
 
 /* No comment provided by engineer. */
 "You weren't in To or Cc on this email, so you were Bcc'd or it was forwarded to you. Replying to all lets everyone see you had it." = "এই ইমেইলে আপনি প্রাপক বা Cc-তে ছিলেন না, তাই আপনাকে Bcc করা হয়েছে বা ফরোয়ার্ড করা হয়েছে। সবাইকে উত্তর দিলে সবাই জানবে এটি আপনার কাছে ছিল।";

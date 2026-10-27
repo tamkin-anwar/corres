@@ -2564,7 +2564,7 @@
 "Someone's first email waits in New Senders until you allow them. These still notify, marked “New sender”, and you can allow or block them right from the email. Blocked senders never notify." = "El primer correo de alguien espera en Remitentes nuevos hasta que lo permitas. Siguen avisando, marcados como «Remitente nuevo», y puedes permitirlos o bloquearlos desde el propio correo. Los remitentes bloqueados nunca avisan.";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "Algo falló que solo tú puedes arreglar.";
+"A payment or account problem needs you." = "Un problema con un pago o una cuenta te necesita.";
 
 /* No comment provided by engineer. */
 "soon" = "pronto";
@@ -3092,7 +3092,7 @@
 "You declined" = "Rechazaste";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "Acabas de reenviar esto. Esperando respuesta.";
+"You forwarded this just now. Waiting for their reply." = "Acabas de reenviar esto. Esperando respuesta.";
 
 /* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "No has abierto los últimos %lld de %@.";
@@ -3107,7 +3107,7 @@
 "You read %@'s email within a minute." = "Lees el correo de %@ en un minuto.";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "Acabas de responder. Esperando respuesta.";
+"You replied just now. Waiting for their reply." = "Acabas de responder. Esperando respuesta.";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "Respondiste. Nada pendiente.";
@@ -3122,7 +3122,7 @@
 "You sent this. Nothing pending." = "Enviaste esto. Nada pendiente.";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "Empezaste esta conversación. Esperando respuesta.";
+"You started this conversation. Waiting for a reply." = "Empezaste esta conversación. Esperando respuesta.";
 
 /* No comment provided by engineer. */
 "You weren't in To or Cc on this email, so you were Bcc'd or it was forwarded to you. Replying to all lets everyone see you had it." = "No estabas en Para ni en Cc de este correo, así que te llegó en Cco o reenviado. Responder a todos hará que todos vean que lo recibiste.";

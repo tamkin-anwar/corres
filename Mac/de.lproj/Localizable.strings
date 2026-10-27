@@ -1859,7 +1859,7 @@
 "Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden." = "Die erste E-Mail von jemandem wartet in „Neue Absender“, bis du die Person erlaubst, sodass du nur E-Mails von Leuten siehst, die du hereingelassen hast. Blockierte Absender bleiben ausgeblendet.";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "Etwas ist fehlgeschlagen, das nur du beheben kannst.";
+"A payment or account problem needs you." = "Ein Zahlungs- oder Account-Problem braucht dich.";
 
 /* No comment provided by engineer. */
 "Something Went Wrong" = "Etwas ist schiefgelaufen";
@@ -2243,7 +2243,7 @@
 "You declined" = "Du hast abgesagt";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "Du hast das gerade weitergeleitet. Wartet auf Antwort.";
+"You forwarded this just now. Waiting for their reply." = "Du hast das gerade weitergeleitet. Wartet auf Antwort.";
 
 /* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "Du hast die letzten %lld von %@ nicht geöffnet.";
@@ -2258,7 +2258,7 @@
 "You read %@'s email within a minute." = "Du liest E-Mails von %@ innerhalb einer Minute.";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "Du hast gerade geantwortet. Wartet auf Antwort.";
+"You replied just now. Waiting for their reply." = "Du hast gerade geantwortet. Wartet auf Antwort.";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "Du hast geantwortet. Nichts offen.";
@@ -2273,7 +2273,7 @@
 "You sent this. Nothing pending." = "Du hast das gesendet. Nichts offen.";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "Du hast diese Konversation begonnen. Wartet auf Antwort.";
+"You started this conversation. Waiting for a reply." = "Du hast diese Konversation begonnen. Wartet auf Antwort.";
 
 /* No comment provided by engineer. */
 "You're copied, not asked." = "Du bist in Kopie, nicht gefragt.";

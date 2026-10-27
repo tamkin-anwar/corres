@@ -926,7 +926,10 @@ public enum InboxClassifier {
     /// You told Corres a sender's mail needs nothing from you.
     public static let lessonReason = "You said mail like this needs no action."
     /// A payment failed, a card was declined, an account is on hold.
-    public static let failureReason = "Something failed that only you can fix."
+    public static let failureReason = "A payment or account problem needs you."
+    /// What `failureReason` said before; still recognized on mail stored
+    /// with it.
+    public static let legacyFailureReason = "Something failed that only you can fix."
     /// A payment asked of you, with its amount.
     public static let paymentReason = "Asks you to pay."
     /// "You allowed Corres access…": nothing to do unless it wasn't you.
@@ -949,7 +952,7 @@ public enum InboxClassifier {
     public static let ruleReasons: Set<String> = [legacyUnreadReason, personalUnreadReason, correspondentReason, staleReason,
                                                   readReason, legacyReadReason, questionReason, deadlineReason, obligationReason, copiedReason,
                                                   askedReason, repliedReason, startedReason, vipReason, fyiReason,
-                                                  lessonReason, confirmationReason, fromYouReason, failureReason, paymentReason,
+                                                  lessonReason, confirmationReason, fromYouReason, failureReason, legacyFailureReason, paymentReason,
                                                   autoReplyReason,
                                                   BulkKind.promotions.reason, BulkKind.social.reason, BulkKind.forums.reason,
                                                   BulkKind.updates.reason, BulkKind.automated.reason]
@@ -1874,12 +1877,15 @@ extension InboxClassifier {
     /// email's own language and passes through unchanged.
     public static func displayReason(_ reason: String) -> String {
         if let known = displayReasons[reason] { return known }
-        // Written when you send, with a verb or a name in it.
-        if reason == "You replied just now. Waiting for their response." {
-            return String(localized: "You replied just now. Waiting for their response.")
+        // Written when you send, with a verb or a name in it. Mail stored
+        // before they said "reply" still reads "response".
+        if reason == "You replied just now. Waiting for their reply."
+            || reason == "You replied just now. Waiting for their response." {
+            return String(localized: "You replied just now. Waiting for their reply.")
         }
-        if reason == "You forwarded this just now. Waiting for their response." {
-            return String(localized: "You forwarded this just now. Waiting for their response.")
+        if reason == "You forwarded this just now. Waiting for their reply."
+            || reason == "You forwarded this just now. Waiting for their response." {
+            return String(localized: "You forwarded this just now. Waiting for their reply.")
         }
         if let match = reason.firstMatch(of: /^No reply from (.+) since (.+)\. Follow up\?$/) {
             let name = String(match.1), day = String(match.2)
@@ -1905,7 +1911,8 @@ extension InboxClassifier {
         repliedReason: String(localized: "You replied. Nothing pending."),
         startedReason: String(localized: "You sent this. Nothing pending."),
         lessonReason: String(localized: "You said mail like this needs no action."),
-        failureReason: String(localized: "Something failed that only you can fix."),
+        failureReason: String(localized: "A payment or account problem needs you."),
+        legacyFailureReason: String(localized: "A payment or account problem needs you."),
         paymentReason: String(localized: "Asks you to pay."),
         promotedReason: String(localized: "Reads like it needs something from you."),
         demotedReason: String(localized: "Nothing here asks anything of you."),
@@ -1918,7 +1925,8 @@ extension InboxClassifier {
         BulkKind.forums.reason: String(localized: "Mailing list. Kept out of Needs You."),
         BulkKind.updates.reason: String(localized: "Automated update. Kept out of Needs You."),
         BulkKind.automated.reason: String(localized: "Bulk mail. Kept out of Needs You."),
-        "You started this conversation. Waiting for a response.": String(localized: "You started this conversation. Waiting for a response."),
+        "You started this conversation. Waiting for a reply.": String(localized: "You started this conversation. Waiting for a reply."),
+        "You started this conversation. Waiting for a response.": String(localized: "You started this conversation. Waiting for a reply."),
         // As they read once "Kept out of Needs You" is taken off, where the
         // line already says so.
         "Promotion.": String(localized: "Promotion."),

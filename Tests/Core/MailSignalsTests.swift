@@ -438,6 +438,22 @@ struct MailSignalsTests {
         #expect(placed.attention == .needsYou && placed.reason == InboxClassifier.failureReason)
     }
 
+    /// Reasons are stored in English. Mail stored with an older wording
+    /// shows the new one, and the old rule reason can still be re-run.
+    @Test func rewordedReasonsStillReadOnStoredMail() {
+        let reworded = [
+            "Something failed that only you can fix.": InboxClassifier.failureReason,
+            "You replied just now. Waiting for their response.": "You replied just now. Waiting for their reply.",
+            "You forwarded this just now. Waiting for their response.": "You forwarded this just now. Waiting for their reply.",
+            "You started this conversation. Waiting for a response.": "You started this conversation. Waiting for a reply.",
+        ]
+        for (old, new) in reworded {
+            #expect(InboxClassifier.displayReason(old) == InboxClassifier.displayReason(new), "\(old)")
+            #expect(InboxClassifier.displayReason(new) == new, "\(new)")
+        }
+        #expect(InboxClassifier.ruleReasons.contains(InboxClassifier.legacyFailureReason))
+    }
+
     @Test func paymentRequestsNeedYou() {
         #expect(MailSignals.isPaymentRequest("Vehicle Registration Renewal Payment Request. Payment in the amount of $188.00 is required to complete the application."))
         #expect(!MailSignals.isPaymentRequest("Rent is due on the first of each month. If you have already paid rent, thank you!"))

@@ -195,7 +195,7 @@ struct SwiftDataMailRepositoryTests {
         let placeholder = Correspondence(
             id: ThreadID(account: "me@example.com", providerID: "thread-labels"),
             sender: "Ridu", organization: "", subject: "Hello", excerpt: "Hi", body: "Hi",
-            receivedAt: now, dueAt: nil, reason: "You started this conversation. Waiting for a response.",
+            receivedAt: now, dueAt: nil, reason: "You started this conversation. Waiting for a reply.",
             attention: .waiting, labelIds: [])
         try await repository.upsert([placeholder], isInitialSync: true)
 
@@ -218,7 +218,7 @@ struct SwiftDataMailRepositoryTests {
         let placeholder = Correspondence(
             id: ThreadID(account: "me@example.com", providerID: "thread-unread"),
             sender: "Ridu", organization: "", subject: "Hello", excerpt: "Hi", body: "Hi",
-            receivedAt: now, dueAt: nil, reason: "You started this conversation. Waiting for a response.",
+            receivedAt: now, dueAt: nil, reason: "You started this conversation. Waiting for a reply.",
             attention: .waiting, isUnread: false)
         try await repository.upsert([placeholder], isInitialSync: true)
 
@@ -383,7 +383,7 @@ struct SwiftDataMailRepositoryTests {
             id: ThreadID(account: "me@example.com", providerID: "thread-1"),
             sender: "Ridu", organization: "", subject: "Hello",
             excerpt: "Hi Ridu", body: "Hi Ridu", receivedAt: now, dueAt: nil,
-            reason: "You started this conversation. Waiting for a response.", attention: .waiting)
+            reason: "You started this conversation. Waiting for a reply.", attention: .waiting)
         try await repository.upsert([placeholder], isInitialSync: true)
         try await repository.setPinned(true, for: placeholder.id)
 

@@ -278,7 +278,7 @@
 "Social notification. Kept out of Needs You." = "소셜 알림입니다. '나에게 필요'에 넣지 않았습니다.";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "나만 해결할 수 있는 문제가 발생했습니다.";
+"A payment or account problem needs you." = "결제 또는 계정 문제로 조치가 필요합니다.";
 
 /* No comment provided by engineer. */
 "Subject:" = "제목:";
@@ -326,10 +326,10 @@
 "You asked. No reply yet." = "내가 질문했습니다. 아직 답장이 없습니다.";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "방금 전달했습니다. 답장을 기다리는 중입니다.";
+"You forwarded this just now. Waiting for their reply." = "방금 전달했습니다. 답장을 기다리는 중입니다.";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "방금 답장했습니다. 답장을 기다리는 중입니다.";
+"You replied just now. Waiting for their reply." = "방금 답장했습니다. 답장을 기다리는 중입니다.";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "답장했습니다. 남은 일이 없습니다.";
@@ -341,7 +341,7 @@
 "You sent this. Nothing pending." = "내가 보냈습니다. 남은 일이 없습니다.";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "내가 시작한 대화입니다. 답장을 기다리는 중입니다.";
+"You started this conversation. Waiting for a reply." = "내가 시작한 대화입니다. 답장을 기다리는 중입니다.";
 
 /* No comment provided by engineer. */
 "You're copied, not asked." = "참조로 받았을 뿐 요청은 없습니다.";

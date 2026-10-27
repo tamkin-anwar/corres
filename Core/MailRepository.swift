@@ -289,7 +289,7 @@ public actor SampleMailRepository: MailRepository {
             let created = Correspondence.started(
                 by: draft, id: realThreadID ?? ThreadID(account: account, providerID: UUID().uuidString),
                 sentAt: sentAt, sentCopy: sentCopy, attention: .waiting,
-                reason: "You started this conversation. Waiting for a response.")
+                reason: "You started this conversation. Waiting for a reply.")
             items.insert(created, at: 0)
             return created
         }
@@ -300,7 +300,7 @@ public actor SampleMailRepository: MailRepository {
         items[index].waitingSince = sentAt
         items[index].snoozedUntil = nil
         let verb = draft.kind == .forward ? "forwarded this" : "replied"
-        items[index].reason = "You \(verb) just now. Waiting for their response."
+        items[index].reason = "You \(verb) just now. Waiting for their reply."
         return items[index]
     }
 
