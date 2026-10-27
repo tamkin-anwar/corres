@@ -185,6 +185,7 @@ public struct ResponseCollector: Sendable {
             size: fetch.size)
         summary.listUnsubscribe = headers?.value("List-Unsubscribe")
         summary.listUnsubscribePost = headers?.value("List-Unsubscribe-Post")
+        summary.authenticationResults = headers?.values("Authentication-Results") ?? []
         // Servers repeat the sender here when there's no Reply-To.
         let sender = summary.from?.email.lowercased()
         summary.replyTo = Self.addresses(envelope.reply).filter { $0.email.lowercased() != sender }
@@ -223,4 +224,5 @@ struct HeaderFields {
         fields = out
     }
     func value(_ name: String) -> String? { fields.first { $0.0.caseInsensitiveCompare(name) == .orderedSame }?.1 }
+    func values(_ name: String) -> [String] { fields.filter { $0.0.caseInsensitiveCompare(name) == .orderedSame }.map(\.1) }
 }

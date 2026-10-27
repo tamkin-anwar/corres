@@ -69,7 +69,7 @@ struct EarlierMessages: View {
             } label: {
                 HStack(spacing: 10) {
                     CorrespondentAvatar(initials: isMine ? "Y" : message.initials, email: isMine ? nil : message.senderEmail,
-                                        size: CGSize(width: 30, height: 30))
+                                        size: CGSize(width: 30, height: 30), companyLogo: message.showsCompanyLogo)
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(alignment: .firstTextBaseline) {
                             Text(isMine ? String(localized: "You") : message.sender).font(.subheadline.weight(.semibold)).lineLimit(1)

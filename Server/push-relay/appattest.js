@@ -171,8 +171,10 @@ function appIdFor(rpIdHash, appIds) {
 // Checks an attestation for the key `keyId` (32 raw bytes), made over the
 // one-time `challenge` this server handed out. Returns what to keep for
 // later assertions; throws AttestError with a short reason otherwise.
+// `platform` is what the app says it runs on: "macOS" for a Mac (or the
+// iPad app on a Mac), anything else or nothing for an iPhone or iPad.
 function verifyAttestation({ attestation, keyId, challenge, appIds = APP_IDS, rootPem = APPLE_ROOT_PEM,
-  now = new Date(), allowDevelopment = true }) {
+  now = new Date(), allowDevelopment = true, platform = null }) {
   let decoded;
   try {
     decoded = cbor.decodeFirstSync(attestation);
@@ -209,14 +211,18 @@ function verifyAttestation({ attestation, keyId, challenge, appIds = APP_IDS, ro
   const certNonce = nonceExtension && innerOctetString(nonceExtension);
   if (!certNonce || !certNonce.equals(nonce)) throw new AttestError('nonce-mismatch');
 
-  // macOS keys also carry their access policy, which has to be this one.
+  // The key's access policy (OID ...100.8.6). Apple defines the check for
+  // macOS keys only: SIP and full security on, this exact value. iPhone and
+  // iPad keys carry the extension too, with a policy of their own, so
+  // checking it on every key refused every iPhone (all /attest calls from
+  // builds 35 to 39 were "mac-policy"). It's checked for keys the app says
+  // come from a Mac (the Mac app, or the iPad app running on one); the
+  // value is kept either way, so the ones iPhones send can be seen.
   const acl = certExtension(leaf.raw, MAC_ACL_OID);
-  if (acl) {
-    const value = innerOctetString(acl);
-    if (!value || (value.toString('base64') !== MAC_ACL && value.toString('latin1') !== MAC_ACL)) {
-      throw new AttestError('mac-policy');
-    }
-  }
+  const aclValue = acl && innerOctetString(acl);
+  const aclMatchesMac = Boolean(aclValue)
+    && (aclValue.toString('base64') === MAC_ACL || aclValue.toString('latin1') === MAC_ACL);
+  if (platform === 'macOS' && !aclMatchesMac) throw new AttestError('mac-policy');
 
   // 5. The key id is the SHA256 of the public key (uncompressed point).
   const jwk = leaf.publicKey.export({ format: 'jwk' });
@@ -241,6 +247,7 @@ function verifyAttestation({ attestation, keyId, challenge, appIds = APP_IDS, ro
     receipt: bytes(field(statement, 'receipt')),
     validationCategory: parsed.validationCategory,
     bundleVersion: parsed.bundleVersion,
+    accessPolicy: aclValue ? (aclMatchesMac ? 'macos-full-security' : crypto.createHash('sha256').update(aclValue).digest('hex').slice(0, 16)) : null,
   };
 }
 

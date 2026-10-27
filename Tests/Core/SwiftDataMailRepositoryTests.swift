@@ -12,6 +12,26 @@ struct SwiftDataMailRepositoryTests {
         return try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self, configurations: [configuration])
     }
 
+    /// A company logo's proof (the receiving service's DMARC pass) is kept
+    /// with the conversation, filled in when the same email is read again
+    /// with its headers, and reset by a newer email.
+    @Test func fromDomainVerifiedIsStoredFilledInAndResetPerMessage() async throws {
+        let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
+        func email(_ messageID: String, at offset: TimeInterval, verified: Bool?) -> Correspondence {
+            Correspondence(id: ThreadID(account: "me@x.test", providerID: "t1"), sender: "Chase", senderEmail: "alerts@chase.com",
+                           organization: "", subject: "Statement", excerpt: "", body: "", latestMessageID: messageID,
+                           receivedAt: now.addingTimeInterval(offset), dueAt: nil, reason: "", attention: .quiet,
+                           labelIds: ["INBOX"]).with(fromDomainVerified: verified)
+        }
+        _ = try await repository.upsert([email("m1", at: 0, verified: nil)], isInitialSync: true)
+        #expect(try await repository.threads().first?.fromDomainVerified == nil)
+        _ = try await repository.upsert([email("m1", at: 0, verified: true)], isInitialSync: false)
+        #expect(try await repository.threads().first?.fromDomainVerified == true)
+        #expect(try await repository.threads().first?.showsCompanyLogo == true)
+        _ = try await repository.upsert([email("m2", at: 60, verified: nil)], isInitialSync: false)
+        #expect(try await repository.threads().first?.fromDomainVerified == nil)
+    }
+
     @Test func seedIfNeededPopulatesOnceAndIsIdempotent() async throws {
         let repository = SwiftDataMailRepository(modelContainer: try makeContainer())
         try await repository.seedIfNeeded(now: now)

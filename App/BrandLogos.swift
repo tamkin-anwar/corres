@@ -8,6 +8,13 @@ import Observation
 /// company sees that server, never the person reading, and the relay is
 /// sent a domain, never an address or anything from an email. Kept on this
 /// device afterwards; Settings › Private by Design can turn them off.
+///
+/// A domain's logo is only ever drawn beside an email whose mail service
+/// says it passed DMARC for that domain, and never in Junk
+/// (`Correspondence.showsCompanyLogo`, `MailAuthentication`), the way Gmail
+/// does it: otherwise a forged email "from" a bank would wear the bank's
+/// verified logo. The relay checks the domain's BIMI record, mark
+/// certificate and DMARC policy; the message's own result is checked here.
 @MainActor
 final class BrandLogos {
     static let shared = BrandLogos()

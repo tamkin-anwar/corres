@@ -140,7 +140,8 @@ public actor IMAPConnection {
 
     static let summaryAttributes: [FetchAttribute] = [
         .uid, .flags, .rfc822Size, .envelope,
-        .bodySection(peek: true, SectionSpecifier(kind: .headerFields(["REFERENCES", "LIST-UNSUBSCRIBE", "LIST-UNSUBSCRIBE-POST"])), nil),
+        .bodySection(peek: true, SectionSpecifier(kind: .headerFields(["REFERENCES", "LIST-UNSUBSCRIBE", "LIST-UNSUBSCRIBE-POST",
+                                                                       "AUTHENTICATION-RESULTS"])), nil),
     ]
 
     /// The newest `count` messages of the selected folder (a first sync, or

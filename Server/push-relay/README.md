@@ -126,10 +126,15 @@ Set `PushNotificationService.relayBaseURL` and `.pubsubTopicName` (in `App/PushN
 How it works:
 
 1. Once per install, the app makes a key in the Secure Enclave (`DCAppAttestService.generateKey`), asks `POST /attest-challenge` for a one-time challenge (32 random bytes, good for five minutes, stored only as a hash in `attestChallenges`), and has Apple attest the key over `SHA256(challenge)`.
-2. `POST /attest` with `{ keyId, attestation, challenge }` verifies all of Apple's steps: the certificate chain up to the pinned Apple App Attestation Root CA, the nonce in the leaf's `1.2.840.113635.100.8.2` extension equal to `SHA256(authData || SHA256(challenge))`, `SHA256(public key) == keyId`, the RP ID hash equal to `SHA256("7GGTC43CG8.studio.anwarcreative.corres")` (or the Mac debug build's `.debug` App ID), counter 0, aaguid `appattest` (production) or `appattestdevelop`, credential id equal to the key id, and on macOS the key's access policy. The public key, a zero counter, the environment and Apple's receipt are kept in `attestKeys`, keyed by the key id. A key already on file is never replaced.
+2. `POST /attest` with `{ keyId, attestation, challenge }` verifies all of Apple's steps: the certificate chain up to the pinned Apple App Attestation Root CA, the nonce in the leaf's `1.2.840.113635.100.8.2` extension equal to `SHA256(authData || SHA256(challenge))`, `SHA256(public key) == keyId`, the RP ID hash equal to `SHA256("7GGTC43CG8.studio.anwarcreative.corres")` (or the Mac debug build's `.debug` App ID), counter 0, aaguid `appattest` (production) or `appattestdevelop`, credential id equal to the key id, and, for a key the app says comes from a Mac (`platform: "macOS"`, sent by the iPad app running on a Mac), the key's access policy (OID `1.2.840.113635.100.8.6`, Apple's macOS-only step). iPhone and iPad keys carry that extension too, with a policy of their own: checking it on every key refused every iPhone (each `/attest` from builds 35, 37 and 39 logged `rejected, mac-policy`, so no iPhone ever had an attested key and every call came in as `none`). The relay now records the policy (`accessPolicy`, a short hash, or `macos-full-security`) and the `platform` on the key, and logs both on `app attest /attest: ok`. The public key, a zero counter, the environment and Apple's receipt are kept in `attestKeys`, keyed by the key id. A key already on file is never replaced.
 3. Each later `register`/`unregister` gets a fresh challenge, puts it in the body as `attestChallenge`, and signs the exact body bytes: headers `Corres-Attest-Key` and `Corres-Attest-Assertion`. The relay checks the challenge (single use), the signature against the stored key over `SHA256(authenticatorData || SHA256(body))`, the RP ID, and that the counter went up, then stores the new counter.
 
-The apps on TestFlight today (builds 35 and 36) sign only `/register` and `/unregister`, so the other three log `allowed unattested, none` for now. Their result goes on the Outlook subscription or iCloud watch record, never on the device record, so it can't hide whether `/register` was attested.
+What each build sends:
+- iPhone and iPad builds up to 37 sign only `/register` and `/unregister`; builds 39 and later sign all five gated routes. Every one of them needs an attested key first, which no iPhone had until the access policy fix above is deployed. After that deploy, current iPhones attest at their next try (an app that was refused waits a day, then makes a new key) without a new build.
+- Builds after 41 also wait up to 20 seconds for a key still being attested before sending, so a new install's first registration is signed; send `platform` with `/attest`; retry a refused call once with a fresh challenge (`unknown-key`, `bad-challenge`, `replayed-counter`); and keep any call the relay refuses as not done (registrations are tried again at the next launch or refresh, unregisters are kept and sent again).
+- Mac builds up to 38 send no proof. Mac builds 40 and later send a DeviceCheck token on all five routes. In the three days to 2026-10-27 no Mac called the relay at all (every request came from iPhone builds 25 to 39, plus `curl` tests), so DeviceCheck hasn't been exercised by a real Mac yet.
+
+The result for `/register-graph` and the iCloud routes goes on the Outlook subscription or iCloud watch record, never on the device record, so it can't hide whether `/register` was attested.
 
 Monitor mode (the default): every checked call is logged on one line (`app attest /register: ok` or `app attest /register: allowed unattested, <reason>`), the device record gets `attested`, `attestReason`, `attestKeyId` and `attestCheckedAt`, and the call goes through either way. Reasons: `none` (no proof sent: an older build, the Simulator, a Mac without App Attest, or a key still being attested), `unknown-key`, `bad-challenge`, `bad-signature`, `replayed-counter`, `wrong-app`, `malformed`. The answer carries a `Corres-Attest-Result` header; on `unknown-key` the app makes and attests a new key. On the app side every failure (no support, no network, an Apple or relay error, Apple throttling) sends the call as before, so nobody loses notifications.
 
@@ -192,17 +197,19 @@ Turning it on:
    ```
 5. Check the logs for a Mac's `devicecheck ok, production`. `devicecheck failed, apple-auth` means the key isn't set up right.
 
+The deployed relay (as of 2026-10-27) uses the second form: `DEVICECHECK_KEY_ID` equals `APNS_KEY_ID` (`T897WMJKV6`), so it reuses `APNS_AUTH_KEY` and needs no `DEVICECHECK_KEY` secret. The one `devicecheck failed, invalid-token` in the logs was a `curl` test with a made-up token (2026-10-26 02:30 UTC), not a Mac. Apple answered 400 rather than 401, which suggests the key is accepted for DeviceCheck, but only a real Mac's `devicecheck ok` proves it: confirm **DeviceCheck** is ticked on that key in the portal.
+
 `DEVICECHECK_DEVELOPMENT=0` (in the same deploy) stops trying the development server, so only TestFlight and App Store builds pass.
 
 ## Enforcement checklist
 
 Before `APP_ATTEST_ENFORCE=1 npm run deploy`:
 
-1. DeviceCheck is configured and the logs show `devicecheck ok` from Macs, not `not configured` or `apple-auth`.
-2. Every iPhone and iPad device record still in use has `attested: true`, and every Mac one has `deviceChecked: true`. Records with neither are builds that would lose notifications.
-3. The iPhone and iPad app signs `/register-graph`, `/register-icloud` and `/unregister-icloud` too (today it signs only `/register` and `/unregister`, so those three would get 401 on iOS). The Mac already sends DeviceCheck on all five.
-4. The app copes with a 401 (it keeps the registration as not done and tries again later) and the current TestFlight and App Store builds are the ones that send proof.
-5. Decide on the Simulator and Xcode builds: the Simulator can't attest or device check, so it would lose relay notifications. Development DeviceCheck tokens pass unless `DEVICECHECK_DEVELOPMENT=0`.
+1. The relay with the access policy fix is deployed, and the logs show `app attest /attest: ok, production, iOS` from iPhones (not `rejected, mac-policy`) and then `app attest /register: ok` and `/register-graph: ok`.
+2. DeviceCheck is configured and the logs show `devicecheck ok, production` from Macs, not `not configured`, `apple-auth` or `invalid-token`.
+3. Every iPhone and iPad device record still in use has `attested: true`, and every Mac one has `deviceChecked: true`; the same on `graphSubscriptions` and `icloudWatches`. Records with neither are builds that would lose notifications (iPhone builds up to 37 leave `/register-graph` and the iCloud routes unsigned; Mac builds up to 38 send nothing).
+4. Done in the app: iPhone and iPad builds 39 and later sign all five routes, Mac builds 40 and later send DeviceCheck on all five, and builds after 41 keep a refused call as not done and try it again later. Wait until testers are on those builds.
+5. Decide on the Simulator and Xcode builds: the Simulator can't attest or device check, so it would lose relay notifications. Development DeviceCheck tokens pass unless `DEVICECHECK_DEVELOPMENT=0`. TestFlight and App Store Macs make production tokens, which are checked on the production server first either way, so `DEVICECHECK_DEVELOPMENT=1` doesn't hurt them; set it to `0` for launch so only distributed builds pass.
 6. Have `APP_ATTEST_NEW_KEYS` ready (Apple throttling) and remember that a plain `npm run deploy` goes back to monitor mode.
 
 ## Limits, rate limits and cleanup

@@ -369,6 +369,8 @@ public actor SwiftDataMailRepository: MailRepository {
             if let preview = MailDigest.preview(body: item.body, html: item.htmlBody) { model.excerpt = preview }
             model.attachmentsData = (try? JSONEncoder().encode(item.attachments)) ?? Data()
             model.isBodyLoaded = true
+            // Outlook's Authentication-Results come with the full message.
+            if let verified = item.fromDomainVerified { model.fromDomainVerified = verified }
             // Outlook's headers (List-Unsubscribe) come with the full message,
             // not the listing, and with them which of Gmail's categories its
             // "Other" mail belongs to. Gmail's arrive earlier and stay.
@@ -665,6 +667,13 @@ public actor SwiftDataMailRepository: MailRepository {
                 // way to Gmail's real one. Its time is when Corres saved it,
                 // a moment after Gmail's, so comparing times kept the
                 // placeholder forever.
+                // The same message read again, now with its service's
+                // authentication result (mail stored before it was read).
+                if let verified = item.fromDomainVerified, item.latestMessageID == existing.latestMessageID,
+                   existing.fromDomainVerified != verified {
+                    existing.fromDomainVerified = verified
+                    changed = true
+                }
                 guard let incomingMessageID = item.latestMessageID, incomingMessageID != existing.latestMessageID,
                       item.receivedAt >= existing.receivedAt || existing.latestMessageID == nil else { continue }
                 // The same email under a new id: an IMAP message's id is its
@@ -676,6 +685,7 @@ public actor SwiftDataMailRepository: MailRepository {
                     existing.latestMessageID = incomingMessageID
                     existing.labelIds = item.labelIds
                     existing.isUnread = item.isUnread
+                    if let verified = item.fromDomainVerified { existing.fromDomainVerified = verified }
                     changed = true
                     continue
                 }
@@ -697,6 +707,8 @@ public actor SwiftDataMailRepository: MailRepository {
                 existing.listUnsubscribeMailto = item.listUnsubscribeMailto
                 existing.listUnsubscribeURL = item.listUnsubscribeURL
                 existing.listUnsubscribeOneClick = item.listUnsubscribeOneClick
+                // Per message too: nil (not read yet) until its headers come.
+                existing.fromDomainVerified = item.fromDomainVerified
                 existing.toRecipients = item.toRecipients
                 existing.ccRecipients = item.ccRecipients
                 existing.replyTo = item.replyTo

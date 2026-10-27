@@ -59,6 +59,11 @@ struct CorrespondentAvatar: View {
     /// rescales the fixed internal content.
     var size = CGSize(width: 42, height: 42)
     var highlighted = false
+    /// Whether the company's logo may show: only for an email its mail
+    /// service says passed DMARC for the From domain, outside Junk
+    /// (`Correspondence.showsCompanyLogo`). Off by default, so an avatar
+    /// with no email behind it (a person, a recipient) never claims one.
+    var companyLogo = false
     @Environment(\.displayScale) private var displayScale
     @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
 
@@ -73,7 +78,7 @@ struct CorrespondentAvatar: View {
                 if let email, let photo = people?.photo(for: email) {
                     Image(platformImage: photo).resizable().scaledToFill()
                         .frame(width: side, height: side).clipShape(Circle())
-                } else if let email, let logo = BrandLogos.shared.logo(for: email) {
+                } else if companyLogo, let email, let logo = BrandLogos.shared.logo(for: email) {
                     // The company's own verified mark (BrandLogos).
                     Image(platformImage: logo).resizable().interpolation(.high).scaledToFill()
                         .frame(width: side, height: side).clipShape(Circle())

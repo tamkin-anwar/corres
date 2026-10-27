@@ -20,6 +20,9 @@ public struct MessageSummary: Sendable, Equatable, Hashable {
     /// has them: newsletters and marketing.
     public var listUnsubscribe: String?
     public var listUnsubscribePost: String?
+    /// Every Authentication-Results header, in the message's order (the
+    /// receiving server's own first).
+    public var authenticationResults: [String] = []
     /// Where replies should go, when that isn't the sender (a newsletter's
     /// reply address, a support desk).
     public var replyTo: [Address] = []

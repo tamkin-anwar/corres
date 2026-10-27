@@ -166,7 +166,8 @@ struct ReadingPane: View {
                 .fixedSize(horizontal: false, vertical: true)
             HStack(alignment: .top, spacing: 12) {
                 Button { showPerson() } label: {
-                    CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail, size: CGSize(width: 38, height: 38))
+                    CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail, size: CGSize(width: 38, height: 38),
+                                        companyLogo: thread.showsCompanyLogo)
                 }
                 .buttonStyle(.plain)
                 .help("Show your mail with \(thread.sender)")

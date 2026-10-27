@@ -221,10 +221,13 @@ struct GmailAPIClient {
     }
 
     /// Only the headers Corres actually reads: sender, recipients (Reply
-    /// All, correspondent signal), subject, threading, and unsubscribe.
+    /// All, correspondent signal), subject, threading, unsubscribe, and
+    /// Gmail's own Authentication-Results (a company logo needs DMARC to
+    /// pass; a few hundred bytes, in the same request).
     /// Metadata plus Gmail's own snippet is everything a row, triage, a
     /// notification, and local search need; the body comes later.
-    private static let metadataHeaders = ["From", "To", "Cc", "Reply-To", "Subject", "Message-ID", "List-Unsubscribe", "List-Unsubscribe-Post"]
+    private static let metadataHeaders = ["From", "To", "Cc", "Reply-To", "Subject", "Message-ID", "List-Unsubscribe", "List-Unsubscribe-Post",
+                                          "Authentication-Results"]
 
     /// Sender, subject, snippet, labels, and headers for up to `batchSize`
     /// messages in one HTTP round trip. Returned threads have
@@ -1004,6 +1007,10 @@ struct GmailAPIClient {
         // right.
         let listUnsubscribeOneClick = listUnsubscribeURL != nil
             && (headers["list-unsubscribe-post"]?.lowercased().contains("one-click") ?? false)
+        // Every Authentication-Results, in the message's order: Gmail's
+        // own (mx.google.com) is the first.
+        let authenticationResults = (message.payload?.headers ?? [])
+            .filter { $0.name.caseInsensitiveCompare("Authentication-Results") == .orderedSame }.map(\.value)
         return Self.build(account: account, threadID: message.threadId ?? message.id, messageID: message.id,
                           sender: sender, senderEmail: senderEmail, organization: organization, subject: subject,
                           excerpt: (message.snippet ?? "").previewText, body: body, htmlBody: htmlBody,
@@ -1012,6 +1019,8 @@ struct GmailAPIClient {
                           ccRecipients: ccRecipients, replyTo: replyTo, listUnsubscribeMailto: listUnsubscribeMailto,
                           listUnsubscribeURL: listUnsubscribeURL, listUnsubscribeOneClick: listUnsubscribeOneClick,
                           bodyLoaded: bodyLoaded)
+            .with(fromDomainVerified: MailAuthentication.dmarcPasses(headers: authenticationResults, receiver: .google,
+                                                                     fromAddress: senderEmail))
     }
 
     /// One email as Corres keeps it, and where it starts (Needs You, Waiting,

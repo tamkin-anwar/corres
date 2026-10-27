@@ -207,6 +207,18 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
     /// with the conversation so it's known without the HTML, which the
     /// lists don't hold. Nil when not worked out.
     public var htmlImageOnly: Bool?
+    /// Whether the service that received the latest message says it passed
+    /// DMARC for its From domain (`MailAuthentication`). Nil when that
+    /// wasn't read (Outlook's listing has no headers; they come with the
+    /// full message) or for mail stored before it was read. A company logo
+    /// needs this to be true.
+    public var fromDomainVerified: Bool?
+
+    /// A company's logo (BIMI) is shown only for mail its service says
+    /// really came from that company, and never in Junk or Spam, as Gmail.
+    public var showsCompanyLogo: Bool {
+        fromDomainVerified == true && !labelIds.contains("SPAM")
+    }
 
     /// Flagged in iOS Mail, starred in Gmail: the same thing underneath, a
     /// Gmail `STARRED` label, so it mirrors both ways through the labels
@@ -441,6 +453,14 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
             isBodyLoaded: incoming.isBodyLoaded,
             waitingSince: preserveAttention ? waitingSince : nil,
             lastSentAt: [lastSentAt, incoming.lastSentAt].compactMap { $0 }.max())
+            .with(fromDomainVerified: incoming.fromDomainVerified)
+    }
+
+    /// A copy with `fromDomainVerified` set.
+    public func with(fromDomainVerified: Bool?) -> Correspondence {
+        var copy = self
+        copy.fromDomainVerified = fromDomainVerified
+        return copy
     }
 }
 

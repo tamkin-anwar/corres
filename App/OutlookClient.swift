@@ -749,6 +749,14 @@ struct OutlookClient: Sendable {
             listUnsubscribeMailto: mailto, listUnsubscribeURL: url,
             listUnsubscribeOneClick: url != nil && (headers["list-unsubscribe-post"]?.lowercased().contains("one-click") ?? false),
             bodyLoaded: full)
+            // Graph sends headers only when asked for by name, and only all
+            // of them (several KB a message), so the listing goes without:
+            // nil until the full message, which brings them, is fetched.
+            .with(fromDomainVerified: message.internetMessageHeaders.map { all in
+                MailAuthentication.dmarcPasses(
+                    headers: all.filter { $0.name.caseInsensitiveCompare("Authentication-Results") == .orderedSame }.map(\.value),
+                    receiver: .microsoft, fromAddress: senderEmail)
+            })
     }
 
     static func labels(for message: GraphMessage, folders: OutlookFolders.IDs, hasUnsubscribe: Bool = false) -> [String] {
