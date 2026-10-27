@@ -2746,3 +2746,174 @@
 "Automatic reply." = "Respuesta automática.";
 
 "Automatic reply. Kept out of Needs You." = "Respuesta automática. Fuera de Te necesita.";
+
+/* No comment provided by engineer. */
+"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@ al %@, con renovación automática. Cancela cuando quieras en Ajustes.";
+
+/* No comment provided by engineer. */
+"%@ a month or %@ a year." = "%@ al mes o %@ al año.";
+
+/* No comment provided by engineer. */
+"%@ free, then renews. Cancel anytime." = "%@ gratis, luego se renueva. Cancela cuando quieras.";
+
+/* No comment provided by engineer. */
+"A one-sentence brief of your day, and what needs you first." = "Un resumen de tu día en una frase, y lo primero que te necesita.";
+
+/* No comment provided by engineer. */
+"Annual" = "Anual";
+
+/* No comment provided by engineer. */
+"Answer from your mail" = "Responder desde tu correo";
+
+/* No comment provided by engineer. */
+"Apple Intelligence, on this %@" = "Apple Intelligence, en este %@";
+
+/* No comment provided by engineer. */
+"Ask a question, get the answer from your own email, on this %@." = "Haz una pregunta y obtén la respuesta de tu propio correo, en este %@.";
+
+/* No comment provided by engineer. */
+"Buy Lifetime · %@" = "Comprar vitalicio · %@";
+
+/* No comment provided by engineer. */
+"Continue" = "Continuar";
+
+/* No comment provided by engineer. */
+"Corres Pro · Beta" = "Corres Pro · Beta";
+
+/* No comment provided by engineer. */
+"Ends %@" = "Termina el %@";
+
+/* No comment provided by engineer. */
+"Everyone who owes you a reply, and for how long." = "Todos los que te deben una respuesta, y desde cuándo.";
+
+/* No comment provided by engineer. */
+"Everything that makes Corres Corres." = "Todo lo que hace que Corres sea Corres.";
+
+/* No comment provided by engineer. */
+"Family" = "Familia";
+
+/* No comment provided by engineer. */
+"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratis durante %@, luego %@ al %@. Cancela cuando quieras en Ajustes antes de que termine la prueba y no se te cobrará.";
+
+/* No comment provided by engineer. */
+"Free trial · first charge %@" = "Prueba gratuita · primer cargo el %@";
+
+/* No comment provided by engineer. */
+"Get Corres Pro" = "Obtener Corres Pro";
+
+/* No comment provided by engineer. */
+"Go to Mail" = "Ir a Correo";
+
+/* No comment provided by engineer. */
+"Included for beta testers" = "Incluido para quienes prueban la beta";
+
+/* No comment provided by engineer. */
+"Lifetime" = "Vitalicio";
+
+/* No comment provided by engineer. */
+"Manage Subscription" = "Gestionar suscripción";
+
+/* No comment provided by engineer. */
+"Monthly" = "Mensual";
+
+/* No comment provided by engineer. */
+"Monthly or yearly." = "Mensual o anual.";
+
+/* No comment provided by engineer. */
+"Needs You and Waiting" = "Te necesita y En espera";
+
+/* No comment provided by engineer. */
+"Needs You in the menu bar, on your desktop and on Apple Watch." = "Te necesita en la barra de menús, el escritorio y el Apple Watch.";
+
+/* No comment provided by engineer. */
+"One payment of %@. No subscription." = "Un solo pago de %@. Sin suscripción.";
+
+/* No comment provided by engineer. */
+"Pay once. Shared with up to five family members." = "Pagas una vez. Se comparte con hasta cinco familiares.";
+
+/* No comment provided by engineer. */
+"Plans couldn't load" = "No se pudieron cargar los planes";
+
+/* No comment provided by engineer. */
+"Preview as Free User" = "Ver como usuario gratuito";
+
+/* No comment provided by engineer. */
+"Privacy Policy" = "Política de privacidad";
+
+/* No comment provided by engineer. */
+"Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro." = "Pro está incluido mientras pruebas la beta. Ver como usuario gratuito muestra la app tal como es sin Pro.";
+
+/* No comment provided by engineer. */
+"Renews %@" = "Se renueva el %@";
+
+/* No comment provided by engineer. */
+"Renews automatically. Cancel anytime." = "Se renueva automáticamente. Cancela cuando quieras.";
+
+/* No comment provided by engineer. */
+"Restore" = "Restaurar";
+
+/* No comment provided by engineer. */
+"Save %lld%%" = "Ahorra un %lld %%";
+
+/* No comment provided by engineer. */
+"Shared by your family" = "Compartido por tu familia";
+
+/* No comment provided by engineer. */
+"Show Primary" = "Mostrar Principal";
+
+/* No comment provided by engineer. */
+"Start %@ free" = "Empieza %@ gratis";
+
+/* No comment provided by engineer. */
+"Subscribe · %@" = "Suscribirse · %@";
+
+/* No comment provided by engineer. */
+"Summaries, replies in your voice, and answers from your mail in Search." = "Resúmenes, respuestas a tu manera y respuestas de tu correo en la búsqueda.";
+
+/* No comment provided by engineer. */
+"Terms of Use" = "Condiciones de uso";
+
+/* No comment provided by engineer. */
+"The conversations that ask something of you, with the reason for each." = "Las conversaciones que te piden algo, con el motivo de cada una.";
+
+/* No comment provided by engineer. */
+"Try Corres Pro Free" = "Probar Corres Pro gratis";
+
+/* No comment provided by engineer. */
+"Try it free for 14 days." = "Pruébalo gratis 14 días.";
+
+/* No comment provided by engineer. */
+"Try it free, then %@ a month or %@ a year." = "Pruébalo gratis, luego %@ al mes o %@ al año.";
+
+/* No comment provided by engineer. */
+"What needs you first, with the reason for each, and the replies you're owed." = "Lo que te necesita primero, con el motivo de cada cosa, y las respuestas que te deben.";
+
+/* No comment provided by engineer. */
+"Widgets and Apple Watch" = "Widgets y Apple Watch";
+
+/* No comment provided by engineer. */
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Sin Pro, Correo sigue funcionando: leer, responder, archivar y buscar. Te necesita, En espera, las respuestas en la búsqueda y la inteligencia en el dispositivo necesitan Pro.";
+
+/* No comment provided by engineer. */
+"Your mail is never sent to our servers or an AI company." = "Tu correo nunca se envía a nuestros servidores ni a una empresa de IA.";
+
+/* No comment provided by engineer. */
+"Yours for good · bought %@" = "Tuyo para siempre · comprado el %@";
+
+/* No comment provided by engineer. */
+"month" = "mes";
+
+/* No comment provided by engineer. */
+"once" = "una vez";
+
+/* No comment provided by engineer. */
+"per month" = "al mes";
+
+/* No comment provided by engineer. */
+"per year" = "al año";
+
+/* No comment provided by engineer. */
+"soon" = "pronto";
+
+/* No comment provided by engineer. */
+"year" = "año";

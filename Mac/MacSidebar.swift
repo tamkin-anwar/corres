@@ -16,8 +16,15 @@ struct MacSidebar: View {
     var body: some View {
         List(selection: Binding(get: { model.mailbox }, set: { if let value = $0 { model.mailbox = value } })) {
             Section {
-                row(.needsYou, count: needsYouCount, prominent: true)
-                row(.waiting, count: waitingCount)
+                // Without Pro (real accounts only), these are locked: a lock
+                // and no count, as on the iPad sidebar, the widgets and the Watch.
+                if services.requiresPro {
+                    row(.needsYou, prominent: true, locked: true)
+                    row(.waiting, locked: true)
+                } else {
+                    row(.needsYou, count: needsYouCount, prominent: true)
+                    row(.waiting, count: waitingCount)
+                }
                 if newSendersCount > 0, MailQuery.newSenderMode != .acceptAll { row(.newSenders, count: newSendersCount) }
             }
             Section("Mail") {
@@ -101,7 +108,7 @@ struct MacSidebar: View {
             .sorted { ($0.isFolder ? 0 : 1, $0.name.lowercased()) < ($1.isFolder ? 0 : 1, $1.name.lowercased()) }
     }
 
-    private func row(_ mailbox: MacMailbox, count: Int? = nil, prominent: Bool = false) -> some View {
+    private func row(_ mailbox: MacMailbox, count: Int? = nil, prominent: Bool = false, locked: Bool = false) -> some View {
         // A sidebar sets its own font for a row; View › Bigger is applied
         // to the title itself, so it's seen. The symbol keeps the sidebar's
         // size: its space in the row doesn't grow with it.
@@ -110,12 +117,12 @@ struct MacSidebar: View {
         } icon: {
             Image(systemName: mailbox.systemImage)
         }
-            .badge(count.map { $0 > 0 ? Text("\($0)") : nil } ?? nil)
+            .badge(locked ? Text(Image(systemName: "lock")) : count.map { $0 > 0 ? Text("\($0)") : nil } ?? nil)
             .fontWeight(prominent ? .semibold : nil)
             .tag(mailbox)
             // The sidebar keeps a row as it was until the row itself
             // changes; the count is part of what it is.
-            .id("\(mailbox.title)-\(count ?? -1)")
+            .id("\(mailbox.title)-\(locked ? -2 : count ?? -1)")
             .dropDestination(for: String.self) { items, _ in
                 let ids = items.flatMap(MacDrag.decode)
                 guard mailbox.acceptsDrop, !ids.isEmpty else { return false }

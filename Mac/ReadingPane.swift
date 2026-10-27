@@ -438,7 +438,9 @@ struct ReadingPane: View {
         }
     }
 
-    private var summariesOn: Bool { services.entitlements.isPro && CorresSettings.summaries && intelligence.isAvailable }
+    /// With Pro, or on sample mail before any account is connected, as on
+    /// the iPhone (`proUnlocked`): summaries used to need Pro even there.
+    private var summariesOn: Bool { !services.requiresPro && CorresSettings.summaries && intelligence.isAvailable }
 
     // MARK: Earlier messages
 

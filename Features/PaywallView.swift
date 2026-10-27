@@ -16,42 +16,54 @@ struct PaywallView: View {
     @State private var selectedID = EntitlementStore.ProductID.annual
 
     var body: some View {
+        #if os(macOS)
+        // Its own window on the Mac (Window "pro"), closed with the
+        // window's own button; the purchase confirms in this window.
+        content
+            .frame(width: 480)
+            .frame(minHeight: 560, idealHeight: 700)
+        #else
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 26) {
-                    header
-                    benefits
-                    plans
-                    purchaseButton
-                    footer
+            content
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button { dismiss() } label: { Image(systemName: "xmark") }
+                            .accessibilityLabel("Close")
+                    }
                 }
-                .padding(.horizontal, CorresSpace.page).padding(.bottom, 28)
-                .frame(maxWidth: 520)
-                .frame(maxWidth: .infinity)
-            }
-            .background {
-                ZStack {
-                    CorresPalette.canvas
-                    RadialGradient(colors: [CorresPalette.accent.opacity(0.14), .clear],
-                                   center: UnitPoint(x: 0.5, y: 0.05), startRadius: 0, endRadius: 420)
-                }
-                .ignoresSafeArea()
-            }
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
-                        .accessibilityLabel("Close")
-                }
-            }
-            .task { await entitlements.loadProducts() }
-            .onChange(of: entitlements.isPro) { _, isPro in if isPro { dismiss() } }
-            .alert("Corres Pro", isPresented: Binding(
-                get: { entitlements.errorMessage != nil },
-                set: { if !$0 { entitlements.errorMessage = nil } }
-            )) {
-                Button("OK", role: .cancel) { entitlements.errorMessage = nil }
-            } message: { Text(entitlements.errorMessage ?? "") }
         }
+        #endif
+    }
+
+    private var content: some View {
+        ScrollView {
+            VStack(spacing: 26) {
+                header
+                benefits
+                plans
+                purchaseButton
+                footer
+            }
+            .padding(.horizontal, CorresSpace.page).padding(.bottom, 28)
+            .frame(maxWidth: 520)
+            .frame(maxWidth: .infinity)
+        }
+        .background {
+            ZStack {
+                CorresPalette.canvas
+                RadialGradient(colors: [CorresPalette.accent.opacity(0.14), .clear],
+                               center: UnitPoint(x: 0.5, y: 0.05), startRadius: 0, endRadius: 420)
+            }
+            .ignoresSafeArea()
+        }
+        .task { await entitlements.loadProducts() }
+        .onChange(of: entitlements.isPro) { _, isPro in if isPro { dismiss() } }
+        .alert("Corres Pro", isPresented: Binding(
+            get: { entitlements.errorMessage != nil },
+            set: { if !$0 { entitlements.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { entitlements.errorMessage = nil }
+        } message: { Text(entitlements.errorMessage ?? "") }
     }
 
     private var header: some View {
@@ -69,8 +81,15 @@ struct PaywallView: View {
     private var benefits: some View {
         VStack(alignment: .leading, spacing: 14) {
             benefit("exclamationmark.circle", "Needs You and Waiting", "What needs you first, with the reason for each, and the replies you're owed.")
+            #if os(macOS)
+            // What Pro adds on the Mac: no rewrites in Compose here yet,
+            // and no Home or Lock Screen.
+            benefit("sparkle", "Apple Intelligence, on this \(Device.name)", "Summaries, replies in your voice, and answers from your mail in Search.")
+            benefit("rectangle.stack", "Widgets and Apple Watch", "Needs You in the menu bar, on your desktop and on Apple Watch.")
+            #else
             benefit("sparkle", "Apple Intelligence, on this \(Device.name)", "Summaries, replies in your voice, rewrites, and answers from your mail in Search.")
             benefit("rectangle.stack", "Widgets and Apple Watch", "Needs You on your Home Screen, Lock Screen and Apple Watch.")
+            #endif
             benefit("lock", "Private by design", "Your mail is never sent to our servers or an AI company.")
         }
         .frame(maxWidth: .infinity, alignment: .leading)

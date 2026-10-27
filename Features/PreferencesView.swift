@@ -235,9 +235,8 @@ struct PreferencesView: View {
             HStack(spacing: 12) {
                 CorrespondenceMark().frame(width: 34, height: 34)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entitlements.plan != .none ? entitlements.plan.title
-                         : entitlements.isPro ? String(localized: "Corres Pro · Beta") : "Corres Pro").font(.body.weight(.semibold))
-                    Text(planStatus).font(.footnote).foregroundStyle(CorresPalette.secondary)
+                    Text(entitlements.planName).font(.body.weight(.semibold))
+                    Text(entitlements.planStatus).font(.footnote).foregroundStyle(CorresPalette.secondary)
                 }
             }
             .padding(.vertical, 2)
@@ -270,28 +269,6 @@ struct PreferencesView: View {
             } else if !entitlements.isPro {
                 Text("Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro.")
             }
-        }
-    }
-
-    private var planStatus: String {
-        switch entitlements.plan {
-        case .none where entitlements.isPro:
-            return String(localized: "Included for beta testers")
-        case .none:
-            if let monthly = entitlements.product(EntitlementStore.ProductID.monthly),
-               let annual = entitlements.product(EntitlementStore.ProductID.annual) {
-                return entitlements.isEligibleForTrial
-                    ? String(localized: "Try it free, then \(monthly.displayPrice) a month or \(annual.displayPrice) a year.")
-                    : String(localized: "\(monthly.displayPrice) a month or \(annual.displayPrice) a year.")
-            }
-            return entitlements.isEligibleForTrial ? String(localized: "Try it free for 14 days.") : String(localized: "Monthly or yearly.")
-        case .monthly(let renews, let inTrial), .annual(let renews, let inTrial):
-            let date = renews.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? String(localized: "soon")
-            return inTrial ? String(localized: "Free trial · first charge \(date)") : String(localized: "Renews \(date)")
-        case .lifetime(let purchased, let familyShared):
-            // What you have, as Apple's own purchase screens say it.
-            return familyShared ? String(localized: "Shared by your family")
-                : String(localized: "Yours for good · bought \(purchased.formatted(date: .abbreviated, time: .omitted))")
         }
     }
 

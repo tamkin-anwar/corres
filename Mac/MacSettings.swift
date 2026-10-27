@@ -24,7 +24,7 @@ struct MacSettingsView: View {
                 .tabItem { Label("Senders", systemImage: "person.2") }.tag(6)
             NavigationStack { RulesView() }
                 .tabItem { Label("Rules", systemImage: "line.3.horizontal.decrease") }.tag(7)
-            MacPlanSettings(entitlements: services.entitlements)
+            MacPlanSettings(services: services)
                 .tabItem { Label("Corres Pro", systemImage: "sparkle") }.tag(8)
         }
         .frame(width: 680, height: 520)
@@ -374,22 +374,69 @@ private struct MacComposingSettings: View {
     }
 }
 
+/// Settings › Corres Pro: the plan you're on and what it does next, the
+/// way into the free trial, and Restore and Redeem, as on the iPhone.
 private struct MacPlanSettings: View {
-    let entitlements: EntitlementStore
+    let services: MacServices
+    @Environment(\.openWindow) private var openWindow
+
+    private var entitlements: EntitlementStore { services.entitlements }
+    /// The App Store's own subscriptions page, where a Mac subscription
+    /// is changed or cancelled.
+    private static let manageURL = URL(string: "https://apps.apple.com/account/subscriptions")!
 
     var body: some View {
         Form {
             Section {
-                LabeledContent("Plan", value: entitlements.isPro ? "Corres Pro" : String(localized: "Free"))
-                Text("Corres Pro adds Needs You, Waiting, answers in Search, summaries and suggested replies. One purchase covers your iPhone, iPad and Mac.")
-                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 12) {
+                    CorrespondenceMark().frame(width: 34, height: 34)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(entitlements.planName).font(.body.weight(.semibold))
+                        Text(entitlements.planStatus).font(.callout).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 2)
+                switch entitlements.plan {
+                case .none:
+                    // Someone who's had the trial can't have it again.
+                    if !entitlements.isPro {
+                        Button(MacPro.unlockTitle(entitlements)) { MacPro.open(openWindow) }
+                    }
+                case .monthly, .annual:
+                    Button("Manage Subscription") { NSWorkspace.shared.open(Self.manageURL) }
+                case .lifetime:
+                    EmptyView()
+                }
+                if EntitlementStore.isBetaBuild && entitlements.hasBetaAccess {
+                    Toggle("Preview as Free User", isOn: Bindable(entitlements).previewAsFree)
+                }
+            } header: {
+                Text("Plan").accessibilityIdentifier(EntitlementStore.buildKind)
+            } footer: {
+                if entitlements.isPro && entitlements.plan == .none {
+                    Text("Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else if !entitlements.isPro {
+                    Text("Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
             Section {
+                Text("Corres Pro adds Needs You, Waiting, answers in Search, summaries and suggested replies. One purchase covers your iPhone, iPad and Mac.")
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 Button("Restore Purchases") { Task { await entitlements.restore() } }
                 Button("Redeem Code") { Task { await entitlements.presentRedeemSheet() } }
             }
         }
         .formStyle(.grouped)
+        .task { await entitlements.loadProducts() }
+        // The Corres Pro window shows its own.
+        .alert("Corres Pro", isPresented: Binding(
+            get: { entitlements.errorMessage != nil && !services.paywallOpen },
+            set: { if !$0 { entitlements.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { entitlements.errorMessage = nil }
+        } message: { Text(entitlements.errorMessage ?? "") }
     }
 }
 

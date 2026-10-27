@@ -32,6 +32,20 @@ final class MacServices {
     let people: PeopleDirectory
     let remote = MacRemoteMailboxes()
 
+    /// Pro screens lock only for real accounts once StoreKit has answered;
+    /// sample mail stays fully open so people can try everything first.
+    /// The same rule as the iPhone's (`CorresShell.requiresPro`): before
+    /// StoreKit answers, the last known answer stands in, and mail already
+    /// here counts as connected, so a Pro list never flashes open and locks.
+    var requiresPro: Bool {
+        let connected = !auth.accounts.isEmpty || store.threads.contains { $0.id.account != "sample" }
+        return connected && !entitlements.isProForDisplay
+    }
+
+    /// Whether the Corres Pro window is open, so its own alert shows an
+    /// error rather than Settings' too.
+    var paywallOpen = false
+
     private var checkLoop: Task<Void, Never>?
     private var launched = false
     /// What `observe` keeps running.
@@ -82,6 +96,9 @@ final class MacServices {
                     WidgetBridge.update(from: store.threads)
                 }
                 OutboxService.isAway = false
+                // A subscription that ended while Corres sat in the
+                // background sends no update: it kept Pro until relaunch.
+                Task { await MacServices.shared.entitlements.refresh() }
                 Organizer.shared.applyWidgetHandoffs()
                 ServerRules.shared.retryIfFailed()
                 await Organizer.shared.outbox?.retryFailedQuietly()
@@ -337,7 +354,7 @@ final class MacServices {
             if await sync.indexOlderMail(accounts: auth.accounts.map(\.email)) { await store.refresh() }
             await sync.verifyInboxes(accounts: auth.accounts.map(\.email))
             await store.refresh()
-            if entitlements.isPro && CorresSettings.summaries {
+            if !requiresPro && CorresSettings.summaries {
                 await intelligence.prewarm(store.threads, includeRead: false)
             }
         }

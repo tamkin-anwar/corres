@@ -3813,3 +3813,6 @@
 
 /* Compose: adding attachments. */
 "Couldn't open %@." = "无法打开 %@。";
+
+/* No comment provided by engineer. */
+"Ends %@" = "%@结束";

@@ -111,6 +111,11 @@ struct MacMainView: View {
             await store.prefetchStoredContent(after + threads.prefix(6))
         }
         .onChange(of: model.mailbox) { keptRead = [] }
+        // Without Pro, Corres opens on Primary: Needs You and Waiting stay
+        // one click away to look at, never a lock in your face each time.
+        .onChange(of: services.requiresPro, initial: true) { _, locked in
+            if locked, model.mailbox.isAttentionList { model.mailbox = .primary }
+        }
         .onChange(of: unreadOnly) { keptRead = [] }
         // What follows a sync, the widgets, Spotlight and the Dock badge
         // are MacServices' own (`startObserving`), window or not.
@@ -127,9 +132,12 @@ struct MacMainView: View {
             switch target {
             case .thread(let id):
                 model.search = ""
-                if services.store.thread(id)?.attention == .needsYou { model.mailbox = .needsYou }
-                // Send Later shows a scheduled email where a conversation would be.
-                else if model.mailbox.remoteSource != nil || [.newSenders, .scheduled].contains(model.mailbox) {
+                let locked = services.requiresPro
+                if !locked, services.store.thread(id)?.attention == .needsYou { model.mailbox = .needsYou }
+                // Send Later shows a scheduled email where a conversation would
+                // be; a locked list, no conversations at all.
+                else if model.mailbox.remoteSource != nil || [.newSenders, .scheduled].contains(model.mailbox)
+                            || locked && model.mailbox.isAttentionList {
                     model.mailbox = .filter(MailFilter.everything.rawValue)
                 }
                 model.selection = [id]
@@ -199,8 +207,17 @@ struct MacMainView: View {
         return VStack(spacing: 0) {
             if services.ask.phase != .idle, !model.search.isEmpty {
                 askCard
+            } else if services.requiresPro, Self.isQuestion(model.search) {
+                lockedAskCard
             }
-            if model.mailbox == .scheduled, model.search.isEmpty {
+            if services.requiresPro, model.mailbox.isAttentionList, model.search.isEmpty {
+                // Needs You and Waiting without Pro: what they do, and one
+                // way in. Mail itself always stays usable.
+                ProLockView(destination: model.mailbox == .waiting ? .waiting : .needsYou,
+                            onUnlock: { MacPro.open(openWindow) },
+                            onOpenMail: { model.mailbox = .primary },
+                            openMailTitle: String(localized: "Show Primary"))
+            } else if model.mailbox == .scheduled, model.search.isEmpty {
                 MacScheduledList(selection: $scheduledSelection)
             } else if model.mailbox == .purchases, model.search.isEmpty {
                 PurchasesView(store: store, accounts: accounts) { model.selection = [$0] }
@@ -319,6 +336,23 @@ struct MacMainView: View {
         .padding(12)
         .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 10))
         .padding(10)
+    }
+
+    /// A question typed in Search without Pro: the answer is part of
+    /// Corres Pro, said plainly, with the way to start the trial.
+    private var lockedAskCard: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "lock").foregroundStyle(CorresPalette.accent)
+            Text("Answer from your mail").macFont(.callout, weight: .medium).foregroundStyle(CorresPalette.ink)
+            Spacer(minLength: 8)
+            Button(MacPro.unlockTitle(services.entitlements)) { MacPro.open(openWindow) }
+                .buttonStyle(.borderless)
+                .foregroundStyle(CorresPalette.accent)
+        }
+        .padding(12)
+        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 10))
+        .padding(10)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: Detail
@@ -969,10 +1003,18 @@ struct MacMainView: View {
         services.ask.reset()
         guard !query.isEmpty else { return }
         // A question gets an answer from your own mail, above the results.
-        if query.hasSuffix("?") || ["when", "what", "where", "who", "how", "did", "do", "is", "does"]
-            .contains(query.lowercased().split(separator: " ").first.map(String.init) ?? "") {
+        // Without Pro, the locked card above the results offers the trial.
+        if Self.isQuestion(query), !services.requiresPro {
             services.ask.ask(query)
         }
+    }
+
+    /// "When is my flight?": a question to answer, not words to find.
+    static func isQuestion(_ text: String) -> Bool {
+        let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return false }
+        return query.hasSuffix("?") || ["when", "what", "where", "who", "how", "did", "do", "is", "does"]
+            .contains(query.lowercased().split(separator: " ").first.map(String.init) ?? "")
     }
 }
 

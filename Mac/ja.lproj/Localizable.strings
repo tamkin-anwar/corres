@@ -2746,3 +2746,174 @@
 "Automatic reply." = "自動返信です。";
 
 "Automatic reply. Kept out of Needs You." = "自動返信です。「要対応」には入れません。";
+
+/* No comment provided by engineer. */
+"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@／%@、自動更新。「設定」でいつでもキャンセルできます。";
+
+/* No comment provided by engineer. */
+"%@ a month or %@ a year." = "月額%@または年額%@。";
+
+/* No comment provided by engineer. */
+"%@ free, then renews. Cancel anytime." = "%@無料、その後は自動更新。いつでもキャンセルできます。";
+
+/* No comment provided by engineer. */
+"A one-sentence brief of your day, and what needs you first." = "1日の概要をひと言で。最初に対応すべきことも。";
+
+/* No comment provided by engineer. */
+"Annual" = "年間";
+
+/* No comment provided by engineer. */
+"Answer from your mail" = "メールから回答";
+
+/* No comment provided by engineer. */
+"Apple Intelligence, on this %@" = "Apple Intelligence、この%@上で";
+
+/* No comment provided by engineer. */
+"Ask a question, get the answer from your own email, on this %@." = "質問すると、この%@上であなた自身のメールから答えを見つけます。";
+
+/* No comment provided by engineer. */
+"Buy Lifetime · %@" = "買い切りを購入 · %@";
+
+/* No comment provided by engineer. */
+"Continue" = "続ける";
+
+/* No comment provided by engineer. */
+"Corres Pro · Beta" = "Corres Pro · ベータ";
+
+/* No comment provided by engineer. */
+"Ends %@" = "%@に終了";
+
+/* No comment provided by engineer. */
+"Everyone who owes you a reply, and for how long." = "あなたへの返信がまだの人全員と、その期間。";
+
+/* No comment provided by engineer. */
+"Everything that makes Corres Corres." = "Corresらしさのすべて。";
+
+/* No comment provided by engineer. */
+"Family" = "ファミリー";
+
+/* No comment provided by engineer. */
+"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@無料、その後は%@／%@。トライアル終了前に「設定」でキャンセルすれば料金はかかりません。";
+
+/* No comment provided by engineer. */
+"Free trial · first charge %@" = "無料トライアル · 初回請求 %@";
+
+/* No comment provided by engineer. */
+"Get Corres Pro" = "Corres Proを入手";
+
+/* No comment provided by engineer. */
+"Go to Mail" = "メールへ移動";
+
+/* No comment provided by engineer. */
+"Included for beta testers" = "ベータテスター向けに付属";
+
+/* No comment provided by engineer. */
+"Lifetime" = "買い切り";
+
+/* No comment provided by engineer. */
+"Manage Subscription" = "サブスクリプションを管理";
+
+/* No comment provided by engineer. */
+"Monthly" = "月間";
+
+/* No comment provided by engineer. */
+"Monthly or yearly." = "月額または年額。";
+
+/* No comment provided by engineer. */
+"Needs You and Waiting" = "「要対応」と「返信待ち」";
+
+/* No comment provided by engineer. */
+"Needs You in the menu bar, on your desktop and on Apple Watch." = "メニューバー、デスクトップ、Apple Watchに「要対応」を表示。";
+
+/* No comment provided by engineer. */
+"One payment of %@. No subscription." = "%@の1回払い。サブスクリプションではありません。";
+
+/* No comment provided by engineer. */
+"Pay once. Shared with up to five family members." = "1回払い。最大5人の家族と共有できます。";
+
+/* No comment provided by engineer. */
+"Plans couldn't load" = "プランを読み込めませんでした";
+
+/* No comment provided by engineer. */
+"Preview as Free User" = "無料ユーザとしてプレビュー";
+
+/* No comment provided by engineer. */
+"Privacy Policy" = "プライバシーポリシー";
+
+/* No comment provided by engineer. */
+"Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro." = "ベータのテスト中はProが含まれます。「無料ユーザとしてプレビュー」では、Proなしの状態を確認できます。";
+
+/* No comment provided by engineer. */
+"Renews %@" = "%@に更新";
+
+/* No comment provided by engineer. */
+"Renews automatically. Cancel anytime." = "自動更新。いつでもキャンセルできます。";
+
+/* No comment provided by engineer. */
+"Restore" = "復元";
+
+/* No comment provided by engineer. */
+"Save %lld%%" = "%lld%%お得";
+
+/* No comment provided by engineer. */
+"Shared by your family" = "ファミリーで共有中";
+
+/* No comment provided by engineer. */
+"Show Primary" = "メインを表示";
+
+/* No comment provided by engineer. */
+"Start %@ free" = "%@無料で始める";
+
+/* No comment provided by engineer. */
+"Subscribe · %@" = "登録 · %@";
+
+/* No comment provided by engineer. */
+"Summaries, replies in your voice, and answers from your mail in Search." = "概要、あなたらしい返信、検索でのメールからの回答。";
+
+/* No comment provided by engineer. */
+"Terms of Use" = "利用規約";
+
+/* No comment provided by engineer. */
+"The conversations that ask something of you, with the reason for each." = "あなたに何かを求める会話と、それぞれの理由。";
+
+/* No comment provided by engineer. */
+"Try Corres Pro Free" = "Corres Proを無料で試す";
+
+/* No comment provided by engineer. */
+"Try it free for 14 days." = "14日間無料で試せます。";
+
+/* No comment provided by engineer. */
+"Try it free, then %@ a month or %@ a year." = "無料で試したあと、月額%@または年額%@。";
+
+/* No comment provided by engineer. */
+"What needs you first, with the reason for each, and the replies you're owed." = "最初に対応すべきことと、それぞれの理由、そしてあなたが待っている返信。";
+
+/* No comment provided by engineer. */
+"Widgets and Apple Watch" = "ウィジェットとApple Watch";
+
+/* No comment provided by engineer. */
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Proがなくても、メールの閲覧、返信、アーカイブ、検索は使えます。「要対応」「返信待ち」、検索での回答、デバイス上のインテリジェンスにはProが必要です。";
+
+/* No comment provided by engineer. */
+"Your mail is never sent to our servers or an AI company." = "メールが私たちのサーバやAI企業に送られることはありません。";
+
+/* No comment provided by engineer. */
+"Yours for good · bought %@" = "ずっと使えます · %@に購入";
+
+/* No comment provided by engineer. */
+"month" = "月";
+
+/* No comment provided by engineer. */
+"once" = "1回";
+
+/* No comment provided by engineer. */
+"per month" = "／月";
+
+/* No comment provided by engineer. */
+"per year" = "／年";
+
+/* No comment provided by engineer. */
+"soon" = "まもなく";
+
+/* No comment provided by engineer. */
+"year" = "年";

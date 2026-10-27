@@ -3813,3 +3813,6 @@
 
 /* Compose: adding attachments. */
 "Couldn't open %@." = "%@ খোলা যায়নি।";
+
+/* No comment provided by engineer. */
+"Ends %@" = "শেষ হবে %@";

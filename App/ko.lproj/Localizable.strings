@@ -3813,3 +3813,6 @@
 
 /* Compose: adding attachments. */
 "Couldn't open %@." = "%@을(를) 열 수 없습니다.";
+
+/* No comment provided by engineer. */
+"Ends %@" = "%@ 종료";

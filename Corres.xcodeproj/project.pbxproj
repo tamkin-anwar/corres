@@ -444,6 +444,7 @@
 		15E36A14687EDFB7F41DBC9C /* Core/SendSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B6F976E8C053BA9BB11B3D /* Core/SendSafety.swift */; };
 		140F11C674AC8D91609B352A /* Core/SendSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B6F976E8C053BA9BB11B3D /* Core/SendSafety.swift */; };
 		55B992973FE916775D9D6AAA /* Core/SendSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B6F976E8C053BA9BB11B3D /* Core/SendSafety.swift */; };
+		EBA4C43461A514968318CAFB /* Features/PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC03B146C6EC4B6C8C084D32 /* Features/PaywallView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1666,6 +1667,7 @@
 				E4EA1E050D08A802787E6060 /* Core/SyncMerge.swift in Sources */,
 				379C128F007FEEBFC0C2CB1D /* Core/ListExclusion.swift in Sources */,
 				15E36A14687EDFB7F41DBC9C /* Core/SendSafety.swift in Sources */,
+				EBA4C43461A514968318CAFB /* Features/PaywallView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
