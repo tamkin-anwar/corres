@@ -702,9 +702,13 @@ struct MacAttachmentChip: View {
     }
 
     private func download() async -> URL? {
+        // A folder of its own for each attachment in the message: two with
+        // the same name ("image.png", twice) opened the first for both.
+        let position = thread.attachments.firstIndex { $0.id == file.id } ?? 0
         let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Attachments", isDirectory: true)
             .appendingPathComponent(thread.latestMessageID ?? thread.id.providerID, isDirectory: true)
+            .appendingPathComponent(String(position), isDirectory: true)
         let safeName = file.filename.replacingOccurrences(of: "/", with: "-")
         let url = folder.appendingPathComponent(safeName.isEmpty ? "attachment" : safeName)
         if FileManager.default.fileExists(atPath: url.path) { return url }

@@ -146,6 +146,16 @@ final class MacRemoteMailboxes {
         pages[source] = page
     }
 
+    /// A draft sent, scheduled or deleted from its compose window: gone
+    /// from Drafts at once. It stayed listed until Drafts was opened
+    /// again, there to be opened and sent a second time.
+    func removeDraft(serverID: String) {
+        let source = Source.kind(.drafts)
+        guard let id = pages[source]?.drafts.first(where: { $0.value == serverID })?.key else { return }
+        pages[source]?.items.removeAll { $0.id == id }
+        removed[source, default: [:]][id] = .now
+    }
+
     /// Gone from view at once after an archive, delete or move.
     func remove(_ ids: Set<ThreadID>) {
         let now = Date.now

@@ -128,7 +128,10 @@ struct MacMainView: View {
             case .thread(let id):
                 model.search = ""
                 if services.store.thread(id)?.attention == .needsYou { model.mailbox = .needsYou }
-                else if model.mailbox.remoteSource != nil || model.mailbox == .newSenders { model.mailbox = .filter(MailFilter.everything.rawValue) }
+                // Send Later shows a scheduled email where a conversation would be.
+                else if model.mailbox.remoteSource != nil || [.newSenders, .scheduled].contains(model.mailbox) {
+                    model.mailbox = .filter(MailFilter.everything.rawValue)
+                }
                 model.selection = [id]
             case .destination(let destination):
                 switch destination {
@@ -386,7 +389,9 @@ struct MacMainView: View {
             }
             ToolbarItem(id: "archive", placement: .primaryAction) {
                 Button { perform(.archive) } label: { Label("Archive", systemImage: "archivebox") }
-                    .help("Archive (⌃⌘A, or E)").disabled(model.selection.isEmpty)
+                    .help("Archive (⌃⌘A, or E)")
+                    // A draft is deleted, not archived.
+                    .disabled(model.selection.isEmpty || model.mailbox.remoteKind == .drafts && model.search.isEmpty)
             }
             ToolbarItem(id: "delete", placement: .primaryAction) {
                 Button { perform(.trash) } label: { Label("Delete", systemImage: "trash") }
@@ -621,6 +626,13 @@ struct MacMainView: View {
             compose(action == .reply ? .reply : action == .replyAll ? .replyAll : .forward, thread)
         case .archive, .trash:
             guard !selected.isEmpty else { return }
+            // In Drafts a row is a draft, but its id is its conversation's:
+            // archiving or deleting that took the whole conversation, the
+            // emails you were answering too. Delete discards the draft.
+            if model.mailbox.remoteKind == .drafts, model.search.isEmpty {
+                if action == .trash { discardDrafts(selected) }
+                return
+            }
             let ids = Set(selected.map(\.id))
             if !model.selection.isDisjoint(with: ids) {
                 let next = model.neighbor(after: ids, in: visibleRows())
@@ -758,6 +770,22 @@ struct MacMainView: View {
         return commands
     }
 
+    /// Delete in Drafts: the drafts themselves go from the server, not the
+    /// conversations they answer.
+    private func discardDrafts(_ selected: [Correspondence]) {
+        let found = selected.compactMap { thread in services.remote.draftID(for: thread.id).map { (account: thread.id.account, id: $0) } }
+        guard !found.isEmpty else { return }
+        let ids = Set(selected.map(\.id))
+        if !model.selection.isDisjoint(with: ids) {
+            model.selection = model.neighbor(after: ids, in: visibleRows()).map { [$0] } ?? []
+        }
+        services.remote.remove(ids)
+        Task {
+            let client = MailClient()
+            for draft in found { try? await client.deleteDraft(id: draft.id, account: draft.account) }
+        }
+    }
+
     /// Double-click or Return: a draft continues in Compose, anything else
     /// opens in its own window.
     private func open(_ thread: Correspondence) {
@@ -773,6 +801,10 @@ struct MacMainView: View {
     /// IMAP list drafts with a preview only, and saving that would have
     /// replaced the draft with its first line.
     private func continueDraft(_ item: Correspondence) async {
+        // Already open in a window: that one comes forward. Two windows on
+        // one draft each saved over the other's words.
+        let serverID = services.remote.draftID(for: item.id)
+        if let open = MacComposeHandoff.window(for: serverID) { openWindow(value: open); return }
         let account = item.id.account
         let client = MailClient()
         var message = item
@@ -794,7 +826,9 @@ struct MacMainView: View {
                           to: message.toRecipients.joined(separator: ", "),
                           cc: message.ccRecipients.isEmpty ? nil : message.ccRecipients.joined(separator: ", "),
                           subject: [String(localized: "(no subject)"), "(no subject)"].contains(message.subject) ? "" : message.subject, body: message.body)
-        draft.gmailDraftID = services.remote.draftID(for: item.id)
+        draft.gmailDraftID = serverID
+        // Opened meanwhile (a second double-click while this one fetched).
+        if let open = MacComposeHandoff.window(for: serverID) { openWindow(value: open); return }
         if let answered {
             draft.inReplyTo = answered.messageIdHeader
             // Kept to hand, so Compose finds the conversation it answers.
@@ -802,7 +836,12 @@ struct MacMainView: View {
         }
         let handoff = UUID()
         MacComposeHandoff.drafts[handoff] = draft
-        openWindow(value: ComposeRequest(kind: draft.kind, handoff: handoff))
+        let request = ComposeRequest(kind: draft.kind, handoff: handoff)
+        if let serverID {
+            MacComposeHandoff.live.insert(request.id)
+            MacComposeHandoff.noteOpen(request, serverID: serverID)
+        }
+        openWindow(value: request)
     }
 
     private func compose(_ kind: Draft.Kind, _ thread: Correspondence) {
