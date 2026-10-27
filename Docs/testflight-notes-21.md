@@ -463,3 +463,28 @@ Please try
 3. Unsubscribe from two newsletters, one after the other.
 
 Something off? Help > Send Diagnostics, or send feedback through TestFlight.
+
+## Build 41
+
+Corres 0.2.0 (41) for iPhone, iPad and Apple Watch
+
+The big ones
+- iPad: with two or more accounts, the sidebar now lists each one properly: its color, its name and its address on one line, with a checkmark on the account you're viewing. Before, the names and addresses were centered and wrapped.
+- The Corres Pro screen is clearer about what Pro includes: Needs You and Waiting, the Apple Intelligence features, and widgets and Apple Watch. Siri and iPad were never locked, and the screen no longer says they were.
+
+Also new
+- The Corres Pro screen offers the monthly and yearly plans. Redeem Code still takes gift codes.
+
+Please try
+1. On iPad with two or more accounts, open the sidebar and switch between them.
+2. In Settings, tap Try Corres Pro Free (or Get Corres Pro) and check the plans and benefits read well in your language. You won't be charged for looking.
+
+Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
+
+## Mac build 42
+
+Corres for Mac 0.2.0 (42)
+
+A small build that keeps the Mac in step with iPhone build 41. Nothing new to try on the Mac; keep using Corres as usual.
+
+Something off? Help > Send Diagnostics, or send feedback through TestFlight.
