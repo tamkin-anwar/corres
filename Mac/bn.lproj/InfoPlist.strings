@@ -5,7 +5,7 @@
 "CFBundleName" = "Corres";
 
 /* Privacy - Calendars Full Access Usage Description */
-"NSCalendarsFullAccessUsageDescription" = "আপনি চাইলে Corres আপনার ক্যালেন্ডার দেখে: আমন্ত্রণের সময় আপনি ফাঁকা কিনা, কেউ আপনার সময় জানতে চাইলে কোন সময়গুলো দেওয়া যায়, আর বাতিল হওয়া ইভেন্ট সরিয়ে ফেলা। আপনার ক্যালেন্ডার এই Mac-এই থাকে।";
+"NSCalendarsFullAccessUsageDescription" = "আপনি চাইলে Corres আপনার ক্যালেন্ডার দেখে, আমন্ত্রণের সময় আপনি ফাঁকা কিনা জানতে, ফাঁকা সময় প্রস্তাব করতে, বা বাতিল হওয়া ইভেন্ট সরাতে। আপনার ক্যালেন্ডার এই Mac-এই থাকে।";
 
 /* Privacy - Calendars Write Only Usage Description */
 "NSCalendarsWriteOnlyAccessUsageDescription" = "আপনি চাইলে Corres আপনার গ্রহণ করা আমন্ত্রণগুলো আপনার ক্যালেন্ডারে যোগ করে।";
