@@ -930,9 +930,11 @@ struct IMAPMailClient: Sendable {
             let line = field.map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: " ")
             let lower = line.lowercased()
             if lower.hasPrefix("to:") || lower.hasPrefix("cc:") || lower.hasPrefix("bcc:") {
-                let value = line[line.index(after: line.firstIndex(of: ":")!)...]
-                let pattern = #"[A-Za-z0-9._%+'-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"#
-                recipients += value.matches(of: try! Regex(pattern)).map { String(value[$0.range]).lowercased() }
+                // Read as addresses, not by a pattern: one that wanted a
+                // letters-only ending cut "user@x.xn--p1ai" to "user@x.xn",
+                // and dropped an address in another script without a word.
+                let value = String(line[line.index(after: line.firstIndex(of: ":")!)...])
+                recipients += PeopleIndex.addresses(inHeader: value)
             }
             if !lower.hasPrefix("bcc:") { kept += field }
         }

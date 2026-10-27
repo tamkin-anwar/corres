@@ -228,6 +228,19 @@ public struct PeopleIndex: Codable, Sendable, Equatable {
         return (name, email)
     }
 
+    /// The addresses in a To, Cc or Bcc header's value, as SMTP's envelope
+    /// takes them: every one, whatever its domain or script
+    /// ("user@x.xn--p1ai", "пользователь@пример.рф"), with a group's name
+    /// ("Team: a@x.com, b@y.com;") and comments ("sam@z.io (Sam)") set
+    /// aside, as RFC 5322 writes them.
+    public static func addresses(inHeader value: String) -> [String] {
+        let unfolded = value.replacingPattern(#"\r?\n[ \t]+"#, with: " ")
+        return entries(in: unfolded).compactMap { entry in
+            let address = entry.replacingPattern(#"^[^<>"@]*:\s*"#, with: "").replacingPattern(#"\([^()"]*\)"#, with: " ")
+            return parse(address)?.email
+        }
+    }
+
     public static func isAddress(_ text: String) -> Bool {
         text.patternRange(#"^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]{2,}$"#) != nil
     }
