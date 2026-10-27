@@ -279,7 +279,7 @@ public enum MailSignals {
         // all the date detector reads (`asciiDigits` keeps the length).
         let source = MailDigest.asciiDigits(own)
         let ns = source as NSString
-        let order = numericDateOrder(senderEmail: senderEmail, text: source)
+        let order = numericDateOrder(senderEmail: senderEmail, text: source, now: now)
         var found: [FoundDate] = []
         for match in detector.matches(in: source, range: NSRange(location: 0, length: ns.length)) {
             var range = match.range
@@ -298,7 +298,7 @@ public enum MailSignals {
             }
             guard var date else { continue }
             if !relativeToday, ns.substring(with: range).patternRange(explicitDatePattern) == nil { continue }
-            switch numericReading(of: ns.substring(with: range), detected: date, order: order) {
+            switch numericReading(of: ns.substring(with: range), detected: date, order: order, now: now) {
             case .notNumeric: break
             case .date(let written): date = written
             // 03/11/2026 from someone whose way of writing dates is unknown:
@@ -372,15 +372,21 @@ public enum MailSignals {
     /// How this email writes numeric dates: settled by another date in it
     /// that can only be read one way ("13/11/2026" is day first), else by
     /// where the sender writes from. Nil when neither says.
-    static func numericDateOrder(senderEmail: String?, text: String) -> DateOrder? {
+    static func numericDateOrder(senderEmail: String?, text: String, now: Date = .now,
+                                 calendar: Calendar = .current) -> DateOrder? {
         let ns = text as NSString
         if let regex = PatternCache.shared.regex(numericDatePattern, caseInsensitive: false) {
             for match in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
-                // Only full dates: "24/7" and "50/50" are not dates.
-                guard match.range(at: 3).location != NSNotFound || match.range(at: 6).location != NSNotFound else { continue }
                 let first = Int(ns.substring(with: match.range(at: 1))) ?? 0
                 let secondRange = match.range(at: 2).location != NSNotFound ? match.range(at: 2) : match.range(at: 5)
                 let second = Int(ns.substring(with: secondRange)) ?? 0
+                let yearRange = match.range(at: 3).location != NSNotFound ? match.range(at: 3) : match.range(at: 6)
+                let year = yearRange.location != NSNotFound ? Int(ns.substring(with: yearRange)) : nil
+                let afterStart = NSMaxRange(match.range)
+                let after = ns.substring(with: NSRange(location: afterStart, length: min(10, ns.length - afterStart)))
+                if let order = orderByWeekday(first, second, year: year, after: after, now: now, calendar: calendar) { return order }
+                // Only full dates: "24/7" and "50/50" are not dates.
+                guard year != nil else { continue }
                 if first > 12, (1...12).contains(second) { return .dayFirst }
                 if second > 12, (1...12).contains(first), second <= 31 { return .monthFirst }
             }
@@ -392,6 +398,46 @@ public enum MailSignals {
         }
         return numericDateOrder(byScript: text)
     }
+
+    /// "12/3(木)", "12/3（周四）", "12/3 (목)": Japanese, Chinese and Korean
+    /// mail writes the weekday in brackets after a numeric date, and the
+    /// weekday says which way round the date is: the reading that falls
+    /// on it. A short email has too little kana to say so by its script
+    /// (`numericDateOrder(byScript:)`). Nil without a weekday, or when
+    /// both readings or neither fall on it. A date without a year is the
+    /// next one, as `LocalDates` reads it.
+    static func orderByWeekday(_ first: Int, _ second: Int, year: Int?, after: String,
+                               now: Date, calendar: Calendar = .current) -> DateOrder? {
+        guard first != second, let match = after.patternRange(bracketedWeekday) else { return nil }
+        // The day's own character: "木" of "木曜日", "四" of "星期四".
+        let name = after[match].filter { !"()（） ".contains($0) }
+            .replacingOccurrences(of: "曜日", with: "").replacingOccurrences(of: "曜", with: "").replacingOccurrences(of: "요일", with: "")
+        let days: [String: Int] = ["日": 1, "天": 1, "月": 2, "一": 2, "火": 3, "二": 3, "水": 4, "三": 4, "木": 5, "四": 5,
+                                   "金": 6, "五": 6, "土": 7, "六": 7, "일": 1, "월": 2, "화": 3, "수": 4, "목": 5, "금": 6, "토": 7,
+                                   "1": 2, "2": 3, "3": 4, "4": 5, "5": 6, "6": 7, "7": 1]
+        guard let weekday = name.last.flatMap({ days[String($0)] }) else { return nil }
+        func falls(day: Int, month: Int) -> Bool {
+            var parts = DateComponents(year: year.map { $0 < 100 ? 2000 + $0 : $0 } ?? calendar.component(.year, from: now),
+                                       month: month, day: day, hour: 12)
+            guard (1...12).contains(month), let date = calendar.date(from: parts),
+                  calendar.component(.day, from: date) == day else { return false }
+            var found = date
+            if year == nil, date < now.addingTimeInterval(-60 * 86_400) {
+                parts.year = (parts.year ?? 0) + 1
+                found = calendar.date(from: parts) ?? date
+            }
+            return calendar.component(.weekday, from: found) == weekday
+        }
+        switch (falls(day: first, month: second), falls(day: second, month: first)) {
+        case (true, false): return .dayFirst
+        case (false, true): return .monthFirst
+        default: return nil
+        }
+    }
+
+    /// A weekday in brackets: "(木)", "（木曜）", "(周四)", "(星期四)", "(목)",
+    /// and "(周4)" as `asciiDigits` leaves it.
+    static let bracketedWeekday = #"^\s?[(（]\s?(?:(?:周|週|星期|礼拜|禮拜)[日天一二三四五六1-7]|[日月火水木金土](?:曜日?)?|[일월화수목금토](?:요일)?)\s?[)）]"#
 
     /// The order the email's own language writes dates in, when that
     /// language uses one order everywhere: Japanese and Korean month
@@ -417,7 +463,11 @@ public enum MailSignals {
     /// A detected date that is numbers only, read the writer's way. Dots
     /// are always day first (no one writes 11.12.2026 for November 12th).
     /// Ambiguous when both numbers could be the month and `order` is nil.
-    static func numericReading(of phrase: String, detected: Date, order: DateOrder?,
+    /// Without a year, a date read the other way round from the
+    /// detector's is the next one after `now`, as `LocalDates` reads one:
+    /// the detector's year was for its own reading ("3/12" as March 12th,
+    /// 2027 made the 3rd of December a year away).
+    static func numericReading(of phrase: String, detected: Date, order: DateOrder?, now: Date? = nil,
                                calendar: Calendar = .current) -> NumericReading {
         let ns = phrase as NSString
         guard let regex = PatternCache.shared.regex(numericDatePattern, caseInsensitive: false),
@@ -439,9 +489,15 @@ public enum MailSignals {
         if yearRange.location != NSNotFound, let written = Int(ns.substring(with: yearRange)) {
             parts.year = written < 100 ? 2000 + written : written
         }
+        let swapped = calendar.component(.month, from: detected) != month || calendar.component(.day, from: detected) != day
+        if yearRange.location == NSNotFound, swapped, let now { parts.year = calendar.component(.year, from: now) }
         parts.month = month
         parts.day = day
-        guard let date = calendar.date(from: parts), calendar.component(.day, from: date) == day else { return .notNumeric }
+        guard var date = calendar.date(from: parts), calendar.component(.day, from: date) == day else { return .notNumeric }
+        if yearRange.location == NSNotFound, swapped, let now, date < now.addingTimeInterval(-60 * 86_400) {
+            parts.year = (parts.year ?? 0) + 1
+            date = calendar.date(from: parts) ?? date
+        }
         return .date(date)
     }
 
@@ -1025,13 +1081,13 @@ public enum EventFinder {
         // its own ("doors open 19:15", "7.15pm") comes back as today at that
         // time, so a meeting on Thursday the 15th showed as today at 19:15.
         struct Found { let date: Date; let duration: TimeInterval; let hasTime: Bool; let hasDay: Bool }
-        let order = MailSignals.numericDateOrder(senderEmail: nil, text: own)
+        let order = MailSignals.numericDateOrder(senderEmail: nil, text: own, now: now)
         var found = dates.matches(in: own, range: NSRange(location: 0, length: ns.length)).compactMap { match -> Found? in
             guard var date = match.date else { return nil }
             let phrase = ns.substring(with: match.range).lowercased()
             let hasTime = phrase.patternRange(clockPattern) != nil
             // 03/11 read the writer's way, or not at all.
-            switch MailSignals.numericReading(of: phrase, detected: date, order: order) {
+            switch MailSignals.numericReading(of: phrase, detected: date, order: order, now: now) {
             case .notNumeric: break
             case .date(let written): date = written
             case .ambiguous: return nil

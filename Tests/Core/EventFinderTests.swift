@@ -60,4 +60,26 @@ struct EventFinderTests {
         #expect(when?.hour == 14)
         #expect(when?.minute == 30)
     }
+
+    /// "12/3(木)": the weekday in brackets after a numeric date, as
+    /// Japanese, Chinese and Korean mail writes it, says which way round
+    /// the date is: December 3rd, 2026 is a Thursday, March 12th, 2027 a
+    /// Friday. A short email has too little kana to say so otherwise.
+    @Test func aBracketedWeekdaySettlesANumericDate() {
+        func start(_ body: String, _ subject: String) -> [Int?]? {
+            parts(EventFinder.fromWording(body, subject: subject, receivedAt: sent, now: now)?.start)
+                .map { [$0.month, $0.day, $0.hour, $0.minute] }
+        }
+        #expect(start("12/3(木)14:00 会議室A", "打ち合わせ") == [12, 3, 14, 0])
+        #expect(start("12/3（木）14:00 会議室", "会議") == [12, 3, 14, 0])
+        #expect(start("12/3(周四)14:00 会议室", "会议") == [12, 3, 14, 0])
+        #expect(start("12/3(목) 14:00 회의실", "회의") == [12, 3, 14, 0])
+        // Written day first, and the weekday says so.
+        #expect(start("3/12(木)14:00 会議室A", "打ち合わせ") == [12, 3, 14, 0])
+        // A weekday neither reading falls on settles nothing.
+        #expect(start("12/3(月)14:00 会議室A", "打ち合わせ") == nil)
+        // A deadline is read the same way.
+        let due = MailSignals.deadline(in: "締切：12/3(木)", now: now, horizon: 90 * 86_400)
+        #expect(due.map { calendar.dateComponents([.month, .day], from: $0) }.map { [$0.month, $0.day] } == [12, 3])
+    }
 }
