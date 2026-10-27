@@ -9,16 +9,20 @@ final class FakeSMTPServer: @unchecked Sendable {
     let offersStartTLS: Bool
     let acceptPassword: String
     let rejectRecipient: String?
+    /// What happens after the end of the message: nil answers 250, "drop"
+    /// closes the connection without an answer, anything else is sent.
+    let afterData: String?
     private let lock = NSLock()
     private var commandLog: [String] = []
     private var bodies: [String] = []
     private var channel: Channel?
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
 
-    init(offersStartTLS: Bool = false, acceptPassword: String = "app-pass", rejectRecipient: String? = nil) {
+    init(offersStartTLS: Bool = false, acceptPassword: String = "app-pass", rejectRecipient: String? = nil, afterData: String? = nil) {
         self.offersStartTLS = offersStartTLS
         self.acceptPassword = acceptPassword
         self.rejectRecipient = rejectRecipient
+        self.afterData = afterData
     }
 
     func start() async throws -> Int {
@@ -54,7 +58,14 @@ final class FakeSMTPServer: @unchecked Sendable {
                 let line = String(pending[..<end.lowerBound])
                 pending.removeSubrange(..<end.upperBound)
                 if inData {
-                    if line == "." { inData = false; server.store(data); data = ""; send("250 2.0.0 queued", context) }
+                    if line == "." {
+                        inData = false; server.store(data); data = ""
+                        switch server.afterData {
+                        case nil: send("250 2.0.0 queued", context)
+                        case "drop": context.close(promise: nil); return
+                        case let reply?: send(reply, context)
+                        }
+                    }
                     else { data += line + "\r\n" }
                     continue
                 }
@@ -145,6 +156,33 @@ struct SMTPTests {
         let client = SMTPClient(host: "127.0.0.1", port: port, security: .startTLS, timeout: .seconds(5))
         await #expect(throws: SMTPClient.SMTPError.noSecureConnection) { try await client.open() }
         #expect(!server.log().contains("AUTH PLAIN"))
+    }
+
+    /// The whole message went and the connection dropped before the
+    /// answer: it may have been taken, which isn't "not sent".
+    @Test func aLostAnswerAfterTheMessageIsUnconfirmed() async throws {
+        let server = FakeSMTPServer(afterData: "drop")
+        let port = try await server.start()
+        defer { Task { await server.stop() } }
+        let client = SMTPClient(host: "127.0.0.1", port: port, security: .none, timeout: .seconds(5))
+        await #expect(throws: SMTPClient.SMTPError.unconfirmed) {
+            try await client.send(Data(self.message.utf8), from: "me@icloud.com", to: ["ann@x.example"],
+                                  username: "me@icloud.com", password: "app-pass")
+        }
+        #expect(server.received().count == 1)
+    }
+
+    /// A refusal after the message is a real answer: not sent, safe to
+    /// try again.
+    @Test func aRefusalAfterTheMessageIsNotUnconfirmed() async throws {
+        let server = FakeSMTPServer(afterData: "451 4.3.0 Try again later")
+        let port = try await server.start()
+        defer { Task { await server.stop() } }
+        let client = SMTPClient(host: "127.0.0.1", port: port, security: .none, timeout: .seconds(5))
+        await #expect(throws: SMTPClient.SMTPError.rejected(451, "Try again later")) {
+            try await client.send(Data(self.message.utf8), from: "me@icloud.com", to: ["ann@x.example"],
+                                  username: "me@icloud.com", password: "app-pass")
+        }
     }
 
     @Test func dotStuffing() {

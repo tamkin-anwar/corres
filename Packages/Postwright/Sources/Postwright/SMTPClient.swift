@@ -28,6 +28,12 @@ public actor SMTPClient {
         case noSecureConnection
         case disconnected
         case timedOut
+        /// The whole message went, end and all, and then the connection
+        /// failed before the server answered. It may have taken it: once
+        /// it has the end of the message it either accepts it or refuses
+        /// it (RFC 5321 4.1.1.4), and a lost answer can't say which. Never
+        /// send it again without asking first (RFC 1047).
+        case unconfirmed
     }
 
     public struct Reply: Sendable, Equatable {
@@ -111,11 +117,22 @@ public actor SMTPClient {
                 guard reply.code == 250 || reply.code == 251 else { throw SMTPError.recipientRejected(recipient, reply.text) }
             }
             try await expect(354, try await command("DATA"))
+            // A write that fails didn't get the end of the message out, and
+            // a server that loses the connection before the end cancels the
+            // message (RFC 5321 4.1.1.10): that one is safely not sent.
             try await write(Self.dotStuffed(message))
             // A server may take minutes to accept a large message (RFC 5321
             // 4.5.3.2.6 allows ten). Giving up sooner said "not sent" for
             // mail that went, and trying again sent it twice.
-            try await expect(250, try await readReply(timeout: max(timeout, Self.dataTerminationTimeout)))
+            let reply: Reply
+            do {
+                reply = try await readReply(timeout: max(timeout, Self.dataTerminationTimeout))
+            } catch {
+                // From here the server may have it: a timeout or a dropped
+                // connection is no answer either way.
+                throw SMTPError.unconfirmed
+            }
+            try await expect(250, reply)
         } catch {
             await close()
             throw error

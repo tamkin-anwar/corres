@@ -17,6 +17,27 @@ import Postwright
 /// - A conversation is the Message-ID it started with (the first in
 ///   References, else In-Reply-To, else its own), so a reply in Sent joins
 ///   the email it answers.
+/// `SMTPHandoffs`, kept with the App Group so a send from the Share
+/// extension is known to the outbox too.
+enum SMTPHandoffLog {
+    private static let key = "corres.smtpHandoffs"
+    private static let lock = NSLock()
+
+    static var current: SMTPHandoffs { lock.withLock { read() } }
+
+    static func update(_ change: (inout SMTPHandoffs) -> Void) {
+        lock.withLock {
+            var handoffs = read().pruned()
+            change(&handoffs)
+            MailAccounts.groupDefaults.set(try? JSONEncoder().encode(handoffs), forKey: key)
+        }
+    }
+
+    private static func read() -> SMTPHandoffs {
+        MailAccounts.groupDefaults.data(forKey: key).flatMap { try? JSONDecoder().decode(SMTPHandoffs.self, from: $0) } ?? SMTPHandoffs()
+    }
+}
+
 struct IMAPMailClient: Sendable {
     typealias ClientError = GmailAPIClient.ClientError
 
@@ -361,7 +382,7 @@ struct IMAPMailClient: Sendable {
         }
         // Not fetched this session (Corres restarted mid-send): ask iCloud.
         // Sent is where a send that went through lands.
-        return try await IMAPSessions.shared.with(account) { session in
+        let found: ThreadID? = try await IMAPSessions.shared.with(account) { session in
             let folders = try await session.folders()
             for path in [folders.sent, folders.inbox].compactMap({ $0 }) {
                 let selected = try await session.connection.select(path)
@@ -373,6 +394,26 @@ struct IMAPMailClient: Sendable {
             }
             return nil
         }
+        // No copy is no answer on its own: iCloud's SMTP files nothing in
+        // Sent, Corres does once the server says it took the email. What
+        // Corres saw when it handed the email over decides.
+        switch SMTPHandoffLog.current.verdict(for: id, account: account, foundIn: found?.providerID) {
+        case .sent(let conversation): return found ?? ThreadID(account: account, providerID: conversation)
+        case .notSent: return nil
+        case .unknown: throw Self.unconfirmed
+        }
+    }
+
+    /// The server may have taken it, and nothing can say whether it did.
+    /// A check that throws is no answer, so the outbox never sends it again
+    /// on its own; Retry, by hand, does (`allowSendingAgain`).
+    static let unconfirmed = ClientError.refused(statusCode: 0, reason: "sendUnconfirmed",
+                                                 message: "The mail server didn't say whether it took this email.")
+
+    /// Retry tapped on a failed send: you've decided to send it again, so
+    /// "may have gone" no longer holds it back. Sent is still checked first.
+    func allowSendingAgain(rfc822MessageID: String, account: String) {
+        SMTPHandoffLog.update { $0.forget(rfc822MessageID, account: account) }
     }
 
     // MARK: Sending
@@ -388,24 +429,40 @@ struct IMAPMailClient: Sendable {
         guard !recipients.isEmpty else { throw ClientError.refused(statusCode: 0, reason: nil, message: "This email has no recipients.") }
         let server = IMAPServer.for(account)
         let smtp = SMTPClient(host: server.smtpHost, port: server.smtpPort, security: server.smtpSecurity == .tls ? .tls : .startTLS)
+        let messageID = Self.messageID(ofMessage: outgoing)
+        // From here it may go. Noted before it's handed over, so Corres
+        // closing mid-send, or an answer lost on the way back, reads as
+        // "may have gone" and never as "not sent" (`findMessage`).
+        if let messageID { SMTPHandoffLog.update { $0.handOver(messageID, account: account) } }
         do {
             try await smtp.send(Data(outgoing.utf8), from: account, to: recipients, username: server.username ?? account, password: password)
-        } catch SMTPClient.SMTPError.authenticationFailed {
-            throw ClientError.notSignedIn
-        } catch SMTPClient.SMTPError.recipientRejected(let address, let why) {
-            throw ClientError.refused(statusCode: 550, reason: "recipientRejected", message: "\(address): \(why)")
-        } catch SMTPClient.SMTPError.rejected(let code, let why) {
-            throw ClientError.refused(statusCode: code, reason: nil, message: why)
+        } catch SMTPClient.SMTPError.unconfirmed {
+            // The whole email went and no answer came back. It stays
+            // "may have gone": never sent again without you.
+            throw Self.unconfirmed
+        } catch {
+            // Anything else means the server never took it: it refused, or
+            // never got the end of the email (RFC 5321 4.1.1.10).
+            if let messageID { SMTPHandoffLog.update { $0.forget(messageID, account: account) } }
+            switch error as? SMTPClient.SMTPError {
+            case .authenticationFailed?: throw ClientError.notSignedIn
+            case .recipientRejected(let address, let why)?:
+                throw ClientError.refused(statusCode: 550, reason: "recipientRejected", message: "\(address): \(why)")
+            case .rejected(let code, let why)?: throw ClientError.refused(statusCode: code, reason: nil, message: why)
+            default: throw error
+            }
         }
+        let conversation = threadId ?? Self.conversation(ofMessage: outgoing) ?? ""
+        if let messageID { SMTPHandoffLog.update { $0.accepted(messageID, account: account, conversation: conversation) } }
         // Sent now; what follows is filing, and must never turn a delivered
         // email into a "Couldn't send". Done before returning, not left to
         // run on its own: the Share extension and a send from a notification
         // end moments after this returns, and a copy never filed can't be
         // found again (a retry would send twice, and the conversation would
         // be looked for in every folder on each sync).
-        await Self.fileInSent(Data(outgoing.utf8), messageID: Self.messageID(ofMessage: outgoing), account: account)
+        await Self.fileInSent(Data(outgoing.utf8), messageID: messageID, account: account)
         // The conversation it belongs to, the same id sync gives it.
-        return threadId ?? Self.conversation(ofMessage: outgoing) ?? ""
+        return conversation
     }
 
     /// Files a copy of a sent email in Sent. Some services (Yahoo, AOL)

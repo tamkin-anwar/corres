@@ -281,6 +281,7 @@ final class GmailSyncService {
             // elsewhere within the same window ends up removed, not re-added.
             try ensureCurrent(account, removal)
             try await repository.applyRemoteChanges(plan.remoteChanges)
+            await removeArchivedBehindYourReply(plan.remoteChanges, account: account, removal: removal)
             // Every listed message accounted for, or a missing one would
             // look deleted.
             if isFullListing, stillMissing.isEmpty {
@@ -684,7 +685,7 @@ final class GmailSyncService {
                 guard let messageID = thread.messageIdHeader,
                       let real = try? await client.findMessage(rfc822MessageID: messageID, account: account),
                       let messages = try? await client.fetchThreadMessages(threadId: real.providerID, account: account),
-                      let sent = messages.last(where: \.isFromAccountOwner) ?? messages.last,
+                      let sent = Correspondence.sentCopy(in: messages, messageID: messageID),
                       (try? await upsert([sent], isInitialSync: true, account: account, removal: removal)) != nil else { continue }
                 try? await repository.remove(thread.id)
                 placeholderTried[thread.id] = nil
@@ -695,6 +696,31 @@ final class GmailSyncService {
                   let latest = messages.last else { continue }
             _ = try? await upsert([latest], isInitialSync: true, account: account, removal: removal)
         }
+    }
+
+    /// Archived on the web after you replied: Gmail takes the Inbox label
+    /// off their messages, and your reply, the one Corres keeps for the
+    /// conversation, never had it, so no change named it and the
+    /// conversation stayed. Each one is asked about first and leaves only
+    /// when nothing in it is still in the Inbox (one message moved by
+    /// another app isn't the whole conversation archived).
+    private func removeArchivedBehindYourReply(_ changes: [RemoteMessageChange], account: String, removal: Int) async {
+        let named = Set(changes.filter { $0.leftInbox && !$0.threadID.providerID.isEmpty }.map(\.threadID))
+        guard !named.isEmpty else { return }
+        var stored: [Correspondence] = []
+        for id in named.prefix(20) {
+            if let thread = try? await repository.thread(id) { stored.append(thread) }
+        }
+        var removals: [RemoteMessageChange] = []
+        for id in RemoteMessageChange.archivedBehindLatest(changes, stored: stored) {
+            guard isCurrent(account, removal),
+                  let latest = stored.first(where: { $0.id == id })?.latestMessageID,
+                  let messages = try? await client.fetchThreadMessages(threadId: id.providerID, account: account),
+                  !messages.isEmpty, !RemoteMessageChange.stillInInbox(messages.map(\.labelIds)) else { continue }
+            removals.append(RemoteMessageChange(threadID: id, messageID: latest, currentLabelIds: nil, removed: true))
+        }
+        guard !removals.isEmpty, isCurrent(account, removal) else { return }
+        _ = try? await repository.applyRemoteChanges(removals)
     }
 
     private static let placeholderRetry: TimeInterval = 5 * 60

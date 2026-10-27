@@ -395,7 +395,13 @@ final class OutboxService {
     func retryFailed() {
         guard let failed, !committing.contains(failed.id) else { return }
         failedSends.removeFirst()
-        queueSend(failed.draft, replyingTo: resolveThread(for: failed.draft), reusing: failed.id)
+        let thread = resolveThread(for: failed.draft)
+        // Retry by hand is your choice to send it again, even one the mail
+        // server never said it took. The quiet retries never do that.
+        if let account = resolveSendingAccount(draft: failed.draft, thread: thread) {
+            client.allowSendingAgain(rfc822MessageID: Self.rfc822MessageID(for: failed.id), account: account)
+        }
+        queueSend(failed.draft, replyingTo: thread, reusing: failed.id)
     }
 
     func discardFailed() {
@@ -473,7 +479,7 @@ final class OutboxService {
         let isPlaceholder = realThreadID?.providerID.hasPrefix("outlook-sent-") == true
         if thread == nil, let realThreadID, !isPlaceholder,
            let messages = try? await client.fetchThreadMessages(threadId: realThreadID.providerID, account: realThreadID.account) {
-            sentCopy = messages.last { $0.isFromAccountOwner } ?? messages.last
+            sentCopy = Correspondence.sentCopy(in: messages, messageID: Self.rfc822MessageID(for: id))
         }
         // A stand-in keeps the Message-ID it went with, so a sync can find
         // the real copy and swap it in, even if Corres quits before the
@@ -515,7 +521,7 @@ final class OutboxService {
             try? await Task.sleep(for: .seconds(delay))
             guard let real = try? await client.findMessage(rfc822MessageID: messageID, account: placeholder.account),
                   let messages = try? await client.fetchThreadMessages(threadId: real.providerID, account: real.account),
-                  let sent = messages.last(where: \.isFromAccountOwner) ?? messages.last else { continue }
+                  let sent = Correspondence.sentCopy(in: messages, messageID: messageID) else { continue }
             _ = try? await repository.upsert([sent], isInitialSync: true)
             await store.remove(placeholder)
             await store.refresh()
