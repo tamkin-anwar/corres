@@ -26,6 +26,16 @@ Each relay instance (and the iCloud watcher) signs one APNs provider token and r
 
 ## 3. Deploy the relay
 
+The three relay functions run as their own service account, `corres-relay`, not the project's default compute account (which holds Editor). It has only what the code uses: `roles/datastore.user` on the project (Firestore), `roles/cloudkms.publicKeyViewer` on the `icloud-watcher` key (the public half, to seal iCloud passwords; it can't decrypt), and `roles/secretmanager.secretAccessor` on `corres-apns-auth-key` (add the DeviceCheck secret here too when it's created). The logo relay runs as `corres-logos`, which has no roles at all. The deploy scripts pass `--service-account`; set up once (2026-10-26):
+
+```bash
+gcloud iam service-accounts create corres-relay
+gcloud projects add-iam-policy-binding corres-509320 --member=serviceAccount:corres-relay@corres-509320.iam.gserviceaccount.com --role=roles/datastore.user --condition=None
+gcloud kms keys add-iam-policy-binding icloud-watcher --keyring=corres --location=us-central1 --member=serviceAccount:corres-relay@corres-509320.iam.gserviceaccount.com --role=roles/cloudkms.publicKeyViewer
+gcloud secrets add-iam-policy-binding corres-apns-auth-key --member=serviceAccount:corres-relay@corres-509320.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor
+gcloud iam service-accounts create corres-logos
+```
+
 From this directory:
 
 ```bash
