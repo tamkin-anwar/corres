@@ -26,9 +26,6 @@
 "Say or write a reply" = "বলে বা লিখে উত্তর দিন";
 
 /* No comment provided by engineer. */
-"Sent from your iPhone" = "আপনার iPhone থেকে পাঠানো হয়েছে";
-
-/* No comment provided by engineer. */
 "Sounds good." = "ভালো লাগছে।";
 
 /* No comment provided by engineer. */
@@ -54,3 +51,6 @@
 "Updated %@" = "হালনাগাদ %@";
 "Open Corres on your iPhone to start your free trial." = "বিনামূল্যে ট্রায়াল শুরু করতে আপনার iPhone-এ Corres খুলুন।";
 "Corres Pro" = "Corres Pro";
+
+/* A reply handed to the iPhone, which sends it. */
+"Sending from your iPhone" = "আপনার iPhone থেকে পাঠানো হচ্ছে";

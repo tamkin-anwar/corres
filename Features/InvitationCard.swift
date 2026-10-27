@@ -212,7 +212,7 @@ struct InvitationCard: View {
         Task {
             guard let start = invitation.start else { return }
             guard await calendar.requestWrite() else {
-                calendarError = "Corres can add events once it's allowed to in System Settings → Privacy & Security → Calendars."
+                calendarError = String(localized: "Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars.")
                 return
             }
             do {

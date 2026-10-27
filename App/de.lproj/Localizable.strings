@@ -3813,3 +3813,7 @@
 
 /* Compose: adding attachments. */
 "Couldn't open %@." = "%@ konnte nicht geöffnet werden.";
+
+/* Retry on a send the mail server may have taken. */
+"This email may already have been sent. Check Sent before sending it again." = "Diese E-Mail wurde vielleicht schon gesendet. Sieh in „Gesendet“ nach, bevor du sie noch einmal sendest.";
+"Send Again" = "Erneut senden";

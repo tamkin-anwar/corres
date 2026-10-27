@@ -368,3 +368,11 @@
 
 /* The Share sheet: what is attached. */
 "%lld attachments" = "添付ファイル%lld件";
+
+/* The mail server may have taken the email. */
+"This email may already have been sent. Check Sent before sending it again." = "このメールはすでに送信されている可能性があります。もう一度送信する前に「送信済み」を確認してください。";
+
+/* Save Draft. */
+"Saved to Drafts" = "下書きに保存しました";
+"Couldn't Save" = "保存できませんでした";
+"Couldn't save. Try again." = "保存できませんでした。もう一度お試しください。";

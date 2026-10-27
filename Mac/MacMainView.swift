@@ -30,10 +30,17 @@ struct MacMainView: View {
     @State private var mailUndo = MailUndoTarget()
     /// A draft from Drafts that couldn't be fetched whole to continue.
     @State private var draftOpenFailed = false
+    /// Retry on a send the mail server may have taken: asked first.
+    @State private var confirmingResend = false
 
     private var store: MailStore { services.store }
     private var actions: ThreadActionService { services.threadActions }
     private var accounts: [String] { services.auth.accounts.map(\.email) }
+    /// For the Message menu's Pin or Unpin.
+    private var selectionIsPinned: Bool {
+        let selected = model.selectedThreads(in: store)
+        return !selected.isEmpty && selected.allSatisfy(\.isPinned)
+    }
 
     var body: some View {
         window
@@ -100,7 +107,8 @@ struct MacMainView: View {
                 perform(.snooze(date), on: threads)
             }
         }
-        .focusedSceneValue(\.macActions, MacActions(perform: { perform($0) }, selectionCount: model.selection.count, isMain: true))
+        .focusedSceneValue(\.macActions, MacActions(perform: { perform($0) }, selectionCount: model.selection.count,
+                                                     isPinned: selectionIsPinned, isMain: true))
         .onChange(of: model.selection) { _, selection in if filtersUnread { keptRead.formUnion(selection) } }
         // The next few after the one you're on, and the top of a mailbox,
         // read ahead: arrowing down shows each at once.
@@ -349,8 +357,14 @@ struct MacMainView: View {
         // Still open after it left the list (answered, moved by a sync).
         let selected = model.selectedThreads(in: store)
         if selected.count == 1, let thread = selected.first {
-            // From the store, which adds the HTML once it's read.
-            ReadingPane(thread: store.thread(thread.id) ?? thread, services: services) { kind in compose(kind, thread) }
+            if model.mailbox.remoteKind == .drafts, model.search.isEmpty {
+                // A draft has its conversation's id, so the store would
+                // show the conversation it answers in its place.
+                draftDetail(thread)
+            } else {
+                // From the store, which adds the HTML once it's read.
+                ReadingPane(thread: store.thread(thread.id) ?? thread, services: services) { kind in compose(kind, thread) }
+            }
         } else if selected.count > 1 {
             ContentUnavailableView {
                 EmptyTitle("\(selected.count) conversations selected", systemImage: "square.stack")
@@ -364,6 +378,40 @@ struct MacMainView: View {
                 Text("Choose a conversation to read it.")
             }
         }
+    }
+
+    /// A draft from Drafts, as written: Edit (or a double-click) continues
+    /// it in Compose.
+    private func draftDetail(_ draft: Correspondence) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(draft.subject.isEmpty ? String(localized: "No subject") : draft.subject)
+                    .macFont(size: 24, weight: .regular, design: .serif)
+                    .textSelection(.enabled)
+                if !draft.toRecipients.isEmpty {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("To").foregroundStyle(CorresPalette.secondary)
+                        Text(draft.toRecipients.joined(separator: ", ")).textSelection(.enabled)
+                    }
+                    .macFont(.subheadline)
+                }
+                HStack(spacing: 8) {
+                    Button("Edit") { open(draft) }
+                    Spacer()
+                    Button("Delete", role: .destructive) { discardDrafts([draft]) }
+                }
+                Divider()
+                Text(draft.body)
+                    .macFont(.body)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(28)
+            .frame(maxWidth: 820, alignment: .leading)
+            .frame(maxWidth: .infinity)
+        }
+        .background(CorresPalette.canvas)
+        .id(draft.id)
     }
 
     // MARK: Toolbar
@@ -467,8 +515,17 @@ struct MacMainView: View {
                     Text("and \(services.outbox.failedSends.count - 1) more").foregroundStyle(CorresPalette.secondary)
                 }
                 Button("Discard") { services.outbox.discardFailed() }.buttonStyle(.borderless)
-                Button("Retry") { services.outbox.retryFailed() }.buttonStyle(.borderless)
-                    .foregroundStyle(CorresPalette.accent)
+                Button("Retry") {
+                    if services.outbox.failedMayHaveSent { confirmingResend = true } else { services.outbox.retryFailed() }
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(CorresPalette.accent)
+                // The mail server took it all and never answered: Retry
+                // could send it twice, so it says so first.
+                .alert("This email may already have been sent. Check Sent before sending it again.", isPresented: $confirmingResend) {
+                    Button("Send Again") { services.outbox.retryFailed() }
+                    Button("Cancel", role: .cancel) {}
+                }
             }
             .macFont(.callout)
             .padding(.horizontal, 16).padding(.vertical, 10)
@@ -652,6 +709,10 @@ struct MacMainView: View {
             guard !selected.isEmpty else { return }
             let flag = !selected.allSatisfy(\.isFlagged)
             Task { await actions.toggleFlagged(flag, for: selected) }
+        case .togglePin:
+            guard !selected.isEmpty else { return }
+            let pin = !selected.allSatisfy(\.isPinned)
+            Task { await actions.setPinned(pin, for: selected) }
         case .toggleUnread:
             guard !selected.isEmpty else { return }
             let unread = !selected.allSatisfy(\.isUnread)
@@ -718,6 +779,7 @@ struct MacMainView: View {
                 Command(title: "Delete", detail: what, systemImage: "trash") { perform(.trash) },
                 Command(title: "Snooze…", detail: what, systemImage: "moon.zzz") { perform(.askSnooze) },
                 Command(title: selected.allSatisfy(\.isFlagged) ? "Unflag" : "Flag", detail: what, systemImage: "flag") { perform(.toggleFlag) },
+                Command(title: selected.allSatisfy(\.isPinned) ? "Unpin" : "Pin", detail: what, systemImage: "pin") { perform(.togglePin) },
                 Command(title: selected.allSatisfy(\.isUnread) ? "Mark as Read" : "Mark as Unread", detail: what, systemImage: "envelope.badge") { perform(.toggleUnread) },
             ]
             // Only the moves that change something.
@@ -929,6 +991,7 @@ struct MacMainView: View {
         menu.addItem(.separator())
         item(thread.isUnread ? String(localized: "Mark as Read") : String(localized: "Mark as Unread"), "envelope.badge", .toggleUnread)
         item(thread.isFlagged ? String(localized: "Unflag") : String(localized: "Flag"), "flag", .toggleFlag)
+        item(thread.isPinned ? String(localized: "Unpin") : String(localized: "Pin"), thread.isPinned ? "pin.slash" : "pin", .togglePin)
         if thread.isSnoozed(at: .now) {
             item(String(localized: "Unsnooze"), "moon.zzz", .snooze(nil))
         } else {

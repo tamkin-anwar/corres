@@ -3813,3 +3813,7 @@
 
 /* Compose: adding attachments. */
 "Couldn't open %@." = "%@을(를) 열 수 없습니다.";
+
+/* Retry on a send the mail server may have taken. */
+"This email may already have been sent. Check Sent before sending it again." = "이 이메일은 이미 보내졌을 수 있습니다. 다시 보내기 전에 보낸 편지함을 확인하세요.";
+"Send Again" = "다시 보내기";

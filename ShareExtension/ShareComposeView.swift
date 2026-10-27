@@ -394,6 +394,19 @@ struct ShareComposeView: View {
             Color.clear.alert("Couldn\u{2019}t Send", isPresented: .constant(true)) {
                 Button("OK") { composer.retry() }
             } message: { Text(message) }
+        case .mayHaveSent:
+            // Not "Couldn't Send": it may well have gone.
+            Color.clear.alert("This email may already have been sent. Check Sent before sending it again.", isPresented: .constant(true)) {
+                Button("OK") { composer.retry() }
+            }
+        case .saved:
+            badge("Saved to Drafts") {
+                Image(systemName: "checkmark.circle.fill").font(.system(size: 40)).foregroundStyle(CorresPalette.accent)
+            }
+        case .unsaved:
+            Color.clear.alert("Couldn't Save", isPresented: .constant(true)) {
+                Button("OK") { composer.retry() }
+            } message: { Text("Couldn't save. Try again.") }
         default:
             EmptyView()
         }

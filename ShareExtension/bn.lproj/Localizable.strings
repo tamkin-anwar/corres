@@ -368,3 +368,11 @@
 
 /* The Share sheet: what is attached. */
 "%lld attachments" = "%lldটি সংযুক্তি";
+
+/* The mail server may have taken the email. */
+"This email may already have been sent. Check Sent before sending it again." = "এই ইমেইলটি হয়তো আগেই পাঠানো হয়েছে। আবার পাঠানোর আগে পাঠানো দেখে নিন।";
+
+/* Save Draft. */
+"Saved to Drafts" = "খসড়ায় সংরক্ষিত";
+"Couldn't Save" = "সংরক্ষণ করা যায়নি";
+"Couldn't save. Try again." = "সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।";

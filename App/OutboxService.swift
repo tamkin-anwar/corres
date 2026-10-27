@@ -398,6 +398,13 @@ final class OutboxService {
         }
     }
 
+    /// The one the banner shows went to the mail server and no answer came
+    /// back, so it may have gone: Retry says so before sending it again.
+    var failedMayHaveSent: Bool {
+        guard let failed, let account = resolveSendingAccount(draft: failed.draft, thread: resolveThread(for: failed.draft)) else { return false }
+        return client.mayHaveSent(rfc822MessageID: Self.rfc822MessageID(for: failed.id), account: account)
+    }
+
     func retryFailed() {
         guard let failed, !committing.contains(failed.id) else { return }
         failedSends.removeFirst()

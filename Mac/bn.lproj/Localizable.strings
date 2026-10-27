@@ -2746,3 +2746,13 @@
 "Automatic reply." = "স্বয়ংক্রিয় উত্তর।";
 
 "Automatic reply. Kept out of Needs You." = "স্বয়ংক্রিয় উত্তর। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* Retry on a send the mail server may have taken. */
+"This email may already have been sent. Check Sent before sending it again." = "এই ইমেইলটি হয়তো আগেই পাঠানো হয়েছে। আবার পাঠানোর আগে পাঠানো দেখে নিন।";
+"Send Again" = "আবার পাঠান";
+
+/* Pin or Unpin a conversation. */
+"Unpin" = "পিন সরান";
+
+/* An invitation: Add to Calendar without access. */
+"Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corres-এর আপনার ক্যালেন্ডারে অ্যাক্সেস নেই। সিস্টেম সেটিংস > গোপনীয়তা ও নিরাপত্তা > ক্যালেন্ডারে অনুমতি দিতে পারেন।";

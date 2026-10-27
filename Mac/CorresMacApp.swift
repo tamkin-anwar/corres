@@ -103,7 +103,7 @@ private struct MacConversationWindow: View {
     let model: MacMailboxModel
     @State private var snoozing = false
     @State private var reminderOutcome: MailReminders.Outcome?
-    @State private var sendUndo = MailUndoTarget()
+    @State private var mailUndo = MailUndoTarget()
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismiss) private var dismiss
     @Environment(\.undoManager) private var undoManager
@@ -112,14 +112,29 @@ private struct MacConversationWindow: View {
         content
             // A reply sent from here can be taken back from here.
             .overlay(alignment: .bottom) { MacUndoSend.Pill(outbox: services.outbox) }
-            .onChange(of: services.outbox.pending?.id, initial: true) {
-                guard let undoManager else { return }
-                undoManager.removeAllActions(withTarget: sendUndo)
-                if services.outbox.pending != nil { MacUndoSend.register(services.outbox, in: undoManager, target: sendUndo) }
+            .onChange(of: [services.outbox.pending?.id, services.threadActions.pendingRemoval?.id], initial: true) {
+                registerUndo()
             }
             // Gone for good (deleted, or moved by a sync), not just waiting
             // out Undo: the window goes too.
             .onChange(of: isGone, initial: true) { if isGone { dismiss() } }
+    }
+
+    /// Edit › Undo: Undo Send first, then this conversation archived or
+    /// deleted from here while the main window was closed.
+    private func registerUndo() {
+        guard let undoManager else { return }
+        undoManager.removeAllActions(withTarget: mailUndo)
+        if services.outbox.pending != nil {
+            MacUndoSend.register(services.outbox, in: undoManager, target: mailUndo)
+            return
+        }
+        let actions = services.threadActions
+        guard let pending = actions.pendingRemoval, pending.threads.contains(where: { $0.id == id }) else { return }
+        undoManager.registerUndo(withTarget: mailUndo) { _ in
+            MainActor.assumeIsolated { actions.undoRemoval() }
+        }
+        undoManager.setActionName(pending.title)
     }
 
     /// Not in your mail any more, nor hidden while Undo is offered.
@@ -134,7 +149,7 @@ private struct MacConversationWindow: View {
             ReadingPane(thread: thread, services: services) { kind in
                 openWindow(value: ComposeRequest(kind: kind, thread: thread.id))
             }
-            .focusedSceneValue(\.macActions, MacActions(perform: { perform($0, on: thread) }))
+            .focusedSceneValue(\.macActions, MacActions(perform: { perform($0, on: thread) }, isPinned: thread.isPinned))
             .sheet(isPresented: $snoozing) {
                 MacSnoozeSheet { date in
                     snoozing = false
@@ -195,14 +210,18 @@ private struct MacConversationWindow: View {
         case .reply, .replyAll, .forward:
             openWindow(value: ComposeRequest(kind: action == .reply ? .reply : action == .replyAll ? .replyAll : .forward, thread: thread.id))
         case .archive, .trash:
-            // Gone from your mail, so the window goes too; Undo is in the main window.
+            // Gone from your mail, so the window goes too; Undo is in the
+            // main window. With that closed, this window stays, saying it
+            // moved, with Undo, until it's done (`isGone`).
             services.remote.remove([thread.id])
             Task { action == .archive ? await actions.archive([thread]) : await actions.trash([thread]) }
-            dismiss()
+            if MacWindows.mainIsOpen { dismiss() }
         case .move(let attention):
             Task { await actions.setAttention(attention, for: [thread]) }
         case .toggleFlag:
             Task { await actions.toggleFlagged(!thread.isFlagged, for: [thread]) }
+        case .togglePin:
+            Task { await actions.togglePinned(thread) }
         case .toggleUnread:
             Task { await actions.toggleUnread(!thread.isUnread, for: [thread]) }
         case .snooze(let date):

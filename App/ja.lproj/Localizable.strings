@@ -3813,3 +3813,7 @@
 
 /* Compose: adding attachments. */
 "Couldn't open %@." = "%@を開けませんでした。";
+
+/* Retry on a send the mail server may have taken. */
+"This email may already have been sent. Check Sent before sending it again." = "このメールはすでに送信されている可能性があります。もう一度送信する前に「送信済み」を確認してください。";
+"Send Again" = "もう一度送信";

@@ -26,9 +26,6 @@
 "Say or write a reply" = "말하거나 써서 답장";
 
 /* No comment provided by engineer. */
-"Sent from your iPhone" = "iPhone에서 보냈습니다";
-
-/* No comment provided by engineer. */
 "Sounds good." = "좋습니다.";
 
 /* No comment provided by engineer. */
@@ -54,3 +51,6 @@
 "Updated %@" = "%@ 업데이트됨";
 "Open Corres on your iPhone to start your free trial." = "iPhone에서 Corres를 열어 무료 체험을 시작하세요.";
 "Corres Pro" = "Corres Pro";
+
+/* A reply handed to the iPhone, which sends it. */
+"Sending from your iPhone" = "iPhone에서 보내는 중";
