@@ -127,9 +127,32 @@ actor GoogleTokenProvider {
         cache[email] = nil
     }
 
-    func removeRefreshToken(for email: String, everywhere: Bool = true) {
+    func removeRefreshToken(for email: String, everywhere: Bool) {
+        let refreshToken = Keychain.get(key: Self.keychainKey(for: email))
         Keychain.delete(key: Self.keychainKey(for: email), everywhere: everywhere)
         cache[email] = nil
+        // Removed from all your devices: Corres's access to the account is
+        // given back at Google too, as the privacy policy says. Revoking one
+        // token ends the whole grant ("Revocation removes all OAuth 2.0
+        // scopes previously granted to a project, invalidating any issued
+        // access or refresh tokens"), so every device's sign-in stops working
+        // with it. Not from this device only: the others keep the account.
+        // Best effort: offline, or Google busy, and the removal still goes
+        // ahead; the token is already gone from the keychain.
+        if everywhere, let refreshToken {
+            Task.detached(priority: .utility) { await Self.revoke(refreshToken) }
+        }
+    }
+
+    /// Google's revocation endpoint (RFC 7009), the token in the form body
+    /// rather than the URL so it never lands in a URL log. 200 means
+    /// revoked; 400 (`invalid_token`) means it already was.
+    static func revoke(_ token: String) async {
+        var request = URLRequest(url: URL(string: "https://oauth2.googleapis.com/revoke")!, timeoutInterval: 15)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Data("token=\(formURLEncode(token))".utf8)
+        _ = try? await URLSession.shared.data(for: request)
     }
 
     /// Lets the Share extension use this account's sign-in too.
