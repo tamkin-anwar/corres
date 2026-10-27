@@ -257,6 +257,9 @@ final class MacServices {
         Task {
             await checkForMail()
             done?()
+            // Labels and folders too: fetched only at launch, a Mac opened
+            // offline had none in its sidebar until Corres was quit.
+            await labelDirectory.refreshIfConnected(accounts: auth.accounts.map(\.email))
         }
     }
 
@@ -381,7 +384,15 @@ final class MacServices {
     func accountsChanged() {
         watchIMAP()
         ServerRules.shared.schedule()
-        Task { await checkForMail() }
+        Task {
+            // The first account added in Settings: the sample mail goes
+            // before its mail arrives, as on the iPhone. It stayed in
+            // among the real mail until Corres was opened again.
+            if !auth.accounts.isEmpty { await store.deleteSampleDataIfPresent() }
+            await checkForMail()
+            // A new account's labels or folders, in the sidebar now.
+            await labelDirectory.refreshIfConnected(accounts: auth.accounts.map(\.email))
+        }
     }
 
     private func startChecking() {
