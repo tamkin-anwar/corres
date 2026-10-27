@@ -768,13 +768,44 @@ public enum MailDigest {
         return ascii.regexRanges(of: #"(?<![\d.,])\d+(?:[.,:'\u00A0\u202F]\d+)*"#).map { canonicalNumber(String(ascii[$0])) }
     }
 
-    /// Any script's digits as 0–9: "১২৫০" (Bengali) reads as "1250".
+    /// Any script's digits as 0–9: "১২৫০" (Bengali) reads as "1250", and
+    /// a Han numeral ("三月五日", "周五") too, but only where it stands for
+    /// one digit. Not inside a bigger number: "十一" is eleven and "三十"
+    /// thirty, which digit by digit were "十1" (November read as January,
+    /// and "十二/三" as February 3rd) and "3十". Nor as an hour without a
+    /// time of day or minutes: "一時的に" is "for a while", not one o'clock;
+    /// "午後三時" and "三時半" are times (`LocalDates.clock` reads the same
+    /// way). Keeps the length, so a range in the result is one in `text`.
     static func asciiDigits(_ text: String) -> String {
         guard text.contains(where: { $0.isNumber && !$0.isASCII }) else { return text }
-        return String(text.map { character -> Character in
-            guard !character.isASCII, let value = character.wholeNumberValue, (0...9).contains(value) else { return character }
+        let characters = Array(text)
+        return String(characters.indices.map { index -> Character in
+            let character = characters[index]
+            guard !character.isASCII, let value = character.wholeNumberValue, (0...9).contains(value),
+                  !isHanDigit(character) || readsAsDigit(hanAt: index, in: characters) else { return character }
             return Character(String(value))
         })
+    }
+
+    private static func isHanDigit(_ character: Character) -> Bool {
+        character.unicodeScalars.first.map { $0.value == 0x3007 || (0x4E00...0x9FFF).contains($0.value) } ?? false
+    }
+
+    /// Whether the Han numeral at `index` is a digit on its own (see `asciiDigits`).
+    private static func readsAsDigit(hanAt index: Int, in characters: [Character]) -> Bool {
+        var start = index, end = index
+        while start > 0, isHanDigit(characters[start - 1]), characters[start - 1].wholeNumberValue.map({ $0 < 10 }) == true { start -= 1 }
+        while end + 1 < characters.count, isHanDigit(characters[end + 1]), characters[end + 1].wholeNumberValue.map({ $0 < 10 }) == true { end += 1 }
+        let bigger: Set<Character> = ["十", "百", "千", "万", "萬", "拾", "佰", "仟", "億", "亿"]
+        if start > 0, bigger.contains(characters[start - 1]) { return false }
+        guard end + 1 < characters.count else { return true }
+        if bigger.contains(characters[end + 1]) { return false }
+        // An hour ("三時", "三点"), not hours ("三時間", "三小时").
+        guard "時时點点".contains(characters[end + 1]), end + 2 >= characters.count || !"間间".contains(characters[end + 2]) else { return true }
+        let before = String(characters[max(0, start - 4)..<start]).trimmingCharacters(in: .whitespaces)
+        if ["午前", "午後", "上午", "下午", "中午", "晚上", "早上", "凌晨"].contains(where: before.hasSuffix) { return true }
+        let after = String(characters[(end + 2)..<min(characters.count, end + 6)]).trimmingCharacters(in: .whitespaces)
+        return after.hasPrefix("半") || after.patternRange(#"^[\d〇一二三四五六七八九十]{1,3}\s?分"#) != nil
     }
 
     /// A number as its value, whatever the locale writes: grouping removed

@@ -481,6 +481,24 @@ struct WorldRulesTests {
         #expect(LocalDates.find(in: "11時に集合", now: now).map { calendar.component(.hour, from: $0.date) } == [11])
     }
 
+    /// The same guard wherever Han numerals become digits: the date
+    /// detector and the summary check read "十二/三" as "十2/3" (a deadline
+    /// on February 3rd), "十一月" as month 1, and "一時的" as one o'clock.
+    @Test func hanNumeralsAreNeverHalfReadAnywhere() {
+        #expect(MailDigest.asciiDigits("十一月五日") == "十一月5日")
+        #expect(MailDigest.asciiDigits("三十分") == "三十分")
+        #expect(MailDigest.asciiDigits("一時的に") == "一時的に")
+        #expect(MailDigest.asciiDigits("午後三時と三時半と三時間") == "午後3時と3時半と3時間")
+        #expect(MailDigest.asciiDigits("二〇二六年三月五日、周五、১২৫০") == "2026年3月5日、周5、1250")
+        #expect(MailSignals.deadline(in: "十二/三までにお支払いください。", now: now, horizon: 400 * 86_400) == nil)
+        #expect(day(MailSignals.deadline(in: "12/3までにお支払いください。", now: now, horizon: 400 * 86_400)) == ymd(2026, 12, 3))
+        #expect(MailDigest.unsupportedClaims(in: "会议改到1月举行。", source: "会议改到十一月举行。").contains("1"))
+        #expect(MailDigest.unsupportedClaims(in: "The service stops at 1:00.", source: "一時的にサービスを停止します。").contains("1:00"))
+        // Han dates that read today still do, in the deadline and the check.
+        #expect(day(MailSignals.deadline(in: "期限：三月五日まで", now: now, horizon: 400 * 86_400)) == ymd(2027, 3, 5))
+        #expect(MailDigest.unsupportedClaims(in: "会议在3月5日下午3点。", source: "会议在三月五日下午三点。").isEmpty)
+    }
+
     /// Bengali's য় (and ড়, ঢ়) is typed as one character or as two; mail
     /// with the one-character spelling matched no Bengali rule. And a month
     /// that ends in a vowel takes its "of" as a letter: "জানুয়ারির".
