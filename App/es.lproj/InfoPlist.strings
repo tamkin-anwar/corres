@@ -5,7 +5,7 @@
 "CFBundleName" = "Corres";
 
 /* Privacy - Calendars Full Access Usage Description */
-"NSCalendarsFullAccessUsageDescription" = "Cuando lo pides, Corres consulta tu calendario: si estás libre para una invitación, horas libres que ofrecer cuando te preguntan cuándo puedes, y quitar un evento cancelado. Tu calendario se queda en este dispositivo.";
+"NSCalendarsFullAccessUsageDescription" = "Cuando lo pides, Corres consulta tu calendario para ver si estás libre para una invitación, sugerir horas libres o quitar un evento cancelado. Tu calendario se queda en este dispositivo.";
 
 /* Privacy - Camera Usage Description */
 "NSCameraUsageDescription" = "Corres usa la cámara solo cuando haces una foto o escaneas un documento para adjuntarlo a un correo.";

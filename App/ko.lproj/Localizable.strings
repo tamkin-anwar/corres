@@ -257,7 +257,7 @@
 "Add %@ to VIPs" = "%@ 님을 VIP에 추가";
 
 /* No comment provided by engineer. */
-"Add a Subject" = "제목 추가";
+"Add Subject" = "제목 추가";
 
 /* No comment provided by engineer. */
 "Add Account" = "계정 추가";
@@ -956,7 +956,7 @@
 "Email from %@" = "%@의 이메일";
 
 /* No comment provided by engineer. */
-"Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "나에게 무언가를 요청하는 이메일을 이 %@에서 분류합니다. 끝났나요? 쓸어넘기거나 '처리됨'을 탭하세요. 이 목록에서 사라지고, 메일에는 남으며, 메일함 → 처리됨에 보관됩니다. 잘못 분류되었나요? 길게 눌러 이동하세요.";
+"Email that asks something of you, sorted on this %@. When you're done with one, swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. If one doesn't belong, press and hold to move it." = "나에게 무언가를 요청하는 이메일을 이 %@에서 분류합니다. 다 처리했으면 쓸어넘기거나 '처리됨'을 탭하세요. 이 목록에서 사라지고, 메일에는 남으며, 메일함 → 처리됨에 보관됩니다. 여기에 맞지 않는 이메일은 길게 눌러 이동하세요.";
 
 /* No comment provided by engineer. */
 "Email Toolbar" = "이메일 도구 막대";
@@ -977,7 +977,7 @@
 "Enter your address and Corres finds your mail server for you." = "주소를 입력하면 Corres가 메일 서버를 찾아줍니다.";
 
 /* No comment provided by engineer. */
-"Every account in one inbox, newest first. New senders wait for your OK first." = "모든 계정을 하나의 받은 편지함에, 최신 순으로. 새 보낸 사람은 허용을 기다립니다.";
+"Every account in one inbox, newest first. First emails from new senders are marked New." = "모든 계정을 하나의 받은 편지함에, 최신 순으로. 새 보낸 사람의 첫 이메일에는 '신규'가 표시됩니다.";
 
 /* No comment provided by engineer. */
 "Every account shares All Inboxes, newest first, each marked with its color. Switch to one account by tapping your photo." = "모든 계정이 '모든 받은 편지함'을 공유하며, 최신 순으로 각자의 색상으로 표시됩니다. 사진을 탭하면 하나의 계정으로 전환됩니다.";
@@ -1025,7 +1025,7 @@
 "Everything from people: every email from a person, including ones you're copied on." = "사람에게서 온 모든 메일: 참조로 받은 메일을 포함해 사람이 보낸 모든 이메일.";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "Corres를 Corres답게 만드는 모든 것.";
+"The parts of Corres that read your mail for you." = "메일을 대신 읽어 주는 Corres의 기능들.";
 
 /* No comment provided by engineer. */
 "Explore Corres" = "Corres 둘러보기";
@@ -1313,9 +1313,6 @@
 "Just This Email" = "이 이메일만";
 
 /* No comment provided by engineer. */
-"Just What's Unread" = "읽지 않은 메일만";
-
-/* No comment provided by engineer. */
 "Keep Editing" = "계속 편집";
 
 /* No comment provided by engineer. */
@@ -1371,9 +1368,6 @@
 
 /* No comment provided by engineer. */
 "Loading older mail…" = "이전 메일 불러오는 중…";
-
-/* No comment provided by engineer. */
-"Loading the full message…" = "전체 메시지 불러오는 중…";
 
 /* No comment provided by engineer. */
 "Long Swipe" = "길게 쓸어넘기기";
@@ -2087,7 +2081,7 @@
 "Port" = "포트";
 
 /* No comment provided by engineer. */
-"Preparing your space" = "준비하는 중";
+"Loading your mail" = "메일을 불러오는 중";
 
 /* No comment provided by engineer. */
 "Press and hold for Reply All and Forward" = "길게 눌러 전체 답장 및 전달";
@@ -2564,7 +2558,7 @@
 "Someone's first email waits in New Senders until you allow them. These still notify, marked “New sender”, and you can allow or block them right from the email. Blocked senders never notify." = "누군가의 첫 이메일은 허용할 때까지 '새 보낸 사람'에서 기다립니다. 이 메일도 '새 보낸 사람'으로 표시되어 알림이 오며, 이메일에서 바로 허용하거나 차단할 수 있습니다. 차단한 보낸 사람은 알림을 보내지 않습니다.";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "나만 해결할 수 있는 문제가 발생했습니다.";
+"A payment or account problem needs you." = "결제 또는 계정 문제로 조치가 필요합니다.";
 
 /* No comment provided by engineer. */
 "soon" = "곧";
@@ -2579,13 +2573,10 @@
 "Sorting" = "분류";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this %@. Corres doesn't send your mail to its own servers or to an AI service." = "분류, 요약, 초안은 이 %@에서 실행됩니다. Corres는 메일을 자체 서버나 AI 서비스로 보내지 않습니다.";
+"Sorting, summaries and drafts run on this %@. Your mail never goes to our servers or to an AI company." = "분류, 요약, 초안은 이 %@에서 실행됩니다. 메일은 저희 서버나 AI 회사로 가지 않습니다.";
 
 /* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Nothing goes to a server." = "분류, 요약, 추천 답장, 다시 쓰기는 Apple Intelligence로 이 %@에서 처리됩니다. 서버로 전송되는 것은 없습니다.";
-
-/* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to Corres's servers or to an AI company." = "분류, 요약, 추천 답장, 다시 쓰기는 Apple Intelligence로 이 %@에서 처리됩니다. 메일은 Corres의 서버나 AI 회사로 가지 않습니다.";
+"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to our servers or to an AI company." = "분류, 요약, 추천 답장, 다시 쓰기는 Apple Intelligence로 이 %@에서 처리됩니다. 메일은 저희 서버나 AI 회사로 가지 않습니다.";
 
 /* No comment provided by engineer. */
 "Sources" = "출처";
@@ -3047,7 +3038,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "켜져 있는 동안 %@이(가) 새로운 이메일에 내 메시지로 답장하며, 이 %@이(가) 꺼져 있어도 보냅니다.";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "누구에게 보낼까요? 먼저 받는 사람을 추가하세요.";
+"Add a recipient, then try again." = "받는 사람을 추가한 다음 다시 시도하세요.";
 
 /* No comment provided by engineer. */
 "Widgets and Apple Watch" = "위젯과 Apple Watch";
@@ -3056,7 +3047,7 @@
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "열면 읽음으로 표시하기가 꺼져 있으면, 쓸어넘기거나 '읽음으로 표시'를 선택할 때까지 대화가 읽지 않음으로 남습니다. 링크는 Safari 읽기 도우미와 콘텐츠 차단기를 사용해 Corres에서 열거나, 기본 브라우저에서 엽니다.";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Pro가 없어도 메일은 계속 작동합니다. 읽기, 답장, 보관, 검색. '나에게 필요', '대기 중', 검색의 답변, 기기 내 인텔리전스에는 Pro가 필요합니다.";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Pro가 없어도 메일은 계속 작동합니다. 읽기, 답장, 보관, 검색. '나에게 필요', '대기 중', 검색의 답변, 요약, 추천 답장에는 Pro가 필요합니다.";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "%@에 다시 표시하지 않음";
@@ -3095,7 +3086,7 @@
 "You declined" = "거절함";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "방금 전달했습니다. 답장을 기다리는 중입니다.";
+"You forwarded this just now. Waiting for their reply." = "방금 전달했습니다. 답장을 기다리는 중입니다.";
 
 /* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "%2$@의 최근 %1$lld개를 열지 않았습니다.";
@@ -3110,7 +3101,7 @@
 "You read %@'s email within a minute." = "%@의 메일을 1분 안에 읽습니다.";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "방금 답장했습니다. 답장을 기다리는 중입니다.";
+"You replied just now. Waiting for their reply." = "방금 답장했습니다. 답장을 기다리는 중입니다.";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "답장했습니다. 남은 일이 없습니다.";
@@ -3125,7 +3116,7 @@
 "You sent this. Nothing pending." = "내가 보냈습니다. 남은 일이 없습니다.";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "내가 시작한 대화입니다. 답장을 기다리는 중입니다.";
+"You started this conversation. Waiting for a reply." = "내가 시작한 대화입니다. 답장을 기다리는 중입니다.";
 
 /* No comment provided by engineer. */
 "You weren't in To or Cc on this email, so you were Bcc'd or it was forwarded to you. Replying to all lets everyone see you had it." = "이 메일의 받는 사람이나 참조에 없으므로 숨은 참조로 받았거나 전달받은 것입니다. 전체 답장하면 모두가 내가 받았다는 것을 알게 됩니다.";
@@ -3176,7 +3167,10 @@
 "Your iCloud address" = "iCloud 주소";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "메일은 저희 서버나 AI 회사로 가지 않습니다.";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Pro는 이 %@에서 메일을 읽습니다. 메일은 저희 서버나 AI 회사로 가지 않습니다.";
+
+/* No comment provided by engineer. */
+"All on this %@" = "모두 이 %@에서";
 
 /* No comment provided by engineer. */
 "Your mail is read on this %@" = "메일은 이 %@에서 읽습니다";
@@ -3203,7 +3197,7 @@
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "규칙이 지금은 Corres에서 실행됩니다. 허용하면 Corres를 닫아도 Gmail에서도 실행됩니다: %@.";
 
 /* No comment provided by engineer. */
-"Your sample conversations couldn't be opened." = "샘플 대화를 열 수 없습니다.";
+"Couldn't Open Sample Mail" = "샘플 메일을 열 수 없음";
 
 /* No comment provided by engineer. */
 "Your usual for %@" = "%@에 평소 쓰는 시간";
@@ -3244,7 +3238,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "Corres가 메일을 변경하려면 %@에 다시 로그인해야 합니다.";
 "%@ (%@ error %lld)" = "%@ (%@ 오류 %lld)";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres는 %@을(를) 읽을 수 있지만 변경할 권한이 없어 읽음 표시, 보관, 깃발 표시가 반영되지 않습니다. 다시 연결하고 요청하는 모든 권한을 허용하세요.";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "구입이 승인을 기다리고 있습니다. 승인되는 즉시 Corres Pro가 잠금 해제됩니다.";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "구입이 승인을 기다리고 있습니다. 승인되는 즉시 Corres Pro가 시작됩니다.";
 "The purchase didn't go through. Try again." = "구입이 완료되지 않았습니다. 다시 시도하세요.";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "코드 사용 화면을 열 수 없습니다. App Store의 계정 메뉴에서도 코드를 사용할 수 있습니다.";
 "No Corres Pro purchase was found for this Apple Account." = "이 Apple 계정에서 Corres Pro 구입 내역을 찾을 수 없습니다.";
@@ -3398,7 +3392,7 @@
 "Couldn't remember this unsubscribe. Try again." = "이 수신 거부를 기록할 수 없습니다. 다시 시도하세요.";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "메시지를 보낼 수 없습니다. 아무것도 보내지지 않았습니다. 다시 시도하세요.";
+"Your email wasn't sent. Try again." = "이메일이 전송되지 않았습니다. 다시 시도하세요.";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "이 대화를 업데이트할 수 없습니다. 다시 시도하세요.";
@@ -3557,13 +3551,10 @@
 "Your Brief" = "나의 브리핑";
 
 /* Daily Brief tip */
-"Today at a glance" = "오늘 한눈에 보기";
-
-/* Daily Brief tip */
 "See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings." = "나에게 필요 맨 위에서 마감, 오늘 일정, 배송을 확인하세요. 설정에서 변경할 수 있습니다.";
 
 /* Daily Brief tip */
-"Show Today's Brief" = "오늘의 브리핑 보기";
+"Show Daily Brief" = "데일리 브리핑 보기";
 
 /* No comment provided by engineer. */
 "%@ Morning" = "%@ 아침";
@@ -3596,7 +3587,7 @@
 "tomorrow at 9am" = "내일 오전 9시";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "“내일 저녁”이나 “다음 주 금요일”처럼 입력해 보세요";
+"Try “tomorrow evening” or “next Friday”" = "“내일 저녁”이나 “다음 주 금요일”처럼 입력해 보세요";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "언제인지 알 수 없어요";
@@ -3739,7 +3730,7 @@
 "Organized by %@" = "주최자: %@";
 
 /* No comment provided by engineer. */
-"Your mail couldn't be opened." = "메일을 열 수 없습니다.";
+"Try again. If it keeps happening, restart Corres." = "다시 시도하세요. 계속 이런 일이 생기면 Corres를 다시 시작하세요.";
 
 /* No comment provided by engineer. */
 "Get Corres Pro" = "Corres Pro 받기";
@@ -3763,7 +3754,7 @@
 "No new senders" = "새 보낸 사람 없음";
 
 /* No comment provided by engineer. */
-"One moment" = "잠시만 기다려 주세요";
+"Couldn't Open Mail" = "메일을 열 수 없음";
 
 /* No comment provided by engineer. */
 "No conversation selected" = "선택한 대화 없음";

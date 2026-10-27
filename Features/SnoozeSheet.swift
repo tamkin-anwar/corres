@@ -108,7 +108,7 @@ struct SnoozeSheet: View {
                 .autocorrectionDisabled()
                 .onSubmit { if let parsed { finish(parsed) } }
                 .onChange(of: phrase) { if !phrase.isEmpty { pickingDate = false } }
-            Text(parsed.map(Self.describe) ?? (phrase.isEmpty ? String(localized: "Try \u{201C}tomorrow evening\u{201D} or \u{201C}next friday\u{201D}")
+            Text(parsed.map(Self.describe) ?? (phrase.isEmpty ? String(localized: "Try \u{201C}tomorrow evening\u{201D} or \u{201C}next Friday\u{201D}")
                                                                  : String(localized: "Not sure when that is")))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(parsed == nil ? CorresPalette.tertiary : CorresPalette.accent)

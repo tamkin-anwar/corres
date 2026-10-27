@@ -81,7 +81,7 @@ private struct MacAccountsSettings: View {
                 Text("Accounts you add on your iPhone or iPad appear here on their own, through iCloud Keychain. Corres reads your mail straight from your provider on this Mac; our servers never receive it.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Section("Add an Account") {
+            Section("Add Account") {
                 HStack(spacing: 10) {
                     Button("Gmail") { Task { await auth.signIn(); services.accountsChanged() } }
                     Button("Outlook") { Task { await auth.signInOutlook(); services.accountsChanged() } }
@@ -417,7 +417,7 @@ private struct MacPlanSettings: View {
                     Text("Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro.")
                         .font(.caption).foregroundStyle(.secondary)
                 } else if !entitlements.isPro {
-                    Text("Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro.")
+                    Text("Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

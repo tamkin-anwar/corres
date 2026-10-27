@@ -5,7 +5,7 @@
 "CFBundleName" = "Corres";
 
 /* Privacy - Calendars Full Access Usage Description */
-"NSCalendarsFullAccessUsageDescription" = "頼んだときに、Corresはカレンダーを確認します。招待の時間が空いているか、空いている時間を聞かれたときに提案する時間、キャンセルされた予定の削除です。カレンダーはこのデバイスから出ません。";
+"NSCalendarsFullAccessUsageDescription" = "頼んだときに、Corresはカレンダーを確認して、招待の時間が空いているかを調べたり、空いている時間を提案したり、キャンセルされた予定を削除したりします。カレンダーはこのデバイスから出ません。";
 
 /* Privacy - Camera Usage Description */
 "NSCameraUsageDescription" = "Corresがカメラを使うのは、メールに添付する写真を撮るときや書類をスキャンするときだけです。";

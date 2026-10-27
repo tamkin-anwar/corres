@@ -70,7 +70,7 @@ struct PaywallView: View {
         VStack(spacing: 12) {
             CorrespondenceMark(glow: true).frame(width: 84, height: 84)
             Text("Corres Pro").font(CorresType.display)
-            Text("Everything that makes Corres Corres.")
+            Text("The parts of Corres that read your mail for you.")
                 .font(.system(.title3, design: .serif).italic())
                 .foregroundStyle(CorresPalette.secondary)
                 .multilineTextAlignment(.center)
@@ -90,7 +90,7 @@ struct PaywallView: View {
             benefit("sparkle", "Apple Intelligence, on this \(Device.name)", "Summaries, replies in your voice, rewrites, and answers from your mail in Search.")
             benefit("rectangle.stack", "Widgets and Apple Watch", "Needs You on your Home Screen, Lock Screen and Apple Watch.")
             #endif
-            benefit("lock", "Private by design", "Your mail is never sent to our servers or an AI company.")
+            benefit("lock", "All on this \(Device.name)", "Pro reads your mail on this \(Device.name). Your mail never goes to our servers or to an AI company.")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -159,7 +159,7 @@ struct PreferencesView: View {
                     Text("Intelligence")
                 } footer: {
                     Text(intelligence.isAvailable
-                         ? "Sorting, summaries, suggested replies and rewrites happen on this \(Device.name) with Apple Intelligence. Nothing goes to a server."
+                         ? "Sorting, summaries, suggested replies and rewrites happen on this \(Device.name) with Apple Intelligence. Your mail never goes to our servers or to an AI company."
                          : "Turn on Apple Intelligence in the Settings app for summaries, suggested replies and rewrites. Needs You still sorts your mail without it.")
                 }
                 Section {
@@ -267,7 +267,7 @@ struct PreferencesView: View {
             if entitlements.isPro && entitlements.plan == .none {
                 Text("Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro.")
             } else if !entitlements.isPro {
-                Text("Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro.")
+                Text("Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro.")
             }
         }
     }
@@ -1427,7 +1427,7 @@ private struct PrivacyView: View {
                 row("Corres never sees your account password", "key",
                     "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this \(Device.name)'s Keychain.")
                 row("Your mail is read on this \(Device.name)", Device.name == "iPad" ? "ipad" : "iphone",
-                    "Sorting, summaries, suggested replies and rewrites happen on this \(Device.name) with Apple Intelligence. Your mail never goes to Corres's servers or to an AI company.")
+                    "Sorting, summaries, suggested replies and rewrites happen on this \(Device.name) with Apple Intelligence. Your mail never goes to our servers or to an AI company.")
                 row("Trackers blocked", "shield.lefthalf.filled",
                     "Remote images, and the tracking pixels hidden in them, stay off until you choose to show them.")
                 row("No read receipts, ever", "eye.slash",

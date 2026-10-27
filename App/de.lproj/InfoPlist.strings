@@ -5,7 +5,7 @@
 "CFBundleName" = "Corres";
 
 /* Privacy - Calendars Full Access Usage Description */
-"NSCalendarsFullAccessUsageDescription" = "Wenn du es möchtest, prüft Corres deinen Kalender: ob du für eine Einladung frei bist, freie Zeiten, wenn dich jemand fragt, wann du Zeit hast, und das Entfernen abgesagter Termine. Dein Kalender bleibt auf diesem Gerät.";
+"NSCalendarsFullAccessUsageDescription" = "Wenn du es möchtest, prüft Corres deinen Kalender, um zu sehen, ob du für eine Einladung frei bist, freie Zeiten vorzuschlagen oder einen abgesagten Termin zu entfernen. Dein Kalender bleibt auf diesem Gerät.";
 
 /* Privacy - Camera Usage Description */
 "NSCameraUsageDescription" = "Corres verwendet die Kamera nur, wenn du ein Foto aufnimmst oder ein Dokument scannst, um es an eine E-Mail anzuhängen.";

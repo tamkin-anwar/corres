@@ -182,7 +182,7 @@
 "Social notification. Kept out of Needs You." = "社交通知。未放入“需要你”。";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "出现了只有你能解决的问题。";
+"A payment or account problem needs you." = "有付款或账户问题需要你处理。";
 
 /* No comment provided by engineer. */
 "Time-sensitive." = "有时效性。";
@@ -224,10 +224,10 @@
 "You asked. No reply yet." = "你提了问题，还没有回复。";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "你刚刚转发了邮件，正在等待回复。";
+"You forwarded this just now. Waiting for their reply." = "你刚刚转发了邮件，正在等待回复。";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "你刚刚回复了，正在等待对方回复。";
+"You replied just now. Waiting for their reply." = "你刚刚回复了，正在等待对方回复。";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "你已回复，没有待处理的事。";
@@ -239,7 +239,7 @@
 "You sent this. Nothing pending." = "这是你发出的，没有待处理的事。";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "这是你发起的对话，正在等待回复。";
+"You started this conversation. Waiting for a reply." = "这是你发起的对话，正在等待回复。";
 
 /* No comment provided by engineer. */
 "You're copied, not asked." = "你只是被抄送，没有被询问。";

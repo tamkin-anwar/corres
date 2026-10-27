@@ -5,7 +5,7 @@
 "CFBundleName" = "Corres";
 
 /* Privacy - Calendars Full Access Usage Description */
-"NSCalendarsFullAccessUsageDescription" = "Cuando lo pides, Corres consulta tu calendario: si estás libre para una invitación, horas libres que ofrecer cuando te preguntan cuándo puedes, y quitar un evento cancelado. Tu calendario se queda en este Mac.";
+"NSCalendarsFullAccessUsageDescription" = "Cuando lo pides, Corres consulta tu calendario para ver si estás libre para una invitación, sugerir horas libres o quitar un evento cancelado. Tu calendario se queda en este Mac.";
 
 /* Privacy - Calendars Write Only Usage Description */
 "NSCalendarsWriteOnlyAccessUsageDescription" = "Corres añade a tu calendario las invitaciones que aceptas cuando se lo pides.";

@@ -182,7 +182,7 @@
 "Social notification. Kept out of Needs You." = "ソーシャルの通知です。「要対応」には入れません。";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "あなたにしか直せない失敗が起きています。";
+"A payment or account problem needs you." = "支払いまたはアカウントの問題で、対応が必要です。";
 
 /* No comment provided by engineer. */
 "Time-sensitive." = "時間厳守です。";
@@ -224,10 +224,10 @@
 "You asked. No reply yet." = "あなたが質問しました。まだ返信はありません。";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "さきほど転送しました。返信を待っています。";
+"You forwarded this just now. Waiting for their reply." = "さきほど転送しました。返信を待っています。";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "さきほど返信しました。返信を待っています。";
+"You replied just now. Waiting for their reply." = "さきほど返信しました。返信を待っています。";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "返信済みです。保留中のことはありません。";
@@ -239,7 +239,7 @@
 "You sent this. Nothing pending." = "あなたが送信しました。保留中のことはありません。";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "あなたが始めた会話です。返信を待っています。";
+"You started this conversation. Waiting for a reply." = "あなたが始めた会話です。返信を待っています。";
 
 /* No comment provided by engineer. */
 "You're copied, not asked." = "CCで受け取っただけで、質問はありません。";

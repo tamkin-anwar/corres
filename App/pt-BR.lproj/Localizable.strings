@@ -257,7 +257,7 @@
 "Add %@ to VIPs" = "Adicionar %@ aos VIPs";
 
 /* No comment provided by engineer. */
-"Add a Subject" = "Adicionar assunto";
+"Add Subject" = "Adicionar assunto";
 
 /* No comment provided by engineer. */
 "Add Account" = "Adicionar conta";
@@ -956,7 +956,7 @@
 "Email from %@" = "E-mail de %@";
 
 /* No comment provided by engineer. */
-"Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "E-mails que pedem algo a você, classificados neste %@. Terminou com um? Deslize ou toque em Resolvido: ele sai desta lista, continua em E-mail e espera em Caixas → Resolvido. Classificou errado? Mantenha pressionado para mover.";
+"Email that asks something of you, sorted on this %@. When you're done with one, swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. If one doesn't belong, press and hold to move it." = "E-mails que pedem algo a você, classificados neste %@. Quando terminar com um, deslize ou toque em Resolvido: ele sai desta lista, continua em E-mail e espera em Caixas → Resolvido. Se algum não for daqui, mantenha pressionado para mover.";
 
 /* No comment provided by engineer. */
 "Email Toolbar" = "Barra do e-mail";
@@ -977,7 +977,7 @@
 "Enter your address and Corres finds your mail server for you." = "Digite seu endereço e o Corres encontra seu servidor de e-mail.";
 
 /* No comment provided by engineer. */
-"Every account in one inbox, newest first. New senders wait for your OK first." = "Todas as contas em uma caixa, os mais novos primeiro. Novos remetentes esperam o seu OK.";
+"Every account in one inbox, newest first. First emails from new senders are marked New." = "Todas as contas em uma caixa, os mais novos primeiro. Os primeiros e-mails de novos remetentes são marcados como novos.";
 
 /* No comment provided by engineer. */
 "Every account shares All Inboxes, newest first, each marked with its color. Switch to one account by tapping your photo." = "Todas as contas compartilham Todas as caixas, os mais novos primeiro, cada um marcado com sua cor. Mude para uma conta tocando na sua foto.";
@@ -1025,7 +1025,7 @@
 "Everything from people: every email from a person, including ones you're copied on." = "Tudo de pessoas: todo e-mail de uma pessoa, incluindo aqueles em que você está em cópia.";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "Tudo o que faz o Corres ser o Corres.";
+"The parts of Corres that read your mail for you." = "As partes do Corres que leem seus e-mails por você.";
 
 /* No comment provided by engineer. */
 "Explore Corres" = "Explorar o Corres";
@@ -1313,9 +1313,6 @@
 "Just This Email" = "Só este e-mail";
 
 /* No comment provided by engineer. */
-"Just What's Unread" = "Só o que não foi lido";
-
-/* No comment provided by engineer. */
 "Keep Editing" = "Continuar editando";
 
 /* No comment provided by engineer. */
@@ -1371,9 +1368,6 @@
 
 /* No comment provided by engineer. */
 "Loading older mail…" = "Carregando e-mails anteriores…";
-
-/* No comment provided by engineer. */
-"Loading the full message…" = "Carregando a mensagem completa…";
 
 /* No comment provided by engineer. */
 "Long Swipe" = "Deslize longo";
@@ -2087,7 +2081,7 @@
 "Port" = "Porta";
 
 /* No comment provided by engineer. */
-"Preparing your space" = "Preparando seu espaço";
+"Loading your mail" = "Carregando seus e-mails";
 
 /* No comment provided by engineer. */
 "Press and hold for Reply All and Forward" = "Mantenha pressionado para Responder a todos e Encaminhar";
@@ -2564,7 +2558,7 @@
 "Someone's first email waits in New Senders until you allow them. These still notify, marked “New sender”, and you can allow or block them right from the email. Blocked senders never notify." = "O primeiro e-mail de alguém espera em Novos remetentes até você permitir. Eles ainda notificam, marcados como “Novo remetente”, e você pode permitir ou bloquear direto pelo e-mail. Remetentes bloqueados nunca notificam.";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "Algo falhou que só você pode resolver.";
+"A payment or account problem needs you." = "Um problema de pagamento ou de conta precisa de você.";
 
 /* No comment provided by engineer. */
 "soon" = "em breve";
@@ -2579,13 +2573,10 @@
 "Sorting" = "Classificação";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this %@. Corres doesn't send your mail to its own servers or to an AI service." = "A classificação, os resumos e os rascunhos acontecem neste %@. O Corres não envia seus e-mails para os próprios servidores nem para um serviço de IA.";
+"Sorting, summaries and drafts run on this %@. Your mail never goes to our servers or to an AI company." = "A classificação, os resumos e os rascunhos acontecem neste %@. Seus e-mails nunca vão para nossos servidores nem para uma empresa de IA.";
 
 /* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Nothing goes to a server." = "A classificação, os resumos, as respostas sugeridas e as reescritas acontecem neste %@ com a Apple Intelligence. Nada vai para um servidor.";
-
-/* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to Corres's servers or to an AI company." = "A classificação, os resumos, as respostas sugeridas e as reescritas acontecem neste %@ com a Apple Intelligence. Seus e-mails nunca vão para os servidores do Corres nem para uma empresa de IA.";
+"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to our servers or to an AI company." = "A classificação, os resumos, as respostas sugeridas e as reescritas acontecem neste %@ com a Apple Intelligence. Seus e-mails nunca vão para nossos servidores nem para uma empresa de IA.";
 
 /* No comment provided by engineer. */
 "Sources" = "Fontes";
@@ -3047,7 +3038,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "Enquanto estiver ativada, %@ responde aos e-mails novos com sua mensagem e envia mesmo com este %@ desligado.";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "Para quem vai? Adicione alguém primeiro.";
+"Add a recipient, then try again." = "Adicione um destinatário e tente novamente.";
 
 /* No comment provided by engineer. */
 "Widgets and Apple Watch" = "Widgets e Apple Watch";
@@ -3056,7 +3047,7 @@
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "Com marcar como lido desativado, uma conversa continua não lida até você deslizar ou escolher Marcar como lido. Os links abrem no Corres com o Leitor do Safari e bloqueadores de conteúdo, ou no seu navegador padrão.";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Sem o Pro, o E-mail continua funcionando: ler, responder, arquivar e buscar. Precisa de Você, Aguardando, respostas na busca e a inteligência no dispositivo precisam do Pro.";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Sem o Pro, o E-mail continua funcionando: ler, responder, arquivar e buscar. Precisa de Você, Aguardando, respostas na busca, resumos e respostas sugeridas precisam do Pro.";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "Não sinalizar mais %@";
@@ -3095,7 +3086,7 @@
 "You declined" = "Você recusou";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "Você acabou de encaminhar. Aguardando resposta.";
+"You forwarded this just now. Waiting for their reply." = "Você acabou de encaminhar. Aguardando resposta.";
 
 /* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "Você não abriu os últimos %lld de %@.";
@@ -3110,7 +3101,7 @@
 "You read %@'s email within a minute." = "Você lê os e-mails de %@ em até um minuto.";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "Você acabou de responder. Aguardando resposta.";
+"You replied just now. Waiting for their reply." = "Você acabou de responder. Aguardando resposta.";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "Você respondeu. Nada pendente.";
@@ -3125,7 +3116,7 @@
 "You sent this. Nothing pending." = "Você enviou isto. Nada pendente.";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "Você começou esta conversa. Aguardando resposta.";
+"You started this conversation. Waiting for a reply." = "Você começou esta conversa. Aguardando resposta.";
 
 /* No comment provided by engineer. */
 "You weren't in To or Cc on this email, so you were Bcc'd or it was forwarded to you. Replying to all lets everyone see you had it." = "Você não estava em Para nem em Cc deste e-mail, então recebeu em Cco ou encaminhado. Responder a todos mostra a todos que você o recebeu.";
@@ -3176,7 +3167,10 @@
 "Your iCloud address" = "Seu endereço do iCloud";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "Seus e-mails nunca vão para nossos servidores nem para uma empresa de IA.";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "O Pro lê seus e-mails neste %@. Seus e-mails nunca vão para nossos servidores nem para uma empresa de IA.";
+
+/* No comment provided by engineer. */
+"All on this %@" = "Tudo neste %@";
 
 /* No comment provided by engineer. */
 "Your mail is read on this %@" = "Seus e-mails são lidos neste %@";
@@ -3203,7 +3197,7 @@
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "Suas regras funcionam no Corres agora. Permita isso e o Gmail também as aplica, mesmo com o Corres fechado: %@.";
 
 /* No comment provided by engineer. */
-"Your sample conversations couldn't be opened." = "Não foi possível abrir suas conversas de exemplo.";
+"Couldn't Open Sample Mail" = "Não foi possível abrir os e-mails de exemplo";
 
 /* No comment provided by engineer. */
 "Your usual for %@" = "Seu costume para %@";
@@ -3244,7 +3238,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "%@ precisa entrar novamente para que o Corres possa alterar os e-mails.";
 "%@ (%@ error %lld)" = "%@ (erro do %@ %lld)";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "O Corres consegue ler %@, mas não tem permissão para alterá-la, então marcar como lido, arquivar e sinalizar não funcionam. Reconecte a conta e permita todas as permissões pedidas.";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "Sua compra está aguardando aprovação. O Corres Pro é liberado assim que ela for aprovada.";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "Sua compra está aguardando aprovação. O Corres Pro começa assim que ela for aprovada.";
 "The purchase didn't go through. Try again." = "A compra não foi concluída. Tente novamente.";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "Não foi possível abrir a tela de resgate de código. Você também pode resgatar na App Store, na sua conta.";
 "No Corres Pro purchase was found for this Apple Account." = "Nenhuma compra do Corres Pro foi encontrada para esta Conta Apple.";
@@ -3398,7 +3392,7 @@
 "Couldn't remember this unsubscribe. Try again." = "Não foi possível registrar este descadastro. Tente novamente.";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "Não foi possível enviar sua mensagem. Nada foi enviado. Tente novamente.";
+"Your email wasn't sent. Try again." = "Seu e-mail não foi enviado. Tente novamente.";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "Não foi possível atualizar esta conversa. Tente novamente.";
@@ -3557,13 +3551,10 @@
 "Your Brief" = "Seu resumo";
 
 /* Daily Brief tip */
-"Today at a glance" = "Seu dia num relance";
-
-/* Daily Brief tip */
 "See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings." = "Veja o que vence, as reuniões e entregas de hoje no topo de Precisa de Você. Você pode mudar isso nos Ajustes.";
 
 /* Daily Brief tip */
-"Show Today's Brief" = "Mostrar o resumo de hoje";
+"Show Daily Brief" = "Mostrar o resumo diário";
 
 /* No comment provided by engineer. */
 "%@ Morning" = "%@ de manhã";
@@ -3596,7 +3587,7 @@
 "tomorrow at 9am" = "amanhã às 9h";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "Tente “amanhã à noite” ou “próxima sexta”";
+"Try “tomorrow evening” or “next Friday”" = "Tente “amanhã à noite” ou “próxima sexta”";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "Não deu para entender quando";
@@ -3739,7 +3730,7 @@
 "Organized by %@" = "Organizado por %@";
 
 /* No comment provided by engineer. */
-"Your mail couldn't be opened." = "Não foi possível abrir seus e-mails.";
+"Try again. If it keeps happening, restart Corres." = "Tente novamente. Se continuar acontecendo, reinicie o Corres.";
 
 /* No comment provided by engineer. */
 "Get Corres Pro" = "Obter o Corres Pro";
@@ -3763,7 +3754,7 @@
 "No new senders" = "Nenhum remetente novo";
 
 /* No comment provided by engineer. */
-"One moment" = "Um momento";
+"Couldn't Open Mail" = "Não foi possível abrir os e-mails";
 
 /* No comment provided by engineer. */
 "No conversation selected" = "Nenhuma conversa selecionada";

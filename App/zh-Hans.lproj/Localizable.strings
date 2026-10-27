@@ -257,7 +257,7 @@
 "Add %@ to VIPs" = "将 %@ 添加到 VIP";
 
 /* No comment provided by engineer. */
-"Add a Subject" = "添加主题";
+"Add Subject" = "添加主题";
 
 /* No comment provided by engineer. */
 "Add Account" = "添加账户";
@@ -956,7 +956,7 @@
 "Email from %@" = "来自%@的邮件";
 
 /* No comment provided by engineer. */
-"Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "需要你回应的邮件，在这台%@上分类。处理完了？轻扫或轻点“已处理”：它会离开此列表，仍保留在“邮件”中，并在“邮箱”→“已处理”里等着。分错了？按住即可移动。";
+"Email that asks something of you, sorted on this %@. When you're done with one, swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. If one doesn't belong, press and hold to move it." = "需要你回应的邮件，在这台%@上分类。处理完一封后，轻扫或轻点“已处理”：它会离开此列表，仍保留在“邮件”中，并在“邮箱”→“已处理”里等着。如果某封不该在这里，按住即可移动。";
 
 /* No comment provided by engineer. */
 "Email Toolbar" = "邮件工具栏";
@@ -977,7 +977,7 @@
 "Enter your address and Corres finds your mail server for you." = "输入你的地址，Corres 会帮你找到邮件服务器。";
 
 /* No comment provided by engineer. */
-"Every account in one inbox, newest first. New senders wait for your OK first." = "所有账户汇集在一个收件箱，最新的在前。新发件人会等待你同意。";
+"Every account in one inbox, newest first. First emails from new senders are marked New." = "所有账户汇集在一个收件箱，最新的在前。新发件人的首封邮件会标为“新”。";
 
 /* No comment provided by engineer. */
 "Every account shares All Inboxes, newest first, each marked with its color. Switch to one account by tapping your photo." = "所有账户共享“所有收件箱”，最新的在前，并以各自的颜色标记。轻点你的照片可切换到单个账户。";
@@ -1025,7 +1025,7 @@
 "Everything from people: every email from a person, including ones you're copied on." = "来自个人的所有邮件：每封来自真人的邮件，包括你被抄送的邮件。";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "让 Corres 成为 Corres 的一切。";
+"The parts of Corres that read your mail for you." = "Corres 中替你阅读邮件的那些功能。";
 
 /* No comment provided by engineer. */
 "Explore Corres" = "探索 Corres";
@@ -1313,9 +1313,6 @@
 "Just This Email" = "仅这封邮件";
 
 /* No comment provided by engineer. */
-"Just What's Unread" = "只看未读";
-
-/* No comment provided by engineer. */
 "Keep Editing" = "继续编辑";
 
 /* No comment provided by engineer. */
@@ -1371,9 +1368,6 @@
 
 /* No comment provided by engineer. */
 "Loading older mail…" = "正在载入更早的邮件…";
-
-/* No comment provided by engineer. */
-"Loading the full message…" = "正在载入完整邮件…";
 
 /* No comment provided by engineer. */
 "Long Swipe" = "长扫";
@@ -2087,7 +2081,7 @@
 "Port" = "端口";
 
 /* No comment provided by engineer. */
-"Preparing your space" = "正在准备";
+"Loading your mail" = "正在载入你的邮件";
 
 /* No comment provided by engineer. */
 "Press and hold for Reply All and Forward" = "按住可全部回复和转发";
@@ -2564,7 +2558,7 @@
 "Someone's first email waits in New Senders until you allow them. These still notify, marked “New sender”, and you can allow or block them right from the email. Blocked senders never notify." = "某人的第一封邮件会在“新发件人”中等待，直到你允许。这些邮件仍会通知，并标为“新发件人”，你可以直接在邮件中允许或屏蔽对方。被屏蔽的发件人从不通知。";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "出现了只有你能解决的问题。";
+"A payment or account problem needs you." = "有付款或账户问题需要你处理。";
 
 /* No comment provided by engineer. */
 "soon" = "即将";
@@ -2579,13 +2573,10 @@
 "Sorting" = "分类";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this %@. Corres doesn't send your mail to its own servers or to an AI service." = "分类、摘要和草稿都在这台%@上完成。Corres 不会把你的邮件发送到自己的服务器或 AI 服务。";
+"Sorting, summaries and drafts run on this %@. Your mail never goes to our servers or to an AI company." = "分类、摘要和草稿都在这台%@上完成。你的邮件绝不会发送到我们的服务器或 AI 公司。";
 
 /* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Nothing goes to a server." = "分类、摘要、建议回复和改写都由 Apple 智能在这台%@上完成。不会发送任何内容到服务器。";
-
-/* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to Corres's servers or to an AI company." = "分类、摘要、建议回复和改写都由 Apple 智能在这台%@上完成。你的邮件绝不会发送到 Corres 的服务器或 AI 公司。";
+"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to our servers or to an AI company." = "分类、摘要、建议回复和改写都由 Apple 智能在这台%@上完成。你的邮件绝不会发送到我们的服务器或 AI 公司。";
 
 /* No comment provided by engineer. */
 "Sources" = "来源";
@@ -3047,7 +3038,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "开启期间，%@ 会用你的消息回复新邮件，即使这台%@关机也会发送。";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "要发给谁？请先添加收件人。";
+"Add a recipient, then try again." = "请添加收件人，然后再试一次。";
 
 /* No comment provided by engineer. */
 "Widgets and Apple Watch" = "小组件和 Apple Watch";
@@ -3056,7 +3047,7 @@
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "关闭“打开时标记为已读”后，对话会保持未读，直到你轻扫或选择“标记为已读”。链接会在 Corres 中以 Safari 阅读器和内容拦截器打开，或在你的默认浏览器中打开。";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "没有 Pro，“邮件”仍可正常使用：阅读、回复、归档和搜索。“需要你”、“等待中”、搜索中的回答以及设备端智能需要 Pro。";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "没有 Pro，“邮件”仍可正常使用：阅读、回复、归档和搜索。“需要你”、“等待中”、搜索中的回答、摘要和建议回复需要 Pro。";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "不再标记%@";
@@ -3095,7 +3086,7 @@
 "You declined" = "你已拒绝";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "你刚刚转发了邮件，正在等待回复。";
+"You forwarded this just now. Waiting for their reply." = "你刚刚转发了邮件，正在等待回复。";
 
 /* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "你还没有打开 %2$@ 最近的 %1$lld 封邮件。";
@@ -3110,7 +3101,7 @@
 "You read %@'s email within a minute." = "你会在一分钟内阅读 %@ 的邮件。";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "你刚刚回复了，正在等待对方回复。";
+"You replied just now. Waiting for their reply." = "你刚刚回复了，正在等待对方回复。";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "你已回复，没有待处理的事。";
@@ -3125,7 +3116,7 @@
 "You sent this. Nothing pending." = "这是你发出的，没有待处理的事。";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "这是你发起的对话，正在等待回复。";
+"You started this conversation. Waiting for a reply." = "这是你发起的对话，正在等待回复。";
 
 /* No comment provided by engineer. */
 "You weren't in To or Cc on this email, so you were Bcc'd or it was forwarded to you. Replying to all lets everyone see you had it." = "你不在这封邮件的收件人或抄送中，所以你是被密送或收到了转发。全部回复会让所有人看到你收到过这封邮件。";
@@ -3176,7 +3167,10 @@
 "Your iCloud address" = "你的 iCloud 地址";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "你的邮件绝不会发送到我们的服务器或 AI 公司。";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Pro 在这台%@上读取你的邮件。你的邮件绝不会发送到我们的服务器或 AI 公司。";
+
+/* No comment provided by engineer. */
+"All on this %@" = "全部在这台%@上";
 
 /* No comment provided by engineer. */
 "Your mail is read on this %@" = "你的邮件在这台%@上读取";
@@ -3203,7 +3197,7 @@
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "你的规则现在在 Corres 中运行。允许后，即使关闭 Corres，Gmail 也会运行它们：%@。";
 
 /* No comment provided by engineer. */
-"Your sample conversations couldn't be opened." = "无法打开你的示例对话。";
+"Couldn't Open Sample Mail" = "无法打开示例邮件";
 
 /* No comment provided by engineer. */
 "Your usual for %@" = "你对%@的常用时间";
@@ -3244,7 +3238,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "%@ 需要重新登录，Corres 才能更改其邮件。";
 "%@ (%@ error %lld)" = "%@（%@ 错误 %lld）";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres 可以读取 %@，但没有更改它的权限，因此标为已读、归档和旗标都无法生效。请重新连接，并允许它请求的所有权限。";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "你的购买正在等待批准。一经批准，Corres Pro 即会解锁。";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "你的购买正在等待批准。批准后 Corres Pro 会立即开始。";
 "The purchase didn't go through. Try again." = "购买未完成。请重试。";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "无法打开兑换代码页面。你也可以在 App Store 的账户页面中兑换。";
 "No Corres Pro purchase was found for this Apple Account." = "未找到此 Apple 账户的 Corres Pro 购买记录。";
@@ -3398,7 +3392,7 @@
 "Couldn't remember this unsubscribe. Try again." = "无法记录此次退订。请重试。";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "无法发送你的邮件。未发送任何内容。请重试。";
+"Your email wasn't sent. Try again." = "你的邮件未发送。请重试。";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "无法更新此对话。请重试。";
@@ -3557,13 +3551,10 @@
 "Your Brief" = "你的简报";
 
 /* Daily Brief tip */
-"Today at a glance" = "今天一目了然";
-
-/* Daily Brief tip */
 "See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings." = "在“需要你”顶部查看到期事项、今天的会议和快递。你可以在设置中更改。";
 
 /* Daily Brief tip */
-"Show Today's Brief" = "显示今天的简报";
+"Show Daily Brief" = "显示每日简报";
 
 /* No comment provided by engineer. */
 "%@ Morning" = "%@早上";
@@ -3596,7 +3587,7 @@
 "tomorrow at 9am" = "明天上午9点";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "试试“明天晚上”或“下周五”";
+"Try “tomorrow evening” or “next Friday”" = "试试“明天晚上”或“下周五”";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "无法识别这个时间";
@@ -3739,7 +3730,7 @@
 "Organized by %@" = "组织者：%@";
 
 /* No comment provided by engineer. */
-"Your mail couldn't be opened." = "无法打开你的邮件。";
+"Try again. If it keeps happening, restart Corres." = "请再试一次。如果问题持续出现，请重新启动 Corres。";
 
 /* No comment provided by engineer. */
 "Get Corres Pro" = "获取 Corres Pro";
@@ -3763,7 +3754,7 @@
 "No new senders" = "没有新发件人";
 
 /* No comment provided by engineer. */
-"One moment" = "请稍候";
+"Couldn't Open Mail" = "无法打开邮件";
 
 /* No comment provided by engineer. */
 "No conversation selected" = "未选择对话";

@@ -212,7 +212,7 @@ final class EntitlementStore {
                 if case .verified(let transaction) = verification { await transaction.finish() }
                 await refresh()
             case .pending:
-                errorMessage = String(localized: "Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved.")
+                errorMessage = String(localized: "Your purchase is waiting for approval. Corres Pro starts as soon as it's approved.")
             case .userCancelled:
                 break
             @unknown default:

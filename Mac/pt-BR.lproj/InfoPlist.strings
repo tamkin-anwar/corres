@@ -5,7 +5,7 @@
 "CFBundleName" = "Corres";
 
 /* Privacy - Calendars Full Access Usage Description */
-"NSCalendarsFullAccessUsageDescription" = "Quando você pede, o Corres verifica seu calendário: se você está livre para um convite, horários livres para oferecer quando perguntam quando você pode, e a remoção de um evento cancelado. Seu calendário fica neste Mac.";
+"NSCalendarsFullAccessUsageDescription" = "Quando você pede, o Corres verifica seu calendário para ver se você está livre para um convite, sugerir horários livres ou remover um evento cancelado. Seu calendário fica neste Mac.";
 
 /* Privacy - Calendars Write Only Usage Description */
 "NSCalendarsWriteOnlyAccessUsageDescription" = "O Corres adiciona ao seu calendário os convites que você aceita, quando você pede.";

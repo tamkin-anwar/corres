@@ -5,7 +5,7 @@
 "CFBundleName" = "Corres";
 
 /* Privacy - Calendars Full Access Usage Description */
-"NSCalendarsFullAccessUsageDescription" = "요청하면 Corres가 캘린더를 확인합니다. 초대 시간에 비어 있는지, 언제 시간이 되는지 물을 때 제안할 빈 시간, 취소된 일정 삭제입니다. 캘린더는 이 Mac에만 머뭅니다.";
+"NSCalendarsFullAccessUsageDescription" = "요청하면 Corres가 캘린더를 확인해 초대 시간에 비어 있는지 보고, 빈 시간을 제안하거나, 취소된 일정을 삭제합니다. 캘린더는 이 Mac에만 머뭅니다.";
 
 /* Privacy - Calendars Write Only Usage Description */
 "NSCalendarsWriteOnlyAccessUsageDescription" = "요청하면 Corres가 수락한 초대를 캘린더에 추가합니다.";

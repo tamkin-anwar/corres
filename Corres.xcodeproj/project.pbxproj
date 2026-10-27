@@ -2533,7 +2533,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Corres;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "When you ask, Corres checks your calendar: whether you're free for an invitation, open times to offer when someone asks when you're free, and taking off a canceled event. Your calendar stays on this device.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "When you ask, Corres checks your calendar to see if you're free for an invitation, suggest open times, or remove a canceled event. Your calendar stays on this device.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Corres uses the camera only when you take a photo or scan a document to attach to an email.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Corres suggests people from your Contacts as you address an email and shows their photos beside their mail. Your contacts stay on this device.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Corres uses the microphone only while you dictate an email. Speech is transcribed on this device.";
@@ -2638,7 +2638,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Corres Debug";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "When you ask, Corres checks your calendar: whether you're free for an invitation, open times to offer when someone asks when you're free, and taking off a canceled event. Your calendar stays on this Mac.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "When you ask, Corres checks your calendar to see if you're free for an invitation, suggest open times, or remove a canceled event. Your calendar stays on this Mac.";
 				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "Corres adds the invitations you accept to your calendar when you ask it to.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Corres suggests people from your Contacts as you address an email and shows their photos beside their mail. Your contacts stay on this Mac.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Anwar Creative Studio";
@@ -2736,7 +2736,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Corres;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "When you ask, Corres checks your calendar: whether you're free for an invitation, open times to offer when someone asks when you're free, and taking off a canceled event. Your calendar stays on this device.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "When you ask, Corres checks your calendar to see if you're free for an invitation, suggest open times, or remove a canceled event. Your calendar stays on this device.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Corres uses the camera only when you take a photo or scan a document to attach to an email.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Corres suggests people from your Contacts as you address an email and shows their photos beside their mail. Your contacts stay on this device.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Corres uses the microphone only while you dictate an email. Speech is transcribed on this device.";
@@ -2773,7 +2773,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Corres;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "When you ask, Corres checks your calendar: whether you're free for an invitation, open times to offer when someone asks when you're free, and taking off a canceled event. Your calendar stays on this Mac.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "When you ask, Corres checks your calendar to see if you're free for an invitation, suggest open times, or remove a canceled event. Your calendar stays on this Mac.";
 				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "Corres adds the invitations you accept to your calendar when you ask it to.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Corres suggests people from your Contacts as you address an email and shows their photos beside their mail. Your contacts stay on this Mac.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Anwar Creative Studio";

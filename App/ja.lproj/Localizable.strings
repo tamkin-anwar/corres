@@ -257,7 +257,7 @@
 "Add %@ to VIPs" = "%@をVIPに追加";
 
 /* No comment provided by engineer. */
-"Add a Subject" = "件名を追加";
+"Add Subject" = "件名を追加";
 
 /* No comment provided by engineer. */
 "Add Account" = "アカウントを追加";
@@ -956,7 +956,7 @@
 "Email from %@" = "%@からのメール";
 
 /* No comment provided by engineer. */
-"Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "あなたに何かを求めるメールを、この%@上で振り分けます。済んだらスワイプするか「対応済み」をタップ。このリストから外れ、メールには残り、「メールボックス」→「対応済み」に入ります。違っていたら長押しで移動できます。";
+"Email that asks something of you, sorted on this %@. When you're done with one, swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. If one doesn't belong, press and hold to move it." = "あなたに何かを求めるメールを、この%@上で振り分けます。済んだらスワイプするか「対応済み」をタップ。このリストから外れ、メールには残り、「メールボックス」→「対応済み」に入ります。ここに合わないメールは、長押しで移動できます。";
 
 /* No comment provided by engineer. */
 "Email Toolbar" = "メールのツールバー";
@@ -977,7 +977,7 @@
 "Enter your address and Corres finds your mail server for you." = "アドレスを入力すると、Corresがメールサーバを見つけます。";
 
 /* No comment provided by engineer. */
-"Every account in one inbox, newest first. New senders wait for your OK first." = "すべてのアカウントを1つの受信ボックスに、新しい順で。新しい差出人はあなたの許可を待ちます。";
+"Every account in one inbox, newest first. First emails from new senders are marked New." = "すべてのアカウントを1つの受信ボックスに、新しい順で。新しい差出人からの最初のメールには「新規」と表示されます。";
 
 /* No comment provided by engineer. */
 "Every account shares All Inboxes, newest first, each marked with its color. Switch to one account by tapping your photo." = "すべてのアカウントが「すべての受信ボックス」を共有し、新しい順に、それぞれの色付きで表示されます。写真をタップすると1つのアカウントに切り替えられます。";
@@ -1025,7 +1025,7 @@
 "Everything from people: every email from a person, including ones you're copied on." = "人からのすべて：人からのメールすべて。CCで受け取ったものも含みます。";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "Corresらしさのすべて。";
+"The parts of Corres that read your mail for you." = "あなたの代わりにメールを読む、Corresの機能。";
 
 /* No comment provided by engineer. */
 "Explore Corres" = "Corresを見てみる";
@@ -1313,9 +1313,6 @@
 "Just This Email" = "このメールだけ";
 
 /* No comment provided by engineer. */
-"Just What's Unread" = "未読だけを表示";
-
-/* No comment provided by engineer. */
 "Keep Editing" = "編集を続ける";
 
 /* No comment provided by engineer. */
@@ -1371,9 +1368,6 @@
 
 /* No comment provided by engineer. */
 "Loading older mail…" = "以前のメールを読み込み中…";
-
-/* No comment provided by engineer. */
-"Loading the full message…" = "メッセージ全体を読み込み中…";
 
 /* No comment provided by engineer. */
 "Long Swipe" = "長いスワイプ";
@@ -2087,7 +2081,7 @@
 "Port" = "ポート";
 
 /* No comment provided by engineer. */
-"Preparing your space" = "準備しています";
+"Loading your mail" = "メールを読み込んでいます";
 
 /* No comment provided by engineer. */
 "Press and hold for Reply All and Forward" = "長押しで全員に返信と転送";
@@ -2564,7 +2558,7 @@
 "Someone's first email waits in New Senders until you allow them. These still notify, marked “New sender”, and you can allow or block them right from the email. Blocked senders never notify." = "初めてのメールは許可するまで「新しい差出人」で待機します。「新しい差出人」の印付きで通知され、メールから直接許可やブロックができます。ブロックした差出人は通知されません。";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "あなたにしか直せない失敗が起きています。";
+"A payment or account problem needs you." = "支払いまたはアカウントの問題で、対応が必要です。";
 
 /* No comment provided by engineer. */
 "soon" = "まもなく";
@@ -2579,13 +2573,10 @@
 "Sorting" = "振り分け";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this %@. Corres doesn't send your mail to its own servers or to an AI service." = "振り分け、概要、下書きはこの%@上で実行されます。Corresがあなたのメールを自社のサーバやAIサービスに送ることはありません。";
+"Sorting, summaries and drafts run on this %@. Your mail never goes to our servers or to an AI company." = "振り分け、概要、下書きはこの%@上で実行されます。メールが私たちのサーバやAI企業に送られることはありません。";
 
 /* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Nothing goes to a server." = "振り分け、概要、返信の候補、書き直しは、Apple Intelligenceによりこの%@上で行われます。サーバには何も送られません。";
-
-/* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to Corres's servers or to an AI company." = "振り分け、概要、返信の候補、書き直しは、Apple Intelligenceによりこの%@上で行われます。メールがCorresのサーバやAI企業に送られることはありません。";
+"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to our servers or to an AI company." = "振り分け、概要、返信の候補、書き直しは、Apple Intelligenceによりこの%@上で行われます。メールが私たちのサーバやAI企業に送られることはありません。";
 
 /* No comment provided by engineer. */
 "Sources" = "情報源";
@@ -3047,7 +3038,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "オンの間、%@は新しいメールにあなたのメッセージで返信します。この%@の電源が切れていても送信されます。";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "宛先がありません。先に宛先を追加してください。";
+"Add a recipient, then try again." = "宛先を追加してから、もう一度お試しください。";
 
 /* No comment provided by engineer. */
 "Widgets and Apple Watch" = "ウィジェットとApple Watch";
@@ -3056,7 +3047,7 @@
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "開いても開封済みにしない設定では、スワイプするか「開封済みにする」を選ぶまで未開封のままです。リンクはSafariのリーダーとコンテンツブロッカー付きでCorres内で開くか、デフォルトのブラウザで開きます。";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Proがなくても、メールの閲覧、返信、アーカイブ、検索は使えます。「要対応」「返信待ち」、検索での回答、デバイス上のインテリジェンスにはProが必要です。";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Proがなくても、メールの閲覧、返信、アーカイブ、検索は使えます。「要対応」「返信待ち」、検索での回答、概要、返信の候補にはProが必要です。";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "今後%@に印を付けません";
@@ -3095,7 +3086,7 @@
 "You declined" = "辞退済み";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "さきほど転送しました。返信を待っています。";
+"You forwarded this just now. Waiting for their reply." = "さきほど転送しました。返信を待っています。";
 
 /* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "%2$@からの直近%1$lld件を開いていません。";
@@ -3110,7 +3101,7 @@
 "You read %@'s email within a minute." = "%@のメールを1分以内に読んでいます。";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "さきほど返信しました。返信を待っています。";
+"You replied just now. Waiting for their reply." = "さきほど返信しました。返信を待っています。";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "返信済みです。保留中のことはありません。";
@@ -3125,7 +3116,7 @@
 "You sent this. Nothing pending." = "あなたが送信しました。保留中のことはありません。";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "あなたが始めた会話です。返信を待っています。";
+"You started this conversation. Waiting for a reply." = "あなたが始めた会話です。返信を待っています。";
 
 /* No comment provided by engineer. */
 "You weren't in To or Cc on this email, so you were Bcc'd or it was forwarded to you. Replying to all lets everyone see you had it." = "あなたはこのメールの宛先にもCCにも入っていないため、BCCで受け取ったか転送されたものです。全員に返信すると、あなたが受け取っていたことが皆にわかります。";
@@ -3176,7 +3167,10 @@
 "Your iCloud address" = "iCloudアドレス";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "メールが私たちのサーバやAI企業に送られることはありません。";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Proはこの%@上でメールを読み取ります。メールが私たちのサーバやAI企業に送られることはありません。";
+
+/* No comment provided by engineer. */
+"All on this %@" = "すべてこの%@上で";
 
 /* No comment provided by engineer. */
 "Your mail is read on this %@" = "メールはこの%@上で読み取られます";
@@ -3203,7 +3197,7 @@
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "ルールは今Corresで実行されています。許可すると、Corresを閉じていてもGmailでも実行されます：%@。";
 
 /* No comment provided by engineer. */
-"Your sample conversations couldn't be opened." = "サンプルの会話を開けませんでした。";
+"Couldn't Open Sample Mail" = "サンプルのメールを開けませんでした";
 
 /* No comment provided by engineer. */
 "Your usual for %@" = "%@でいつも使う時刻";
@@ -3244,7 +3238,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "Corresがメールを変更するには、%@に再度サインインする必要があります。";
 "%@ (%@ error %lld)" = "%@（%@ エラー %lld）";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corresは%@を読み取れますが、変更する権限がないため、既読、アーカイブ、フラグの操作が反映されません。再接続して、求められるすべての権限を許可してください。";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "購入は承認待ちです。承認されるとすぐにCorres Proが使えるようになります。";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "購入は承認待ちです。承認されるとすぐにCorres Proが始まります。";
 "The purchase didn't go through. Try again." = "購入が完了しませんでした。もう一度お試しください。";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "コードを使う画面を開けませんでした。App Storeのアカウントからでもコードを使えます。";
 "No Corres Pro purchase was found for this Apple Account." = "このApple AccountでCorres Proの購入は見つかりませんでした。";
@@ -3398,7 +3392,7 @@
 "Couldn't remember this unsubscribe. Try again." = "この配信停止を記録できませんでした。もう一度お試しください。";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "メッセージを送信できませんでした。何も送信されていません。もう一度お試しください。";
+"Your email wasn't sent. Try again." = "メールは送信されませんでした。もう一度お試しください。";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "このスレッドを更新できませんでした。もう一度お試しください。";
@@ -3557,13 +3551,10 @@
 "Your Brief" = "今日のまとめ";
 
 /* Daily Brief tip */
-"Today at a glance" = "今日をひと目で";
-
-/* Daily Brief tip */
 "See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings." = "期限が近いもの、今日の予定、配達を要対応の一番上に表示します。設定でいつでも変更できます。";
 
 /* Daily Brief tip */
-"Show Today's Brief" = "今日のまとめを表示";
+"Show Daily Brief" = "デイリーまとめを表示";
 
 /* No comment provided by engineer. */
 "%@ Morning" = "%@の朝";
@@ -3596,7 +3587,7 @@
 "tomorrow at 9am" = "明日 9時";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "「明日の夜」や「来週の金曜」のように入力できます";
+"Try “tomorrow evening” or “next Friday”" = "「明日の夜」や「来週の金曜」のように入力できます";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "いつのことか分かりません";
@@ -3739,7 +3730,7 @@
 "Organized by %@" = "主催者：%@";
 
 /* No comment provided by engineer. */
-"Your mail couldn't be opened." = "メールを開けませんでした。";
+"Try again. If it keeps happening, restart Corres." = "もう一度お試しください。何度も起きる場合は、Corresを再起動してください。";
 
 /* No comment provided by engineer. */
 "Get Corres Pro" = "Corres Proを入手";
@@ -3763,7 +3754,7 @@
 "No new senders" = "新しい差出人はいません";
 
 /* No comment provided by engineer. */
-"One moment" = "少々お待ちください";
+"Couldn't Open Mail" = "メールを開けませんでした";
 
 /* No comment provided by engineer. */
 "No conversation selected" = "会話が選択されていません";

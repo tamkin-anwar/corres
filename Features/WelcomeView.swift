@@ -42,9 +42,9 @@ struct WelcomeView: View {
                 point("exclamationmark.circle", "What needs you, first",
                       "The few conversations that ask something of you, with the reason for each.")
                 point("tray", "Everything else, in one place",
-                      "Every account in one inbox, newest first. New senders wait for your OK first.")
+                      "Every account in one inbox, newest first. First emails from new senders are marked New.")
                 point("lock", "Private by design",
-                      "Sorting, summaries and drafts run on this \(Device.name). Corres doesn't send your mail to its own servers or to an AI service.")
+                      "Sorting, summaries and drafts run on this \(Device.name). Your mail never goes to our servers or to an AI company.")
             }
             .padding(.top, 44)
             Spacer(minLength: 40)

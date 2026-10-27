@@ -158,7 +158,7 @@
 "Add a signature" = "Signatur hinzufügen";
 
 /* No comment provided by engineer. */
-"Add an Account" = "Account hinzufügen";
+"Add Account" = "Account hinzufügen";
 
 /* No comment provided by engineer. */
 "Add an Email Account" = "E-Mail-Account hinzufügen";
@@ -899,13 +899,13 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
-"If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "Wenn Corres hängt, sich schließt oder sich seltsam verhält, zeigt diese Datei, wo: Build, macOS-Version, Zeiten und Absturzberichte. Nie deine E-Mails.";
+"If Corres froze or quit unexpectedly, this file shows where it stopped: the build, the macOS version, timings and any crash report. Never your mail." = "Wenn Corres hängt oder unerwartet beendet wird, zeigt diese Datei, wo es stehen geblieben ist: Build, macOS-Version, Zeiten und Absturzberichte. Nie deine E-Mails.";
 
 /* No comment provided by engineer. */
 "Images from the web stay off until you click Show Images, so senders can't tell when you opened their email." = "Bilder aus dem Web bleiben aus, bis du auf „Bilder zeigen“ klickst, damit Absender nicht sehen, wann du ihre E-Mail geöffnet hast.";
 
 /* No comment provided by engineer. */
-"Images hidden to protect your privacy" = "Bilder zum Schutz deiner Privatsphäre ausgeblendet";
+"Images hidden" = "Bilder ausgeblendet";
 
 /* No comment provided by engineer. */
 "Images hidden, and %lld trackers blocked" = "Bilder ausgeblendet und %lld Tracker blockiert";
@@ -1859,10 +1859,10 @@
 "Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden." = "Die erste E-Mail von jemandem wartet in „Neue Absender“, bis du die Person erlaubst, sodass du nur E-Mails von Leuten siehst, die du hereingelassen hast. Blockierte Absender bleiben ausgeblendet.";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "Etwas ist fehlgeschlagen, das nur du beheben kannst.";
+"A payment or account problem needs you." = "Ein Zahlungs- oder Account-Problem braucht dich.";
 
 /* No comment provided by engineer. */
-"Something Went Wrong" = "Etwas ist schiefgelaufen";
+"Couldn't Finish That" = "Konnte nicht abgeschlossen werden";
 
 /* No comment provided by engineer. */
 "Sort By" = "Sortieren nach";
@@ -1871,7 +1871,7 @@
 "Sorting" = "Sortierung";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service." = "Sortierung, Zusammenfassungen und Entwürfe laufen auf diesem Mac. Deine E-Mails gehen nie an unsere Server oder an einen KI-Dienst.";
+"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI company." = "Sortierung, Zusammenfassungen und Entwürfe laufen auf diesem Mac. Deine E-Mails gehen nie an unsere Server oder an eine KI-Firma.";
 
 /* No comment provided by engineer. */
 "Spam" = "Spam";
@@ -2016,9 +2016,6 @@
 
 /* No comment provided by engineer. */
 "Tomorrow" = "Morgen";
-
-/* No comment provided by engineer. */
-"Tomorrow 8am, next friday, in 3 days" = "Tomorrow 8am, next friday, in 3 days";
 
 /* No comment provided by engineer. */
 "Tomorrow and Next Week come back then; This Weekend an hour later, on Saturday." = "„Morgen“ und „Nächste Woche“ kommen dann zurück, „Dieses Wochenende“ eine Stunde später am Samstag.";
@@ -2201,7 +2198,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "Solange sie aktiv ist, beantwortet %@ neue E-Mails mit deiner Nachricht und sendet sie, auch bei ausgeschaltetem %@.";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "An wen soll sie gehen? Füge zuerst jemanden hinzu.";
+"Add a recipient, then try again." = "Füge einen Empfänger hinzu und versuch es dann noch einmal.";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "%@ werden nicht mehr markiert";
@@ -2243,7 +2240,7 @@
 "You declined" = "Du hast abgesagt";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "Du hast das gerade weitergeleitet. Wartet auf Antwort.";
+"You forwarded this just now. Waiting for their reply." = "Du hast das gerade weitergeleitet. Wartet auf Antwort.";
 
 /* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "Du hast die letzten %lld von %@ nicht geöffnet.";
@@ -2258,7 +2255,7 @@
 "You read %@'s email within a minute." = "Du liest E-Mails von %@ innerhalb einer Minute.";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "Du hast gerade geantwortet. Wartet auf Antwort.";
+"You replied just now. Waiting for their reply." = "Du hast gerade geantwortet. Wartet auf Antwort.";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "Du hast geantwortet. Nichts offen.";
@@ -2273,7 +2270,7 @@
 "You sent this. Nothing pending." = "Du hast das gesendet. Nichts offen.";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "Du hast diese Konversation begonnen. Wartet auf Antwort.";
+"You started this conversation. Waiting for a reply." = "Du hast diese Konversation begonnen. Wartet auf Antwort.";
 
 /* No comment provided by engineer. */
 "You're copied, not asked." = "Du bist in Kopie, nicht gefragt.";
@@ -2334,7 +2331,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "%@ muss sich erneut anmelden, bevor Corres die E-Mails ändern kann.";
 "%@ (%@ error %lld)" = "%@ (%@-Fehler %lld)";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres kann %@ lesen, hat aber keine Berechtigung, etwas zu ändern. Als gelesen markieren, Archivieren und Markieren gehen deshalb nicht durch. Verbinde den Account neu und erlaube alle Berechtigungen, nach denen gefragt wird.";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "Dein Kauf wartet auf Freigabe. Corres Pro wird freigeschaltet, sobald er freigegeben ist.";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "Dein Kauf wartet auf Freigabe. Corres Pro startet, sobald er freigegeben ist.";
 "The purchase didn't go through. Try again." = "Der Kauf hat nicht geklappt. Versuch es noch einmal.";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "Das Fenster zum Einlösen konnte nicht geöffnet werden. Du kannst Codes auch im App Store unter deinem Account einlösen.";
 "No Corres Pro purchase was found for this Apple Account." = "Für diesen Apple Account wurde kein Kauf von Corres Pro gefunden.";
@@ -2451,7 +2448,7 @@
 "Couldn't remember this unsubscribe. Try again." = "Corres konnte sich diese Abmeldung nicht merken. Versuch es noch einmal.";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "Deine Nachricht konnte nicht gesendet werden. Es wurde nichts gesendet. Versuch es noch einmal.";
+"Your email wasn't sent. Try again." = "Deine E-Mail wurde nicht gesendet. Versuch es noch einmal.";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "Diese Konversation konnte nicht aktualisiert werden. Versuch es noch einmal.";
@@ -2545,7 +2542,7 @@
 "tomorrow at 9am" = "morgen um 9 Uhr";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "Zum Beispiel „morgen Abend“ oder „nächsten Freitag“";
+"Try “tomorrow evening” or “next Friday”" = "Zum Beispiel „morgen Abend“ oder „nächsten Freitag“";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "Diese Zeit wurde nicht erkannt";
@@ -2647,7 +2644,7 @@
 "Tomorrow at %@" = "Morgen um %@";
 
 /* No comment provided by engineer. */
-"Tomorrow at 8am, next friday, in 3 days" = "morgen um 8 Uhr, nächsten Freitag, in 3 Tagen";
+"Tomorrow at 8 AM, next Friday, in 3 days" = "morgen um 8 Uhr, nächsten Freitag, in 3 Tagen";
 
 /* No comment provided by engineer. */
 "(no subject)" = "(kein Betreff)";
@@ -2796,7 +2793,7 @@
 "Everyone who owes you a reply, and for how long." = "Alle, die dir eine Antwort schulden, und seit wann.";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "Alles, was Corres ausmacht.";
+"The parts of Corres that read your mail for you." = "Die Teile von Corres, die deine E-Mails für dich lesen.";
 
 /* No comment provided by engineer. */
 "Family" = "Familie";
@@ -2901,10 +2898,13 @@
 "Widgets and Apple Watch" = "Widgets und Apple Watch";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Ohne Pro funktioniert „E-Mail“ weiter: lesen, antworten, archivieren und suchen. „Braucht dich“, „Wartet“, Antworten in der Suche und die Intelligenz auf dem Gerät brauchen Pro.";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Ohne Pro funktioniert „E-Mail“ weiter: lesen, antworten, archivieren und suchen. „Braucht dich“, „Wartet“, Antworten in der Suche, Zusammenfassungen und Antwortvorschläge brauchen Pro.";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "Deine E-Mails gehen nie an unsere Server oder an eine KI-Firma.";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Pro liest deine E-Mails auf diesem %@. Deine E-Mails gehen nie an unsere Server oder an eine KI-Firma.";
+
+/* No comment provided by engineer. */
+"All on this %@" = "Alles auf diesem %@";
 
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "Dauerhaft deins · gekauft am %@";

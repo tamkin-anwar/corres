@@ -165,7 +165,7 @@ struct ConversationView: View {
                                 // while the full message loads (see `.task` below).
                                 HStack(spacing: 8) {
                                     ProgressView().controlSize(.small)
-                                    Text("Loading the full message…").font(.footnote).foregroundStyle(CorresPalette.secondary)
+                                    Text("Loading the full email…").font(.footnote).foregroundStyle(CorresPalette.secondary)
                                 }
                                 .padding(.horizontal, CorresSpace.page)
                             }

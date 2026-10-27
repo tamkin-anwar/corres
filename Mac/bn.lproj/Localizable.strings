@@ -158,7 +158,7 @@
 "Add a signature" = "একটি স্বাক্ষর যোগ করুন";
 
 /* No comment provided by engineer. */
-"Add an Account" = "একটি অ্যাকাউন্ট যোগ করুন";
+"Add Account" = "অ্যাকাউন্ট যোগ করুন";
 
 /* No comment provided by engineer. */
 "Add an Email Account" = "একটি ইমেইল অ্যাকাউন্ট যোগ করুন";
@@ -899,13 +899,13 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
-"If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "Corres আটকে গেলে, বন্ধ হয়ে গেলে বা ঠিকমতো না চললে, এই ফাইলটি জানায় কোথায়: বিল্ড, macOS সংস্করণ, সময়ের হিসাব আর ক্র্যাশ রিপোর্ট। কখনো আপনার মেইল নয়।";
+"If Corres froze or quit unexpectedly, this file shows where it stopped: the build, the macOS version, timings and any crash report. Never your mail." = "Corres আটকে গেলে বা হঠাৎ বন্ধ হয়ে গেলে, এই ফাইলটি দেখায় কোথায় থেমেছিল: বিল্ড, macOS সংস্করণ, সময়ের হিসাব আর ক্র্যাশ রিপোর্ট। কখনো আপনার মেইল নয়।";
 
 /* No comment provided by engineer. */
 "Images from the web stay off until you click Show Images, so senders can't tell when you opened their email." = "«ছবি দেখান»-এ ক্লিক না করা পর্যন্ত ওয়েবের ছবি বন্ধ থাকে, তাই প্রেরকরা জানতে পারেন না আপনি কখন তাদের ইমেইল খুলেছেন।";
 
 /* No comment provided by engineer. */
-"Images hidden to protect your privacy" = "আপনার গোপনীয়তা রক্ষায় ছবি লুকানো";
+"Images hidden" = "ছবি লুকানো";
 
 /* No comment provided by engineer. */
 "Images hidden, and %lld trackers blocked" = "ছবি লুকানো, আর %lldটি ট্র্যাকার আটকানো হয়েছে";
@@ -1859,10 +1859,10 @@
 "Someone's first email waits in New Senders until you allow them, so you only see mail from people you've let in. Blocked senders stay hidden." = "কারো প্রথম ইমেইল নতুন প্রেরক-এ অপেক্ষা করে যতক্ষণ না আপনি অনুমতি দেন, তাই শুধু যাদের ঢুকতে দিয়েছেন তাদের মেইলই দেখেন। ব্লক করা প্রেরকরা লুকানো থাকে।";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "এমন কিছু ব্যর্থ হয়েছে যা শুধু আপনিই ঠিক করতে পারেন।";
+"A payment or account problem needs you." = "পেমেন্ট বা অ্যাকাউন্টের একটি সমস্যা আপনার দেখা দরকার।";
 
 /* No comment provided by engineer. */
-"Something Went Wrong" = "কিছু একটা ভুল হয়েছে";
+"Couldn't Finish That" = "কাজটি শেষ করা যায়নি";
 
 /* No comment provided by engineer. */
 "Sort By" = "সাজানোর ভিত্তি";
@@ -1871,7 +1871,7 @@
 "Sorting" = "সাজানো";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service." = "সাজানো, সারসংক্ষেপ আর খসড়া এই Mac-এ হয়। আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI সেবায় যায় না।";
+"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI company." = "সাজানো, সারসংক্ষেপ আর খসড়া এই Mac-এ হয়। আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI কোম্পানির কাছে যায় না।";
 
 /* No comment provided by engineer. */
 "Spam" = "স্প্যাম";
@@ -2016,9 +2016,6 @@
 
 /* No comment provided by engineer. */
 "Tomorrow" = "আগামীকাল";
-
-/* No comment provided by engineer. */
-"Tomorrow 8am, next friday, in 3 days" = "Tomorrow 8am, next friday, in 3 days";
 
 /* No comment provided by engineer. */
 "Tomorrow and Next Week come back then; This Weekend an hour later, on Saturday." = "«আগামীকাল» ও «পরের সপ্তাহ» তখন ফিরে আসে; «এই সপ্তাহান্ত» শনিবার এক ঘণ্টা পরে।";
@@ -2201,7 +2198,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "এটি চালু থাকলে %@ নতুন ইমেইলের উত্তরে আপনার বার্তা পাঠায়, এই %@ বন্ধ থাকলেও।";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "কাকে পাঠাবেন? আগে কাউকে যোগ করুন।";
+"Add a recipient, then try again." = "একজন প্রাপক যোগ করুন, তারপর আবার চেষ্টা করুন।";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "%@ আর চিহ্নিত করা হবে না";
@@ -2243,7 +2240,7 @@
 "You declined" = "আপনি প্রত্যাখ্যান করেছেন";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "আপনি এইমাত্র এটি ফরোয়ার্ড করেছেন। তাদের উত্তরের অপেক্ষায়।";
+"You forwarded this just now. Waiting for their reply." = "আপনি এইমাত্র এটি ফরোয়ার্ড করেছেন। তাদের উত্তরের অপেক্ষায়।";
 
 /* No comment provided by engineer. */
 "You haven't opened the last %lld from %@." = "%2$@ থেকে আসা শেষ %1$lldটি আপনি খোলেননি।";
@@ -2258,7 +2255,7 @@
 "You read %@'s email within a minute." = "%@-এর ইমেইল আপনি এক মিনিটের মধ্যে পড়েন।";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "আপনি এইমাত্র উত্তর দিয়েছেন। তাদের উত্তরের অপেক্ষায়।";
+"You replied just now. Waiting for their reply." = "আপনি এইমাত্র উত্তর দিয়েছেন। তাদের উত্তরের অপেক্ষায়।";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "আপনি উত্তর দিয়েছেন। কিছু বাকি নেই।";
@@ -2273,7 +2270,7 @@
 "You sent this. Nothing pending." = "আপনি এটি পাঠিয়েছেন। কিছু বাকি নেই।";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "আপনি এই কথোপকথন শুরু করেছেন। উত্তরের অপেক্ষায়।";
+"You started this conversation. Waiting for a reply." = "আপনি এই কথোপকথন শুরু করেছেন। উত্তরের অপেক্ষায়।";
 
 /* No comment provided by engineer. */
 "You're copied, not asked." = "আপনাকে কপি করা হয়েছে, কিছু চাওয়া হয়নি।";
@@ -2334,7 +2331,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "Corres মেইল পরিবর্তন করার আগে %@-এ আবার সাইন ইন করতে হবে।";
 "%@ (%@ error %lld)" = "%@ (%@ ত্রুটি %lld)";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres %@ পড়তে পারে কিন্তু পরিবর্তন করার অনুমতি নেই, তাই পঠিত চিহ্নিত করা, আর্কাইভ করা ও ফ্ল্যাগ দেওয়া কার্যকর হবে না। আবার সংযুক্ত করুন এবং চাওয়া সব অনুমতি দিন।";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "আপনার কেনাকাটা অনুমোদনের অপেক্ষায় আছে। অনুমোদন পেলেই Corres Pro চালু হবে।";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "আপনার কেনাকাটা অনুমোদনের অপেক্ষায় আছে। অনুমোদন পেলেই Corres Pro শুরু হবে।";
 "The purchase didn't go through. Try again." = "কেনাকাটা সম্পন্ন হয়নি। আবার চেষ্টা করুন।";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "কোড রিডিম করার পাতা খোলা যায়নি। আপনি App Store-এ আপনার অ্যাকাউন্ট থেকেও রিডিম করতে পারেন।";
 "No Corres Pro purchase was found for this Apple Account." = "এই Apple অ্যাকাউন্টে কোনো Corres Pro কেনাকাটা পাওয়া যায়নি।";
@@ -2451,7 +2448,7 @@
 "Couldn't remember this unsubscribe. Try again." = "এই আনসাবস্ক্রাইব মনে রাখা যায়নি। আবার চেষ্টা করুন।";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "আপনার মেসেজ পাঠানো যায়নি। কিছুই পাঠানো হয়নি। আবার চেষ্টা করুন।";
+"Your email wasn't sent. Try again." = "আপনার ইমেইল পাঠানো হয়নি। আবার চেষ্টা করুন।";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "এই কথোপকথন আপডেট করা যায়নি। আবার চেষ্টা করুন।";
@@ -2545,7 +2542,7 @@
 "tomorrow at 9am" = "আগামীকাল সকাল ৯টা";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "“আগামীকাল সন্ধ্যায়” বা “আগামী শুক্রবার” লিখে দেখুন";
+"Try “tomorrow evening” or “next Friday”" = "“আগামীকাল সন্ধ্যায়” বা “আগামী শুক্রবার” লিখে দেখুন";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "সময়টা বোঝা গেল না";
@@ -2647,7 +2644,7 @@
 "Tomorrow at %@" = "আগামীকাল %@";
 
 /* No comment provided by engineer. */
-"Tomorrow at 8am, next friday, in 3 days" = "আগামীকাল সকাল ৮টা, আগামী শুক্রবার, ৩ দিন পরে";
+"Tomorrow at 8 AM, next Friday, in 3 days" = "আগামীকাল সকাল ৮টা, আগামী শুক্রবার, ৩ দিন পরে";
 
 /* No comment provided by engineer. */
 "(no subject)" = "(বিষয় নেই)";
@@ -2796,7 +2793,7 @@
 "Everyone who owes you a reply, and for how long." = "যাদের কাছে আপনি উত্তর পান, আর কতদিন ধরে।";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "যা কিছু Corres-কে Corres করে তোলে।";
+"The parts of Corres that read your mail for you." = "Corres-এর যে অংশগুলো আপনার হয়ে মেইল পড়ে।";
 
 /* No comment provided by engineer. */
 "Family" = "পরিবার";
@@ -2901,10 +2898,13 @@
 "Widgets and Apple Watch" = "উইজেট আর Apple Watch";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Pro ছাড়াও মেইল চলে: পড়া, উত্তর দেওয়া, আর্কাইভ আর সার্চ। আপনার করণীয়, অপেক্ষায়, সার্চে উত্তর আর ডিভাইসের বুদ্ধিমত্তার জন্য Pro লাগে।";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Pro ছাড়াও মেইল চলে: পড়া, উত্তর দেওয়া, আর্কাইভ আর সার্চ। আপনার করণীয়, অপেক্ষায়, সার্চে উত্তর, সারসংক্ষেপ আর প্রস্তাবিত উত্তরের জন্য Pro লাগে।";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI কোম্পানির কাছে পাঠানো হয় না।";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Pro আপনার মেইল এই %@-এ পড়ে। আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI কোম্পানির কাছে যায় না।";
+
+/* No comment provided by engineer. */
+"All on this %@" = "সবকিছু এই %@-এ";
 
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "চিরকালের জন্য আপনার · কেনা হয়েছে %@";

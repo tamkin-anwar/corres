@@ -278,7 +278,7 @@
 "Social notification. Kept out of Needs You." = "সামাজিক নোটিফিকেশন। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
 
 /* No comment provided by engineer. */
-"Something failed that only you can fix." = "এমন কিছু ব্যর্থ হয়েছে যা শুধু আপনিই ঠিক করতে পারেন।";
+"A payment or account problem needs you." = "পেমেন্ট বা অ্যাকাউন্টের একটি সমস্যা আপনার দেখা দরকার।";
 
 /* No comment provided by engineer. */
 "Subject:" = "বিষয়:";
@@ -326,10 +326,10 @@
 "You asked. No reply yet." = "আপনি জিজ্ঞেস করেছেন। এখনো উত্তর নেই।";
 
 /* No comment provided by engineer. */
-"You forwarded this just now. Waiting for their response." = "আপনি এইমাত্র এটি ফরোয়ার্ড করেছেন। তাদের উত্তরের অপেক্ষায়।";
+"You forwarded this just now. Waiting for their reply." = "আপনি এইমাত্র এটি ফরোয়ার্ড করেছেন। তাদের উত্তরের অপেক্ষায়।";
 
 /* No comment provided by engineer. */
-"You replied just now. Waiting for their response." = "আপনি এইমাত্র উত্তর দিয়েছেন। তাদের উত্তরের অপেক্ষায়।";
+"You replied just now. Waiting for their reply." = "আপনি এইমাত্র উত্তর দিয়েছেন। তাদের উত্তরের অপেক্ষায়।";
 
 /* No comment provided by engineer. */
 "You replied. Nothing pending." = "আপনি উত্তর দিয়েছেন। কিছু বাকি নেই।";
@@ -341,7 +341,7 @@
 "You sent this. Nothing pending." = "আপনি এটি পাঠিয়েছেন। কিছু বাকি নেই।";
 
 /* No comment provided by engineer. */
-"You started this conversation. Waiting for a response." = "আপনি এই কথোপকথন শুরু করেছেন। উত্তরের অপেক্ষায়।";
+"You started this conversation. Waiting for a reply." = "আপনি এই কথোপকথন শুরু করেছেন। উত্তরের অপেক্ষায়।";
 
 /* No comment provided by engineer. */
 "You're copied, not asked." = "আপনাকে কপি করা হয়েছে, কিছু চাওয়া হয়নি।";

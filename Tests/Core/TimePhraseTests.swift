@@ -37,6 +37,14 @@ struct TimePhraseTests {
         #expect(parts("next week").map { [$0.day, $0.weekday] } == [28, 2])
     }
 
+    /// The snooze field's own examples, as they're written there.
+    @Test func theSnoozeFieldsExamplesParse() {
+        #expect(parts("Tomorrow at 8 AM").map { [$0.day, $0.hour, $0.minute] } == [25, 8, 0])
+        #expect(parts("next Friday").map { [$0.weekday, $0.hour] } == [6, TimePhrase.morningHour])
+        #expect(parts("next Friday") == parts("next friday"))
+        #expect(parts("in 3 days").map { $0.day } == 27)
+    }
+
     @Test func nextWeekNeverDuplicatesTomorrow() {
         let sunday = calendar.date(from: DateComponents(year: 2026, month: 9, day: 27, hour: 10))!
         let result = TimePhrase.parse("next week", now: sunday, calendar: calendar)
