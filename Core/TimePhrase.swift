@@ -62,9 +62,12 @@ public enum TimePhrase {
         let phrase = dayWords.joined(separator: " ")
         let today = calendar.startOfDay(for: now)
         switch phrase {
-        case "", "today":
+        // "This evening", "this afternoon": today, at that time.
+        case "", "today", "this":
             guard let time else { return nil }
             let candidate = at(time, on: today, calendar: calendar)
+            // "This evening" said after it's begun is not tomorrow's.
+            if phrase == "this" { return candidate }
             // "9am" typed at 10am means tomorrow's 9am.
             return candidate.flatMap { $0 > now ? $0 : calendar.date(byAdding: .day, value: 1, to: $0) }
         case "tonight":
@@ -159,7 +162,8 @@ public enum TimePhrase {
         let minute = parts.count == 2 ? Int(parts[1]) : 0
         guard let minute, (0..<60).contains(minute) else { return nil }
         switch meridiem {
-        case "am": guard (1...12).contains(hour) else { return nil }; if hour == 12 { hour = 0 }
+        // "午前0時" says am and a 24-hour time, as Japanese writes midnight.
+        case "am": guard (0...12).contains(hour) else { return nil }; if hour == 12 { hour = 0 }
         // "午後21時" says pm and a 24-hour time; both mean the same.
         case "pm": guard (1...23).contains(hour) else { return nil }; if hour < 12 { hour += 12 }
         default: guard (0...24).contains(hour) else { return nil }
@@ -451,7 +455,10 @@ extension TimePhrase {
             rule(word + #"রাত\S*"#, "night"),
         ]
 
+        // Midnight, the end of the day it's said with, in every language:
+        // unread, "demain à minuit" fell to the date detector, at noon.
         private static let german: [Rule] = [
+            rule(#"\b(?:um )?mitternacht\b"#, "midnight"),
             rule(#"\bübermorgen\b"#, "in 2 days"),
             rule(#"\bin ein(?:er|em|en|e)?\b"#, "in 1"), rule(#"\bin zwei\b"#, "in 2"), rule(#"\bin drei\b"#, "in 3"),
             rule(#"\bin (\d+) minuten?\b"#, "in $1 minutes"), rule(#"\bin (\d+) stunden?\b"#, "in $1 hours"),
@@ -472,6 +479,7 @@ extension TimePhrase {
         ]
 
         private static let french: [Rule] = [
+            rule(#"(?:\bà )?\bminuit\b"#, "midnight"),
             rule(#"\baprès[- ]demain\b|\bapres[- ]demain\b"#, "in 2 days"),
             rule(#"\bdans une?\b"#, "dans 1"), rule(#"\bdans deux\b"#, "dans 2"), rule(#"\bdans trois\b"#, "dans 3"),
             rule(#"\bdans (\d+) ?min(?:ute)?s?\b"#, "in $1 minutes"), rule(#"\bdans (\d+) ?(?:heures?|h)\b"#, "in $1 hours"),
@@ -484,7 +492,9 @@ extension TimePhrase {
             rule(#"\b(\d{1,2}) heures?\b"#, "at $1:00"),
         ] + weekdayRules(["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"],
                          next: [#"\bDAY prochain\b"#], this: [#"\bce "#], before: #"\b"#, after: #"\b"#) + [
-            rule(#"\bce soir\b"#, "tonight"), rule(#"\baujourd'hui\b"#, "today"), rule(#"\bdemain\b"#, "tomorrow"),
+            rule(#"\bce soir\b"#, "tonight"), rule(#"\bcet (?:après|apres)-midi\b"#, "this afternoon"),
+            rule(#"\bce matin\b"#, "this morning"),
+            rule(#"\baujourd'hui\b"#, "today"), rule(#"\bdemain\b"#, "tomorrow"),
             rule(#"\b(?:la )?semaine prochaine\b"#, "next week"), rule(#"\b(?:ce|le) week-?end\b"#, "this weekend"),
             rule(#"\bweek-end\b"#, "weekend"),
             rule(#"\b(?:le )?mois prochain\b"#, "next month"), rule(#"\bplus tard\b"#, "later"),
@@ -493,6 +503,8 @@ extension TimePhrase {
         ]
 
         private static let spanish: [Rule] = [
+            // "Las 12 de la noche" is midnight too.
+            rule(#"\b(?:a (?:la )?)?medianoche\b|\ba las 12 de la noche\b"#, "midnight"),
             rule(#"\bpasado ma[ñn]ana\b"#, "in 2 days"),
             rule(#"\b(?:en|dentro de) un[ao]?\b"#, "en 1"), rule(#"\b(?:en|dentro de) dos\b"#, "en 2"),
             rule(#"\b(?:en|dentro de) tres\b"#, "en 3"),
@@ -509,6 +521,7 @@ extension TimePhrase {
                          next: [#"\b(?:el )?pr[óo]ximo DAY"#, #"\b(?:el )?DAY (?:que viene|pr[óo]ximo)\b"#],
                          before: #"\b(?:el )?"#, after: #"\b"#) + [
             rule(#"\b(?:por|en) la ma[ñn]ana\b"#, "morning"), rule(#"\besta noche\b"#, "tonight"),
+            rule(#"\besta tarde\b"#, "this afternoon"),
             rule(#"\bma[ñn]ana\b"#, "tomorrow"), rule(#"\bhoy\b"#, "today"),
             rule(#"\b(?:la )?(?:pr[óo]xima semana|semana que viene|semana pr[óo]xima)\b"#, "next week"),
             rule(#"\b(?:este |el )?fin de semana\b"#, "this weekend"),
@@ -517,6 +530,7 @@ extension TimePhrase {
         ]
 
         private static let portuguese: [Rule] = [
+            rule(#"(?:\bà |\ba )?\bmeia-noite\b|(?:\bàs |\bas )12 ?h? da noite\b"#, "midnight"),
             rule(#"\bdepois de amanh[ãa]\b"#, "in 2 days"),
             rule(#"\b(?:em|daqui a) uma?\b"#, "em 1"), rule(#"\b(?:em|daqui a) (?:dois|duas)\b"#, "em 2"),
             rule(#"\b(?:em|daqui a) tr[êe]s\b"#, "em 3"),
@@ -529,7 +543,8 @@ extension TimePhrase {
         ] + weekdayRules(["domingo", "segunda(?:-feira)?", "ter[çc]a(?:-feira)?", "quarta(?:-feira)?", "quinta(?:-feira)?",
                           "sexta(?:-feira)?", "s[áa]bado"],
                          next: [#"\bpr[óo]xim[ao] DAY"#, #"\bDAY que vem\b"#], before: #"\b(?:n[ao] )?"#, after: #"\b"#) + [
-            rule(#"\bhoje (?:à|a) noite\b|\besta noite\b"#, "tonight"), rule(#"\bhoje\b"#, "today"),
+            rule(#"\bhoje (?:à|a) noite\b|\besta noite\b"#, "tonight"), rule(#"\besta tarde\b"#, "this afternoon"),
+            rule(#"\bhoje\b"#, "today"),
             rule(#"\bamanh[ãa]\b"#, "tomorrow"),
             rule(#"\b(?:semana que vem|pr[óo]xima semana)\b"#, "next week"),
             rule(#"\b(?:neste |este |no )?fim de semana\b"#, "this weekend"),

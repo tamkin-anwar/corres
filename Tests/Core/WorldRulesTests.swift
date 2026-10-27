@@ -144,6 +144,15 @@ struct WorldRulesTests {
         for text in ["Veuillez trouver ci-joint la facture.", "附件是报价单，请查收。", "Danke, das passt.", "ありがとうございました。"] {
             #expect(!MailSignals.asksSomething(text), "\(text)")
         }
+        // Asked to send, submit or sign, as Japanese, Korean and Chinese
+        // write it; "please see" and "please note" still ask nothing.
+        for text in ["資料を送ってください。", "申請書をご提出ください。", "계약서를 보내 주시기 바랍니다.", "서류 제출 바랍니다.",
+                     "请提交报告。", "請簽署合約。"] {
+            #expect(MailSignals.asksSomething(text), "\(text)")
+        }
+        for text in ["詳細は添付をご覧ください。", "참고 바랍니다.", "请查收附件。"] {
+            #expect(!MailSignals.asksSomething(text), "\(text)")
+        }
     }
 
     @Test func obligationsFailuresAndPaymentRequestsInEveryLanguage() {
@@ -424,6 +433,64 @@ struct WorldRulesTests {
         }
     }
 
+    /// "By Friday" and "by tomorrow" in Japanese, Korean, Chinese and
+    /// Bengali set a deadline, as they do in English and Europe's
+    /// languages; the date detector reads none of them.
+    @Test func relativeDeadlinesInEveryScript() {
+        func due(_ text: String, receivedAt: Date? = nil) -> [Int]? {
+            MailSignals.deadline(in: text, now: now, receivedAt: receivedAt)
+                .map { calendar.dateComponents([.month, .day, .hour, .minute], from: $0) }
+                .map { [$0.month!, $0.day!, $0.hour!, $0.minute!] }
+        }
+        // Sunday the 25th: Friday is the 30th.
+        #expect(due("金曜日までにご返信ください。") == [10, 30, 12, 0])
+        #expect(due("请于周五前回复。") == [10, 30, 12, 0])
+        #expect(due("星期五之前请提交报告。") == [10, 30, 12, 0])
+        #expect(due("금요일까지 회신 부탁드립니다.") == [10, 30, 12, 0])
+        #expect(due("শুক্রবারের মধ্যে জানাবেন।") == [10, 30, 12, 0])
+        #expect(due("明日の17時までにご確認ください。") == [10, 26, 17, 0])
+        #expect(due("내일 오후 5시까지 보내 주세요.") == [10, 26, 17, 0])
+        #expect(due("明天下午3点前回复我。") == [10, 26, 15, 0])
+        #expect(due("期限：明日") == [10, 26, 12, 0])
+        // By the end of today: its last minute.
+        #expect(due("本日中にご対応ください。") == [10, 25, 23, 59])
+        // "Until" and "go to" are not "by".
+        #expect(due("金曜日まで休みます。") == nil)
+        #expect(due("明天前往北京。") == nil)
+        // Mail from an earlier day: its "tomorrow" isn't tomorrow now.
+        #expect(due("明日までにご確認ください。", receivedAt: now.addingTimeInterval(-3 * 86_400)) == nil)
+    }
+
+    /// Dates and times in Han numerals are read whole or not at all:
+    /// "十一月五日" (November 5th) was January 5th, "十一時" one o'clock, and
+    /// "一時的に" (for a while) a time today.
+    @Test func hanNumeralsAreNeverHalfRead() {
+        #expect(LocalDates.find(in: "十一月五日下午三点开会", now: now).filter(\.hasDay).isEmpty)
+        #expect(LocalDates.find(in: "十二月三日までにご提出ください", now: now).filter(\.hasDay).isEmpty)
+        #expect(LocalDates.find(in: "十一時に集合してください", now: now).isEmpty)
+        #expect(EventFinder.fromWording("会議室は一時的に使えません。", subject: "会議室のお知らせ", receivedAt: now, now: now) == nil)
+        // A Han numeral with a time of day, and Arabic digits, still count.
+        #expect(LocalDates.find(in: "下午三点开会", now: now).map { calendar.component(.hour, from: $0.date) } == [15])
+        #expect(day(LocalDates.find(in: "三月五日", now: now).first?.date) == ymd(2027, 3, 5))
+        #expect(LocalDates.find(in: "11時に集合", now: now).map { calendar.component(.hour, from: $0.date) } == [11])
+    }
+
+    /// Bengali's য় (and ড়, ঢ়) is typed as one character or as two; mail
+    /// with the one-character spelling matched no Bengali rule. And a month
+    /// that ends in a vowel takes its "of" as a letter: "জানুয়ারির".
+    @Test func bengaliReadsEitherSpellingAndTheMonthsOf() {
+        let ya = "\u{09DF}"
+        #expect(MailSignals.asksSomething("রিপোর্টটি দ\(ya)া করে পাঠান।"))
+        #expect(MailSignals.isObligation("আপনার অ্যাপ\(ya)েন্টমেন্ট আগামীকাল"))
+        #expect(MailSignals.isAutoReply("স্ব\(ya)ংক্রি\(ya) উত্তর: বাজেট\nআমি অফিসের বাইরে।"))
+        for text in ["৫ জানুয়ারির মধ্যে বিল পরিশোধ করুন।", "৫ জানু\(ya)ারির মধ্যে বিল পরিশোধ করুন।"] {
+            #expect(day(MailSignals.deadline(in: text, now: now, horizon: 120 * 86_400)) == ymd(2027, 1, 5), "\(text)")
+        }
+        #expect(day(LocalDates.find(in: "১০ জুলাইয়ের মধ্যে", now: now).first?.date) == ymd(2027, 7, 10))
+        // Still never the start of a longer word: "মেইল" is not May.
+        #expect(LocalDates.find(in: "৫ মেইল পাঠানো হয়েছে", now: now).isEmpty)
+    }
+
     // MARK: One-time codes and money
 
     @Test func oneTimeCodesInEveryLanguage() {
@@ -447,6 +514,48 @@ struct WorldRulesTests {
         for (text, code) in cases {
             #expect(MailDigest.verificationCode(in: text) == code, "\(text)")
         }
+    }
+
+    /// A code named after its service, a code in French typography, and
+    /// never a shop's discount code, which put a sale in Primary for its
+    /// first hour as if it were a sign-in.
+    @Test func codesNamedForTheirServiceButNotShopCodes() {
+        let cases: [(String, String)] = [
+            ("123456 is your Instagram code", "123456"),
+            ("G-482913 is your Google verification code.", "482913"),
+            ("48291345 is your Facebook confirmation code", "48291345"),
+            ("Votre code : 482913", "482913"),
+            ("Tu código es 552310", "552310"),
+        ]
+        for (text, code) in cases {
+            #expect(MailDigest.verificationCode(in: text) == code, "\(text)")
+        }
+        for text in ["Promo code: FALL25 for 20% off", "Use discount code: SAVE20 today", "Your gift card code: ABCD-1234",
+                     "Coupon code: TAKE10 at checkout", "Ship to: 1 Main St. ZIP code: 94105"] {
+            #expect(MailDigest.verificationCode(in: text) == nil, "\(text)")
+            #expect(MailDigest.kind(subject: "Fall sale", text: text, senderEmail: "deals@shop.test", isBulk: true,
+                                    looksAutomated: true, hasEvent: false) != .code, "\(text)")
+        }
+        let sale = Correspondence(id: ThreadID(account: "me@x.test", providerID: "sale"), sender: "Shop", senderEmail: "deals@shop.test",
+                                  organization: "", subject: "Fall sale starts now", excerpt: "Promo code: FALL25 for 20% off everything",
+                                  body: "", receivedAt: .now, dueAt: nil, reason: "", attention: .quiet, labelIds: ["CATEGORY_PROMOTIONS"])
+        #expect(InboxCategory.of(sale) == .promotions)
+    }
+
+    /// Whose dollar it is stays with the amount, and thousands grouped
+    /// with a space stay whole: "R$ 1.250,00" was handed on as "$ 1.250,00",
+    /// and "1 250,00 €" as "250,00 €".
+    @Test func amountsKeepTheirCurrencyAndThousands() {
+        for amount in ["R$ 1.250,00", "C$45.00", "A$120", "US$ 99", "HK$300", "1 250,00 €", "€ 12 500", "1\u{202F}250,00 €"] {
+            #expect(MailDigest.facts(in: "Total: \(amount) today").first == amount, "\(amount)")
+        }
+        let brazil = MailDigest.glance(text: "Pedido confirmado\nTotal: R$ 1.250,00\nNúmero do pedido: 4521-889", kind: .receipt)
+        #expect(brazil?.facts.first?.value == "R$ 1.250,00")
+        let france = MailDigest.glance(text: "Votre commande\nTotal : 1 250,00 €\nNuméro de commande : 4521-889", kind: .receipt)
+        #expect(france?.facts.first?.value == "1 250,00 €")
+        // Numbers beside each other are not one amount.
+        #expect(MailDigest.facts(in: "Seats 2 and 3 cost $45 each") == ["$45"])
+        #expect(!MailDigest.isAmount("PAID 12 items"))
     }
 
     @Test func amountsWrittenWithWords() {

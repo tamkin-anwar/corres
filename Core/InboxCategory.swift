@@ -163,6 +163,6 @@ public enum InboxCategory: String, Codable, CaseIterable, Sendable {
         + #"|(?i)(\d{1,3}\s?%\s?(rabatt|de (réduction|remise|descuento|desconto)|dto|off)|\b(rabatt|angebot(e)?|sonderangebot|schlussverkauf|soldes|promos?|réduction|oferta(s)?|rebajas|descuento|desconto|liquidação|promoção|ছাড়|অফার)\b|セール|割引|クーポン|할인|쿠폰|특가|折扣|优惠|優惠|促销|促銷|满减|滿減|\d{1,2}\s?折)"#
 
     static func looksPromotional(_ subject: String) -> Bool {
-        promotionalMemo.value(subject) { subject.patternRange(promotionalPattern) != nil }
+        promotionalMemo.value(subject) { MailSignals.oneBengaliSpelling(subject).patternRange(promotionalPattern) != nil }
     }
 }

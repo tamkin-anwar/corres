@@ -142,6 +142,26 @@ struct TimePhraseTests {
                    "明天晚上12点": [26, 0], "tonight at 12": [25, 0], "tomorrow at midnight": [26, 0],
                    "tomorrow at noon": [25, 12]])
         #expect(parts("내일 밤 12시 30분")?.minute == 30)
+        // In Europe's languages too: each was tomorrow at noon.
+        expectAll(["demain à minuit": [26, 0], "morgen um Mitternacht": [26, 0], "mañana a medianoche": [26, 0],
+                   "mañana a las 12 de la noche": [26, 0], "amanhã à meia-noite": [26, 0], "amanhã às 12h da noite": [26, 0],
+                   // Japanese writes midnight as "午前0時".
+                   "明日の午前0時": [25, 0], "午前0時": [25, 0]])
+    }
+
+    /// "This evening", "esta tarde", "cet après-midi": today, at that time,
+    /// and never tomorrow's once it has begun.
+    @Test func thisMorningAfternoonAndEvening() {
+        let morning = calendar.date(from: DateComponents(year: 2026, month: 9, day: 24, hour: 10))!
+        func hour(_ phrase: String, at time: Date) -> [Int]? {
+            TimePhrase.parse(phrase, now: time, calendar: calendar)
+                .map { calendar.dateComponents([.day, .hour], from: $0) }.map { [$0.day!, $0.hour!] }
+        }
+        for phrase in ["this afternoon", "esta tarde", "cet après-midi"] {
+            #expect(hour(phrase, at: morning) == [24, 14], "\(phrase)")
+        }
+        #expect(hour("this evening", at: morning) == [24, 18])
+        #expect(hour("this evening", at: now) == nil)
     }
 
     @Test func chinese() {
