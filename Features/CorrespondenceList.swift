@@ -71,7 +71,7 @@ struct CorrespondenceRow: View {
                 if let recipient = sentTo ?? (thread.isFromAccountOwner ? thread.counterpartName() : nil) {
                     CorrespondentAvatar(initials: Self.initials(of: recipient), email: thread.toRecipients.first)
                 } else {
-                    CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail)
+                    CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail, companyLogo: thread.showsCompanyLogo)
                 }
             }
             VStack(alignment: .leading, spacing: 2) {

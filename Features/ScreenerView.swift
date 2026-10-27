@@ -47,6 +47,8 @@ struct ScreenerView: View {
         let latestDate: Date
         let messageCount: Int
         let isCompany: Bool
+        /// The latest email's service vouched for its From domain.
+        let companyLogo: Bool
         var id: String { "\(account)|\(senderEmail)" }
         var domain: String? { InboxClassifier.companyDomain(of: senderEmail) }
     }
@@ -65,7 +67,7 @@ struct ScreenerView: View {
             }
             return SenderGroup(senderEmail: senderEmail, account: first.id.account, sender: first.sender,
                                latestSubject: latest.subject, latestDate: latest.receivedAt,
-                               messageCount: threads.count, isCompany: isCompany)
+                               messageCount: threads.count, isCompany: isCompany, companyLogo: latest.showsCompanyLogo)
         }.sorted { $0.latestDate > $1.latestDate }
     }
 
@@ -186,7 +188,7 @@ struct ScreenerView: View {
     private func card(for group: SenderGroup) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
-                CorrespondentAvatar(initials: initials(for: group.sender), email: group.senderEmail)
+                CorrespondentAvatar(initials: initials(for: group.sender), email: group.senderEmail, companyLogo: group.companyLogo)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(group.sender).font(.body.weight(.semibold)).lineLimit(1)

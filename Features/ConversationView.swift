@@ -516,7 +516,8 @@ struct ConversationView: View {
     private func headerContent(for thread: Correspondence) -> some View {
         HStack(spacing: 12) {
             CorrespondentAvatar(initials: thread.isFromAccountOwner ? "Y" : thread.initials,
-                                email: thread.isFromAccountOwner ? nil : thread.senderEmail, size: CGSize(width: 44, height: 44))
+                                email: thread.isFromAccountOwner ? nil : thread.senderEmail, size: CGSize(width: 44, height: 44),
+                                companyLogo: thread.showsCompanyLogo)
             VStack(alignment: .leading, spacing: 2) {
                 Text(thread.isFromAccountOwner ? String(localized: "You") : thread.sender).font(.body.weight(.semibold))
                 // Wraps rather than cutting off the date or their address.

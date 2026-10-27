@@ -235,3 +235,19 @@ struct FolderNameTests {
         }
     }
 }
+
+struct HeaderFieldsTests {
+    /// Every Authentication-Results header, folded lines joined, in the
+    /// message's order: the receiving server's own comes first.
+    @Test func keepsEveryAuthenticationResultsInOrder() {
+        let raw = "Authentication-Results: dmarc.icloud.com; dmarc=pass\r\n header.from=apple.com\r\n"
+            + "List-Unsubscribe: <https://apple.example/u>\r\n"
+            + "authentication-results: spf.icloud.com; spf=pass smtp.mailfrom=apple.com\r\n\r\n"
+        let fields = HeaderFields(data: Data(raw.utf8))
+        #expect(fields.values("Authentication-Results") == [
+            "dmarc.icloud.com; dmarc=pass header.from=apple.com",
+            "spf.icloud.com; spf=pass smtp.mailfrom=apple.com",
+        ])
+        #expect(fields.value("List-Unsubscribe") == "<https://apple.example/u>")
+    }
+}

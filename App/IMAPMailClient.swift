@@ -831,6 +831,15 @@ struct IMAPMailClient: Sendable {
             listUnsubscribeMailto: mailto, listUnsubscribeURL: url,
             listUnsubscribeOneClick: url != nil && (m.listUnsubscribePost?.lowercased().contains("one-click") ?? false),
             bodyLoaded: body != nil)
+            .with(fromDomainVerified: MailAuthentication.dmarcPasses(
+                headers: m.authenticationResults, receiver: Self.receiver(for: account), fromAddress: senderEmail))
+    }
+
+    /// Whose Authentication-Results count: iCloud's own. Another IMAP
+    /// service's can't be told from one the sender wrote, so its mail shows
+    /// no company logo.
+    static func receiver(for account: String) -> MailAuthentication.Receiver {
+        MailAccounts.provider(for: account) == .icloud && IMAPServer.for(account).imapHost == "imap.mail.me.com" ? .icloud : .unknown
     }
 
     static func labels(flags: Set<String>, folder: String, folders: IMAPSessions.FolderPaths, hasUnsubscribe: Bool = false) -> [String] {

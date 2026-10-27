@@ -681,7 +681,8 @@ final class ThreadCellView: NSTableCellView {
             let side = (32 * min(MacListScale.factor, 1.5)).rounded()
             pictureSize.constant = side
             textLeading.constant = 18 + side + 10
-            let avatar = CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail, size: CGSize(width: side, height: side))
+            let avatar = CorrespondentAvatar(initials: thread.initials, email: thread.senderEmail, size: CGSize(width: side, height: side),
+                                             companyLogo: thread.showsCompanyLogo)
             picture.rootView = people.map { AnyView(avatar.environment($0)) } ?? AnyView(avatar)
         } else {
             textLeading.constant = 20

@@ -74,6 +74,8 @@ public final class PersistedCorrespondence {
     /// in `PersistedMessageContent`; `htmlBody` here only holds mail saved
     /// before that, until it's moved (`SwiftDataMailRepository.moveContent`).
     public var htmlImageOnly: Bool = false
+    /// `Correspondence.fromDomainVerified`; nil for rows stored before it.
+    public var fromDomainVerified: Bool? = nil
 
     public init(from correspondence: Correspondence) {
         self.compositeID = Self.compositeID(account: correspondence.id.account, providerID: correspondence.id.providerID)
@@ -110,6 +112,7 @@ public final class PersistedCorrespondence {
         self.isBodyLoaded = correspondence.isBodyLoaded
         self.waitingSince = correspondence.waitingSince
         self.lastSentAt = correspondence.lastSentAt
+        self.fromDomainVerified = correspondence.fromDomainVerified
     }
 
     /// Everything but the message itself. The list, sync and sorting read
@@ -123,7 +126,7 @@ public final class PersistedCorrespondence {
         \.snoozedUntil, \.senderDecisionRaw, \.imagesTrusted, \.attachmentsData, \.isUnread, \.labelIds,
         \.listUnsubscribeMailto, \.listUnsubscribeURL, \.listUnsubscribeOneClick, \.senderUnsubscribed,
         \.toRecipients, \.ccRecipients, \.replyTo, \.triagedMessageID, \.isBodyLoaded, \.waitingSince, \.lastSentAt,
-        \.htmlImageOnly,
+        \.htmlImageOnly, \.fromDomainVerified,
     ] }
 
     /// What the list holds: the text, for search and the signals read
@@ -168,6 +171,7 @@ public final class PersistedCorrespondence {
                        listUnsubscribeOneClick: listUnsubscribeOneClick, senderUnsubscribed: senderUnsubscribed,
                        isBodyLoaded: isBodyLoaded, waitingSince: waitingSince, lastSentAt: lastSentAt)
         item.htmlImageOnly = htmlImageOnly
+        item.fromDomainVerified = fromDomainVerified
         return item
     }
 
