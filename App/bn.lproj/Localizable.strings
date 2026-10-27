@@ -3795,3 +3795,21 @@
 "Automatic reply." = "স্বয়ংক্রিয় উত্তর।";
 
 "Automatic reply. Kept out of Needs You." = "স্বয়ংক্রিয় উত্তর। আপনার করণীয়-র বাইরে রাখা হয়েছে।";
+
+/* Compose: adding attachments. */
+"%@ would put this email over %@’s %@ limit." = "%@ যোগ করলে এই ইমেইলটি %@-এর %@ সীমা ছাড়িয়ে যাবে।";
+
+/* Compose: adding attachments. */
+"A photo was made smaller to fit %@’s %@ limit." = "%@-এর %@ সীমায় আঁটাতে একটি ছবি ছোট করা হয়েছে।";
+
+/* Compose: adding attachments. */
+"%lld photos were made smaller to fit %@’s %@ limit." = "%lldটি ছবি %@-এর %@ সীমায় আঁটাতে ছোট করা হয়েছে।";
+
+/* Compose: adding attachments. */
+"One item couldn't be loaded." = "একটি জিনিস লোড করা যায়নি।";
+
+/* Compose: adding attachments. */
+"%lld items couldn't be loaded." = "%lldটি জিনিস লোড করা যায়নি।";
+
+/* Compose: adding attachments. */
+"Couldn't open %@." = "%@ খোলা যায়নি।";

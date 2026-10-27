@@ -3795,3 +3795,21 @@
 "Automatic reply." = "自动回复。";
 
 "Automatic reply. Kept out of Needs You." = "自动回复。未放入“需要你”。";
+
+/* Compose: adding attachments. */
+"%@ would put this email over %@’s %@ limit." = "加入 %1$@ 后，这封邮件会超出%2$@的 %3$@ 上限。";
+
+/* Compose: adding attachments. */
+"A photo was made smaller to fit %@’s %@ limit." = "已缩小 1 张照片，以符合%1$@的 %2$@ 上限。";
+
+/* Compose: adding attachments. */
+"%lld photos were made smaller to fit %@’s %@ limit." = "已缩小 %1$lld 张照片，以符合%2$@的 %3$@ 上限。";
+
+/* Compose: adding attachments. */
+"One item couldn't be loaded." = "有 1 项无法载入。";
+
+/* Compose: adding attachments. */
+"%lld items couldn't be loaded." = "有 %lld 项无法载入。";
+
+/* Compose: adding attachments. */
+"Couldn't open %@." = "无法打开 %@。";
