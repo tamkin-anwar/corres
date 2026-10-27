@@ -92,3 +92,14 @@ CASA.
 - Testers must be added as **test users** in the Cloud Console (up to 100).
 - They'll see Google's "unverified app" screen and can continue past it.
 - Outlook isn't affected by any of this; it has its own Microsoft verification (see the launch checklist).
+
+## 2026-10-27: second submission
+Google replied on Oct 20 asking for a fuller demo video, exact scope matching,
+and privacy policy sections on sharing and protection. Done:
+- Privacy policy: "Who we share Google user data with" and "How we protect your data".
+- Data Access: added openid, email and profile (the app requests them); new justification.
+- New video, https://youtu.be/Ax97pAU6cko (unlisted, 13 min), recorded on the
+  studio Workspace account: both consent flows expanded, every gmail.modify
+  action and both gmail.settings.basic uses (Out of Office, Rules as Gmail
+  filters), each followed by the result in Gmail on the web.
+- Replied to Google's email thread. Status: data access under review.
