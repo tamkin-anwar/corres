@@ -180,6 +180,10 @@ final class MacServices {
         }
         await auth.restoreConnectedAccounts()
         HangReporter.step("accounts restored")
+        // Asked for as soon as the accounts are known, not after the
+        // first sync: a slow or stuck sync used to mean it was never
+        // asked at all, so no alerts and no pushes on the Mac.
+        Task { await startNotifications() }
         await loading.value
         HangReporter.finish("launch")
         #if DEBUG
@@ -204,7 +208,6 @@ final class MacServices {
         await outbox.resumeAfterRelaunch()
         watchIMAP()
         startChecking()
-        await startNotifications()
     }
 
     #if DEBUG
@@ -409,6 +412,9 @@ final class MacServices {
             await checkForMail()
             // A new account's labels or folders, in the sidebar now.
             await labelDirectory.refreshIfConnected(accounts: auth.accounts.map(\.email))
+            // The first account added in Settings asks for alerts now,
+            // not at the next launch; a later one registers its pushes.
+            await startNotifications()
         }
     }
 

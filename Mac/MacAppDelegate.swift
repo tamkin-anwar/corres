@@ -63,7 +63,10 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
         MainActor.assumeIsolated { MacAppDelegate.didRegister?(deviceToken) }
     }
 
-    func application(_ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {}
+    func application(_ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        // Without a token the Mac gets no pushes: say so in diagnostics.
+        HangReporter.note("push registration failed: \((error as NSError).domain) \((error as NSError).code)")
+    }
 
     /// A silent push: mail changed on the server, so check now rather
     /// than at the next 20-second look.
