@@ -564,6 +564,22 @@ struct WorldRulesTests {
         #expect(!MailDigest.isAmount("PAID 12 items"))
     }
 
+    /// In capitals, words are currency codes too: "TOP 10" is Tonga's
+    /// pa'anga and "ALL 3" Albania's lek. A code in capital text counts
+    /// only with a money label before it or cents after.
+    @Test func capitalWordsAreNotAmounts() {
+        #expect(MailDigest.facts(in: "OUR TOP 10 PICKS FOR THIS WEEK").isEmpty)
+        #expect(MailDigest.facts(in: "PLEASE PAY ALL 3 INSTALMENTS ON TIME").isEmpty)
+        #expect(MailDigest.facts(in: "TOP 10\nShop the list").isEmpty)
+        // Real amounts in capitals stay.
+        #expect(MailDigest.facts(in: "ORDER TOTAL USD 300 PAID") == ["USD 300"])
+        #expect(MailDigest.facts(in: "ORDER TOTAL:\nEUR 45") == ["EUR 45"])
+        #expect(MailDigest.facts(in: "BALANCE ALL 3,500.00 THANK YOU") == ["ALL 3,500.00"])
+        #expect(MailDigest.facts(in: "YOU PAID $45, THANK YOU") == ["$45"])
+        // In ordinary text, codes read as before.
+        #expect(MailDigest.facts(in: "Also AED 120 on file.") == ["AED 120"])
+    }
+
     @Test func amountsWrittenWithWords() {
         for amount in ["1,250円", "5,000원", "88元", "20块", "1,250 টাকা", "৳1,250", "Rs. 1,500/-", "RMB 300", "₹2,499"] {
             #expect(MailDigest.isAmount(amount), "\(amount)")

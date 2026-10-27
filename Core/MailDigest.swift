@@ -423,10 +423,29 @@ public enum MailDigest {
         return signs
     }()
 
+    /// Where `text` names an amount (`amountPattern`). In capital text a
+    /// currency written only as its code needs a money label before it or
+    /// cents after: there "TOP 10" (Tonga's pa'anga) and "ALL 3" (Albania's
+    /// lek) are words. The glance card reads codes with their case for
+    /// the same reason (`caseSensitiveAmount`), which capitals get past.
+    static func amountRanges(in text: String) -> [Range<String.Index>] {
+        text.regexRanges(of: amountPattern).filter { range in
+            let marker = currencyMarker(text[range].filter { !$0.isNumber })
+            guard !marker.isEmpty, marker.allSatisfy({ $0.isASCII && $0.isLetter }) else { return true }
+            let lineStart = text[..<range.lowerBound].lastIndex(of: "\n").map { text.index(after: $0) } ?? text.startIndex
+            let lineEnd = text[range.upperBound...].firstIndex(of: "\n") ?? text.endIndex
+            let around = text[lineStart..<range.lowerBound] + text[range.upperBound..<lineEnd]
+            if around.contains(where: \.isLowercase) { return true }
+            if text[range].patternRange(#"\d[.,]\d{2}(/-)?$"#) != nil { return true }
+            let before = text[text.index(range.lowerBound, offsetBy: -min(40, text.distance(from: text.startIndex, to: range.lowerBound)))..<range.lowerBound]
+            return before.patternRange(#"(?i)\b(total|subtotal|amount|balance|price|fee|cost|charged?|due|sum|betrag|summe|gesamt|montant|prix|importe|monto|precio|valor|preço)\s*[:：\-–—]?\s*$"#) != nil
+        }
+    }
+
     /// Each amount in `text`, with its value (`canonicalNumber`) and the
     /// currencies it can be in.
     private static func amounts(in text: String) -> [(text: String, value: String, currencies: Set<String>?)] {
-        text.regexRanges(of: amountPattern).compactMap { range in
+        amountRanges(in: text).compactMap { range in
             let written = String(text[range])
             // Thousands grouped with a space count whole ("1 250,00 €").
             guard let value = numberTokens(in: written.replacingOccurrences(of: " ", with: "\u{00A0}")).first else { return nil }
@@ -442,7 +461,7 @@ public enum MailDigest {
             guard !value.isEmpty, !found.contains(where: { $0.1 == value }) else { return }
             found.append((source.distance(from: source.startIndex, to: range.lowerBound), value))
         }
-        for range in source.regexRanges(of: amountPattern) { add(range) }
+        for range in amountRanges(in: source) { add(range) }
         for range in source.regexRanges(of: #"(?i:\b(order|confirmation|booking|reservation|invoice|ticket|case|tracking)\s*(number|no\.?|#|id|code)?\s*(is)?\s*:?\s*#?)(?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{3,}\b"#) { add(range) }
         if let code = verificationCode(in: source), let range = source.range(of: code) { add(range) }
         if let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) {
