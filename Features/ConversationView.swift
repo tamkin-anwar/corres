@@ -33,6 +33,8 @@ struct ConversationView: View {
     let onLeave: (() -> Void)?
     @State private var currentID: ThreadID
     @State private var composeDraft: Draft?
+    /// The conversation a reply or forward was started from, kept while it's written.
+    @State private var composeSource: Correspondence?
     @State private var htmlHeight: CGFloat = 200
     @State private var showRemoteImages = false
     @State private var showingUnsubscribeConfirmation = false
@@ -327,10 +329,14 @@ struct ConversationView: View {
         .userActivity(Handoff.conversation, isActive: store.thread(currentID) != nil) { activity in
             if let thread = store.thread(currentID) { Handoff.describe(activity, thread) }
         }
+        // The conversation the reply was started in, not the one showing:
+        // archived elsewhere mid-reply, the next one took its place here,
+        // and the reply went into that conversation instead.
         .sheet(item: $composeDraft) { draft in
             ComposeView(store: store, outbox: outbox, auth: auth, draft: draft,
-                        sourceThread: store.thread(currentID))
+                        sourceThread: draft.threadID.flatMap { store.thread($0) } ?? composeSource)
         }
+        .onChange(of: composeDraft?.id) { composeSource = composeDraft?.threadID.flatMap { store.thread($0) } }
         .confirmationDialog("Move this conversation to Trash?",
                             isPresented: Binding(get: { confirmingTrash != nil }, set: { if !$0 { confirmingTrash = nil } }),
                             titleVisibility: .visible) {

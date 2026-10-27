@@ -43,6 +43,8 @@ struct CorresShell: View {
     @State private var showingScreener = false
     @State private var showingWelcome = false
     @State private var composeDraft: Draft?
+    /// The draft taken off the pill: closing it unchanged keeps it.
+    @State private var reopenedDraftID: UUID?
     /// nil is the unified view (every connected account merged, chronological,
     /// matching Apple Mail's "All Inboxes"/Spark's Smart Inbox); a specific
     /// email switches to that one account only, matching Superhuman's
@@ -153,6 +155,13 @@ struct CorresShell: View {
         showingPaywall = true
     }
 
+    /// The email on the Draft pill, back in Compose.
+    fileprivate func openShelved() {
+        let draft = outbox.takeShelved()
+        reopenedDraftID = draft?.id
+        composeDraft = draft
+    }
+
     /// A new email to someone (from their person card).
     func write(to address: String) {
         composeDraft = Draft(kind: .new, to: address, subject: "")
@@ -198,10 +207,12 @@ struct CorresShell: View {
         case .thread(let id):
             // Archived mail too: Search finds it, so it opens.
             guard let thread = store.thread(id) else {
-                show(.needsYou)
+                show(requiresPro ? .mail : .needsYou)
                 return
             }
-            let preferred: Destination = thread.attention == .waiting ? .waiting : (thread.attention == .needsYou ? .needsYou : .mail)
+            // Without Pro, Mail: the list beside it was a lock on iPad.
+            let preferred: Destination = requiresPro ? .mail
+                : thread.attention == .waiting ? .waiting : (thread.attention == .needsYou ? .needsYou : .mail)
             let destination = tabs.contains(preferred) || sizeClass == .regular ? preferred : .mail
             let switching = selection != destination
             selection = destination
@@ -260,6 +271,9 @@ struct CorresShell: View {
             // Back from a Control Center button or a widget's Handled.
             OutboxService.isAway = phase == .background
             if phase == .active {
+                // A subscription that ended while Corres sat in the
+                // background sends no update: it kept Pro until relaunch.
+                Task { await entitlements.refresh() }
                 Organizer.shared.applyWidgetHandoffs()
                 ServerRules.shared.retryIfFailed()
                 Task { await outbox.retryFailedQuietly() }
@@ -427,7 +441,8 @@ struct CorresShell: View {
                 .onAppear { if offeringTrial { paywallOffered = true } }
         }
         .sheet(item: $composeDraft) { draft in ComposeView(store: store, outbox: outbox, auth: auth, draft: draft,
-                                                                     sourceThread: draft.threadID.flatMap { store.thread($0) })
+                                                                     sourceThread: draft.threadID.flatMap { store.thread($0) },
+                                                                     reopened: draft.id == reopenedDraftID)
             .environment(\.proUnlocked, !requiresPro) }
         .fullScreenCover(isPresented: $showingWelcome, onDismiss: { if trialOfferWaiting { offerTrialIfDue() } }) {
             WelcomeView {
@@ -613,7 +628,7 @@ struct CorresShell: View {
                         .font(.caption).foregroundStyle(CorresPalette.secondary)
                         .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 }
-                Button("Open") { composeDraft = outbox.takeShelved() }
+                Button("Open") { openShelved() }
                     .font(.subheadline.weight(.semibold))
                     .fixedSize()
                 Button { outbox.clearShelf() } label: {
@@ -624,7 +639,7 @@ struct CorresShell: View {
             }
             .padding(.leading, 16).padding(.trailing, 8).frame(minHeight: 48)
             .corresGlass(in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .onTapGesture { composeDraft = outbox.takeShelved() }
+            .onTapGesture { openShelved() }
             // About as wide as it used to be at most, and never wider than
             // the screen at large text sizes, so Open stays on it.
             .frame(maxWidth: 350)
@@ -842,6 +857,8 @@ struct CorresShell: View {
     }
 
     private func sidebarCount(for destination: Destination) -> Int? {
+        // Locked lists show no count, as on the widgets and the Watch.
+        if requiresPro, destination != .mail { return nil }
         let overview = store.overview(account: accountFilter, all: auth.accounts.map(\.email))
         switch destination {
         case .needsYou: return overview.needsYou.count

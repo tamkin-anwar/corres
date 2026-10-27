@@ -121,7 +121,9 @@ final class WatchBridge: NSObject {
             await actions.setUnread(false, for: thread)
         case .reply(_, let text):
             guard let outbox = Organizer.shared.outbox, thread.id.account != "sample" else { return }
-            if !thread.isBodyLoaded { await actions.loadContent(for: thread) }
+            // A few seconds at most, as from a notification: woken in the
+            // background, Corres could be stopped before the reply was saved.
+            if !thread.isBodyLoaded { _ = await waitBriefly(for: Task { await actions.loadContent(for: thread) }, upTo: .seconds(8)) }
             let source = store.thread(thread.id) ?? thread
             var draft = source.draft(kind: .reply)
             draft.body = Draft.adding(signature: CorresSettings.signature(for: source.id.account, reply: true), to: text + draft.body)

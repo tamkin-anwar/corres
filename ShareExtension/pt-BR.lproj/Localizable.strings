@@ -362,3 +362,9 @@
 "Automatic reply." = "Resposta automática.";
 
 "Automatic reply. Kept out of Needs You." = "Resposta automática. Fora de Precisa de Você.";
+
+/* The Share sheet: what is attached. */
+"1 attachment" = "1 anexo";
+
+/* The Share sheet: what is attached. */
+"%lld attachments" = "%lld anexos";

@@ -362,3 +362,9 @@
 "Automatic reply." = "자동 회신입니다.";
 
 "Automatic reply. Kept out of Needs You." = "자동 회신입니다. '나에게 필요'에 넣지 않았습니다.";
+
+/* The Share sheet: what is attached. */
+"1 attachment" = "첨부 파일 1개";
+
+/* The Share sheet: what is attached. */
+"%lld attachments" = "첨부 파일 %lld개";

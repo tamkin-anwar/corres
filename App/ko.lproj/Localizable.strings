@@ -3795,3 +3795,21 @@
 "Automatic reply." = "자동 회신입니다.";
 
 "Automatic reply. Kept out of Needs You." = "자동 회신입니다. '나에게 필요'에 넣지 않았습니다.";
+
+/* Compose: adding attachments. */
+"%@ would put this email over %@’s %@ limit." = "%1$@을(를) 추가하면 이 이메일이 %2$@의 %3$@ 한도를 초과합니다.";
+
+/* Compose: adding attachments. */
+"A photo was made smaller to fit %@’s %@ limit." = "%1$@의 %2$@ 한도에 맞도록 사진 1장을 줄였습니다.";
+
+/* Compose: adding attachments. */
+"%lld photos were made smaller to fit %@’s %@ limit." = "%2$@의 %3$@ 한도에 맞도록 사진 %1$lld장을 줄였습니다.";
+
+/* Compose: adding attachments. */
+"One item couldn't be loaded." = "항목 1개를 불러올 수 없습니다.";
+
+/* Compose: adding attachments. */
+"%lld items couldn't be loaded." = "항목 %lld개를 불러올 수 없습니다.";
+
+/* Compose: adding attachments. */
+"Couldn't open %@." = "%@을(를) 열 수 없습니다.";

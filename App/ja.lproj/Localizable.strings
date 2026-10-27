@@ -3795,3 +3795,21 @@
 "Automatic reply." = "自動返信です。";
 
 "Automatic reply. Kept out of Needs You." = "自動返信です。「要対応」には入れません。";
+
+/* Compose: adding attachments. */
+"%@ would put this email over %@’s %@ limit." = "%1$@を追加すると、このメールは%2$@の上限（%3$@）を超えます。";
+
+/* Compose: adding attachments. */
+"A photo was made smaller to fit %@’s %@ limit." = "%1$@の上限（%2$@）に収まるよう、写真を1枚小さくしました。";
+
+/* Compose: adding attachments. */
+"%lld photos were made smaller to fit %@’s %@ limit." = "%2$@の上限（%3$@）に収まるよう、写真を%1$lld枚小さくしました。";
+
+/* Compose: adding attachments. */
+"One item couldn't be loaded." = "1件の項目を読み込めませんでした。";
+
+/* Compose: adding attachments. */
+"%lld items couldn't be loaded." = "%lld件の項目を読み込めませんでした。";
+
+/* Compose: adding attachments. */
+"Couldn't open %@." = "%@を開けませんでした。";

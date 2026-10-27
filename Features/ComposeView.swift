@@ -89,7 +89,15 @@ struct ComposeView: View {
     /// (Mail's two-step delete, so one stray tap never loses a recipient).
     @State private var selectedChip: (field: Field, index: Int)?
 
-    init(store: MailStore, outbox: OutboxService, auth: GoogleAuthService? = nil, draft: Draft, sourceThread: Correspondence?) {
+    /// Opened from where it was kept (the Draft pill, Send Later, Undo):
+    /// closing it unchanged keeps it. It was let go, the email with it.
+    private let reopened: Bool
+
+    init(store: MailStore, outbox: OutboxService, auth: GoogleAuthService? = nil, draft: Draft, sourceThread: Correspondence?,
+         reopened: Bool = false) {
+        // Already been in Compose (put aside, scheduled, undone), or
+        // written in the Share sheet.
+        self.reopened = reopened || draft.signatureAdded == true
         self.store = store
         self.outbox = outbox
         self.auth = auth
@@ -298,12 +306,12 @@ struct ComposeView: View {
             // Leaving Corres mid-email: saved to Drafts, in case iOS closes
             // Corres while it's in the background.
             .onChange(of: scenePhase) { _, phase in
-                if phase == .background, !isFinished, hasUnsavedChanges { outbox.autosave(draft, replyingTo: sourceThread) }
+                if phase == .background, !isFinished, hasUnsavedChanges || reopened { outbox.autosave(draft, replyingTo: sourceThread) }
             }
             // Swiping Compose away never loses what you wrote: it's saved
             // and tucked away, as Gmail saves and Mail minimizes.
             .onDisappear {
-                if !isFinished, hasUnsavedChanges || draft.gmailDraftID != nil {
+                if !isFinished, hasUnsavedChanges || draft.gmailDraftID != nil || reopened {
                     outbox.shelve(draft, replyingTo: sourceThread)
                 }
             }
@@ -554,7 +562,9 @@ struct ComposeView: View {
         Task {
             let result = await intelligence.rewrite(text, tone: tone)
             rewriting = nil
-            guard let result else { return }
+            // Typed on while it was rewritten: those words stay. The
+            // rewrite replaced them, and Undo went back to before them too.
+            guard let result, ownText.text == text else { return }
             beforeRewrite = text
             draft.body = result + quote
             bodyRevision += 1
@@ -581,7 +591,7 @@ struct ComposeView: View {
 
     private func attemptDismiss() {
         // A saved draft always offers Delete too, not only once changed.
-        if hasUnsavedChanges || draft.gmailDraftID != nil { showingDiscardConfirmation = true } else { dismiss() }
+        if hasUnsavedChanges || draft.gmailDraftID != nil || reopened { showingDiscardConfirmation = true } else { dismiss() }
     }
 
     /// Optimistic: the sheet closes the instant Send is tapped, matching the
@@ -1111,7 +1121,7 @@ struct ComposeView: View {
     /// the undo window.
     private func addAttachment(filename: String, mimeType: String, data: Data) {
         guard draft.attachmentsSizeBytes + data.count <= sendingProvider.attachmentLimit else {
-            attachmentError = "\(filename) would put this email over \(MailAccounts.serviceTitle(for: sendingAccount))\u{2019}s \(sendingProvider.attachmentLimitText) limit."
+            attachmentError = String(localized: "\(filename) would put this email over \(MailAccounts.serviceTitle(for: sendingAccount))\u{2019}s \(sendingProvider.attachmentLimitText) limit.")
             return
         }
         draft.attachments.append(PendingAttachment(filename: filename, mimeType: mimeType, data: data))
@@ -1141,11 +1151,11 @@ struct ComposeView: View {
             addAttachment(filename: file.filename, mimeType: file.mimeType, data: file.data)
         }
         if shrank > 0, failed == 0, attachmentError == nil {
-            let limit = "\(MailAccounts.serviceTitle(for: sendingAccount))\u{2019}s \(sendingProvider.attachmentLimitText) limit"
-            attachmentNote = shrank == 1 ? "A photo was made smaller to fit \(limit)."
-                                         : "\(shrank) photos were made smaller to fit \(limit)."
+            let service = MailAccounts.serviceTitle(for: sendingAccount), limit = sendingProvider.attachmentLimitText
+            attachmentNote = shrank == 1 ? String(localized: "A photo was made smaller to fit \(service)\u{2019}s \(limit) limit.")
+                                         : String(localized: "\(shrank) photos were made smaller to fit \(service)\u{2019}s \(limit) limit.")
         }
-        if failed > 0 { attachmentError = failed == 1 ? "One item couldn't be loaded." : "\(failed) items couldn't be loaded." }
+        if failed > 0 { attachmentError = failed == 1 ? String(localized: "One item couldn't be loaded.") : String(localized: "\(failed) items couldn't be loaded.") }
     }
 
     /// `.fileImporter` hands back security-scoped URLs: access must be
@@ -1155,7 +1165,7 @@ struct ComposeView: View {
     private func addFiles(_ urls: [URL]) {
         for url in urls {
             guard let data = AttachmentFiles.read(url) else {
-                attachmentError = "Couldn't open \(url.lastPathComponent)."
+                attachmentError = String(localized: "Couldn't open \(url.lastPathComponent).")
                 continue
             }
             let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"

@@ -384,9 +384,10 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             return
         }
         guard let account = info["account"] as? String, let providerID = info["thread"] as? String else {
-            // A summary of several emails opens Needs You.
+            // A summary of several emails opens Needs You, or Mail without
+            // Pro: new mail never opens on a lock.
             if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
-                await MainActor.run { AppRouter.shared.pending = .destination(.needsYou) }
+                await MainActor.run { AppRouter.shared.pending = .destination(WidgetBridge.isLocked ? .mail : .needsYou) }
             }
             return
         }
@@ -407,8 +408,10 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         let id = ThreadID(account: account, providerID: providerID)
         // The notification extension can show an email before Corres has
         // stored it: fetched now, or a reply typed into it would be lost.
+        // Bounded too: a long catch-up would use the action's time up, and
+        // still not here, a reply is kept as a draft below.
         if store.thread(id) == nil {
-            _ = await sync.syncAll(accounts: [account])
+            _ = await waitBriefly(for: Task { [sync] in _ = await sync.syncAll(accounts: [account]) }, upTo: .seconds(10))
             await store.load()
         }
         guard let thread = store.thread(id) else {
@@ -432,9 +435,12 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             guard !text.isEmpty else { return }
             // The email it quotes: Corres closed, it often hasn't been read
             // here yet, and the reply went out quoting nothing.
+            // A few seconds at most: iOS gives a notification action little
+            // time, and a slow connection (the fetch waits up to 45) used
+            // to have Corres stopped before the reply was even saved.
             var thread = thread
             if !thread.isBodyLoaded {
-                await threadActions.loadContent(for: thread)
+                _ = await waitBriefly(for: Task { await threadActions.loadContent(for: thread) }, upTo: .seconds(8))
                 thread = store.thread(thread.id) ?? thread
             }
             // As a reply written in Compose: your words, your signature,

@@ -1,3 +1,4 @@
+import ImageIO
 import LinkPresentation
 import UIKit
 import UniformTypeIdentifiers
@@ -13,7 +14,16 @@ struct SharedContent {
         var data: Data
         var isImage: Bool
         var thumbnail: UIImage?
+        /// A file too big for any service to carry is left unread (`data`
+        /// stays empty), only its size kept so the sheet can say so: a long
+        /// video read whole used up the little memory a Share sheet gets,
+        /// and it closed.
+        var unreadSize: Int?
+        var size: Int { unreadSize ?? data.count }
     }
+
+    /// The most any service takes in one email (`MailProvider.attachmentLimit`).
+    static let largestSendable = [MailProvider.google, .microsoft, .icloud, .imap].map(\.attachmentLimit).max() ?? 25_000_000
 
     struct Link {
         let url: URL
@@ -49,10 +59,11 @@ struct SharedContent {
                     if let file = await loadImage(provider, type: image, number: photos) { content.files.append(file) }
                 } else if let movie = types.first(where: { $0.conforms(to: .movie) || $0.conforms(to: .audiovisualContent) }) {
                     videos += 1
-                    if let data = await loadData(provider, type: movie) {
+                    if let read = await loadFileData(provider, type: movie) {
                         let ext = movie.preferredFilenameExtension ?? "mov"
                         content.files.append(File(filename: name(provider, fallback: "Video \(videos)", ext: ext),
-                                                  mimeType: movie.preferredMIMEType ?? "video/quicktime", data: data, isImage: false))
+                                                  mimeType: movie.preferredMIMEType ?? "video/quicktime", data: read.data, isImage: false,
+                                                  unreadSize: read.unreadSize))
                     }
                 } else if types.contains(where: { $0 == .url }), !types.contains(where: { $0 == .fileURL }),
                           let url = try? await provider.loadItem(forTypeIdentifier: UTType.url.identifier) as? URL, !url.isFileURL {
@@ -138,18 +149,35 @@ struct SharedContent {
     @MainActor
     private static func loadFile(_ provider: NSItemProvider, type: UTType) async -> File? {
         let suggested = provider.suggestedName
-        return await withCheckedContinuation { continuation in
+        guard let read = await loadFileData(provider, type: type) else { return nil }
+        let url = read.url
+        let actual = UTType(filenameExtension: url.pathExtension) ?? type
+        let filename = suggested.map { name in
+            (name as NSString).pathExtension.isEmpty && !url.pathExtension.isEmpty ? "\(name).\(url.pathExtension)" : name
+        } ?? url.lastPathComponent
+        return File(filename: filename, mimeType: actual.preferredMIMEType ?? "application/octet-stream",
+                    data: read.data, isImage: false, unreadSize: read.unreadSize)
+    }
+
+    /// A file's contents, from the copy the provider hands over. Too big to
+    /// send anywhere: its size only (see `File.unreadSize`).
+    @MainActor
+    private static func loadFileData(_ provider: NSItemProvider, type: UTType) async -> (data: Data, unreadSize: Int?, url: URL)? {
+        await withCheckedContinuation { continuation in
             _ = provider.loadFileRepresentation(forTypeIdentifier: type.identifier) { url, _ in
-                guard let url, let data = try? Data(contentsOf: url) else {
+                guard let url else {
                     continuation.resume(returning: nil)
                     return
                 }
-                let actual = UTType(filenameExtension: url.pathExtension) ?? type
-                let filename = suggested.map { name in
-                    (name as NSString).pathExtension.isEmpty && !url.pathExtension.isEmpty ? "\(name).\(url.pathExtension)" : name
-                } ?? url.lastPathComponent
-                continuation.resume(returning: File(filename: filename, mimeType: actual.preferredMIMEType ?? "application/octet-stream",
-                                                    data: data, isImage: false))
+                if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > largestSendable {
+                    continuation.resume(returning: (Data(), size, url))
+                    return
+                }
+                guard let data = try? Data(contentsOf: url) else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                continuation.resume(returning: (data, nil, url))
             }
         }
     }
@@ -203,16 +231,26 @@ enum PhotoSize: String, CaseIterable, Identifiable {
     }
 
     /// The photo at this size, as JPEG (never larger than the original).
+    /// Scaled as it's read, never drawn at full size first: each full
+    /// 12- or 48-megapixel decode, three sizes for every photo, took more
+    /// memory than the Share sheet is allowed.
     func resized(_ data: Data) -> Data {
-        guard let maxPixels, let image = UIImage(data: data) else { return data }
-        let longest = max(image.size.width * image.scale, image.size.height * image.scale)
-        guard longest > maxPixels else { return data }
-        let scale = maxPixels / longest
-        let size = CGSize(width: (image.size.width * image.scale * scale).rounded(), height: (image.size.height * image.scale * scale).rounded())
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        let resized = UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
-        guard let jpeg = resized.jpegData(compressionQuality: 0.8), jpeg.count < data.count else { return data }
+        guard let maxPixels, let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = (properties[kCGImagePropertyPixelWidth] as? NSNumber)?.doubleValue,
+              let height = (properties[kCGImagePropertyPixelHeight] as? NSNumber)?.doubleValue,
+              max(width, height) > maxPixels else { return data }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixels,
+        ]
+        let jpeg = autoreleasepool { () -> Data? in
+            guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+            return UIImage(cgImage: image).jpegData(compressionQuality: 0.8)
+        }
+        guard let jpeg, jpeg.count < data.count else { return data }
         return jpeg
     }
 }

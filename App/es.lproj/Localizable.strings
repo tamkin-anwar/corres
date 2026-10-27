@@ -3795,3 +3795,21 @@
 "Automatic reply." = "Respuesta automática.";
 
 "Automatic reply. Kept out of Needs You." = "Respuesta automática. Fuera de Te necesita.";
+
+/* Compose: adding attachments. */
+"%@ would put this email over %@’s %@ limit." = "Con %1$@, este correo superaría el límite de %3$@ de %2$@.";
+
+/* Compose: adding attachments. */
+"A photo was made smaller to fit %@’s %@ limit." = "Se redujo una foto para que quepa en el límite de %2$@ de %1$@.";
+
+/* Compose: adding attachments. */
+"%lld photos were made smaller to fit %@’s %@ limit." = "Se redujeron %1$lld fotos para que quepan en el límite de %3$@ de %2$@.";
+
+/* Compose: adding attachments. */
+"One item couldn't be loaded." = "No se pudo cargar un elemento.";
+
+/* Compose: adding attachments. */
+"%lld items couldn't be loaded." = "No se pudieron cargar %lld elementos.";
+
+/* Compose: adding attachments. */
+"Couldn't open %@." = "No se pudo abrir %@.";

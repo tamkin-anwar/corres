@@ -362,3 +362,9 @@
 "Automatic reply." = "自動返信です。";
 
 "Automatic reply. Kept out of Needs You." = "自動返信です。「要対応」には入れません。";
+
+/* The Share sheet: what is attached. */
+"1 attachment" = "添付ファイル1件";
+
+/* The Share sheet: what is attached. */
+"%lld attachments" = "添付ファイル%lld件";
