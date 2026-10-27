@@ -13,8 +13,13 @@ public enum TimePhrase {
     /// "Later today": three hours from now, or this evening at six.
     public nonisolated(unsafe) static var laterTodayIsEvening = false
 
-    public static func parse(_ input: String, now: Date = .now, calendar: Calendar = .current) -> Date? {
-        let text = Words.english(input)
+    /// `languages`: the reader's, most preferred first. A lone "9h" is
+    /// nine o'clock to a French reader, as French writes the time, and
+    /// nine hours to anyone else ("2h" in Superhuman and Spark).
+    public static func parse(_ input: String, now: Date = .now, calendar: Calendar = .current,
+                             languages: [String] = Locale.preferredLanguages) -> Date? {
+        let french = languages.first.map { Locale(identifier: $0).language.languageCode == .french } ?? false
+        let text = Words.english(input, frenchReader: french)
         guard !text.isEmpty else { return nil }
         let result = parseRelative(text, now: now, calendar: calendar) ?? detect(text, now: now)
         guard let result, result > now else { return nil }
@@ -275,12 +280,15 @@ extension TimePhrase {
     /// is set to, and English passes through untouched. Digits in any
     /// script count ("৩", "３"), and small Chinese numbers do too ("三天后").
     enum Words {
-        static func english(_ input: String) -> String {
+        /// `frenchReader`: a lone "9h" (or "9 h") is nine o'clock, as French
+        /// writes the time; "dans 2h" and "pendant 2h" stay spans.
+        static func english(_ input: String, frenchReader: Bool = false) -> String {
             var text = asciiDigits(input.precomposedStringWithCanonicalMapping.lowercased())
                 .replacingOccurrences(of: "\u{2019}", with: "'")
             for separator in ["、", "，", "。", "；", ",", ";"] {
                 text = text.replacingOccurrences(of: separator, with: " ")
             }
+            if frenchReader { text = text.replacingPattern(#"^\s*(\d{1,2}) ?h\s*$"#, with: "at $1:00") }
             for (index, rule) in rules.enumerated() {
                 if index == hanNumberStep { text = hanNumbers(text) }
                 let range = NSRange(text.startIndex..., in: text)
@@ -499,6 +507,7 @@ extension TimePhrase {
             rule(#"\baprès[- ]demain\b|\bapres[- ]demain\b"#, "in 2 days"),
             rule(#"\bdans une?\b"#, "dans 1"), rule(#"\bdans deux\b"#, "dans 2"), rule(#"\bdans trois\b"#, "dans 3"),
             rule(#"\bdans (\d+) ?min(?:ute)?s?\b"#, "in $1 minutes"), rule(#"\bdans (\d+) ?(?:heures?|h)\b"#, "in $1 hours"),
+            rule(#"\bpendant (\d+) ?min(?:ute)?s?\b"#, "in $1 minutes"), rule(#"\bpendant (\d+) ?(?:heures?|h)\b"#, "in $1 hours"),
             rule(#"\bdans (\d+) jours?\b"#, "in $1 days"), rule(#"\bdans (\d+) semaines?\b"#, "in $1 weeks"),
             rule(#"\bdans (\d+) mois\b"#, "in $1 months"),
             rule(#"(?:\bà )?\b(\d{1,2}) ?h ?(\d{2}) (?:du soir|de l'après-midi|de l'apres-midi)"#, "at $1:$2 pm"),

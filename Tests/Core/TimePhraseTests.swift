@@ -13,8 +13,9 @@ struct TimePhraseTests {
         calendar.date(from: DateComponents(year: 2026, month: 9, day: 24, hour: 21, minute: 14))!
     }
 
-    private func parts(_ phrase: String) -> DateComponents? {
-        TimePhrase.parse(phrase, now: now, calendar: calendar)
+    /// Read for an English reader unless `languages` says otherwise.
+    private func parts(_ phrase: String, languages: [String] = ["en-US"]) -> DateComponents? {
+        TimePhrase.parse(phrase, now: now, calendar: calendar, languages: languages)
             .map { calendar.dateComponents([.month, .day, .hour, .minute, .weekday], from: $0) }
     }
 
@@ -63,6 +64,26 @@ struct TimePhraseTests {
 
     /// "1h", "30m", "1 hr": a span from now, as Superhuman and Spark read
     /// them, not one o'clock.
+    /// French writes the time "9h": alone, it's nine o'clock to a French
+    /// reader. A span is "dans 1h" or "pendant 2h". Anyone else's "1h"
+    /// stays an hour from now.
+    @Test func aLoneHourIsAClockTimeInFrench() {
+        for french in [["fr-FR"], ["fr-CA", "en-CA"]] {
+            #expect(parts("9h", languages: french).map { [$0.day, $0.hour, $0.minute] } == [25, 9, 0], "\(french)")
+            #expect(parts("9 h", languages: french).map { [$0.day, $0.hour, $0.minute] } == [25, 9, 0], "\(french)")
+            #expect(parts("15h", languages: french).map { [$0.day, $0.hour, $0.minute] } == [25, 15, 0], "\(french)")
+            #expect(parts("dans 1h", languages: french).map { [$0.day, $0.hour, $0.minute] } == [24, 22, 14], "\(french)")
+            #expect(parts("pendant 2h", languages: french).map { [$0.day, $0.hour, $0.minute] } == [24, 23, 14], "\(french)")
+            #expect(parts("demain 9h", languages: french).map { [$0.day, $0.hour] } == [25, 9], "\(french)")
+        }
+        for other in [["en-US"], ["de-DE"], ["en-GB", "fr-FR"], ["bn-BD"]] {
+            #expect(parts("1h", languages: other).map { [$0.day, $0.hour, $0.minute] } == [24, 22, 14], "\(other)")
+            #expect(parts("9h", languages: other).map { [$0.day, $0.hour, $0.minute] } == [25, 6, 14], "\(other)")
+            // A French phrase reads its time whoever types it.
+            #expect(parts("demain 9h", languages: other).map { [$0.day, $0.hour] } == [25, 9], "\(other)")
+        }
+    }
+
     @Test func shortSpansAreFromNow() {
         #expect(parts("1h").map { [$0.day, $0.hour, $0.minute] } == [24, 22, 14])
         #expect(parts("2h").map { [$0.day, $0.hour, $0.minute] } == [24, 23, 14])
