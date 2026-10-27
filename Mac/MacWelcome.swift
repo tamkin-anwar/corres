@@ -34,7 +34,7 @@ struct MacWelcome: View {
             HStack(spacing: 12) {
                 Button("Explore Sample Mail", action: onExplore)
                     .controlSize(.large)
-                Button("Add an Account") {
+                Button("Add Account") {
                     onExplore()
                     openSettings()
                 }

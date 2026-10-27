@@ -158,7 +158,7 @@
 "Add a signature" = "Adicionar uma assinatura";
 
 /* No comment provided by engineer. */
-"Add an Account" = "Adicionar uma conta";
+"Add Account" = "Adicionar conta";
 
 /* No comment provided by engineer. */
 "Add an Email Account" = "Adicionar conta de e-mail";
@@ -899,13 +899,13 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
-"If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "Se o Corres travou, fechou ou agiu de forma estranha, este arquivo diz onde: o build, a versão do macOS, os tempos e os relatórios de falha. Nunca seus e-mails.";
+"If Corres froze or quit unexpectedly, this file shows where it stopped: the build, the macOS version, timings and any crash report. Never your mail." = "Se o Corres travou ou fechou inesperadamente, este arquivo mostra onde ele parou: o build, a versão do macOS, os tempos e os relatórios de falha. Nunca seus e-mails.";
 
 /* No comment provided by engineer. */
 "Images from the web stay off until you click Show Images, so senders can't tell when you opened their email." = "As imagens da web ficam desligadas até você clicar em “Mostrar imagens”, para que os remetentes não saibam quando você abriu o e-mail.";
 
 /* No comment provided by engineer. */
-"Images hidden to protect your privacy" = "Imagens ocultas para proteger sua privacidade";
+"Images hidden" = "Imagens ocultas";
 
 /* No comment provided by engineer. */
 "Images hidden, and %lld trackers blocked" = "Imagens ocultas e %lld rastreadores bloqueados";
@@ -1862,7 +1862,7 @@
 "A payment or account problem needs you." = "Um problema de pagamento ou de conta precisa de você.";
 
 /* No comment provided by engineer. */
-"Something Went Wrong" = "Algo deu errado";
+"Couldn't Finish That" = "Não foi possível concluir";
 
 /* No comment provided by engineer. */
 "Sort By" = "Ordenar por";
@@ -2016,9 +2016,6 @@
 
 /* No comment provided by engineer. */
 "Tomorrow" = "Amanhã";
-
-/* No comment provided by engineer. */
-"Tomorrow 8am, next friday, in 3 days" = "Tomorrow 8am, next friday, in 3 days";
 
 /* No comment provided by engineer. */
 "Tomorrow and Next Week come back then; This Weekend an hour later, on Saturday." = "“Amanhã” e “Próxima semana” voltam nesse horário; “Este fim de semana”, uma hora depois, no sábado.";
@@ -2201,7 +2198,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "Enquanto estiver ativada, %@ responde aos e-mails novos com sua mensagem e envia mesmo com este %@ desligado.";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "Para quem vai? Adicione alguém primeiro.";
+"Add a recipient, then try again." = "Adicione um destinatário e tente novamente.";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "Não sinalizar mais %@";
@@ -2451,7 +2448,7 @@
 "Couldn't remember this unsubscribe. Try again." = "Não foi possível registrar este descadastro. Tente novamente.";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "Não foi possível enviar sua mensagem. Nada foi enviado. Tente novamente.";
+"Your email wasn't sent. Try again." = "Seu e-mail não foi enviado. Tente novamente.";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "Não foi possível atualizar esta conversa. Tente novamente.";
@@ -2545,7 +2542,7 @@
 "tomorrow at 9am" = "amanhã às 9h";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "Tente “amanhã à noite” ou “próxima sexta”";
+"Try “tomorrow evening” or “next Friday”" = "Tente “amanhã à noite” ou “próxima sexta”";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "Não deu para entender quando";
@@ -2647,7 +2644,7 @@
 "Tomorrow at %@" = "Amanhã às %@";
 
 /* No comment provided by engineer. */
-"Tomorrow at 8am, next friday, in 3 days" = "amanhã às 8h, próxima sexta, em 3 dias";
+"Tomorrow at 8 AM, next Friday, in 3 days" = "amanhã às 8h, próxima sexta, em 3 dias";
 
 /* No comment provided by engineer. */
 "(no subject)" = "(sem assunto)";

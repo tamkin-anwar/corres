@@ -723,13 +723,13 @@ struct CorresShell: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea()
                 .accessibilityElement()
-                .accessibilityLabel("Preparing your space")
+                .accessibilityLabel("Loading your mail")
         case .failed:
             ContentUnavailableView {
-                EmptyTitle("One moment", systemImage: "arrow.clockwise")
-            } description: {
                 // Real mail too: it used to say "sample" to everyone.
-                Text(auth.accounts.isEmpty ? "Your sample conversations couldn't be opened." : "Your mail couldn't be opened.")
+                EmptyTitle(auth.accounts.isEmpty ? "Couldn't Open Sample Mail" : "Couldn't Open Mail", systemImage: "arrow.clockwise")
+            } description: {
+                Text("Try again. If it keeps happening, restart Corres.")
             } actions: {
                 Button("Try Again") { Task { await store.load() } }
             }

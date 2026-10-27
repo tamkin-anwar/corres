@@ -257,7 +257,7 @@
 "Add %@ to VIPs" = "Adicionar %@ aos VIPs";
 
 /* No comment provided by engineer. */
-"Add a Subject" = "Adicionar assunto";
+"Add Subject" = "Adicionar assunto";
 
 /* No comment provided by engineer. */
 "Add Account" = "Adicionar conta";
@@ -956,7 +956,7 @@
 "Email from %@" = "E-mail de %@";
 
 /* No comment provided by engineer. */
-"Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "E-mails que pedem algo a você, classificados neste %@. Terminou com um? Deslize ou toque em Resolvido: ele sai desta lista, continua em E-mail e espera em Caixas → Resolvido. Classificou errado? Mantenha pressionado para mover.";
+"Email that asks something of you, sorted on this %@. When you're done with one, swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. If one doesn't belong, press and hold to move it." = "E-mails que pedem algo a você, classificados neste %@. Quando terminar com um, deslize ou toque em Resolvido: ele sai desta lista, continua em E-mail e espera em Caixas → Resolvido. Se algum não for daqui, mantenha pressionado para mover.";
 
 /* No comment provided by engineer. */
 "Email Toolbar" = "Barra do e-mail";
@@ -1313,9 +1313,6 @@
 "Just This Email" = "Só este e-mail";
 
 /* No comment provided by engineer. */
-"Just What's Unread" = "Só o que não foi lido";
-
-/* No comment provided by engineer. */
 "Keep Editing" = "Continuar editando";
 
 /* No comment provided by engineer. */
@@ -1371,9 +1368,6 @@
 
 /* No comment provided by engineer. */
 "Loading older mail…" = "Carregando e-mails anteriores…";
-
-/* No comment provided by engineer. */
-"Loading the full message…" = "Carregando a mensagem completa…";
 
 /* No comment provided by engineer. */
 "Long Swipe" = "Deslize longo";
@@ -2087,7 +2081,7 @@
 "Port" = "Porta";
 
 /* No comment provided by engineer. */
-"Preparing your space" = "Preparando seu espaço";
+"Loading your mail" = "Carregando seus e-mails";
 
 /* No comment provided by engineer. */
 "Press and hold for Reply All and Forward" = "Mantenha pressionado para Responder a todos e Encaminhar";
@@ -3044,7 +3038,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "Enquanto estiver ativada, %@ responde aos e-mails novos com sua mensagem e envia mesmo com este %@ desligado.";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "Para quem vai? Adicione alguém primeiro.";
+"Add a recipient, then try again." = "Adicione um destinatário e tente novamente.";
 
 /* No comment provided by engineer. */
 "Widgets and Apple Watch" = "Widgets e Apple Watch";
@@ -3203,7 +3197,7 @@
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "Suas regras funcionam no Corres agora. Permita isso e o Gmail também as aplica, mesmo com o Corres fechado: %@.";
 
 /* No comment provided by engineer. */
-"Your sample conversations couldn't be opened." = "Não foi possível abrir suas conversas de exemplo.";
+"Couldn't Open Sample Mail" = "Não foi possível abrir os e-mails de exemplo";
 
 /* No comment provided by engineer. */
 "Your usual for %@" = "Seu costume para %@";
@@ -3398,7 +3392,7 @@
 "Couldn't remember this unsubscribe. Try again." = "Não foi possível registrar este descadastro. Tente novamente.";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "Não foi possível enviar sua mensagem. Nada foi enviado. Tente novamente.";
+"Your email wasn't sent. Try again." = "Seu e-mail não foi enviado. Tente novamente.";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "Não foi possível atualizar esta conversa. Tente novamente.";
@@ -3557,13 +3551,10 @@
 "Your Brief" = "Seu resumo";
 
 /* Daily Brief tip */
-"Today at a glance" = "Seu dia num relance";
-
-/* Daily Brief tip */
 "See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings." = "Veja o que vence, as reuniões e entregas de hoje no topo de Precisa de Você. Você pode mudar isso nos Ajustes.";
 
 /* Daily Brief tip */
-"Show Today's Brief" = "Mostrar o resumo de hoje";
+"Show Daily Brief" = "Mostrar o resumo diário";
 
 /* No comment provided by engineer. */
 "%@ Morning" = "%@ de manhã";
@@ -3596,7 +3587,7 @@
 "tomorrow at 9am" = "amanhã às 9h";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "Tente “amanhã à noite” ou “próxima sexta”";
+"Try “tomorrow evening” or “next Friday”" = "Tente “amanhã à noite” ou “próxima sexta”";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "Não deu para entender quando";
@@ -3739,7 +3730,7 @@
 "Organized by %@" = "Organizado por %@";
 
 /* No comment provided by engineer. */
-"Your mail couldn't be opened." = "Não foi possível abrir seus e-mails.";
+"Try again. If it keeps happening, restart Corres." = "Tente novamente. Se continuar acontecendo, reinicie o Corres.";
 
 /* No comment provided by engineer. */
 "Get Corres Pro" = "Obter o Corres Pro";
@@ -3763,7 +3754,7 @@
 "No new senders" = "Nenhum remetente novo";
 
 /* No comment provided by engineer. */
-"One moment" = "Um momento";
+"Couldn't Open Mail" = "Não foi possível abrir os e-mails";
 
 /* No comment provided by engineer. */
 "No conversation selected" = "Nenhuma conversa selecionada";

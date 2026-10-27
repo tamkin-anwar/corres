@@ -862,7 +862,7 @@ final class MailStore {
             HangReporter.failure("record a sent email", error)
             return true
         } catch {
-            errorMessage = String(localized: "Your message couldn't be sent. Nothing was sent. Try again.")
+            errorMessage = String(localized: "Your email wasn't sent. Try again.")
             return false
         }
     }

@@ -257,7 +257,7 @@
 "Add %@ to VIPs" = "%@ 님을 VIP에 추가";
 
 /* No comment provided by engineer. */
-"Add a Subject" = "제목 추가";
+"Add Subject" = "제목 추가";
 
 /* No comment provided by engineer. */
 "Add Account" = "계정 추가";
@@ -956,7 +956,7 @@
 "Email from %@" = "%@의 이메일";
 
 /* No comment provided by engineer. */
-"Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "나에게 무언가를 요청하는 이메일을 이 %@에서 분류합니다. 끝났나요? 쓸어넘기거나 '처리됨'을 탭하세요. 이 목록에서 사라지고, 메일에는 남으며, 메일함 → 처리됨에 보관됩니다. 잘못 분류되었나요? 길게 눌러 이동하세요.";
+"Email that asks something of you, sorted on this %@. When you're done with one, swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. If one doesn't belong, press and hold to move it." = "나에게 무언가를 요청하는 이메일을 이 %@에서 분류합니다. 다 처리했으면 쓸어넘기거나 '처리됨'을 탭하세요. 이 목록에서 사라지고, 메일에는 남으며, 메일함 → 처리됨에 보관됩니다. 여기에 맞지 않는 이메일은 길게 눌러 이동하세요.";
 
 /* No comment provided by engineer. */
 "Email Toolbar" = "이메일 도구 막대";
@@ -1313,9 +1313,6 @@
 "Just This Email" = "이 이메일만";
 
 /* No comment provided by engineer. */
-"Just What's Unread" = "읽지 않은 메일만";
-
-/* No comment provided by engineer. */
 "Keep Editing" = "계속 편집";
 
 /* No comment provided by engineer. */
@@ -1371,9 +1368,6 @@
 
 /* No comment provided by engineer. */
 "Loading older mail…" = "이전 메일 불러오는 중…";
-
-/* No comment provided by engineer. */
-"Loading the full message…" = "전체 메시지 불러오는 중…";
 
 /* No comment provided by engineer. */
 "Long Swipe" = "길게 쓸어넘기기";
@@ -2087,7 +2081,7 @@
 "Port" = "포트";
 
 /* No comment provided by engineer. */
-"Preparing your space" = "준비하는 중";
+"Loading your mail" = "메일을 불러오는 중";
 
 /* No comment provided by engineer. */
 "Press and hold for Reply All and Forward" = "길게 눌러 전체 답장 및 전달";
@@ -3044,7 +3038,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "켜져 있는 동안 %@이(가) 새로운 이메일에 내 메시지로 답장하며, 이 %@이(가) 꺼져 있어도 보냅니다.";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "누구에게 보낼까요? 먼저 받는 사람을 추가하세요.";
+"Add a recipient, then try again." = "받는 사람을 추가한 다음 다시 시도하세요.";
 
 /* No comment provided by engineer. */
 "Widgets and Apple Watch" = "위젯과 Apple Watch";
@@ -3203,7 +3197,7 @@
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "규칙이 지금은 Corres에서 실행됩니다. 허용하면 Corres를 닫아도 Gmail에서도 실행됩니다: %@.";
 
 /* No comment provided by engineer. */
-"Your sample conversations couldn't be opened." = "샘플 대화를 열 수 없습니다.";
+"Couldn't Open Sample Mail" = "샘플 메일을 열 수 없음";
 
 /* No comment provided by engineer. */
 "Your usual for %@" = "%@에 평소 쓰는 시간";
@@ -3398,7 +3392,7 @@
 "Couldn't remember this unsubscribe. Try again." = "이 수신 거부를 기록할 수 없습니다. 다시 시도하세요.";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "메시지를 보낼 수 없습니다. 아무것도 보내지지 않았습니다. 다시 시도하세요.";
+"Your email wasn't sent. Try again." = "이메일이 전송되지 않았습니다. 다시 시도하세요.";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "이 대화를 업데이트할 수 없습니다. 다시 시도하세요.";
@@ -3557,13 +3551,10 @@
 "Your Brief" = "나의 브리핑";
 
 /* Daily Brief tip */
-"Today at a glance" = "오늘 한눈에 보기";
-
-/* Daily Brief tip */
 "See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings." = "나에게 필요 맨 위에서 마감, 오늘 일정, 배송을 확인하세요. 설정에서 변경할 수 있습니다.";
 
 /* Daily Brief tip */
-"Show Today's Brief" = "오늘의 브리핑 보기";
+"Show Daily Brief" = "데일리 브리핑 보기";
 
 /* No comment provided by engineer. */
 "%@ Morning" = "%@ 아침";
@@ -3596,7 +3587,7 @@
 "tomorrow at 9am" = "내일 오전 9시";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "“내일 저녁”이나 “다음 주 금요일”처럼 입력해 보세요";
+"Try “tomorrow evening” or “next Friday”" = "“내일 저녁”이나 “다음 주 금요일”처럼 입력해 보세요";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "언제인지 알 수 없어요";
@@ -3739,7 +3730,7 @@
 "Organized by %@" = "주최자: %@";
 
 /* No comment provided by engineer. */
-"Your mail couldn't be opened." = "메일을 열 수 없습니다.";
+"Try again. If it keeps happening, restart Corres." = "다시 시도하세요. 계속 이런 일이 생기면 Corres를 다시 시작하세요.";
 
 /* No comment provided by engineer. */
 "Get Corres Pro" = "Corres Pro 받기";
@@ -3763,7 +3754,7 @@
 "No new senders" = "새 보낸 사람 없음";
 
 /* No comment provided by engineer. */
-"One moment" = "잠시만 기다려 주세요";
+"Couldn't Open Mail" = "메일을 열 수 없음";
 
 /* No comment provided by engineer. */
 "No conversation selected" = "선택한 대화 없음";

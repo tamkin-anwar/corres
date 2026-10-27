@@ -255,7 +255,7 @@ struct SendMailDraftIntent: AppIntent {
             return .result(dialog: IntentDialog(stringLiteral: String(localized: "Add your email account in Corres first.")))
         }
         guard draft.isSendable, draft.recipientsLookValid else {
-            return .result(dialog: IntentDialog(stringLiteral: String(localized: "Who should it go to? Add someone first.")))
+            return .result(dialog: IntentDialog(stringLiteral: String(localized: "Add a recipient, then try again.")))
         }
         // Who it really goes to: a name Siri gave without an address Corres
         // knows isn't in the email, and asking "to Maya and Sam?" then

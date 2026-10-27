@@ -257,7 +257,7 @@
 "Add %@ to VIPs" = "将 %@ 添加到 VIP";
 
 /* No comment provided by engineer. */
-"Add a Subject" = "添加主题";
+"Add Subject" = "添加主题";
 
 /* No comment provided by engineer. */
 "Add Account" = "添加账户";
@@ -956,7 +956,7 @@
 "Email from %@" = "来自%@的邮件";
 
 /* No comment provided by engineer. */
-"Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "需要你回应的邮件，在这台%@上分类。处理完了？轻扫或轻点“已处理”：它会离开此列表，仍保留在“邮件”中，并在“邮箱”→“已处理”里等着。分错了？按住即可移动。";
+"Email that asks something of you, sorted on this %@. When you're done with one, swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. If one doesn't belong, press and hold to move it." = "需要你回应的邮件，在这台%@上分类。处理完一封后，轻扫或轻点“已处理”：它会离开此列表，仍保留在“邮件”中，并在“邮箱”→“已处理”里等着。如果某封不该在这里，按住即可移动。";
 
 /* No comment provided by engineer. */
 "Email Toolbar" = "邮件工具栏";
@@ -1313,9 +1313,6 @@
 "Just This Email" = "仅这封邮件";
 
 /* No comment provided by engineer. */
-"Just What's Unread" = "只看未读";
-
-/* No comment provided by engineer. */
 "Keep Editing" = "继续编辑";
 
 /* No comment provided by engineer. */
@@ -1371,9 +1368,6 @@
 
 /* No comment provided by engineer. */
 "Loading older mail…" = "正在载入更早的邮件…";
-
-/* No comment provided by engineer. */
-"Loading the full message…" = "正在载入完整邮件…";
 
 /* No comment provided by engineer. */
 "Long Swipe" = "长扫";
@@ -2087,7 +2081,7 @@
 "Port" = "端口";
 
 /* No comment provided by engineer. */
-"Preparing your space" = "正在准备";
+"Loading your mail" = "正在载入你的邮件";
 
 /* No comment provided by engineer. */
 "Press and hold for Reply All and Forward" = "按住可全部回复和转发";
@@ -3044,7 +3038,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "开启期间，%@ 会用你的消息回复新邮件，即使这台%@关机也会发送。";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "要发给谁？请先添加收件人。";
+"Add a recipient, then try again." = "请添加收件人，然后再试一次。";
 
 /* No comment provided by engineer. */
 "Widgets and Apple Watch" = "小组件和 Apple Watch";
@@ -3203,7 +3197,7 @@
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "你的规则现在在 Corres 中运行。允许后，即使关闭 Corres，Gmail 也会运行它们：%@。";
 
 /* No comment provided by engineer. */
-"Your sample conversations couldn't be opened." = "无法打开你的示例对话。";
+"Couldn't Open Sample Mail" = "无法打开示例邮件";
 
 /* No comment provided by engineer. */
 "Your usual for %@" = "你对%@的常用时间";
@@ -3398,7 +3392,7 @@
 "Couldn't remember this unsubscribe. Try again." = "无法记录此次退订。请重试。";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "无法发送你的邮件。未发送任何内容。请重试。";
+"Your email wasn't sent. Try again." = "你的邮件未发送。请重试。";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "无法更新此对话。请重试。";
@@ -3557,13 +3551,10 @@
 "Your Brief" = "你的简报";
 
 /* Daily Brief tip */
-"Today at a glance" = "今天一目了然";
-
-/* Daily Brief tip */
 "See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings." = "在“需要你”顶部查看到期事项、今天的会议和快递。你可以在设置中更改。";
 
 /* Daily Brief tip */
-"Show Today's Brief" = "显示今天的简报";
+"Show Daily Brief" = "显示每日简报";
 
 /* No comment provided by engineer. */
 "%@ Morning" = "%@早上";
@@ -3596,7 +3587,7 @@
 "tomorrow at 9am" = "明天上午9点";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "试试“明天晚上”或“下周五”";
+"Try “tomorrow evening” or “next Friday”" = "试试“明天晚上”或“下周五”";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "无法识别这个时间";
@@ -3739,7 +3730,7 @@
 "Organized by %@" = "组织者：%@";
 
 /* No comment provided by engineer. */
-"Your mail couldn't be opened." = "无法打开你的邮件。";
+"Try again. If it keeps happening, restart Corres." = "请再试一次。如果问题持续出现，请重新启动 Corres。";
 
 /* No comment provided by engineer. */
 "Get Corres Pro" = "获取 Corres Pro";
@@ -3763,7 +3754,7 @@
 "No new senders" = "没有新发件人";
 
 /* No comment provided by engineer. */
-"One moment" = "请稍候";
+"Couldn't Open Mail" = "无法打开邮件";
 
 /* No comment provided by engineer. */
 "No conversation selected" = "未选择对话";

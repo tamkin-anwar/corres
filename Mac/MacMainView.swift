@@ -186,7 +186,7 @@ struct MacMainView: View {
                                                      set: { if !$0 { store.errorMessage = nil } })) {
             Button("OK", role: .cancel) { store.errorMessage = nil }
         } message: { Text(store.errorMessage ?? "") }
-        .alert("Something Went Wrong", isPresented: Binding(get: { actions.errorMessage != nil },
+        .alert("Couldn't Finish That", isPresented: Binding(get: { actions.errorMessage != nil },
                                                             set: { if !$0 { actions.errorMessage = nil } })) {
             Button("OK", role: .cancel) { actions.errorMessage = nil }
         } message: { Text(actions.errorMessage ?? "") }
@@ -1162,7 +1162,7 @@ private struct MacNotices: ViewModifier {
     private func diagnosticsSheet(_ url: URL) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Send Diagnostics").macFont(.headline)
-            Text("If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail.")
+            Text("If Corres froze or quit unexpectedly, this file shows where it stopped: the build, the macOS version, timings and any crash report. Never your mail.")
                 .foregroundStyle(CorresPalette.secondary).fixedSize(horizontal: false, vertical: true)
             HStack {
                 Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }

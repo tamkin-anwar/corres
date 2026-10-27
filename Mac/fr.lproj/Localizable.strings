@@ -158,7 +158,7 @@
 "Add a signature" = "Ajouter une signature";
 
 /* No comment provided by engineer. */
-"Add an Account" = "Ajouter un compte";
+"Add Account" = "Ajouter un compte";
 
 /* No comment provided by engineer. */
 "Add an Email Account" = "Ajouter un compte de messagerie";
@@ -899,13 +899,13 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
-"If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "Si Corres s’est figé, fermé ou a mal fonctionné, ce fichier indique où : la version, la version de macOS, les temps et les rapports de plantage. Jamais vos e-mails.";
+"If Corres froze or quit unexpectedly, this file shows where it stopped: the build, the macOS version, timings and any crash report. Never your mail." = "Si Corres s’est figé ou a quitté de façon inattendue, ce fichier indique où il s’est arrêté : la version, la version de macOS, les temps et les rapports de plantage. Jamais vos e-mails.";
 
 /* No comment provided by engineer. */
 "Images from the web stay off until you click Show Images, so senders can't tell when you opened their email." = "Les images du Web restent masquées jusqu’à ce que vous cliquiez sur « Afficher les images », pour que les expéditeurs ne sachent pas quand vous avez ouvert leur e-mail.";
 
 /* No comment provided by engineer. */
-"Images hidden to protect your privacy" = "Images masquées pour protéger votre vie privée";
+"Images hidden" = "Images masquées";
 
 /* No comment provided by engineer. */
 "Images hidden, and %lld trackers blocked" = "Images masquées et %lld traqueurs bloqués";
@@ -1862,7 +1862,7 @@
 "A payment or account problem needs you." = "Un problème de paiement ou de compte demande votre attention.";
 
 /* No comment provided by engineer. */
-"Something Went Wrong" = "Une erreur s’est produite";
+"Couldn't Finish That" = "Impossible de terminer";
 
 /* No comment provided by engineer. */
 "Sort By" = "Trier par";
@@ -2016,9 +2016,6 @@
 
 /* No comment provided by engineer. */
 "Tomorrow" = "Demain";
-
-/* No comment provided by engineer. */
-"Tomorrow 8am, next friday, in 3 days" = "Tomorrow 8am, next friday, in 3 days";
 
 /* No comment provided by engineer. */
 "Tomorrow and Next Week come back then; This Weekend an hour later, on Saturday." = "« Demain » et « La semaine prochaine » reviennent à cette heure-là ; « Ce week-end » une heure plus tard, le samedi.";
@@ -2201,7 +2198,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "Tant qu’elle est activée, %@ répond aux nouveaux e-mails avec votre message et l’envoie même si votre %@ est éteint.";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "À qui l’envoyer ? Ajoutez d’abord quelqu’un.";
+"Add a recipient, then try again." = "Ajoutez un destinataire, puis réessayez.";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "Ne plus signaler %@";
@@ -2451,7 +2448,7 @@
 "Couldn't remember this unsubscribe. Try again." = "Impossible de mémoriser ce désabonnement. Réessayez.";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "Votre message n'a pas pu être envoyé. Rien n'a été envoyé. Réessayez.";
+"Your email wasn't sent. Try again." = "Votre e-mail n’a pas été envoyé. Réessayez.";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "Impossible de mettre à jour cette conversation. Réessayez.";
@@ -2545,7 +2542,7 @@
 "tomorrow at 9am" = "demain à 9h";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "Essayez « demain soir » ou « vendredi prochain »";
+"Try “tomorrow evening” or “next Friday”" = "Essayez « demain soir » ou « vendredi prochain »";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "Moment non reconnu";
@@ -2647,7 +2644,7 @@
 "Tomorrow at %@" = "Demain à %@";
 
 /* No comment provided by engineer. */
-"Tomorrow at 8am, next friday, in 3 days" = "demain à 8h, vendredi prochain, dans 3 jours";
+"Tomorrow at 8 AM, next Friday, in 3 days" = "demain à 8h, vendredi prochain, dans 3 jours";
 
 /* No comment provided by engineer. */
 "(no subject)" = "(sans objet)";

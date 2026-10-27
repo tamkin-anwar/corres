@@ -81,7 +81,7 @@ private struct MacAccountsSettings: View {
                 Text("Accounts you add on your iPhone or iPad appear here on their own, through iCloud Keychain. Corres reads your mail straight from your provider on this Mac; our servers never receive it.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Section("Add an Account") {
+            Section("Add Account") {
                 HStack(spacing: 10) {
                     Button("Gmail") { Task { await auth.signIn(); services.accountsChanged() } }
                     Button("Outlook") { Task { await auth.signInOutlook(); services.accountsChanged() } }

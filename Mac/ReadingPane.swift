@@ -556,7 +556,7 @@ struct ReadingPane: View {
             let trackers = thread.htmlBody.map { HTMLMessageBody.analysis(of: $0).trackers } ?? 0
             Text(trackers == 1 ? "Images hidden, and 1 tracker blocked"
                  : trackers > 1 ? "Images hidden, and \(trackers) trackers blocked"
-                              : "Images hidden to protect your privacy")
+                              : "Images hidden")
                 .macFont(.callout).foregroundStyle(CorresPalette.secondary)
             Spacer()
             Button { showImages = true } label: { Text("Show Images").macTextSize() }.macControlSize(.small)

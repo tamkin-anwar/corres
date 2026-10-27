@@ -257,7 +257,7 @@
 "Add %@ to VIPs" = "%@をVIPに追加";
 
 /* No comment provided by engineer. */
-"Add a Subject" = "件名を追加";
+"Add Subject" = "件名を追加";
 
 /* No comment provided by engineer. */
 "Add Account" = "アカウントを追加";
@@ -956,7 +956,7 @@
 "Email from %@" = "%@からのメール";
 
 /* No comment provided by engineer. */
-"Email that asks something of you, sorted on this %@. Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. Wrong call? Press and hold to move it." = "あなたに何かを求めるメールを、この%@上で振り分けます。済んだらスワイプするか「対応済み」をタップ。このリストから外れ、メールには残り、「メールボックス」→「対応済み」に入ります。違っていたら長押しで移動できます。";
+"Email that asks something of you, sorted on this %@. When you're done with one, swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes → Handled. If one doesn't belong, press and hold to move it." = "あなたに何かを求めるメールを、この%@上で振り分けます。済んだらスワイプするか「対応済み」をタップ。このリストから外れ、メールには残り、「メールボックス」→「対応済み」に入ります。ここに合わないメールは、長押しで移動できます。";
 
 /* No comment provided by engineer. */
 "Email Toolbar" = "メールのツールバー";
@@ -1313,9 +1313,6 @@
 "Just This Email" = "このメールだけ";
 
 /* No comment provided by engineer. */
-"Just What's Unread" = "未読だけを表示";
-
-/* No comment provided by engineer. */
 "Keep Editing" = "編集を続ける";
 
 /* No comment provided by engineer. */
@@ -1371,9 +1368,6 @@
 
 /* No comment provided by engineer. */
 "Loading older mail…" = "以前のメールを読み込み中…";
-
-/* No comment provided by engineer. */
-"Loading the full message…" = "メッセージ全体を読み込み中…";
 
 /* No comment provided by engineer. */
 "Long Swipe" = "長いスワイプ";
@@ -2087,7 +2081,7 @@
 "Port" = "ポート";
 
 /* No comment provided by engineer. */
-"Preparing your space" = "準備しています";
+"Loading your mail" = "メールを読み込んでいます";
 
 /* No comment provided by engineer. */
 "Press and hold for Reply All and Forward" = "長押しで全員に返信と転送";
@@ -3044,7 +3038,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "オンの間、%@は新しいメールにあなたのメッセージで返信します。この%@の電源が切れていても送信されます。";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "宛先がありません。先に宛先を追加してください。";
+"Add a recipient, then try again." = "宛先を追加してから、もう一度お試しください。";
 
 /* No comment provided by engineer. */
 "Widgets and Apple Watch" = "ウィジェットとApple Watch";
@@ -3203,7 +3197,7 @@
 "Your rules run in Corres now. Allow this and Gmail runs them too, even with Corres closed: %@." = "ルールは今Corresで実行されています。許可すると、Corresを閉じていてもGmailでも実行されます：%@。";
 
 /* No comment provided by engineer. */
-"Your sample conversations couldn't be opened." = "サンプルの会話を開けませんでした。";
+"Couldn't Open Sample Mail" = "サンプルのメールを開けませんでした";
 
 /* No comment provided by engineer. */
 "Your usual for %@" = "%@でいつも使う時刻";
@@ -3398,7 +3392,7 @@
 "Couldn't remember this unsubscribe. Try again." = "この配信停止を記録できませんでした。もう一度お試しください。";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "メッセージを送信できませんでした。何も送信されていません。もう一度お試しください。";
+"Your email wasn't sent. Try again." = "メールは送信されませんでした。もう一度お試しください。";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "このスレッドを更新できませんでした。もう一度お試しください。";
@@ -3557,13 +3551,10 @@
 "Your Brief" = "今日のまとめ";
 
 /* Daily Brief tip */
-"Today at a glance" = "今日をひと目で";
-
-/* Daily Brief tip */
 "See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings." = "期限が近いもの、今日の予定、配達を要対応の一番上に表示します。設定でいつでも変更できます。";
 
 /* Daily Brief tip */
-"Show Today's Brief" = "今日のまとめを表示";
+"Show Daily Brief" = "デイリーまとめを表示";
 
 /* No comment provided by engineer. */
 "%@ Morning" = "%@の朝";
@@ -3596,7 +3587,7 @@
 "tomorrow at 9am" = "明日 9時";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "「明日の夜」や「来週の金曜」のように入力できます";
+"Try “tomorrow evening” or “next Friday”" = "「明日の夜」や「来週の金曜」のように入力できます";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "いつのことか分かりません";
@@ -3739,7 +3730,7 @@
 "Organized by %@" = "主催者：%@";
 
 /* No comment provided by engineer. */
-"Your mail couldn't be opened." = "メールを開けませんでした。";
+"Try again. If it keeps happening, restart Corres." = "もう一度お試しください。何度も起きる場合は、Corresを再起動してください。";
 
 /* No comment provided by engineer. */
 "Get Corres Pro" = "Corres Proを入手";
@@ -3763,7 +3754,7 @@
 "No new senders" = "新しい差出人はいません";
 
 /* No comment provided by engineer. */
-"One moment" = "少々お待ちください";
+"Couldn't Open Mail" = "メールを開けませんでした";
 
 /* No comment provided by engineer. */
 "No conversation selected" = "会話が選択されていません";

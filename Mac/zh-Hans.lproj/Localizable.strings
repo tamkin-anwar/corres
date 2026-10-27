@@ -158,7 +158,7 @@
 "Add a signature" = "添加签名";
 
 /* No comment provided by engineer. */
-"Add an Account" = "添加账户";
+"Add Account" = "添加账户";
 
 /* No comment provided by engineer. */
 "Add an Email Account" = "添加邮件账户";
@@ -899,13 +899,13 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
-"If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "如果 Corres 卡住、关闭或出现异常，这个文件会说明发生在哪里：版本号、macOS 版本、耗时和崩溃报告。从不包含你的邮件。";
+"If Corres froze or quit unexpectedly, this file shows where it stopped: the build, the macOS version, timings and any crash report. Never your mail." = "如果 Corres 卡住或意外退出，这个文件会显示它停在了哪里：版本号、macOS 版本、耗时和崩溃报告。从不包含你的邮件。";
 
 /* No comment provided by engineer. */
 "Images from the web stay off until you click Show Images, so senders can't tell when you opened their email." = "在你点按“显示图片”之前，网络图片不会加载，因此发件人无法知道你何时打开了邮件。";
 
 /* No comment provided by engineer. */
-"Images hidden to protect your privacy" = "已隐藏图片以保护你的隐私";
+"Images hidden" = "已隐藏图片";
 
 /* No comment provided by engineer. */
 "Images hidden, and %lld trackers blocked" = "图片已隐藏，并拦截了 %lld 个追踪器";
@@ -1862,7 +1862,7 @@
 "A payment or account problem needs you." = "有付款或账户问题需要你处理。";
 
 /* No comment provided by engineer. */
-"Something Went Wrong" = "出了点问题";
+"Couldn't Finish That" = "无法完成";
 
 /* No comment provided by engineer. */
 "Sort By" = "排序方式";
@@ -2016,9 +2016,6 @@
 
 /* No comment provided by engineer. */
 "Tomorrow" = "明天";
-
-/* No comment provided by engineer. */
-"Tomorrow 8am, next friday, in 3 days" = "Tomorrow 8am, next friday, in 3 days";
 
 /* No comment provided by engineer. */
 "Tomorrow and Next Week come back then; This Weekend an hour later, on Saturday." = "“明天”和“下周”会在那时回来；“本周末”则在周六晚一小时。";
@@ -2201,7 +2198,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "开启期间，%@ 会用你的消息回复新邮件，即使这台%@关机也会发送。";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "要发给谁？请先添加收件人。";
+"Add a recipient, then try again." = "请添加收件人，然后再试一次。";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "不再标记%@";
@@ -2451,7 +2448,7 @@
 "Couldn't remember this unsubscribe. Try again." = "无法记录此次退订。请重试。";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "无法发送你的邮件。未发送任何内容。请重试。";
+"Your email wasn't sent. Try again." = "你的邮件未发送。请重试。";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "无法更新此对话。请重试。";
@@ -2545,7 +2542,7 @@
 "tomorrow at 9am" = "明天上午9点";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "试试“明天晚上”或“下周五”";
+"Try “tomorrow evening” or “next Friday”" = "试试“明天晚上”或“下周五”";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "无法识别这个时间";
@@ -2647,7 +2644,7 @@
 "Tomorrow at %@" = "明天 %@";
 
 /* No comment provided by engineer. */
-"Tomorrow at 8am, next friday, in 3 days" = "明天上午8点、下周五、3天后";
+"Tomorrow at 8 AM, next Friday, in 3 days" = "明天上午8点、下周五、3天后";
 
 /* No comment provided by engineer. */
 "(no subject)" = "(无主题)";

@@ -262,7 +262,7 @@ struct ComposeView: View {
             }
             .confirmationDialog("Send without a subject?", isPresented: $confirmingNoSubject, titleVisibility: .visible) {
                 Button(pendingSendAt == nil ? "Send" : "Schedule") { sendAndDismiss() }
-                Button("Add a Subject", role: .cancel) { pendingSendAt = nil; draft.followUpAfter = nil; focusedField = .subject }
+                Button("Add Subject", role: .cancel) { pendingSendAt = nil; draft.followUpAfter = nil; focusedField = .subject }
             }
             .sheet(isPresented: $showingSendLaterPicker) {
                 NavigationStack {

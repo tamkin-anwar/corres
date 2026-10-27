@@ -97,7 +97,7 @@ final class MacPrinter: NSObject, WKNavigationDelegate {
         <p class="row"><b>\(label("From"))</b> \(from)</p>
         \(to.isEmpty ? "" : "<p class=\"row\"><b>\(label("To"))</b> \(to)</p>")
         <p class="row"><b>\(label("Date"))</b> \(escape(date))</p>
-        \(imagesHidden ? "<p class=\"note\">\(escape(String(localized: "Images hidden to protect your privacy")))</p>" : "")
+        \(imagesHidden ? "<p class=\"note\">\(escape(String(localized: "Images hidden")))</p>" : "")
         </div>
         \(body)
         </body></html>

@@ -1380,7 +1380,7 @@ struct CorrespondenceList: View {
     @ViewBuilder
     private var listFooter: some View {
         if kind == .needsYou && !results.isEmpty {
-            Text("Email that asks something of you, sorted on this \(Device.name). Done with one? Swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes \u{2192} Handled. Wrong call? Press and hold to move it.")
+            Text("Email that asks something of you, sorted on this \(Device.name). When you're done with one, swipe it or tap Handled: it leaves this list, stays in Mail, and waits in Mailboxes \u{2192} Handled. If one doesn't belong, press and hold to move it.")
                 .font(.footnote).foregroundStyle(CorresPalette.tertiary)
                 .padding(.horizontal, CorresSpace.page).padding(.vertical, 18)
         } else if kind == .waiting && !results.isEmpty {

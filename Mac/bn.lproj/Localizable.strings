@@ -158,7 +158,7 @@
 "Add a signature" = "একটি স্বাক্ষর যোগ করুন";
 
 /* No comment provided by engineer. */
-"Add an Account" = "একটি অ্যাকাউন্ট যোগ করুন";
+"Add Account" = "অ্যাকাউন্ট যোগ করুন";
 
 /* No comment provided by engineer. */
 "Add an Email Account" = "একটি ইমেইল অ্যাকাউন্ট যোগ করুন";
@@ -899,13 +899,13 @@
 "iCloud" = "iCloud";
 
 /* No comment provided by engineer. */
-"If Corres froze, closed or acted up, this file says where: the build, the macOS version, timings and any crash report. Never your mail." = "Corres আটকে গেলে, বন্ধ হয়ে গেলে বা ঠিকমতো না চললে, এই ফাইলটি জানায় কোথায়: বিল্ড, macOS সংস্করণ, সময়ের হিসাব আর ক্র্যাশ রিপোর্ট। কখনো আপনার মেইল নয়।";
+"If Corres froze or quit unexpectedly, this file shows where it stopped: the build, the macOS version, timings and any crash report. Never your mail." = "Corres আটকে গেলে বা হঠাৎ বন্ধ হয়ে গেলে, এই ফাইলটি দেখায় কোথায় থেমেছিল: বিল্ড, macOS সংস্করণ, সময়ের হিসাব আর ক্র্যাশ রিপোর্ট। কখনো আপনার মেইল নয়।";
 
 /* No comment provided by engineer. */
 "Images from the web stay off until you click Show Images, so senders can't tell when you opened their email." = "«ছবি দেখান»-এ ক্লিক না করা পর্যন্ত ওয়েবের ছবি বন্ধ থাকে, তাই প্রেরকরা জানতে পারেন না আপনি কখন তাদের ইমেইল খুলেছেন।";
 
 /* No comment provided by engineer. */
-"Images hidden to protect your privacy" = "আপনার গোপনীয়তা রক্ষায় ছবি লুকানো";
+"Images hidden" = "ছবি লুকানো";
 
 /* No comment provided by engineer. */
 "Images hidden, and %lld trackers blocked" = "ছবি লুকানো, আর %lldটি ট্র্যাকার আটকানো হয়েছে";
@@ -1862,7 +1862,7 @@
 "A payment or account problem needs you." = "পেমেন্ট বা অ্যাকাউন্টের একটি সমস্যা আপনার দেখা দরকার।";
 
 /* No comment provided by engineer. */
-"Something Went Wrong" = "কিছু একটা ভুল হয়েছে";
+"Couldn't Finish That" = "কাজটি শেষ করা যায়নি";
 
 /* No comment provided by engineer. */
 "Sort By" = "সাজানোর ভিত্তি";
@@ -2016,9 +2016,6 @@
 
 /* No comment provided by engineer. */
 "Tomorrow" = "আগামীকাল";
-
-/* No comment provided by engineer. */
-"Tomorrow 8am, next friday, in 3 days" = "Tomorrow 8am, next friday, in 3 days";
 
 /* No comment provided by engineer. */
 "Tomorrow and Next Week come back then; This Weekend an hour later, on Saturday." = "«আগামীকাল» ও «পরের সপ্তাহ» তখন ফিরে আসে; «এই সপ্তাহান্ত» শনিবার এক ঘণ্টা পরে।";
@@ -2201,7 +2198,7 @@
 "While it's on, %@ answers new email with your message and sends it even with this %@ off." = "এটি চালু থাকলে %@ নতুন ইমেইলের উত্তরে আপনার বার্তা পাঠায়, এই %@ বন্ধ থাকলেও।";
 
 /* No comment provided by engineer. */
-"Who should it go to? Add someone first." = "কাকে পাঠাবেন? আগে কাউকে যোগ করুন।";
+"Add a recipient, then try again." = "একজন প্রাপক যোগ করুন, তারপর আবার চেষ্টা করুন।";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "%@ আর চিহ্নিত করা হবে না";
@@ -2451,7 +2448,7 @@
 "Couldn't remember this unsubscribe. Try again." = "এই আনসাবস্ক্রাইব মনে রাখা যায়নি। আবার চেষ্টা করুন।";
 
 /* No comment provided by engineer. */
-"Your message couldn't be sent. Nothing was sent. Try again." = "আপনার মেসেজ পাঠানো যায়নি। কিছুই পাঠানো হয়নি। আবার চেষ্টা করুন।";
+"Your email wasn't sent. Try again." = "আপনার ইমেইল পাঠানো হয়নি। আবার চেষ্টা করুন।";
 
 /* No comment provided by engineer. */
 "Couldn't update this conversation. Try again." = "এই কথোপকথন আপডেট করা যায়নি। আবার চেষ্টা করুন।";
@@ -2545,7 +2542,7 @@
 "tomorrow at 9am" = "আগামীকাল সকাল ৯টা";
 
 /* No comment provided by engineer. */
-"Try “tomorrow evening” or “next friday”" = "“আগামীকাল সন্ধ্যায়” বা “আগামী শুক্রবার” লিখে দেখুন";
+"Try “tomorrow evening” or “next Friday”" = "“আগামীকাল সন্ধ্যায়” বা “আগামী শুক্রবার” লিখে দেখুন";
 
 /* No comment provided by engineer. */
 "Not sure when that is" = "সময়টা বোঝা গেল না";
@@ -2647,7 +2644,7 @@
 "Tomorrow at %@" = "আগামীকাল %@";
 
 /* No comment provided by engineer. */
-"Tomorrow at 8am, next friday, in 3 days" = "আগামীকাল সকাল ৮টা, আগামী শুক্রবার, ৩ দিন পরে";
+"Tomorrow at 8 AM, next Friday, in 3 days" = "আগামীকাল সকাল ৮টা, আগামী শুক্রবার, ৩ দিন পরে";
 
 /* No comment provided by engineer. */
 "(no subject)" = "(বিষয় নেই)";

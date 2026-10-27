@@ -7,7 +7,7 @@ struct UnreadOnlyTip: Tip {
     /// Conversations opened; the tip waits until you've read a few.
     static let opened = Tips.Event(id: "conversationOpened")
 
-    var title: Text { Text("Just What's Unread") }
+    var title: Text { Text("Unread Only") }
     var message: Text? { Text("Tap here to see only unread mail in this list. Tap again to see it all.") }
     var image: Image? { Image(systemName: "line.3.horizontal.decrease.circle") }
     var rules: [Rule] { #Rule(Self.opened) { $0.donations.count >= 5 } }
@@ -23,7 +23,7 @@ struct DailyBriefTip: Tip {
     static let notNowAction = "notNow"
     private static let lastDayKey = "corres.tips.lastDayOpened"
 
-    var title: Text { Text("Today at a glance") }
+    var title: Text { Text("Daily Brief") }
     var message: Text? {
         Text("See what's due, today's meetings and deliveries at the top of Needs You. You can change this in Settings.")
     }
@@ -31,7 +31,7 @@ struct DailyBriefTip: Tip {
     var rules: [Rule] { #Rule(Self.dayOpened) { $0.donations.count >= 3 } }
     var options: [any TipOption] { [MaxDisplayCount(1)] }
     var actions: [Action] {
-        [Action(id: Self.showAction, title: String(localized: "Show Today's Brief")),
+        [Action(id: Self.showAction, title: String(localized: "Show Daily Brief")),
          Action(id: Self.notNowAction, title: String(localized: "Not Now"))]
     }
 
