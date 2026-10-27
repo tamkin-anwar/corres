@@ -306,7 +306,7 @@ struct ComposeView: View {
             // Leaving Corres mid-email: saved to Drafts, in case iOS closes
             // Corres while it's in the background.
             .onChange(of: scenePhase) { _, phase in
-                if phase == .background, !isFinished, hasUnsavedChanges { outbox.autosave(draft, replyingTo: sourceThread) }
+                if phase == .background, !isFinished, hasUnsavedChanges || reopened { outbox.autosave(draft, replyingTo: sourceThread) }
             }
             // Swiping Compose away never loses what you wrote: it's saved
             // and tucked away, as Gmail saves and Mail minimizes.
