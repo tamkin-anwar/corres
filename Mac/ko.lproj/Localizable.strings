@@ -1871,7 +1871,7 @@
 "Sorting" = "분류";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service." = "분류, 요약, 초안은 이 Mac에서 실행됩니다. 메일은 저희 서버나 AI 서비스로 가지 않습니다.";
+"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI company." = "분류, 요약, 초안은 이 Mac에서 실행됩니다. 메일은 저희 서버나 AI 회사로 가지 않습니다.";
 
 /* No comment provided by engineer. */
 "Spam" = "스팸";
@@ -2334,7 +2334,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "Corres가 메일을 변경하려면 %@에 다시 로그인해야 합니다.";
 "%@ (%@ error %lld)" = "%@ (%@ 오류 %lld)";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres는 %@을(를) 읽을 수 있지만 변경할 권한이 없어 읽음 표시, 보관, 깃발 표시가 반영되지 않습니다. 다시 연결하고 요청하는 모든 권한을 허용하세요.";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "구입이 승인을 기다리고 있습니다. 승인되는 즉시 Corres Pro가 잠금 해제됩니다.";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "구입이 승인을 기다리고 있습니다. 승인되는 즉시 Corres Pro가 시작됩니다.";
 "The purchase didn't go through. Try again." = "구입이 완료되지 않았습니다. 다시 시도하세요.";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "코드 사용 화면을 열 수 없습니다. App Store의 계정 메뉴에서도 코드를 사용할 수 있습니다.";
 "No Corres Pro purchase was found for this Apple Account." = "이 Apple 계정에서 Corres Pro 구입 내역을 찾을 수 없습니다.";
@@ -2796,7 +2796,7 @@
 "Everyone who owes you a reply, and for how long." = "나에게 답장할 차례인 모든 사람과 그 기간.";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "Corres를 Corres답게 만드는 모든 것.";
+"The parts of Corres that read your mail for you." = "메일을 대신 읽어 주는 Corres의 기능들.";
 
 /* No comment provided by engineer. */
 "Family" = "가족";
@@ -2901,10 +2901,13 @@
 "Widgets and Apple Watch" = "위젯과 Apple Watch";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Pro가 없어도 메일은 계속 작동합니다. 읽기, 답장, 보관, 검색. '나에게 필요', '대기 중', 검색의 답변, 기기 내 인텔리전스에는 Pro가 필요합니다.";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Pro가 없어도 메일은 계속 작동합니다. 읽기, 답장, 보관, 검색. '나에게 필요', '대기 중', 검색의 답변, 요약, 추천 답장에는 Pro가 필요합니다.";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "메일은 저희 서버나 AI 회사로 가지 않습니다.";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Pro는 이 %@에서 메일을 읽습니다. 메일은 저희 서버나 AI 회사로 가지 않습니다.";
+
+/* No comment provided by engineer. */
+"All on this %@" = "모두 이 %@에서";
 
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "영구 소장 · %@ 구입";

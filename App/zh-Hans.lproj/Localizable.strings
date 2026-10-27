@@ -977,7 +977,7 @@
 "Enter your address and Corres finds your mail server for you." = "输入你的地址，Corres 会帮你找到邮件服务器。";
 
 /* No comment provided by engineer. */
-"Every account in one inbox, newest first. New senders wait for your OK first." = "所有账户汇集在一个收件箱，最新的在前。新发件人会等待你同意。";
+"Every account in one inbox, newest first. First emails from new senders are marked New." = "所有账户汇集在一个收件箱，最新的在前。新发件人的首封邮件会标为“新”。";
 
 /* No comment provided by engineer. */
 "Every account shares All Inboxes, newest first, each marked with its color. Switch to one account by tapping your photo." = "所有账户共享“所有收件箱”，最新的在前，并以各自的颜色标记。轻点你的照片可切换到单个账户。";
@@ -1025,7 +1025,7 @@
 "Everything from people: every email from a person, including ones you're copied on." = "来自个人的所有邮件：每封来自真人的邮件，包括你被抄送的邮件。";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "让 Corres 成为 Corres 的一切。";
+"The parts of Corres that read your mail for you." = "Corres 中替你阅读邮件的那些功能。";
 
 /* No comment provided by engineer. */
 "Explore Corres" = "探索 Corres";
@@ -2579,13 +2579,10 @@
 "Sorting" = "分类";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this %@. Corres doesn't send your mail to its own servers or to an AI service." = "分类、摘要和草稿都在这台%@上完成。Corres 不会把你的邮件发送到自己的服务器或 AI 服务。";
+"Sorting, summaries and drafts run on this %@. Your mail never goes to our servers or to an AI company." = "分类、摘要和草稿都在这台%@上完成。你的邮件绝不会发送到我们的服务器或 AI 公司。";
 
 /* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Nothing goes to a server." = "分类、摘要、建议回复和改写都由 Apple 智能在这台%@上完成。不会发送任何内容到服务器。";
-
-/* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to Corres's servers or to an AI company." = "分类、摘要、建议回复和改写都由 Apple 智能在这台%@上完成。你的邮件绝不会发送到 Corres 的服务器或 AI 公司。";
+"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to our servers or to an AI company." = "分类、摘要、建议回复和改写都由 Apple 智能在这台%@上完成。你的邮件绝不会发送到我们的服务器或 AI 公司。";
 
 /* No comment provided by engineer. */
 "Sources" = "来源";
@@ -3056,7 +3053,7 @@
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "关闭“打开时标记为已读”后，对话会保持未读，直到你轻扫或选择“标记为已读”。链接会在 Corres 中以 Safari 阅读器和内容拦截器打开，或在你的默认浏览器中打开。";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "没有 Pro，“邮件”仍可正常使用：阅读、回复、归档和搜索。“需要你”、“等待中”、搜索中的回答以及设备端智能需要 Pro。";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "没有 Pro，“邮件”仍可正常使用：阅读、回复、归档和搜索。“需要你”、“等待中”、搜索中的回答、摘要和建议回复需要 Pro。";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "不再标记%@";
@@ -3176,7 +3173,10 @@
 "Your iCloud address" = "你的 iCloud 地址";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "你的邮件绝不会发送到我们的服务器或 AI 公司。";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Pro 在这台%@上读取你的邮件。你的邮件绝不会发送到我们的服务器或 AI 公司。";
+
+/* No comment provided by engineer. */
+"All on this %@" = "全部在这台%@上";
 
 /* No comment provided by engineer. */
 "Your mail is read on this %@" = "你的邮件在这台%@上读取";
@@ -3244,7 +3244,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "%@ 需要重新登录，Corres 才能更改其邮件。";
 "%@ (%@ error %lld)" = "%@（%@ 错误 %lld）";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres 可以读取 %@，但没有更改它的权限，因此标为已读、归档和旗标都无法生效。请重新连接，并允许它请求的所有权限。";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "你的购买正在等待批准。一经批准，Corres Pro 即会解锁。";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "你的购买正在等待批准。批准后 Corres Pro 会立即开始。";
 "The purchase didn't go through. Try again." = "购买未完成。请重试。";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "无法打开兑换代码页面。你也可以在 App Store 的账户页面中兑换。";
 "No Corres Pro purchase was found for this Apple Account." = "未找到此 Apple 账户的 Corres Pro 购买记录。";

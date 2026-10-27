@@ -977,7 +977,7 @@
 "Enter your address and Corres finds your mail server for you." = "Gib deine Adresse ein, und Corres findet deinen Mailserver.";
 
 /* No comment provided by engineer. */
-"Every account in one inbox, newest first. New senders wait for your OK first." = "Alle Accounts in einem Eingang, die neuesten zuerst. Neue Absender warten auf dein OK.";
+"Every account in one inbox, newest first. First emails from new senders are marked New." = "Alle Accounts in einem Eingang, die neuesten zuerst. Erste E-Mails von neuen Absendern werden als „Neu“ markiert.";
 
 /* No comment provided by engineer. */
 "Every account shares All Inboxes, newest first, each marked with its color. Switch to one account by tapping your photo." = "Alle Accounts teilen sich „Alle Eingänge“, die neuesten zuerst, jeweils in ihrer Farbe markiert. Tippe auf dein Foto, um zu einem Account zu wechseln.";
@@ -1025,7 +1025,7 @@
 "Everything from people: every email from a person, including ones you're copied on." = "Alles von Personen: jede E-Mail von einer Person, auch wenn du nur in Kopie bist.";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "Alles, was Corres ausmacht.";
+"The parts of Corres that read your mail for you." = "Die Teile von Corres, die deine E-Mails für dich lesen.";
 
 /* No comment provided by engineer. */
 "Explore Corres" = "Corres entdecken";
@@ -2579,13 +2579,10 @@
 "Sorting" = "Sortierung";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this %@. Corres doesn't send your mail to its own servers or to an AI service." = "Sortierung, Zusammenfassungen und Entwürfe laufen auf diesem %@. Corres schickt deine E-Mails weder an eigene Server noch an einen KI-Dienst.";
+"Sorting, summaries and drafts run on this %@. Your mail never goes to our servers or to an AI company." = "Sortierung, Zusammenfassungen und Entwürfe laufen auf diesem %@. Deine E-Mails gehen nie an unsere Server oder an eine KI-Firma.";
 
 /* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Nothing goes to a server." = "Sortierung, Zusammenfassungen, Antwortvorschläge und Umformulierungen passieren auf diesem %@ mit Apple Intelligence. Nichts geht an einen Server.";
-
-/* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to Corres's servers or to an AI company." = "Sortierung, Zusammenfassungen, Antwortvorschläge und Umformulierungen passieren auf diesem %@ mit Apple Intelligence. Deine E-Mails gehen nie an die Server von Corres oder an eine KI-Firma.";
+"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to our servers or to an AI company." = "Sortierung, Zusammenfassungen, Antwortvorschläge und Umformulierungen passieren auf diesem %@ mit Apple Intelligence. Deine E-Mails gehen nie an unsere Server oder an eine KI-Firma.";
 
 /* No comment provided by engineer. */
 "Sources" = "Quellen";
@@ -3056,7 +3053,7 @@
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "Ist „Beim Öffnen als gelesen markieren“ aus, bleibt eine Konversation ungelesen, bis du streichst oder „Als gelesen markieren“ wählst. Links öffnen sich in Corres mit Safari-Reader und Inhaltsblockern oder in deinem Standardbrowser.";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Ohne Pro funktioniert „E-Mail“ weiter: lesen, antworten, archivieren und suchen. „Braucht dich“, „Wartet“, Antworten in der Suche und die Intelligenz auf dem Gerät brauchen Pro.";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Ohne Pro funktioniert „E-Mail“ weiter: lesen, antworten, archivieren und suchen. „Braucht dich“, „Wartet“, Antworten in der Suche, Zusammenfassungen und Antwortvorschläge brauchen Pro.";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "%@ werden nicht mehr markiert";
@@ -3176,7 +3173,10 @@
 "Your iCloud address" = "Deine iCloud-Adresse";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "Deine E-Mails gehen nie an unsere Server oder an eine KI-Firma.";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Pro liest deine E-Mails auf diesem %@. Deine E-Mails gehen nie an unsere Server oder an eine KI-Firma.";
+
+/* No comment provided by engineer. */
+"All on this %@" = "Alles auf diesem %@";
 
 /* No comment provided by engineer. */
 "Your mail is read on this %@" = "Deine E-Mails werden auf diesem %@ gelesen";
@@ -3244,7 +3244,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "%@ muss sich erneut anmelden, bevor Corres die E-Mails ändern kann.";
 "%@ (%@ error %lld)" = "%@ (%@-Fehler %lld)";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres kann %@ lesen, hat aber keine Berechtigung, etwas zu ändern. Als gelesen markieren, Archivieren und Markieren gehen deshalb nicht durch. Verbinde den Account neu und erlaube alle Berechtigungen, nach denen gefragt wird.";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "Dein Kauf wartet auf Freigabe. Corres Pro wird freigeschaltet, sobald er freigegeben ist.";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "Dein Kauf wartet auf Freigabe. Corres Pro startet, sobald er freigegeben ist.";
 "The purchase didn't go through. Try again." = "Der Kauf hat nicht geklappt. Versuch es noch einmal.";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "Das Fenster zum Einlösen konnte nicht geöffnet werden. Du kannst Codes auch im App Store unter deinem Account einlösen.";
 "No Corres Pro purchase was found for this Apple Account." = "Für diesen Apple Account wurde kein Kauf von Corres Pro gefunden.";

@@ -977,7 +977,7 @@
 "Enter your address and Corres finds your mail server for you." = "アドレスを入力すると、Corresがメールサーバを見つけます。";
 
 /* No comment provided by engineer. */
-"Every account in one inbox, newest first. New senders wait for your OK first." = "すべてのアカウントを1つの受信ボックスに、新しい順で。新しい差出人はあなたの許可を待ちます。";
+"Every account in one inbox, newest first. First emails from new senders are marked New." = "すべてのアカウントを1つの受信ボックスに、新しい順で。新しい差出人からの最初のメールには「新規」と表示されます。";
 
 /* No comment provided by engineer. */
 "Every account shares All Inboxes, newest first, each marked with its color. Switch to one account by tapping your photo." = "すべてのアカウントが「すべての受信ボックス」を共有し、新しい順に、それぞれの色付きで表示されます。写真をタップすると1つのアカウントに切り替えられます。";
@@ -1025,7 +1025,7 @@
 "Everything from people: every email from a person, including ones you're copied on." = "人からのすべて：人からのメールすべて。CCで受け取ったものも含みます。";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "Corresらしさのすべて。";
+"The parts of Corres that read your mail for you." = "あなたの代わりにメールを読む、Corresの機能。";
 
 /* No comment provided by engineer. */
 "Explore Corres" = "Corresを見てみる";
@@ -2579,13 +2579,10 @@
 "Sorting" = "振り分け";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this %@. Corres doesn't send your mail to its own servers or to an AI service." = "振り分け、概要、下書きはこの%@上で実行されます。Corresがあなたのメールを自社のサーバやAIサービスに送ることはありません。";
+"Sorting, summaries and drafts run on this %@. Your mail never goes to our servers or to an AI company." = "振り分け、概要、下書きはこの%@上で実行されます。メールが私たちのサーバやAI企業に送られることはありません。";
 
 /* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Nothing goes to a server." = "振り分け、概要、返信の候補、書き直しは、Apple Intelligenceによりこの%@上で行われます。サーバには何も送られません。";
-
-/* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to Corres's servers or to an AI company." = "振り分け、概要、返信の候補、書き直しは、Apple Intelligenceによりこの%@上で行われます。メールがCorresのサーバやAI企業に送られることはありません。";
+"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to our servers or to an AI company." = "振り分け、概要、返信の候補、書き直しは、Apple Intelligenceによりこの%@上で行われます。メールが私たちのサーバやAI企業に送られることはありません。";
 
 /* No comment provided by engineer. */
 "Sources" = "情報源";
@@ -3056,7 +3053,7 @@
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "開いても開封済みにしない設定では、スワイプするか「開封済みにする」を選ぶまで未開封のままです。リンクはSafariのリーダーとコンテンツブロッカー付きでCorres内で開くか、デフォルトのブラウザで開きます。";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Proがなくても、メールの閲覧、返信、アーカイブ、検索は使えます。「要対応」「返信待ち」、検索での回答、デバイス上のインテリジェンスにはProが必要です。";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Proがなくても、メールの閲覧、返信、アーカイブ、検索は使えます。「要対応」「返信待ち」、検索での回答、概要、返信の候補にはProが必要です。";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "今後%@に印を付けません";
@@ -3176,7 +3173,10 @@
 "Your iCloud address" = "iCloudアドレス";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "メールが私たちのサーバやAI企業に送られることはありません。";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Proはこの%@上でメールを読み取ります。メールが私たちのサーバやAI企業に送られることはありません。";
+
+/* No comment provided by engineer. */
+"All on this %@" = "すべてこの%@上で";
 
 /* No comment provided by engineer. */
 "Your mail is read on this %@" = "メールはこの%@上で読み取られます";
@@ -3244,7 +3244,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "Corresがメールを変更するには、%@に再度サインインする必要があります。";
 "%@ (%@ error %lld)" = "%@（%@ エラー %lld）";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corresは%@を読み取れますが、変更する権限がないため、既読、アーカイブ、フラグの操作が反映されません。再接続して、求められるすべての権限を許可してください。";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "購入は承認待ちです。承認されるとすぐにCorres Proが使えるようになります。";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "購入は承認待ちです。承認されるとすぐにCorres Proが始まります。";
 "The purchase didn't go through. Try again." = "購入が完了しませんでした。もう一度お試しください。";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "コードを使う画面を開けませんでした。App Storeのアカウントからでもコードを使えます。";
 "No Corres Pro purchase was found for this Apple Account." = "このApple AccountでCorres Proの購入は見つかりませんでした。";

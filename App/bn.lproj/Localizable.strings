@@ -977,7 +977,7 @@
 "Enter your address and Corres finds your mail server for you." = "আপনার ঠিকানা লিখুন, Corres আপনার মেইল সার্ভার খুঁজে নেবে।";
 
 /* No comment provided by engineer. */
-"Every account in one inbox, newest first. New senders wait for your OK first." = "সব অ্যাকাউন্ট এক ইনবক্সে, নতুনগুলো আগে। নতুন প্রেরকরা আগে আপনার সম্মতির অপেক্ষা করে।";
+"Every account in one inbox, newest first. First emails from new senders are marked New." = "সব অ্যাকাউন্ট এক ইনবক্সে, নতুনগুলো আগে। নতুন প্রেরকদের প্রথম ইমেইলে “নতুন” চিহ্ন থাকে।";
 
 /* No comment provided by engineer. */
 "Every account shares All Inboxes, newest first, each marked with its color. Switch to one account by tapping your photo." = "সব অ্যাকাউন্ট সব ইনবক্সে একসাথে, নতুনগুলো আগে, প্রতিটি নিজের রঙে চিহ্নিত। একটি অ্যাকাউন্টে যেতে আপনার ছবিতে ট্যাপ করুন।";
@@ -1025,7 +1025,7 @@
 "Everything from people: every email from a person, including ones you're copied on." = "মানুষের সব মেইল: কোনো মানুষের প্রতিটি ইমেইল, যেগুলোতে আপনাকে কপি করা হয়েছে সেগুলোসহ।";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "যা কিছু Corres-কে Corres করে তোলে।";
+"The parts of Corres that read your mail for you." = "Corres-এর যে অংশগুলো আপনার হয়ে মেইল পড়ে।";
 
 /* No comment provided by engineer. */
 "Explore Corres" = "Corres ঘুরে দেখুন";
@@ -2579,13 +2579,10 @@
 "Sorting" = "সাজানো";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this %@. Corres doesn't send your mail to its own servers or to an AI service." = "সাজানো, সারসংক্ষেপ আর খসড়া এই %@-এ হয়। Corres আপনার মেইল নিজের সার্ভারে বা কোনো AI সেবায় পাঠায় না।";
+"Sorting, summaries and drafts run on this %@. Your mail never goes to our servers or to an AI company." = "সাজানো, সারসংক্ষেপ আর খসড়া এই %@-এ হয়। আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI কোম্পানির কাছে যায় না।";
 
 /* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Nothing goes to a server." = "সাজানো, সারসংক্ষেপ, প্রস্তাবিত উত্তর আর নতুন করে লেখা এই %@-এ Apple Intelligence দিয়ে হয়। কিছুই সার্ভারে যায় না।";
-
-/* No comment provided by engineer. */
-"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to Corres's servers or to an AI company." = "সাজানো, সারসংক্ষেপ, প্রস্তাবিত উত্তর আর নতুন করে লেখা এই %@-এ Apple Intelligence দিয়ে হয়। আপনার মেইল কখনো Corres-এর সার্ভারে বা কোনো AI কোম্পানির কাছে যায় না।";
+"Sorting, summaries, suggested replies and rewrites happen on this %@ with Apple Intelligence. Your mail never goes to our servers or to an AI company." = "সাজানো, সারসংক্ষেপ, প্রস্তাবিত উত্তর আর নতুন করে লেখা এই %@-এ Apple Intelligence দিয়ে হয়। আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI কোম্পানির কাছে যায় না।";
 
 /* No comment provided by engineer. */
 "Sources" = "উৎস";
@@ -3056,7 +3053,7 @@
 "With marking as read off, a conversation stays unread until you swipe or choose Mark as Read. Links open in Corres with Safari's Reader and content blockers, or in your default browser." = "খুললেই পঠিত চিহ্নিত করা বন্ধ থাকলে, সোয়াইপ না করা বা পঠিত চিহ্নিত করুন বেছে না নেওয়া পর্যন্ত কথোপকথন অপঠিত থাকে। লিংক Corres-এ Safari-র রিডার আর কন্টেন্ট ব্লকারসহ খোলে, অথবা আপনার ডিফল্ট ব্রাউজারে।";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Pro ছাড়াও মেইল চলে: পড়া, উত্তর দেওয়া, আর্কাইভ আর সার্চ। আপনার করণীয়, অপেক্ষায়, সার্চে উত্তর আর ডিভাইসের বুদ্ধিমত্তার জন্য Pro লাগে।";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Pro ছাড়াও মেইল চলে: পড়া, উত্তর দেওয়া, আর্কাইভ আর সার্চ। আপনার করণীয়, অপেক্ষায়, সার্চে উত্তর, সারসংক্ষেপ আর প্রস্তাবিত উত্তরের জন্য Pro লাগে।";
 
 /* No comment provided by engineer. */
 "Won't flag %@ again" = "%@ আর চিহ্নিত করা হবে না";
@@ -3176,7 +3173,10 @@
 "Your iCloud address" = "আপনার iCloud ঠিকানা";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI কোম্পানির কাছে পাঠানো হয় না।";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Pro আপনার মেইল এই %@-এ পড়ে। আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI কোম্পানির কাছে যায় না।";
+
+/* No comment provided by engineer. */
+"All on this %@" = "সবকিছু এই %@-এ";
 
 /* No comment provided by engineer. */
 "Your mail is read on this %@" = "আপনার মেইল এই %@-এ পড়া হয়";
@@ -3244,7 +3244,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "Corres মেইল পরিবর্তন করার আগে %@-এ আবার সাইন ইন করতে হবে।";
 "%@ (%@ error %lld)" = "%@ (%@ ত্রুটি %lld)";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres %@ পড়তে পারে কিন্তু পরিবর্তন করার অনুমতি নেই, তাই পঠিত চিহ্নিত করা, আর্কাইভ করা ও ফ্ল্যাগ দেওয়া কার্যকর হবে না। আবার সংযুক্ত করুন এবং চাওয়া সব অনুমতি দিন।";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "আপনার কেনাকাটা অনুমোদনের অপেক্ষায় আছে। অনুমোদন পেলেই Corres Pro চালু হবে।";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "আপনার কেনাকাটা অনুমোদনের অপেক্ষায় আছে। অনুমোদন পেলেই Corres Pro শুরু হবে।";
 "The purchase didn't go through. Try again." = "কেনাকাটা সম্পন্ন হয়নি। আবার চেষ্টা করুন।";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "কোড রিডিম করার পাতা খোলা যায়নি। আপনি App Store-এ আপনার অ্যাকাউন্ট থেকেও রিডিম করতে পারেন।";
 "No Corres Pro purchase was found for this Apple Account." = "এই Apple অ্যাকাউন্টে কোনো Corres Pro কেনাকাটা পাওয়া যায়নি।";

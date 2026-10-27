@@ -417,7 +417,7 @@ private struct MacPlanSettings: View {
                     Text("Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro.")
                         .font(.caption).foregroundStyle(.secondary)
                 } else if !entitlements.isPro {
-                    Text("Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro.")
+                    Text("Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

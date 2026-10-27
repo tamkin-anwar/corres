@@ -1871,7 +1871,7 @@
 "Sorting" = "সাজানো";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service." = "সাজানো, সারসংক্ষেপ আর খসড়া এই Mac-এ হয়। আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI সেবায় যায় না।";
+"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI company." = "সাজানো, সারসংক্ষেপ আর খসড়া এই Mac-এ হয়। আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI কোম্পানির কাছে যায় না।";
 
 /* No comment provided by engineer. */
 "Spam" = "স্প্যাম";
@@ -2334,7 +2334,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "Corres মেইল পরিবর্তন করার আগে %@-এ আবার সাইন ইন করতে হবে।";
 "%@ (%@ error %lld)" = "%@ (%@ ত্রুটি %lld)";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres %@ পড়তে পারে কিন্তু পরিবর্তন করার অনুমতি নেই, তাই পঠিত চিহ্নিত করা, আর্কাইভ করা ও ফ্ল্যাগ দেওয়া কার্যকর হবে না। আবার সংযুক্ত করুন এবং চাওয়া সব অনুমতি দিন।";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "আপনার কেনাকাটা অনুমোদনের অপেক্ষায় আছে। অনুমোদন পেলেই Corres Pro চালু হবে।";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "আপনার কেনাকাটা অনুমোদনের অপেক্ষায় আছে। অনুমোদন পেলেই Corres Pro শুরু হবে।";
 "The purchase didn't go through. Try again." = "কেনাকাটা সম্পন্ন হয়নি। আবার চেষ্টা করুন।";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "কোড রিডিম করার পাতা খোলা যায়নি। আপনি App Store-এ আপনার অ্যাকাউন্ট থেকেও রিডিম করতে পারেন।";
 "No Corres Pro purchase was found for this Apple Account." = "এই Apple অ্যাকাউন্টে কোনো Corres Pro কেনাকাটা পাওয়া যায়নি।";
@@ -2796,7 +2796,7 @@
 "Everyone who owes you a reply, and for how long." = "যাদের কাছে আপনি উত্তর পান, আর কতদিন ধরে।";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "যা কিছু Corres-কে Corres করে তোলে।";
+"The parts of Corres that read your mail for you." = "Corres-এর যে অংশগুলো আপনার হয়ে মেইল পড়ে।";
 
 /* No comment provided by engineer. */
 "Family" = "পরিবার";
@@ -2901,10 +2901,13 @@
 "Widgets and Apple Watch" = "উইজেট আর Apple Watch";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Pro ছাড়াও মেইল চলে: পড়া, উত্তর দেওয়া, আর্কাইভ আর সার্চ। আপনার করণীয়, অপেক্ষায়, সার্চে উত্তর আর ডিভাইসের বুদ্ধিমত্তার জন্য Pro লাগে।";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Pro ছাড়াও মেইল চলে: পড়া, উত্তর দেওয়া, আর্কাইভ আর সার্চ। আপনার করণীয়, অপেক্ষায়, সার্চে উত্তর, সারসংক্ষেপ আর প্রস্তাবিত উত্তরের জন্য Pro লাগে।";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI কোম্পানির কাছে পাঠানো হয় না।";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Pro আপনার মেইল এই %@-এ পড়ে। আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI কোম্পানির কাছে যায় না।";
+
+/* No comment provided by engineer. */
+"All on this %@" = "সবকিছু এই %@-এ";
 
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "চিরকালের জন্য আপনার · কেনা হয়েছে %@";

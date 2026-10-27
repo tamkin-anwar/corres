@@ -27,7 +27,7 @@ struct MacWelcome: View {
                 point("keyboard", "Made for the Mac",
                       "Mail's shortcuts, ⌘K to go anywhere, and drag to file. Press ? any time to see every key.")
                 point("lock", "Private by design",
-                      "Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service.")
+                      "Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI company.")
             }
             .padding(.top, 30)
             .padding(.horizontal, 44)

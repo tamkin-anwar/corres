@@ -1871,7 +1871,7 @@
 "Sorting" = "Classificação";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service." = "A classificação, os resumos e os rascunhos acontecem neste Mac. Seus e-mails nunca vão para nossos servidores nem para um serviço de IA.";
+"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI company." = "A classificação, os resumos e os rascunhos acontecem neste Mac. Seus e-mails nunca vão para nossos servidores nem para uma empresa de IA.";
 
 /* No comment provided by engineer. */
 "Spam" = "Spam";
@@ -2334,7 +2334,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "%@ precisa entrar novamente para que o Corres possa alterar os e-mails.";
 "%@ (%@ error %lld)" = "%@ (erro do %@ %lld)";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "O Corres consegue ler %@, mas não tem permissão para alterá-la, então marcar como lido, arquivar e sinalizar não funcionam. Reconecte a conta e permita todas as permissões pedidas.";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "Sua compra está aguardando aprovação. O Corres Pro é liberado assim que ela for aprovada.";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "Sua compra está aguardando aprovação. O Corres Pro começa assim que ela for aprovada.";
 "The purchase didn't go through. Try again." = "A compra não foi concluída. Tente novamente.";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "Não foi possível abrir a tela de resgate de código. Você também pode resgatar na App Store, na sua conta.";
 "No Corres Pro purchase was found for this Apple Account." = "Nenhuma compra do Corres Pro foi encontrada para esta Conta Apple.";
@@ -2796,7 +2796,7 @@
 "Everyone who owes you a reply, and for how long." = "Todos que devem uma resposta a você, e há quanto tempo.";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "Tudo o que faz o Corres ser o Corres.";
+"The parts of Corres that read your mail for you." = "As partes do Corres que leem seus e-mails por você.";
 
 /* No comment provided by engineer. */
 "Family" = "Família";
@@ -2901,10 +2901,13 @@
 "Widgets and Apple Watch" = "Widgets e Apple Watch";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Sem o Pro, o E-mail continua funcionando: ler, responder, arquivar e buscar. Precisa de Você, Aguardando, respostas na busca e a inteligência no dispositivo precisam do Pro.";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Sem o Pro, o E-mail continua funcionando: ler, responder, arquivar e buscar. Precisa de Você, Aguardando, respostas na busca, resumos e respostas sugeridas precisam do Pro.";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "Seus e-mails nunca vão para nossos servidores nem para uma empresa de IA.";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "O Pro lê seus e-mails neste %@. Seus e-mails nunca vão para nossos servidores nem para uma empresa de IA.";
+
+/* No comment provided by engineer. */
+"All on this %@" = "Tudo neste %@";
 
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "Seu para sempre · comprado em %@";

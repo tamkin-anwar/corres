@@ -1871,7 +1871,7 @@
 "Sorting" = "分类";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service." = "分类、摘要和草稿都在这台 Mac 上完成。你的邮件绝不会发送到我们的服务器或 AI 服务。";
+"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI company." = "分类、摘要和草稿都在这台 Mac 上完成。你的邮件绝不会发送到我们的服务器或 AI 公司。";
 
 /* No comment provided by engineer. */
 "Spam" = "垃圾邮件";
@@ -2334,7 +2334,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "%@ 需要重新登录，Corres 才能更改其邮件。";
 "%@ (%@ error %lld)" = "%@（%@ 错误 %lld）";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corres 可以读取 %@，但没有更改它的权限，因此标为已读、归档和旗标都无法生效。请重新连接，并允许它请求的所有权限。";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "你的购买正在等待批准。一经批准，Corres Pro 即会解锁。";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "你的购买正在等待批准。批准后 Corres Pro 会立即开始。";
 "The purchase didn't go through. Try again." = "购买未完成。请重试。";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "无法打开兑换代码页面。你也可以在 App Store 的账户页面中兑换。";
 "No Corres Pro purchase was found for this Apple Account." = "未找到此 Apple 账户的 Corres Pro 购买记录。";
@@ -2796,7 +2796,7 @@
 "Everyone who owes you a reply, and for how long." = "欠你回复的所有人，以及等了多久。";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "让 Corres 成为 Corres 的一切。";
+"The parts of Corres that read your mail for you." = "Corres 中替你阅读邮件的那些功能。";
 
 /* No comment provided by engineer. */
 "Family" = "家人共享";
@@ -2901,10 +2901,13 @@
 "Widgets and Apple Watch" = "小组件和 Apple Watch";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "没有 Pro，“邮件”仍可正常使用：阅读、回复、归档和搜索。“需要你”、“等待中”、搜索中的回答以及设备端智能需要 Pro。";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "没有 Pro，“邮件”仍可正常使用：阅读、回复、归档和搜索。“需要你”、“等待中”、搜索中的回答、摘要和建议回复需要 Pro。";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "你的邮件绝不会发送到我们的服务器或 AI 公司。";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Pro 在这台%@上读取你的邮件。你的邮件绝不会发送到我们的服务器或 AI 公司。";
+
+/* No comment provided by engineer. */
+"All on this %@" = "全部在这台%@上";
 
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "永久拥有 · 购买于 %@";

@@ -1871,7 +1871,7 @@
 "Sorting" = "振り分け";
 
 /* No comment provided by engineer. */
-"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI service." = "振り分け、概要、下書きはこのMac上で実行されます。メールが私たちのサーバやAIサービスに送られることはありません。";
+"Sorting, summaries and drafts run on this Mac. Your mail never goes to our servers or to an AI company." = "振り分け、概要、下書きはこのMac上で実行されます。メールが私たちのサーバやAI企業に送られることはありません。";
 
 /* No comment provided by engineer. */
 "Spam" = "迷惑メール";
@@ -2334,7 +2334,7 @@
 "%@ needs to sign in again before Corres can change its mail." = "Corresがメールを変更するには、%@に再度サインインする必要があります。";
 "%@ (%@ error %lld)" = "%@（%@ エラー %lld）";
 "Corres can read %@ but doesn't have permission to change it, so marking read, archiving, and flagging can't go through. Reconnect it and allow every permission it asks for." = "Corresは%@を読み取れますが、変更する権限がないため、既読、アーカイブ、フラグの操作が反映されません。再接続して、求められるすべての権限を許可してください。";
-"Your purchase is waiting for approval. Corres Pro unlocks as soon as it's approved." = "購入は承認待ちです。承認されるとすぐにCorres Proが使えるようになります。";
+"Your purchase is waiting for approval. Corres Pro starts as soon as it's approved." = "購入は承認待ちです。承認されるとすぐにCorres Proが始まります。";
 "The purchase didn't go through. Try again." = "購入が完了しませんでした。もう一度お試しください。";
 "Couldn't open the Redeem Code sheet. You can also redeem in the App Store under your account." = "コードを使う画面を開けませんでした。App Storeのアカウントからでもコードを使えます。";
 "No Corres Pro purchase was found for this Apple Account." = "このApple AccountでCorres Proの購入は見つかりませんでした。";
@@ -2796,7 +2796,7 @@
 "Everyone who owes you a reply, and for how long." = "あなたへの返信がまだの人全員と、その期間。";
 
 /* No comment provided by engineer. */
-"Everything that makes Corres Corres." = "Corresらしさのすべて。";
+"The parts of Corres that read your mail for you." = "あなたの代わりにメールを読む、Corresの機能。";
 
 /* No comment provided by engineer. */
 "Family" = "ファミリー";
@@ -2901,10 +2901,13 @@
 "Widgets and Apple Watch" = "ウィジェットとApple Watch";
 
 /* No comment provided by engineer. */
-"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Proがなくても、メールの閲覧、返信、アーカイブ、検索は使えます。「要対応」「返信待ち」、検索での回答、デバイス上のインテリジェンスにはProが必要です。";
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search, summaries and suggested replies need Pro." = "Proがなくても、メールの閲覧、返信、アーカイブ、検索は使えます。「要対応」「返信待ち」、検索での回答、概要、返信の候補にはProが必要です。";
 
 /* No comment provided by engineer. */
-"Your mail is never sent to our servers or an AI company." = "メールが私たちのサーバやAI企業に送られることはありません。";
+"Pro reads your mail on this %@. Your mail never goes to our servers or to an AI company." = "Proはこの%@上でメールを読み取ります。メールが私たちのサーバやAI企業に送られることはありません。";
+
+/* No comment provided by engineer. */
+"All on this %@" = "すべてこの%@上で";
 
 /* No comment provided by engineer. */
 "Yours for good · bought %@" = "ずっと使えます · %@に購入";
