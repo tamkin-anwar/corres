@@ -365,15 +365,23 @@ final class PushNotificationService {
     }()
 
     /// Registered every launch; iOS shows these under a long-press on any
-    /// single-conversation notification, without opening Corres.
+    /// single-conversation notification, without opening Corres. The Mac
+    /// registers the same ones, and the Watch shows the iPhone's.
+    ///
+    /// On a locked iPhone, Reply and Archive ask for Face ID or the passcode
+    /// first (`.authenticationRequired`: "the system prompts the user to
+    /// unlock the device", then hands Corres the action), so someone holding
+    /// the phone can't send mail as you or file it away. Mark as Read still
+    /// works locked, as in Mail. A text input action takes the same options
+    /// as any other, so Reply asks when it's chosen, before anything is sent.
     static func registerNotificationActions() {
         let archive = UNNotificationAction(identifier: archiveAction, title: String(localized: "Archive"),
-                                           options: [], icon: UNNotificationActionIcon(systemImageName: "archivebox"))
+                                           options: [.authenticationRequired], icon: UNNotificationActionIcon(systemImageName: "archivebox"))
         let markRead = UNNotificationAction(identifier: markReadAction, title: String(localized: "Mark as Read"),
                                             options: [], icon: UNNotificationActionIcon(systemImageName: "envelope.open"))
         // Mail's and Gmail's quick reply: typed in the notification, sent
         // from it.
-        let reply = UNTextInputNotificationAction(identifier: replyAction, title: String(localized: "Reply"), options: [],
+        let reply = UNTextInputNotificationAction(identifier: replyAction, title: String(localized: "Reply"), options: [.authenticationRequired],
                                                   icon: UNNotificationActionIcon(systemImageName: "arrowshape.turn.up.left"),
                                                   textInputButtonTitle: String(localized: "Send"), textInputPlaceholder: String(localized: "Reply"))
         let category = UNNotificationCategory(identifier: messageCategory, actions: [reply, archive, markRead],

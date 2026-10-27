@@ -383,6 +383,14 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             await MainActor.run { AppRouter.shared.pending = .destination(.needsYou) }
             return
         }
+        // The relay's own "New email", left as it came when the notification
+        // extension couldn't fetch the email: it names the message, not the
+        // conversation. Tapping it still opens that email.
+        if info["thread"] == nil, response.actionIdentifier == UNNotificationDefaultActionIdentifier,
+           let account = info["account"] as? String, let messageID = info["message"] as? String,
+           await openMessage(messageID, account: account) {
+            return
+        }
         guard let account = info["account"] as? String, let providerID = info["thread"] as? String else {
             // A summary of several emails opens Needs You, or Mail without
             // Pro: new mail never opens on a lock.
@@ -393,6 +401,22 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
         let typed = (response as? UNTextInputNotificationResponse)?.userText
         await handleNotificationAction(response.actionIdentifier, account: account, providerID: providerID, typed: typed)
+    }
+
+    /// Finds the conversation a message belongs to, once the mail has
+    /// loaded: here already (its latest message), or asked of the server
+    /// as the notification extension would have, for a few seconds at most.
+    private func openMessage(_ messageID: String, account: String) async -> Bool {
+        if store.state != .loaded { await store.load() }
+        if let thread = store.threads.first(where: { $0.id.account == account && $0.latestMessageID == messageID }) {
+            router.pending = .thread(thread.id)
+            return true
+        }
+        await auth.waitUntilRestored()
+        let lookup = Task { try? await MailClient().fetchSummary(ids: [messageID], account: account).first?.id }
+        guard let found = await waitBriefly(for: lookup, upTo: .seconds(8)), let id = found else { return false }
+        router.pending = .thread(id)
+        return true
     }
 
     private func sendScheduledDue() async {
