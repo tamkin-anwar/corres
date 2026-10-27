@@ -468,16 +468,32 @@ Something off? Help > Send Diagnostics, or send feedback through TestFlight.
 
 Corres 0.2.0 (41) for iPhone, iPad and Apple Watch
 
+This build includes everything from build 39 too.
+
 The big ones
-- iPad: with two or more accounts, the sidebar now lists each one properly: its color, its name and its address on one line, with a checkmark on the account you're viewing. Before, the names and addresses were centered and wrapped.
-- The Corres Pro screen is clearer about what Pro includes: Needs You and Waiting, the Apple Intelligence features, and widgets and Apple Watch. Siri and iPad were never locked, and the screen no longer says they were.
+- Siri tells you what really happened. It says who an email goes to, says so when a send didn't go through, and tells you when nothing matched what you asked for.
+- Safer sending. If Outlook is slow to answer while an email goes out, Corres checks before trying again, so nothing is sent twice. A big email no longer loses its copy in Sent.
+- Reads mail from everywhere. Bills in taka (Tk, BDT) and rupees, Bengali and Arabic digits, Japanese and Korean dates, and older Japanese and Chinese encodings in Gmail. A deadline with no time lasts the whole day.
+- Faster in a big mailbox. Deleting and archiving are much quicker, and the first minute after opening stays smooth.
 
 Also new
-- The Corres Pro screen offers the monthly and yearly plans. Redeem Code still takes gift codes.
+- Automatic replies ("I'm out of the office") stay out of Needs You.
+- The Lock Screen widget hides sender and subject while your iPhone is locked.
+- Replies from a notification or Apple Watch quote the email and come from the address it was sent to.
+- iPad: with two or more accounts, the sidebar shows each one's color, name and address, with a checkmark on the account you're viewing.
+- The Corres Pro screen is clearer about what Pro includes and offers the monthly and yearly plans. Siri and iPad were never locked. On Apple Watch, Needs You and Waiting are part of Pro, as on iPhone. Everyone on TestFlight has Pro, so nothing changes for you.
+
+Fixed
+- iCloud and other email: archive, delete and flag made offline go through once you're back, and a wrong password no longer locks you out by retrying.
+- Mail moved back to the Inbox on the web comes back in Corres.
+- On iPad, a conversation in its own window closes after you archive, delete or snooze it.
+- Write on a person's card opens a new email.
 
 Please try
-1. On iPad with two or more accounts, open the sidebar and switch between them.
-2. In Settings, tap Try Corres Pro Free (or Get Corres Pro) and check the plans and benefits read well in your language. You won't be charged for looking.
+1. Ask Siri to send an email to someone, then check Sent.
+2. Archive or delete several emails in a row in a big mailbox.
+3. On iPad with two or more accounts, switch between them in the sidebar.
+4. If you get bills or dates in Bengali, Japanese or Korean, open one and check the details at the top.
 
 Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
 
