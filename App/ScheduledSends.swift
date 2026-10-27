@@ -22,7 +22,9 @@ final class ScheduledSends {
         let id: UUID
         var draft: Draft
         var sendAt: Date
-        let scheduledAt: Date
+        /// Replies after this hold it. Moved to when you gave a held one
+        /// a new time, knowing they'd replied.
+        var scheduledAt: Date
         /// They replied after it was scheduled; waiting for you to decide.
         var heldBecauseReplied = false
         /// Tried once already, in the Share sheet: sent under its own
@@ -81,6 +83,10 @@ final class ScheduledSends {
     func reschedule(_ id: UUID, to date: Date) {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         items[index].sendAt = date
+        // Held, and given a new time: their reply is known, so only a
+        // later one holds it again. It used to be held again at the new
+        // time, every time, for the reply you'd already seen.
+        if items[index].heldBecauseReplied { items[index].scheduledAt = .now }
         items[index].heldBecauseReplied = false
         items.sort { $0.sendAt < $1.sendAt }
         save()

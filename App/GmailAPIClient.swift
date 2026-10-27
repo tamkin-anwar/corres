@@ -308,8 +308,23 @@ struct GmailAPIClient {
     private func batchFetch<Item>(ids: [String], query: String, account: String,
                                   transform: (GmailMessage) -> Item) async throws -> (items: [Item], failedIDs: [String]) {
         guard !ids.isEmpty else { return ([], []) }
+        // More than one batch holds, a batch at a time. Only the first 50
+        // used to be asked for, and the rest were dropped without being
+        // counted as failed: a mailbox page of 50 conversations (Mac
+        // mailboxes, the search index, the Inbox check) lists up to 100
+        // messages, so up to half of each page never arrived.
+        guard ids.count <= Self.batchSize else {
+            var items: [Item] = []
+            var failed: [String] = []
+            for chunk in ids.chunked(into: Self.batchSize) {
+                let result = try await batchFetch(ids: chunk, query: query, account: account, transform: transform)
+                items += result.items
+                failed += result.failedIDs
+            }
+            return (items, failed)
+        }
         let token = try await accessToken(for: account)
-        var pending = Array(ids.prefix(Self.batchSize))
+        var pending = ids
         var items: [Item] = []
         for attempt in 1...Self.batchAttempts {
             guard !pending.isEmpty else { break }

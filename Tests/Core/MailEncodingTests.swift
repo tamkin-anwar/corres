@@ -96,4 +96,13 @@ struct MailEncodingTests {
         let again = try JSONDecoder().decode(Draft.self, from: JSONEncoder().encode(withHeaders))
         #expect(again.inReplyTo == "abc@mail.example")
     }
+
+    /// The Date header reads the same whatever language or calendar the
+    /// device is set to, with the sender's own offset.
+    @Test func dateHeaderIsRFC5322() {
+        let date = Date(timeIntervalSince1970: 1_793_065_739) // 2026-10-27 01:48:59 UTC
+        #expect(MailEncoding.dateHeader(date, timeZone: TimeZone(identifier: "America/Los_Angeles")!) == "Mon, 26 Oct 2026 18:48:59 -0700")
+        #expect(MailEncoding.dateHeader(date, timeZone: TimeZone(identifier: "Asia/Dhaka")!) == "Tue, 27 Oct 2026 07:48:59 +0600")
+        #expect(MailEncoding.dateHeader(date, timeZone: TimeZone(identifier: "UTC")!) == "Tue, 27 Oct 2026 01:48:59 +0000")
+    }
 }

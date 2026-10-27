@@ -650,6 +650,13 @@ final class OutboxService {
             } catch {
                 lastError = error
                 guard Self.isRetryable(error), attempt < Self.maxSendAttempts else { throw error }
+                // Exponential backoff, plus jitter so a burst of sends that
+                // all failed for the same reason (a brief outage) don't all
+                // retry in lockstep and hit Gmail again at the exact same
+                // moment.
+                let backoffMs = Double(Self.baseBackoffMilliseconds) * pow(2, Double(attempt - 1))
+                let jitterMs = Double.random(in: 0...(backoffMs * 0.5))
+                try? await Task.sleep(for: .milliseconds(Int(backoffMs + jitterMs)))
                 // `isRetryable` only admits failures where the request may
                 // never have reached Gmail at all *or* Gmail's response
                 // itself was lost after accepting it — genuinely ambiguous,
@@ -658,6 +665,10 @@ final class OutboxService {
                 // has a message with this exact attempt's Message-ID, the
                 // earlier try actually landed and this returns its thread
                 // instead of sending a real duplicate.
+                // Asked after the wait, just before sending again: asked
+                // the moment the try failed, a server still finishing it
+                // (Outlook after a 504, Gmail's search catching up) said
+                // "not here", and the wait then ended in a second send.
                 // A check that fails is no answer: the earlier try may have
                 // gone, so it stays failed instead of going again.
                 let existing: ThreadID?
@@ -667,13 +678,6 @@ final class OutboxService {
                     throw lastError
                 }
                 if let existing { return existing }
-                // Exponential backoff, plus jitter so a burst of sends that
-                // all failed for the same reason (a brief outage) don't all
-                // retry in lockstep and hit Gmail again at the exact same
-                // moment.
-                let backoffMs = Double(Self.baseBackoffMilliseconds) * pow(2, Double(attempt - 1))
-                let jitterMs = Double.random(in: 0...(backoffMs * 0.5))
-                try? await Task.sleep(for: .milliseconds(Int(backoffMs + jitterMs)))
             }
         }
         throw lastError

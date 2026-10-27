@@ -544,8 +544,10 @@ struct IMAPMailClient: Sendable {
             if uid == nil, let messageID = Self.messageID(ofMessage: Self.mime(fromRaw: raw)) {
                 uid = try await session.connection.search(messageID: messageID).max()
             }
-            if let existingID, let old = Self.parse(existingID), old.uid != uid || old.path != drafts {
-                _ = try? await session.connection.select(old.path)
+            // Only by the number it had then: after the folder was
+            // renumbered (a new UIDVALIDITY) that UID is another message.
+            if let existingID, let old = Self.parse(existingID), old.uid != uid || old.path != drafts,
+               (try? await session.connection.select(old.path))?.uidValidity == old.uidValidity {
                 try? await session.connection.setFlags(["\\Deleted"], uids: [old.uid], add: true)
                 try? await session.connection.expungeIfPossible(uids: [old.uid])
             }
@@ -556,7 +558,9 @@ struct IMAPMailClient: Sendable {
     func deleteDraft(id: String, account: String) async throws {
         guard let key = Self.parse(id) else { return }
         try await IMAPSessions.shared.with(account) { session in
-            try await session.connection.select(key.path)
+            // Renumbered since (a new UIDVALIDITY): that UID is another
+            // message now, and the draft can't be found by it.
+            guard try await session.connection.select(key.path).uidValidity == key.uidValidity else { return }
             try await session.connection.setFlags(["\\Deleted"], uids: [key.uid], add: true)
             try await session.connection.expungeIfPossible(uids: [key.uid])
         }

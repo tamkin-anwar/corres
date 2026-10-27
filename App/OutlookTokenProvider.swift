@@ -39,13 +39,28 @@ actor OutlookTokenProvider {
         return try await task.value
     }
 
+    /// A sign-in Microsoft turned down, and when: not offered again for a
+    /// while (as `GoogleTokenProvider` does), rather than on every check.
+    private var refused: [String: (token: Int, at: Date)] = [:]
+    private static let refusedPause: TimeInterval = 10 * 60
+
     private func refresh(_ account: String) async throws -> String {
         guard let refreshToken = Keychain.get(key: Self.key(account)) else { throw TokenError.noRefreshToken }
         guard let clientID = Self.clientID else { throw TokenError.noClientID }
-        let response = try await Self.tokenRequest([
-            "client_id": clientID, "grant_type": "refresh_token", "refresh_token": refreshToken,
-            "scope": Self.scopes.joined(separator: " "),
-        ])
+        if let last = refused[account], last.token == refreshToken.hashValue, Date.now.timeIntervalSince(last.at) < Self.refusedPause {
+            throw TokenError.refreshFailed
+        }
+        let response: TokenResponse
+        do {
+            response = try await Self.tokenRequest([
+                "client_id": clientID, "grant_type": "refresh_token", "refresh_token": refreshToken,
+                "scope": Self.scopes.joined(separator: " "),
+            ])
+        } catch TokenError.refreshFailed {
+            refused[account] = (refreshToken.hashValue, .now)
+            throw TokenError.refreshFailed
+        }
+        refused[account] = nil
         if let rotated = response.refresh_token { Keychain.set(rotated, key: Self.key(account)) }
         cache[account] = Cached(value: response.access_token, expiresAt: .now.addingTimeInterval(TimeInterval(response.expires_in)))
         return response.access_token
@@ -53,6 +68,7 @@ actor OutlookTokenProvider {
 
     func store(refreshToken: String, accessToken: String?, expiresIn: Int?, for account: String) {
         Keychain.set(refreshToken, key: Self.key(account))
+        refused[account] = nil
         if let accessToken, let expiresIn {
             cache[account] = Cached(value: accessToken, expiresAt: .now.addingTimeInterval(TimeInterval(expiresIn)))
         }
