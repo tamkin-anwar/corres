@@ -173,9 +173,13 @@ public enum MailSignals {
     /// `receivedAt` on an earlier day, "reply by Friday" from last week
     /// became next Friday. `senderEmail` says how the sender writes a date
     /// like 03/11/2026 (`numericDateOrder`).
+    ///
+    /// A reply's or forward's subject is the first message's deadline, as
+    /// it is its question (`asksSomething`): "Paid, thanks" under "Re:
+    /// Payment due Friday" set Friday as due.
     public static func deadline(in text: String, now: Date = .now, horizon: TimeInterval = 45 * 86_400,
                                 senderEmail: String? = nil, receivedAt: Date? = nil) -> Date? {
-        let own = String(ownText(text).prefix(4_000))
+        let own = String(ownText(withoutReplySubject(text)).prefix(4_000))
         guard !own.isEmpty else { return nil }
         return dates(in: own, senderEmail: senderEmail, now: now, relativeToday: readsRelativeDates(receivedAt))
             .filter { $0.isDeadline && $0.date > now.addingTimeInterval(-3_600) && $0.date < now.addingTimeInterval(horizon) }
@@ -195,6 +199,7 @@ public enum MailSignals {
     public static func timeSensitiveDate(in text: String, now: Date = .now, within: TimeInterval = 3 * 86_400,
                                          senderEmail: String? = nil, receivedAt: Date? = nil) -> Date? {
         if let due = deadline(in: text, now: now, horizon: within, senderEmail: senderEmail, receivedAt: receivedAt) { return due }
+        let text = withoutReplySubject(text)
         guard isObligation(text) else { return nil }
         let own = String(ownText(text).prefix(4_000))
         return dates(in: own, senderEmail: senderEmail, now: now, relativeToday: readsRelativeDates(receivedAt)).map(\.date)

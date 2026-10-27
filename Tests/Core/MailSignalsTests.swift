@@ -79,6 +79,23 @@ struct MailSignalsTests {
         #expect(MailSignals.deadline(in: "Due \(spelled(now.addingTimeInterval(200 * 86_400))).", now: now) == nil)
     }
 
+    /// A reply's subject repeats the first message's deadline: "Paid,
+    /// thanks" under "Re: Payment due …" is done, not due.
+    @Test func aRepliesSubjectSetsNoDeadline() {
+        let now = Date()
+        let soon = spelled(now.addingTimeInterval(5 * 86_400))
+        #expect(MailSignals.deadline(in: "Re: Payment due \(soon)\nPaid, thanks.", now: now) == nil)
+        #expect(MailSignals.deadline(in: "AW: Zahlung fällig am \(soon)\nErledigt, danke.", now: now) == nil)
+        #expect(MailSignals.deadline(in: "Fwd: RSVP by \(soon)\nFYI.", now: now) == nil)
+        #expect(MailSignals.deadline(in: "回复：截止日期：\(soon)\n已付款。", now: now) == nil)
+        let nearer = spelled(now.addingTimeInterval(2 * 86_400))
+        #expect(MailSignals.timeSensitiveDate(in: "Re: Your appointment on \(nearer)\nThanks, see you then.", now: now) == nil)
+        #expect(MailSignals.timeSensitiveDate(in: "Your appointment on \(nearer)\nPlease arrive early.", now: now) != nil)
+        // A deadline in the reply itself still counts, and a new email's subject does.
+        #expect(MailSignals.deadline(in: "Re: Payment\nPlease pay by \(soon).", now: now) != nil)
+        #expect(MailSignals.deadline(in: "Payment due \(soon)\nSee the invoice attached.", now: now) != nil)
+    }
+
     /// The date detector reads "tomorrow" and "Friday" by today's clock:
     /// in an email from days ago they meant another day.
     @Test func relativeDatesCountOnlyInTodaysMail() {
