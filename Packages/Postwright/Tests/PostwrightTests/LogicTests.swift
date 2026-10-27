@@ -157,6 +157,18 @@ struct HeaderDecodingTests {
         #expect(MIMEWords.decode("Plain subject") == "Plain subject")
     }
 
+    /// A character's bytes split between two words still read as that
+    /// character; words in different charsets, or apart, stay apart.
+    @Test func wordsSplittingACharacterAreReadTogether() {
+        let bytes = Array("日本の請求書".utf8) // 18 bytes; split inside "の"
+        let first = Data(bytes[..<7]).base64EncodedString(), second = Data(bytes[7...]).base64EncodedString()
+        #expect(MIMEWords.decode("=?UTF-8?B?\(first)?=\r\n =?UTF-8?B?\(second)?=") == "日本の請求書")
+        #expect(MIMEWords.decode("=?utf-8?Q?=E6=97?= =?UTF-8?Q?=A5?= x") == "日 x")
+        #expect(MIMEWords.decode("=?UTF-8?Q?a?= b =?UTF-8?Q?c?=") == "a b c")
+        #expect(MIMEWords.decode("=?ISO-8859-1?Q?Gr=FC?= =?UTF-8?Q?=C3=9F?=") == "Grüß")
+        #expect(MIMEWords.decode("=?UTF-8*en?Q?Caf=C3=A9?=") == "Café")
+    }
+
     @Test func datesInTheirRealShapes() {
         let expected = ISO8601DateFormatter().date(from: "2026-10-16T13:07:48Z")
         #expect(RFC2822Date.parse("Fri, 16 Oct 2026 09:07:48 -0400") == expected)

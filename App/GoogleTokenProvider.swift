@@ -46,6 +46,14 @@ actor GoogleTokenProvider {
     /// starting a second one.
     private var inFlightRefreshes: [String: Task<String, Error>] = [:]
 
+    /// A sign-in Google turned down (revoked, or the password changed),
+    /// and when. Not offered again for a while: every 20-second check,
+    /// label refresh and waiting change asked again, thousands of times a
+    /// day on a Mac left open. Signing in again brings a new one, tried at
+    /// once.
+    private var refused: [String: (token: Int, at: Date)] = [:]
+    private static let refusedPause: TimeInterval = 10 * 60
+
     func accessToken(for email: String) async throws -> String {
         if let cached = cache[email], cached.expiresAt > Date().addingTimeInterval(Self.expiryBuffer) {
             return cached.value
@@ -62,6 +70,10 @@ actor GoogleTokenProvider {
     private func refreshAccessToken(for email: String) async throws -> String {
         guard let refreshToken = Keychain.get(key: Self.keychainKey(for: email)) else {
             throw TokenError.noRefreshToken
+        }
+        if let last = refused[email], last.token == refreshToken.hashValue,
+           Date().timeIntervalSince(last.at) < Self.refusedPause {
+            throw TokenError.refreshFailed
         }
         // The same client GoogleSignIn reads; from Info.plist, so the Share
         // extension (which doesn't link GoogleSignIn) can refresh too.
@@ -80,8 +92,10 @@ actor GoogleTokenProvider {
         guard let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode else {
             let status = (response as? HTTPURLResponse)?.statusCode ?? -1
             if status == 429 || (500...599).contains(status) { throw TokenError.unavailable(statusCode: status) }
+            refused[email] = (refreshToken.hashValue, Date())
             throw TokenError.refreshFailed
         }
+        refused[email] = nil
         let decoded = try JSONDecoder().decode(TokenResponse.self, from: data)
         cache[email] = CachedToken(value: decoded.access_token, expiresAt: Date().addingTimeInterval(TimeInterval(decoded.expires_in)))
         if let scope = decoded.scope {
@@ -105,6 +119,7 @@ actor GoogleTokenProvider {
         Keychain.set(refreshToken, key: Self.keychainKey(for: email))
         cache[email] = nil
         grantedScopes[email] = nil
+        refused[email] = nil
     }
 
     /// Forgets the cached access token so the next call mints a fresh one.

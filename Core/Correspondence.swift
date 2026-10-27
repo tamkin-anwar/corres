@@ -1994,4 +1994,16 @@ public enum MailEncoding {
         if !current.isEmpty { chunks.append(current) }
         return chunks.map { "=?UTF-8?B?\(Data($0).base64EncodedString())?=" }.joined(separator: "\r\n ")
     }
+
+    /// The Date header's value (RFC 5322 3.3), "Mon, 26 Oct 2026 18:48:59
+    /// -0700": English names and the Gregorian calendar whatever the
+    /// device is set to, with its offset from UTC.
+    public static func dateHeader(_ date: Date, timeZone: TimeZone = .current) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss Z"
+        return formatter.string(from: date)
+    }
 }

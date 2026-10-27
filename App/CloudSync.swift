@@ -270,15 +270,26 @@ final class CloudSync {
                 await store.snooze(thread.id, until: nil); changed += 1
             }
         }
-        let pendingBySender = Dictionary(grouping: store.threadsIncludingHidden.compactMap { thread in
-            thread.senderEmail.map { ($0.lowercased(), thread.senderDecision) }
-        }, by: \.0)
+        // Each sender's mail in the account the decision was made in, with
+        // the address as it's stored: Gmail keeps its capitals
+        // ("Sara.Lee@Firm.com"), and a decision given the lowercased key
+        // matched none of it, so it never took on this device and was
+        // tried again, with a full reload, after every sync.
+        var byAccountSender: [String: [(email: String, account: String, decision: SenderDecision)]] = [:]
+        for thread in store.threadsIncludingHidden {
+            guard let email = thread.senderEmail else { continue }
+            byAccountSender[thread.id.account.lowercased() + "|" + email.lowercased(), default: []]
+                .append((email, thread.id.account, thread.senderDecision))
+        }
         for (sender, decision) in decisions {
             guard let wanted = SenderDecision(rawValue: decision.decision),
-                  let current = pendingBySender[sender]?.first?.1, current != wanted else { continue }
-            applyingSenders.insert(sender)
-            await store.approveOrBlock(wanted, sender: sender, account: decision.account); changed += 1
-            applyingSenders.remove(sender)
+                  let theirs = byAccountSender[decision.account.lowercased() + "|" + sender] else { continue }
+            var seen = Set<String>()
+            for mail in theirs where mail.decision != wanted && seen.insert(mail.email).inserted {
+                applyingSenders.insert(sender)
+                await store.approveOrBlock(wanted, sender: mail.email, account: mail.account); changed += 1
+                applyingSenders.remove(sender)
+            }
         }
         if changed > 0 { Self.log.info("Applied \(changed) changes from your other devices") }
     }

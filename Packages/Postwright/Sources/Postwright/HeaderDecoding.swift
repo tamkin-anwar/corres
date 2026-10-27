@@ -12,28 +12,53 @@ enum MIMEWords {
         var result = ""
         var cursor = 0
         var lastWasEncoded = false
+        // Neighbouring words in one charset are read as one: many senders
+        // split a character's bytes between two words (Japanese and
+        // Chinese subjects most often), and read one word at a time each
+        // half came out as "�".
+        var pending: (bytes: Data, charset: String)?
+        func flush() {
+            guard let words = pending else { return }
+            result += string(words.bytes, charset: words.charset)
+            pending = nil
+        }
         for match in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
             let between = ns.substring(with: NSRange(location: cursor, length: match.range.location - cursor))
             // Whitespace between two encoded words is dropped (RFC 2047 §6.2).
-            if !(lastWasEncoded && between.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+            let adjacent = lastWasEncoded && between.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            if !adjacent {
+                flush()
                 result += between
             }
-            let charset = ns.substring(with: match.range(at: 1))
+            // "UTF-8*en": a language after the charset (RFC 2231 §5).
+            let charset = ns.substring(with: match.range(at: 1)).split(separator: "*").first.map(String.init) ?? ""
             let encoding = ns.substring(with: match.range(at: 2)).uppercased()
             let payload = ns.substring(with: match.range(at: 3))
-            if let decoded = decodeWord(payload, encoding: encoding, charset: charset) {
-                result += decoded
+            if let bytes = decodeBytes(payload, encoding: encoding) {
+                if adjacent, let words = pending, words.charset.caseInsensitiveCompare(charset) == .orderedSame {
+                    pending = (words.bytes + bytes, words.charset)
+                } else {
+                    flush()
+                    pending = (bytes, charset)
+                }
             } else {
+                flush()
                 result += ns.substring(with: match.range)
             }
             cursor = match.range.location + match.range.length
             lastWasEncoded = true
         }
+        flush()
         result += ns.substring(from: cursor)
         return result
     }
 
-    private static func decodeWord(_ payload: String, encoding: String, charset: String) -> String? {
+    private static func string(_ data: Data, charset: String) -> String {
+        let enc = Charset.encoding(named: charset) ?? .utf8
+        return String(data: data, encoding: enc) ?? String(decoding: data, as: UTF8.self)
+    }
+
+    private static func decodeBytes(_ payload: String, encoding: String) -> Data? {
         let data: Data?
         if encoding == "B" {
             var padded = payload
@@ -50,9 +75,7 @@ enum MIMEWords {
             }
             data = Data(bytes)
         }
-        guard let data else { return nil }
-        let enc = Charset.encoding(named: charset) ?? .utf8
-        return String(data: data, encoding: enc) ?? String(decoding: data, as: UTF8.self)
+        return data
     }
 }
 

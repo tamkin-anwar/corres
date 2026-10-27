@@ -42,6 +42,10 @@ enum GmailMessageComposer {
             headers.append("Bcc: \(addressList(bcc))")
         }
         headers.append("Subject: \(encodedSubject(subject))")
+        // Required (RFC 5322 3.6). Gmail and Outlook add one when it's
+        // missing, but the copy Corres files in an IMAP account's Sent had
+        // none, so it showed as sent "now" every time it was read.
+        headers.append("Date: \(MailEncoding.dateHeader(.now))")
         headers.append("Message-ID: <\(messageID)>")
         headers.append("MIME-Version: 1.0")
         if let inReplyTo {

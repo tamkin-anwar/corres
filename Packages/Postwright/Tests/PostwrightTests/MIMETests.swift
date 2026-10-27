@@ -105,6 +105,36 @@ struct MIMETests {
         let m = parse("Content-Type: multipart/alternative; boundary=q\n\n--q\nContent-Type: text/plain\n\nHi\n--q--\n")
         #expect(m.plainText == "Hi")
     }
+
+    /// A part inside whose boundary starts with its parent's: the inner
+    /// delimiters aren't the outer's (RFC 2046 5.1.1).
+    @Test func innerBoundaryStartingWithTheOuterOne() {
+        let m = parse("""
+        Content-Type: multipart/mixed; boundary="b"\r
+        \r
+        --b \r
+        Content-Type: multipart/alternative; boundary="b1"\r
+        \r
+        --b1\r
+        Content-Type: text/plain; charset=utf-8\r
+        \r
+        Plain\r
+        --b1\r
+        Content-Type: text/html; charset=utf-8\r
+        \r
+        <p>Rich</p>\r
+        --b1--\r
+        --b\r
+        Content-Type: application/pdf; name="a.pdf"\r
+        \r
+        PDF\r
+        --b--\r
+
+        """)
+        #expect(m.plainText == "Plain")
+        #expect(m.html == "<p>Rich</p>")
+        #expect(m.attachments.map(\.filename) == ["a.pdf"])
+    }
 }
 
 /// Charset labels read as the larger encoding senders actually write.

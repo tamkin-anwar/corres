@@ -161,8 +161,13 @@ public enum MIMEParser {
                 if i == bytes.count || bytes[i] == 10 {
                     var line = Array(bytes[lineStart..<i])
                     if line.last == 13 { line.removeLast() }
-                    let isDelimiter = line.count >= delimiter.count && Array(line.prefix(delimiter.count)) == delimiter
-                    if isDelimiter {
+                    // The boundary, then only "--" (the last) or spaces
+                    // (RFC 2046 5.1.1). A line that merely starts with it is
+                    // content: "--b1" isn't the end of a part inside "--b".
+                    let rest = line.count >= delimiter.count && Array(line.prefix(delimiter.count)) == delimiter
+                        ? line.dropFirst(delimiter.count) : nil
+                    let isDelimiter = rest.map { $0.starts(with: [45, 45]) || $0.allSatisfy { $0 == 32 || $0 == 9 } } ?? false
+                    if isDelimiter, let rest {
                         if let s = start {
                             // The part ends before the CRLF preceding the delimiter.
                             var end = lineStart
@@ -170,7 +175,6 @@ public enum MIMEParser {
                             if end > s, bytes[end - 1] == 13 { end -= 1 }
                             parts.append(Part(Data(bytes[s..<max(s, end)])))
                         }
-                        let rest = line.dropFirst(delimiter.count)
                         if rest.starts(with: [45, 45]) { break } // closing "--boundary--"
                         start = i + 1
                     }

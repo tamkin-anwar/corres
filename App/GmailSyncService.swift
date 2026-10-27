@@ -286,7 +286,17 @@ final class GmailSyncService {
             // look deleted.
             if isFullListing, stillMissing.isEmpty {
                 try ensureCurrent(account, removal)
-                try await reconcile(account: account, listed: listed)
+                if MailAccounts.provider(for: account).usesIMAP {
+                    // An IMAP listing is the newest by arrival, but dated
+                    // by the sender's clock: one email dated years back
+                    // (spam, a wrong clock, mail moved back to the Inbox)
+                    // stretched the window over mail it never listed,
+                    // and all of that was removed here while still in the
+                    // Inbox. Each is asked about first instead.
+                    try await confirmAgainstInbox(account: account, listed: listed, removal: removal)
+                } else {
+                    try await reconcile(account: account, listed: listed)
+                }
             }
 
             // Ids a previous sync couldn't fetch, retried here independent
@@ -506,14 +516,31 @@ final class GmailSyncService {
         }
         guard !suspects.isEmpty else { return }
         var changes: [RemoteMessageChange] = []
+        var asked = Set<String>(), answered = Set<String>()
         for chunk in suspects.compactMap(\.latestMessageID).chunked(into: GmailAPIClient.batchSize) {
             guard let fetched = try? await client.fetchMetadata(ids: chunk, account: account) else { continue }
+            asked.formUnion(chunk)
+            answered.formUnion(fetched.items.compactMap(\.latestMessageID))
             for item in fetched.items {
                 guard let messageID = item.latestMessageID, !item.labelIds.contains("INBOX"),
                       let thread = suspects.first(where: { $0.latestMessageID == messageID }) else { continue }
                 let discarded = item.labelIds.contains("TRASH") || item.labelIds.contains("SPAM")
                 changes.append(RemoteMessageChange(threadID: thread.id, messageID: messageID,
                                                    currentLabelIds: discarded ? nil : item.labelIds, removed: discarded))
+            }
+        }
+        // An IMAP server has nothing to say about a message that left a
+        // folder: it's known by the folder, the folder's numbering
+        // (UIDVALIDITY) and its UID there, and asked for, it simply isn't
+        // in the answer. One not answered for, in a folder numbered as the
+        // listing's, was moved or deleted elsewhere; in a renumbered one,
+        // nothing can be said. Without this, nothing was ever removed here.
+        if MailAccounts.provider(for: account).usesIMAP {
+            let numbering = Set(listed.compactMap { $0.latestMessageID.flatMap(IMAPMailClient.parse) }.map { "\($0.uidValidity):\($0.path)" })
+            for thread in suspects {
+                guard let messageID = thread.latestMessageID, asked.contains(messageID), !answered.contains(messageID),
+                      let key = IMAPMailClient.parse(messageID), numbering.contains("\(key.uidValidity):\(key.path)") else { continue }
+                changes.append(RemoteMessageChange(threadID: thread.id, messageID: messageID, currentLabelIds: nil, removed: true))
             }
         }
         try ensureCurrent(account, removal)
