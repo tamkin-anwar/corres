@@ -1657,11 +1657,21 @@ private struct TranslateSheet: ViewModifier {
     }
 }
 
-/// iOS 26's hard scroll edge: the content goes under a frosted band.
+/// iOS 26's hard scroll edge: scrolled, the content goes under a frosted
+/// band. At rest the top stays the plain soft edge, black like every other
+/// screen; the hard band showed there as a grey strip behind the buttons.
 private struct HardTopEdge: ViewModifier {
+    @State private var scrolled = false
+
     func body(content: Content) -> some View {
         if #available(iOS 26.0, macOS 26.0, *) {
-            content.scrollEdgeEffectStyle(.hard, for: .top)
+            content
+                .scrollEdgeEffectStyle(scrolled ? .hard : .soft, for: .top)
+                .onScrollGeometryChange(for: Bool.self) { geometry in
+                    geometry.contentOffset.y + geometry.contentInsets.top > 1
+                } action: { _, isScrolled in
+                    scrolled = isScrolled
+                }
         } else {
             content
         }
