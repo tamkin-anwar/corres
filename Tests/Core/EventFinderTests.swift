@@ -82,4 +82,32 @@ struct EventFinderTests {
         let due = MailSignals.deadline(in: "締切：12/3(木)", now: now, horizon: 90 * 86_400)
         #expect(due.map { calendar.dateComponents([.month, .day], from: $0) }.map { [$0.month, $0.day] } == [12, 3])
     }
+
+    /// "14:00〜" (from 14:00) and "14:00～15:00": Japanese and Chinese write
+    /// a time's range with a wave dash (U+301C) or a full-width tilde
+    /// (U+FF5E). The date detector read no time at all in either.
+    @Test func aWaveDashRangeKeepsItsTime() {
+        func event(_ body: String, _ subject: String) -> [Int?]? {
+            EventFinder.fromWording(body, subject: subject, receivedAt: sent, now: now).map { event in
+                let start = calendar.dateComponents([.month, .day, .hour, .minute], from: event.start)
+                let end = event.end.map { calendar.component(.hour, from: $0) }
+                return [start.month, start.day, start.hour, start.minute, end]
+            }
+        }
+        #expect(event("12/3(木)14:00〜 会議室A", "打ち合わせ") == [12, 3, 14, 0, nil])
+        #expect(event("12/3(木)14:00〜15:00 会議室A", "打ち合わせ") == [12, 3, 14, 0, 15])
+        #expect(event("12/3(木)14:00～15:00 会議室A", "打ち合わせ") == [12, 3, 14, 0, 15])
+        #expect(event("12/3(木)14:00 ～ 15:00 会議室A", "打ち合わせ") == [12, 3, 14, 0, 15])
+        #expect(event("12/3(周四)14:00～15:00 会议室", "会议") == [12, 3, 14, 0, 15])
+        #expect(event("12/3(周四)14:00~15:00 会议室", "会议") == [12, 3, 14, 0, 15])
+        // A range's "00-15" is not a date: the range alone read as today.
+        #expect(event("The webinar is on Thursday 15 October 2026. Sessions run 14:00-15:00.", "Webinar")?.prefix(3)
+                == [10, 15, 14])
+        // A deadline keeps its time too.
+        let due = MailSignals.deadline(in: "12/3 17:00～までにご提出ください。", now: now, horizon: 90 * 86_400)
+        #expect(due.map { calendar.dateComponents([.month, .day, .hour], from: $0) }.map { [$0.month, $0.day, $0.hour] } == [12, 3, 17])
+        // A tilde that isn't after a time is left alone.
+        #expect(MailSignals.withTimeRangesForDetector("約3〜5日") == "約3〜5日")
+        #expect(MailSignals.withTimeRangesForDetector("14:00〜15:00、16:00～") == "14:00-15:00、16:00 ")
+    }
 }

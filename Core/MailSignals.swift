@@ -266,6 +266,24 @@ public enum MailSignals {
 
     struct FoundDate { let date: Date; let isDeadline: Bool }
 
+    /// "14:00〜15:00", "14:00～", "14:00~15:00": Japanese and Chinese write a
+    /// time's range with a wave dash (U+301C) or a tilde, full-width
+    /// (U+FF5E) or plain. The date detector reads "14:00-15:00" but no time
+    /// at all in these, so for it the mark becomes "-" when another time
+    /// follows, and a space when none does ("14:00〜", from 14:00). Only
+    /// after a clock time: "約3〜5日" (about 3 to 5 days) stays. One
+    /// character for one, so a range in the result is one in `text`.
+    static func withTimeRangesForDetector(_ text: String) -> String {
+        guard text.contains(where: { "〜～~".contains($0) }),
+              let regex = PatternCache.shared.regex(#"(?<=\d[:：]\d\d)\s?([〜～~])\s?(\d{1,2}[:：]\d\d)?"#, caseInsensitive: false)
+        else { return text }
+        let result = NSMutableString(string: text)
+        for match in regex.matches(in: text, range: NSRange(location: 0, length: result.length)) {
+            result.replaceCharacters(in: match.range(at: 1), with: match.range(at: 2).location != NSNotFound ? "-" : " ")
+        }
+        return result as String
+    }
+
     /// Every date the text names, each read once: Apple's date detector
     /// for the languages it reads, with its two slips put right (a lead-in
     /// word taken into the date, and a numeric date read the reader's way
@@ -276,8 +294,9 @@ public enum MailSignals {
     static func dates(in own: String, senderEmail: String?, now: Date, relativeToday: Bool = true) -> [FoundDate] {
         guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else { return [] }
         // Bengali and Arabic-Indic digits ("৩১/১২/২০২৬") as 0-9, which is
-        // all the date detector reads (`asciiDigits` keeps the length).
-        let source = MailDigest.asciiDigits(own)
+        // all the date detector reads (`asciiDigits` keeps the length), and
+        // a range's "〜" as it reads one (`withTimeRangesForDetector`).
+        let source = withTimeRangesForDetector(MailDigest.asciiDigits(own))
         let ns = source as NSString
         let order = numericDateOrder(senderEmail: senderEmail, text: source, now: now)
         var found: [FoundDate] = []
@@ -1059,8 +1078,9 @@ public enum EventFinder {
     /// "noon", and the European ways, "15 Uhr", "15h30", "15h".
     private static let clockPattern = #"\d:\d\d|\d[.:]\d\d\s?(am|pm)\b|\d\s?(am|pm)\b|noon|\d\s?uhr\b|\d{1,2}\s?h(\d\d)?\b|mittag|midi\b|mediodía|meio-dia"#
     /// A day in it: a weekday or month name in the app's Latin-script
-    /// languages, a numeric date (not "7.15pm"), or today/tomorrow.
-    private static let dayPattern = #"\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\b\d{1,4}[/-]\d{1,2}\b|\b\d{1,2}\.\d{1,2}\.\d{2,4}\b|\b(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|lunes|martes|miércoles|jueves|viernes|sábado|domingo|segunda|terça|quarta|quinta|sexta)\b|\b(januar|februar|märz|mai|juni|juli|oktober|dezember|janvier|février|mars|avril|juin|juillet|août|septembre|octobre|novembre|décembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|janeiro|fevereiro|março|maio|junho|julho|setembro|outubro|novembro|dezembro)\b|"# + relativeDayPattern
+    /// languages, a numeric date (not "7.15pm", nor the "00-15" of a time
+    /// range, "14:00-15:00"), or today/tomorrow.
+    private static let dayPattern = #"\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|(?<![:\d])\b\d{1,4}[/-]\d{1,2}\b(?!:)|\b\d{1,2}\.\d{1,2}\.\d{2,4}\b|\b(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|lunes|martes|miércoles|jueves|viernes|sábado|domingo|segunda|terça|quarta|quinta|sexta)\b|\b(januar|februar|märz|mai|juni|juli|oktober|dezember|janvier|février|mars|avril|juin|juillet|août|septembre|octobre|novembre|décembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|janeiro|fevereiro|março|maio|junho|julho|setembro|outubro|novembro|dezembro)\b|"# + relativeDayPattern
     private static let relativeDayPattern = #"\b(today|tonight|tomorrow|heute|morgen|aujourd'hui|demain|hoy|mañana|hoje|amanhã)\b"#
 
     /// The earliest upcoming date with a clock time in the next three
@@ -1082,9 +1102,11 @@ public enum EventFinder {
         // time, so a meeting on Thursday the 15th showed as today at 19:15.
         struct Found { let date: Date; let duration: TimeInterval; let hasTime: Bool; let hasDay: Bool }
         let order = MailSignals.numericDateOrder(senderEmail: nil, text: own, now: now)
-        var found = dates.matches(in: own, range: NSRange(location: 0, length: ns.length)).compactMap { match -> Found? in
+        // "14:00～15:00" as the detector reads a range (same length as `own`).
+        let detectable = MailSignals.withTimeRangesForDetector(own)
+        var found = dates.matches(in: detectable, range: NSRange(location: 0, length: ns.length)).compactMap { match -> Found? in
             guard var date = match.date else { return nil }
-            let phrase = ns.substring(with: match.range).lowercased()
+            let phrase = (detectable as NSString).substring(with: match.range).lowercased()
             let hasTime = phrase.patternRange(clockPattern) != nil
             // 03/11 read the writer's way, or not at all.
             switch MailSignals.numericReading(of: phrase, detected: date, order: order, now: now) {
