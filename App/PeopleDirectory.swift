@@ -215,6 +215,17 @@ final class PeopleDirectory {
         save()
     }
 
+    /// An account removed: who it wrote to (its Sent mail, and lookups)
+    /// goes. That history doesn't say which account each person came from,
+    /// so it's all read again from the accounts still here
+    /// (`backfillIfNeeded`). People you hid stay hidden.
+    func forget(account: String) {
+        history = PeopleIndex()
+        backfilled = []
+        looked = []
+        save()
+    }
+
     /// Forgets everyone, when the last account is removed.
     func reset() {
         history = PeopleIndex()

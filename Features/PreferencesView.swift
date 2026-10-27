@@ -465,6 +465,7 @@ struct PreferencesView: View {
 /// its mail off this iPhone; nothing is deleted from the account.
 private struct AccountDetailView: View {
     @Environment(MailIntelligence.self) private var intelligence
+    @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
     let account: GmailAccount
     let store: MailStore
     var auth: GoogleAuthService
@@ -709,7 +710,7 @@ private struct AccountDetailView: View {
         let email = account.email
         Task {
             await AccountRemoval.remove(email, everywhere: everywhere, auth: auth, sync: sync, store: store,
-                                        push: pushService, intelligence: intelligence)
+                                        push: pushService, intelligence: intelligence, people: people)
         }
         dismiss()
     }

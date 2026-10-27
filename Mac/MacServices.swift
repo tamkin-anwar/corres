@@ -149,7 +149,7 @@ final class MacServices {
         // Removed from all your devices on another one: its mail here goes.
         auth.onRemovedElsewhere = { [unowned self] email in
             await pushService.disable(account: email)
-            await AccountRemoval.forgetHere(email, sync: sync, store: store, intelligence: intelligence)
+            await AccountRemoval.forgetHere(email, sync: sync, store: store, intelligence: intelligence, people: people)
         }
         await auth.restoreConnectedAccounts()
         HangReporter.step("accounts restored")
@@ -427,9 +427,9 @@ final class MacServices {
         // the TestFlight Corres on this Mac uses to a newer layout.
         let directory = URL.applicationSupportDirectory.appending(path: "Corres Debug", directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let configuration = ModelConfiguration(schema: schema, url: directory.appending(path: "default.store"))
+        let configuration = ModelConfiguration(schema: schema, url: directory.appending(path: "default.store"), cloudKitDatabase: .none)
         #else
-        let configuration = ModelConfiguration(schema: schema)
+        let configuration = ModelConfiguration(schema: schema, cloudKitDatabase: .none)
         #endif
         do {
             let container = try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self,

@@ -125,7 +125,7 @@ private struct MacAccountsSettings: View {
         guard let email = removing else { return }
         Task {
             await AccountRemoval.remove(email, everywhere: everywhere, auth: auth, sync: services.sync, store: services.store,
-                                        push: services.pushService, intelligence: services.intelligence)
+                                        push: services.pushService, intelligence: services.intelligence, people: services.people)
             services.accountsChanged()
         }
     }

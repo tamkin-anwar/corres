@@ -162,7 +162,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // Removed from all your devices on another one: its mail here goes.
         auth.onRemovedElsewhere = { [unowned self] email in
             await pushService.disable(account: email)
-            await AccountRemoval.forgetHere(email, sync: sync, store: store, intelligence: mailIntelligence)
+            await AccountRemoval.forgetHere(email, sync: sync, store: store, intelligence: mailIntelligence, people: people)
         }
         await auth.restoreConnectedAccounts()
         await storeLoaded
@@ -351,7 +351,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         let schema = Schema(CorresSchemaV1.models)
         do {
             let container = try ModelContainer(for: schema, migrationPlan: CorresMigrationPlan.self,
-                                               configurations: [ModelConfiguration(schema: schema)])
+                                               configurations: [ModelConfiguration(schema: schema, cloudKitDatabase: .none)])
             return (container, false)
         } catch {
             // A corrupt/incompatible on-disk store should not brick the app on

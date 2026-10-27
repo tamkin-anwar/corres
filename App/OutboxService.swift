@@ -389,7 +389,13 @@ final class OutboxService {
     func forget(account: String) {
         let gone = failedSends.filter { ($0.draft.fromAccount ?? $0.draft.threadID?.account) == account }.map(\.id)
         failedSends.removeAll { gone.contains($0.id) }
-        Task { for id in gone { try? await repository.removeOutboxEntry(id: id) } }
+        Task {
+            // And any still saved as unsent (Corres closed mid-send), which
+            // the next launch would otherwise try, fail and show again.
+            let saved = (try? await repository.outboxEntries()) ?? []
+            let unsent = saved.filter { ($0.draft.fromAccount ?? $0.draft.threadID?.account) == account }.map(\.id)
+            for id in Set(gone + unsent) { try? await repository.removeOutboxEntry(id: id) }
+        }
     }
 
     func retryFailed() {

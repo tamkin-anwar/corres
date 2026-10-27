@@ -868,6 +868,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
             .joined(separator: " ").replacingOccurrences(of: "\"", with: "%22").replacingOccurrences(of: "&", with: "&amp;")
         return """
         <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="referrer" content="no-referrer">
         <meta name="corres-load" content="\(load)">
         <meta name="corres-dark" content="\(dark ? 1 : 0)">
         <meta name="corres-text-scale" content="\(String(format: "%.3f", size / 17))">

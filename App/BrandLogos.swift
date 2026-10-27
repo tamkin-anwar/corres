@@ -60,7 +60,7 @@ final class BrandLogos {
     /// here; asked for in the background otherwise, and drawn once it
     /// arrives.
     func logo(for email: String) -> PlatformImage? {
-        guard Self.isEnabled, let domain = Self.domain(of: email) else { return nil }
+        guard Self.isEnabled, let domain = Self.domain(of: email), Self.isHostName(domain) else { return nil }
         if let image = slot(domain).image { return image }
         if checked.insert(domain).inserted {
             waiting.append(domain)
@@ -74,6 +74,14 @@ final class BrandLogos {
         let domain = email[email.index(after: at)...].trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ">"))).lowercased()
         guard domain.contains("."), !personal.contains(domain) else { return nil }
         return domain
+    }
+
+    /// Only a host name is asked about: the domain goes to the logo server
+    /// and names a file here, so nothing else from a sender's address (a
+    /// slash, two dots in a row) may.
+    static func isHostName(_ domain: String) -> Bool {
+        !domain.hasPrefix(".") && !domain.contains("..") && domain.count <= 253
+            && domain.unicodeScalars.allSatisfy { ("a"..."z").contains($0) || ("0"..."9").contains($0) || $0 == "." || $0 == "-" }
     }
 
     /// Three at a time, so a screen of new senders doesn't open twenty

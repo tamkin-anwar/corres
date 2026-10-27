@@ -10,14 +10,16 @@ import Foundation
 @MainActor
 enum AccountRemoval {
     static func remove(_ email: String, everywhere: Bool, auth: GoogleAuthService, sync: GmailSyncService,
-                       store: MailStore, push: PushNotificationService, intelligence: MailIntelligence) async {
+                       store: MailStore, push: PushNotificationService, intelligence: MailIntelligence,
+                       people: PeopleDirectory?) async {
         if everywhere { await ServerRules.shared.removeAll(for: email) }
-        // Gmail's watch is the account's, not this device's: stopping it
-        // would silence new-mail alerts on your other devices too, so only
-        // when the account leaves all of them.
-        if everywhere { await push.disable(account: email) }
+        // This device's records at the relay (and a sealed iCloud password)
+        // and its own Outlook subscription go, before the sign-in does.
+        // Gmail's watch is the account's, shared by your devices, so
+        // `disable` leaves it to lapse on its own.
+        await push.disable(account: email)
         await auth.signOut(email, everywhere: everywhere)
-        await forgetHere(email, sync: sync, store: store, intelligence: intelligence)
+        await forgetHere(email, sync: sync, store: store, intelligence: intelligence, people: people)
     }
 
     /// What removing it does, said before you choose.
@@ -32,14 +34,24 @@ enum AccountRemoval {
     }
 
     /// What this device kept for it: its mail, its place in sync, changes
-    /// still waiting to reach the server, and summaries.
-    static func forgetHere(_ email: String, sync: GmailSyncService, store: MailStore, intelligence: MailIntelligence) async {
+    /// still waiting to reach the server, summaries, and who it wrote to.
+    static func forgetHere(_ email: String, sync: GmailSyncService, store: MailStore, intelligence: MailIntelligence,
+                           people: PeopleDirectory?) async {
         sync.clearCursor(for: email)
+        people?.forget(account: email)
         ActionQueue.shared.forget(account: email)
         Organizer.shared.outbox?.forget(account: email)
         ScheduledSends.shared.forget(account: email)
         ServerRules.shared.forget(account: email)
         await store.removeAccountData(email)
         intelligence.forget(account: email)
+        #if os(macOS)
+        // Attachments opened on the Mac (Quick Look, Open) are kept by
+        // message, not by account (`MacAttachmentChip`): all of them go, and
+        // come from the server again when next opened.
+        if let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            try? FileManager.default.removeItem(at: caches.appendingPathComponent("Attachments", isDirectory: true))
+        }
+        #endif
     }
 }
