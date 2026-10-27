@@ -147,8 +147,10 @@ public enum MailSignals {
     /// le", "au plus tard", "antes del", "vence el", "até", "prazo". Chinese,
     /// Japanese, Korean and Bengali deadlines are read with their dates
     /// (`LocalDates`). Deliberately tight; a date on its own ("Posted Sep
-    /// 3") is not a deadline.
-    static let leadInWords = #"due|by|before|until|no later than|deadline(\s+is)?|expires?|expiring|rsvp(\s+by)?|respond by|reply by|closes?|bis( zum| spätestens)?|spätestens( am| bis)?|fällig( am| bis)?|frist( bis)?|zahlbar bis|avant( le)?|d'ici( le)?|au plus tard( le)?|jusqu'au|date limite|échéance|dû le|antes del?|hasta el|a más tardar( el)?|fecha límite|vence( el| em)?|vencimento|até( o dia| dia)?|prazo( até)?|data limite"#
+    /// 3") is not a deadline. Business English puts words between "by"
+    /// and the day ("by end of day Friday", "EOD tomorrow", "COB
+    /// Thursday"), which count too: they once set no deadline at all.
+    static let leadInWords = #"due|by|before|until|no later than|(the )?(end of (the )?(business )?day|end of business|close of business|eod|cob)|deadline(\s+is)?|expires?|expiring|rsvp(\s+by)?|respond by|reply by|closes?|bis( zum| spätestens)?|spätestens( am| bis)?|fällig( am| bis)?|frist( bis)?|zahlbar bis|avant( le)?|d'ici( le)?|au plus tard( le)?|jusqu'au|date limite|échéance|dû le|antes del?|hasta el|a más tardar( el)?|fecha límite|vence( el| em)?|vencimento|até( o dia| dia)?|prazo( até)?|data limite"#
     private static let deadlineLeadIn = #"(?i)\b("# + leadInWords + #")\s*:?\s*(on\s+|the\s+|le\s+|el\s+|am\s+|dem\s+|o\s+)?$"#
     /// The same words at the start of what the date detector found: it
     /// takes them into the date ("due November 5, 2026" came back as today,

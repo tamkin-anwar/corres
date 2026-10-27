@@ -70,6 +70,12 @@ struct WorldRulesTests {
         for phrase in ["Due by Nov 5", "pay by November 5"] {
             #expect(day(MailSignals.deadline(in: phrase, now: before)) == day(next), "\(phrase)")
         }
+        // "By end of day", "EOD", "COB" before the day.
+        for phrase in ["Please send the deck by end of day Nov 5", "Need this EOD Nov 5", "Sign and return by COB on November 5",
+                       "Due by the end of the business day on November 5"] {
+            #expect(day(MailSignals.deadline(in: phrase, now: before)) == day(next), "\(phrase)")
+        }
+        #expect(calendar.isDateInTomorrow(MailSignals.deadline(in: "Can you review this by EOD tomorrow?") ?? .distantPast))
     }
 
     @Test func deadlinesInOtherLanguages() {
