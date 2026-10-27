@@ -52,6 +52,7 @@ final class Organizer {
         WidgetHandoff.open = { destination in
             if let url = URL(string: "\(WidgetSnapshot.urlScheme)://\(destination)") { _ = AppRouter.shared.open(url) }
         }
+        WidgetHandoff.applyHandled = { Organizer.shared.applyWidgetHandoffs() }
         store.afterRefresh = { [weak self] in
             Task { await self?.organizeNow() }
         }
@@ -63,19 +64,37 @@ final class Organizer {
         if let route = WidgetHandoff.takePendingRoute(), let url = URL(string: "\(WidgetSnapshot.urlScheme)://\(route)") {
             _ = AppRouter.shared.open(url)
         }
-        let handled = WidgetHandoff.takeHandled()
-        guard !handled.isEmpty, let store, let actions else { return }
+        // Not ready yet (still launching), or already applying: the taps
+        // stay where they are for the next call. Each one is removed only
+        // once its conversation has moved, so none is lost and none is
+        // applied twice.
+        guard !isApplyingHandled, let store, let actions else { return }
+        let taps = WidgetHandoff.pendingHandled()
+        guard !taps.isEmpty else { return }
+        isApplyingHandled = true
         Task {
+            defer { isApplyingHandled = false }
             // Opened from the widget with Corres closed: the mail isn't read
             // yet, and without it every tap would be dropped.
             if store.state != .loaded { await store.load() }
-            let threads = handled.compactMap { id -> Correspondence? in
-                let parts = id.split(separator: "|", maxSplits: 1).map(String.init)
-                return parts.count == 2 ? store.thread(ThreadID(account: parts[0], providerID: parts[1])) : nil
+            guard store.state == .loaded else { return }
+            var threads: [Correspondence] = []
+            for tap in taps {
+                let parts = tap.id.split(separator: "|", maxSplits: 1).map(String.init)
+                // A conversation no longer here (deleted or moved on another
+                // device) has nothing left to move.
+                guard parts.count == 2, let thread = store.thread(ThreadID(account: parts[0], providerID: parts[1])),
+                      !threads.contains(where: { $0.id == thread.id }) else { continue }
+                threads.append(thread)
             }
             await actions.setAttention(.handled, for: threads)
+            WidgetHandoff.finishHandled(taps)
+            // Taps made while these were applied.
+            if !WidgetHandoff.pendingHandled().isEmpty { Task { applyWidgetHandoffs() } }
         }
     }
+
+    @ObservationIgnored private var isApplyingHandled = false
 
     private func organizeNow() async {
         guard let store, let actions else { return }

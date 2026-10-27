@@ -143,12 +143,13 @@ public enum MailSignals {
     private static let leadInAtStart = #"(?i)^(("# + leadInWords + #")\s*:?\s*)+(on\s+|the\s+|le\s+|el\s+|am\s+|dem\s+|o\s+)?(?=\S)"#
     /// A deadline in Chinese, Japanese, Korean or Bengali is said before
     /// the date ("期限：", "截止日期：", "마감", "শেষ তারিখ") or after it
-    /// ("11月12日まで", "11월 12일까지", "11月12日前", "১২ নভেম্বরের মধ্যে").
+    /// ("11月12日まで", "11월 12일까지", "11月12日前", "১২ নভেম্বরের মধ্যে",
+    /// "রাত ১২টার মধ্যে").
     static let localLeadIn = #"(期限|締め?切り?日?|締切日?|支払期限|お支払い期限|期日|마감(일)?|기한|납부 ?기한|截止(日期|时间|時間)?|最晚|最迟|最遲|请于|請於|于|於|শেষ তারিখ)\s?[:：は은는이]?\s?$"#
     /// The same words before a numeric date, without "于"/"於" ("on"),
     /// which as often says when a meeting is as when something is due.
     static let numericLocalLeadIn = #"(期限|締め?切り?日?|締切日?|支払期限|お支払い期限|期日|마감(일)?|기한|납부 ?기한|截止(日期|时间|時間)?|最晚|最迟|最遲|请于|請於|শেষ তারিখ)\s?[:：は은는이]?\s?$"#
-    static let localLeadOut = #"^\s?(\([^)]{1,4}\)|（[^）]{1,4}）)?\s?(ের|এর)?\s?(まで|迄|까지|前|之前|以前|মধ্যে)"#
+    static let localLeadOut = #"^\s?(\([^)]{1,4}\)|（[^）]{1,4}）)?\s?(ের|এর|র)?\s?(まで|迄|까지|前|之前|以前|মধ্যে)"#
 
     /// The earliest upcoming deadline the message names, within `horizon`.
     /// Relative dates ("by Friday", "tomorrow") resolve against today's
@@ -245,7 +246,11 @@ public enum MailSignals {
             let after = digits.substring(with: NSRange(location: afterStart, length: min(14, digits.length - afterStart)))
             let isDeadline = before.patternRange(localLeadIn) != nil || after.patternRange(localLeadOut) != nil
                 || before.patternRange(deadlineLeadIn) != nil
-            found.append(FoundDate(date: local.date, isDeadline: isDeadline))
+            // Due at midnight ("11월 12일 자정까지") is due on the 12th: its
+            // last minute, which shows as that day, not 0:00 on the 13th.
+            let clock = Calendar.current.dateComponents([.hour, .minute], from: local.date)
+            let midnight = local.hasTime && clock.hour == 0 && clock.minute == 0
+            found.append(FoundDate(date: midnight ? local.date.addingTimeInterval(-60) : local.date, isDeadline: isDeadline))
         }
         return found
     }
@@ -524,9 +529,9 @@ enum LocalDates {
     /// "মে" (May) never as the start of a longer word ("মেইল").
     static let bengaliPattern = #"(\d{1,2})\s?("# + bengaliMonths.joined(separator: "|") + #")(?!\p{L})(?:,?\s?(\d{4}))?"#
     /// A clock time: "15:30", "15時", "午後3時半", "下午3点", "오후 3시 30분",
-    /// "সকাল ১০টায়". Not "3時間" or "2시간" (hours, not a time), and not the
-    /// Bengali counting word in "৫টা বই" (five books).
-    static let timePattern = #"(午前|午後|上午|下午|中午|晚上|早上|凌晨|오전|오후|সকাল|দুপুর|বিকাল|বিকেল|সন্ধ্যা|রাত)?\s?(\d{1,2})\s?(?:[:：]\s?(\d{2})|([時时點点](?!間|间)|시(?!간)|টা(?=য|\s?বাজে))\s?(?:(\d{1,2})\s?[分분]|(半))?)"#
+    /// "সকাল ১০টায়", "রাতে ১২টার". Not "3時間" or "2시간" (hours, not a
+    /// time). Midnight and noon as words too: "자정", "정오", "মধ্যরাত".
+    static let timePattern = #"(?:(午前|午後|上午|下午|中午|晚上|早上|凌晨|오전|오후|낮|밤|저녁|아침|새벽|সকাল|দুপুর|বিকাল|বিকেল|সন্ধ্যা|রাত)(?:\x{09C7}|\x{09DF}|\x{09AF}\x{09BC})?)?\s?(\d{1,2})\s?(?:[:：]\s?(\d{2})|([時时點点](?!間|间)|시(?!간)|টা)\s?(?:(\d{1,2})\s?[分분]|(半))?)|(자정|정오|মধ্যরাত|মাঝরাত)"#
 
     static func find(in source: String, now: Date, calendar: Calendar = .current) -> [Found] {
         let digits = MailDigest.asciiDigits(source)
@@ -541,16 +546,36 @@ enum LocalDates {
         func text(_ match: NSTextCheckingResult, _ group: Int) -> String {
             match.range(at: group).location == NSNotFound ? "" : ns.substring(with: match.range(at: group))
         }
-        func clock(_ match: NSTextCheckingResult) -> (hour: Int, minute: Int)? {
+        /// `nextDay`: midnight, which ends the day it's said with ("12일
+        /// 자정" is when the 12th turns into the 13th).
+        func clock(_ match: NSTextCheckingResult) -> (hour: Int, minute: Int, nextDay: Bool)? {
+            switch text(match, 7) {
+            case "": break
+            case "정오": return (12, 0, false)
+            default: return (0, 0, true)
+            }
             guard var hour = number(match, 2) else { return nil }
             let minute = number(match, 3) ?? number(match, 5) ?? (match.range(at: 6).location != NSNotFound ? 30 : 0)
             let marker = text(match, 1)
-            if ["午後", "下午", "晚上", "오후", "বিকাল", "বিকেল", "সন্ধ্যা", "রাত"].contains(marker), hour < 12 { hour += 12 }
+            // "৫টা বই" is five books: a Bengali টা is a time with a time of
+            // day ("রাত ১২টার"), or alone as "৫টায়" or "৫টা বাজে".
+            if text(match, 4) == "টা", marker.isEmpty {
+                let start = NSMaxRange(match.range(at: 4))
+                let after = ns.substring(with: NSRange(location: start, length: min(6, ns.length - start)))
+                let first = after.unicodeScalars.first
+                guard first == "\u{09AF}" || first == "\u{09DF}" || after.drop(while: { $0 == " " }).hasPrefix("বাজে") else { return nil }
+            }
+            // 12 at night is midnight ("밤 12시", "রাত ১২টা", "晚上12点"), and
+            // so is "24시"; 12 by day stays noon ("낮 12시", "오후 12시",
+            // "দুপুর ১২টা").
+            if ["밤", "রাত", "晚上"].contains(marker) && hour == 12 || hour == 24 && minute == 0 { return (0, minute, true) }
+            if marker == "새벽", hour == 12 { hour = 0 }
+            if ["午後", "下午", "晚上", "오후", "밤", "저녁", "বিকাল", "বিকেল", "সন্ধ্যা", "রাত"].contains(marker), hour < 12 { hour += 12 }
             // "3시", "3点" with no morning or afternoon word: a meeting at
             // three is in the afternoon.
-            if marker.isEmpty || marker == "দুপুর", !text(match, 4).isEmpty, (1...6).contains(hour) { hour += 12 }
+            if marker.isEmpty || marker == "দুপুর" || marker == "낮", !text(match, 4).isEmpty, (1...6).contains(hour) { hour += 12 }
             guard (0...23).contains(hour), (0...59).contains(minute) else { return nil }
-            return (hour, minute)
+            return (hour, minute, false)
         }
         var found: [Found] = []
         var used: [NSRange] = []
@@ -565,7 +590,7 @@ enum LocalDates {
             guard (1...12).contains(month), (1...31).contains(day) else { continue }
             // A time just after it: "11月12日(木) 15時", "11월 12일 오후 3시".
             var range = match.range
-            var time: (hour: Int, minute: Int)?
+            var time: (hour: Int, minute: Int, nextDay: Bool)?
             let tail = NSRange(location: NSMaxRange(match.range), length: min(16, ns.length - NSMaxRange(match.range)))
             if let next = times.firstMatch(in: digits, range: tail),
                ns.substring(with: NSRange(location: tail.location, length: next.range.location - tail.location))
@@ -582,6 +607,7 @@ enum LocalDates {
                 parts.year = (parts.year ?? 0) + 1
                 date = calendar.date(from: parts) ?? date
             }
+            if time?.nextDay == true { date = calendar.date(byAdding: .day, value: 1, to: date) ?? date }
             found.append(Found(date: date, hasDay: true, hasTime: time != nil, range: range))
             used.append(range)
         }
@@ -595,7 +621,8 @@ enum LocalDates {
                   !(["点", "點"].contains(text(match, 4)) && text(match, 1).isEmpty && match.range(at: 5).location == NSNotFound
                     && match.range(at: 6).location == NSNotFound),
                   let time = clock(match),
-                  let date = calendar.date(bySettingHour: time.hour, minute: time.minute, second: 0, of: now) else { continue }
+                  var date = calendar.date(bySettingHour: time.hour, minute: time.minute, second: 0, of: now) else { continue }
+            if time.nextDay { date = calendar.date(byAdding: .day, value: 1, to: date) ?? date }
             found.append(Found(date: date, hasDay: false, hasTime: true, range: match.range))
         }
         return found

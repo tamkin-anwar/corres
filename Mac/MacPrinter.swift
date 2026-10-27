@@ -79,6 +79,8 @@ final class MacPrinter: NSObject, WKNavigationDelegate {
         let to = (thread.toRecipients + thread.ccRecipients).map(escape).joined(separator: ", ")
         let date = thread.receivedAt.formatted(date: .complete, time: .shortened)
         let body = thread.htmlBody ?? "<pre style=\"white-space:pre-wrap;font:inherit\">\(escape(thread.body))</pre>"
+        // In the app's language, like the date under them.
+        func label(_ name: String.LocalizationValue) -> String { escape(String(localized: name)) + ":" }
         return """
         <!doctype html><html><head><meta charset="utf-8"><style>
         :root { color-scheme: light; }
@@ -92,9 +94,9 @@ final class MacPrinter: NSObject, WKNavigationDelegate {
         </style></head><body>
         <div class="head">
         <h1 class="subject">\(escape(thread.subject.isEmpty ? String(localized: "No subject") : thread.subject))</h1>
-        <p class="row"><b>From:</b> \(from)</p>
-        \(to.isEmpty ? "" : "<p class=\"row\"><b>To:</b> \(to)</p>")
-        <p class="row"><b>Date:</b> \(escape(date))</p>
+        <p class="row"><b>\(label("From"))</b> \(from)</p>
+        \(to.isEmpty ? "" : "<p class=\"row\"><b>\(label("To"))</b> \(to)</p>")
+        <p class="row"><b>\(label("Date"))</b> \(escape(date))</p>
         \(imagesHidden ? "<p class=\"note\">\(escape(String(localized: "Images hidden to protect your privacy")))</p>" : "")
         </div>
         \(body)

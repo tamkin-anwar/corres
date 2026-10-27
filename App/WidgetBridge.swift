@@ -37,7 +37,10 @@ enum WidgetBridge {
             guard !Task.isCancelled else { return }
             let threads = currentThreads()
             let badge = BadgeInputs.current(threads)
-            let built = await Task.detached(priority: .utility) { build(from: threads, now: .now, badge: badge) }.value
+            let handled = WidgetHandoff.pendingHandledIDs()
+            let built = await Task.detached(priority: .utility) {
+                build(from: threads, now: .now, badge: badge, handled: handled)
+            }.value
             guard !Task.isCancelled else { return }
             apply(built)
         }
@@ -47,7 +50,7 @@ enum WidgetBridge {
     /// (background refresh, a changed setting).
     static func update(from threads: [Correspondence]) {
         pendingUpdate?.cancel()
-        apply(build(from: threads, now: .now, badge: BadgeInputs.current(threads)))
+        apply(build(from: threads, now: .now, badge: BadgeInputs.current(threads), handled: WidgetHandoff.pendingHandledIDs()))
     }
 
     /// What the badge counts, gathered on the main actor (your lessons and
@@ -85,8 +88,12 @@ enum WidgetBridge {
         let badge: Int
     }
 
-    nonisolated private static func build(from threads: [Correspondence], now: Date, badge: BadgeInputs) -> Built {
-        let needs = MailQuery.prioritized(threads, attention: .needsYou, now: now)
+    /// `handled`: marked Handled on a widget and not yet applied by the app
+    /// (`WidgetHandoff`), left out of Needs You so they don't come back.
+    nonisolated private static func build(from threads: [Correspondence], now: Date, badge: BadgeInputs,
+                                          handled: Set<String>) -> Built {
+        func isHandled(_ thread: Correspondence) -> Bool { handled.contains(thread.id.account + "|" + thread.id.providerID) }
+        let needs = MailQuery.prioritized(threads, attention: .needsYou, now: now).filter { !isHandled($0) }
         let waiting = MailQuery.prioritized(threads, attention: .waiting, now: now)
         let unread = MailQuery.filter(threads, now: now).filter(\.isUnread).count
         let known = Correspondence.knownSenderNames(threads)
@@ -109,7 +116,7 @@ enum WidgetBridge {
         let count: Int
         switch badge.kind {
         case .needsYou:
-            count = MailQuery.prioritized(counted, attention: .needsYou, now: now).count
+            count = MailQuery.prioritized(counted, attention: .needsYou, now: now).filter { !isHandled($0) }.count
         case .primary:
             let context = InboxCategory.context(for: counted)
             count = inbox.filter { InboxCategory.of($0, override: badge.categoryOverrides[$0.id], context: context, now: now) == .primary }.count
@@ -137,6 +144,11 @@ enum WidgetBridge {
         }
         var snapshot = built.snapshot
         snapshot.isLocked = isLocked && !snapshot.isSample
+        // Handled on a widget while this was being put together.
+        let handled = WidgetHandoff.pendingHandledIDs()
+        let shown = snapshot.needsYou.count
+        snapshot.needsYou.removeAll { handled.contains($0.id) }
+        snapshot.needsYouCount = max(0, snapshot.needsYouCount - (shown - snapshot.needsYou.count))
         BriefNotifier.reschedule(snapshot)
         // Compare without the timestamp, so a sync that changed nothing
         // doesn't spend the widget reload budget.

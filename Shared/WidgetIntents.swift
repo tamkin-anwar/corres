@@ -36,29 +36,53 @@ enum WidgetHandoff {
             .appendingPathComponent("WidgetHandled", isDirectory: true)
     }
 
+    /// Set by the app at launch: a Handled the system runs inside the app
+    /// (it's open) is applied at once rather than on the next sync.
+    nonisolated(unsafe) static var applyHandled: (@MainActor @Sendable () -> Void)?
+
     static func markHandled(_ id: String) {
         guard let folder = handledFolder else { return }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         try? Data(id.utf8).write(to: folder.appendingPathComponent(UUID().uuidString), options: .atomic)
     }
 
-    /// "account|thread" ids marked Handled from a widget since last time.
-    static func takeHandled() -> [String] {
-        // Taps saved by an earlier version, in the old shared list.
-        var ids = defaults?.stringArray(forKey: handledKey) ?? []
-        if !ids.isEmpty { defaults?.removeObject(forKey: handledKey) }
-        guard let folder = handledFolder,
-              let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil,
-                                                                       options: .skipsHiddenFiles) else { return ids }
-        for file in files {
-            // Read, then removed: a tap saved meanwhile is a new file, left
-            // for next time.
-            guard let data = try? Data(contentsOf: file) else { continue }
-            try? FileManager.default.removeItem(at: file)
-            let id = String(decoding: data, as: UTF8.self)
-            if !id.isEmpty, !ids.contains(id) { ids.append(id) }
+    /// A Handled tap waiting for the app: the "account|thread" id, and the
+    /// file that keeps it until the app has applied it.
+    struct HandledTap {
+        let id: String
+        let file: URL
+    }
+
+    /// The taps not yet applied, oldest first. Read only: each stays until
+    /// the app has moved its conversation and calls `finishHandled`, so a
+    /// tap is never lost to an app that quits, or isn't ready, halfway.
+    static func pendingHandled() -> [HandledTap] {
+        // Taps saved by an earlier version, in the old shared list: kept as
+        // files like the rest.
+        if let old = defaults?.stringArray(forKey: handledKey), !old.isEmpty {
+            old.forEach(markHandled)
+            defaults?.removeObject(forKey: handledKey)
         }
-        return ids
+        guard let folder = handledFolder,
+              let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.creationDateKey],
+                                                                       options: .skipsHiddenFiles) else { return [] }
+        func created(_ file: URL) -> Date { (try? file.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast }
+        return files.sorted { created($0) < created($1) }.compactMap { file in
+            guard let data = try? Data(contentsOf: file), !data.isEmpty else { return nil }
+            return HandledTap(id: String(decoding: data, as: UTF8.self), file: file)
+        }
+    }
+
+    /// The ids of the taps not yet applied: kept out of the widget's Needs
+    /// You until then, so a snapshot the app writes meanwhile never brings
+    /// a handled email back.
+    static func pendingHandledIDs() -> Set<String> {
+        Set(pendingHandled().map(\.id))
+    }
+
+    /// Taps the app has applied (or whose conversation is gone).
+    static func finishHandled(_ taps: [HandledTap]) {
+        for tap in taps { try? FileManager.default.removeItem(at: tap.file) }
     }
 }
 
@@ -112,6 +136,7 @@ struct MarkHandledFromWidgetIntent: AppIntent {
             snapshot.save()
         }
         WidgetCenter.shared.reloadAllTimelines()
+        if let apply = WidgetHandoff.applyHandled { await apply() }
         return .result()
     }
 }

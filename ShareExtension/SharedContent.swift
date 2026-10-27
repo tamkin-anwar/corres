@@ -61,10 +61,11 @@ struct SharedContent {
                     } else {
                         content.text += (content.text.isEmpty ? "" : "\n") + url.absoluteString
                     }
-                } else if !types.contains(.fileURL), !types.contains(where: { $0.conforms(to: .vCard) }),
+                } else if !isDocument(provider, types: types), !types.contains(where: { $0.conforms(to: .vCard) }),
                           types.contains(where: { $0.conforms(to: .text) }) {
                     // Words (a note, a selection, rich text): into the message,
-                    // never attached as an .rtf.
+                    // never attached as an .rtf. A text file (a .txt from
+                    // Files) is attached, as Mail does.
                     if let text = await loadText(provider, types: types), !text.isEmpty {
                         content.text += (content.text.isEmpty ? "" : "\n\n") + text
                     }
@@ -92,6 +93,16 @@ struct SharedContent {
     }
 
     // MARK: Loading
+
+    /// A file rather than words: Files hands over a .txt as plain text with
+    /// no file URL, so its name ("notes.txt") or an open-in-place copy is
+    /// what says it's a document. A selection or a note has neither.
+    @MainActor
+    private static func isDocument(_ provider: NSItemProvider, types: [UTType]) -> Bool {
+        if types.contains(.fileURL) || !provider.registeredContentTypesForOpenInPlace.isEmpty { return true }
+        guard let name = provider.suggestedName, !(name as NSString).pathExtension.isEmpty else { return false }
+        return UTType(filenameExtension: (name as NSString).pathExtension)?.conforms(to: .text) == true
+    }
 
     @MainActor
     private static func name(_ provider: NSItemProvider, fallback: String, ext: String) -> String {

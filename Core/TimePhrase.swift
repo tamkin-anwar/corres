@@ -68,8 +68,9 @@ public enum TimePhrase {
             // "9am" typed at 10am means tomorrow's 9am.
             return candidate.flatMap { $0 > now ? $0 : calendar.date(byAdding: .day, value: 1, to: $0) }
         case "tonight":
-            // "Tonight at 9" is nine in the evening.
-            let evening = time.map { $0.0 < 12 ? ($0.0 + 12, $0.1) : $0 }
+            // "Tonight at 9" is nine in the evening; "tonight at 12" is
+            // midnight.
+            let evening = time.map { $0.0 < 12 ? ($0.0 + 12, $0.1) : $0.0 == 12 ? (24, $0.1) : $0 }
             return at(evening ?? (20, 0), on: today, calendar: calendar)
         case "later", "later today":
             if laterTodayIsEvening, let evening = at((18, 0), on: today, calendar: calendar), evening > now.addingTimeInterval(1_800) {
@@ -109,12 +110,13 @@ public enum TimePhrase {
     }
 
     /// Pulls a trailing time off the words: "at 9", "9am", "9:30 pm",
-    /// "17:00", "noon", "morning", "evening".
+    /// "17:00", "noon", "morning", "evening". Midnight is hour 24, the end
+    /// of the day it's said with.
     private static func splitTime(_ words: [String]) -> ([String], (Int, Int)?) {
         var words = words
         var time: (Int, Int)?
         let named: [String: (Int, Int)] = ["morning": (morningHour, 0), "noon": (12, 0), "midday": (12, 0),
-                                           "afternoon": (14, 0), "evening": (18, 0), "night": (20, 0)]
+                                           "afternoon": (14, 0), "evening": (18, 0), "night": (20, 0), "midnight": (24, 0)]
         if let last = words.last, let value = named[last] {
             words.removeLast()
             if words.last == "the" { words.removeLast() }
@@ -160,13 +162,17 @@ public enum TimePhrase {
         case "am": guard (1...12).contains(hour) else { return nil }; if hour == 12 { hour = 0 }
         // "午後21時" says pm and a 24-hour time; both mean the same.
         case "pm": guard (1...23).contains(hour) else { return nil }; if hour < 12 { hour += 12 }
-        default: guard (0...23).contains(hour) else { return nil }
+        default: guard (0...24).contains(hour) else { return nil }
         }
         return (hour, minute)
     }
 
     private static func at(_ time: (Int, Int), on day: Date, calendar: Calendar) -> Date? {
-        calendar.date(bySettingHour: time.0, minute: time.1, second: 0, of: day)
+        // "Tomorrow at midnight" is when tomorrow ends.
+        if time.0 == 24, let next = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: day)) {
+            return calendar.date(bySettingHour: 0, minute: time.1, second: 0, of: next)
+        }
+        return calendar.date(bySettingHour: time.0, minute: time.1, second: 0, of: day)
     }
 
     // MARK: - Weekends
@@ -371,6 +377,11 @@ extension TimePhrase {
             rule(#"(\d+)\s*일\s*(?:후|뒤)"#, "in $1 days"), rule(#"(\d+)\s*주\s*(?:후|뒤)"#, "in $1 weeks"),
             rule(#"(\d+)\s*(?:개월|달)\s*(?:후|뒤)"#, "in $1 months"),
         ] + weekdayRules(["일", "월", "화", "수", "목", "금", "토"], nextWeek: [#"다음\s*주\s*"#], this: [#"이번\s*주\s*"#], after: "요일") + [
+            // 12 at night is midnight ("밤 12시", "자정"); 12 by day stays
+            // noon ("낮 12시", "오후 12시", "정오").
+            rule(#"밤\s*12\s*시\s*반"#, "at 24:30"), rule(#"밤\s*12\s*시\s*(\d{1,2})\s*분"#, "at 24:$1"),
+            rule(#"밤\s*12\s*시(?!간)"#, "midnight"), rule("자정", "midnight"),
+            rule(#"낮\s*(12|[1-6])\s*시(?!간)"#, "at $1:00 pm"),
             rule(#"(?:오후|저녁|밤)\s*(\d{1,2})\s*시\s*반"#, "at $1:30 pm"),
             rule(#"(?:오후|저녁|밤)\s*(\d{1,2})\s*시\s*(\d{1,2})\s*분"#, "at $1:$2 pm"),
             rule(#"(?:오후|저녁|밤)\s*(\d{1,2})\s*시(?!간)"#, "at $1:00 pm"),
@@ -392,6 +403,7 @@ extension TimePhrase {
             rule(#"(\d+)\s*天\s*"# + after, "in $1 days"),
             rule(#"(\d+)\s*(?:个|個)?\s*(?:星期|礼拜|禮拜|周|週)\s*"# + after, "in $1 weeks"),
             rule(#"(\d+)\s*(?:个|個)\s*月\s*"# + after, "in $1 months"),
+            rule(#"晚上\s*12\s*[点點]\s*半"#, "at 24:30"), rule(#"晚上\s*12\s*[点點](?:钟|鐘)?"#, "midnight"),
             rule(#"(?:下午|晚上|傍晚)\s*(\d{1,2})\s*[点點]\s*半"#, "at $1:30 pm"),
             rule(#"(?:下午|晚上|傍晚)\s*(\d{1,2})\s*[点點]\s*(\d{1,2})\s*分?"#, "at $1:$2 pm"),
             rule(#"(?:下午|晚上|傍晚)\s*(\d{1,2})\s*[点點](?:钟|鐘)?"#, "at $1:00 pm"),
@@ -415,6 +427,10 @@ extension TimePhrase {
             rule(#"(\d+)\s*মিনিট\s*পরে?"#, "in $1 minutes"), rule(#"(\d+)\s*ঘ(?:ণ্|ন্)টা\s*পরে?"#, "in $1 hours"),
             rule(#"(\d+)\s*দিন\s*পরে?"#, "in $1 days"), rule(#"(\d+)\s*সপ্তাহ\s*পরে?"#, "in $1 weeks"),
             rule(#"(\d+)\s*মাস\s*পরে?"#, "in $1 months"),
+            // 12 at night is midnight ("রাত ১২টা", "মধ্যরাত"); 12 by day
+            // stays noon ("দুপুর ১২টা").
+            rule(word + #"রাত\S*\s*সাড়ে\s*12\s*টা\S*"#, "at 24:30"), rule(word + #"রাত\S*\s*12:(\d{2})\s*(?:টা\S*)?"#, "at 24:$1"),
+            rule(word + #"রাত\S*\s*12\s*টা\S*"#, "midnight"), rule(word + #"(?:মধ্যরাত|মাঝরাত)\S*"#, "midnight"),
             rule(word + #"(?:বিকাল|বিকেল|সন্ধ্যা|সন্ধ্যে|রাত|দুপুর)\S*\s*সাড়ে\s*(\d{1,2})\s*টা\S*"#, "at $1:30 pm"),
             rule(word + #"(?:বিকাল|বিকেল|সন্ধ্যা|সন্ধ্যে|রাত|দুপুর)\S*\s*(\d{1,2}):(\d{2})\s*(?:টা\S*)?"#, "at $1:$2 pm"),
             rule(word + #"(?:বিকাল|বিকেল|সন্ধ্যা|সন্ধ্যে|রাত|দুপুর)\S*\s*(\d{1,2})\s*টা\S*"#, "at $1:00 pm"),

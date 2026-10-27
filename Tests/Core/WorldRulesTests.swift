@@ -382,6 +382,48 @@ struct WorldRulesTests {
         #expect(LocalDates.find(in: "মিটিংয়ে ৫টা বই আনবেন", now: now).isEmpty)
     }
 
+    /// 12 at night is midnight, the end of the day it's said with; 12 by
+    /// day is noon. Korean: 밤 12시, 자정 / 낮 12시, 오후 12시, 정오.
+    /// Bengali: রাত ১২টা, মধ্যরাত / দুপুর ১২টা.
+    @Test func midnightAndNoonInKoreanAndBengali() {
+        func start(_ text: String) -> [Int]? {
+            EventFinder.fromWording(text, subject: "", receivedAt: now, now: now)
+                .map { calendar.dateComponents([.month, .day, .hour, .minute], from: $0.start) }
+                .map { [$0.month!, $0.day!, $0.hour!, $0.minute!] }
+        }
+        for text in ["회의: 2026년 11월 12일 밤 12시", "회의: 2026년 11월 12일 자정", "회의: 2026년 11월 12일 24시",
+                     "মিটিং ১২ নভেম্বর ২০২৬ রাত ১২টায়", "মিটিং ১২ নভেম্বর ২০২৬ রাতে ১২টায়", "মিটিং ১২ নভেম্বর ২০২৬ মধ্যরাতে"] {
+            #expect(start(text) == [11, 13, 0, 0], "\(text)")
+        }
+        #expect(start("회의: 2026년 11월 12일 밤 12시 30분") == [11, 13, 0, 30])
+        for text in ["회의: 2026년 11월 12일 낮 12시", "회의: 2026년 11월 12일 오후 12시", "회의: 2026년 11월 12일 정오",
+                     "মিটিং ১২ নভেম্বর ২০২৬ দুপুর ১২টায়", "মিটিং ১২ নভেম্বর ২০২৬ দুপুরে ১২টায়"] {
+            #expect(start(text) == [11, 12, 12, 0], "\(text)")
+        }
+        // The other hours keep their time of day.
+        #expect(start("회의: 2026년 11월 12일 밤 9시") == [11, 12, 21, 0])
+        #expect(start("회의: 2026년 11월 12일 낮 2시") == [11, 12, 14, 0])
+        #expect(start("মিটিং ১২ নভেম্বর ২০২৬ রাত ৯টায়") == [11, 12, 21, 0])
+
+        // Due at midnight is due that day, at its last minute.
+        for text in ["11월 12일 자정까지 납부해 주세요.", "11월 12일 밤 12시까지 납부해 주세요.",
+                     "১২ নভেম্বর রাত ১২টার মধ্যে বিল পরিশোধ করুন।"] {
+            let due = MailSignals.deadline(in: text, now: now)
+            #expect(due.map { calendar.dateComponents([.month, .day, .hour, .minute], from: $0) }
+                .map { [$0.month!, $0.day!, $0.hour!, $0.minute!] } == [11, 12, 23, 59], "\(text)")
+            #expect(due.map { TodayBrief.hasTime($0, calendar: calendar) } == false, "\(text)")
+        }
+        for text in ["11월 12일 낮 12시까지 납부해 주세요.", "১২ নভেম্বর দুপুর ১২টার মধ্যে বিল পরিশোধ করুন।"] {
+            #expect(MailSignals.deadline(in: text, now: now).map { calendar.component(.hour, from: $0) } == 12, "\(text)")
+        }
+
+        // A time alone: tonight's midnight, not today's noon.
+        let tonight = calendar.date(from: DateComponents(year: 2026, month: 10, day: 26, hour: 0))!
+        for text in ["오늘 자정까지", "오늘 밤 12시까지", "আজ রাত ১২টার মধ্যে"] {
+            #expect(LocalDates.find(in: text, now: now).map(\.date) == [tonight], "\(text)")
+        }
+    }
+
     // MARK: One-time codes and money
 
     @Test func oneTimeCodesInEveryLanguage() {
