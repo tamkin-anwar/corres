@@ -369,6 +369,71 @@ public enum MailDigest {
     /// Whether `text` is an amount of money, in any currency and form.
     public static func isAmount(_ text: String) -> Bool { text.patternRange(amountPattern) != nil }
 
+    /// Which currencies an amount can be in, by the sign, code or word
+    /// written with it: "R$" is only Brazil's real, "$" any dollar or
+    /// peso, "¥" the yen or the yuan, "Tk" and "৳" the taka. Nil when it
+    /// names none ("1,500/-").
+    static func currencies(ofAmount amount: some StringProtocol) -> Set<String>? {
+        let marker = currencyMarker(String(amount).filter { !$0.isNumber })
+        guard !marker.isEmpty else { return nil }
+        return currencyMarkers[marker] ?? localeCurrencySigns[marker] ?? [marker]
+    }
+
+    /// A currency sign or code as `currencyMarkers` keys it: without
+    /// spaces, dots and the "/-" mark, full-width signs as plain ones.
+    private static func currencyMarker(_ text: some StringProtocol) -> String {
+        String(text.filter { !$0.isWhitespace && !".,'/-".contains($0) })
+            .replacingOccurrences(of: "＄", with: "$").replacingOccurrences(of: "￥", with: "¥")
+    }
+
+    /// Every currency code iOS knows, and the signs and words mail writes
+    /// most, with the currencies each can mean ("$" is a dollar or a
+    /// peso in the locales that write it so; "US$", "Tk", "円" and "RMB"
+    /// are written in mail but no locale's sign). Rarer signs are read
+    /// from the locales (`localeCurrencySigns`).
+    static let currencyMarkers: [String: Set<String>] = {
+        var markers: [String: Set<String>] = [:]
+        for code in Locale.Currency.isoCurrencies.map(\.identifier) { markers[code, default: []].insert(code) }
+        let written: [String: [String]] = [
+            "$": ["USD", "CAD", "AUD", "NZD", "HKD", "SGD", "TWD", "MXN", "ARS", "CLP", "COP", "UYU", "CUP", "BBD", "BMD",
+                  "BND", "BSD", "BZD", "FJD", "GYD", "JMD", "KYD", "LRD", "NAD", "SBD", "SRD", "TTD", "XCD"],
+            "€": ["EUR"], "£": ["GBP", "GIP", "FKP", "SHP", "SSP"],
+            "US$": ["USD"], "C$": ["CAD"], "CA$": ["CAD"], "A$": ["AUD"], "AU$": ["AUD"], "NZ$": ["NZD"], "HK$": ["HKD"],
+            "S$": ["SGD"], "NT$": ["TWD"], "MX$": ["MXN"], "R$": ["BRL"], "Tk": ["BDT"], "টাকা": ["BDT"], "৳": ["BDT"],
+            "Rs": ["INR", "PKR", "LKR", "NPR", "MUR", "SCR"], "রুপি": ["INR", "PKR", "LKR", "NPR"], "₹": ["INR"],
+            "Tsh": ["TZS"], "Ksh": ["KES"], "RMB": ["CNY"], "人民币": ["CNY"], "人民幣": ["CNY"], "元": ["CNY"], "块": ["CNY"],
+            "塊": ["CNY"], "円": ["JPY"], "원": ["KRW"], "₩": ["KRW"], "¥": ["JPY", "CNY"],
+        ]
+        for (marker, codes) in written { markers[marker, default: []].formUnion(codes) }
+        return markers
+    }()
+
+    /// Each locale's own currency sign ("₦" in Nigeria, "₱" in the
+    /// Philippines, "kr" in Sweden and Norway), read only when an amount
+    /// carries a sign `currencyMarkers` doesn't have: reading every
+    /// locale takes a quarter of a second.
+    private static let localeCurrencySigns: [String: Set<String>] = {
+        var signs: [String: Set<String>] = [:]
+        for identifier in Locale.availableIdentifiers {
+            let locale = Locale(identifier: identifier)
+            guard let code = locale.currency?.identifier, let symbol = locale.currencySymbol else { continue }
+            let marker = currencyMarker(symbol)
+            if !marker.isEmpty { signs[marker, default: []].insert(code) }
+        }
+        return signs
+    }()
+
+    /// Each amount in `text`, with its value (`canonicalNumber`) and the
+    /// currencies it can be in.
+    private static func amounts(in text: String) -> [(text: String, value: String, currencies: Set<String>?)] {
+        text.regexRanges(of: amountPattern).compactMap { range in
+            let written = String(text[range])
+            // Thousands grouped with a space count whole ("1 250,00 €").
+            guard let value = numberTokens(in: written.replacingOccurrences(of: " ", with: "\u{00A0}")).first else { return nil }
+            return (written, value, currencies(ofAmount: written))
+        }
+    }
+
     public static func facts(in text: String) -> [String] {
         let source = String(text.prefix(8_000))
         var found: [(Int, String)] = []
@@ -423,11 +488,22 @@ public enum MailDigest {
         // supported by "$1,284.63". Compared as values, in any locale:
         // "1,250.00", "1.250,00", "1,25,000"-style grouping and Bengali or
         // Arabic digits all read the same (`canonicalNumber`).
-        let sourceNumbers = Set(numberTokens(in: lowerSource))
+        let sourceAmounts = amounts(in: source)
+        let sourceNumbers = Set(numberTokens(in: lowerSource)).union(sourceAmounts.map(\.value))
         for token in numberTokens(in: summary) where !sourceNumbers.contains(token) {
             // "3:00" is supported by a bare "3" ("3pm").
             if token.hasSuffix(":00"), sourceNumbers.contains(String(token.dropLast(3))) { continue }
             unsupported.append(token)
+        }
+        // An amount needs the email's currency too: "$1,250" is not
+        // supported by "R$ 1.250,00", which is Brazilian reais. A figure
+        // the email gives without a currency stays supported.
+        for amount in amounts(in: summary) {
+            guard let currencies = amount.currencies else { continue }
+            let same = sourceAmounts.filter { $0.value == amount.value }
+            if !same.isEmpty, !same.contains(where: { $0.currencies.map { !$0.isDisjoint(with: currencies) } ?? true }) {
+                unsupported.append(amount.text)
+            }
         }
         let words = summary.split(whereSeparator: { !$0.isLetter && $0 != "'" && $0 != "’" })
         for word in words {
@@ -447,6 +523,8 @@ public enum MailDigest {
                 var lower = token.lowercased()
                 for suffix in ["'s", "’s"] where lower.hasSuffix(suffix) { lower = String(lower.dropLast(2)) }
                 if commonCapitalized.contains(lower) || calendarStems[lower] != nil { continue }
+                // A currency ("BRL", "R$1,250") is checked with its amount above.
+                if currencyMarkers[token] != nil || token.patternRange("^(?:" + amountPattern + ")$") != nil { continue }
                 if !lowerSource.contains(lower) { unsupported.append(token) }
             }
         }

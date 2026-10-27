@@ -90,6 +90,33 @@ struct WorldNumberTests {
         #expect(!MailDigest.unsupportedClaims(in: "You paid ৳152,000 to Daraz.", source: bangla).isEmpty)
     }
 
+    /// An amount in the summary needs the email's currency too: "$1,250"
+    /// is not supported by "R$ 1.250,00", which is Brazilian reais.
+    @Test func amountsKeepTheirCurrency() {
+        let brazil = "Your payment to Loja was successful. Total paid: R$ 1.250,00."
+        #expect(!MailDigest.unsupportedClaims(in: "Your payment to Loja of $1,250 was successful.", source: brazil).isEmpty)
+        #expect(MailDigest.unsupportedClaims(in: "Your payment to Loja of R$1,250 was successful.", source: brazil).isEmpty)
+        #expect(MailDigest.unsupportedClaims(in: "Your payment to Loja of BRL 1,250 was successful.", source: brazil).isEmpty)
+        let euro = "Your payment to Zalando was successful. Total paid: 1.250,00 €."
+        #expect(!MailDigest.unsupportedClaims(in: "Your payment to Zalando of £1,250 was successful.", source: euro).isEmpty)
+        #expect(MailDigest.unsupportedClaims(in: "Your payment to Zalando of EUR 1,250 was successful.", source: euro).isEmpty)
+        // One currency written two ways: a sign or its code, a sign or a word.
+        #expect(MailDigest.unsupportedClaims(in: "Your payment to Loja of US$45 was successful.",
+                                             source: "Your payment to Loja was successful. Total paid: $45.00.").isEmpty)
+        #expect(MailDigest.unsupportedClaims(in: "You paid ¥1,250 to Loja.", source: "You paid 1,250円 to Loja.").isEmpty)
+        #expect(MailDigest.unsupportedClaims(in: "You paid Tk 1,250 to Daraz.",
+                                             source: "Your bKash payment of ৳1,250 to Daraz was successful.").isEmpty)
+        #expect(!MailDigest.unsupportedClaims(in: "You paid ₹1,250 to Daraz.",
+                                              source: "Your bKash payment of ৳1,250 to Daraz was successful.").isEmpty)
+        // A sign read from its locale: "₦" is the naira.
+        #expect(MailDigest.unsupportedClaims(in: "You paid NGN 45,000 to Jumia.", source: "You paid ₦45,000 to Jumia.").isEmpty)
+        #expect(!MailDigest.unsupportedClaims(in: "You paid ₱45,000 to Jumia.", source: "You paid ₦45,000 to Jumia.").isEmpty)
+        // Thousands grouped with a space: "1 250,00 €" is 1,250.
+        #expect(MailDigest.unsupportedClaims(in: "You paid €1,250 to Zalando.", source: "You paid 1 250,00 € to Zalando.").isEmpty)
+        // A number the email gives without a currency stays supported.
+        #expect(MailDigest.unsupportedClaims(in: "You paid $1,250 to Loja.", source: "You paid 1,250 to Loja.").isEmpty)
+    }
+
     @Test func amountsInAnyCurrencyAreFound() {
         let facts = MailDigest.facts(in: "Total ₦45,000 paid. Also AED 120 and 3.500 kr on file. Rs. 899 refund.")
         #expect(facts.contains { $0.contains("45,000") })
