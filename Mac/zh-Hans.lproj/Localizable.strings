@@ -2756,3 +2756,173 @@
 
 /* An invitation: Add to Calendar without access. */
 "Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corres 无权访问你的日历。你可以在“系统设置”>“隐私与安全性”>“日历”中允许。";
+/* No comment provided by engineer. */
+"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@/%@，自动续订。可随时在“设置”中取消。";
+
+/* No comment provided by engineer. */
+"%@ a month or %@ a year." = "每月 %@ 或每年 %@。";
+
+/* No comment provided by engineer. */
+"%@ free, then renews. Cancel anytime." = "免费%@，之后自动续订。可随时取消。";
+
+/* No comment provided by engineer. */
+"A one-sentence brief of your day, and what needs you first." = "一句话概括你的一天，以及最先需要你处理的事。";
+
+/* No comment provided by engineer. */
+"Annual" = "年付";
+
+/* No comment provided by engineer. */
+"Answer from your mail" = "从你的邮件中找答案";
+
+/* No comment provided by engineer. */
+"Apple Intelligence, on this %@" = "Apple 智能，在这台%@上";
+
+/* No comment provided by engineer. */
+"Ask a question, get the answer from your own email, on this %@." = "提一个问题，在这台%@上从你自己的邮件中找到答案。";
+
+/* No comment provided by engineer. */
+"Buy Lifetime · %@" = "购买终身版 · %@";
+
+/* No comment provided by engineer. */
+"Continue" = "继续";
+
+/* No comment provided by engineer. */
+"Corres Pro · Beta" = "Corres Pro · 测试版";
+
+/* No comment provided by engineer. */
+"Ends %@" = "%@结束";
+
+/* No comment provided by engineer. */
+"Everyone who owes you a reply, and for how long." = "欠你回复的所有人，以及等了多久。";
+
+/* No comment provided by engineer. */
+"Everything that makes Corres Corres." = "让 Corres 成为 Corres 的一切。";
+
+/* No comment provided by engineer. */
+"Family" = "家人共享";
+
+/* No comment provided by engineer. */
+"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/%@。在试用结束前于“设置”中取消即不会收费。";
+
+/* No comment provided by engineer. */
+"Free trial · first charge %@" = "免费试用 · 首次扣款 %@";
+
+/* No comment provided by engineer. */
+"Get Corres Pro" = "获取 Corres Pro";
+
+/* No comment provided by engineer. */
+"Go to Mail" = "前往邮件";
+
+/* No comment provided by engineer. */
+"Included for beta testers" = "测试版用户免费使用";
+
+/* No comment provided by engineer. */
+"Lifetime" = "终身";
+
+/* No comment provided by engineer. */
+"Manage Subscription" = "管理订阅";
+
+/* No comment provided by engineer. */
+"Monthly" = "月付";
+
+/* No comment provided by engineer. */
+"Monthly or yearly." = "按月或按年。";
+
+/* No comment provided by engineer. */
+"Needs You and Waiting" = "“需要你”和“等待中”";
+
+/* No comment provided by engineer. */
+"Needs You in the menu bar, on your desktop and on Apple Watch." = "在菜单栏、桌面和 Apple Watch 上显示“需要你”。";
+
+/* No comment provided by engineer. */
+"One payment of %@. No subscription." = "一次性支付 %@。不是订阅。";
+
+/* No comment provided by engineer. */
+"Pay once. Shared with up to five family members." = "一次付费。可与最多五位家庭成员共享。";
+
+/* No comment provided by engineer. */
+"Plans couldn't load" = "无法载入方案";
+
+/* No comment provided by engineer. */
+"Preview as Free User" = "以免费用户身份预览";
+
+/* No comment provided by engineer. */
+"Privacy Policy" = "隐私政策";
+
+/* No comment provided by engineer. */
+"Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro." = "测试版期间包含 Pro。“以免费用户身份预览”会显示没有 Pro 时的 App。";
+
+/* No comment provided by engineer. */
+"Renews %@" = "%@续订";
+
+/* No comment provided by engineer. */
+"Renews automatically. Cancel anytime." = "自动续订。可随时取消。";
+
+/* No comment provided by engineer. */
+"Restore" = "恢复";
+
+/* No comment provided by engineer. */
+"Save %lld%%" = "省 %lld%%";
+
+/* No comment provided by engineer. */
+"Shared by your family" = "由你的家庭共享";
+
+/* No comment provided by engineer. */
+"Show Primary" = "显示主要";
+
+/* No comment provided by engineer. */
+"Start %@ free" = "免费试用%@";
+
+/* No comment provided by engineer. */
+"Subscribe · %@" = "订阅 · %@";
+
+/* No comment provided by engineer. */
+"Summaries, replies in your voice, and answers from your mail in Search." = "摘要、带有你个人风格的回复，以及在搜索中从你的邮件里得到的回答。";
+
+/* No comment provided by engineer. */
+"Terms of Use" = "使用条款";
+
+/* No comment provided by engineer. */
+"The conversations that ask something of you, with the reason for each." = "需要你回应的对话，以及各自的原因。";
+
+/* No comment provided by engineer. */
+"Try Corres Pro Free" = "免费试用 Corres Pro";
+
+/* No comment provided by engineer. */
+"Try it free for 14 days." = "免费试用 14 天。";
+
+/* No comment provided by engineer. */
+"Try it free, then %@ a month or %@ a year." = "免费试用，之后每月 %@ 或每年 %@。";
+
+/* No comment provided by engineer. */
+"What needs you first, with the reason for each, and the replies you're owed." = "最先需要你处理的事，附上原因，以及你在等的回复。";
+
+/* No comment provided by engineer. */
+"Widgets and Apple Watch" = "小组件和 Apple Watch";
+
+/* No comment provided by engineer. */
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "没有 Pro，“邮件”仍可正常使用：阅读、回复、归档和搜索。“需要你”、“等待中”、搜索中的回答以及设备端智能需要 Pro。";
+
+/* No comment provided by engineer. */
+"Your mail is never sent to our servers or an AI company." = "你的邮件绝不会发送到我们的服务器或 AI 公司。";
+
+/* No comment provided by engineer. */
+"Yours for good · bought %@" = "永久拥有 · 购买于 %@";
+
+/* No comment provided by engineer. */
+"month" = "月";
+
+/* No comment provided by engineer. */
+"once" = "一次";
+
+/* No comment provided by engineer. */
+"per month" = "每月";
+
+/* No comment provided by engineer. */
+"per year" = "每年";
+
+/* No comment provided by engineer. */
+"soon" = "即将";
+
+/* No comment provided by engineer. */
+"year" = "年";

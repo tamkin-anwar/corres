@@ -2756,3 +2756,173 @@
 
 /* An invitation: Add to Calendar without access. */
 "Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corres가 캘린더에 접근할 수 없습니다. 시스템 설정 > 개인정보 보호 및 보안 > 캘린더에서 허용할 수 있습니다.";
+/* No comment provided by engineer. */
+"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@/%@, 자동 갱신. 설정에서 언제든지 취소할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"%@ a month or %@ a year." = "월 %@ 또는 연 %@.";
+
+/* No comment provided by engineer. */
+"%@ free, then renews. Cancel anytime." = "%@ 무료, 이후 자동 갱신. 언제든지 취소할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"A one-sentence brief of your day, and what needs you first." = "하루를 한 문장으로 요약하고, 가장 먼저 필요한 것을 알려줍니다.";
+
+/* No comment provided by engineer. */
+"Annual" = "연간";
+
+/* No comment provided by engineer. */
+"Answer from your mail" = "내 메일에서 찾은 답";
+
+/* No comment provided by engineer. */
+"Apple Intelligence, on this %@" = "Apple Intelligence, 이 %@에서";
+
+/* No comment provided by engineer. */
+"Ask a question, get the answer from your own email, on this %@." = "질문하면 이 %@에서 내 이메일로부터 답을 찾아줍니다.";
+
+/* No comment provided by engineer. */
+"Buy Lifetime · %@" = "평생 이용권 구입 · %@";
+
+/* No comment provided by engineer. */
+"Continue" = "계속";
+
+/* No comment provided by engineer. */
+"Corres Pro · Beta" = "Corres Pro · 베타";
+
+/* No comment provided by engineer. */
+"Ends %@" = "%@ 종료";
+
+/* No comment provided by engineer. */
+"Everyone who owes you a reply, and for how long." = "나에게 답장할 차례인 모든 사람과 그 기간.";
+
+/* No comment provided by engineer. */
+"Everything that makes Corres Corres." = "Corres를 Corres답게 만드는 모든 것.";
+
+/* No comment provided by engineer. */
+"Family" = "가족";
+
+/* No comment provided by engineer. */
+"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ 무료, 이후 %@/%@. 체험 기간이 끝나기 전에 설정에서 취소하면 요금이 청구되지 않습니다.";
+
+/* No comment provided by engineer. */
+"Free trial · first charge %@" = "무료 체험 · 첫 결제 %@";
+
+/* No comment provided by engineer. */
+"Get Corres Pro" = "Corres Pro 받기";
+
+/* No comment provided by engineer. */
+"Go to Mail" = "메일로 이동";
+
+/* No comment provided by engineer. */
+"Included for beta testers" = "베타 테스터에게 포함됨";
+
+/* No comment provided by engineer. */
+"Lifetime" = "평생";
+
+/* No comment provided by engineer. */
+"Manage Subscription" = "구독 관리";
+
+/* No comment provided by engineer. */
+"Monthly" = "월간";
+
+/* No comment provided by engineer. */
+"Monthly or yearly." = "월간 또는 연간.";
+
+/* No comment provided by engineer. */
+"Needs You and Waiting" = "'나에게 필요'와 '대기 중'";
+
+/* No comment provided by engineer. */
+"Needs You in the menu bar, on your desktop and on Apple Watch." = "메뉴 막대, 데스크탑, Apple Watch에 '나에게 필요' 표시.";
+
+/* No comment provided by engineer. */
+"One payment of %@. No subscription." = "%@ 1회 결제. 구독이 아닙니다.";
+
+/* No comment provided by engineer. */
+"Pay once. Shared with up to five family members." = "한 번 결제. 최대 5명의 가족과 공유됩니다.";
+
+/* No comment provided by engineer. */
+"Plans couldn't load" = "요금제를 불러올 수 없음";
+
+/* No comment provided by engineer. */
+"Preview as Free User" = "무료 사용자로 미리보기";
+
+/* No comment provided by engineer. */
+"Privacy Policy" = "개인정보 처리방침";
+
+/* No comment provided by engineer. */
+"Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro." = "베타를 테스트하는 동안 Pro가 포함됩니다. '무료 사용자로 미리보기'는 Pro가 없는 앱의 모습을 보여줍니다.";
+
+/* No comment provided by engineer. */
+"Renews %@" = "%@ 갱신";
+
+/* No comment provided by engineer. */
+"Renews automatically. Cancel anytime." = "자동 갱신. 언제든지 취소할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"Restore" = "복원";
+
+/* No comment provided by engineer. */
+"Save %lld%%" = "%lld%% 절약";
+
+/* No comment provided by engineer. */
+"Shared by your family" = "가족이 공유함";
+
+/* No comment provided by engineer. */
+"Show Primary" = "기본 보기";
+
+/* No comment provided by engineer. */
+"Start %@ free" = "%@ 무료로 시작";
+
+/* No comment provided by engineer. */
+"Subscribe · %@" = "구독 · %@";
+
+/* No comment provided by engineer. */
+"Summaries, replies in your voice, and answers from your mail in Search." = "요약, 나다운 답장, 검색에서 내 메일로부터 얻는 답변.";
+
+/* No comment provided by engineer. */
+"Terms of Use" = "이용 약관";
+
+/* No comment provided by engineer. */
+"The conversations that ask something of you, with the reason for each." = "나에게 무언가를 요청하는 대화와 각각의 이유.";
+
+/* No comment provided by engineer. */
+"Try Corres Pro Free" = "Corres Pro 무료 체험";
+
+/* No comment provided by engineer. */
+"Try it free for 14 days." = "14일 동안 무료로 사용해 보세요.";
+
+/* No comment provided by engineer. */
+"Try it free, then %@ a month or %@ a year." = "무료로 사용한 후 월 %@ 또는 연 %@.";
+
+/* No comment provided by engineer. */
+"What needs you first, with the reason for each, and the replies you're owed." = "가장 먼저 필요한 것과 각각의 이유, 그리고 받아야 할 답장.";
+
+/* No comment provided by engineer. */
+"Widgets and Apple Watch" = "위젯과 Apple Watch";
+
+/* No comment provided by engineer. */
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Pro가 없어도 메일은 계속 작동합니다. 읽기, 답장, 보관, 검색. '나에게 필요', '대기 중', 검색의 답변, 기기 내 인텔리전스에는 Pro가 필요합니다.";
+
+/* No comment provided by engineer. */
+"Your mail is never sent to our servers or an AI company." = "메일은 저희 서버나 AI 회사로 가지 않습니다.";
+
+/* No comment provided by engineer. */
+"Yours for good · bought %@" = "영구 소장 · %@ 구입";
+
+/* No comment provided by engineer. */
+"month" = "월";
+
+/* No comment provided by engineer. */
+"once" = "1회";
+
+/* No comment provided by engineer. */
+"per month" = "월";
+
+/* No comment provided by engineer. */
+"per year" = "연";
+
+/* No comment provided by engineer. */
+"soon" = "곧";
+
+/* No comment provided by engineer. */
+"year" = "년";

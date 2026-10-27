@@ -28,8 +28,10 @@ final class EntitlementStore {
 
     enum Plan: Equatable {
         case none
-        case monthly(renews: Date?, inTrial: Bool)
-        case annual(renews: Date?, inTrial: Bool)
+        /// `autoRenews` is false once the subscription is cancelled: the
+        /// date is then when it ends, not when it renews.
+        case monthly(renews: Date?, inTrial: Bool, autoRenews: Bool)
+        case annual(renews: Date?, inTrial: Bool, autoRenews: Bool)
         case lifetime(purchased: Date, familyShared: Bool)
 
         var title: String {
@@ -122,11 +124,20 @@ final class EntitlementStore {
     }
 
     private var updatesTask: Task<Void, Never>?
+    private var statusTask: Task<Void, Never>?
 
     init() {
         updatesTask = Task { [weak self] in
             for await update in Transaction.updates {
                 if case .verified(let transaction) = update { await transaction.finish() }
+                await self?.refresh()
+            }
+        }
+        // A subscription cancelled or turned back on (in Settings, the App
+        // Store, or on another device) changes its renewal info, not its
+        // transaction: without this, Plan said "Renews" until relaunch.
+        statusTask = Task { [weak self] in
+            for await _ in Product.SubscriptionInfo.Status.updates {
                 await self?.refresh()
             }
         }
@@ -173,9 +184,11 @@ final class EntitlementStore {
             case ProductID.lifetime:
                 best = .lifetime(purchased: transaction.originalPurchaseDate, familyShared: transaction.ownershipType == .familyShared)
             case ProductID.annual where !isLifetime(best):
-                best = .annual(renews: transaction.expirationDate, inTrial: Self.isTrial(transaction))
+                best = .annual(renews: transaction.expirationDate, inTrial: Self.isTrial(transaction),
+                               autoRenews: await Self.autoRenews(transaction))
             case ProductID.monthly where best == .none:
-                best = .monthly(renews: transaction.expirationDate, inTrial: Self.isTrial(transaction))
+                best = .monthly(renews: transaction.expirationDate, inTrial: Self.isTrial(transaction),
+                                autoRenews: await Self.autoRenews(transaction))
             default:
                 break
             }
@@ -194,7 +207,7 @@ final class EntitlementStore {
         isPurchasing = true
         defer { isPurchasing = false }
         do {
-            switch try await product.purchase() {
+            switch try await Self.buy(product) {
             case .success(let verification):
                 if case .verified(let transaction) = verification { await transaction.finish() }
                 await refresh()
@@ -242,6 +255,32 @@ final class EntitlementStore {
         }
     }
 
+    /// The App Store's confirmation, shown in the window or scene the
+    /// person is using, as Apple asks of UIKit and AppKit apps. Falls back
+    /// to the plain call only when there's no window to show it in.
+    private static func buy(_ product: Product) async throws -> Product.PurchaseResult {
+        #if canImport(UIKit)
+        if let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }) {
+            return try await product.purchase(confirmIn: scene)
+        }
+        #else
+        if #available(macOS 15.2, *), let window = Platform.keyWindow {
+            return try await product.purchase(confirmIn: window)
+        }
+        #endif
+        return try await product.purchase()
+    }
+
+    /// Whether the subscription will renew, from Apple's signed renewal
+    /// info. Unknown counts as renewing, the App Store's own default.
+    private static func autoRenews(_ transaction: Transaction) async -> Bool {
+        guard let status = await transaction.subscriptionStatus,
+              case .verified(let renewal) = status.renewalInfo else { return true }
+        return renewal.willAutoRenew
+    }
+
     private func isLifetime(_ plan: Plan) -> Bool {
         if case .lifetime = plan { return true }
         return false
@@ -252,5 +291,39 @@ final class EntitlementStore {
             return transaction.offer?.paymentMode == .freeTrial
         }
         return false
+    }
+}
+
+// MARK: - What Settings says about your plan
+
+extension EntitlementStore {
+    /// The plan's name in Settings › Plan, on iPhone, iPad and Mac.
+    var planName: String {
+        plan != .none ? plan.title : isPro ? String(localized: "Corres Pro · Beta") : "Corres Pro"
+    }
+
+    /// The line under it: prices before you subscribe, then when it renews,
+    /// or, once cancelled, when it ends.
+    var planStatus: String {
+        switch plan {
+        case .none where isPro:
+            return String(localized: "Included for beta testers")
+        case .none:
+            if let monthly = product(ProductID.monthly), let annual = product(ProductID.annual) {
+                return isEligibleForTrial
+                    ? String(localized: "Try it free, then \(monthly.displayPrice) a month or \(annual.displayPrice) a year.")
+                    : String(localized: "\(monthly.displayPrice) a month or \(annual.displayPrice) a year.")
+            }
+            return isEligibleForTrial ? String(localized: "Try it free for 14 days.") : String(localized: "Monthly or yearly.")
+        case .monthly(let renews, let inTrial, let autoRenews), .annual(let renews, let inTrial, let autoRenews):
+            let date = renews.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? String(localized: "soon")
+            // Cancelled: Pro stays until the period (or trial) is over, then ends.
+            if !autoRenews { return String(localized: "Ends \(date)") }
+            return inTrial ? String(localized: "Free trial · first charge \(date)") : String(localized: "Renews \(date)")
+        case .lifetime(let purchased, let familyShared):
+            // What you have, as Apple's own purchase screens say it.
+            return familyShared ? String(localized: "Shared by your family")
+                : String(localized: "Yours for good · bought \(purchased.formatted(date: .abbreviated, time: .omitted))")
+        }
     }
 }

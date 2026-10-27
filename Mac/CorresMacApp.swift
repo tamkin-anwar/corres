@@ -83,8 +83,25 @@ struct CorresMacApp: App {
         // come back on the next launch.
         .restorationBehavior(.disabled)
 
+        // Corres Pro: monthly or annual, with the free trial. Its own
+        // window, opened from a locked list, the menu bar or Settings, so
+        // the App Store's confirmation shows in it (`purchase(confirmIn:)`).
+        Window("Corres Pro", id: MacPro.windowID) {
+            PaywallView()
+                .environment(services.entitlements)
+                .tint(CorresPalette.accent)
+                .preferredColorScheme(colorScheme)
+                .onAppear { services.paywallOpen = true }
+                .onDisappear { services.paywallOpen = false }
+        }
+        .windowResizability(.contentSize)
+        .windowStyle(.hiddenTitleBar)
+        .defaultPosition(.center)
+        .restorationBehavior(.disabled)
+
         Settings {
             MacSettingsView(services: services)
+                .environment(services.entitlements)
                 .tint(CorresPalette.accent)
                 .preferredColorScheme(colorScheme)
         }
@@ -246,5 +263,23 @@ private struct MacConversationWindow: View {
         case .openInWindow:
             break
         }
+    }
+}
+
+/// Opening Corres Pro's window from anywhere: a locked list, a locked
+/// answer in Search, the menu bar or Settings.
+@MainActor
+enum MacPro {
+    static let windowID = "pro"
+
+    static func open(_ openWindow: OpenWindowAction) {
+        openWindow(id: windowID)
+        NSApp.activate()
+    }
+
+    /// "Try Corres Pro Free" while the free trial is still on offer to
+    /// this Apple Account, "Get Corres Pro" after it.
+    static func unlockTitle(_ entitlements: EntitlementStore) -> String {
+        entitlements.isEligibleForTrial ? String(localized: "Try Corres Pro Free") : String(localized: "Get Corres Pro")
     }
 }

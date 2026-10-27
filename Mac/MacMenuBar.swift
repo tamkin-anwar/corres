@@ -12,6 +12,29 @@ struct MacMenuBarContent: View {
     }
 
     var body: some View {
+        if services.requiresPro {
+            // Needs You is part of Corres Pro: no count and no emails from
+            // it here without Pro, and the way to start the trial.
+            Label("Needs You", systemImage: "lock")
+            Button(MacPro.unlockTitle(services.entitlements)) { MacPro.open(openWindow) }
+        } else {
+            needsYouItems
+        }
+        Divider()
+        Button("New Message") {
+            openWindow(value: ComposeRequest(kind: .new))
+            NSApp.activate()
+        }
+        .keyboardShortcut("n")
+        Button("Open Corres") {
+            openWindow(id: "main")
+            NSApp.activate()
+        }
+        Button("Get New Mail") { Task { await services.checkForMail() } }
+    }
+
+    @ViewBuilder
+    private var needsYouItems: some View {
         let items = needsYou
         if items.isEmpty {
             Text("Nothing needs you")
@@ -28,17 +51,6 @@ struct MacMenuBarContent: View {
                 }
             }
         }
-        Divider()
-        Button("New Message") {
-            openWindow(value: ComposeRequest(kind: .new))
-            NSApp.activate()
-        }
-        .keyboardShortcut("n")
-        Button("Open Corres") {
-            openWindow(id: "main")
-            NSApp.activate()
-        }
-        Button("Get New Mail") { Task { await services.checkForMail() } }
     }
 }
 
@@ -48,8 +60,13 @@ struct MacMenuBarLabel: View {
     let services: MacServices
 
     var body: some View {
-        let count = services.store.overview().needsYou.count
-        if count > 0 {
+        // Locked without Pro: the plain icon, never a count of a list you
+        // can't open (the Dock's badge counts Primary then, as on iPhone).
+        let count = services.requiresPro ? 0 : services.store.overview().needsYou.count
+        if services.requiresPro {
+            Image(systemName: "tray")
+                .accessibilityLabel(Text(verbatim: "Corres"))
+        } else if count > 0 {
             Label("\(count)", systemImage: "tray.full")
                 .accessibilityLabel(count == 1 ? "Corres: 1 email needs you" : "Corres: \(count) emails need you")
         } else {

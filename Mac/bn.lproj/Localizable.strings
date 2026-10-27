@@ -2756,3 +2756,173 @@
 
 /* An invitation: Add to Calendar without access. */
 "Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corres-এর আপনার ক্যালেন্ডারে অ্যাক্সেস নেই। সিস্টেম সেটিংস > গোপনীয়তা ও নিরাপত্তা > ক্যালেন্ডারে অনুমতি দিতে পারেন।";
+/* No comment provided by engineer. */
+"%@ a %@, renewing automatically. Cancel anytime in Settings." = "প্রতি %2$@ %1$@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
+
+/* No comment provided by engineer. */
+"%@ a month or %@ a year." = "মাসে %@ বা বছরে %@।";
+
+/* No comment provided by engineer. */
+"%@ free, then renews. Cancel anytime." = "%@ বিনামূল্যে, তারপর নবায়ন হয়। যেকোনো সময় বাতিল করুন।";
+
+/* No comment provided by engineer. */
+"A one-sentence brief of your day, and what needs you first." = "এক বাক্যে আপনার দিনের সারসংক্ষেপ, আর প্রথমে কী করণীয়।";
+
+/* No comment provided by engineer. */
+"Annual" = "বার্ষিক";
+
+/* No comment provided by engineer. */
+"Answer from your mail" = "আপনার মেইল থেকে উত্তর";
+
+/* No comment provided by engineer. */
+"Apple Intelligence, on this %@" = "Apple Intelligence, এই %@-এ";
+
+/* No comment provided by engineer. */
+"Ask a question, get the answer from your own email, on this %@." = "একটি প্রশ্ন করুন, উত্তর পান আপনার নিজের ইমেইল থেকে, এই %@-এ।";
+
+/* No comment provided by engineer. */
+"Buy Lifetime · %@" = "আজীবনের জন্য কিনুন · %@";
+
+/* No comment provided by engineer. */
+"Continue" = "চালিয়ে যান";
+
+/* No comment provided by engineer. */
+"Corres Pro · Beta" = "Corres Pro · বেটা";
+
+/* No comment provided by engineer. */
+"Ends %@" = "শেষ হবে %@";
+
+/* No comment provided by engineer. */
+"Everyone who owes you a reply, and for how long." = "যাদের কাছে আপনি উত্তর পান, আর কতদিন ধরে।";
+
+/* No comment provided by engineer. */
+"Everything that makes Corres Corres." = "যা কিছু Corres-কে Corres করে তোলে।";
+
+/* No comment provided by engineer. */
+"Family" = "পরিবার";
+
+/* No comment provided by engineer. */
+"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি %3$@ %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";
+
+/* No comment provided by engineer. */
+"Free trial · first charge %@" = "বিনামূল্যে ট্রায়াল · প্রথম চার্জ %@";
+
+/* No comment provided by engineer. */
+"Get Corres Pro" = "Corres Pro নিন";
+
+/* No comment provided by engineer. */
+"Go to Mail" = "মেইলে যান";
+
+/* No comment provided by engineer. */
+"Included for beta testers" = "বেটা পরীক্ষকদের জন্য অন্তর্ভুক্ত";
+
+/* No comment provided by engineer. */
+"Lifetime" = "আজীবন";
+
+/* No comment provided by engineer. */
+"Manage Subscription" = "সাবস্ক্রিপশন পরিচালনা";
+
+/* No comment provided by engineer. */
+"Monthly" = "মাসিক";
+
+/* No comment provided by engineer. */
+"Monthly or yearly." = "মাসিক বা বার্ষিক।";
+
+/* No comment provided by engineer. */
+"Needs You and Waiting" = "আপনার করণীয় ও অপেক্ষায়";
+
+/* No comment provided by engineer. */
+"Needs You in the menu bar, on your desktop and on Apple Watch." = "মেনু বার, ডেস্কটপ আর Apple Watch-এ আপনার করণীয়।";
+
+/* No comment provided by engineer. */
+"One payment of %@. No subscription." = "একবারে %@। কোনো সাবস্ক্রিপশন নয়।";
+
+/* No comment provided by engineer. */
+"Pay once. Shared with up to five family members." = "একবার পরিশোধ করুন। পরিবারের সর্বোচ্চ পাঁচজনের সাথে শেয়ার করা যায়।";
+
+/* No comment provided by engineer. */
+"Plans couldn't load" = "প্ল্যান লোড করা যায়নি";
+
+/* No comment provided by engineer. */
+"Preview as Free User" = "বিনামূল্যের ব্যবহারকারী হিসেবে দেখুন";
+
+/* No comment provided by engineer. */
+"Privacy Policy" = "গোপনীয়তা নীতি";
+
+/* No comment provided by engineer. */
+"Pro is included while you test the beta. Preview as Free User shows the app as it is without Pro." = "বেটা পরীক্ষার সময় Pro অন্তর্ভুক্ত। বিনামূল্যের ব্যবহারকারী হিসেবে দেখুন Pro ছাড়া অ্যাপটি যেমন তেমন দেখায়।";
+
+/* No comment provided by engineer. */
+"Renews %@" = "নবায়ন হবে %@";
+
+/* No comment provided by engineer. */
+"Renews automatically. Cancel anytime." = "নিজে থেকে নবায়ন হয়। যেকোনো সময় বাতিল করুন।";
+
+/* No comment provided by engineer. */
+"Restore" = "পুনরুদ্ধার";
+
+/* No comment provided by engineer. */
+"Save %lld%%" = "%lld%% সাশ্রয়";
+
+/* No comment provided by engineer. */
+"Shared by your family" = "আপনার পরিবার শেয়ার করেছে";
+
+/* No comment provided by engineer. */
+"Show Primary" = "প্রধান দেখান";
+
+/* No comment provided by engineer. */
+"Start %@ free" = "%@ বিনামূল্যে শুরু করুন";
+
+/* No comment provided by engineer. */
+"Subscribe · %@" = "সাবস্ক্রাইব করুন · %@";
+
+/* No comment provided by engineer. */
+"Summaries, replies in your voice, and answers from your mail in Search." = "সারসংক্ষেপ, আপনার ভঙ্গিতে উত্তর, আর সার্চে আপনার মেইল থেকে উত্তর।";
+
+/* No comment provided by engineer. */
+"Terms of Use" = "ব্যবহারের শর্তাবলি";
+
+/* No comment provided by engineer. */
+"The conversations that ask something of you, with the reason for each." = "যেসব কথোপকথন আপনার কাছে কিছু চায়, প্রতিটির কারণসহ।";
+
+/* No comment provided by engineer. */
+"Try Corres Pro Free" = "Corres Pro বিনামূল্যে চেষ্টা করুন";
+
+/* No comment provided by engineer. */
+"Try it free for 14 days." = "14 দিন বিনামূল্যে চেষ্টা করুন।";
+
+/* No comment provided by engineer. */
+"Try it free, then %@ a month or %@ a year." = "বিনামূল্যে চেষ্টা করুন, তারপর মাসে %@ বা বছরে %@।";
+
+/* No comment provided by engineer. */
+"What needs you first, with the reason for each, and the replies you're owed." = "প্রথমে আপনার করণীয়, প্রতিটির কারণসহ, আর যেসব উত্তর আপনার পাওনা।";
+
+/* No comment provided by engineer. */
+"Widgets and Apple Watch" = "উইজেট আর Apple Watch";
+
+/* No comment provided by engineer. */
+"Without Pro, Mail keeps working: read, reply, archive and search. Needs You, Waiting, answers in Search and the on-device intelligence need Pro." = "Pro ছাড়াও মেইল চলে: পড়া, উত্তর দেওয়া, আর্কাইভ আর সার্চ। আপনার করণীয়, অপেক্ষায়, সার্চে উত্তর আর ডিভাইসের বুদ্ধিমত্তার জন্য Pro লাগে।";
+
+/* No comment provided by engineer. */
+"Your mail is never sent to our servers or an AI company." = "আপনার মেইল কখনো আমাদের সার্ভারে বা কোনো AI কোম্পানির কাছে পাঠানো হয় না।";
+
+/* No comment provided by engineer. */
+"Yours for good · bought %@" = "চিরকালের জন্য আপনার · কেনা হয়েছে %@";
+
+/* No comment provided by engineer. */
+"month" = "মাস";
+
+/* No comment provided by engineer. */
+"once" = "একবার";
+
+/* No comment provided by engineer. */
+"per month" = "প্রতি মাসে";
+
+/* No comment provided by engineer. */
+"per year" = "প্রতি বছরে";
+
+/* No comment provided by engineer. */
+"soon" = "শিগগির";
+
+/* No comment provided by engineer. */
+"year" = "বছর";
