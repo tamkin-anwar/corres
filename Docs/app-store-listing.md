@@ -55,14 +55,14 @@ macOS:
 > • Needs You holds the emails with a question, a decision or a deadline for you, grouped into Due soon and When you can.
 > • Waiting lists the emails you sent that haven't had a reply, and nudges you when it's time to follow up.
 > • The Daily Brief, if you turn it on: what's due today, today's events and deliveries on the way.
-> • Done with one? Swipe it away. Wrong call? Press and hold to move it, and Corres learns.
+> • Swipe one away when it's done. Press and hold to move it, and Corres learns.
 >
 > ALL YOUR ACCOUNTS
-> • Gmail, Google Workspace, Outlook.com, Microsoft 365 and iCloud Mail, plus Yahoo, AOL, Fastmail, Zoho or a work server with just your address and password.
+> • Gmail, Google Workspace, Outlook.com, Microsoft 365 and iCloud Mail, plus Yahoo, AOL, Fastmail, Zoho or a work server, with your address and password.
 > • Primary, Promotions, Social and Updates, sorted by Corres and learning from the emails you move, with Everything one tap away.
 > • Each account has its own color, name, signatures and notifications.
 > • Rules sort mail as it arrives, and can also run in Gmail and Outlook, so they work with Corres closed.
-> • New Outlook and iCloud mail notifies you within seconds.
+> • New Outlook mail notifies you within seconds, iCloud too with Instant Notifications.
 >
 > NEW SENDERS
 > • Choose how first emails from someone new arrive: Review Everyone, Review Companies, Show Marked New or Let Everyone In.
@@ -81,7 +81,7 @@ macOS:
 > • Several signatures, send-as addresses, and bold, lists and links.
 > • Suggested replies and rewrites with Corres Pro, in your own greeting, sign-off and length, learned from email you've sent. Nothing is sent until you send it.
 >
-> BEYOND THE APP
+> SIRI, WIDGETS AND MORE
 > • Ask Siri to write, send or find an email.
 > • Widgets, Control Center and Shortcuts, plus Live Activities for Send Later and deliveries on the way.
 >
@@ -89,15 +89,15 @@ macOS:
 > • With Corres Pro, see what needs you and why, on your wrist and on your watch face.
 > • Reply by voice, Scribble or a ready answer, or mark it Handled. Replies go out through your iPhone.
 >
-> ANYWHERE
+> OFFLINE AND IN SYNC
 > • Archive, delete and flag with no signal. Your changes go through once you're back online.
 > • What you sort, snooze, pin, allow and block follows you between iPhone, iPad and Mac through iCloud. Your email never does.
 >
 > WORLDWIDE
-> • Corres speaks nine languages, from English and Spanish to Japanese and Bengali, and understands deadlines, receipts, deliveries, one-time codes and events in all of them. Weekends follow your region.
+> • Corres is in nine languages, from English and Spanish to Japanese and Bengali, and reads deadlines, receipts, deliveries, one-time codes and events in all of them. Weekends follow your region.
 >
-> SMART ON EVERY IPHONE
-> • Needs You, its reasons, and key details like amounts, dates and order numbers work on every iPhone, with or without Apple Intelligence.
+> WITH OR WITHOUT APPLE INTELLIGENCE
+> • Needs You, its reasons, and key details like amounts, dates and order numbers work on every iPhone and iPad.
 > • With Apple Intelligence, Corres Pro also writes summaries and suggested replies on the iPhone itself, checked against the email before you see them.
 >
 > PRIVACY
@@ -164,7 +164,7 @@ Changes from the 2026-10-22 text:
 > Corres opens on what needs you. Gmail, Outlook, iCloud and almost any other email account sit in one inbox, read and sorted on your Mac. The emails that ask something of you come first, each with the reason it's there. The rest of your mail is one click away, quiet until you're ready.
 >
 > A REAL MAC APP
-> • Native, fast and keyboard-first: Mail's shortcuts, ⌘K to go anywhere or do anything, and drag to file.
+> • Mail's keyboard shortcuts, ⌘K to open any mailbox or command, and drag to file.
 > • Conversations in their own windows, labels and folders in the sidebar, and your mail in Spotlight.
 > • Keeps working from the menu bar with no window open: new mail, the Dock badge, widgets and search stay current.
 > • One purchase covers Corres on iPhone, iPad and Mac.
@@ -173,10 +173,10 @@ Changes from the 2026-10-22 text:
 > • Needs You holds the emails with a question, a decision or a deadline for you, grouped into Due soon and When you can.
 > • Waiting lists the emails you sent that haven't had a reply, and nudges you when it's time to follow up.
 > • The Daily Brief, if you turn it on: what's due today, today's events and deliveries on the way.
-> • Done with one? Archive it with one key. Wrong call? Move it, and Corres learns.
+> • Archive one with a single key when it's done. Move one, and Corres learns.
 >
 > ALL YOUR ACCOUNTS
-> • Gmail, Google Workspace, Outlook.com, Microsoft 365 and iCloud Mail, plus Yahoo, AOL, Fastmail, Zoho or a work server with just your address and password.
+> • Gmail, Google Workspace, Outlook.com, Microsoft 365 and iCloud Mail, plus Yahoo, AOL, Fastmail, Zoho or a work server, with your address and password.
 > • Primary, Promotions, Social and Updates, sorted by Corres and learning from the emails you move, with Everything one click away.
 > • Each account has its own color, name, signatures and notifications.
 > • Rules sort mail as it arrives, and can also run in Gmail and Outlook, so they work with Corres closed.
@@ -199,15 +199,15 @@ Changes from the 2026-10-22 text:
 > • Suggested replies and rewrites with Corres Pro, in your own greeting, sign-off and length, learned from email you've sent. Nothing is sent until you send it.
 > • Ask Siri to write, send or find an email.
 >
-> ANYWHERE
+> OFFLINE AND IN SYNC
 > • Archive, delete and flag with no connection. Your changes go through once you're back online.
 > • What you sort, snooze, pin, allow and block follows you between iPhone, iPad and Mac through iCloud. Your email never does.
 >
 > WORLDWIDE
-> • Corres speaks nine languages, from English and Spanish to Japanese and Bengali, and understands deadlines, receipts, deliveries, one-time codes and events in all of them. Weekends follow your region.
+> • Corres is in nine languages, from English and Spanish to Japanese and Bengali, and reads deadlines, receipts, deliveries, one-time codes and events in all of them. Weekends follow your region.
 >
-> SMART ON EVERY MAC
-> • Needs You, its reasons, and key details like amounts, dates and order numbers work on every Mac, with or without Apple Intelligence.
+> WITH OR WITHOUT APPLE INTELLIGENCE
+> • Needs You, its reasons, and key details like amounts, dates and order numbers work on every Mac.
 > • With Apple Intelligence, Corres Pro also writes summaries and suggested replies on the Mac itself, checked against the email before you see them.
 >
 > PRIVACY
