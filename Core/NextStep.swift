@@ -257,10 +257,12 @@ extension MailDigest {
                 merged.append(line)
             }
         }
-        let body = String(merged.joined(separator: "\n").prefix(8_000))
+        let body = MailSignals.oneBengaliSpelling(String(merged.joined(separator: "\n").prefix(8_000)))
 
-        // What happened, in the same few words whoever sent it.
-        let top = subject + "\n" + merged.prefix(25).joined(separator: "\n")
+        // What happened, in the same few words whoever sent it. Bengali in
+        // either spelling of য়, ড় and ঢ় (`oneBengaliSpelling`): typed as
+        // one character, "ডেলিভারি করা হয়েছে" matched no status.
+        let top = MailSignals.oneBengaliSpelling(subject + "\n" + merged.prefix(25).joined(separator: "\n"))
         var status = statusRules.first { top.matchesAny($0.patterns) }
         // A receipt, by its own subject, is for something paid.
         if status == nil, subject.patternRange(#"(?i)\breceipt\b|領収書|영수증|收据|收據|রসিদ"#) != nil {

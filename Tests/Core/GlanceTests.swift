@@ -157,4 +157,18 @@ struct GlanceTests {
         let text = "অর্ডার নিশ্চিত হয়েছে\nমোট: ১,২৯৯৳\nঅর্ডার নম্বর: ৪৪৭১"
         #expect(MailDigest.unsupportedClaims(in: "You paid ৳1,299.", source: text).isEmpty)
     }
+
+    /// Bengali's য় typed as one character (U+09DF) or as য with a dot
+    /// below: the status reads the same either way, as asks and
+    /// deadlines do (`oneBengaliSpelling`).
+    @Test func banglaStatusInEitherSpelling() {
+        let ya = "\u{09DF}"
+        for spelling in ["য়", ya] {
+            let delivered = "আপনার পার্সেল ডেলিভারি করা হ\(spelling)েছে\nOrder #A4471-22"
+            #expect(MailDigest.glance(text: delivered, kind: .shipping)?.status == "Delivered", "\(spelling.unicodeScalars.map(\.value))")
+            let due = "বকে\(spelling)া পরিমাণ পরিশোধ করুন\nবকে\(spelling)া: ৳ ১,২৫০"
+            #expect(MailDigest.glance(text: due, kind: .receipt)?.status == "Payment due", "\(spelling.unicodeScalars.map(\.value))")
+            #expect(MailDigest.glance(text: due, kind: .receipt)?.facts.first?.label == "বকেয়া", "\(spelling.unicodeScalars.map(\.value))")
+        }
+    }
 }
