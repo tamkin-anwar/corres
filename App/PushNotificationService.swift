@@ -80,7 +80,7 @@ final class PushNotificationService {
             }
         }
         if let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) {
-            try? await post(path: "unregister", body: ["deviceToken": deviceTokenHex])
+            await unregister(["deviceToken": deviceTokenHex])
         }
         defaults.removeObject(forKey: Self.deviceTokenKey)
     }
@@ -94,8 +94,34 @@ final class PushNotificationService {
         // stopping it here would silence them too. It lapses on its own.
         if MailAccounts.provider(for: account) != .google { try? await client.stopWatching(account: account) }
         if let deviceTokenHex = defaults.string(forKey: Self.deviceTokenKey) {
-            try? await post(path: "unregister", body: ["deviceToken": deviceTokenHex, "emailAddress": account])
+            await unregister(["deviceToken": deviceTokenHex, "emailAddress": account])
         }
+    }
+
+    /// Unregister calls the relay didn't take (offline, or refused once it
+    /// checks App Attest and this device's key isn't ready yet): kept, and
+    /// sent again the next time Corres comes back, so a removed account or
+    /// switched-off notifications don't keep waking this device.
+    private static let pendingUnregisterKey = "corres.push.pendingUnregister"
+
+    private func unregister(_ body: [String: String]) async {
+        do {
+            try await post(path: "unregister", body: body)
+        } catch {
+            var pending = defaults.array(forKey: Self.pendingUnregisterKey) as? [[String: String]] ?? []
+            if !pending.contains(body) { pending.append(body) }
+            defaults.set(Array(pending.suffix(20)), forKey: Self.pendingUnregisterKey)
+        }
+    }
+
+    func retryPendingUnregisters() async {
+        let pending = defaults.array(forKey: Self.pendingUnregisterKey) as? [[String: String]] ?? []
+        guard !pending.isEmpty else { return }
+        var left: [[String: String]] = []
+        for body in pending {
+            do { try await post(path: "unregister", body: body) } catch { left.append(body) }
+        }
+        if left.isEmpty { defaults.removeObject(forKey: Self.pendingUnregisterKey) } else { defaults.set(left, forKey: Self.pendingUnregisterKey) }
     }
 
     /// Called from `AppDelegate.didRegisterForRemoteNotificationsWithDeviceToken`
@@ -113,6 +139,7 @@ final class PushNotificationService {
     /// `renewWatch`, at most twice a day: on coming back to Corres, so push
     /// never lapses for someone who keeps it open for days.
     func renewWatchIfDue(accounts: [String]) async {
+        await retryPendingUnregisters()
         let key = "corres.push.lastRenewed"
         let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
         guard !accounts.isEmpty, Date.now.timeIntervalSince(last) > 12 * 3_600 else { return }
@@ -461,10 +488,11 @@ final class PushNotificationService {
         if path.hasSuffix("icloud"), !(200..<300).contains(status) {
             throw ICloudInstantError.unavailable
         }
-        // The relay turned the registration down (or wasn't there): not
-        // renewed, so the next launch or refresh tries again instead of
-        // counting it done for the next twelve hours.
-        if path == "register" || path == "register-graph", !(200..<300).contains(status) {
+        // The relay turned the call down (or wasn't there), including a 401
+        // once it requires App Attest or DeviceCheck: not counted as done,
+        // so the next launch or refresh tries again instead of counting it
+        // done for the next twelve hours. An unregister is kept to send again.
+        if Self.deviceCheckedPaths.contains(path), !(200..<300).contains(status) {
             throw GmailAPIClient.ClientError.badResponse(statusCode: status)
         }
     }
@@ -505,8 +533,9 @@ extension PushNotificationService {
 
 /// App Attest (Apple's "Establishing your app's integrity"): a key in this
 /// device's Secure Enclave that Apple certifies belongs to a genuine,
-/// unmodified Corres, used to sign the relay's register and unregister
-/// calls so it can tell them from something only shaped like Corres.
+/// unmodified Corres, used to sign every call the relay checks (register,
+/// unregister, register-graph, register-icloud, unregister-icloud) so it can
+/// tell them from something only shaped like Corres.
 /// Strictly best effort: no support (the Simulator, most Macs), no network,
 /// a relay or Apple error, or Apple throttling all mean the call goes
 /// without it, exactly as before. Only the app itself runs this; App Attest
@@ -524,8 +553,20 @@ actor AppAttest {
     private static let retryKey = "corres.appattest.retryAfter"
     private var attesting: Task<Void, Never>?
 
+    /// Where the key lives, for the relay: a Mac key's access policy is
+    /// checked (Apple's macOS step), an iPhone's or iPad's isn't. The iPad
+    /// app running on a Mac counts as a Mac.
+    private static var platform: String {
+        #if os(macOS)
+        return "macOS"
+        #else
+        return ProcessInfo.processInfo.isiOSAppOnMac ? "macOS" : "iOS"
+        #endif
+    }
+
     private static var isAvailable: Bool {
-        #if targetEnvironment(simulator)
+        #if targetEnvironment(simulator) || os(macOS)
+        // The Mac app has no App Attest entitlement; it sends DeviceCheck.
         return false
         #else
         guard Bundle.main.bundleURL.pathExtension != "appex" else { return false }
@@ -533,15 +574,46 @@ actor AppAttest {
         #endif
     }
 
-    /// Sends a register or unregister call, signed when this device has an
-    /// attested key: the body then also names a fresh challenge, and the
+    /// Sends one of the relay's checked calls, signed when this device has
+    /// an attested key: the body then also names a fresh challenge, and the
     /// headers carry the key id and its signature over that exact body.
-    /// Otherwise (or if signing fails) it goes as it was, and with no
-    /// attested key yet one is made and attested in the background.
+    /// With no attested key yet, one is made and attested first (waiting a
+    /// little); if that or signing fails, it goes unsigned as before.
     func send(_ request: URLRequest, body: [String: String]) async throws -> URLResponse {
         guard Self.isAvailable else { return try await URLSession.shared.data(for: request).1 }
-        guard let stored = load(), stored.attested else {
+        let response = try await sendOnce(request, body: body)
+        guard let http = response as? HTTPURLResponse else { return response }
+        let result = http.value(forHTTPHeaderField: "Corres-Attest-Result")
+        // The relay no longer knows this key (say its records were reset):
+        // a new one is made and attested before the next call.
+        if result == "unknown-key" { forget() }
+        // Refused (the relay requires proof): once more, signed with a fresh
+        // challenge, when that could change the answer. Anything else is
+        // left for the caller, which keeps the call as not done.
+        let retryable = ["unknown-key", "bad-challenge", "replayed-counter"].contains(result ?? "")
+            || (result == "none" && load()?.attested == true)
+        if http.statusCode == 401, retryable {
+            return try await sendOnce(request, body: body)
+        }
+        return response
+    }
+
+    private func sendOnce(_ request: URLRequest, body: [String: String]) async throws -> URLResponse {
+        // No attested key yet: one is made and attested now (or the one
+        // already under way finished), waiting up to 20 seconds, so a new
+        // install's first registration is signed rather than unsigned.
+        if load()?.attested != true {
             attestIfDue()
+            if let attesting {
+                await withTaskGroup(of: Void.self) { group in
+                    group.addTask { await attesting.value }
+                    group.addTask { try? await Task.sleep(for: .seconds(20)) }
+                    await group.next()
+                    group.cancelAll()
+                }
+            }
+        }
+        guard let stored = load(), stored.attested else {
             return try await URLSession.shared.data(for: request).1
         }
         // One signed call at a time: each signature takes the key's next
@@ -553,11 +625,7 @@ actor AppAttest {
             request.httpBody = signed.body
             for (name, value) in signed.headers { request.setValue(value, forHTTPHeaderField: name) }
         }
-        let (_, response) = try await URLSession.shared.data(for: request)
-        // The relay no longer knows this key (say its records were reset):
-        // a new one is made and attested before the next call.
-        if (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Corres-Attest-Result") == "unknown-key" { forget() }
-        return response
+        return try await URLSession.shared.data(for: request).1
     }
 
     private func sign(_ body: [String: String], keyId: String) async -> (body: Data, headers: [String: String])? {
@@ -617,7 +685,8 @@ actor AppAttest {
             let issued = try await challenge(purpose: "attest")
             guard let issuedData = Data(base64Encoded: issued) else { return retry(in: 3_600) }
             let attestation = try await DCAppAttestService.shared.attestKey(keyId, clientDataHash: Data(SHA256.hash(data: issuedData)))
-            let status = try await post("attest", ["keyId": keyId, "attestation": attestation.base64EncodedString(), "challenge": issued])
+            let status = try await post("attest", ["keyId": keyId, "attestation": attestation.base64EncodedString(), "challenge": issued,
+                                                   "platform": Self.platform])
             switch status {
             case 204, 409: save(Stored(keyId: keyId, attested: true))
             case 400, 401:

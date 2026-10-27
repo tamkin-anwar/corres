@@ -425,7 +425,7 @@ async function consumeChallenge(challenge) {
 // The app's new key, attested by Apple over one of our challenges. Once
 // verified, its public key and a zero counter are kept for its assertions.
 async function handleAttest(req, res) {
-  const { keyId, attestation, challenge } = req.body || {};
+  const { keyId, attestation, challenge, platform } = req.body || {};
   if (typeof keyId !== 'string' || typeof attestation !== 'string'
       || !KEY_ID_PATTERN.test(keyId) || !ATTESTATION_PATTERN.test(attestation)) {
     res.status(400).send('keyId, attestation and challenge are required and must be well formed');
@@ -444,6 +444,7 @@ async function handleAttest(req, res) {
       keyId: Buffer.from(keyId, 'base64'),
       challenge: Buffer.from(challenge, 'base64'),
       allowDevelopment: APP_ATTEST_DEVELOPMENT,
+      platform: platform === 'macOS' ? 'macOS' : null,
     });
   } catch (error) {
     const reason = error instanceof appAttest.AttestError ? error.reason : 'error';
@@ -464,6 +465,8 @@ async function handleAttest(req, res) {
       receipt: verified.receipt ? verified.receipt.toString('base64') : null,
       validationCategory: verified.validationCategory ?? null,
       bundleVersion: verified.bundleVersion ?? null,
+      platform: platform === 'macOS' ? 'macOS' : 'iOS',
+      accessPolicy: verified.accessPolicy,
       createdAt: Firestore.FieldValue.serverTimestamp(),
     });
     return true;
@@ -473,7 +476,7 @@ async function handleAttest(req, res) {
     res.status(409).send('Key already attested');
     return;
   }
-  console.log(`app attest /attest: ok, ${verified.environment}`);
+  console.log(`app attest /attest: ok, ${verified.environment}, ${platform === 'macOS' ? 'macOS' : 'iOS'}, category ${verified.validationCategory ?? '?'}, policy ${verified.accessPolicy ?? 'none'}`);
   res.status(204).send();
 }
 
