@@ -524,3 +524,67 @@ Please try
 3. Unsubscribe from two newsletters, one after the other.
 
 Something off? Help > Send Diagnostics, or send feedback through TestFlight.
+
+## Build 43
+
+Corres 0.2.0 (43) for iPhone, iPad and Apple Watch
+
+The big ones
+- Sending you can trust. Before trying an email again, Corres checks whether the first try already went, so nothing goes twice. If a mail server took an email but never answered, Corres says it may already have been sent and asks before sending again.
+- Drafts are kept. A draft you reopen and close without changes, or leave when Corres goes to the background, stays in Drafts. A reply always stays with the conversation you started it in.
+- Reads times the way mail writes them: "by end of day Friday", "EOD tomorrow" and "COB", "9h" in French, "14:00〜15:00" in Japanese and Chinese, midnight in Korean and Bengali, and dates with the weekday in brackets after them.
+- On a locked iPhone, Reply and Archive from a notification ask for Face ID first. Mark as Read still works while locked.
+
+Also new
+- Company logos show only on mail that its email service says really came from that company, and never in Junk.
+- Removing an account takes it off Corres's servers too. Remove from All Devices also ends Corres's access to that Google account.
+- In dark mode, the top of an email is black like the rest of Corres until you scroll.
+
+Fixed
+- Gmail: a conversation that ends with your own reply leaves the Inbox when you archive it on the web, and big mailboxes no longer miss messages.
+- iCloud and other email: sent copies show when they were sent, not "now".
+- Siri says so when your mail server turned down Archive, Delete or Junk.
+- Share sheet: big videos no longer close it, and a saved draft says "Saved to Drafts".
+- A .txt file shared from Files arrives as an attachment.
+- Handled from a widget sticks.
+- Apple Watch: a reply says "Sending from your iPhone" until it has gone.
+
+Please try
+1. Lock your iPhone and reply to an email from its notification. It should ask for Face ID.
+2. Open a draft, close it without changes, and check it's still in Drafts.
+3. Open an email that says "by end of day Friday" or "EOD tomorrow" and check the deadline at the top.
+4. In dark mode, open an email. The top should be black until you scroll.
+
+Something off? Settings > Send Diagnostics, or take a screenshot to send feedback through TestFlight.
+
+## Mac build 44
+
+Corres for Mac 0.2.0 (44)
+
+The big ones
+- Notifications on the Mac. Corres now asks for permission as soon as your accounts load, and again when you add one. Before, a slow first sync meant it never asked, so the Mac got no alerts. Allow it when it asks.
+- Corres Pro on the Mac works as on iPhone, with its own Corres Pro window. Everyone on TestFlight has Pro, so nothing changes for you.
+- Sending you can trust. Before trying an email again, Corres checks whether the first try already went, so nothing goes twice. If a mail server took an email but never answered, Corres says it may already have been sent and asks before sending again.
+- Drafts: Delete deletes the draft, not the whole conversation. Each draft opens in one window, and a draft you send or schedule leaves the list at once.
+
+Also new
+- Reads times the way mail writes them: "by end of day Friday", "EOD tomorrow" and "COB", "9h" in French, "14:00〜15:00" in Japanese and Chinese, midnight in Korean and Bengali.
+- Company logos show only on mail that its email service says really came from that company, and never in Junk.
+- The Dock badge can count New Since Last Opened, as set on your iPhone.
+- Removing an account takes it off Corres's servers too.
+
+Fixed
+- Save to Downloads works, and a save that fails says so.
+- Adding your first account replaces the sample mail right away.
+- Labels and folders load after opening Corres offline.
+- Single-key shortcuts work right after launch, without clicking first.
+- Search results in Drafts open as conversations.
+- Two attachments with the same name each open as themselves.
+- Printed emails show From, To and Date in your language.
+
+Please try
+1. Open this build and allow notifications when Corres asks. Then check that new mail alerts you.
+2. Delete a draft from Drafts.
+3. Save an attachment to Downloads.
+
+Something off? Help > Send Diagnostics, or send feedback through TestFlight.
