@@ -46,8 +46,13 @@ const log = (...args) => console.log(new Date().toISOString(), ...args);
 // ---- APNs (the same pushes the relay sends) ------------------------------
 
 const APNS_HOSTS = { production: 'api.push.apple.com', development: 'api.sandbox.push.apple.com' };
+// One provider token, reused for 50 minutes, as the relay does: Apple
+// refuses one over an hour old (ExpiredProviderToken) and a new one more
+// than once every 20 minutes on a connection (TooManyProviderTokenUpdates).
 let cachedToken = null;
 let cachedTokenAt = 0;
+const TOKEN_LIFETIME_MS = 50 * 60 * 1000;
+const TOKEN_MIN_AGE_MS = 20 * 60 * 1000;
 
 function base64url(input) {
   return Buffer.from(input).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -55,7 +60,7 @@ function base64url(input) {
 
 function apnsToken() {
   const now = Date.now();
-  if (cachedToken && now - cachedTokenAt < 50 * 60 * 1000) return cachedToken;
+  if (cachedToken && now - cachedTokenAt < TOKEN_LIFETIME_MS) return cachedToken;
   const header = base64url(JSON.stringify({ alg: 'ES256', kid: process.env.APNS_KEY_ID }));
   const payload = base64url(JSON.stringify({ iss: process.env.APNS_TEAM_ID, iat: Math.floor(now / 1000) }));
   const signature = crypto.sign('sha256', Buffer.from(`${header}.${payload}`),
@@ -63,6 +68,20 @@ function apnsToken() {
   cachedToken = `${header}.${payload}.${base64url(signature)}`;
   cachedTokenAt = now;
   return cachedToken;
+}
+
+// APNs called `rejected` expired: true when the push is worth sending
+// again, with a fresh token (or one another push already signed). One
+// under 20 minutes old is kept, since replacing it that soon is refused too.
+function renewExpiredToken(rejected) {
+  if (cachedToken !== rejected) return true;
+  if (Date.now() - cachedTokenAt < TOKEN_MIN_AGE_MS) {
+    log('apns token called expired under 20 minutes old; kept');
+    return false;
+  }
+  log('apns token called expired; signing a new one');
+  cachedToken = null;
+  return true;
 }
 
 // One connection per APNs server, kept open and reused, as the relay
@@ -96,10 +115,16 @@ function apnsSession(environment) {
 }
 
 async function apnsRequest(environment, deviceToken, headers, payload) {
-  const first = await apnsAttempt(environment, deviceToken, headers, payload);
-  if (first.status !== 0 || !first.reused) return first;
-  dropSession(environment);
-  return apnsAttempt(environment, deviceToken, headers, payload);
+  let result = await apnsAttempt(environment, deviceToken, headers, payload);
+  if (result.status === 0 && result.reused) {
+    dropSession(environment);
+    result = await apnsAttempt(environment, deviceToken, headers, payload);
+  }
+  // Once more with a freshly signed token, if Apple says ours is stale.
+  if (result.status === 403 && result.reason === 'ExpiredProviderToken' && renewExpiredToken(result.token)) {
+    result = await apnsAttempt(environment, deviceToken, headers, payload);
+  }
+  return result;
 }
 
 function apnsAttempt(environment, deviceToken, headers, payload) {
@@ -108,12 +133,14 @@ function apnsAttempt(environment, deviceToken, headers, payload) {
     const done = (result) => { if (!settled) { settled = true; resolve(result); } };
     let request;
     let reused = false;
+    let token;
     try {
       const connection = apnsSession(environment);
       reused = connection.reused;
+      token = apnsToken();
       request = connection.session.request({
         ':method': 'POST', ':path': `/3/device/${deviceToken}`,
-        authorization: `bearer ${apnsToken()}`, 'apns-topic': process.env.APNS_BUNDLE_ID, ...headers,
+        authorization: `bearer ${token}`, 'apns-topic': process.env.APNS_BUNDLE_ID, ...headers,
       });
     } catch {
       dropSession(environment);
@@ -129,7 +156,7 @@ function apnsAttempt(environment, deviceToken, headers, payload) {
     const finish = () => {
       let reason = null;
       try { reason = body ? JSON.parse(body).reason : null; } catch { reason = null; }
-      done(status ? { status, reason } : { status: 0, reason: 'StreamClosed', reused });
+      done(status ? { status, reason, token } : { status: 0, reason: 'StreamClosed', reused });
     };
     request.on('end', finish);
     // A stream closed without an error or an end clears its own timeout:
@@ -156,14 +183,17 @@ function push(deviceToken, environment, alert) {
 }
 
 // Through the device's own APNs server; a token Apple says is gone (410,
-// or BadDeviceToken on both servers) takes its watch with it.
+// or BadDeviceToken on both servers) takes its watch with it. Writes here
+// are updates, not merges: a watch deleted meanwhile (switched off, or
+// expired by Firestore's TTL policy) stays deleted, rather than coming back
+// as a record with no password and no `expiresAt`.
 async function wake(watch, alert) {
   const known = watch.data.apnsEnvironment;
   const order = known ? [known, ...Object.keys(APNS_HOSTS).filter((e) => e !== known)] : Object.keys(APNS_HOSTS);
   for (const environment of order) {
     const { status, reason } = await push(watch.data.deviceToken, environment, alert);
     if (status === 200) {
-      if (environment !== known) await watches.doc(watch.id).set({ apnsEnvironment: environment }, { merge: true }).catch(() => {});
+      if (environment !== known) await watches.doc(watch.id).update({ apnsEnvironment: environment }).catch(() => {});
       return;
     }
     if (status === 410) { await watches.doc(watch.id).delete().catch(() => {}); return; }
@@ -339,7 +369,7 @@ function sealedWrongly(error) {
 
 function verified(watch) {
   watch.verifiedSealed = watch.data.sealedPassword;
-  if (watch.data.failures) watches.doc(watch.id).set({ failures: 0 }, { merge: true }).catch(() => {});
+  if (watch.data.failures) watches.doc(watch.id).update({ failures: 0 }).catch(() => {});
 }
 
 // The login's other devices: trusted once their own password is shown to
@@ -387,7 +417,7 @@ async function fail(watch, authentication) {
     log('removed a watch the server keeps turning away');
     return;
   }
-  await watches.doc(watch.id).set({ failures }, { merge: true }).catch(() => {});
+  await watches.doc(watch.id).update({ failures }).catch(() => {});
 }
 
 function connectSoon(entry) {

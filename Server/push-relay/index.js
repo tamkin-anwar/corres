@@ -19,6 +19,18 @@ const deviceCheck = require('./devicecheck');
 
 const firestore = new Firestore();
 const devices = firestore.collection('devices');
+// Device records and iCloud watches carry `expiresAt`, 30 days after the
+// device last registered, and Firestore's TTL policy deletes the ones
+// nobody renews (see README): an old phone, a token iOS replaced, an app
+// deleted without APNs saying so. The app registers again on every launch,
+// and whenever it runs (opened, woken by a push or a background refresh)
+// once 12 hours have passed (`renewWatchIfDue`), so a device in use never
+// gets near it. Without the app running, Gmail's watch lapses in 7 days
+// and Outlook's subscription in under 3 anyway.
+const DEVICE_RECORD_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
+function deviceExpiry() {
+  return Firestore.Timestamp.fromMillis(Date.now() + DEVICE_RECORD_LIFETIME_MS);
+}
 // Outlook (Microsoft Graph) subscriptions: subscription id → the account
 // it watches and a hash of its secret (clientState). Only the hash is kept.
 const graphSubscriptions = firestore.collection('graphSubscriptions');
@@ -69,11 +81,17 @@ const APNS_HOSTS = {
 };
 const APNS_ENVIRONMENTS = Object.keys(APNS_HOSTS);
 
-// APNs provider tokens (ES256 JWTs) are valid up to one hour; cached and
-// rebuilt just under that so a burst of pushes doesn't re-sign one per push.
+// APNs provider tokens (ES256 JWTs). Apple's rules: a token whose `iat` is
+// more than an hour old is refused (ExpiredProviderToken, 403), and a new
+// token more than once every 20 minutes on the same connection is refused
+// too (TooManyProviderTokenUpdates, 429). So each instance signs one token,
+// keeps it in memory for 50 minutes for every push and both APNs servers,
+// then signs the next. Instances don't share one, and don't need to: each
+// holds its own connections, and the 20-minute rule is per connection.
 let cachedToken = null;
 let cachedTokenIssuedAt = 0;
 const TOKEN_LIFETIME_MS = 50 * 60 * 1000;
+const TOKEN_MIN_AGE_MS = 20 * 60 * 1000;
 
 function base64url(input) {
   return Buffer.from(input).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -96,6 +114,22 @@ function buildAPNsToken() {
   cachedToken = `${signingInput}.${base64url(signature)}`;
   cachedTokenIssuedAt = now;
   return cachedToken;
+}
+
+// APNs called `rejected` expired (only a clock that's far off makes that
+// happen inside 50 minutes). True when the push is worth sending again:
+// the token is dropped so the next push signs a fresh one, or another push
+// already did that. A token under 20 minutes old is kept, since replacing
+// it that soon is what TooManyProviderTokenUpdates refuses; that push fails.
+function renewExpiredAPNsToken(rejected) {
+  if (cachedToken !== rejected) return true;
+  if (Date.now() - cachedTokenIssuedAt < TOKEN_MIN_AGE_MS) {
+    console.log('apns token called expired under 20 minutes old; kept');
+    return false;
+  }
+  console.log('apns token called expired; signing a new one');
+  cachedToken = null;
+  return true;
 }
 
 // A silent, content-free wake-up push: no alert/sound/badge, just
@@ -134,18 +168,27 @@ function apnsSession(environment) {
   return { session, reused: false };
 }
 
-// `timeoutMs`: how long one attempt may take. The Outlook path, which
-// Microsoft wants answered within about three seconds, passes a shorter
-// one and doesn't retry after a timeout.
+// Each attempt may take 10 seconds. The Outlook path, which Microsoft
+// wants answered within three seconds, passes a `deadline` (a time) instead:
+// every attempt ends by it, none starts after it, and a timeout isn't retried.
 const APNS_TIMEOUT_MS = 10_000;
-const GRAPH_APNS_TIMEOUT_MS = 2_500;
 
-async function apnsRequest(environment, deviceToken, headers, payload, timeoutMs = APNS_TIMEOUT_MS) {
-  const first = await apnsAttempt(environment, deviceToken, headers, payload, timeoutMs);
-  if (first.status !== 0 || !first.reused) return first;
-  if (first.reason === 'Timeout' && timeoutMs < APNS_TIMEOUT_MS) return first;
-  dropSession(environment);
-  return apnsAttempt(environment, deviceToken, headers, payload, timeoutMs);
+async function apnsRequest(environment, deviceToken, headers, payload, deadline) {
+  const attempt = () => {
+    const timeoutMs = deadline ? Math.min(APNS_TIMEOUT_MS, deadline - Date.now()) : APNS_TIMEOUT_MS;
+    if (timeoutMs <= 0) return Promise.resolve({ status: 0, reason: 'Timeout' });
+    return apnsAttempt(environment, deviceToken, headers, payload, timeoutMs);
+  };
+  let result = await attempt();
+  if (result.status === 0 && result.reused && !(result.reason === 'Timeout' && deadline)) {
+    dropSession(environment);
+    result = await attempt();
+  }
+  // Once more with a freshly signed token, if Apple says ours is stale.
+  if (result.status === 403 && result.reason === 'ExpiredProviderToken' && renewExpiredAPNsToken(result.token)) {
+    result = await attempt();
+  }
+  return result;
 }
 
 function apnsAttempt(environment, deviceToken, headers, payload, timeoutMs = APNS_TIMEOUT_MS) {
@@ -154,13 +197,17 @@ function apnsAttempt(environment, deviceToken, headers, payload, timeoutMs = APN
     const done = (result) => { if (!settled) { settled = true; resolve(result); } };
     let request;
     let reused = false;
+    // The token this push carries, so an ExpiredProviderToken answer
+    // replaces that one and not a newer one another push already signed.
+    let token;
     try {
       const connection = apnsSession(environment);
       reused = connection.reused;
+      token = buildAPNsToken();
       request = connection.session.request({
         ':method': 'POST',
         ':path': `/3/device/${deviceToken}`,
-        authorization: `bearer ${buildAPNsToken()}`,
+        authorization: `bearer ${token}`,
         'apns-topic': process.env.APNS_BUNDLE_ID,
         ...headers,
       });
@@ -178,7 +225,7 @@ function apnsAttempt(environment, deviceToken, headers, payload, timeoutMs = APN
     const finish = () => {
       let reason = null;
       try { reason = body ? JSON.parse(body).reason : null; } catch { reason = null; }
-      done(status ? { status, reason } : { status: 0, reason: 'StreamClosed', reused });
+      done(status ? { status, reason, token } : { status: 0, reason: 'StreamClosed', reused });
     };
     request.on('end', finish);
     // A stream closed without an error or an end (the connection shut
@@ -190,9 +237,9 @@ function apnsAttempt(environment, deviceToken, headers, payload, timeoutMs = APN
   });
 }
 
-function sendSilentPush(deviceToken, environment, timeoutMs) {
+function sendSilentPush(deviceToken, environment, deadline) {
   return apnsRequest(environment, deviceToken, { 'apns-push-type': 'background', 'apns-priority': '5' },
-    { aps: { 'content-available': 1 } }, timeoutMs);
+    { aps: { 'content-available': 1 } }, deadline);
 }
 
 // A visible alert for one new email, filled in on the iPhone by Corres's
@@ -205,7 +252,7 @@ function sendSilentPush(deviceToken, environment, timeoutMs) {
 // For Gmail, whose notice names no message, `historyId` replaces
 // `messageId`: the extension asks Gmail itself what's new since then, and
 // stays silent if nothing is (Apple's notification filtering).
-function sendAlertPush(deviceToken, environment, emailAddress, messageId, historyId, timeoutMs) {
+function sendAlertPush(deviceToken, environment, emailAddress, messageId, historyId, deadline) {
   return apnsRequest(environment, deviceToken, {
     'apns-push-type': 'alert',
     'apns-priority': '10',
@@ -214,7 +261,7 @@ function sendAlertPush(deviceToken, environment, emailAddress, messageId, histor
     aps: { alert: { 'title-loc-key': 'New email', body: emailAddress }, sound: 'default', 'mutable-content': 1 },
     account: emailAddress,
     ...(messageId ? { message: messageId } : { gmailHistory: String(historyId) }),
-  }, timeoutMs);
+  }, deadline);
 }
 
 // Wakes one registered device through the server its token belongs to.
@@ -223,7 +270,7 @@ function sendAlertPush(deviceToken, environment, emailAddress, messageId, histor
 // server is tried on the other, in case it was registered wrongly, and the
 // record is corrected. Never throws: a failed write is only logged, so one
 // device can't fail a whole notice and get it redelivered to everyone.
-async function wakeDevice(doc, alert, timeoutMs) {
+async function wakeDevice(doc, alert, deadline) {
   const known = doc.data().apnsEnvironment;
   const order = APNS_ENVIRONMENTS.includes(known)
     ? [known, ...APNS_ENVIRONMENTS.filter((e) => e !== known)]
@@ -231,10 +278,12 @@ async function wakeDevice(doc, alert, timeoutMs) {
   let badEverywhere = true;
   for (const environment of order) {
     const { status, reason } = alert
-      ? await sendAlertPush(doc.id, environment, alert.emailAddress, alert.messageId, alert.historyId, timeoutMs)
-      : await sendSilentPush(doc.id, environment, timeoutMs);
+      ? await sendAlertPush(doc.id, environment, alert.emailAddress, alert.messageId, alert.historyId, deadline)
+      : await sendSilentPush(doc.id, environment, deadline);
     if (status === 200) {
-      if (environment !== known) await quietly(doc.ref.set({ apnsEnvironment: environment }, { merge: true }));
+      // An update, not a merge: it can't bring back a record deleted
+      // meanwhile (unregistered, or expired) as one with no `expiresAt`.
+      if (environment !== known) await quietly(doc.ref.update({ apnsEnvironment: environment }));
       return;
     }
     if (status === 410) {
@@ -562,6 +611,7 @@ async function handleRegister(req, res) {
       ? Firestore.FieldValue.arrayUnion(emailAddress)
       : Firestore.FieldValue.arrayRemove(emailAddress),
     updatedAt: Firestore.FieldValue.serverTimestamp(),
+    expiresAt: deviceExpiry(),
     ...attestFields(attest),
     ...environmentFrom(req.body),
   }, { merge: true });
@@ -601,6 +651,8 @@ async function handleUnregister(req, res) {
       emailAddresses: Firestore.FieldValue.arrayRemove(emailAddress),
       alertAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
       gmailAlertAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
+      // The device is still there and still registering its other accounts.
+      expiresAt: deviceExpiry(),
       ...attestFields(attest),
     }, { merge: true });
   } else {
@@ -707,6 +759,7 @@ async function handleRegisterGraph(req, res) {
     emailAddresses: Firestore.FieldValue.arrayUnion(emailAddress),
     alertAccounts: alerts ? Firestore.FieldValue.arrayUnion(emailAddress) : Firestore.FieldValue.arrayRemove(emailAddress),
     updatedAt: Firestore.FieldValue.serverTimestamp(),
+    expiresAt: deviceExpiry(),
     ...environmentFrom(req.body),
   }, { merge: true });
   // `expiresAt` lets Firestore's TTL policy clear records nobody renews
@@ -729,27 +782,50 @@ async function handleRegisterGraph(req, res) {
 // the subscription's own device, so a guessed URL can't push anything.
 // Like the Gmail path, nothing about the message itself is read or kept,
 // and the endpoint always answers 202 so Graph doesn't retry.
+//
+// Graph counts a notice delivered only if the answer comes within 3
+// seconds; it retries a slower one, and once more than 10% of answers in
+// 10 minutes are slower it delays every notice by 10 minutes
+// (learn.microsoft.com/graph/change-notifications-delivery-webhooks). So
+// every APNs attempt ends by GRAPH_PUSH_MS and none starts after it, and
+// the answer goes by GRAPH_ANSWER_MS at the latest, even if Firestore is
+// still reading. It isn't answered first with the work after: this
+// function has CPU only while it handles a request (request-based billing),
+// so work after the answer would stall until the next request. Graph's 3
+// seconds include the trip from Microsoft and any wait for an instance, so
+// this leaves a second for those.
+const GRAPH_PUSH_MS = 1_900;
+const GRAPH_ANSWER_MS = 2_000;
+
 async function handleGraph(req, res) {
   const validationToken = req.query && req.query.validationToken;
   if (validationToken) {
+    // Graph's URL check: 200, text/plain, the decoded token, within 10
+    // seconds. nosniff, so no browser reads the echoed text as a page.
     res.set('Content-Type', 'text/plain');
+    res.set('X-Content-Type-Options', 'nosniff');
     res.status(200).send(String(validationToken));
     return;
   }
-  try {
-    await wakeForGraph((req.body && Array.isArray(req.body.value)) ? req.body.value.slice(0, 100) : []);
-  } catch (error) {
-    console.log('graph failed', error && error.message);
-  }
+  const deadline = Date.now() + GRAPH_PUSH_MS;
+  const work = wakeForGraph((req.body && Array.isArray(req.body.value)) ? req.body.value.slice(0, 100) : [], deadline)
+    .then(() => true, (error) => { console.log('graph failed', error && error.message); return true; });
+  let timer;
+  const late = new Promise((resolve) => { timer = setTimeout(() => resolve(false), GRAPH_ANSWER_MS); });
+  const finished = await Promise.race([work, late]);
+  clearTimeout(timer);
+  // Firestore was slow: anything still waiting sends nothing once it
+  // resumes, since every push checks the deadline first.
+  if (!finished) console.log('graph: answered before the work finished');
   res.status(202).send();
 }
 
-async function wakeForGraph(notifications) {
+async function wakeForGraph(notifications, deadline) {
   const valid = notifications.filter((n) => n && matches(n.subscriptionId, SUBSCRIPTION_ID_PATTERN)
     && (typeof n.clientState === 'string' || typeof n.clientState === 'number'));
   if (valid.length === 0) return;
   // Every subscription in one read: Microsoft expects an answer within
-  // about three seconds.
+  // three seconds.
   const ids = [...new Set(valid.map((n) => n.subscriptionId))];
   const docs = await firestore.getAll(...ids.map((id) => graphSubscriptions.doc(id)));
   const subscriptions = new Map(docs.filter((doc) => doc.exists).map((doc) => [doc.id, doc.data()]));
@@ -771,9 +847,8 @@ async function wakeForGraph(notifications) {
     const isNew = (notification.changeType || 'created') === 'created';
     if (isNew && matches(messageId, MESSAGE_ID_PATTERN)) targets.get(key).messageIds.add(messageId);
   }
-  // Everything in parallel, with a short APNs timeout: the reply waits for
-  // the pushes (a Cloud Function may lose its CPU once it has answered, so
-  // the work can't run after it).
+  // Everything in parallel, each push bounded by the deadline: the reply
+  // waits for the pushes (see handleGraph for why they can't run after it).
   const results = await Promise.allSettled([...targets.values()].map(async (target) => {
     let found;
     if (target.deviceToken) {
@@ -792,10 +867,10 @@ async function wakeForGraph(notifications) {
     await Promise.allSettled(found.map(async (device) => {
       const alerting = (device.data().alertAccounts || []).includes(target.emailAddress);
       const alerts = alerting
-        ? [...target.messageIds].slice(0, 10).map((messageId) => wakeDevice(device, { emailAddress: target.emailAddress, messageId }, GRAPH_APNS_TIMEOUT_MS))
+        ? [...target.messageIds].slice(0, 10).map((messageId) => wakeDevice(device, { emailAddress: target.emailAddress, messageId }, deadline))
         : [];
       // The quiet wake-up too, so Corres syncs in the background as before.
-      await Promise.allSettled([...alerts, wakeDevice(device, undefined, GRAPH_APNS_TIMEOUT_MS)]);
+      await Promise.allSettled([...alerts, wakeDevice(device, undefined, deadline)]);
     }));
   }));
   logRejected('graph', results);
@@ -905,6 +980,7 @@ async function handleRegisterICloud(req, res) {
     alerts: body.alerts !== '0',
     failures: 0,
     updatedAt: Firestore.FieldValue.serverTimestamp(),
+    expiresAt: deviceExpiry(),
     ...attestFields(attest),
     ...environmentFrom(body),
   });

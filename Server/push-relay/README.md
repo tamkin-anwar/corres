@@ -22,6 +22,8 @@ Everything below is a one-time setup. None of it can be done from inside this re
    gcloud secrets create corres-apns-auth-key --data-file=AuthKey_XXXXXXXXXX.p8
    ```
 
+Each relay instance (and the iCloud watcher) signs one APNs provider token and reuses it for 50 minutes, inside Apple's rules: no token over an hour old, and no new token more than once every 20 minutes on a connection ([Establishing a token-based connection to APNs](https://developer.apple.com/documentation/usernotifications/establishing-a-token-based-connection-to-apns)). If APNs answers `ExpiredProviderToken` anyway (a clock far off), the push is sent once more with a new token, unless the current one is under 20 minutes old.
+
 ## 3. Deploy the relay
 
 From this directory:
@@ -43,7 +45,7 @@ This deploys one HTTP Cloud Function (`corres-push-relay`) with these routes:
 - `POST /register-graph`: an Outlook subscription the app made with Microsoft Graph itself: its id, a hash of its secret (`clientState`), the account, and the device. Graph's notices for that subscription wake only that device (each device makes its own subscription). An older subscription for the same account and device is deleted.
 - `POST /icloud-key`, `POST /register-icloud`, `POST /unregister-icloud`: instant iCloud alerts. The app seals the app-specific password to the watcher's KMS key; the record keeps the address, server, user name and device for `Server/icloud-watcher`. An iCloud address (`icloud.com`, `me.com`, `mac.com`) may only name `imap.mail.me.com`.
 
-`npm run deploy:graph` deploys `corres-push-relay-graph`, Microsoft Graph's notification target, with one instance kept warm (`--min-instances=1`), since Microsoft wants an answer within about three seconds. It reads every named subscription in one Firestore call and gives each APNs request 2.5 seconds.
+`npm run deploy:graph` deploys `corres-push-relay-graph`, Microsoft Graph's notification target, with one instance kept warm (`--min-instances=1`). Graph counts a notice delivered only if it's answered within 3 seconds, and delays every notice by 10 minutes once more than 10% of answers in 10 minutes are slower ([Receive change notifications through webhooks](https://learn.microsoft.com/en-us/graph/change-notifications-delivery-webhooks)). So the function reads every named subscription in one Firestore call, sends the pushes in parallel, and answers 202 within 2 seconds whatever happens: no APNs attempt runs past 1.9 seconds, and if Firestore is still reading it answers anyway (logged as `graph: answered before the work finished`) and that notice's pushes are skipped. It doesn't answer first and push after, because the function has CPU only while it handles a request. Graph's URL check (`?validationToken=`) is answered at once with the token as plain text.
 
 These routes stay `--allow-unauthenticated`: there is no user-login system in Corres to authenticate these calls against, so they have to stay reachable by any anonymous app install. Real input validation (device-token/email format, a cap on how many accounts one device token can register) closes off the cheapest abuse, but this is *not* authentication on its own. App Attest is (see "App Attest (monitor mode)" below), once enforcement is turned on.
 
@@ -219,13 +221,21 @@ gcloud compute security-policies rules create 1000 --security-policy=corres-rela
 
 Cleanup:
 - A device token APNs calls gone (410, or `BadDeviceToken` on both servers) deletes the device record, or the iCloud watch at the watcher.
+- Device records and iCloud watches carry `expiresAt`, 30 days after the device last registered. The app registers again on every launch, and whenever it runs (opened, woken by a push, or a background refresh) once 12 hours have passed, so a device in use never gets close; an old phone, a token iOS replaced, or an app deleted without APNs saying so stops getting pushes, and an unused iCloud watch closes its IMAP connection. One-time setup, so Firestore clears them:
+
+```bash
+gcloud firestore fields ttls update expiresAt --collection-group=devices --enable-ttl
+gcloud firestore fields ttls update expiresAt --collection-group=icloudWatches --enable-ttl
+```
+
+  Firestore deletes an expired record within about a day ([Manage data retention with TTL policies](https://cloud.google.com/firestore/native/docs/ttl)). A device record that goes takes the device's Outlook subscriptions with it (the next Graph notice for one finds no device and deletes it), and the watcher stops a deleted watch at once.
 - Outlook subscription records carry `expiresAt` (a week after the last registration; Graph's mail subscriptions last under three days and the app renews them well before). One-time setup, so Firestore clears the ones nobody renews:
 
 ```bash
 gcloud firestore fields ttls update expiresAt --collection-group=graphSubscriptions --enable-ttl
 ```
 
-- Records written before this change have no `expiresAt` and stay until their device renews (which adds it) or unregisters.
+- Records written before these changes have no `expiresAt` and stay until their device registers again (which adds it) or unregisters.
 
 ## iCloud watcher
 
