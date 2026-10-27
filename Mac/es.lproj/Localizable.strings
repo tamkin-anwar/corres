@@ -2746,3 +2746,13 @@
 "Automatic reply." = "Respuesta automática.";
 
 "Automatic reply. Kept out of Needs You." = "Respuesta automática. Fuera de Te necesita.";
+
+/* Retry on a send the mail server may have taken. */
+"This email may already have been sent. Check Sent before sending it again." = "Puede que este correo ya se haya enviado. Revisa Enviados antes de volver a enviarlo.";
+"Send Again" = "Volver a enviar";
+
+/* Pin or Unpin a conversation. */
+"Unpin" = "Dejar de fijar";
+
+/* An invitation: Add to Calendar without access. */
+"Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corres no tiene acceso a tu calendario. Puedes permitirlo en Ajustes del Sistema > Privacidad y seguridad > Calendarios.";

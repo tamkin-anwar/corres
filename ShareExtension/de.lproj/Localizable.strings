@@ -368,3 +368,11 @@
 
 /* The Share sheet: what is attached. */
 "%lld attachments" = "%lld Anhänge";
+
+/* The mail server may have taken the email. */
+"This email may already have been sent. Check Sent before sending it again." = "Diese E-Mail wurde vielleicht schon gesendet. Sieh in „Gesendet“ nach, bevor du sie noch einmal sendest.";
+
+/* Save Draft. */
+"Saved to Drafts" = "In Entwürfe gesichert";
+"Couldn't Save" = "Konnte nicht gesichert werden";
+"Couldn't save. Try again." = "Konnte nicht gesichert werden. Versuche es erneut.";

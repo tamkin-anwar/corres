@@ -100,6 +100,12 @@ struct MailClient: Sendable {
         if isICloud(account) { icloud.allowSendingAgain(rfc822MessageID: rfc822MessageID, account: account) }
     }
 
+    /// The server may have taken this email without saying so (SMTP), so
+    /// sending it again could send it twice.
+    func mayHaveSent(rfc822MessageID: String, account: String) -> Bool {
+        isICloud(account) && icloud.mayHaveSent(rfc822MessageID: rfc822MessageID, account: account)
+    }
+
     @discardableResult
     func send(raw: String, threadId: String?, account: String) async throws -> String {
         isICloud(account) ? try await icloud.send(raw: raw, threadId: threadId, account: account) : isOutlook(account) ? try await outlook.send(raw: raw, threadId: threadId, account: account)

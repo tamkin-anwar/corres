@@ -3813,3 +3813,7 @@
 
 /* Compose: adding attachments. */
 "Couldn't open %@." = "无法打开 %@。";
+
+/* Retry on a send the mail server may have taken. */
+"This email may already have been sent. Check Sent before sending it again." = "这封邮件可能已经发送。再次发送前，请先查看“已发送”。";
+"Send Again" = "再次发送";

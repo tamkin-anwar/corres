@@ -26,9 +26,6 @@
 "Say or write a reply" = "Fale ou escreva uma resposta";
 
 /* No comment provided by engineer. */
-"Sent from your iPhone" = "Enviado do seu iPhone";
-
-/* No comment provided by engineer. */
 "Sounds good." = "Parece bom.";
 
 /* No comment provided by engineer. */
@@ -54,3 +51,6 @@
 "Updated %@" = "Atualizado %@";
 "Open Corres on your iPhone to start your free trial." = "Abra o Corres no seu iPhone para começar seu teste gratuito.";
 "Corres Pro" = "Corres Pro";
+
+/* A reply handed to the iPhone, which sends it. */
+"Sending from your iPhone" = "Enviando do seu iPhone";

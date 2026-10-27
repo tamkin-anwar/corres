@@ -16,6 +16,10 @@ final class ShareComposer {
     enum Phase: Equatable {
         case loading, editing, sending, sent, queued
         case failed(String)
+        /// The mail server took the whole email and never answered.
+        case mayHaveSent
+        /// Save Draft: saved, or not.
+        case saved, unsaved
     }
 
     let snapshot: ShareSnapshot?
@@ -282,6 +286,10 @@ final class ShareComposer {
             }
         } catch GmailAPIClient.ClientError.notSignedIn {
             phase = .failed(String(localized: "Open Corres once, then share again. Corres finishes setting up sharing the first time it opens after updating."))
+        } catch where IMAPMailClient.isUnconfirmed(error) {
+            // The mail server took it all and never answered: it may have
+            // gone, so it isn't "didn't accept it".
+            phase = .mayHaveSent
         } catch {
             phase = .failed(String(localized: "\(MailAccounts.serviceTitle(for: account)) didn\u{2019}t accept it. Try again in a moment."))
         }
@@ -295,7 +303,8 @@ final class ShareComposer {
         let full = raw(draft), bare = raw(draft, withAttachments: false)
         let saved = (try? await client.saveDraft(attachments: draft.attachments, threadId: nil, existingID: nil, account: account,
                                                  compose: { $0 ? full : bare })) != nil
-        phase = saved ? .sent : .editing
+        // Not saved is said, not just back to editing as if nothing happened.
+        phase = saved ? .saved : .unsaved
         return saved
     }
 

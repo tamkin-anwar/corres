@@ -4,7 +4,7 @@ import SwiftUI
 /// right-click.
 enum MacAction: Equatable {
     case compose, reply, replyAll, forward
-    case archive, trash, move(Attention), toggleFlag, toggleUnread, snooze(Date?), askSnooze
+    case archive, trash, move(Attention), toggleFlag, togglePin, toggleUnread, snooze(Date?), askSnooze
     case getMail, show(MacMailbox), next, previous, openInWindow, undo, commandPalette, print, shortcuts, search
     case toggleUnreadOnly, remind(Date?), sendDiagnostics
 }
@@ -14,6 +14,8 @@ struct MacActions {
     let perform: (MacAction) -> Void
     /// How many conversations they'd act on.
     var selectionCount = 1
+    /// Every one of them pinned: the Message menu offers Unpin.
+    var isPinned = false
     /// The main window's: Go To or Do, the mailboxes and the rest of its
     /// own act here, not by way of `MacWindows.perform`.
     var isMain = false
@@ -305,6 +307,7 @@ struct MacCommands: Commands {
                     Button("Choose a Time…") { actions?.perform(.askSnooze) }
                 }
                 Button("Flag") { actions?.perform(.toggleFlag) }.keyboardShortcut("l", modifiers: [.command, .shift])
+                Button(actions?.isPinned == true ? LocalizedStringKey("Unpin") : "Pin") { actions?.perform(.togglePin) }
                 Button("Mark as Read or Unread") { actions?.perform(.toggleUnread) }.keyboardShortcut("u", modifiers: [.command, .shift])
                 Divider()
                 Menu("Add to Reminders") {

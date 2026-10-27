@@ -223,10 +223,15 @@ final class ThreadActionService {
     }
 
     func togglePinned(_ thread: Correspondence) async {
-        let was = thread.isPinned
-        await store.setPinned(!was, for: thread.id)
-        offerUndo(was ? String(localized: "Unpinned") : String(localized: "Pinned"), systemImage: was ? "pin.slash" : "pin") { [store] in
-            await store.setPinned(was, for: thread.id)
+        await setPinned(!thread.isPinned, for: [thread])
+    }
+
+    /// Pinned or unpinned together (the Mac's selection), with one Undo.
+    func setPinned(_ isPinned: Bool, for threads: [Correspondence]) async {
+        let before = threads.map { ($0.id, $0.isPinned) }
+        await store.asOneChange { for thread in threads { await store.setPinned(isPinned, for: thread.id) } }
+        offerUndo(isPinned ? String(localized: "Pinned") : String(localized: "Unpinned"), systemImage: isPinned ? "pin" : "pin.slash") { [store] in
+            for (id, was) in before { await store.setPinned(was, for: id) }
         }
     }
 

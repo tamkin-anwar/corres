@@ -2746,3 +2746,13 @@
 "Automatic reply." = "自動返信です。";
 
 "Automatic reply. Kept out of Needs You." = "自動返信です。「要対応」には入れません。";
+
+/* Retry on a send the mail server may have taken. */
+"This email may already have been sent. Check Sent before sending it again." = "このメールはすでに送信されている可能性があります。もう一度送信する前に「送信済み」を確認してください。";
+"Send Again" = "もう一度送信";
+
+/* Pin or Unpin a conversation. */
+"Unpin" = "ピンを外す";
+
+/* An invitation: Add to Calendar without access. */
+"Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corresはカレンダーにアクセスできません。「システム設定」>「プライバシーとセキュリティ」>「カレンダー」で許可できます。";

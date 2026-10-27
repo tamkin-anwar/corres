@@ -416,6 +416,17 @@ struct IMAPMailClient: Sendable {
         SMTPHandoffLog.update { $0.forget(rfc822MessageID, account: account) }
     }
 
+    /// Handed over and no answer seen: Retry says so before it sends.
+    func mayHaveSent(rfc822MessageID: String, account: String) -> Bool {
+        SMTPHandoffLog.current.state(of: rfc822MessageID, account: account) == .unconfirmed
+    }
+
+    /// The error `send` throws when the server may have taken the email.
+    static func isUnconfirmed(_ error: Error) -> Bool {
+        guard case .refused(_, let reason, _)? = error as? ClientError else { return false }
+        return reason == "sendUnconfirmed"
+    }
+
     // MARK: Sending
 
     /// Sends through iCloud's SMTP (STARTTLS on 587), then files a copy in

@@ -146,7 +146,8 @@ struct ReplyView: View {
         if sent {
             VStack(spacing: 8) {
                 Image(systemName: queued ? "clock" : "paperplane.fill").font(.title2).foregroundStyle(WatchPalette.accent)
-                (queued ? Text("Will send from your iPhone") : Text("Sent from your iPhone"))
+                // Handed to the iPhone, which sends it: not sent yet.
+                (queued ? Text("Will send from your iPhone") : Text("Sending from your iPhone"))
                     .font(.footnote).multilineTextAlignment(.center)
             }
             .task {

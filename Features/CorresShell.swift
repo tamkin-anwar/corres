@@ -534,6 +534,7 @@ struct CorresShell: View {
     }
 
     @State private var bannerDrag: CGFloat = 0
+    @State private var confirmingResend = false
 
     /// The Undo pill above the sending one: a send that failed (or is
     /// counting down) used to hide every Undo while it lingered.
@@ -685,11 +686,20 @@ struct CorresShell: View {
                 }
                 Spacer(minLength: 8)
                 Button("Discard") { outbox.discardFailed() }.font(.subheadline)
-                Button("Retry") { outbox.retryFailed() }.font(.subheadline.weight(.semibold))
+                Button("Retry") {
+                    if outbox.failedMayHaveSent { confirmingResend = true } else { outbox.retryFailed() }
+                }
+                .font(.subheadline.weight(.semibold))
             }
             .padding(.horizontal, 20).padding(.vertical, 14)
             .corresGlass(in: Capsule())
             .padding(.horizontal, CorresSpace.page)
+            // The mail server took it all and never answered: Retry could
+            // send it twice, so it says so first.
+            .alert("This email may already have been sent. Check Sent before sending it again.", isPresented: $confirmingResend) {
+                Button("Send Again") { outbox.retryFailed() }
+                Button("Cancel", role: .cancel) {}
+            }
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         }
     }

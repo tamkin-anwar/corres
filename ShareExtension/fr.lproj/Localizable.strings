@@ -368,3 +368,11 @@
 
 /* The Share sheet: what is attached. */
 "%lld attachments" = "%lld pièces jointes";
+
+/* The mail server may have taken the email. */
+"This email may already have been sent. Check Sent before sending it again." = "Cet e-mail a peut-être déjà été envoyé. Vérifiez Envoyés avant de le renvoyer.";
+
+/* Save Draft. */
+"Saved to Drafts" = "Enregistré dans Brouillons";
+"Couldn't Save" = "Enregistrement impossible";
+"Couldn't save. Try again." = "Enregistrement impossible. Réessayez.";

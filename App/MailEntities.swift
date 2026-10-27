@@ -341,7 +341,11 @@ struct UpdateMailIntent: AppIntent {
         guard !threads.isEmpty else { throw UpdateMailError.notFound }
         guard isRead != nil || isFlagged != nil || isJunk != nil || mailbox != nil else { throw UpdateMailError.nothingToChange }
         if let isRead { for thread in threads { await actions.setUnread(!isRead, for: thread) } }
-        if let isFlagged { for thread in threads { await actions.setFlagged(isFlagged, for: thread) } }
+        if let isFlagged {
+            for thread in threads {
+                guard await actions.setFlagged(isFlagged, for: thread) else { throw UpdateMailError.notUpdated }
+            }
+        }
         if isJunk == true {
             for thread in threads { await actions.reportSpam(thread, animated: false) }
             // Sent now: there's no Undo pill for Siri to wait out.
@@ -352,7 +356,7 @@ struct UpdateMailIntent: AppIntent {
                 guard await actions.moveToInbox(thread) else { throw UpdateMailError.notMoved }
             }
         }
-        if let mailbox, isJunk != true { try await move(threads, to: mailbox, actions: actions) }
+        if let mailbox, isJunk != true { try await move(threads, to: mailbox, store: store, actions: actions) }
         return .result()
     }
 
@@ -360,7 +364,7 @@ struct UpdateMailIntent: AppIntent {
     /// own labels or folders. Needs You and Waiting are Corres's own lists,
     /// not places mail can be moved to.
     @MainActor
-    private func move(_ threads: [Correspondence], to mailbox: CorresMailbox, actions: ThreadActionService) async throws {
+    private func move(_ threads: [Correspondence], to mailbox: CorresMailbox, store: MailStore, actions: ThreadActionService) async throws {
         let list = mailbox.id.split(separator: "|", maxSplits: 1).dropFirst().first.map(String.init) ?? ""
         let account = mailbox.account.emailAddress
         let inAccount = threads.filter { $0.id.account == account }
@@ -381,13 +385,15 @@ struct UpdateMailIntent: AppIntent {
             }) else { throw UpdateMailError.noSuchMailbox(mailbox.name) }
             for thread in inAccount { await actions.moveToLabel(label.id, named: label.name, thread) }
             await actions.commitPendingRemoval()
+            // Turned away by the server: back in the list, and Siri says so.
+            guard !inAccount.contains(where: { store.thread($0.id) != nil }) else { throw UpdateMailError.notMovedToMailbox }
         }
     }
 }
 
 /// What Siri says when a change to mail can't be made.
 enum UpdateMailError: Error, CustomLocalizedStringResourceConvertible {
-    case notFound, nothingToChange, notMoved, notArchived, notDeleted, notReported
+    case notFound, nothingToChange, notMoved, notArchived, notDeleted, notReported, notMovedToMailbox, notUpdated
     case noSuchMailbox(String)
 
     var localizedStringResource: LocalizedStringResource {
@@ -398,6 +404,8 @@ enum UpdateMailError: Error, CustomLocalizedStringResourceConvertible {
         case .notArchived: "Couldn't archive this conversation. Try again."
         case .notDeleted: "Couldn't move this conversation to Trash. Try again."
         case .notReported: "Couldn't report this conversation as spam. Try again."
+        case .notMovedToMailbox: "Couldn't move this conversation. Try again."
+        case .notUpdated: "Couldn't update this conversation. Try again."
         case .noSuchMailbox(let name): "Corres can't move mail to \(name)."
         }
     }

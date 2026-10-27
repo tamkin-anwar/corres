@@ -50,6 +50,10 @@ struct MacComposeView: View {
     /// The save to Drafts waiting for a pause in typing.
     @State private var saveTask: Task<Void, Never>?
     @State private var confirmDelete = false
+    /// Sent with the main window closed: the email waiting out Undo Send.
+    @State private var sendingID: UUID?
+    @State private var sendUndo = MailUndoTarget()
+    @Environment(\.undoManager) private var undoManager
     @FocusState private var focus: Field?
     /// View › Bigger and Smaller, so the field names keep fitting.
     @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
@@ -137,6 +141,18 @@ struct MacComposeView: View {
         .alert("Couldn't Attach", isPresented: Binding(get: { attachmentError != nil }, set: { if !$0 { attachmentError = nil } })) {
             Button("OK", role: .cancel) {}
         } message: { Text(attachmentError ?? "") }
+        .disabled(sendingID != nil)
+        .overlay(alignment: .bottom) { if sendingID != nil { MacUndoSend.Pill(outbox: services.outbox) } }
+        // Edit › Undo takes it back too; gone (sent, or undone and open
+        // again in a new window), the window goes.
+        .onChange(of: services.outbox.pending?.id) { _, id in
+            guard sendingID != nil, id != sendingID else { return }
+            undoManager?.removeAllActions(withTarget: sendUndo)
+            dismiss()
+        }
+        .onChange(of: sendingID) { _, id in
+            if id != nil, let undoManager { MacUndoSend.register(services.outbox, in: undoManager, target: sendUndo) }
+        }
         .onAppear { MacComposeHandoff.live.insert(request.id) }
         .task {
             load()
@@ -559,7 +575,13 @@ struct MacComposeView: View {
         MacComposeDrafts.shared.forget(draft.id)
         leaveDrafts()
         services.outbox.queueSend(draft, replyingTo: replyingTo)
-        dismiss()
+        // Undo Send is in the main window. With that closed, this window
+        // stays, with Undo, until the email goes.
+        if !MacWindows.mainIsOpen, let pending = services.outbox.pending {
+            sendingID = pending.id
+        } else {
+            dismiss()
+        }
     }
 
     // MARK: Send Later

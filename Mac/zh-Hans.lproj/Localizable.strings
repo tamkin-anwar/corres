@@ -2746,3 +2746,13 @@
 "Automatic reply." = "自动回复。";
 
 "Automatic reply. Kept out of Needs You." = "自动回复。未放入“需要你”。";
+
+/* Retry on a send the mail server may have taken. */
+"This email may already have been sent. Check Sent before sending it again." = "这封邮件可能已经发送。再次发送前，请先查看“已发送”。";
+"Send Again" = "再次发送";
+
+/* Pin or Unpin a conversation. */
+"Unpin" = "取消置顶";
+
+/* An invitation: Add to Calendar without access. */
+"Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corres 无权访问你的日历。你可以在“系统设置”>“隐私与安全性”>“日历”中允许。";
