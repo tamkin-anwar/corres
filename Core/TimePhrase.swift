@@ -24,7 +24,7 @@ public enum TimePhrase {
     // MARK: - Relative phrases
 
     private static let units: [(names: [String], component: Calendar.Component)] = [
-        (["minute", "minutes", "min", "mins"], .minute),
+        (["minute", "minutes", "min", "mins", "m"], .minute),
         (["hour", "hours", "hr", "hrs", "h"], .hour),
         (["day", "days", "d"], .day),
         (["week", "weeks", "wk", "wks", "w"], .weekOfYear),
@@ -45,6 +45,11 @@ public enum TimePhrase {
         var amountWords = dayWords
         if amountWords.count > 1, ["a", "an"].contains(amountWords[0]), ["couple", "few"].contains(amountWords[1]) {
             amountWords.removeFirst()
+        }
+        // "2h", "30m", "3d": the amount and its unit written together.
+        if amountWords.count == 1, let word = amountWords.first, word.first?.isNumber == true,
+           let letter = word.firstIndex(where: { !$0.isNumber }) {
+            amountWords = [String(word[..<letter]), String(word[letter...])]
         }
         if let first = amountWords.first {
             let amount = Int(first) ?? numberWords[first]
@@ -132,10 +137,12 @@ public enum TimePhrase {
             words.removeLast()
         }
         if let last = words.last, let parsed = clock(last, meridiem: meridiem) {
-            // A bare number is only a time when "at" precedes it or it
-            // carries am/pm or a colon; "in 3" is an amount, not 3 o'clock.
+            // A bare number is only a time when "at" or a day ("tomorrow
+            // 9") precedes it or it carries am/pm or a colon; "in 3" is an
+            // amount, not 3 o'clock.
             let hasMarker = meridiem != nil || last.contains(":") || last.hasSuffix("am") || last.hasSuffix("pm")
-            if hasMarker || words.dropLast().last == "at" {
+            let before = words.dropLast().last ?? ""
+            if hasMarker || before == "at" || dayNames.contains(before) || weekdays[before] != nil {
                 words.removeLast()
                 if words.last == "at" { words.removeLast() }
                 time = parsed
@@ -145,6 +152,9 @@ public enum TimePhrase {
         }
         return (words, time)
     }
+
+    /// Days a bare hour can follow without "at": "tomorrow 9", "friday 2".
+    private static let dayNames: Set<String> = ["today", "tomorrow", "tmrw", "tmr", "tonight"]
 
     private static func clock(_ token: String, meridiem: String?) -> (Int, Int)? {
         var token = token
@@ -166,7 +176,13 @@ public enum TimePhrase {
         case "am": guard (0...12).contains(hour) else { return nil }; if hour == 12 { hour = 0 }
         // "午後21時" says pm and a 24-hour time; both mean the same.
         case "pm": guard (1...23).contains(hour) else { return nil }; if hour < 12 { hour += 12 }
-        default: guard (0...24).contains(hour) else { return nil }
+        default:
+            guard (0...24).contains(hour) else { return nil }
+            // A bare hour reads as calendars read it (Google Calendar,
+            // Fantastical, Apple Reminders): 1 to 6 is the afternoon, 7 to
+            // 11 the morning, 12 noon. A leading zero ("05:00") is a
+            // 24-hour time and stays as written.
+            if (1...6).contains(hour), !token.hasPrefix("0") { hour += 12 }
         }
         return (hour, minute)
     }
@@ -553,9 +569,10 @@ extension TimePhrase {
             rule(#"(?:\bà |\ba )?\btarde\b"#, "afternoon"), rule(#"(?:\bà |\ba )?\bnoite\b"#, "night"),
         ]
 
-        /// "in 2h" is two hours; "9h" on its own is nine o'clock, as in
-        /// French ("demain 9h"), read last so Portuguese "às 9h" is first.
+        /// "in 2h" and a lone "2h" are two hours; "9h" after a day is nine
+        /// o'clock, as in French ("demain 9h"), read last so Portuguese
+        /// "às 9h" is first.
         private static let clocks: [Rule] = [rule(#"\bin (\d+) ?h\b"#, "in $1 hours"),
-                                             rule(#"(?<!\bin )\b(\d{1,2})h\b"#, "at $1:00")]
+                                             rule(#"(?<=\S)(?<!\bin)\s+(\d{1,2})h\b"#, "at $1:00")]
     }
 }

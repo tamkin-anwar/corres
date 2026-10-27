@@ -215,47 +215,60 @@ final class LineQueue: @unchecked Sendable {
     private let lock = NSLock()
     private var buffered: [String] = []
     private var closed = false
-    private var waiter: CheckedContinuation<String?, Error>?
+    private var waiter: (id: Int, continuation: CheckedContinuation<String?, Error>)?
+    private var waits = 0
 
     func push(_ line: String) {
         lock.lock()
-        if let waiter { self.waiter = nil; lock.unlock(); waiter.resume(returning: line); return }
+        if let waiter { self.waiter = nil; lock.unlock(); waiter.continuation.resume(returning: line); return }
         buffered.append(line)
         lock.unlock()
-    }
-
-    private func failWaiter() {
-        lock.lock()
-        let waiter = self.waiter; self.waiter = nil
-        lock.unlock()
-        waiter?.resume(throwing: SMTPClient.SMTPError.timedOut)
     }
 
     func close() {
         lock.lock(); closed = true
         let waiter = self.waiter; self.waiter = nil
         lock.unlock()
-        waiter?.resume(returning: nil)
+        waiter?.continuation.resume(returning: nil)
     }
 
+    /// The next line, or nil once the connection has closed. Gives up
+    /// after `timeout`, or when the task is cancelled.
     func next(timeout: Duration) async throws -> String? {
         try await withThrowingTaskGroup(of: String?.self) { group in
-            group.addTask {
-                try await withCheckedThrowingContinuation { continuation in
-                    self.lock.lock()
-                    if !self.buffered.isEmpty { let l = self.buffered.removeFirst(); self.lock.unlock(); continuation.resume(returning: l); return }
-                    if self.closed { self.lock.unlock(); continuation.resume(returning: nil); return }
-                    self.waiter = continuation
-                    self.lock.unlock()
-                }
-            }
+            group.addTask { try await self.take() }
             group.addTask {
                 try await Task.sleep(for: timeout)
-                self.failWaiter()
                 throw SMTPClient.SMTPError.timedOut
             }
             defer { group.cancelAll() }
             return try await group.next() ?? nil
+        }
+    }
+
+    /// Waits for a line until one comes, the connection closes or the
+    /// task is cancelled. Cancelled before its wait began (the timeout
+    /// came first), it stops at once: it used to start waiting anyway,
+    /// and `next` waited on it until the server sent a line or hung up.
+    private func take() async throws -> String? {
+        let id = lock.withLock { waits += 1; return waits }
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                lock.lock()
+                if !buffered.isEmpty { let line = buffered.removeFirst(); lock.unlock(); continuation.resume(returning: line); return }
+                if closed { lock.unlock(); continuation.resume(returning: nil); return }
+                // Checked under the lock `onCancel` takes, so a cancel is
+                // seen here or finds the waiter there, never neither.
+                if Task.isCancelled { lock.unlock(); continuation.resume(throwing: CancellationError()); return }
+                waiter = (id, continuation)
+                lock.unlock()
+            }
+        } onCancel: {
+            lock.lock()
+            let cancelled = waiter?.id == id ? waiter : nil
+            if cancelled != nil { waiter = nil }
+            lock.unlock()
+            cancelled?.continuation.resume(throwing: CancellationError())
         }
     }
 }

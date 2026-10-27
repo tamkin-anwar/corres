@@ -42,6 +42,37 @@ struct TimePhraseTests {
         #expect(result.map { calendar.component(.day, from: $0) } == Optional(5))
     }
 
+    /// A bare hour reads the way calendars read it (Google Calendar,
+    /// Fantastical, Apple Reminders): 1 to 6 is the afternoon, 7 to 11 the
+    /// morning, 12 is noon. am/pm, a leading zero ("05:00") and 24-hour
+    /// times say which they mean and are kept.
+    @Test func bareHoursReadAsCalendarsReadThem() {
+        expectAll(["tomorrow at 3": [25, 15], "tomorrow at 6": [25, 18], "tomorrow at 7": [25, 7],
+                   "tomorrow at 11": [25, 11], "tomorrow at 12": [25, 12], "tomorrow at 3:30": [25, 15],
+                   "tomorrow 9": [25, 9], "tomorrow 4": [25, 16], "friday 2": [25, 14], "friday at 10": [25, 10],
+                   "tomorrow at 3am": [25, 3], "tomorrow at 3 pm": [25, 15], "tomorrow at 9pm": [25, 21],
+                   "tomorrow at 05:00": [25, 5], "tomorrow at 15:00": [25, 15], "tomorrow at 17": [25, 17],
+                   "tomorrow at 0:30": [25, 0], "tonight at 10": [24, 22], "tonight at 12": [25, 0],
+                   "in 3 days at 4": [27, 16]])
+        // In the other languages' bare hours too; their own am/pm words win.
+        expectAll(["明日 3時": [25, 15], "明日 午前3時": [25, 3], "明天3点": [25, 15], "明天上午3点": [25, 3],
+                   "내일 3시": [25, 15], "내일 오전 3시": [25, 3], "কাল ৪টায়": [25, 16], "morgen um 3": [25, 15],
+                   "morgen um 15 Uhr": [25, 15], "demain à 3h": [25, 15], "demain 15h": [25, 15],
+                   "mañana a las 3": [25, 15], "amanhã às 3h": [25, 15], "demain 9h": [25, 9]])
+    }
+
+    /// "1h", "30m", "1 hr": a span from now, as Superhuman and Spark read
+    /// them, not one o'clock.
+    @Test func shortSpansAreFromNow() {
+        #expect(parts("1h").map { [$0.day, $0.hour, $0.minute] } == [24, 22, 14])
+        #expect(parts("2h").map { [$0.day, $0.hour, $0.minute] } == [24, 23, 14])
+        #expect(parts("30m").map { [$0.day, $0.hour, $0.minute] } == [24, 21, 44])
+        #expect(parts("1 hr").map { [$0.day, $0.hour, $0.minute] } == [24, 22, 14])
+        #expect(parts("in 2 hrs").map { [$0.day, $0.hour, $0.minute] } == [24, 23, 14])
+        #expect(parts("3d").map { [$0.day, $0.hour] } == [27, TimePhrase.morningHour])
+        #expect(parts("1w").map { [$0.month, $0.day] } == [10, 1])
+    }
+
     @Test func todayTimesRollForwardOnlyWhenPast() {
         #expect(parts("9am").map { [$0.day, $0.hour] } == [25, 9])
         #expect(parts("at 11:30pm").map { [$0.day, $0.hour, $0.minute] } == [24, 23, 30])

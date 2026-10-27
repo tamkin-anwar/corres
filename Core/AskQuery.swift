@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 
 /// A question to Ask, read for the parts plain keyword search misses: a
 /// person ("from Oliver", "what did Maya ask"), "attachments", a kind of
@@ -20,7 +21,10 @@ public struct AskQuery: Equatable, Sendable {
     /// Whether this can be answered by filtering alone, without the model.
     public var isList: Bool { wantsAttachments || topic == .receipts || topic == .packages }
 
-    public init(_ question: String, now: Date = .now, calendar: Calendar = .current) {
+    /// `languages`: the reader's, most preferred first, for a word that
+    /// means different things in two of them ("hier").
+    public init(_ question: String, now: Date = .now, calendar: Calendar = .current,
+                languages: [String] = Locale.preferredLanguages) {
         var text = " " + question.lowercased()
             .replacingOccurrences(of: "’", with: "'")
             .components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "@.'-")).inverted)
@@ -58,7 +62,8 @@ public struct AskQuery: Equatable, Sendable {
             range = interval(.weekOfYear, offset: -1)
         } else if take(#" (today|heute|aujourd'hui|hoy|hoje|আজ) |今日|今天|오늘"#) != nil {
             range = DateInterval(start: startOfToday, duration: 86_400)
-        } else if take(#" (yesterday|gestern|hier|ayer|ontem|গতকাল) |昨日|昨天|어제"#) != nil {
+        } else if take(#" (yesterday|gestern|d'hier|ayer|ontem|গতকাল) |昨日|昨天|어제"#) != nil
+                    || text.contains(" hier ") && Self.hierIsYesterday(question, languages: languages) && take(" hier ") != nil {
             range = DateInterval(start: startOfToday.addingTimeInterval(-86_400), duration: 86_400)
         } else if let days = take(#" (last|past) (\d{1,3}) days "#), let count = Int(days[2]) {
             range = DateInterval(start: startOfToday.addingTimeInterval(Double(-count) * 86_400), end: now)
@@ -180,6 +185,24 @@ public struct AskQuery: Equatable, Sendable {
         return String(localized: "\(what) from \(name)")
     }
 
+    /// "Hier" is yesterday in French and here in German. The question's
+    /// other words say which language it's in ("les factures reçues hier",
+    /// "Zeig mir die Rechnungen hier"); with too few to tell, the reader's
+    /// language decides, French or German, whichever comes first. Any
+    /// other reader gets yesterday, as before.
+    static func hierIsYesterday(_ question: String, languages: [String]) -> Bool {
+        let rest = question.replacingPattern(#"(?i)\bhier\b"#, with: " ")
+        let recognizer = NLLanguageRecognizer()
+        recognizer.languageConstraints = [.french, .german]
+        recognizer.processString(rest)
+        if let (language, likelihood) = recognizer.languageHypotheses(withMaximum: 1).first, likelihood >= 0.7 {
+            return language == .french
+        }
+        let reader = languages.lazy.compactMap { Locale(identifier: $0).language.languageCode?.identifier }
+            .first { $0 == "fr" || $0 == "de" }
+        return reader != "de"
+    }
+
     /// What's left of a Chinese, Japanese or Korean question once its
     /// parts are read: the grammar ("の", "を見せて", "보여줘", "的") isn't a
     /// word to search for.
@@ -212,6 +235,8 @@ public struct AskQuery: Equatable, Sendable {
         "messages", "latest", "last", "recent", "send", "sent", "leave", "get", "got", "that", "this", "ask",
         "asked", "say", "said", "want", "wanted", "need", "needed", "mention", "write", "wrote", "all", "some",
         "list", "please", "anything", "everything",
+        // "Hier" left over is German's "here" (French "hier", yesterday, is read as a time).
+        "hier",
         // The same small words in German, French, Spanish and Portuguese.
         "zeig", "zeige", "mir", "die", "der", "das", "den", "dem", "ein", "eine", "meine", "mein", "alle", "was",
         "wann", "wer", "hat", "ist", "mit", "für", "und", "oder", "im", "le", "la", "les", "des", "du", "un", "une",

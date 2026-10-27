@@ -23,6 +23,48 @@ struct MailSignalsTests {
         #expect(!MailSignals.asksSomething("Sounds good.\n\nOn Mon, Sep 21, 2026 at 9:00 AM, Maya wrote:\n> Can you make it?"))
     }
 
+    /// "Let me know if you have any questions" closes a message politely,
+    /// in every language; it asks nothing. A real request beside it does.
+    @Test func courtesyClosingsAskNothing() {
+        for text in ["Here's the report. Let me know if you have any questions.",
+                     "Attached is the invoice. Please let me know if you have any other questions or concerns!",
+                     "Done. Feel free to reach out if you need anything else.",
+                     "The files are uploaded. Don't hesitate to contact me.",
+                     "Thanks again. If you have any questions, please don't hesitate to reach out.",
+                     "All set for next week. Let us know if there's anything else we can help with.",
+                     "Any questions, just let me know.",
+                     "Anbei der Bericht. Bei Fragen stehe ich Ihnen gerne zur Verfügung.",
+                     "Anbei der Bericht. Lassen Sie mich wissen, wenn Sie Fragen haben.",
+                     "Anbei der Bericht. Bei Fragen melden Sie sich bitte gerne.",
+                     "Voici le rapport. N'hésitez pas à me contacter si vous avez des questions.",
+                     "Voici le rapport. Dites-moi si vous avez des questions.",
+                     "Aquí está el informe. Avísame si tienes alguna pregunta.",
+                     "Aquí está el informe. No dudes en contactarme.",
+                     "Segue o relatório. Me avise se tiver alguma dúvida.",
+                     "Segue o relatório. Qualquer dúvida, estou à disposição.",
+                     "রিপোর্টটি সংযুক্ত করা হলো। কোনো প্রশ্ন থাকলে জানাবেন।",
+                     "資料を添付します。ご不明な点がございましたら、お気軽にお問い合わせください。",
+                     "자료를 첨부합니다. 궁금한 점이 있으시면 언제든지 연락 주세요.",
+                     "附件是报告。如有任何问题，请随时与我联系。"] {
+            #expect(!MailSignals.asksSomething(text), "\(text)")
+        }
+        // A real request still counts, beside a closing or in it.
+        #expect(MailSignals.asksSomething("Could you sign by Friday? Let me know if you have any questions."))
+        #expect(MailSignals.asksSomething("Let me know if you have any questions, and please confirm the date."))
+        #expect(MailSignals.asksSomething("Let me know if you can make it Thursday."))
+        #expect(MailSignals.asksSomething("Lassen Sie mich wissen, ob der Termin passt."))
+        #expect(MailSignals.asksSomething("請確認附件。如有任何问题，请随时与我联系。"))
+    }
+
+    /// A question mark inside a link is its query string, with or without
+    /// "https://".
+    @Test func linksAskNothing() {
+        #expect(!MailSignals.asksSomething("Details here: www.example.com/page?x=1"))
+        #expect(!MailSignals.asksSomething("See example.com/reset?token=abc for the new form."))
+        #expect(!MailSignals.asksSomething("Our new page: shop.example.co.uk/sale?ref=mail&utm=1"))
+        #expect(MailSignals.asksSomething("Did you see www.example.com/page?x=1?"))
+    }
+
     /// The subject of a reply repeats the first message's question; the
     /// reply itself is the answer.
     @Test func aRepliesSubjectIsNotItsQuestion() {
@@ -77,6 +119,23 @@ struct MailSignalsTests {
         // Past dates and ones far off aren't "due soon".
         #expect(MailSignals.deadline(in: "Due \(spelled(now.addingTimeInterval(-10 * 86_400))).", now: now) == nil)
         #expect(MailSignals.deadline(in: "Due \(spelled(now.addingTimeInterval(200 * 86_400))).", now: now) == nil)
+    }
+
+    /// A reply's subject repeats the first message's deadline: "Paid,
+    /// thanks" under "Re: Payment due …" is done, not due.
+    @Test func aRepliesSubjectSetsNoDeadline() {
+        let now = Date()
+        let soon = spelled(now.addingTimeInterval(5 * 86_400))
+        #expect(MailSignals.deadline(in: "Re: Payment due \(soon)\nPaid, thanks.", now: now) == nil)
+        #expect(MailSignals.deadline(in: "AW: Zahlung fällig am \(soon)\nErledigt, danke.", now: now) == nil)
+        #expect(MailSignals.deadline(in: "Fwd: RSVP by \(soon)\nFYI.", now: now) == nil)
+        #expect(MailSignals.deadline(in: "回复：截止日期：\(soon)\n已付款。", now: now) == nil)
+        let nearer = spelled(now.addingTimeInterval(2 * 86_400))
+        #expect(MailSignals.timeSensitiveDate(in: "Re: Your appointment on \(nearer)\nThanks, see you then.", now: now) == nil)
+        #expect(MailSignals.timeSensitiveDate(in: "Your appointment on \(nearer)\nPlease arrive early.", now: now) != nil)
+        // A deadline in the reply itself still counts, and a new email's subject does.
+        #expect(MailSignals.deadline(in: "Re: Payment\nPlease pay by \(soon).", now: now) != nil)
+        #expect(MailSignals.deadline(in: "Payment due \(soon)\nSee the invoice attached.", now: now) != nil)
     }
 
     /// The date detector reads "tomorrow" and "Friday" by today's clock:

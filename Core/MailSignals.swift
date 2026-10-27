@@ -83,7 +83,7 @@ public enum MailSignals {
     static let requestPatterns: [String] = [
         #"(?i)\b(can|could|would|will) you\b|\blet me know\b|\bplease (confirm|advise|review|send|reply|respond|approve|sign|share|rsvp|let)\b|\bwhat do you think\b|\byour thoughts\b|\bany (update|news)\b|\bare you (free|available|around)\b|\bwhen (works|would work|are you)\b|\bget back to me\b|\blooking forward to (hearing|your reply)\b|\brsvp\b"#,
         // German
-        #"(?i)\b(bitte (um )?(bestätig|rückmeld|antwort|melde|prüf|schick|send|unterschreib|teil)\w*|(können|könnten|würden) sie|(kannst|könntest|würdest) du|lass(t)? (mich|uns) wissen|geben sie (mir|uns) bescheid|gib (mir|uns) bescheid|ich bitte um|was meinst du|was meinen sie)\b"#,
+        #"(?i)\b(bitte (um )?(bestätig|rückmeld|antwort|melde|prüf|schick|send|unterschreib|teil)\w*|(können|könnten|würden) sie|(kannst|könntest|würdest) du|(lass(t)?|lassen sie) (es )?(mich|uns) wissen|geben sie (mir|uns) bescheid|gib (mir|uns) bescheid|ich bitte um|was meinst du|was meinen sie)\b"#,
         // French
         #"(?i)\b(merci de (confirmer|me |nous |valider|vérifier|signer|répondre|revenir)|(pouvez|pourriez)-vous|(peux|pourrais)-tu|veuillez (confirmer|me |nous |répondre|signer|valider)|(tenez|tiens)-moi au courant|(faites|fais)-moi savoir|(dites|dis)-moi|qu'en (penses-tu|pensez-vous)|dans l'attente de (votre|ta) réponse)\b"#,
         // Spanish
@@ -105,16 +105,73 @@ public enum MailSignals {
         #"(送って|送付して|提出して|返送して|記入して|署名して|共有して|返信して)(ください|下さい|もらえ|いただけ|頂け)|ご(提出|送付|記入|署名|返送|共有)(ください|下さい|をお願い|いただけ)|(보내|제출해|작성해|서명해|검토해|회신해|답장해|공유해|송부해) ?주(세요|십시오|시기 ?바랍니다)|(확인|회신|답장|검토|제출|작성|서명|송부) ?(해 ?주시기 ?)?바랍니다|[请請](发送|發送|提交|签字|簽字|签署|簽署|审核|審核|审阅|審閱|填写|填寫|答复|答覆|核对|核對)"#,
     ]
 
+    /// A polite closing that offers help rather than asking for anything,
+    /// in English and the app's other languages: "Let me know if you have
+    /// any questions", "Feel free to reach out", "Bei Fragen stehe ich
+    /// Ihnen gerne zur Verfügung", "N'hésitez pas à me contacter", "No
+    /// dudes en contactarme", "Qualquer dúvida, estou à disposição",
+    /// "কোনো প্রশ্ন থাকলে জানাবেন", "ご不明な点がございましたら、お気軽にお問い合わせ
+    /// ください", "궁금한 점이 있으시면 연락 주세요", "如有任何问题，请随时与我联系".
+    /// Only the closing goes, so a request in the same sentence ("…, and
+    /// please confirm the date") still counts. "Let me know" alone, or
+    /// with anything but an offer ("if you can make it"), is a request.
+    static let courtesyClosings: [String] = [
+        // "Let me know if you have any questions", "Feel free to reach out
+        // if you need anything else", "Let us know if there's anything
+        // else we can help with".
+        #"(?i)\b(?:(?:please|just|do)\s+)*(?:let (?:me|us) know|(?:feel free|do not hesitate|don'?t hesitate|never hesitate) to (?:reach out|contact (?:me|us)|get in touch|ask|let (?:me|us) know|email (?:me|us)|call (?:me|us))(?: to (?:me|us))?|reach out(?: to (?:me|us))?|get in touch|contact (?:me|us))\s+(?:if|should|in case)\s+(?:you\s+)?(?:have|need|want|require|there is|there are|there's|anything)\s*[^.!?\n]{0,40}?\b(?:questions?|concerns?|anything(?: else)?|help|assistance|clarification|issues?|problems?|information|comments?|feedback)\b(?:\s+(?:or|and)\s+(?:questions?|concerns?|comments?|feedback|need anything(?: else)?))?(?:\s+(?:else\s+)?(?:(?:i|we) can (?:do|help(?: you)?(?: with)?)|you need))?\s*[.!]?"#,
+        // "Feel free to reach out.", "Don't hesitate to contact me."
+        #"(?i)\b(?:please\s+)?(?:feel free|do not hesitate|don'?t hesitate|never hesitate) to (?:reach out|contact (?:me|us)|get in touch|ask)(?: (?:to )?(?:me|us))?(?: (?:anytime|any time|at any time))?\s*[.!]?"#,
+        // "If you have any questions, please don't hesitate to reach out",
+        // "Any questions, just let me know".
+        #"(?i)\b(?:(?:if|should) you (?:have|need) (?:any|anything)[^.!?\n]{0,30}?\b(?:questions?|concerns?|help|assistance|else|information)\b|any (?:questions?|concerns?))[^.!?\n]{0,15}?,?\s*(?:(?:please|just|do)\s+)*(?:let (?:me|us) know|(?:feel free|do not hesitate|don'?t hesitate) to (?:reach out|contact (?:me|us)|get in touch|ask)(?: (?:me|us))?|reach out|get in touch|contact (?:me|us)|give (?:me|us) a (?:call|shout))\s*[.!]?"#,
+        // German: "Bei Fragen stehe ich Ihnen gerne zur Verfügung", "Lassen
+        // Sie mich wissen, wenn Sie Fragen haben", "Zögern Sie nicht, mich
+        // zu kontaktieren".
+        #"(?i)\b(?:bei|für) (?:weiteren |sonstigen |eventuellen |allen )?(?:rück)?fragen\b[^.!?\n,]*[.!]?"#,
+        #"(?i)\b(?:(?:lassen sie|lass|lasst) (?:es )?(?:mich|uns) wissen|(?:geben sie|gib) (?:mir|uns) (?:gerne |einfach )?bescheid|melden sie sich (?:gerne|einfach)|meld(?:e)? dich (?:gerne|einfach)),? (?:wenn|falls|sollten) (?:sie|du|ihr|es) (?:noch )?(?:weitere |irgendwelche )?(?:fragen|anmerkungen|unklarheiten)[^.!?\n,]*[.!]?"#,
+        #"(?i)\bzögern sie nicht,? (?:mich|uns) (?:zu kontaktieren|anzusprechen|anzurufen)[^.!?\n,]*[.!]?"#,
+        // French: "N'hésitez pas à me contacter", "Dites-moi si vous avez
+        // des questions", "Je reste à votre disposition".
+        #"(?i)\bn['’]h[ée]sit(?:ez|e) pas (?:à|a) (?:me|nous) (?:contacter|recontacter|joindre|écrire|solliciter|faire signe|revenir vers (?:moi|nous))[^.!?\n,]*[.!]?"#,
+        #"(?i)\b(?:dites|dis|faites|fais)-(?:moi|nous)(?: savoir)? si (?:vous avez|tu as) (?:des|d'autres|la moindre|quelques) (?:questions?|interrogations?|remarques?)[^.!?\n,]*[.!]?"#,
+        #"(?i)\bje reste (?:à|a) (?:votre|ta) (?:entière )?disposition[^.!?\n,]*[.!]?"#,
+        // Spanish: "Avísame si tienes alguna pregunta", "No dudes en
+        // contactarme", "Quedo a su disposición".
+        #"(?i)\b(?:av[íi]same|av[íi]seme|d[íi]me|d[íi]game|me avisas|h[áa]zmelo saber|h[áa]gamelo saber) si (?:tienes|tiene|tuvieras|tuviera) (?:alguna|cualquier|m[áa]s) (?:pregunta|duda|consulta)s?[^.!?\n,]*[.!]?"#,
+        #"(?i)\bno (?:dudes|dude|duden) en (?:contactarme|contactarnos|escribirme|escribirnos|preguntar(?:me)?|consultarme|llamarme|avisarme)[^.!?\n,]*[.!]?"#,
+        #"(?i)\bsi (?:tienes|tiene) (?:alguna|cualquier) (?:pregunta|duda|consulta)s?,? (?:av[íi]same|av[íi]seme)[^.!?\n,]*[.!]?|\bquedo a (?:tu|su) (?:entera )?disposici[óo]n[^.!?\n,]*[.!]?"#,
+        // Portuguese: "Me avise se tiver alguma dúvida", "Qualquer dúvida,
+        // estou à disposição", "Não hesite em entrar em contato".
+        #"(?i)\b(?:me avise|me avisa|me diga|me informe|me fala) (?:se|caso) (?:tiver|tenha|houver|tenham) (?:alguma|qualquer|mais) (?:d[úu]vida|pergunta|quest[ãa]o)s?[^.!?\n,]*[.!]?"#,
+        #"(?i)\bqualquer (?:d[úu]vida|pergunta|coisa|quest[ãa]o),? (?:(?:[ée] s[óo] )?(?:me )?(?:avise|avisa|avisar|chamar|falar|chame|fale)|(?:estou|fico) [àa] disposi[çc][ãa]o)[^.!?\n,]*[.!]?"#,
+        #"(?i)\bn[ãa]o hesite em (?:entrar em contato|me contatar|nos contatar|perguntar|me procurar)[^.!?\n,]*[.!]?|(?:\bfico|\bestou) [àa] (?:sua |inteira )?disposi[çc][ãa]o[^.!?\n,]*[.!]?"#,
+        // Bengali: "কোনো প্রশ্ন থাকলে জানাবেন".
+        #"(?:কোনো|কোন|যেকোনো|যে কোনো)\s?(?:প্রশ্ন|জিজ্ঞাসা|সমস্যা|কিছু)\s?(?:থাকলে|হলে)[^।.!?\n]{0,20}?(?:জানাবেন|জানান|জানাও|জানাবে|যোগাযোগ করবেন|যোগাযোগ করুন)[।.!]?"#,
+        // Japanese, Korean and Chinese.
+        #"(?:ご不明(?:な)?点|ご質問|何か|ご要望|ご意見)(?:等|など)?(?:が|は)?(?:ございましたら|ございます場合は|ありましたら|あれば)[、,]?\s?(?:お気軽に|遠慮なく|いつでも|何なりと)?\s?(?:お問い合わせ|お問合せ|ご連絡|お知らせ|お申し付け)(?:ください|下さい|くださいませ)[。.!！]?"#,
+        #"(?:궁금한\s?(?:점|사항|것)|문의\s?사항|질문|문의)(?:이|가)?\s?(?:있으시면|있으면|있으실 경우)[,\s]*(?:언제든(?:지)?|편하게|부담 없이)?\s?(?:연락|말씀|알려|문의)\s?(?:해\s?)?(?:주세요|주십시오|주시기 바랍니다|부탁드립니다)[.!]?"#,
+        #"(?:如有|如果有|若有|有)(?:任何|其他|什么|什麼)?(?:问题|問題|疑问|疑問|需要)[，,]?\s?(?:请|請)?(?:随时|隨時)?(?:与|與|和|跟)?(?:我|我们|我們)?(?:联系|聯繫|聯絡|联络|告知|告诉|告訴)(?:我|我们|我們)?[。.!！]?"#,
+    ]
+
+    /// A link with or without "https://" ("www.example.com/page?x=1",
+    /// "example.com/reset?token=abc"), whose query string carries a
+    /// question mark. Punctuation after it ends the sentence, not the link.
+    static let linkPattern = #"(?i)(?:https?://|www\.)\S*[^\s.,;:!?)\]'"’」』]|\b[\w-]+(?:\.[\w-]+)+/\S*[^\s.,;:!?)\]'"’」』]"#
+
     /// Whether the writer asks the reader something: a real question or a
     /// request. Links are removed first, since their query strings carry
-    /// question marks. A question mark in any script counts: full-width
-    /// "？" (Chinese, Japanese) and Arabic-script "؟" too.
+    /// question marks, and courtesy closings (`courtesyClosings`), which
+    /// offer help without asking. A question mark in any script counts:
+    /// full-width "？" (Chinese, Japanese) and Arabic-script "؟" too.
     ///
     /// A reply's or forward's subject ("Re: Are you free Thursday?") is the
     /// first message's question, not this one's: answered with "Yes,
     /// Thursday works", it read as asking you something.
     public static func asksSomething(_ text: String) -> Bool {
-        let own = ownText(withoutReplySubject(text)).replacingPattern(#"https?://\S+"#, with: "")
+        let own = courtesyClosings.reduce(ownText(withoutReplySubject(text)).replacingPattern(linkPattern, with: "")) {
+            $0.replacingPattern($1, with: " ")
+        }
         if own.patternRange(#"[\p{L}\p{N})"'’」』]\s?[?？؟]"#) != nil { return true }
         if own.matchesAny(requestPatterns) { return true }
         return own.unicodeScalars.contains { $0.value >= 0x0980 } && own.matchesAny(requestPatternsOtherScripts)
@@ -173,9 +230,13 @@ public enum MailSignals {
     /// `receivedAt` on an earlier day, "reply by Friday" from last week
     /// became next Friday. `senderEmail` says how the sender writes a date
     /// like 03/11/2026 (`numericDateOrder`).
+    ///
+    /// A reply's or forward's subject is the first message's deadline, as
+    /// it is its question (`asksSomething`): "Paid, thanks" under "Re:
+    /// Payment due Friday" set Friday as due.
     public static func deadline(in text: String, now: Date = .now, horizon: TimeInterval = 45 * 86_400,
                                 senderEmail: String? = nil, receivedAt: Date? = nil) -> Date? {
-        let own = String(ownText(text).prefix(4_000))
+        let own = String(ownText(withoutReplySubject(text)).prefix(4_000))
         guard !own.isEmpty else { return nil }
         return dates(in: own, senderEmail: senderEmail, now: now, relativeToday: readsRelativeDates(receivedAt))
             .filter { $0.isDeadline && $0.date > now.addingTimeInterval(-3_600) && $0.date < now.addingTimeInterval(horizon) }
@@ -195,6 +256,7 @@ public enum MailSignals {
     public static func timeSensitiveDate(in text: String, now: Date = .now, within: TimeInterval = 3 * 86_400,
                                          senderEmail: String? = nil, receivedAt: Date? = nil) -> Date? {
         if let due = deadline(in: text, now: now, horizon: within, senderEmail: senderEmail, receivedAt: receivedAt) { return due }
+        let text = withoutReplySubject(text)
         guard isObligation(text) else { return nil }
         let own = String(ownText(text).prefix(4_000))
         return dates(in: own, senderEmail: senderEmail, now: now, relativeToday: readsRelativeDates(receivedAt)).map(\.date)
@@ -217,7 +279,7 @@ public enum MailSignals {
         // all the date detector reads (`asciiDigits` keeps the length).
         let source = MailDigest.asciiDigits(own)
         let ns = source as NSString
-        let order = numericDateOrder(senderEmail: senderEmail, text: source)
+        let order = numericDateOrder(senderEmail: senderEmail, text: source, now: now)
         var found: [FoundDate] = []
         for match in detector.matches(in: source, range: NSRange(location: 0, length: ns.length)) {
             var range = match.range
@@ -236,7 +298,7 @@ public enum MailSignals {
             }
             guard var date else { continue }
             if !relativeToday, ns.substring(with: range).patternRange(explicitDatePattern) == nil { continue }
-            switch numericReading(of: ns.substring(with: range), detected: date, order: order) {
+            switch numericReading(of: ns.substring(with: range), detected: date, order: order, now: now) {
             case .notNumeric: break
             case .date(let written): date = written
             // 03/11/2026 from someone whose way of writing dates is unknown:
@@ -310,15 +372,21 @@ public enum MailSignals {
     /// How this email writes numeric dates: settled by another date in it
     /// that can only be read one way ("13/11/2026" is day first), else by
     /// where the sender writes from. Nil when neither says.
-    static func numericDateOrder(senderEmail: String?, text: String) -> DateOrder? {
+    static func numericDateOrder(senderEmail: String?, text: String, now: Date = .now,
+                                 calendar: Calendar = .current) -> DateOrder? {
         let ns = text as NSString
         if let regex = PatternCache.shared.regex(numericDatePattern, caseInsensitive: false) {
             for match in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
-                // Only full dates: "24/7" and "50/50" are not dates.
-                guard match.range(at: 3).location != NSNotFound || match.range(at: 6).location != NSNotFound else { continue }
                 let first = Int(ns.substring(with: match.range(at: 1))) ?? 0
                 let secondRange = match.range(at: 2).location != NSNotFound ? match.range(at: 2) : match.range(at: 5)
                 let second = Int(ns.substring(with: secondRange)) ?? 0
+                let yearRange = match.range(at: 3).location != NSNotFound ? match.range(at: 3) : match.range(at: 6)
+                let year = yearRange.location != NSNotFound ? Int(ns.substring(with: yearRange)) : nil
+                let afterStart = NSMaxRange(match.range)
+                let after = ns.substring(with: NSRange(location: afterStart, length: min(10, ns.length - afterStart)))
+                if let order = orderByWeekday(first, second, year: year, after: after, now: now, calendar: calendar) { return order }
+                // Only full dates: "24/7" and "50/50" are not dates.
+                guard year != nil else { continue }
                 if first > 12, (1...12).contains(second) { return .dayFirst }
                 if second > 12, (1...12).contains(first), second <= 31 { return .monthFirst }
             }
@@ -330,6 +398,46 @@ public enum MailSignals {
         }
         return numericDateOrder(byScript: text)
     }
+
+    /// "12/3(木)", "12/3（周四）", "12/3 (목)": Japanese, Chinese and Korean
+    /// mail writes the weekday in brackets after a numeric date, and the
+    /// weekday says which way round the date is: the reading that falls
+    /// on it. A short email has too little kana to say so by its script
+    /// (`numericDateOrder(byScript:)`). Nil without a weekday, or when
+    /// both readings or neither fall on it. A date without a year is the
+    /// next one, as `LocalDates` reads it.
+    static func orderByWeekday(_ first: Int, _ second: Int, year: Int?, after: String,
+                               now: Date, calendar: Calendar = .current) -> DateOrder? {
+        guard first != second, let match = after.patternRange(bracketedWeekday) else { return nil }
+        // The day's own character: "木" of "木曜日", "四" of "星期四".
+        let name = after[match].filter { !"()（） ".contains($0) }
+            .replacingOccurrences(of: "曜日", with: "").replacingOccurrences(of: "曜", with: "").replacingOccurrences(of: "요일", with: "")
+        let days: [String: Int] = ["日": 1, "天": 1, "月": 2, "一": 2, "火": 3, "二": 3, "水": 4, "三": 4, "木": 5, "四": 5,
+                                   "金": 6, "五": 6, "土": 7, "六": 7, "일": 1, "월": 2, "화": 3, "수": 4, "목": 5, "금": 6, "토": 7,
+                                   "1": 2, "2": 3, "3": 4, "4": 5, "5": 6, "6": 7, "7": 1]
+        guard let weekday = name.last.flatMap({ days[String($0)] }) else { return nil }
+        func falls(day: Int, month: Int) -> Bool {
+            var parts = DateComponents(year: year.map { $0 < 100 ? 2000 + $0 : $0 } ?? calendar.component(.year, from: now),
+                                       month: month, day: day, hour: 12)
+            guard (1...12).contains(month), let date = calendar.date(from: parts),
+                  calendar.component(.day, from: date) == day else { return false }
+            var found = date
+            if year == nil, date < now.addingTimeInterval(-60 * 86_400) {
+                parts.year = (parts.year ?? 0) + 1
+                found = calendar.date(from: parts) ?? date
+            }
+            return calendar.component(.weekday, from: found) == weekday
+        }
+        switch (falls(day: first, month: second), falls(day: second, month: first)) {
+        case (true, false): return .dayFirst
+        case (false, true): return .monthFirst
+        default: return nil
+        }
+    }
+
+    /// A weekday in brackets: "(木)", "（木曜）", "(周四)", "(星期四)", "(목)",
+    /// and "(周4)" as `asciiDigits` leaves it.
+    static let bracketedWeekday = #"^\s?[(（]\s?(?:(?:周|週|星期|礼拜|禮拜)[日天一二三四五六1-7]|[日月火水木金土](?:曜日?)?|[일월화수목금토](?:요일)?)\s?[)）]"#
 
     /// The order the email's own language writes dates in, when that
     /// language uses one order everywhere: Japanese and Korean month
@@ -355,7 +463,11 @@ public enum MailSignals {
     /// A detected date that is numbers only, read the writer's way. Dots
     /// are always day first (no one writes 11.12.2026 for November 12th).
     /// Ambiguous when both numbers could be the month and `order` is nil.
-    static func numericReading(of phrase: String, detected: Date, order: DateOrder?,
+    /// Without a year, a date read the other way round from the
+    /// detector's is the next one after `now`, as `LocalDates` reads one:
+    /// the detector's year was for its own reading ("3/12" as March 12th,
+    /// 2027 made the 3rd of December a year away).
+    static func numericReading(of phrase: String, detected: Date, order: DateOrder?, now: Date? = nil,
                                calendar: Calendar = .current) -> NumericReading {
         let ns = phrase as NSString
         guard let regex = PatternCache.shared.regex(numericDatePattern, caseInsensitive: false),
@@ -377,9 +489,15 @@ public enum MailSignals {
         if yearRange.location != NSNotFound, let written = Int(ns.substring(with: yearRange)) {
             parts.year = written < 100 ? 2000 + written : written
         }
+        let swapped = calendar.component(.month, from: detected) != month || calendar.component(.day, from: detected) != day
+        if yearRange.location == NSNotFound, swapped, let now { parts.year = calendar.component(.year, from: now) }
         parts.month = month
         parts.day = day
-        guard let date = calendar.date(from: parts), calendar.component(.day, from: date) == day else { return .notNumeric }
+        guard var date = calendar.date(from: parts), calendar.component(.day, from: date) == day else { return .notNumeric }
+        if yearRange.location == NSNotFound, swapped, let now, date < now.addingTimeInterval(-60 * 86_400) {
+            parts.year = (parts.year ?? 0) + 1
+            date = calendar.date(from: parts) ?? date
+        }
         return .date(date)
     }
 
@@ -963,13 +1081,13 @@ public enum EventFinder {
         // its own ("doors open 19:15", "7.15pm") comes back as today at that
         // time, so a meeting on Thursday the 15th showed as today at 19:15.
         struct Found { let date: Date; let duration: TimeInterval; let hasTime: Bool; let hasDay: Bool }
-        let order = MailSignals.numericDateOrder(senderEmail: nil, text: own)
+        let order = MailSignals.numericDateOrder(senderEmail: nil, text: own, now: now)
         var found = dates.matches(in: own, range: NSRange(location: 0, length: ns.length)).compactMap { match -> Found? in
             guard var date = match.date else { return nil }
             let phrase = ns.substring(with: match.range).lowercased()
             let hasTime = phrase.patternRange(clockPattern) != nil
             // 03/11 read the writer's way, or not at all.
-            switch MailSignals.numericReading(of: phrase, detected: date, order: order) {
+            switch MailSignals.numericReading(of: phrase, detected: date, order: order, now: now) {
             case .notNumeric: break
             case .date(let written): date = written
             case .ambiguous: return nil

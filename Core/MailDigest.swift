@@ -369,6 +369,90 @@ public enum MailDigest {
     /// Whether `text` is an amount of money, in any currency and form.
     public static func isAmount(_ text: String) -> Bool { text.patternRange(amountPattern) != nil }
 
+    /// Which currencies an amount can be in, by the sign, code or word
+    /// written with it: "R$" is only Brazil's real, "$" any dollar or
+    /// peso, "¥" the yen or the yuan, "Tk" and "৳" the taka. Nil when it
+    /// names none ("1,500/-").
+    static func currencies(ofAmount amount: some StringProtocol) -> Set<String>? {
+        let marker = currencyMarker(String(amount).filter { !$0.isNumber })
+        guard !marker.isEmpty else { return nil }
+        return currencyMarkers[marker] ?? localeCurrencySigns[marker] ?? [marker]
+    }
+
+    /// A currency sign or code as `currencyMarkers` keys it: without
+    /// spaces, dots and the "/-" mark, full-width signs as plain ones.
+    private static func currencyMarker(_ text: some StringProtocol) -> String {
+        String(text.filter { !$0.isWhitespace && !".,'/-".contains($0) })
+            .replacingOccurrences(of: "＄", with: "$").replacingOccurrences(of: "￥", with: "¥")
+    }
+
+    /// Every currency code iOS knows, and the signs and words mail writes
+    /// most, with the currencies each can mean ("$" is a dollar or a
+    /// peso in the locales that write it so; "US$", "Tk", "円" and "RMB"
+    /// are written in mail but no locale's sign). Rarer signs are read
+    /// from the locales (`localeCurrencySigns`).
+    static let currencyMarkers: [String: Set<String>] = {
+        var markers: [String: Set<String>] = [:]
+        for code in Locale.Currency.isoCurrencies.map(\.identifier) { markers[code, default: []].insert(code) }
+        let written: [String: [String]] = [
+            "$": ["USD", "CAD", "AUD", "NZD", "HKD", "SGD", "TWD", "MXN", "ARS", "CLP", "COP", "UYU", "CUP", "BBD", "BMD",
+                  "BND", "BSD", "BZD", "FJD", "GYD", "JMD", "KYD", "LRD", "NAD", "SBD", "SRD", "TTD", "XCD"],
+            "€": ["EUR"], "£": ["GBP", "GIP", "FKP", "SHP", "SSP"],
+            "US$": ["USD"], "C$": ["CAD"], "CA$": ["CAD"], "A$": ["AUD"], "AU$": ["AUD"], "NZ$": ["NZD"], "HK$": ["HKD"],
+            "S$": ["SGD"], "NT$": ["TWD"], "MX$": ["MXN"], "R$": ["BRL"], "Tk": ["BDT"], "টাকা": ["BDT"], "৳": ["BDT"],
+            "Rs": ["INR", "PKR", "LKR", "NPR", "MUR", "SCR"], "রুপি": ["INR", "PKR", "LKR", "NPR"], "₹": ["INR"],
+            "Tsh": ["TZS"], "Ksh": ["KES"], "RMB": ["CNY"], "人民币": ["CNY"], "人民幣": ["CNY"], "元": ["CNY"], "块": ["CNY"],
+            "塊": ["CNY"], "円": ["JPY"], "원": ["KRW"], "₩": ["KRW"], "¥": ["JPY", "CNY"],
+        ]
+        for (marker, codes) in written { markers[marker, default: []].formUnion(codes) }
+        return markers
+    }()
+
+    /// Each locale's own currency sign ("₦" in Nigeria, "₱" in the
+    /// Philippines, "kr" in Sweden and Norway), read only when an amount
+    /// carries a sign `currencyMarkers` doesn't have: reading every
+    /// locale takes a quarter of a second.
+    private static let localeCurrencySigns: [String: Set<String>] = {
+        var signs: [String: Set<String>] = [:]
+        for identifier in Locale.availableIdentifiers {
+            let locale = Locale(identifier: identifier)
+            guard let code = locale.currency?.identifier, let symbol = locale.currencySymbol else { continue }
+            let marker = currencyMarker(symbol)
+            if !marker.isEmpty { signs[marker, default: []].insert(code) }
+        }
+        return signs
+    }()
+
+    /// Where `text` names an amount (`amountPattern`). In capital text a
+    /// currency written only as its code needs a money label before it or
+    /// cents after: there "TOP 10" (Tonga's pa'anga) and "ALL 3" (Albania's
+    /// lek) are words. The glance card reads codes with their case for
+    /// the same reason (`caseSensitiveAmount`), which capitals get past.
+    static func amountRanges(in text: String) -> [Range<String.Index>] {
+        text.regexRanges(of: amountPattern).filter { range in
+            let marker = currencyMarker(text[range].filter { !$0.isNumber })
+            guard !marker.isEmpty, marker.allSatisfy({ $0.isASCII && $0.isLetter }) else { return true }
+            let lineStart = text[..<range.lowerBound].lastIndex(of: "\n").map { text.index(after: $0) } ?? text.startIndex
+            let lineEnd = text[range.upperBound...].firstIndex(of: "\n") ?? text.endIndex
+            let around = text[lineStart..<range.lowerBound] + text[range.upperBound..<lineEnd]
+            if around.contains(where: \.isLowercase) { return true }
+            if text[range].patternRange(#"\d[.,]\d{2}(/-)?$"#) != nil { return true }
+            let before = text[text.index(range.lowerBound, offsetBy: -min(40, text.distance(from: text.startIndex, to: range.lowerBound)))..<range.lowerBound]
+            return before.patternRange(#"(?i)\b(total|subtotal|amount|balance|price|fee|cost|charged?|due|sum|betrag|summe|gesamt|montant|prix|importe|monto|precio|valor|preço)\s*[:：\-–—]?\s*$"#) != nil
+        }
+    }
+
+    /// Each amount in `text`, with its value (`canonicalNumber`) and the
+    /// currencies it can be in.
+    private static func amounts(in text: String) -> [(text: String, value: String, currencies: Set<String>?)] {
+        amountRanges(in: text).compactMap { range in
+            let written = String(text[range])
+            // Thousands grouped with a space count whole ("1 250,00 €").
+            guard let value = numberTokens(in: written.replacingOccurrences(of: " ", with: "\u{00A0}")).first else { return nil }
+            return (written, value, currencies(ofAmount: written))
+        }
+    }
+
     public static func facts(in text: String) -> [String] {
         let source = String(text.prefix(8_000))
         var found: [(Int, String)] = []
@@ -377,7 +461,7 @@ public enum MailDigest {
             guard !value.isEmpty, !found.contains(where: { $0.1 == value }) else { return }
             found.append((source.distance(from: source.startIndex, to: range.lowerBound), value))
         }
-        for range in source.regexRanges(of: amountPattern) { add(range) }
+        for range in amountRanges(in: source) { add(range) }
         for range in source.regexRanges(of: #"(?i:\b(order|confirmation|booking|reservation|invoice|ticket|case|tracking)\s*(number|no\.?|#|id|code)?\s*(is)?\s*:?\s*#?)(?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{3,}\b"#) { add(range) }
         if let code = verificationCode(in: source), let range = source.range(of: code) { add(range) }
         if let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) {
@@ -423,11 +507,22 @@ public enum MailDigest {
         // supported by "$1,284.63". Compared as values, in any locale:
         // "1,250.00", "1.250,00", "1,25,000"-style grouping and Bengali or
         // Arabic digits all read the same (`canonicalNumber`).
-        let sourceNumbers = Set(numberTokens(in: lowerSource))
+        let sourceAmounts = amounts(in: source)
+        let sourceNumbers = Set(numberTokens(in: lowerSource)).union(sourceAmounts.map(\.value))
         for token in numberTokens(in: summary) where !sourceNumbers.contains(token) {
             // "3:00" is supported by a bare "3" ("3pm").
             if token.hasSuffix(":00"), sourceNumbers.contains(String(token.dropLast(3))) { continue }
             unsupported.append(token)
+        }
+        // An amount needs the email's currency too: "$1,250" is not
+        // supported by "R$ 1.250,00", which is Brazilian reais. A figure
+        // the email gives without a currency stays supported.
+        for amount in amounts(in: summary) {
+            guard let currencies = amount.currencies else { continue }
+            let same = sourceAmounts.filter { $0.value == amount.value }
+            if !same.isEmpty, !same.contains(where: { $0.currencies.map { !$0.isDisjoint(with: currencies) } ?? true }) {
+                unsupported.append(amount.text)
+            }
         }
         let words = summary.split(whereSeparator: { !$0.isLetter && $0 != "'" && $0 != "’" })
         for word in words {
@@ -447,6 +542,8 @@ public enum MailDigest {
                 var lower = token.lowercased()
                 for suffix in ["'s", "’s"] where lower.hasSuffix(suffix) { lower = String(lower.dropLast(2)) }
                 if commonCapitalized.contains(lower) || calendarStems[lower] != nil { continue }
+                // A currency ("BRL", "R$1,250") is checked with its amount above.
+                if currencyMarkers[token] != nil || token.patternRange("^(?:" + amountPattern + ")$") != nil { continue }
                 if !lowerSource.contains(lower) { unsupported.append(token) }
             }
         }
@@ -671,13 +768,44 @@ public enum MailDigest {
         return ascii.regexRanges(of: #"(?<![\d.,])\d+(?:[.,:'\u00A0\u202F]\d+)*"#).map { canonicalNumber(String(ascii[$0])) }
     }
 
-    /// Any script's digits as 0–9: "১২৫০" (Bengali) reads as "1250".
+    /// Any script's digits as 0–9: "১২৫০" (Bengali) reads as "1250", and
+    /// a Han numeral ("三月五日", "周五") too, but only where it stands for
+    /// one digit. Not inside a bigger number: "十一" is eleven and "三十"
+    /// thirty, which digit by digit were "十1" (November read as January,
+    /// and "十二/三" as February 3rd) and "3十". Nor as an hour without a
+    /// time of day or minutes: "一時的に" is "for a while", not one o'clock;
+    /// "午後三時" and "三時半" are times (`LocalDates.clock` reads the same
+    /// way). Keeps the length, so a range in the result is one in `text`.
     static func asciiDigits(_ text: String) -> String {
         guard text.contains(where: { $0.isNumber && !$0.isASCII }) else { return text }
-        return String(text.map { character -> Character in
-            guard !character.isASCII, let value = character.wholeNumberValue, (0...9).contains(value) else { return character }
+        let characters = Array(text)
+        return String(characters.indices.map { index -> Character in
+            let character = characters[index]
+            guard !character.isASCII, let value = character.wholeNumberValue, (0...9).contains(value),
+                  !isHanDigit(character) || readsAsDigit(hanAt: index, in: characters) else { return character }
             return Character(String(value))
         })
+    }
+
+    private static func isHanDigit(_ character: Character) -> Bool {
+        character.unicodeScalars.first.map { $0.value == 0x3007 || (0x4E00...0x9FFF).contains($0.value) } ?? false
+    }
+
+    /// Whether the Han numeral at `index` is a digit on its own (see `asciiDigits`).
+    private static func readsAsDigit(hanAt index: Int, in characters: [Character]) -> Bool {
+        var start = index, end = index
+        while start > 0, isHanDigit(characters[start - 1]), characters[start - 1].wholeNumberValue.map({ $0 < 10 }) == true { start -= 1 }
+        while end + 1 < characters.count, isHanDigit(characters[end + 1]), characters[end + 1].wholeNumberValue.map({ $0 < 10 }) == true { end += 1 }
+        let bigger: Set<Character> = ["十", "百", "千", "万", "萬", "拾", "佰", "仟", "億", "亿"]
+        if start > 0, bigger.contains(characters[start - 1]) { return false }
+        guard end + 1 < characters.count else { return true }
+        if bigger.contains(characters[end + 1]) { return false }
+        // An hour ("三時", "三点"), not hours ("三時間", "三小时").
+        guard "時时點点".contains(characters[end + 1]), end + 2 >= characters.count || !"間间".contains(characters[end + 2]) else { return true }
+        let before = String(characters[max(0, start - 4)..<start]).trimmingCharacters(in: .whitespaces)
+        if ["午前", "午後", "上午", "下午", "中午", "晚上", "早上", "凌晨"].contains(where: before.hasSuffix) { return true }
+        let after = String(characters[(end + 2)..<min(characters.count, end + 6)]).trimmingCharacters(in: .whitespaces)
+        return after.hasPrefix("半") || after.patternRange(#"^[\d〇一二三四五六七八九十]{1,3}\s?分"#) != nil
     }
 
     /// A number as its value, whatever the locale writes: grouping removed

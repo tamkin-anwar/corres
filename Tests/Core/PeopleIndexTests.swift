@@ -54,6 +54,22 @@ struct PeopleIndexTests {
         #expect(PeopleIndex.parse("sara.wiltshire") == nil)
     }
 
+    /// The addresses an email goes to over SMTP, read from its To, Cc and
+    /// Bcc headers: a letters-only top-level domain cut "user@x.xn--p1ai"
+    /// (Russia's .рф) to "user@x.xn", and an address in another script
+    /// was dropped without a word.
+    @Test func headerAddressesForSending() {
+        #expect(PeopleIndex.addresses(inHeader: #"Ivan <user@x.xn--p1ai>, "Doe, Jane" <Jane@X.com>"#)
+                == ["user@x.xn--p1ai", "jane@x.com"])
+        #expect(PeopleIndex.addresses(inHeader: "пользователь@пример.рф, 用户@例子.广告, ราม@ตัวอย่าง.ไทย")
+                == ["пользователь@пример.рф", "用户@例子.广告", "ราม@ตัวอย่าง.ไทย"])
+        #expect(PeopleIndex.addresses(inHeader: "=?UTF-8?B?0JjQstCw0L0=?=\r\n <ivan@mail.xn--p1ai>") == ["ivan@mail.xn--p1ai"])
+        // Groups and comments, as RFC 5322 writes them.
+        #expect(PeopleIndex.addresses(inHeader: "Team: a@x.com, b@y.com;, sam@z.io (Sam Smith)") == ["a@x.com", "b@y.com", "sam@z.io"])
+        #expect(PeopleIndex.addresses(inHeader: "undisclosed-recipients:;").isEmpty)
+        #expect(PeopleIndex.addresses(inHeader: #""Re: Sam" <sam@z.io>"#) == ["sam@z.io"])
+    }
+
     @Test func noMatchMeansNothing() {
         var index = PeopleIndex()
         index.recordSent(to: "Sara <sara@x.com>", at: now)
