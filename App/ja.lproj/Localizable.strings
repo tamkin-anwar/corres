@@ -758,9 +758,6 @@
 "Corres learns your greeting, sign-off and length once you've sent a few more emails." = "あと数通メールを送ると、Corresはあなたの挨拶、結び、長さを覚えます。";
 
 /* No comment provided by engineer. */
-"Corres never sees your account password" = "Corresがアカウントのパスワードを見ることはありません";
-
-/* No comment provided by engineer. */
 "Corres never tells anyone you opened their email. Waiting is tracked from the conversation itself." = "Corresは、あなたがメールを開いたことを誰にも知らせません。返信待ちは会話そのものから判断します。";
 
 /* No comment provided by engineer. */
@@ -1146,9 +1143,6 @@
 
 /* No comment provided by engineer. */
 "Gmail and Outlook" = "GmailとOutlook";
-
-/* No comment provided by engineer. */
-"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "GmailとOutlookはGoogleとMicrosoftのページでサインインし、Corresはいつでも取り消せる許可を受け取ります。iCloudはaccount.apple.comでいつでも無効にできるApp用パスワードを使います。どちらもこの%@のキーチェーンに保存されます。";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail、Outlook、iCloudメール、Yahoo、AOL、Fastmailなど、ほとんどのメールに対応。メールはこの%@上で振り分けられ、読まれます。";
@@ -3830,3 +3824,7 @@
 "Keep it scheduled?" = "予約したままにしますか？";
 "Keep Scheduled" = "予約したままにする";
 "It still sends at the time you picked, with your changes." = "変更を加えたうえで、選んだ時刻に送信されます。";
+
+/* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
+"Corres never sees your Google or Microsoft password" = "CorresがGoogleやMicrosoftのパスワードを見ることはありません";
+"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "GmailとOutlookはGoogleとMicrosoftのページでサインインし、Corresはいつでも取り消せる許可を受け取ります。iCloudはaccount.apple.comでいつでも無効にできるApp用パスワードを使い、そのほかのメールは入力したパスワードを使います。どちらもこの%@のキーチェーンに保存されます。どちらかで即時通知をオンにすると、そのパスワードの封をしたコピーがCorresのメール監視機能に送られ、開けるのはその機能だけです。オフにするとコピーは削除されます。";

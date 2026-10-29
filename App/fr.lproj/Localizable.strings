@@ -758,9 +758,6 @@
 "Corres learns your greeting, sign-off and length once you've sent a few more emails." = "Corres apprend votre formule d’appel, votre formule de politesse et votre longueur après quelques e-mails envoyés de plus.";
 
 /* No comment provided by engineer. */
-"Corres never sees your account password" = "Corres ne voit jamais le mot de passe de votre compte";
-
-/* No comment provided by engineer. */
 "Corres never tells anyone you opened their email. Waiting is tracked from the conversation itself." = "Corres ne dit jamais à personne que vous avez ouvert son e-mail. En attente se déduit de la conversation elle-même.";
 
 /* No comment provided by engineer. */
@@ -1146,9 +1143,6 @@
 
 /* No comment provided by engineer. */
 "Gmail and Outlook" = "Gmail et Outlook";
-
-/* No comment provided by engineer. */
-"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail et Outlook se connectent sur les pages de Google et de Microsoft, et Corres reçoit une autorisation que vous pouvez retirer à tout moment. iCloud utilise un mot de passe pour app que vous pouvez désactiver sur account.apple.com. Les deux restent dans le trousseau de votre %@.";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail et presque toutes les autres messageries. Vos e-mails sont triés et lus sur votre %@.";
@@ -3830,3 +3824,7 @@
 "Keep it scheduled?" = "Garder l’envoi programmé ?";
 "Keep Scheduled" = "Garder programmé";
 "It still sends at the time you picked, with your changes." = "Il part toujours à l’heure choisie, avec vos modifications.";
+
+/* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
+"Corres never sees your Google or Microsoft password" = "Corres ne voit jamais votre mot de passe Google ou Microsoft";
+"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "Gmail et Outlook se connectent sur les pages de Google et de Microsoft, et Corres reçoit une autorisation que vous pouvez retirer à tout moment. iCloud utilise un mot de passe pour app que vous pouvez désactiver sur account.apple.com, et les autres messageries utilisent le mot de passe que vous saisissez. Les deux restent dans le trousseau de votre %@. Si vous activez les notifications instantanées pour l’un d’eux, une copie scellée de son mot de passe est envoyée à l’outil de surveillance du courrier de Corres, le seul à pouvoir l’ouvrir. Les désactiver supprime cette copie.";

@@ -758,9 +758,6 @@
 "Corres learns your greeting, sign-off and length once you've sent a few more emails." = "再发送几封邮件后，Corres 就会学会你的问候语、结束语和篇幅。";
 
 /* No comment provided by engineer. */
-"Corres never sees your account password" = "Corres 从不接触你的账户密码";
-
-/* No comment provided by engineer. */
 "Corres never tells anyone you opened their email. Waiting is tracked from the conversation itself." = "Corres 从不告诉任何人你打开了他们的邮件。“等待中”根据对话本身判断。";
 
 /* No comment provided by engineer. */
@@ -1146,9 +1143,6 @@
 
 /* No comment provided by engineer. */
 "Gmail and Outlook" = "Gmail 和 Outlook";
-
-/* No comment provided by engineer. */
-"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail 和 Outlook 在 Google 和 Microsoft 自己的页面登录，Corres 获得的权限你随时可以收回。iCloud 使用 App 专用密码，你可以随时在 account.apple.com 停用。两者都保存在这台%@的钥匙串中。";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail、Outlook、iCloud 邮件、Yahoo、AOL、Fastmail 以及几乎所有其他邮箱。你的邮件在这台%@上分类和阅读。";
@@ -3830,3 +3824,7 @@
 "Keep it scheduled?" = "保持定时发送？";
 "Keep Scheduled" = "保持定时";
 "It still sends at the time you picked, with your changes." = "邮件仍会在你选定的时间发送，并包含你的修改。";
+
+/* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
+"Corres never sees your Google or Microsoft password" = "Corres 从不接触你的 Google 或 Microsoft 密码";
+"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "Gmail 和 Outlook 在 Google 和 Microsoft 自己的页面登录，Corres 获得的权限你随时可以收回。iCloud 使用 App 专用密码，你可以随时在 account.apple.com 停用；其他邮箱使用你输入的密码。两者都保存在这台%@的钥匙串中。如果你为其中一个帐户打开即时通知，它的密码会以封存的副本发送给 Corres 的邮件监视程序，只有它才能打开。关闭即时通知即可删除该副本。";

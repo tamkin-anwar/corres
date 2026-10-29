@@ -758,9 +758,6 @@
 "Corres learns your greeting, sign-off and length once you've sent a few more emails." = "Corres lernt deine Begrüßung, deinen Gruß und deine Länge, sobald du ein paar E-Mails mehr gesendet hast.";
 
 /* No comment provided by engineer. */
-"Corres never sees your account password" = "Corres sieht nie dein Account-Passwort";
-
-/* No comment provided by engineer. */
 "Corres never tells anyone you opened their email. Waiting is tracked from the conversation itself." = "Corres verrät niemandem, dass du seine E-Mail geöffnet hast. „Wartet“ ergibt sich aus der Konversation selbst.";
 
 /* No comment provided by engineer. */
@@ -1146,9 +1143,6 @@
 
 /* No comment provided by engineer. */
 "Gmail and Outlook" = "Gmail und Outlook";
-
-/* No comment provided by engineer. */
-"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail und Outlook melden sich auf den Seiten von Google und Microsoft an, und Corres erhält eine Berechtigung, die du jederzeit zurücknehmen kannst. iCloud nutzt ein App-spezifisches Passwort, das du auf account.apple.com jederzeit deaktivieren kannst. Beides bleibt im Schlüsselbund auf diesem %@.";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail und fast jede andere E-Mail. Deine E-Mails werden auf diesem %@ sortiert und gelesen.";
@@ -3830,3 +3824,7 @@
 "Keep it scheduled?" = "Weiterhin geplant lassen?";
 "Keep Scheduled" = "Geplant lassen";
 "It still sends at the time you picked, with your changes." = "Sie wird mit deinen Änderungen weiterhin zur gewählten Zeit gesendet.";
+
+/* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
+"Corres never sees your Google or Microsoft password" = "Corres sieht nie dein Google- oder Microsoft-Passwort";
+"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "Gmail und Outlook melden sich auf den Seiten von Google und Microsoft an, und Corres erhält eine Berechtigung, die du jederzeit zurücknehmen kannst. iCloud nutzt ein App-spezifisches Passwort, das du auf account.apple.com jederzeit deaktivieren kannst, und andere E-Mail-Accounts nutzen das Passwort, das du eingibst. Beides bleibt im Schlüsselbund auf diesem %@. Schaltest du für einen davon Sofortige Mitteilungen ein, geht eine versiegelte Kopie seines Passworts an den Mail-Wächter von Corres, und nur er kann sie öffnen. Schaltest du sie aus, wird diese Kopie gelöscht.";

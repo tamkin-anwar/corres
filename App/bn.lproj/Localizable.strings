@@ -758,9 +758,6 @@
 "Corres learns your greeting, sign-off and length once you've sent a few more emails." = "আরও কয়েকটি ইমেইল পাঠালে Corres আপনার সম্ভাষণ, বিদায় সম্ভাষণ আর দৈর্ঘ্য শিখে নেবে।";
 
 /* No comment provided by engineer. */
-"Corres never sees your account password" = "Corres কখনো আপনার অ্যাকাউন্টের পাসওয়ার্ড দেখে না";
-
-/* No comment provided by engineer. */
 "Corres never tells anyone you opened their email. Waiting is tracked from the conversation itself." = "আপনি কারো ইমেইল খুলেছেন তা Corres কখনো কাউকে জানায় না। অপেক্ষার হিসাব রাখা হয় কথোপকথন থেকেই।";
 
 /* No comment provided by engineer. */
@@ -1146,9 +1143,6 @@
 
 /* No comment provided by engineer. */
 "Gmail and Outlook" = "Gmail ও Outlook";
-
-/* No comment provided by engineer. */
-"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail আর Outlook সাইন ইন করে Google ও Microsoft-এর নিজস্ব পেজে, আর Corres এমন একটি অনুমতি পায় যা আপনি যেকোনো সময় ফিরিয়ে নিতে পারেন। iCloud অ্যাপের জন্য আলাদা একটি পাসওয়ার্ড ব্যবহার করে, যা account.apple.com-এ বন্ধ করতে পারেন। দুটোই এই %@-এর কিচেইনে থাকে।";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail, Outlook, iCloud মেইল, Yahoo, AOL, Fastmail আর প্রায় যেকোনো ইমেইল। আপনার মেইল এই %@-এই সাজানো ও পড়া হয়।";
@@ -3830,3 +3824,7 @@
 "Keep it scheduled?" = "নির্ধারিত সময়েই রাখবেন?";
 "Keep Scheduled" = "নির্ধারিত রাখুন";
 "It still sends at the time you picked, with your changes." = "আপনার পরিবর্তনসহ এটি বেছে নেওয়া সময়েই পাঠানো হবে।";
+
+/* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
+"Corres never sees your Google or Microsoft password" = "Corres কখনো আপনার Google বা Microsoft পাসওয়ার্ড দেখে না";
+"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "Gmail ও Outlook সাইন ইন করে Google ও Microsoft-এর নিজস্ব পেজে, আর Corres এমন একটি অনুমতি পায় যা আপনি যেকোনো সময় ফিরিয়ে নিতে পারেন। iCloud অ্যাপের জন্য আলাদা একটি পাসওয়ার্ড ব্যবহার করে, যা account.apple.com-এ বন্ধ করা যায়, আর অন্য ইমেইল আপনার দেওয়া পাসওয়ার্ড ব্যবহার করে। দুটোই এই %@-এর কিচেইনে থাকে। এগুলোর কোনোটির জন্য তাৎক্ষণিক নোটিফিকেশন চালু করলে তার পাসওয়ার্ডের একটি সিল করা কপি Corres-এর মেইল পর্যবেক্ষকের কাছে যায়, যা শুধু সেটিই খুলতে পারে। বন্ধ করলে কপিটি মুছে যায়।";

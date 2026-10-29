@@ -1546,8 +1546,11 @@ private struct PrivacyView: View {
                 .onChange(of: companyLogos) { _, on in if !on { BrandLogos.shared.forgetAll() } }
             }
             Section {
-                row("Corres never sees your account password", "key",
-                    "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this \(Device.name)'s Keychain.")
+                // Other email signs in with its real password, and Instant
+                // Notifications sends a sealed copy to the mail watcher
+                // (see the account's Notifications footer): both said.
+                row("Corres never sees your Google or Microsoft password", "key",
+                    "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this \(Device.name)'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy.")
                 row("Your mail is read on this \(Device.name)", Device.name == "iPad" ? "ipad" : "iphone",
                     "Sorting, summaries, suggested replies and rewrites happen on this \(Device.name) with Apple Intelligence. Your mail never goes to our servers or to an AI company.")
                 row("Trackers blocked", "shield.lefthalf.filled",
