@@ -49,16 +49,32 @@ public enum MailDigest {
     /// real, otherwise the HTML turned into text. Many emails (newsletters,
     /// receipts) carry only HTML, and Gmail's snippet stands in for their
     /// plain text, so the richer of the two wins.
-    public static func readableText(body: String, html: String?) -> String {
-        let plain = body.trimmingCharacters(in: .whitespacesAndNewlines)
+    public static func readableText(body: String, html: String?, cellBreaks: Bool = false) -> String {
+        let plain = plainText(body)
         guard let html, !html.isEmpty else { return plain }
         // Some senders' plain part only says to read the HTML one ("your
-        // email client might not support HTML", Epic Games).
-        let isPlaceholder = plain.patternRange(#"(?i)(not support|unable to (display|view)|can'?t (display|see)|view (it|this( email)?) (online|in (a|your) browser)|html (formatted )?(e-?mail|version))"#) != nil && wordCount(plain) < 400
+        // email client might not support HTML", Epic Games; "your email
+        // provider is scrambling the email", Morning Brew).
+        let isPlaceholder = plain.patternRange(#"(?i)(not support|unable to (display|view)|can'?t (display|see)|view (it|this( email)?) (online|in (a|your) browser)|html (formatted )?(e-?mail|version)|scrambl|read (it|this)( email)?( in full)? online)"#) != nil && wordCount(plain) < 400
         if wordCount(plain) >= 60 && !isPlaceholder { return plain }
-        let converted = text(fromHTML: html)
+        let converted = text(fromHTML: html, cellBreaks: cellBreaks)
         if isPlaceholder, !converted.isEmpty { return converted }
         return wordCount(converted) > wordCount(plain) ? converted : plain
+    }
+
+    /// A plain-text part as written to be read: some senders put HTML in it
+    /// (a tax office's tables and styles) or its entities ("you&#39;re",
+    /// "&zwnj;" padding), which were shown and quoted as typed.
+    static func plainText(_ body: String) -> String {
+        let plain = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard plain.contains("<") || plain.contains("&") else { return plain }
+        if plain.patternRange(#"(?i)<(table|td|tr|div|p|br|style|span|sup|b|strong|a)\b[^>]{0,200}>"#) != nil {
+            return text(fromHTML: plain.replacingOccurrences(of: "\n", with: "<br>"))
+        }
+        if plain.patternRange(#"&(#\d{1,6}|#x[0-9a-fA-F]{1,6}|[a-zA-Z]{2,8});"#) != nil {
+            return tidy(plain.decodingHTMLEntities)
+        }
+        return plain
     }
 
     /// The list preview, from the email itself once its body is here: the
@@ -86,7 +102,12 @@ public enum MailDigest {
 
     /// HTML to readable text: no head, styles, scripts, comments or hidden
     /// preheaders; block elements become line breaks; entities decoded.
-    public static func text(fromHTML html: String) -> String {
+    /// With `cellBreaks`, each table cell is a line of its own: designed
+    /// mail lays its blocks out in cells, and run together they read as
+    /// one sentence ("Profile Your Autopay date will change…").
+    /// Off by default: a receipt's "Total" and "$14.62" sit in one row's
+    /// two cells, and its figures are read as one line.
+    public static func text(fromHTML html: String, cellBreaks: Bool = false) -> String {
         var text = html
         let removals = [
             #"(?is)<head\b.*?</head>"#, #"(?is)<style\b.*?</style>"#, #"(?is)<script\b.*?</script>"#,
@@ -100,7 +121,7 @@ public enum MailDigest {
         text = text.replacingPattern(#"(?i)<br\s*/?>"#, with: "\n")
         text = text.replacingPattern(#"(?i)</(p|div|tr|li|h[1-6]|table|blockquote|section|article)>"#, with: "\n")
         text = text.replacingPattern(#"(?i)<li\b[^>]*>"#, with: "\n• ")
-        text = text.replacingPattern(#"(?i)</t[dh]>"#, with: " ")
+        text = text.replacingPattern(#"(?i)</t[dh]>"#, with: cellBreaks ? "\n" : " ")
         // A quoted attribute can hold a ">" (an image's alt text with "<br>"
         // in it); a plain <[^>]+> stopped there and left CSS in the text.
         text = text.replacingPattern(#"<(?:[^>"']|"[^"]*"|'[^']*')*>"#, with: " ")
@@ -892,7 +913,7 @@ public enum MailDigest {
         sentence.patternRange(boilerplatePattern) != nil
     }
 
-    private static let boilerplatePattern = #"(?i)\b(do not reply|don'?t reply|no-?reply|unsubscribe|you('re| are) receiving this|(this|the) (e-?mail|message) (was|is) (sent|intended)|sent to you because|all rights reserved|privacy (policy|notice|statement)|terms (of (use|service)|and conditions)|in (your|a) (web )?browser|having trouble (viewing|seeing)|address book|(email|notification|communication) preferences|download (the|our|your) (app|receipt|invoice|statement|pdf)|pdf format|get the app|app store|google play|follow us|registered (office|in)|company (no|number)|customer service is available)\b|©"#
+    private static let boilerplatePattern = #"(?i)\b(do not reply|don'?t reply|no-?reply|unsubscribe|you('re| are) receiving this|(this|the) (e-?mail|message) (was|is) (sent|intended)|sent to you because|all rights reserved|privacy (policy|notice|statement)|terms (of (use|service)|and conditions)|in (your|a) (web )?browser|having trouble (viewing|seeing)|address book|(email|notification|communication) preferences|download (the|our|your) (app|receipt|invoice|statement|pdf)|pdf format|get the app|app store|google play|follow us|registered (office|in)|company (no|number)|customer service is available|not support html|scrambling the email|you are receiving|you subscribed|system generated|make sure you (receive|get) (our |these )?e-?mails|safe senders?|member fdic|equal housing|banking services (are )?provided by)\b|©"#
 
     /// Questions an email asks to sell or help, not ones it needs answered:
     /// "Want to…?", "Need help?", "Questions?", "Not you?".

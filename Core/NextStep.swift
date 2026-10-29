@@ -437,6 +437,12 @@ extension Glance {
         "Refund": String(localized: "Refund"),
         "Amount": String(localized: "Amount"),
         "Order": String(localized: "Order"),
+        // The In short card's own labels (`InShort.details`).
+        "Start date": String(localized: "Start date"),
+        "Where": String(localized: "Where"),
+        "Confirmation": String(localized: "Confirmation"),
+        "Pay": String(localized: "Pay"),
+        "More jobs": String(localized: "More jobs"),
         "Book": String(localized: "Book"),
         "Pay": String(localized: "Pay"),
         "Update payment": String(localized: "Update payment"),
