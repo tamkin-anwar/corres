@@ -13,8 +13,9 @@ import Observation
 /// Intelligence the In short card still says what each email is and the
 /// line worth knowing, read from the email itself (`InShort`), and that
 /// line stands in for a summary wherever Corres can build it from the
-/// email's facts (a sale, a code, a job offer). Marketing is never
-/// summarized: on real mail the model told sales as things you were given.
+/// email's facts (a sale, a code, a job offer). Marketing and newsletters
+/// are never summarized: on real mail the model told sales as things you
+/// were given, and a newsletter by one of its stories.
 ///
 /// Summaries are held to the email: every number, date, name and code in
 /// one must be in the email itself (`MailDigest.unsupportedClaims`). One
@@ -52,8 +53,8 @@ final class MailIntelligence {
 
     /// Bumped when what's worth summarizing changes, or how a summary is
     /// checked against its email (4: alarm and outcome words; 5: no
-    /// summaries of marketing).
-    nonisolated static let summaryRules = 5
+    /// summaries of marketing; 6: nor of newsletters).
+    nonisolated static let summaryRules = 6
 
     enum Tone: String, CaseIterable, Identifiable {
         case shorter = "Shorter", warmer = "Warmer", formal = "More Formal", proofread = "Proofread"
@@ -160,15 +161,19 @@ final class MailIntelligence {
         let words = readable.reduce(0) { $0 + MailDigest.wordCount($1.text) }
         // A summary has to save reading: short emails get none (one
         // repeated a short reminder word for word, right above it).
-        // Nor does marketing: on real mail the model told sales as things
-        // you were given ("You got 30% off", "You're offered four new
-        // hoodies") or led with the wrong offer, and Gmail and Superhuman
-        // leave promotions unsummarized too. The card says the offer
-        // itself, read from the email (`InShort`).
+        // Nor does mail sent to everyone: on real mail the model told sales
+        // as things you were given ("You got 30% off", "You're offered four
+        // new hoodies") or led with the wrong offer, and summed up a
+        // newsletter by one of its stories, as news about you ("You got
+        // market data showing Nasdaq down 1.25%"). Gmail leaves its
+        // promotions unsummarized, and Superhuman anything with an
+        // unsubscribe link. The card says
+        // the offer, or that it's a newsletter and how long it reads,
+        // from the email itself (`InShort`).
         var isMarketing = !isConversation && thread.labelIds.contains("CATEGORY_PROMOTIONS")
         if !isConversation, !isMarketing, thread.looksAutomated {
             let topic = await Self.topic(of: messages.last ?? thread)
-            isMarketing = topic == .sale || topic == .promotion
+            isMarketing = topic == .sale || topic == .promotion || topic == .newsletter
         }
         let wantsSummary = !isMarketing && words >= (isConversation ? MailDigest.minimumConversationWords : MailDigest.minimumWords)
         // Nothing to answer when the last word is yours.
