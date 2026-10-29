@@ -169,10 +169,13 @@ final class ThreadActionService {
                 && SenderLessons.category(for: $0) == category }.prefix(50))
         // Here at once, with Undo; Gmail follows behind, one email at a
         // time (up to 50 round trips, too slow to wait on before saying so).
+        // Only the category labels change, here and on Undo: a read or a
+        // flag that lands meanwhile isn't put back as it was.
         var before: [(ThreadID, [String])] = []
         for item in moving where item.id.account != Self.sampleAccount {
-            before.append((item.id, item.labelIds))
-            await store.setLabelIds(item.labelIds.filter { !InboxCategory.gmailLabels.contains($0) } + [category.gmailLabel], for: item.id)
+            let labels = store.thread(item.id)?.labelIds ?? item.labelIds
+            before.append((item.id, labels.filter(InboxCategory.gmailLabels.contains)))
+            await store.setLabelIds(InboxCategory.labels(labels, withCategories: [category.gmailLabel]), for: item.id)
         }
         store.listsShouldRebuild()
         let client = client
@@ -185,12 +188,14 @@ final class ThreadActionService {
         }
         offerUndo(said, systemImage: "tray.and.arrow.down") { [store] in
             undoRule()
-            for (id, labels) in before { await store.setLabelIds(labels, for: id) }
+            for (id, categories) in before {
+                guard let labels = store.thread(id)?.labelIds else { continue }
+                await store.setLabelIds(InboxCategory.labels(labels, withCategories: categories), for: id)
+            }
             store.listsShouldRebuild()
             // After the move has reached Gmail, so Gmail ends where it began.
             await forward.value
-            for (id, labels) in before {
-                let added = labels.filter(InboxCategory.gmailLabels.contains)
+            for (id, added) in before {
                 try? await client.modifyThread(threadId: id.providerID, addLabelIds: added,
                                                removeLabelIds: Array(InboxCategory.gmailLabels.subtracting(added)), account: id.account)
             }
@@ -245,6 +250,22 @@ final class ThreadActionService {
     /// Out of the inbox and into Spam, which also teaches the provider's
     /// filter. Undo works like Archive's.
     func reportSpam(_ thread: Correspondence, animated: Bool = true) async { await queueRemoval([thread], kind: .spam, animated: animated) }
+
+    /// Accounts removed while a removal of theirs was on its way: it ends
+    /// quietly, not with "Couldn't archive".
+    private var forgottenAccounts: Set<String> = []
+
+    /// The account was removed (`AccountRemoval.forgetHere`): its mail
+    /// waiting out Undo goes with it, and the rest goes on as it would.
+    func forget(account: String) {
+        forgottenAccounts.insert(account)
+        guard let pending = pendingRemoval, pending.threads.contains(where: { $0.id.account == account }) else { return }
+        removalTask?.cancel()
+        pendingRemoval = nil
+        for thread in pending.threads where thread.id.account == account { store.unhide(thread.id) }
+        let others = pending.threads.filter { $0.id.account != account }
+        if !others.isEmpty { enqueue(PendingRemoval(threads: others, kind: pending.kind)) }
+    }
 
     /// Undo puts the conversation back exactly where it was.
     func undoRemoval() {
@@ -320,7 +341,10 @@ final class ThreadActionService {
     /// own tab follows, as when you move it yourself.
     func applyCategoryQuietly(_ category: InboxCategory, to thread: Correspondence) async {
         guard thread.id.account != Self.sampleAccount else { return }
-        await store.setLabelIds(thread.labelIds.filter { !InboxCategory.gmailLabels.contains($0) } + [category.gmailLabel], for: thread.id)
+        // Its labels as they are now, not as a rule pass first read them:
+        // only the category changes.
+        let labels = store.thread(thread.id)?.labelIds ?? thread.labelIds
+        await store.setLabelIds(InboxCategory.labels(labels, withCategories: [category.gmailLabel]), for: thread.id)
         store.listsShouldRebuild()
         try? await client.modifyThread(threadId: thread.id.providerID, addLabelIds: [category.gmailLabel],
                                        removeLabelIds: Array(InboxCategory.gmailLabels.subtracting([category.gmailLabel])),
@@ -562,7 +586,14 @@ final class ThreadActionService {
     /// network call happens to finish; this matches that.
     private func perform(_ thread: Correspondence, failureMessage: String,
                          change: ActionQueue.Action.Kind, local: () async -> Void) async {
-        guard store.beginPending(thread.id) else { return }
+        // Busy for a moment (a read being saved as it was opened): waited
+        // for, up to two seconds, rather than the archive quietly dropped.
+        var reserved = store.beginPending(thread.id)
+        for _ in 0..<40 where !reserved {
+            try? await Task.sleep(for: .milliseconds(50))
+            reserved = store.beginPending(thread.id)
+        }
+        guard reserved else { return }
         defer { store.endPending(thread.id) }
         #if DEBUG
         // A stress-test run (`-stressThreads`) swipes freely without
@@ -574,7 +605,9 @@ final class ThreadActionService {
         #endif
         if thread.id.account != Self.sampleAccount {
             guard auth.isConnected(thread.id.account) else {
-                errorMessage = failureMessage
+                // Removed while this waited its turn: its mail is gone
+                // from here too, and there's nothing to say.
+                if !forgottenAccounts.contains(thread.id.account) { errorMessage = failureMessage }
                 return
             }
             do {
@@ -595,7 +628,9 @@ final class ThreadActionService {
     /// put back if a waiting change is refused later.
     private func send(_ change: ActionQueue.Action.Kind, for thread: Correspondence, keeping snapshot: Correspondence? = nil) async throws {
         let account = thread.id.account, id = thread.id.providerID
-        let action = ActionQueue.Action(account: account, threadID: id, kind: change, snapshot: snapshot)
+        let action = ActionQueue.Action(account: account, threadID: id, kind: change, snapshot: snapshot,
+                                        knownMessageID: thread.latestMessageID, knownAt: thread.receivedAt)
+        ActionQueue.shared.noteChange(account: account, threadID: id)
         if ActionQueue.shared.hasWaiting(account: account, threadID: id) {
             ActionQueue.shared.enqueue(action)
             return
@@ -620,12 +655,17 @@ final class ThreadActionService {
     private func performOptimistic(_ thread: Correspondence, failureMessage: String, quietly: Bool = false,
                                    change: ActionQueue.Action.Kind, local: () async -> Void,
                                    revert: () async -> Void) async -> Bool {
+        // Before it shows: a sync landing meanwhile doesn't undo it.
+        if thread.id.account != Self.sampleAccount {
+            ActionQueue.shared.noteChange(account: thread.id.account, threadID: thread.id.providerID)
+        }
         await local()
         guard thread.id.account != Self.sampleAccount else { return true }
         guard auth.isConnected(thread.id.account) else {
             // Still signing in (just launched, or opened from a
             // notification): the change waits for it rather than failing.
-            ActionQueue.shared.enqueue(ActionQueue.Action(account: thread.id.account, threadID: thread.id.providerID, kind: change))
+            ActionQueue.shared.enqueue(ActionQueue.Action(account: thread.id.account, threadID: thread.id.providerID, kind: change,
+                                                          knownMessageID: thread.latestMessageID, knownAt: thread.receivedAt))
             return true
         }
         do {

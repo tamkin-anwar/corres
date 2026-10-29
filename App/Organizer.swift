@@ -281,14 +281,18 @@ final class Organizer {
 
     /// Does what a rule says, except archiving, which the caller does for
     /// everything at once. Returns whether it should be archived.
+    /// Each step reads the conversation again: the pass read it before
+    /// other rules and other conversations had their turn, and a step
+    /// written from that copy put back what changed since.
     private func perform(_ rule: MailRule, on thread: Correspondence, store: MailStore, actions: ThreadActionService) async -> Bool {
-        if let attention = rule.attention, thread.attention != attention, let messageID = thread.latestMessageID {
-            await store.applySemanticTriage(thread.id, from: thread.attention, to: attention,
+        func current() -> Correspondence { store.thread(thread.id) ?? thread }
+        if let attention = rule.attention, current().attention != attention, let messageID = current().latestMessageID {
+            await store.applySemanticTriage(thread.id, from: current().attention, to: attention,
                                             reason: InboxClassifier.ruleReason, messageID: messageID)
         }
-        if let category = rule.category { await actions.applyCategoryQuietly(category, to: thread) }
-        if rule.markRead, thread.isUnread { await actions.setUnread(false, for: thread) }
-        if rule.flag, !thread.isFlagged { await actions.setFlagged(true, for: thread) }
+        if let category = rule.category { await actions.applyCategoryQuietly(category, to: current()) }
+        if rule.markRead, current().isUnread { await actions.setUnread(false, for: current()) }
+        if rule.flag, !current().isFlagged { await actions.setFlagged(true, for: current()) }
         return rule.archive
     }
 
