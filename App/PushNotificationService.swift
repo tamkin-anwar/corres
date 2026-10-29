@@ -140,6 +140,9 @@ final class PushNotificationService {
     /// never lapses for someone who keeps it open for days.
     func renewWatchIfDue(accounts: [String]) async {
         await retryPendingUnregisters()
+        // Corres is back, so is the connection, likely: a Google sign-in
+        // removed from all devices while offline is withdrawn now.
+        await GoogleTokenProvider.shared.retryPendingRevokes()
         let key = "corres.push.lastRenewed"
         let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
         guard !accounts.isEmpty, Date.now.timeIntervalSince(last) > 12 * 3_600 else { return }
@@ -194,9 +197,12 @@ final class PushNotificationService {
                             // the email itself, the moment it arrives, unless the
                             // account's notifications are off.
                             let alerts = await MainActor.run { Self.showsPushAlerts && AccountPreferences.level(for: account) != nil }
-                            try await self.post(path: "register-graph", body: ["subscriptionId": subscription.id, "clientState": subscription.secret,
-                                                                               "emailAddress": account, "deviceToken": deviceTokenHex,
-                                                                               "alerts": alerts ? "1" : "0"])
+                            var body = ["subscriptionId": subscription.id, "clientState": subscription.secret,
+                                        "emailAddress": account, "deviceToken": deviceTokenHex, "alerts": alerts ? "1" : "0"]
+                            // Microsoft's word that this device signed in to
+                            // the account, so nobody else can register it.
+                            if let idToken = await OutlookTokenProvider.shared.idToken(for: account) { body["idToken"] = idToken }
+                            try await self.post(path: "register-graph", body: body)
                             return true
                         }
                         _ = try await self.client.watch(topicName: Self.pubsubTopicName, account: account)
@@ -206,8 +212,11 @@ final class PushNotificationService {
                         let alerts = await MainActor.run {
                             NotifyPolicy.gmailAlerts && Self.showsPushAlerts && AccountPreferences.level(for: account) != nil
                         }
-                        try await self.post(path: "register", body: ["emailAddress": account, "deviceToken": deviceTokenHex,
-                                                                     "gmailAlerts": alerts ? "1" : "0"])
+                        var body = ["emailAddress": account, "deviceToken": deviceTokenHex, "gmailAlerts": alerts ? "1" : "0"]
+                        // Google's word that this device signed in to the
+                        // account, so nobody else can register it.
+                        if let idToken = await GoogleTokenProvider.shared.idToken(for: account) { body["idToken"] = idToken }
+                        try await self.post(path: "register", body: body)
                         return true
                     } catch {
                         return false
@@ -447,14 +456,31 @@ final class PushNotificationService {
                                                        "username": server.username ?? account])
     }
 
-    /// RSA-OAEP (SHA-256) to the watcher's KMS key, fetched from the relay.
+    /// The SHA-256 of each watcher key (PKCS#1 DER, as `/icloud-key` sends
+    /// it) a password may be sealed to. The relay hands out the key, but
+    /// only one of these is used: a relay that was tampered with, or
+    /// anything in between, can't swap in a key of its own and read the
+    /// password. Version 1 of the `icloud-watcher` KMS key, recorded
+    /// 2026-10-28 from the live `/icloud-key`. To check it, or to add a new
+    /// version before rotating (keep the old one until every build has
+    /// the new one): `gcloud kms keys versions get-public-key <version>
+    /// --key=icloud-watcher --keyring=corres --location=us-central1
+    /// --output-file=key.pem`, then
+    /// `openssl rsa -pubin -in key.pem -RSAPublicKey_out -outform DER | shasum -a 256`.
+    static let pinnedSealingKeys: Set<String> = [
+        "4813932c7c96c33469ea017e552ebda4e6ee968f214ff03d3e83dcb218fa9071",
+    ]
+
+    /// RSA-OAEP (SHA-256) to the watcher's KMS key, fetched from the relay
+    /// and used only if it's one of `pinnedSealingKeys`.
     private static func seal(_ password: String) async throws -> String {
         var request = URLRequest(url: relayBaseURL.appendingPathComponent("icloud-key"))
         request.httpMethod = "POST"
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200,
               let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let keyBase64 = json["key"] as? String, let keyData = Data(base64Encoded: keyBase64) else {
+              let keyBase64 = json["key"] as? String, let keyData = Data(base64Encoded: keyBase64),
+              isPinnedSealingKey(keyData) else {
             throw ICloudInstantError.unavailable
         }
         let attributes: [String: Any] = [kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
@@ -464,6 +490,11 @@ final class PushNotificationService {
             throw ICloudInstantError.unavailable
         }
         return sealed.base64EncodedString()
+    }
+
+    static func isPinnedSealingKey(_ keyData: Data) -> Bool {
+        let digest = SHA256.hash(data: keyData).map { String(format: "%02x", $0) }.joined()
+        return pinnedSealingKeys.contains(digest)
     }
 
     private func post(path: String, body: [String: String]) async throws {

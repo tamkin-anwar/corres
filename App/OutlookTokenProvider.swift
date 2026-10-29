@@ -63,7 +63,25 @@ actor OutlookTokenProvider {
         refused[account] = nil
         if let rotated = response.refresh_token { Keychain.set(rotated, key: Self.key(account)) }
         cache[account] = Cached(value: response.access_token, expiresAt: .now.addingTimeInterval(TimeInterval(response.expires_in)))
+        if let idToken = response.id_token {
+            idTokens[account] = Cached(value: idToken, expiresAt: GoogleTokenProvider.expiry(ofJWT: idToken)
+                                       ?? .now.addingTimeInterval(TimeInterval(response.expires_in)))
+        }
         return response.access_token
+    }
+
+    /// Microsoft's ID token for the account (the sign-in includes `openid`
+    /// and `email`), for the push relay to check that this device signed
+    /// in to the address it registers. In memory only; fresh for at least
+    /// five more minutes, or nil.
+    private var idTokens: [String: Cached] = [:]
+
+    func idToken(for account: String) async -> String? {
+        if let cached = idTokens[account], cached.expiresAt > Date().addingTimeInterval(5 * 60) { return cached.value }
+        if inFlight[account] == nil { cache[account] = nil }
+        _ = try? await accessToken(for: account)
+        guard let fresh = idTokens[account], fresh.expiresAt > Date() else { return nil }
+        return fresh.value
     }
 
     func store(refreshToken: String, accessToken: String?, expiresIn: Int?, for account: String) {
@@ -79,6 +97,7 @@ actor OutlookTokenProvider {
     func remove(_ account: String, everywhere: Bool = true) {
         Keychain.delete(key: Self.key(account), everywhere: everywhere)
         cache[account] = nil
+        idTokens[account] = nil
     }
 
     func hasRefreshToken(for account: String) -> Bool { Keychain.get(key: Self.key(account)) != nil }

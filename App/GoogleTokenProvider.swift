@@ -98,6 +98,10 @@ actor GoogleTokenProvider {
         refused[email] = nil
         let decoded = try JSONDecoder().decode(TokenResponse.self, from: data)
         cache[email] = CachedToken(value: decoded.access_token, expiresAt: Date().addingTimeInterval(TimeInterval(decoded.expires_in)))
+        if let idToken = decoded.id_token {
+            idTokens[email] = CachedToken(value: idToken, expiresAt: Self.expiry(ofJWT: idToken)
+                                          ?? Date().addingTimeInterval(TimeInterval(decoded.expires_in)))
+        }
         if let scope = decoded.scope {
             grantedScopes[email] = Set(scope.split(separator: " ").map(String.init))
         }
@@ -115,11 +119,45 @@ actor GoogleTokenProvider {
 
     func grantedScopes(for email: String) -> Set<String>? { grantedScopes[email] }
 
+    /// Google's ID token for the account, which comes with every access
+    /// token (the sign-in includes `openid email`): Google's signed word
+    /// that this is the account's verified address. The push relay checks
+    /// it so nobody can register an address they didn't sign in to. Kept
+    /// in memory only, and fresh for at least five more minutes; nil when
+    /// there's none (offline, or a sign-in without it).
+    private var idTokens: [String: CachedToken] = [:]
+
+    func idToken(for email: String) async -> String? {
+        if let cached = idTokens[email], cached.expiresAt > Date().addingTimeInterval(5 * 60) { return cached.value }
+        // A token still cached would skip the refresh that brings one.
+        if inFlightRefreshes[email] == nil { cache[email] = nil }
+        _ = try? await accessToken(for: email)
+        guard let fresh = idTokens[email], fresh.expiresAt > Date() else { return nil }
+        return fresh.value
+    }
+
+    /// A JWT's `exp`, without checking anything else: only to know when to
+    /// ask for a new one.
+    static func expiry(ofJWT token: String) -> Date? {
+        let parts = token.split(separator: ".")
+        guard parts.count == 3 else { return nil }
+        var payload = parts[1].replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        payload += String(repeating: "=", count: (4 - payload.count % 4) % 4)
+        guard let data = Data(base64Encoded: payload),
+              let claims = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let exp = claims["exp"] as? NSNumber else { return nil }
+        return Date(timeIntervalSince1970: exp.doubleValue)
+    }
+
     func store(refreshToken: String, for email: String) {
         Keychain.set(refreshToken, key: Self.keychainKey(for: email))
         cache[email] = nil
+        idTokens[email] = nil
         grantedScopes[email] = nil
         refused[email] = nil
+        // Signed in again: an older sign-in still waiting to be withdrawn
+        // must not be, since withdrawing it would end this one too.
+        Keychain.deleteDeviceOnly(key: Self.pendingRevokeKey(for: email), service: Self.pendingRevokeService)
     }
 
     /// Forgets the cached access token so the next call mints a fresh one.
@@ -131,28 +169,56 @@ actor GoogleTokenProvider {
         let refreshToken = Keychain.get(key: Self.keychainKey(for: email))
         Keychain.delete(key: Self.keychainKey(for: email), everywhere: everywhere)
         cache[email] = nil
+        idTokens[email] = nil
         // Removed from all your devices: Corres's access to the account is
         // given back at Google too, as the privacy policy says. Revoking one
         // token ends the whole grant ("Revocation removes all OAuth 2.0
         // scopes previously granted to a project, invalidating any issued
         // access or refresh tokens"), so every device's sign-in stops working
         // with it. Not from this device only: the others keep the account.
-        // Best effort: offline, or Google busy, and the removal still goes
-        // ahead; the token is already gone from the keychain.
-        if everywhere, let refreshToken {
-            Task.detached(priority: .utility) { await Self.revoke(refreshToken) }
+        // Offline, or Google busy, the removal still goes ahead and the
+        // token waits on this device only (never synced or backed up) until
+        // Google takes it (`retryPendingRevokes`), then it's deleted.
+        guard everywhere, let refreshToken else { return }
+        let key = Self.pendingRevokeKey(for: email)
+        Keychain.setDeviceOnly(refreshToken, key: key, service: Self.pendingRevokeService)
+        Task.detached(priority: .utility) {
+            if await Self.revoke(refreshToken) { Keychain.deleteDeviceOnly(key: key, service: Self.pendingRevokeService) }
         }
     }
 
+    /// Sign-ins removed from all devices that Google hasn't withdrawn yet,
+    /// tried again whenever Corres comes back (`renewWatchIfDue`). One whose
+    /// account was added again meanwhile, here or on another device, is
+    /// dropped instead: withdrawing it would end the new sign-in too. After
+    /// 30 days it's dropped anyway.
+    func retryPendingRevokes() async {
+        let prefix = Self.pendingRevokeKey(for: "")
+        for item in Keychain.deviceOnlyItems(service: Self.pendingRevokeService) {
+            let email = String(item.key.dropFirst(prefix.count))
+            let stale = item.saved.map { $0.timeIntervalSinceNow < -30 * 86_400 } ?? false
+            let done = !item.key.hasPrefix(prefix) || stale || Keychain.get(key: Self.keychainKey(for: email)) != nil
+            if done { Keychain.deleteDeviceOnly(key: item.key, service: Self.pendingRevokeService); continue }
+            if await Self.revoke(item.value) { Keychain.deleteDeviceOnly(key: item.key, service: Self.pendingRevokeService) }
+        }
+    }
+
+    private static let pendingRevokeService = "corres.pendingRevoke"
+    private static func pendingRevokeKey(for email: String) -> String { "studio.anwarcreative.corres.pendingRevoke.\(email)" }
+
     /// Google's revocation endpoint (RFC 7009), the token in the form body
     /// rather than the URL so it never lands in a URL log. 200 means
-    /// revoked; 400 (`invalid_token`) means it already was.
-    static func revoke(_ token: String) async {
+    /// revoked; 400 (`invalid_token`) means it already was. Either way it's
+    /// done; anything else (offline, Google busy) is false, to try again.
+    @discardableResult
+    static func revoke(_ token: String) async -> Bool {
         var request = URLRequest(url: URL(string: "https://oauth2.googleapis.com/revoke")!, timeoutInterval: 15)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = Data("token=\(formURLEncode(token))".utf8)
-        _ = try? await URLSession.shared.data(for: request)
+        guard let (_, response) = try? await URLSession.shared.data(for: request),
+              let status = (response as? HTTPURLResponse)?.statusCode else { return false }
+        return status == 200 || status == 400
     }
 
     /// Lets the Share extension use this account's sign-in too.
@@ -201,5 +267,5 @@ actor GoogleTokenProvider {
         value.addingPercentEncoding(withAllowedCharacters: formURLEncodeAllowed) ?? value
     }
 
-    private struct TokenResponse: Decodable { let access_token: String; let expires_in: Int; let scope: String? }
+    private struct TokenResponse: Decodable { let access_token: String; let expires_in: Int; let scope: String?; let id_token: String? }
 }

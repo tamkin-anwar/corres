@@ -37,8 +37,12 @@ enum Keychain {
         // Available as soon as the device is unlocked once after boot, and
         // stays available in the background: needed for background push /
         // BGAppRefreshTask token refreshes, which can run before the person
-        // has unlocked the device this session.
-        attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        // has unlocked the device this session. This device only: the
+        // privacy policy says a sign-in stays on the device it was added on
+        // unless iCloud Keychain carries it (`setSynced`), so this copy
+        // never goes into a backup that could be restored onto another
+        // device. The App Group still shares it with the extensions here.
+        attributes[kSecAttrAccessible as String] = localAccessibility
         var shared = attributes
         shared[kSecAttrAccessGroup as String] = sharedGroup
         // Never lose a sign-in: if the shared group is refused, keep it
@@ -61,7 +65,7 @@ enum Keychain {
               let value = get(key: key) else { return }
         var added = inShared
         added[kSecValueData as String] = Data(value.utf8)
-        added[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        added[kSecAttrAccessible as String] = localAccessibility
         guard SecItemAdd(added as CFDictionary, nil) == errSecSuccess else { return }
         // Every other copy of it (the app's own group) goes.
         let all: [String: Any] = [
@@ -94,6 +98,7 @@ enum Keychain {
         let status = SecItemCopyMatching(query as CFDictionary, &result)
         if status == errSecSuccess, let data = result as? Data {
             syncOnce(data, key: key)
+            keepOnDeviceOnce(key: key)
             return String(data: data, encoding: .utf8)
         }
         // Signed in on another of your devices: its iCloud Keychain copy.
@@ -110,6 +115,77 @@ enum Keychain {
         ].merging(modern) { $1 }
         SecItemDelete(query as CFDictionary)
         if everywhere { SecItemDelete(syncedQuery(key: key) as CFDictionary) }
+    }
+
+    /// The local copy's protection: after the first unlock (background
+    /// work needs it), and never restored onto another device.
+    private static var localAccessibility: CFString { kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly }
+
+    nonisolated(unsafe) private static var checkedLocal: Set<String> = []
+
+    /// Local copies saved before they were kept to this device (they
+    /// could go into a backup and be restored elsewhere) are moved to
+    /// this-device-only the first time they're read, once per key per launch.
+    private static func keepOnDeviceOnce(key: String) {
+        checkLock.lock()
+        let first = checkedLocal.insert(key).inserted
+        checkLock.unlock()
+        guard first else { return }
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+        ].merging(modern) { $1 }
+        SecItemUpdate(query as CFDictionary, [kSecAttrAccessible as String: localAccessibility] as CFDictionary)
+    }
+
+    // MARK: This device only, for a job
+
+    /// A secret kept only until a job is done, such as a Google sign-in
+    /// still to be withdrawn: on this device only, never in iCloud
+    /// Keychain or a backup, and not shared with the extensions.
+    static func setDeviceOnly(_ value: String, key: String, service: String) {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+            kSecAttrSynchronizable as String: false,
+        ].merging(modern) { $1 }
+        SecItemDelete(query as CFDictionary)
+        var attributes = query
+        attributes[kSecValueData as String] = Data(value.utf8)
+        attributes[kSecAttrAccessible as String] = localAccessibility
+        SecItemAdd(attributes as CFDictionary, nil)
+    }
+
+    /// Every item kept for `service`: its key, its value and when it was
+    /// saved.
+    static func deviceOnlyItems(service: String) -> [(key: String, value: String, saved: Date?)] {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrSynchronizable as String: false,
+            kSecReturnAttributes as String: true,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+        ].merging(modern) { $1 }
+        var found: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &found) == errSecSuccess,
+              let items = found as? [[String: Any]] else { return [] }
+        return items.compactMap { item in
+            guard let key = item[kSecAttrAccount as String] as? String, let data = item[kSecValueData as String] as? Data,
+                  let value = String(data: data, encoding: .utf8) else { return nil }
+            return (key, value, item[kSecAttrCreationDate as String] as? Date)
+        }
+    }
+
+    static func deleteDeviceOnly(key: String, service: String) {
+        SecItemDelete([
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+            kSecAttrSynchronizable as String: false,
+        ].merging(modern) { $1 } as CFDictionary)
     }
 
     // MARK: iCloud Keychain
