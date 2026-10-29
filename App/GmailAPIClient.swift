@@ -599,6 +599,22 @@ struct GmailAPIClient {
         try await performChange(path: "threads/\(threadId)/trash", body: nil, account: account)
     }
 
+    /// The same changes on some of a conversation's messages only: those
+    /// there when a change that waited was made (`ActionQueue.runWaiting`).
+    func modifyMessages(ids: [String], addLabelIds: [String], removeLabelIds: [String], account: String) async throws {
+        // Gmail takes up to 1,000 ids at once.
+        for chunk in ids.chunked(into: 1_000) {
+            var body: [String: [String]] = ["ids": chunk]
+            if !addLabelIds.isEmpty { body["addLabelIds"] = addLabelIds }
+            if !removeLabelIds.isEmpty { body["removeLabelIds"] = removeLabelIds }
+            try await performChange(path: "messages/batchModify", body: try JSONSerialization.data(withJSONObject: body), account: account)
+        }
+    }
+
+    func trashMessages(ids: [String], account: String) async throws {
+        for id in ids { try await performChange(path: "messages/\(id)/trash", body: nil, account: account) }
+    }
+
     /// Out of Trash, back where it was (Gmail restores its labels, so
     /// mail that was in the Inbox returns there).
     func untrashThread(threadId: String, account: String) async throws {

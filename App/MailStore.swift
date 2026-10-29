@@ -33,16 +33,15 @@ final class MailStore {
     /// The HTML of conversations opened lately. The lists hold every
     /// conversation without it (see `SwiftDataMailRepository.threads`);
     /// it's read from storage, about a millisecond, when one is opened.
-    private(set) var contents: [ThreadID: String] = [:]
-    /// Conversations already looked up, HTML or not, oldest first.
-    @ObservationIgnored private var contentOrder: [ThreadID] = []
-    private static let contentsKept = 40
+    /// Kept with the message it was read for: after a reply arrives, the
+    /// last message's HTML isn't shown under the reply's header.
+    private(set) var contents = OpenedContent(limit: 40)
 
     /// Whether a conversation's HTML is still to be read from storage:
     /// the reader waits for it rather than drawing the plain text first.
     func needsStoredContent(_ id: ThreadID) -> Bool {
         guard let thread = thread(id), thread.isBodyLoaded, thread.htmlBody == nil else { return false }
-        return !contentOrder.contains(id)
+        return !contents.isKnown(id, messageID: thread.latestMessageID)
     }
 
     /// Reads HTML apart from the repository, so an open never waits on a
@@ -52,9 +51,21 @@ final class MailStore {
     /// Reads an opened conversation's HTML from storage.
     func loadStoredContent(_ id: ThreadID) async {
         guard needsStoredContent(id) else { return }
+        // The message it's read for, taken before: storage is never behind
+        // the lists, so a newer one read meanwhile is only read again.
+        let messageID = thread(id)?.latestMessageID
         let html: String? = if let contentReader { await contentReader.html(for: id) }
             else { try? await repository.thread(id)?.htmlBody }
-        remember(html, for: id)
+        remember(html, for: id, messageID: messageID)
+    }
+
+    /// A reply arrived in a conversation read lately: its new HTML is read
+    /// now, so a reader left open on it (the Mac's) shows the reply rather
+    /// than waiting to be opened again.
+    private func readRepliedContent() {
+        let replied = contents.ids.filter(needsStoredContent)
+        guard !replied.isEmpty else { return }
+        Task { await prefetchStoredContent(replied) }
     }
 
     /// The conversations at the top of a list, read ahead so opening one
@@ -69,18 +80,16 @@ final class MailStore {
     /// itself (a summary) without opening it. Not kept.
     func storedThread(_ thread: Correspondence) async -> Correspondence {
         guard thread.isBodyLoaded, thread.htmlBody == nil else { return thread }
-        if let html = contents[thread.id] { var full = thread; full.htmlBody = html; return full }
+        if let html = contents.html(for: thread.id, messageID: thread.latestMessageID) {
+            var full = thread
+            full.htmlBody = html
+            return full
+        }
         return (try? await repository.thread(thread.id)) ?? thread
     }
 
-    private func remember(_ html: String?, for id: ThreadID) {
-        contentOrder.removeAll { $0 == id }
-        contentOrder.append(id)
-        contents[id] = html
-        if contentOrder.count > Self.contentsKept {
-            let old = contentOrder.removeFirst()
-            contents[old] = nil
-        }
+    private func remember(_ html: String?, for id: ThreadID, messageID: String?) {
+        contents.remember(html, for: id, messageID: messageID)
     }
 
     /// Several changes the lists see as one, so they rebuild once.
@@ -156,7 +165,7 @@ final class MailStore {
         guard !hiddenIDs.contains(id) else { return nil }
         if let index = positions[id], allThreads.indices.contains(index), allThreads[index].id == id {
             var found = allThreads[index]
-            if found.htmlBody == nil, let html = contents[id] { found.htmlBody = html }
+            if found.htmlBody == nil, let html = contents.html(for: id, messageID: found.latestMessageID) { found.htmlBody = html }
             return found
         }
         return browsed[id]
@@ -259,6 +268,13 @@ final class MailStore {
         item.labelIds.removeAll { ["TRASH", "SPAM"].contains($0) }
         if !item.labelIds.contains("INBOX") { item.labelIds.append("INBOX") }
         browsed[thread.id] = nil
+        // Kept already as archived mail: saving the same message again
+        // changes nothing (`upsert`), so it's put in the Inbox itself.
+        if positions[thread.id] != nil {
+            let labels = item.labelIds
+            await mutate(thread.id) { try await self.repository.setLabelIds(labels, for: thread.id) }
+            return
+        }
         _ = try? await repository.upsert([item], isInitialSync: true)
         await refresh()
     }
@@ -544,6 +560,7 @@ final class MailStore {
             waiting.forEach { $0.resume() }
         } while refreshAgain
         isRefreshing = false
+        readRepliedContent()
         afterRefresh?()
     }
     private func apply(_ changes: StoredChanges) {
@@ -605,19 +622,29 @@ final class MailStore {
 
     // Your own moves, pins and snoozes follow you to your other devices
     // (`CloudSync`); one arriving from another device isn't sent back.
-    func update(_ id: ThreadID, to attention: Attention) async {
+    // `recording` false: applying one from another device (`CloudSync`).
+    func update(_ id: ThreadID, to attention: Attention, recording: Bool = true) async {
         await mutate(id) { try await self.repository.setAttention(attention, for: id) }
-        CloudSync.shared.recordAttention(attention, for: id, messageID: thread(id)?.latestMessageID)
+        // Hidden ones too: Handled from a list hides the row first, and a
+        // move kept without its message applied to every later reply.
+        guard recording else { return }
+        CloudSync.shared.recordAttention(attention, for: id, messageID: savedThread(id)?.latestMessageID)
     }
 
-    func setPinned(_ isPinned: Bool, for id: ThreadID) async {
+    func setPinned(_ isPinned: Bool, for id: ThreadID, recording: Bool = true) async {
         await mutate(id) { try await self.repository.setPinned(isPinned, for: id) }
-        CloudSync.shared.recordPinned(isPinned, for: id)
+        if recording { CloudSync.shared.recordPinned(isPinned, for: id) }
     }
 
-    func snooze(_ id: ThreadID, until: Date?) async {
+    func snooze(_ id: ThreadID, until: Date?, recording: Bool = true) async {
         await mutate(id) { try await self.repository.snooze(id, until: until) }
-        CloudSync.shared.recordSnooze(until: until, for: id)
+        if recording { CloudSync.shared.recordSnooze(until: until, for: id) }
+    }
+
+    /// A conversation by id, hidden for Undo or not.
+    private func savedThread(_ id: ThreadID) -> Correspondence? {
+        if let index = positions[id], allThreads.indices.contains(index), allThreads[index].id == id { return allThreads[index] }
+        return browsed[id]
     }
 
     func setUnread(_ isUnread: Bool, for id: ThreadID) async {
@@ -689,7 +716,7 @@ final class MailStore {
     func applyLoadedContent(_ items: [Correspondence]) async {
         // Arrived for a conversation being read: keep its HTML, since the
         // reload below brings the list back without it.
-        for item in items { remember(item.htmlBody, for: item.id) }
+        for item in items { remember(item.htmlBody, for: item.id, messageID: item.latestMessageID) }
         // A mailbox's conversation, opened: its full message replaces the
         // preview, keeping what's been changed on it here.
         let browsedItems = items.filter { item in browsed[item.id] != nil && !allThreads.contains { $0.id == item.id } }
@@ -789,13 +816,14 @@ final class MailStore {
         return senders
     }
 
-    /// A decision another device made, applied here.
+    /// A decision another device made, applied here (and not recorded
+    /// again as this device's own).
     func approveOrBlock(_ decision: SenderDecision, sender: String, account: String) async {
-        await setSenderDecision(decision, senderEmail: sender, account: account)
+        await setSenderDecision(decision, senderEmail: sender, account: account, recording: false)
     }
 
-    private func setSenderDecision(_ decision: SenderDecision, senderEmail: String, account: String) async {
-        CloudSync.shared.recordDecision(decision, sender: senderEmail, account: account)
+    private func setSenderDecision(_ decision: SenderDecision, senderEmail: String, account: String, recording: Bool = true) async {
+        if recording { CloudSync.shared.recordDecision(decision, sender: senderEmail, account: account) }
         do {
             try await repository.setSenderDecision(decision, forSenderEmail: senderEmail, account: account)
             await refresh()

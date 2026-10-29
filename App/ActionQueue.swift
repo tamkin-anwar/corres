@@ -19,6 +19,15 @@ final class ActionQueue {
         enum Kind: Codable, Equatable {
             case modify(add: [String], remove: [String])
             case trash
+
+            /// Takes mail out of the Inbox or marks it read: what a reply
+            /// that came after it shouldn't have done to it too.
+            var leavesNewMail: Bool {
+                switch self {
+                case .trash: true
+                case .modify(let add, let remove): remove.contains("INBOX") || remove.contains("UNREAD") || add.contains("SPAM")
+                }
+            }
         }
         var id = UUID()
         let account: String
@@ -27,6 +36,11 @@ final class ActionQueue {
         /// The conversation as it was, for a removal: put back if the
         /// server refuses for good.
         var snapshot: Correspondence?
+        /// Its latest message when the change was made, and when that came:
+        /// a change that waits doesn't reach mail that arrived after it.
+        /// Optional so saved changes decode.
+        var knownMessageID: String?
+        var knownAt: Date?
         var createdAt = Date.now
         var attempts = 0
     }
@@ -66,6 +80,24 @@ final class ActionQueue {
         actions.contains { $0.account == account && $0.threadID == threadID }
     }
 
+    /// When each conversation was last changed here (read, flagged, moved).
+    private var changedAt: [String: Date] = [:]
+    private static let settling: TimeInterval = 120
+
+    func noteChange(account: String, threadID: String) {
+        let now = Date.now
+        if changedAt.count > 500 { changedAt = changedAt.filter { now.timeIntervalSince($0.value) < Self.settling } }
+        changedAt[account + "|" + threadID] = now
+    }
+
+    /// A change of yours is waiting, or was just made: what a sync read
+    /// from the server about this conversation may be from before it, and
+    /// would put the dot or the flag back for a moment.
+    func isChanging(account: String, threadID: String) -> Bool {
+        if let at = changedAt[account + "|" + threadID], Date.now.timeIntervalSince(at) < Self.settling { return true }
+        return hasWaiting(account: account, threadID: threadID)
+    }
+
     /// The account was removed: what waited for it is dropped, not sent
     /// later (if it's added back) or put back on screen.
     func forget(account: String) {
@@ -100,7 +132,7 @@ final class ActionQueue {
             // would touch the wrong change or none.
             func position() -> Int? { actions.firstIndex { $0.id == action.id } }
             do {
-                try await Self.run(action, client: client)
+                try await Self.runWaiting(action, client: client)
                 if let at = position() { actions.remove(at: at); save() }
             } catch where Self.isGone(error) {
                 // Already gone on the server (deleted elsewhere): what this
@@ -141,6 +173,29 @@ final class ActionQueue {
             try await client.modifyThread(threadId: action.threadID, addLabelIds: add, removeLabelIds: remove, account: action.account)
         case .trash:
             try await client.trashThread(threadId: action.threadID, account: action.account)
+        }
+    }
+
+    /// A change that waited, sent as it was meant: to the mail there when
+    /// you made it. A reply that came meanwhile stays in the Inbox, unread,
+    /// rather than being archived, deleted or marked read with what you'd
+    /// seen. Gmail takes the change on those messages alone; Outlook and
+    /// IMAP accounts leave the conversation as it is, the reply with it.
+    static func runWaiting(_ action: Action, client: MailClient) async throws {
+        guard action.kind.leavesNewMail, let known = action.knownMessageID else { return try await run(action, client: client) }
+        let messages = try await client.fetchThreadMessages(threadId: action.threadID, account: action.account)
+        guard let earlier = WaitingChange.messagesKnown(atMessage: known, at: action.knownAt, in: messages) else {
+            return try await run(action, client: client)
+        }
+        guard client.changesSingleMessages(account: action.account), !earlier.isEmpty else {
+            log.info("A waiting change was left out: a reply came after it")
+            return
+        }
+        switch action.kind {
+        case .modify(let add, let remove):
+            try await client.modifyMessages(ids: earlier, addLabelIds: add, removeLabelIds: remove, account: action.account)
+        case .trash:
+            try await client.trashMessages(ids: earlier, account: action.account)
         }
     }
 

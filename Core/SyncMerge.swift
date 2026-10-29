@@ -41,4 +41,40 @@ public enum SyncMerge {
             return at > gone
         }
     }
+
+    /// Whether a move made on another device (Needs You, Waiting, Handled)
+    /// applies to a conversation here: only while it still ends with the
+    /// message the move was made on. A reply puts it back in play, and a
+    /// move kept without its message applied to every reply after it.
+    public static func moveApplies(madeOn messageID: String?, latest: String?) -> Bool {
+        messageID == latest
+    }
+
+    /// A sender decision's key: the account it was made in and the sender,
+    /// so allowing someone in one account doesn't block them in another.
+    public static func decisionKey(account: String, sender: String) -> String {
+        account.lowercased() + "|" + sender.lowercased()
+    }
+
+    /// The sender a decision's key names.
+    public static func decisionSender(key: String, account: String) -> String {
+        let prefix = account.lowercased() + "|"
+        return key.hasPrefix(prefix) ? String(key.dropFirst(prefix.count)) : key
+    }
+
+    /// Sender decisions keyed by account and sender (`decisionKey`). They
+    /// were once keyed by the sender alone, and other devices may still
+    /// write them that way: each is moved under its account, the later
+    /// decision winning where both are there.
+    public static func accountKeyed<Value>(_ entries: [String: Value], account: (Value) -> String,
+                                           at: (Value) -> Date) -> [String: Value] {
+        var result: [String: Value] = [:]
+        for (key, value) in entries {
+            let owner = account(value)
+            let normalized = decisionKey(account: owner, sender: decisionSender(key: key, account: owner))
+            if let kept = result[normalized], at(kept) >= at(value) { continue }
+            result[normalized] = value
+        }
+        return result
+    }
 }

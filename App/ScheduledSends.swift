@@ -67,6 +67,13 @@ final class ScheduledSends {
     // MARK: Scheduling
 
     func schedule(_ draft: Draft, at date: Date) {
+        // A reply keeps its In-Reply-To and References from now: archived
+        // or gone from here by the time it sends, it still threads.
+        var draft = draft
+        if draft.kind != .new, let id = draft.threadID, let store = timeStore ?? Organizer.shared.store,
+           let thread = store.thread(id) ?? store.threadsIncludingHidden.first(where: { $0.id == id }) {
+            draft = OutboxService.keepingReplyHeaders(draft, thread: thread)
+        }
         let item = Item(id: draft.id, draft: draft, sendAt: date, scheduledAt: .now)
         items.removeAll { $0.id == item.id }
         items.append(item)

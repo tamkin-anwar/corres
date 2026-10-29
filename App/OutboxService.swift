@@ -410,8 +410,18 @@ final class OutboxService {
     /// The account was removed: its unsent and failed emails go with it,
     /// rather than being sent if it's ever added back.
     func forget(account: String) {
-        let gone = failedSends.filter { ($0.draft.fromAccount ?? $0.draft.threadID?.account) == account }.map(\.id)
+        var gone = failedSends.filter { ($0.draft.fromAccount ?? $0.draft.threadID?.account) == account }.map(\.id)
         failedSends.removeAll { gone.contains($0.id) }
+        // Still counting down for Undo: stopped, or it would go out from
+        // an account that's gone, fail, and come back every launch.
+        if let current = pending, let draft = queuedDraft, (draft.fromAccount ?? draft.threadID?.account) == account {
+            task?.cancel()
+            task = nil
+            pending = nil
+            queuedDraft = nil
+            queuedThread = nil
+            gone.append(current.id)
+        }
         Task {
             // And any still saved as unsent (Corres closed mid-send), which
             // the next launch would otherwise try, fail and show again.
@@ -595,7 +605,7 @@ final class OutboxService {
 
     /// The reply's In-Reply-To and References, taken from the thread while
     /// it's to hand (its latest message) and kept on the draft.
-    nonisolated private static func keepingReplyHeaders(_ draft: Draft, thread: Correspondence?) -> Draft {
+    nonisolated static func keepingReplyHeaders(_ draft: Draft, thread: Correspondence?) -> Draft {
         guard let thread else { return draft }
         var draft = draft
         if let header = thread.messageIdHeader { draft.inReplyTo = header }

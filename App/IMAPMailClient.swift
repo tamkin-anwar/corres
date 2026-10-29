@@ -589,7 +589,17 @@ struct IMAPMailClient: Sendable {
         let keys = try await Self.messageKeys(inConversation: threadId, account: account, preferLoaded: flagsOnly)
         guard !keys.isEmpty else { return }
         try await IMAPSessions.shared.with(account) { session in
-            let folders = session.cachedFolders
+            let folders = flagsOnly ? session.cachedFolders : try await session.folders()
+            // Moving to a folder this account doesn't have would leave the
+            // mail where it is while Corres takes it away for good: refused
+            // instead, so it comes back here and you're told why.
+            if addLabelIds.contains("SPAM"), folders.junk == nil {
+                throw Self.missingFolder(String(localized: "There's no Spam folder in this account."))
+            }
+            if removeLabelIds.contains("INBOX"), !addLabelIds.contains("SPAM"), !addLabelIds.contains(where: { $0.hasPrefix("folder:") }),
+               folders.archive == nil, keys.contains(where: { $0.path == folders.inbox }) {
+                throw Self.missingFolder(String(localized: "There's no Archive folder in this account."))
+            }
             for (path, group) in Dictionary(grouping: keys, by: \.path) {
                 let selected = try await session.connection.select(path)
                 let uids = group.filter { $0.uidValidity == selected.uidValidity }.map(\.uid)
@@ -624,7 +634,9 @@ struct IMAPMailClient: Sendable {
     func trashThread(threadId: String, account: String) async throws {
         let keys = try await Self.messageKeys(inConversation: threadId, account: account)
         try await IMAPSessions.shared.with(account) { session in
-            guard let trash = session.cachedFolders.trash else { return }
+            guard let trash = try await session.folders().trash else {
+                throw Self.missingFolder(String(localized: "There's no Trash folder in this account."))
+            }
             for (path, group) in Dictionary(grouping: keys, by: \.path) where path != trash {
                 let selected = try await session.connection.select(path)
                 let uids = group.filter { $0.uidValidity == selected.uidValidity }.map(\.uid)
@@ -632,6 +644,12 @@ struct IMAPMailClient: Sendable {
                 await IMAPCache.shared.forget(group.map(\.raw), account: account)
             }
         }
+    }
+
+    /// A refusal, not a dropped connection (`ActionQueue.isTransient`): it
+    /// isn't tried again, and the conversation is put back.
+    private static func missingFolder(_ message: String) -> ClientError {
+        ClientError.refused(statusCode: 0, reason: "noSuchFolder", message: message)
     }
 
     func untrashThread(threadId: String, account: String) async throws {

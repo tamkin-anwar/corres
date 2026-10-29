@@ -810,6 +810,29 @@ public struct RemoteMessageChange: Sendable, Equatable {
     }
 }
 
+/// A change made while offline (an archive, a delete, a read) that reaches
+/// the server later, once mail may have arrived in the conversation since.
+public enum WaitingChange {
+    /// The ids of the conversation's messages (oldest first) the change was
+    /// made on: those up to `known`, its latest message then, found by id
+    /// or, failing that, by time. Nil when nothing has come since, so the
+    /// change goes to the whole conversation as before. Your own messages
+    /// (a reply sent from another device) aren't new mail.
+    public static func messagesKnown(atMessage known: String, at knownAt: Date?, in messages: [Correspondence]) -> [String]? {
+        let later: ArraySlice<Correspondence>
+        if let index = messages.firstIndex(where: { $0.latestMessageID == known }) {
+            later = messages[(index + 1)...]
+        } else if let knownAt {
+            later = ArraySlice(messages.filter { $0.receivedAt > knownAt })
+        } else {
+            return nil
+        }
+        let arrived = Set(later.filter { !$0.isFromAccountOwner && !$0.labelIds.contains("SENT") }.compactMap(\.latestMessageID))
+        guard !arrived.isEmpty else { return nil }
+        return messages.compactMap(\.latestMessageID).filter { !arrived.contains($0) }
+    }
+}
+
 /// Messages a sync couldn't fetch, kept to try again on later passes, each
 /// with how many passes failed it and since when. One that keeps failing
 /// is let go after a few tries or a few days: kept forever, it was asked

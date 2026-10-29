@@ -146,6 +146,18 @@ struct MailClient: Sendable {
         isICloud(account) ? try await icloud.trashThread(threadId: threadId, account: account) : isOutlook(account) ? try await outlook.trashThread(threadId: threadId, account: account) : try await gmail.trashThread(threadId: threadId, account: account)
     }
 
+    /// Whether a change can go to some of a conversation's messages
+    /// (`modifyMessages`, `trashMessages`): Gmail's.
+    func changesSingleMessages(account: String) -> Bool { !isICloud(account) && !isOutlook(account) }
+
+    func modifyMessages(ids: [String], addLabelIds: [String], removeLabelIds: [String], account: String) async throws {
+        try await gmail.modifyMessages(ids: ids, addLabelIds: addLabelIds, removeLabelIds: removeLabelIds, account: account)
+    }
+
+    func trashMessages(ids: [String], account: String) async throws {
+        try await gmail.trashMessages(ids: ids, account: account)
+    }
+
     func untrashThread(threadId: String, account: String) async throws {
         isICloud(account) ? try await icloud.untrashThread(threadId: threadId, account: account) : isOutlook(account) ? try await outlook.untrashThread(threadId: threadId, account: account) : try await gmail.untrashThread(threadId: threadId, account: account)
     }

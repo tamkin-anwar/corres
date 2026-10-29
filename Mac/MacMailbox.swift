@@ -190,10 +190,12 @@ final class MacMailboxModel {
     /// `serverMatches`: what the accounts' own search found for `search`.
     func rows(store: MailStore, accounts: [String], remote: MacRemoteMailboxes, serverMatches: Set<ThreadID> = []) -> [MacRow] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
-        // Mail on the server: as fetched, less anything just moved away.
+        // Mail on the server: as fetched, less anything just moved away,
+        // each as it is now (read, flagged), not as the page first had it,
+        // so the dot changes and a toggle doesn't go the wrong way.
         if query.isEmpty, let source = mailbox.remoteSource {
             let hidden = store.hiddenIDs
-            let rows = remote.items(source).filter { !hidden.contains($0.id) && inFocus($0) }.map(MacRow.thread)
+            let rows = remote.items(source).filter { !hidden.contains($0.id) && inFocus($0) }.map { MacRow.thread(store.thread($0.id) ?? $0) }
             // A page from the server, so comparing is cheap; setting the
             // same rows again would redraw the list each time.
             if rows != cachedRows { cachedRows = rows }

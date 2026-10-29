@@ -280,7 +280,10 @@ final class GmailSyncService {
             // After upsert, so a message that arrived and was then archived
             // elsewhere within the same window ends up removed, not re-added.
             try ensureCurrent(account, removal)
-            try await repository.applyRemoteChanges(plan.remoteChanges)
+            // IMAP reports the flags it read, which can be from before a
+            // change of yours reached the server; it reports them again.
+            let reported = MailAccounts.provider(for: account).usesIMAP ? Self.leavingYourChanges(plan.remoteChanges) : plan.remoteChanges
+            try await repository.applyRemoteChanges(reported)
             await removeArchivedBehindYourReply(plan.remoteChanges, account: account, removal: removal)
             // Every listed message accounted for, or a missing one would
             // look deleted.
@@ -398,6 +401,14 @@ final class GmailSyncService {
         }
     }
 
+    /// Labels read from the server for conversations you've just changed
+    /// here (or whose change is still waiting): the listing may be from
+    /// before it, and would put the dot or flag back for a moment. Left
+    /// for a later pass; removals still go.
+    private static func leavingYourChanges(_ changes: [RemoteMessageChange]) -> [RemoteMessageChange] {
+        changes.filter { $0.removed || !ActionQueue.shared.isChanging(account: $0.threadID.account, threadID: $0.threadID.providerID) }
+    }
+
     /// A full listing (first sync, or history the server no longer keeps)
     /// carries no list of changes, and upsert leaves mail it already has
     /// alone. So mail read, archived or deleted elsewhere while the cursor
@@ -405,9 +416,9 @@ final class GmailSyncService {
     /// listing, but only between its oldest and newest Inbox mail: older
     /// mail wasn't listed, and newer mail arrived after it.
     private func reconcile(account: String, listed: [Correspondence]) async throws {
-        try await repository.applyRemoteChanges(listed.compactMap { item in
+        try await repository.applyRemoteChanges(Self.leavingYourChanges(listed.compactMap { item in
             item.latestMessageID.map { RemoteMessageChange(threadID: item.id, messageID: $0, currentLabelIds: item.labelIds, removed: false) }
-        })
+        }))
         let inboxDates = listed.filter { $0.labelIds.contains("INBOX") }.map(\.receivedAt)
         guard let oldest = inboxDates.min(), let newest = inboxDates.max() else { return }
         let listedIDs = Set(listed.map(\.id))
@@ -505,9 +516,9 @@ final class GmailSyncService {
     /// listing can come back short (a message the server failed to send),
     /// and that mustn't remove mail you still have.
     private func confirmAgainstInbox(account: String, listed: [Correspondence], removal: Int) async throws {
-        try await repository.applyRemoteChanges(listed.compactMap { item in
+        try await repository.applyRemoteChanges(Self.leavingYourChanges(listed.compactMap { item in
             item.latestMessageID.map { RemoteMessageChange(threadID: item.id, messageID: $0, currentLabelIds: item.labelIds, removed: false) }
-        })
+        }))
         let inboxDates = listed.filter { $0.labelIds.contains("INBOX") }.map(\.receivedAt)
         guard let oldest = inboxDates.min(), let newest = inboxDates.max() else { return }
         let listedIDs = Set(listed.map(\.id))
