@@ -10,10 +10,11 @@ import Observation
 /// Built on Apple's Foundation Models framework (the on-device model behind
 /// Apple Intelligence), like `SemanticTriageService`. There is deliberately
 /// no cloud fallback: mail never leaves the device. Without Apple
-/// Intelligence there's no summary: quoting the email's own sentences
-/// above the email never saved reading, and picked up buttons and sales
-/// lines from designed mail. Receipts, deliveries and bills get their
-/// key figures instead, with or without it (`MailDigest.glance`).
+/// Intelligence the In short card still says what each email is and the
+/// line worth knowing, read from the email itself (`InShort`), and that
+/// line stands in for a summary wherever Corres can build it from the
+/// email's facts (a sale, a code, a job offer). Marketing is never
+/// summarized: on real mail the model told sales as things you were given.
 ///
 /// Summaries are held to the email: every number, date, name and code in
 /// one must be in the email itself (`MailDigest.unsupportedClaims`). One
@@ -50,8 +51,9 @@ final class MailIntelligence {
     }
 
     /// Bumped when what's worth summarizing changes, or how a summary is
-    /// checked against its email (4: alarm and outcome words).
-    nonisolated static let summaryRules = 4
+    /// checked against its email (4: alarm and outcome words; 5: no
+    /// summaries of marketing).
+    nonisolated static let summaryRules = 5
 
     enum Tone: String, CaseIterable, Identifiable {
         case shorter = "Shorter", warmer = "Warmer", formal = "More Formal", proofread = "Proofread"
@@ -158,7 +160,17 @@ final class MailIntelligence {
         let words = readable.reduce(0) { $0 + MailDigest.wordCount($1.text) }
         // A summary has to save reading: short emails get none (one
         // repeated a short reminder word for word, right above it).
-        let wantsSummary = words >= (isConversation ? MailDigest.minimumConversationWords : MailDigest.minimumWords)
+        // Nor does marketing: on real mail the model told sales as things
+        // you were given ("You got 30% off", "You're offered four new
+        // hoodies") or led with the wrong offer, and Gmail and Superhuman
+        // leave promotions unsummarized too. The card says the offer
+        // itself, read from the email (`InShort`).
+        var isMarketing = !isConversation && thread.labelIds.contains("CATEGORY_PROMOTIONS")
+        if !isConversation, !isMarketing, thread.looksAutomated {
+            let topic = await Self.topic(of: messages.last ?? thread)
+            isMarketing = topic == .sale || topic == .promotion
+        }
+        let wantsSummary = !isMarketing && words >= (isConversation ? MailDigest.minimumConversationWords : MailDigest.minimumWords)
         // Nothing to answer when the last word is yours.
         // Only a person writing to you gets reply suggestions: never
         // automated or Gmail-categorized mail.
@@ -191,6 +203,12 @@ final class MailIntelligence {
                       replyIntents: wantsReplies ? Array(result.replies.prefix(3)) : [],
                       coversWholeMessage: result.covered,
                       messageCount: messages.count), for: key)
+    }
+
+    /// What the email is, as the In short card reads it. Off the main
+    /// thread: a full pass over its HTML.
+    nonisolated private static func topic(of message: Correspondence) async -> InShort.Topic {
+        InShort.make(for: message).topic
     }
 
     /// Each message as plain, cleaned text. Off the main thread: turning a
