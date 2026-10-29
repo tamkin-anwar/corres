@@ -2926,3 +2926,7 @@
 
 /* No comment provided by engineer. */
 "year" = "বছর";
+
+/* The message list's context menu. */
+"Move To" = "সরান";
+"Add to VIPs" = "VIP-তে যোগ করুন";

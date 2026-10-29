@@ -2926,3 +2926,7 @@
 
 /* No comment provided by engineer. */
 "year" = "年";
+
+/* The message list's context menu. */
+"Move To" = "移動";
+"Add to VIPs" = "VIPに追加";

@@ -2926,3 +2926,7 @@
 
 /* No comment provided by engineer. */
 "year" = "년";
+
+/* The message list's context menu. */
+"Move To" = "이동";
+"Add to VIPs" = "VIP에 추가";

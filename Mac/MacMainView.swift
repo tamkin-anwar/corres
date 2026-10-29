@@ -1010,55 +1010,119 @@ struct MacMainView: View {
             }
             menu.addItem(.separator())
         }
-        item(String(localized: "Reply"), "arrowshape.turn.up.left", .reply)
-        item(String(localized: "Reply All"), "arrowshape.turn.up.left.2", .replyAll)
-        item(String(localized: "Forward"), "arrowshape.turn.up.right", .forward)
-        menu.addItem(.separator())
-        item(String(localized: "Archive"), "archivebox", .archive)
-        item(String(localized: "Delete"), "trash", .trash)
-        menu.addItem(.separator())
-        for attention in Attention.choices {
-            item(String(localized: "Move to \(attention.title)"),
-                 attention == .needsYou ? "exclamationmark.circle" : attention == .waiting ? "clock" : "checkmark.circle",
-                 .move(attention))
+        // The press-and-hold menu chosen on the iPhone or iPad (Settings →
+        // Customize → Press and Hold), which follows you here: the top
+        // row's actions first, then the list, in the same order.
+        let layout = CorresSettings.rowMenu
+        let top = layout.top.filter { appliesOnMac($0, to: thread) }
+        let list = layout.list.filter { appliesOnMac($0, to: thread) && !$0.isDestructive }
+        let destructive = layout.list.filter { appliesOnMac($0, to: thread) && $0.isDestructive }
+        for group in [top, list, destructive] where !group.isEmpty {
+            for action in group { addRowMenuItem(action, for: thread, to: menu) }
+            menu.addItem(.separator())
         }
-        menu.addItem(.separator())
-        item(thread.isUnread ? String(localized: "Mark as Read") : String(localized: "Mark as Unread"), "envelope.badge", .toggleUnread)
-        item(thread.isFlagged ? String(localized: "Unflag") : String(localized: "Flag"), "flag", .toggleFlag)
-        item(thread.isPinned ? String(localized: "Unpin") : String(localized: "Pin"), thread.isPinned ? "pin.slash" : "pin", .togglePin)
-        if thread.isSnoozed(at: .now) {
-            item(String(localized: "Unsnooze"), "moon.zzz", .snooze(nil))
-        } else {
-            item(String(localized: "Snooze…"), "moon.zzz", .askSnooze)
-        }
-        // Mute: out of your lists, and new replies stay quiet.
-        let isMuted = Organizer.shared.isMuted(thread.id)
-        let mute = ClosureMenuItem(title: isMuted ? String(localized: "Unmute") : String(localized: "Mute")) {
-            if isMuted { Organizer.shared.unmute(thread.id) } else { Organizer.shared.mute(thread) }
-        }
-        mute.image = NSImage(systemSymbolName: isMuted ? "bell" : "bell.slash", accessibilityDescription: nil)
-        menu.addItem(mute)
-        // A VIP's mail always lands in Needs You and always notifies.
-        if let email = thread.senderEmail, !thread.isFromAccountOwner {
-            let isVIP = InboxClassifier.isVIP(email)
-            let vip = ClosureMenuItem(title: isVIP ? String(localized: "Remove from VIPs") : String(localized: "Make VIP")) {
-                Task { await services.store.setVIP(email, account: thread.id.account, isVIP: !isVIP) }
-            }
-            vip.image = NSImage(systemSymbolName: isVIP ? "star.slash" : "star", accessibilityDescription: nil)
-            menu.addItem(vip)
-        }
-        // When to be reminded, as Mail's Remind Me offers.
-        let remind = NSMenuItem(title: String(localized: "Add to Reminders"), action: nil, keyEquivalent: "")
-        remind.image = NSImage(systemSymbolName: "checklist", accessibilityDescription: nil)
-        let times = NSMenu()
-        for choice in MailReminders.choices(for: thread) {
-            times.addItem(ClosureMenuItem(title: choice.title) { perform(.remind(choice.date), on: [thread]) })
-        }
-        remind.submenu = times
-        menu.addItem(remind)
-        menu.addItem(.separator())
         item(String(localized: "Open in New Window"), "macwindow", .openInWindow)
         return menu
+    }
+
+    /// Unsubscribe and Share need a confirmation or a sheet of their own,
+    /// which this menu doesn't have on the Mac, so they're left out here.
+    private func appliesOnMac(_ action: RowMenuAction, to thread: Correspondence) -> Bool {
+        switch action {
+        case .unsubscribe, .share: false
+        case .vip: thread.senderEmail != nil && !thread.isFromAccountOwner
+        // A first email from someone already offers Block Sender above.
+        case .block: thread.senderEmail != nil && !thread.isFromAccountOwner && thread.senderDecision != .pending
+        case .spam: !thread.isFromAccountOwner
+        default: true
+        }
+    }
+
+    private func addRowMenuItem(_ action: RowMenuAction, for thread: Correspondence, to menu: NSMenu) {
+        func entry(_ title: String, _ symbol: String, run: @escaping () -> Void) {
+            let item = ClosureMenuItem(title: title, handler: run)
+            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+            menu.addItem(item)
+        }
+        switch action {
+        case .reply: entry(String(localized: "Reply"), action.systemImage) { perform(.reply) }
+        case .replyAll: entry(String(localized: "Reply All"), action.systemImage) { perform(.replyAll) }
+        case .forward: entry(String(localized: "Forward"), action.systemImage) { perform(.forward) }
+        case .archive: entry(String(localized: "Archive"), action.systemImage) { perform(.archive) }
+        case .trash: entry(String(localized: "Delete"), action.systemImage) { perform(.trash) }
+        case .read:
+            entry(thread.isUnread ? String(localized: "Mark as Read") : String(localized: "Mark as Unread"),
+                  thread.isUnread ? "envelope.open" : "envelope.badge") { perform(.toggleUnread) }
+        case .flag: entry(thread.isFlagged ? String(localized: "Unflag") : String(localized: "Flag"), "flag") { perform(.toggleFlag) }
+        case .pin: entry(thread.isPinned ? String(localized: "Unpin") : String(localized: "Pin"), thread.isPinned ? "pin.slash" : "pin") { perform(.togglePin) }
+        case .snooze:
+            if thread.isSnoozed(at: .now) {
+                entry(String(localized: "Unsnooze"), "moon.zzz") { perform(.snooze(nil)) }
+            } else {
+                entry(String(localized: "Snooze…"), "moon.zzz") { perform(.askSnooze) }
+            }
+        case .moveTo:
+            // One level: Corres's own lists, then the account's labels or folders.
+            let move = NSMenuItem(title: String(localized: "Move To"), action: nil, keyEquivalent: "")
+            move.image = NSImage(systemSymbolName: action.systemImage, accessibilityDescription: nil)
+            let places = NSMenu()
+            for attention in Attention.choices {
+                let item = ClosureMenuItem(title: attention.title) { perform(.move(attention)) }
+                if thread.attention == attention { item.state = .on }
+                places.addItem(item)
+            }
+            let account = thread.id.account
+            let labels = services.labelDirectory.labels(for: account).filter { !$0.isCategory }
+            if !labels.isEmpty { places.addItem(.separator()) }
+            for label in labels {
+                let item = ClosureMenuItem(title: label.name) {
+                    drop(on: .label(account: account, id: label.id, name: label.name), [thread.id])
+                }
+                item.image = NSImage(systemSymbolName: label.isFolder ? "folder" : "tag", accessibilityDescription: nil)
+                places.addItem(item)
+            }
+            move.submenu = places
+            menu.addItem(move)
+        case .mute:
+            // Out of your lists, and new replies stay quiet.
+            let isMuted = Organizer.shared.isMuted(thread.id)
+            entry(isMuted ? String(localized: "Unmute") : String(localized: "Mute"), isMuted ? "bell" : "bell.slash") {
+                if isMuted { Organizer.shared.unmute(thread.id) } else { Organizer.shared.mute(thread) }
+            }
+        case .vip:
+            // A VIP's mail always lands in Needs You and always notifies.
+            guard let email = thread.senderEmail else { return }
+            let isVIP = InboxClassifier.isVIP(email)
+            entry(isVIP ? String(localized: "Remove from VIPs") : String(localized: "Add to VIPs"), isVIP ? "star.slash" : "star") {
+                Task { await services.store.setVIP(email, account: thread.id.account, isVIP: !isVIP) }
+            }
+        case .reminder:
+            // When to be reminded, as Mail's Remind Me offers.
+            let remind = NSMenuItem(title: String(localized: "Add to Reminders"), action: nil, keyEquivalent: "")
+            remind.image = NSImage(systemSymbolName: action.systemImage, accessibilityDescription: nil)
+            let times = NSMenu()
+            for choice in MailReminders.choices(for: thread) {
+                times.addItem(ClosureMenuItem(title: choice.title) { perform(.remind(choice.date), on: [thread]) })
+            }
+            remind.submenu = times
+            menu.addItem(remind)
+        case .spam:
+            entry(String(localized: "Report Spam"), action.systemImage) {
+                drop(on: .server(MacRemoteMailboxes.Kind.spam.rawValue), [thread.id])
+            }
+        case .block:
+            guard let email = thread.senderEmail else { return }
+            entry(String(localized: "Block Sender"), action.systemImage) {
+                let alert = NSAlert()
+                alert.messageText = String(localized: "Block \(thread.sender)?")
+                alert.informativeText = String(localized: "Their mail is hidden in Corres from now on, with no notice to them. Your email account isn't changed.")
+                alert.addButton(withTitle: String(localized: "Block"))
+                alert.addButton(withTitle: String(localized: "Cancel"))
+                guard alert.runModal() == .alertFirstButtonReturn else { return }
+                Task { await services.store.blockSender(email, account: thread.id.account) }
+            }
+        case .unsubscribe, .share: break
+        }
     }
 
     private func submitSearch() {

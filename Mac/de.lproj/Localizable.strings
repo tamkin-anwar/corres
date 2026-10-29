@@ -2926,3 +2926,7 @@
 
 /* No comment provided by engineer. */
 "year" = "Jahr";
+
+/* The message list's context menu. */
+"Move To" = "Bewegen nach";
+"Add to VIPs" = "Zu VIPs hinzufügen";
