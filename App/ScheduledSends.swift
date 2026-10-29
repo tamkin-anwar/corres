@@ -66,7 +66,9 @@ final class ScheduledSends {
 
     // MARK: Scheduling
 
-    func schedule(_ draft: Draft, at date: Date) {
+    /// `announcing`: says so, with Undo. Not when an email opened to edit
+    /// goes back on the schedule unchanged in time.
+    func schedule(_ draft: Draft, at date: Date, announcing: Bool = true) {
         let item = Item(id: draft.id, draft: draft, sendAt: date, scheduledAt: .now)
         items.removeAll { $0.id == item.id }
         items.append(item)
@@ -77,7 +79,7 @@ final class ScheduledSends {
         AppDelegate.scheduleBackgroundRefresh()
         #endif
         rearm()
-        announce?(item)
+        if announcing { announce?(item) }
     }
 
     func reschedule(_ id: UUID, to date: Date) {

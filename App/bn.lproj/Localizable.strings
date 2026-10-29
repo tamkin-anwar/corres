@@ -3825,3 +3825,8 @@
 "Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "উপরের সারিতে বা মেনুতে যোগ করতে একটিতে ট্যাপ করুন। যে কাজ কোনো ইমেইলে খাটে না, যেমন মেইলিং লিস্ট থেকে না এলে আনসাবস্ক্রাইব, সেটি ওই ইমেইলের মেনুতে থাকে না।";
 "Add to Top Row" = "উপরের সারিতে যোগ করুন";
 "Add to Menu" = "মেনুতে যোগ করুন";
+
+/* Compose, opened from Send Later to edit: closing it keeps the email scheduled. */
+"Keep it scheduled?" = "নির্ধারিত সময়েই রাখবেন?";
+"Keep Scheduled" = "নির্ধারিত রাখুন";
+"It still sends at the time you picked, with your changes." = "আপনার পরিবর্তনসহ এটি বেছে নেওয়া সময়েই পাঠানো হবে।";

@@ -3825,3 +3825,8 @@
 "Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "タップすると上段かメニューに追加できます。メールに当てはまらないアクション（メーリングリスト以外のメールでの配信停止など）は、そのメールのメニューには表示されません。";
 "Add to Top Row" = "上段に追加";
 "Add to Menu" = "メニューに追加";
+
+/* Compose, opened from Send Later to edit: closing it keeps the email scheduled. */
+"Keep it scheduled?" = "予約したままにしますか？";
+"Keep Scheduled" = "予約したままにする";
+"It still sends at the time you picked, with your changes." = "変更を加えたうえで、選んだ時刻に送信されます。";

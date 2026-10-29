@@ -3825,3 +3825,8 @@
 "Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "탭하여 맨 위 줄이나 메뉴에 추가하세요. 메일링 리스트가 아닌 이메일의 '수신 거부'처럼 이메일에 해당하지 않는 동작은 그 메뉴에 표시되지 않습니다.";
 "Add to Top Row" = "맨 위 줄에 추가";
 "Add to Menu" = "메뉴에 추가";
+
+/* Compose, opened from Send Later to edit: closing it keeps the email scheduled. */
+"Keep it scheduled?" = "예약을 유지하겠습니까?";
+"Keep Scheduled" = "예약 유지";
+"It still sends at the time you picked, with your changes." = "변경한 내용과 함께 선택한 시간에 그대로 보냅니다.";

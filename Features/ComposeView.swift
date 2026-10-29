@@ -92,12 +92,17 @@ struct ComposeView: View {
     /// Opened from where it was kept (the Draft pill, Send Later, Undo):
     /// closing it unchanged keeps it. It was let go, the email with it.
     private let reopened: Bool
+    /// Opened from Send Later to edit: when it was to go. Closed without
+    /// sending, it goes back on the schedule (with any changes) instead
+    /// of into Drafts.
+    private let scheduledFor: Date?
 
     init(store: MailStore, outbox: OutboxService, auth: GoogleAuthService? = nil, draft: Draft, sourceThread: Correspondence?,
-         reopened: Bool = false) {
+         reopened: Bool = false, scheduledFor: Date? = nil) {
         // Already been in Compose (put aside, scheduled, undone), or
         // written in the Share sheet.
         self.reopened = reopened || draft.signatureAdded == true
+        self.scheduledFor = scheduledFor
         self.store = store
         self.outbox = outbox
         self.auth = auth
@@ -221,7 +226,7 @@ struct ComposeView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     // Tap sends; press and hold for Send Later, as in Mail.
-                    Button("Send") { checkThenSend() }
+                    Button("Send") { startSend() }
                     .fontWeight(.semibold)
                     .prominentToolbarButton()
                     .disabled(!canSend)
@@ -229,21 +234,23 @@ struct ComposeView: View {
                         Section("Send Later") {
                             ForEach(ScheduledSends.suggestions(), id: \.date) { option in
                                 Button {
-                                    checkThenSend(at: option.date)
+                                    startSend(at: option.date)
                                 } label: {
                                     Text(option.title)
                                     Text(ScheduledSends.describe(option.date).capitalizedFirst)
                                 }
                             }
-                            Button { showingSendLaterPicker = true } label: { Label("Pick a Time\u{2026}", systemImage: "calendar") }
+                            Button {
+                                sendLaterDate = Scheduling.sendLaterTime(sendLaterDate)
+                                showingSendLaterPicker = true
+                            } label: { Label("Pick a Time\u{2026}", systemImage: "calendar") }
                         }
                         // Sends now; brings it back to Needs You if nobody
                         // answers by then.
                         Section("Send, Remind Me If No Reply") {
                             ForEach([(String(localized: "In 1 Day"), 1.0), (String(localized: "In 3 Days"), 3.0), (String(localized: "In 1 Week"), 7.0)], id: \.1) { option in
                                 Button {
-                                    draft.followUpAfter = option.1 * 86_400
-                                    checkThenSend()
+                                    startSend(followUp: option.1 * 86_400)
                                 } label: { Label(option.0, systemImage: "bell.badge") }
                             }
                         }
@@ -253,18 +260,27 @@ struct ComposeView: View {
             }
             // "See attached", and nothing attached: Gmail and Outlook ask too.
             .confirmationDialog("Did you mean to attach something?", isPresented: $confirmingNoAttachment, titleVisibility: .visible) {
-                Button("Attach a File") { showingFileImporter = true }
-                Button("Attach a Photo") { showingPhotoPicker = true }
+                // Back to the email: the Send Later time or reminder chosen
+                // goes with it, so a plain Send afterwards sends plainly.
+                Button("Attach a File") { cancelSend(); showingFileImporter = true }
+                Button("Attach a Photo") { cancelSend(); showingPhotoPicker = true }
                 Button(pendingSendAt == nil ? "Send Anyway" : "Schedule Anyway") { checkThenSend(skippingAttachment: true) }
-                Button("Keep Editing", role: .cancel) { pendingSendAt = nil; draft.followUpAfter = nil }
+                Button("Keep Editing", role: .cancel) { cancelSend() }
             } message: {
                 Text("Your email mentions an attachment, but nothing is attached.")
             }
             .confirmationDialog("Send without a subject?", isPresented: $confirmingNoSubject, titleVisibility: .visible) {
                 Button(pendingSendAt == nil ? "Send" : "Schedule") { sendAndDismiss() }
-                Button("Add Subject", role: .cancel) { pendingSendAt = nil; draft.followUpAfter = nil; focusedField = .subject }
+                Button("Add Subject", role: .cancel) { cancelSend(); focusedField = .subject }
             }
-            .sheet(isPresented: $showingSendLaterPicker) {
+            // The checks run once the picker has closed: a question asked
+            // while it was still closing never showed, and nothing went.
+            .sheet(isPresented: $showingSendLaterPicker, onDismiss: {
+                if let date = scheduleAfterPicker {
+                    scheduleAfterPicker = nil
+                    startSend(at: Scheduling.sendLaterTime(date))
+                }
+            }) {
                 NavigationStack {
                     DatePicker("Send at", selection: $sendLaterDate, in: Date.now.addingTimeInterval(60)...,
                                displayedComponents: [.date, .hourAndMinute])
@@ -281,8 +297,8 @@ struct ComposeView: View {
                             ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showingSendLaterPicker = false } }
                             ToolbarItem(placement: .confirmationAction) {
                                 Button("Schedule") {
+                                    scheduleAfterPicker = sendLaterDate
                                     showingSendLaterPicker = false
-                                    checkThenSend(at: sendLaterDate)
                                 }
                                 .fontWeight(.semibold)
                             }
@@ -292,8 +308,9 @@ struct ComposeView: View {
             }
             // Mail's choices: keep it (saved to Drafts, a tap away at the
             // bottom of the screen) or delete it.
-            .confirmationDialog("Save this draft?", isPresented: $showingDiscardConfirmation, titleVisibility: .visible) {
-                Button("Save Draft") { dismiss() }
+            .confirmationDialog(scheduledFor == nil ? "Save this draft?" : "Keep it scheduled?",
+                                isPresented: $showingDiscardConfirmation, titleVisibility: .visible) {
+                Button(scheduledFor == nil ? "Save Draft" : "Keep Scheduled") { dismiss() }
                 Button("Delete Draft", role: .destructive) {
                     isFinished = true
                     outbox.discard(draft, replyingTo: sourceThread)
@@ -301,7 +318,11 @@ struct ComposeView: View {
                 }
                 Button("Keep Editing", role: .cancel) {}
             } message: {
-                Text("Saved drafts wait at the bottom of the screen and in Drafts, on every device.")
+                if scheduledFor == nil {
+                    Text("Saved drafts wait at the bottom of the screen and in Drafts, on every device.")
+                } else {
+                    Text("It still sends at the time you picked, with your changes.")
+                }
             }
             // Leaving Corres mid-email: saved to Drafts, in case iOS closes
             // Corres while it's in the background.
@@ -311,7 +332,11 @@ struct ComposeView: View {
             // Swiping Compose away never loses what you wrote: it's saved
             // and tucked away, as Gmail saves and Mail minimizes.
             .onDisappear {
-                if !isFinished, hasUnsavedChanges || draft.gmailDraftID != nil || reopened {
+                if !isFinished, let scheduledFor {
+                    // Edited from Send Later and closed: back on the
+                    // schedule, never only in Drafts.
+                    reschedule(at: scheduledFor, announcing: false)
+                } else if !isFinished, hasUnsavedChanges || draft.gmailDraftID != nil || reopened {
                     outbox.shelve(draft, replyingTo: sourceThread)
                 }
             }
@@ -590,6 +615,8 @@ struct ComposeView: View {
     }
 
     private func attemptDismiss() {
+        // Unchanged from Send Later: closes, still scheduled.
+        if scheduledFor != nil, !hasUnsavedChanges { dismiss(); return }
         // A saved draft always offers Delete too, not only once changed.
         if hasUnsavedChanges || draft.gmailDraftID != nil || reopened { showingDiscardConfirmation = true } else { dismiss() }
     }
@@ -670,11 +697,27 @@ struct ComposeView: View {
     @State private var sendLaterDate = Calendar.current.date(byAdding: .hour, value: 1, to: .now) ?? .now
     /// When it's to go, if later; carried through the checks.
     @State private var pendingSendAt: Date?
+    /// Schedule, tapped in the picker: sent on once the picker has closed.
+    @State private var scheduleAfterPicker: Date?
+
+    /// Send, Send Later or Send with a reminder: each starts afresh, so a
+    /// time or reminder chosen before going back to the email (to attach
+    /// something, or add a subject) never rides along with a later Send.
+    private func startSend(at sendAt: Date? = nil, followUp: TimeInterval? = nil) {
+        pendingSendAt = sendAt
+        draft.followUpAfter = followUp
+        checkThenSend()
+    }
+
+    /// Back to the email from one of the checks: nothing chosen is kept.
+    private func cancelSend() {
+        pendingSendAt = nil
+        draft.followUpAfter = nil
+    }
 
     /// The checks before anything goes: a promised attachment, then a
-    /// subject. Each asks once and never blocks. `at`: Send Later.
-    private func checkThenSend(at sendAt: Date? = nil, skippingAttachment: Bool = false) {
-        if let sendAt { pendingSendAt = sendAt }
+    /// subject. Each asks once and never blocks.
+    private func checkThenSend(skippingAttachment: Bool = false) {
         if !skippingAttachment, draft.attachments.isEmpty, MailDigest.mentionsAttachment(draft.body) {
             confirmingNoAttachment = true
         } else if !draft.hasSubject {
@@ -688,17 +731,21 @@ struct ComposeView: View {
         isFinished = true
         if outbox.shelved?.id == draft.id { outbox.clearShelf() }
         if let sendAt = pendingSendAt {
-            // Send Later holds it now; a copy left in Drafts could also be
-            // sent from another device.
-            outbox.removeGmailDraft(of: draft, replyingTo: sourceThread)
-            var scheduled = draft
-            scheduled.gmailDraftID = nil
-            ScheduledSends.shared.schedule(scheduled, at: sendAt)
+            reschedule(at: Scheduling.sendLaterTime(sendAt))
             dismiss()
             return
         }
         outbox.queueSend(draft, replyingTo: sourceThread)
         dismiss()
+    }
+
+    /// Send Later holds it; a copy left in Drafts could also be sent from
+    /// another device.
+    private func reschedule(at sendAt: Date, announcing: Bool = true) {
+        outbox.removeGmailDraft(of: draft, replyingTo: sourceThread)
+        var scheduled = draft
+        scheduled.gmailDraftID = nil
+        ScheduledSends.shared.schedule(scheduled, at: sendAt, announcing: announcing)
     }
 
     // MARK: - Recipients

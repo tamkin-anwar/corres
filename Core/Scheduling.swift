@@ -59,6 +59,13 @@ public enum Scheduling {
         return result
     }
 
+    /// Send Later's time, never in the past: at least a minute from now,
+    /// as the picker allows. A picker left open (or a time kept from an
+    /// hour ago) could otherwise schedule an email that was already due.
+    public static func sendLaterTime(_ date: Date, now: Date = .now) -> Date {
+        max(date, now.addingTimeInterval(60))
+    }
+
     /// 10:05 becomes 10:30; 10:30 stays.
     static func roundedUpToHalfHour(_ date: Date, calendar: Calendar) -> Date {
         let parts = calendar.dateComponents([.minute, .second], from: date)

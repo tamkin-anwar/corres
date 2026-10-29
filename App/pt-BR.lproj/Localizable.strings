@@ -3825,3 +3825,8 @@
 "Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "Toque em uma para adicioná-la à linha superior ou ao menu. Uma ação que não se aplica a um e-mail, como Descadastrar quando ele não vem de uma lista de e-mails, fica fora do menu dele.";
 "Add to Top Row" = "Adicionar à linha superior";
 "Add to Menu" = "Adicionar ao menu";
+
+/* Compose, opened from Send Later to edit: closing it keeps the email scheduled. */
+"Keep it scheduled?" = "Manter agendado?";
+"Keep Scheduled" = "Manter agendado";
+"It still sends at the time you picked, with your changes." = "Ele ainda será enviado no horário escolhido, com suas alterações.";
