@@ -1,32 +1,21 @@
 import Foundation
 
-/// What Corres reads out of an email to put above it, on every device: its
-/// one call to action, a receipt's or delivery's key figures, and what a
-/// long personal email asks of you. Read from the email itself, no model.
+/// What Corres reads out of an email to put above it, on every device: what
+/// it is and the line worth knowing (`InShort`), its one call to action, a
+/// receipt's or delivery's key figures, and what a long personal email asks
+/// of you. Read from the email itself, no model.
 struct ReadingAids: Equatable {
-    var nextStep: NextStep?
-    var glance: Glance?
-    var ask: String?
+    var card: InShort?
+    var nextStep: NextStep? { card?.nextStep }
+    var glance: Glance? { card?.glance }
+    var ask: String? { card?.ask }
 
     /// Off the main thread: reading a designed email's links is a full pass
     /// over its HTML.
     static func find(in thread: Correspondence) async -> ReadingAids {
         guard thread.isBodyLoaded else { return ReadingAids() }
-        let bulk = InboxClassifier.bulkKind(labelIds: thread.labelIds, looksAutomated: thread.looksAutomated)
-        let isBulk = bulk != nil, isPromotion = bulk == .promotions
-        let body = thread.body, html = thread.htmlBody, subject = thread.subject, sender = thread.senderEmail
-        let automated = thread.looksAutomated, labelIds = thread.labelIds
         return await Task.detached(priority: .utility) {
-            // The whole text, not the cleaned one: cleaning drops what
-            // follows a sign-off, which is often exactly where the link is.
-            let whole = MailDigest.readableText(body: body, html: html)
-            let cleaned = MailDigest.clean(whole)
-            let kind = isPromotion ? .newsletter
-                : MailDigest.kind(subject: subject, text: cleaned, senderEmail: sender, isBulk: isBulk,
-                                  looksAutomated: automated, hasEvent: false, labelIds: labelIds)
-            return ReadingAids(nextStep: MailDigest.nextStep(text: whole, html: html, kind: kind),
-                               glance: MailDigest.glance(text: cleaned, subject: subject, kind: kind),
-                               ask: kind == .personal ? MailDigest.buriedAsk(text: cleaned) : nil)
+            ReadingAids(card: InShort.make(for: thread))
         }.value
     }
 }

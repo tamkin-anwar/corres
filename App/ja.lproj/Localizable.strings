@@ -3837,3 +3837,108 @@
 "Verified as sent from %@" = "%@ からの送信を確認済み";
 "Couldn't load the full email. This is only its preview." = "メール全体を読み込めませんでした。これはプレビューのみです。";
 "You're offline. This is only the email's preview." = "オフラインです。これはメールのプレビューのみです。";
+
+/* No comment provided by engineer. */
+"Job offer" = "採用通知";
+
+/* No comment provided by engineer. */
+"Job alert" = "求人アラート";
+
+/* No comment provided by engineer. */
+"Appointment" = "予約";
+
+/* No comment provided by engineer. */
+"Sale" = "セール";
+
+/* No comment provided by engineer. */
+"Promotion" = "広告";
+
+/* No comment provided by engineer. */
+"Newsletter" = "ニュースレター";
+
+/* No comment provided by engineer. */
+"Security alert" = "セキュリティ通知";
+
+/* No comment provided by engineer. */
+"Security code" = "確認コード";
+
+/* No comment provided by engineer. */
+"Receipt" = "領収書";
+
+/* No comment provided by engineer. */
+"A job alert." = "求人アラートです。";
+
+/* No comment provided by engineer. */
+"A sale." = "セールです。";
+
+/* No comment provided by engineer. */
+"A promotion." = "広告です。";
+
+/* No comment provided by engineer. */
+"A newsletter." = "ニュースレターです。";
+
+/* No comment provided by engineer. */
+"A security alert." = "セキュリティ通知です。";
+
+/* No comment provided by engineer. */
+"A one-time code." = "ワンタイムコードです。";
+
+/* No comment provided by engineer. */
+"A delivery update." = "配達のお知らせです。";
+
+/* No comment provided by engineer. */
+"A receipt or bill." = "領収書または請求書です。";
+
+/* No comment provided by engineer. */
+"A calendar invitation." = "カレンダーの招待です。";
+
+/* No comment provided by engineer. */
+"An appointment reminder." = "予約のリマインダーです。";
+
+/* No comment provided by engineer. */
+"Code %@." = "コード %@。";
+
+/* No comment provided by engineer. */
+"Expires in %@." = "%@後に期限切れ。";
+
+/* No comment provided by engineer. */
+"%@ at %@." = "%2$@の%1$@。";
+
+/* No comment provided by engineer. */
+"%@." = "%@。";
+
+/* No comment provided by engineer. */
+"An offer to join %@." = "%@からの採用通知。";
+
+/* No comment provided by engineer. */
+"An offer from %@." = "%@からのオファー。";
+
+/* No comment provided by engineer. */
+"Starts %@." = "開始日：%@。";
+
+/* No comment provided by engineer. */
+"Listings from %@, not a reply from an employer." = "%@の求人情報です。採用担当者からの返信ではありません。";
+
+/* No comment provided by engineer. */
+"Ended %@." = "%@に終了。";
+
+/* No comment provided by engineer. */
+"Ends %@." = "%@に終了予定。";
+
+/* No comment provided by engineer. */
+"About %lld minutes to read." = "約%lld分で読めます。";
+
+/* No comment provided by engineer. */
+"Start date" = "開始日";
+
+/* No comment provided by engineer. */
+"Where" = "場所";
+
+/* No comment provided by engineer. */
+"Confirmation" = "確認番号";
+
+/* No comment provided by engineer. */
+"Listed pay" = "掲載給与";
+
+/* No comment provided by engineer. */
+"More jobs" = "ほかの求人";

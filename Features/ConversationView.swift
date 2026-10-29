@@ -355,6 +355,7 @@ struct ConversationView: View {
             nextStep = nil
             glance = nil
             buriedAsk = nil
+            inShort = nil
             // Keep the list underneath scrolled to the conversation you're
             // on while it's hidden, so going back shows it already in place.
             router.returnAnchor = currentID
@@ -411,6 +412,7 @@ struct ConversationView: View {
                 nextStep = aids.nextStep
                 glance = aids.glance
                 buriedAsk = aids.ask
+                inShort = aids.card
             }
             // Covers the whole conversation once its history is here.
             if proUnlocked, let current = store.thread(currentID) {
@@ -497,6 +499,8 @@ struct ConversationView: View {
     /// of you, read from the email itself.
     @State private var glance: Glance?
     @State private var buriedAsk: String?
+    /// What the email is and the line worth knowing (`InShort`).
+    @State private var inShort: InShort?
     @AppStorage(CorresSettings.keyDetailsKey) private var keyDetailsOn = true
     private var loadsImages: Bool { remoteImages == CorresSettings.RemoteImages.always.rawValue }
 
@@ -835,14 +839,25 @@ struct ConversationView: View {
     /// to correct it.
     private func inShortCard(for thread: Correspondence) -> some View {
         let showsSummaries = proUnlocked && summariesOn
-        let insight = showsSummaries ? intelligence.insight(for: thread) : nil
-        let isPreparing = showsSummaries && insight?.summary == nil && intelligence.isPreparing(thread)
+        // Corres's own line, from the email: a sale's offer, a code, an
+        // offer's role and start. Read straight from it, so it stands in
+        // for a written summary there; a quoted sentence gives way to one.
+        let card = keyDetailsOn ? inShort : nil
+        let hasHeadline = card?.headline != nil
+        let insight = showsSummaries && !hasHeadline ? intelligence.insight(for: thread) : nil
+        let isPreparing = showsSummaries && !hasHeadline && insight?.summary == nil && intelligence.isPreparing(thread)
+        let showsGist = insight?.summary == nil && !isPreparing && (card?.headline ?? card?.quote) != nil
+        let details = glance == nil ? card?.details ?? [] : []
         // Only the status to say ("No action needed: …")? Then a line, not a card.
-        let hasMore = insight?.summary != nil || isPreparing || (keyDetailsOn && (glance != nil || buriedAsk != nil))
-            || (nextStep != nil && !thread.isFromAccountOwner)
+        let hasMore = insight?.summary != nil || isPreparing || showsGist || !details.isEmpty
+            || (keyDetailsOn && (glance != nil || buriedAsk != nil)) || (nextStep != nil && !thread.isFromAccountOwner)
         return VStack(alignment: .leading, spacing: 10) {
             if let insight, let summary = insight.summary {
                 summaryBlock(insight, summary: summary)
+                Hairline().padding(.vertical, 2)
+            } else if showsGist, let card {
+                gistBlock(card)
+                if !details.isEmpty { detailsRow(details) }
                 Hairline().padding(.vertical, 2)
             } else if isPreparing {
                 HStack(spacing: 8) {
@@ -852,6 +867,10 @@ struct ConversationView: View {
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Summarizing")
+                Hairline().padding(.vertical, 2)
+            }
+            if !showsGist, !details.isEmpty {
+                detailsRow(details)
                 Hairline().padding(.vertical, 2)
             }
             if keyDetailsOn, let glance {
@@ -973,25 +992,50 @@ struct ConversationView: View {
         .accessibilityLabel("Change where this conversation is sorted")
     }
 
-    /// Where this conversation sits and why. Handled says where it went
-    /// rather than the reason it once needed you.
+    /// Where this conversation sits and why, saying what the email is
+    /// rather than only how it was sent (`InShort.statusLine`).
     private func statusLine(for thread: Correspondence) -> String {
-        if thread.isPastEvent(), let due = thread.dueAt {
-            return String(localized: "Was on \(due.formatted(.dateTime.weekday(.wide).month(.wide).day())), so it's out of Needs You. It stays in Mail.")
+        InShort.statusLine(for: thread, topic: inShort?.topic)
+    }
+
+    /// What the email is and the line worth knowing: Corres's few words
+    /// around facts copied from it, or its own sentence in quotation
+    /// marks. Never paraphrased, so never made up.
+    private func gistBlock(_ card: InShort) -> some View {
+        let text = card.headline ?? card.quote.map { "\u{201C}\($0)\u{201D}" } ?? ""
+        return VStack(alignment: .leading, spacing: 5) {
+            Label(card.topic.title, systemImage: card.topic.symbol)
+                .labelStyle(TightLabelStyle()).eyebrow(CorresPalette.accent)
+            Text(text)
+                .font(.subheadline).lineSpacing(3).foregroundStyle(CorresPalette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
         }
-        switch thread.attention {
-        case .handled: return String(localized: "Handled. It's off your lists and stays in Mail and in Mailboxes \u{2192} Handled.")
-        case .quiet:
-            // The reason often ends by saying so itself ("Marketing
-            // newsletter, no action needed"); say it once.
-            // "Kept out of Needs You" says the same again; once is enough.
-            let reason = thread.reason.replacingPattern(#"(?i)[\s,;.—–-]*no action (is )?needed[.!]?"#, with: "")
-                .replacingPattern(#"(?i)\s*kept out of needs you\.?"#, with: "")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            return reason.isEmpty ? String(localized: "No action needed.")
-                : String(localized: "No action needed: \(InboxClassifier.displayReason(reason))")
-        default: return thread.reason.isEmpty ? thread.attention.title : "\(thread.attention.title): \(thread.displayReason)"
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(card.topic.title): \(text)")
+    }
+
+    /// Label and value pairs read from the email ("Start date", "Site"),
+    /// laid out like a receipt's figures.
+    private func detailsRow(_ facts: [Glance.Fact]) -> some View {
+        let glance = Glance(status: nil, isAlert: false, facts: facts)
+        return ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 22) { glanceFacts(glance) }
+            // An address doesn't fit on one line beside another value; one
+            // under the other, each wraps.
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(facts, id: \.self) { fact in
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(Glance.display(fact.label)).font(.caption).foregroundStyle(CorresPalette.secondary)
+                        Text(fact.value).font(.body.weight(.semibold)).foregroundStyle(CorresPalette.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    }
+                }
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 
     /// A receipt's, delivery's or bill's status and key figures, the way

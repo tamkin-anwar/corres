@@ -2952,3 +2952,111 @@
 "You're offline. This is only the email's preview." = "Você está offline. Isto é só a prévia do e-mail.";
 "Loading the full email…" = "Carregando o e-mail completo…";
 "You" = "Você";
+
+/* No comment provided by engineer. */
+"Job offer" = "Oferta de emprego";
+
+/* No comment provided by engineer. */
+"Job alert" = "Alerta de vagas";
+
+/* No comment provided by engineer. */
+"Appointment" = "Compromisso";
+
+/* No comment provided by engineer. */
+"Sale" = "Liquidação";
+
+/* No comment provided by engineer. */
+"Promotion" = "Publicidade";
+
+/* No comment provided by engineer. */
+"Newsletter" = "Newsletter";
+
+/* No comment provided by engineer. */
+"Security alert" = "Alerta de segurança";
+
+/* No comment provided by engineer. */
+"Security code" = "Código de segurança";
+
+/* No comment provided by engineer. */
+"Delivery" = "Entrega";
+
+/* No comment provided by engineer. */
+"Receipt" = "Recibo";
+
+/* No comment provided by engineer. */
+"A job alert." = "Um alerta de vagas.";
+
+/* No comment provided by engineer. */
+"A sale." = "Uma liquidação.";
+
+/* No comment provided by engineer. */
+"A promotion." = "Uma publicidade.";
+
+/* No comment provided by engineer. */
+"A newsletter." = "Uma newsletter.";
+
+/* No comment provided by engineer. */
+"A security alert." = "Um alerta de segurança.";
+
+/* No comment provided by engineer. */
+"A one-time code." = "Um código de uso único.";
+
+/* No comment provided by engineer. */
+"A delivery update." = "Uma atualização de entrega.";
+
+/* No comment provided by engineer. */
+"A receipt or bill." = "Um recibo ou uma conta.";
+
+/* No comment provided by engineer. */
+"A calendar invitation." = "Um convite de calendário.";
+
+/* No comment provided by engineer. */
+"An appointment reminder." = "Um lembrete de compromisso.";
+
+/* No comment provided by engineer. */
+"Code %@." = "Código %@.";
+
+/* No comment provided by engineer. */
+"Expires in %@." = "Expira em %@.";
+
+/* No comment provided by engineer. */
+"%@ at %@." = "%1$@ na %2$@.";
+
+/* No comment provided by engineer. */
+"%@." = "%@.";
+
+/* No comment provided by engineer. */
+"An offer to join %@." = "Uma oferta para entrar na %@.";
+
+/* No comment provided by engineer. */
+"An offer from %@." = "Uma oferta de %@.";
+
+/* No comment provided by engineer. */
+"Starts %@." = "Começa em %@.";
+
+/* No comment provided by engineer. */
+"Listings from %@, not a reply from an employer." = "Vagas do %@, não uma resposta de um empregador.";
+
+/* No comment provided by engineer. */
+"Ended %@." = "Terminou em %@.";
+
+/* No comment provided by engineer. */
+"Ends %@." = "Termina em %@.";
+
+/* No comment provided by engineer. */
+"About %lld minutes to read." = "Cerca de %lld minutos de leitura.";
+
+/* No comment provided by engineer. */
+"Start date" = "Data de início";
+
+/* No comment provided by engineer. */
+"Where" = "Onde";
+
+/* No comment provided by engineer. */
+"Confirmation" = "Confirmação";
+
+/* No comment provided by engineer. */
+"Listed pay" = "Salário informado";
+
+/* No comment provided by engineer. */
+"More jobs" = "Mais vagas";

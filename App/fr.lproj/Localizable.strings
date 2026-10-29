@@ -3837,3 +3837,108 @@
 "Verified as sent from %@" = "Vérifié : envoyé depuis %@";
 "Couldn't load the full email. This is only its preview." = "Impossible de charger l’e-mail complet. Ceci n’est qu’un aperçu.";
 "You're offline. This is only the email's preview." = "Vous êtes hors ligne. Ceci n’est qu’un aperçu de l’e-mail.";
+
+/* No comment provided by engineer. */
+"Job offer" = "Offre d'emploi";
+
+/* No comment provided by engineer. */
+"Job alert" = "Alerte emploi";
+
+/* No comment provided by engineer. */
+"Appointment" = "Rendez-vous";
+
+/* No comment provided by engineer. */
+"Sale" = "Promo";
+
+/* No comment provided by engineer. */
+"Promotion" = "Publicité";
+
+/* No comment provided by engineer. */
+"Newsletter" = "Newsletter";
+
+/* No comment provided by engineer. */
+"Security alert" = "Alerte de sécurité";
+
+/* No comment provided by engineer. */
+"Security code" = "Code de sécurité";
+
+/* No comment provided by engineer. */
+"Receipt" = "Reçu";
+
+/* No comment provided by engineer. */
+"A job alert." = "Une alerte emploi.";
+
+/* No comment provided by engineer. */
+"A sale." = "Une offre promotionnelle.";
+
+/* No comment provided by engineer. */
+"A promotion." = "Une publicité.";
+
+/* No comment provided by engineer. */
+"A newsletter." = "Une newsletter.";
+
+/* No comment provided by engineer. */
+"A security alert." = "Une alerte de sécurité.";
+
+/* No comment provided by engineer. */
+"A one-time code." = "Un code à usage unique.";
+
+/* No comment provided by engineer. */
+"A delivery update." = "Un suivi de livraison.";
+
+/* No comment provided by engineer. */
+"A receipt or bill." = "Un reçu ou une facture.";
+
+/* No comment provided by engineer. */
+"A calendar invitation." = "Une invitation d'agenda.";
+
+/* No comment provided by engineer. */
+"An appointment reminder." = "Un rappel de rendez-vous.";
+
+/* No comment provided by engineer. */
+"Code %@." = "Code %@.";
+
+/* No comment provided by engineer. */
+"Expires in %@." = "Expire dans %@.";
+
+/* No comment provided by engineer. */
+"%@ at %@." = "%1$@ chez %2$@.";
+
+/* No comment provided by engineer. */
+"%@." = "%@.";
+
+/* No comment provided by engineer. */
+"An offer to join %@." = "Une offre pour rejoindre %@.";
+
+/* No comment provided by engineer. */
+"An offer from %@." = "Une offre de %@.";
+
+/* No comment provided by engineer. */
+"Starts %@." = "Début : %@.";
+
+/* No comment provided by engineer. */
+"Listings from %@, not a reply from an employer." = "Offres de %@, pas une réponse d'un employeur.";
+
+/* No comment provided by engineer. */
+"Ended %@." = "Terminée le %@.";
+
+/* No comment provided by engineer. */
+"Ends %@." = "Se termine le %@.";
+
+/* No comment provided by engineer. */
+"About %lld minutes to read." = "Environ %lld minutes de lecture.";
+
+/* No comment provided by engineer. */
+"Start date" = "Date de début";
+
+/* No comment provided by engineer. */
+"Where" = "Lieu";
+
+/* No comment provided by engineer. */
+"Confirmation" = "Confirmation";
+
+/* No comment provided by engineer. */
+"Listed pay" = "Salaire indiqué";
+
+/* No comment provided by engineer. */
+"More jobs" = "Autres offres";
