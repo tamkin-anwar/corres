@@ -495,9 +495,14 @@ public enum MailDigest {
     /// if it wasn't you. Worth seeing, never a to-do on its own; an
     /// on-device model once promoted one as "unauthorized access claim
     /// requires verification".
+    /// Kept per text: asked of every conversation the model brought into
+    /// Needs You, on every pass.
     public static func isConfirmationAlert(_ text: String) -> Bool {
-        text.patternRange(#"(?i)\b(if (you|this) (didn\S{0,5}t|did not|wasn\S{0,5}t|was not|don\S{0,5}t recogni[sz]e)|if this was you|wasn\S{0,5}t you\?)"#) != nil
+        confirmationMemo.value(text) {
+            text.patternRange(#"(?i)\b(if (you|this) (didn\S{0,5}t|did not|wasn\S{0,5}t|was not|don\S{0,5}t recogni[sz]e)|if this was you|wasn\S{0,5}t you\?)"#) != nil
+        }
     }
+    private static let confirmationMemo = Memo<String, Bool>()
 
     public static func unsupportedClaims(in summary: String, source: String) -> [String] {
         let lowerSource = source.lowercased()

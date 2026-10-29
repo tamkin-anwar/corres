@@ -164,7 +164,7 @@ public final class PersistedCorrespondence {
                        isPinned: isPinned, snoozedUntil: snoozedUntil,
                        senderDecision: SenderDecision(rawValue: senderDecisionRaw) ?? .approved,
                        imagesTrusted: imagesTrusted,
-                       attachments: (try? JSONDecoder().decode([MailAttachment].self, from: attachmentsData)) ?? [],
+                       attachments: Self.attachments(from: attachmentsData),
                        isUnread: isUnread, labelIds: labelIds,
                        toRecipients: toRecipients, ccRecipients: ccRecipients, replyTo: replyTo, triagedMessageID: triagedMessageID,
                        listUnsubscribeMailto: listUnsubscribeMailto, listUnsubscribeURL: listUnsubscribeURL,
@@ -176,6 +176,14 @@ public final class PersistedCorrespondence {
     }
 
     public static func compositeID(account: String, providerID: String) -> String { "\(account)|\(providerID)" }
+
+    /// Most mail has no attachments, saved as "[]" (or nothing, from
+    /// before): no decoder is made for those. One per row, on every read
+    /// of the list, added seconds to reading a big mailbox.
+    static func attachments(from data: Data) -> [MailAttachment] {
+        guard data.count > 2 else { return [] }
+        return (try? JSONDecoder().decode([MailAttachment].self, from: data)) ?? []
+    }
 }
 
 /// A message's HTML, kept apart from its conversation: nine tenths of what
