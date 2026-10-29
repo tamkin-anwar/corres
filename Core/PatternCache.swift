@@ -84,3 +84,38 @@ final class Memo<Key: Hashable & Sendable, Value: Sendable>: @unchecked Sendable
         return made
     }
 }
+
+/// A value read and written from any thread, one at a time. For the
+/// settings Core reads while sorting mail (VIPs, your own addresses, the
+/// Screener's mode): they're set on the main thread and read by a sync
+/// saving mail at the same moment, and a Set or Dictionary replaced while
+/// another thread reads it can be freed under the reader. Each read hands
+/// back a copy of its own.
+public final class LockedValue<Value: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: Value
+
+    public init(_ value: Value) { stored = value }
+
+    public var value: Value {
+        get {
+            lock.lock(); defer { lock.unlock() }
+            return stored
+        }
+        set {
+            lock.lock(); defer { lock.unlock() }
+            stored = newValue
+        }
+    }
+}
+
+extension LockedValue where Value: Equatable {
+    /// Replaces the value only when it differs. Returns whether it did.
+    @discardableResult
+    public func set(_ newValue: Value) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        guard stored != newValue else { return false }
+        stored = newValue
+        return true
+    }
+}
