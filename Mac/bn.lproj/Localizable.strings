@@ -2940,3 +2940,15 @@
 "%@ a month, renewing automatically. Cancel anytime in Settings." = "প্রতি মাস %@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
 "Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি বছর %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";
 "Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি মাস %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";
+"you" = "আপনি";
+"Cc %@" = "সিসি %@";
+"Bcc you" = "বিসিসি: আপনি";
+"Details" = "বিস্তারিত";
+"Show every address and the full date" = "সব ঠিকানা ও পুরো তারিখ দেখুন";
+"Reply-To" = "উত্তর যাবে";
+"You aren't named in To or Cc. It was Bcc'd or forwarded to you." = "প্রাপক বা সিসি-তে আপনার নাম নেই। এটি বিসিসি বা ফরোয়ার্ড করে আপনাকে পাঠানো হয়েছে।";
+"Verified as sent from %@" = "%@ থেকে পাঠানো বলে যাচাই করা হয়েছে";
+"Couldn't load the full email. This is only its preview." = "পুরো ইমেইল লোড করা যায়নি। এটি শুধু প্রিভিউ।";
+"You're offline. This is only the email's preview." = "আপনি অফলাইনে আছেন। এটি শুধু ইমেইলের প্রিভিউ।";
+"Loading the full email…" = "পুরো ইমেইল লোড হচ্ছে…";
+"You" = "আপনি";

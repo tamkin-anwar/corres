@@ -24,6 +24,8 @@ struct ReadingPane: View {
     /// The email's language, when it isn't one you read (Mail's Translate banner).
     @State private var foreignLanguage: Locale.Language?
     @State private var showingTranslation = false
+    /// The header's Details: every address and the full date.
+    @State private var showingDetails = false
     @AppStorage(CorresSettings.keyDetailsKey) private var keyDetailsOn = true
     @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
@@ -85,24 +87,19 @@ struct ReadingPane: View {
                         .padding(.horizontal, 28)
                         .padding(.bottom, 10)
                 }
+                // Said above the email while only its preview is here, so
+                // the preview isn't taken for the whole email.
+                if !thread.isBodyLoaded, !services.store.needsStoredContent(thread.id) {
+                    loadingLine
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 10)
+                }
                 Divider().padding(.horizontal, 28)
                 HTMLMessageBody(html: html, height: $bodyHeight, heightKey: MessageHeights.key(thread),
                                 expectedHeight: MessageHeights.expected(for: thread), blockRemoteImages: !imagesAllowed)
                     .frame(height: bodyHeight)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                if !thread.isBodyLoaded, services.threadActions.contentFailures.contains(thread.id) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.circle")
-                        Text("Couldn't load the full message.")
-                        Button("Try Again") { Task { await services.threadActions.loadContent(for: thread) } }
-                            .buttonStyle(.link)
-                    }
-                    .macFont(.callout)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 28)
-                    .padding(.bottom, 10)
-                }
                 if !thread.attachments.isEmpty {
                     attachments
                         .padding(.horizontal, 28)
@@ -117,6 +114,11 @@ struct ReadingPane: View {
                                  text: showingTranslation ? MailDigest.readableText(body: thread.body, html: thread.htmlBody) : "")
         .id(thread.id)
         .task(id: thread.id) { await opened() }
+        // Couldn't load while offline: tried again once the connection is back.
+        .onChange(of: NetworkWatch.shared.isOnline) { _, online in
+            guard online, services.threadActions.contentFailures.contains(thread.id) else { return }
+            Task { await services.threadActions.loadContent(for: thread) }
+        }
         .onChange(of: showImages) { _, shown in
             if shown { MacPrinter.imagesShown.insert(thread.id) }
         }
@@ -188,14 +190,31 @@ struct ReadingPane: View {
                                 .textSelection(.enabled)
                         }
                     }
-                    if !recipients.isEmpty {
-                        Text(recipients).macFont(.subheadline).foregroundStyle(CorresPalette.secondary).lineLimit(2)
+                    // Who else it went to, and a click for every address,
+                    // Reply-To and the full date, as Mail's Details.
+                    if let recipients {
+                        Button { showingDetails.toggle() } label: {
+                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                Text(recipients).lineLimit(2).multilineTextAlignment(.leading)
+                                Image(systemName: "chevron.down").macFont(.caption2, weight: .semibold)
+                                    .foregroundStyle(CorresPalette.tertiary)
+                            }
+                            .macFont(.subheadline).foregroundStyle(CorresPalette.secondary)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Show every address and the full date")
+                        .popover(isPresented: $showingDetails, arrowEdge: .bottom) { details }
                     }
                 }
                 Spacer(minLength: 12)
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text(thread.receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()))
+                    // With the year once it isn't this year's.
+                    Text(Calendar.current.isDate(thread.receivedAt, equalTo: .now, toGranularity: .year)
+                         ? thread.receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
+                         : thread.receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().year().hour().minute()))
                         .macFont(.subheadline).foregroundStyle(CorresPalette.secondary)
+                        .help(thread.receivedAt.formatted(.dateTime.weekday(.wide).month(.wide).day().year().hour().minute()))
                     if services.auth.accounts.count > 1 {
                         Text(AccountPreferences.nickname(for: thread.id.account))
                             .macFont(.caption).foregroundStyle(CorresPalette.tertiary)
@@ -205,12 +224,75 @@ struct ReadingPane: View {
         }
     }
 
-    private var recipients: String {
+    /// "To you, Amazon · Cc Sam Lee", as on the iPhone: Gmail keeps To and
+    /// Cc as bare addresses, which read as "To tamkin@…" before.
+    private var recipients: String? {
+        func names(_ entries: [String]) -> String {
+            let all = entries.map { recipient($0).name }
+            return all.count > 4 ? all.prefix(3).joined(separator: ", ") + " +\(all.count - 3)" : all.joined(separator: ", ")
+        }
         var parts: [String] = []
-        let to = thread.recipientNames
-        if !to.isEmpty { parts.append(String(localized: "To ") + to.joined(separator: ", ")) }
-        if !thread.ccRecipients.isEmpty { parts.append(String(localized: "Cc \(thread.ccRecipients.count)")) }
-        return parts.joined(separator: " · ")
+        if !thread.toRecipients.isEmpty { parts.append(String(localized: "To \(names(thread.toRecipients))")) }
+        if !thread.ccRecipients.isEmpty { parts.append(String(localized: "Cc \(names(thread.ccRecipients))")) }
+        if thread.reachedYouHidden, thread.id.account != "sample" { parts.append(String(localized: "Bcc you")) }
+        if parts.isEmpty { return thread.senderEmail == nil ? nil : String(localized: "Details") }
+        return parts.joined(separator: " \u{00B7} ")
+    }
+
+    /// A recipient as a name ("you" for an address of yours) and address.
+    private func recipient(_ entry: String) -> (name: String, email: String) {
+        let parsed = PeopleIndex.parse(entry)
+        let email = parsed?.email ?? Correspondence.bareAddress(entry)
+        if thread.ownAddresses.contains(email) { return (String(localized: "you", comment: "Among an email's recipients"), email) }
+        if let name = parsed?.name, !name.isEmpty { return (Person.readable(name), email) }
+        return (services.people.name(for: email) ?? Person.name(forAddress: email), email)
+    }
+
+    /// Every address in full, Reply-To when replies go elsewhere, the whole
+    /// date, and whether the sender's mail service vouched for it.
+    private var details: some View {
+        Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 10, verticalSpacing: 6) {
+            if let email = thread.senderEmail {
+                detailRow("From", [thread.isFromAccountOwner ? email : "\(thread.sender) <\(email)>"])
+            }
+            let replyTo = thread.replyTo.filter { Correspondence.bareAddress($0) != thread.senderEmail?.lowercased() }
+            if !replyTo.isEmpty { detailRow("Reply-To", replyTo.map(shown)) }
+            if !thread.toRecipients.isEmpty { detailRow("To", thread.toRecipients.map(shown)) }
+            if !thread.ccRecipients.isEmpty { detailRow("Cc", thread.ccRecipients.map(shown)) }
+            detailRow("Date", [thread.receivedAt.formatted(.dateTime.weekday(.wide).month(.wide).day().year().hour().minute())])
+            if thread.reachedYouHidden, thread.id.account != "sample" {
+                GridRow {
+                    Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
+                    Text("You aren't named in To or Cc. It was Bcc'd or forwarded to you.")
+                        .foregroundStyle(CorresPalette.secondary)
+                }
+            }
+            if thread.fromDomainVerified == true, let domain = thread.senderEmail?.split(separator: "@").last {
+                GridRow {
+                    Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
+                    Label(String(localized: "Verified as sent from \(String(domain))"), systemImage: "checkmark.seal")
+                        .foregroundStyle(CorresPalette.secondary)
+                }
+            }
+        }
+        .macFont(.callout)
+        .textSelection(.enabled)
+        .padding(14)
+        .frame(maxWidth: 460, alignment: .leading)
+    }
+
+    private func shown(_ entry: String) -> String {
+        let person = recipient(entry)
+        return person.name.caseInsensitiveCompare(person.email) == .orderedSame ? person.email : "\(person.name) <\(person.email)>"
+    }
+
+    private func detailRow(_ title: LocalizedStringKey, _ values: [String]) -> some View {
+        GridRow {
+            Text(title).foregroundStyle(CorresPalette.secondary).gridColumnAlignment(.trailing)
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(values, id: \.self) { Text($0).foregroundStyle(CorresPalette.ink).fixedSize(horizontal: false, vertical: true) }
+            }
+        }
     }
 
     // MARK: Why it's here, and the summary
@@ -486,8 +568,13 @@ struct ReadingPane: View {
                 HStack {
                     Image(systemName: isOpen ? "chevron.down" : "chevron.right")
                         .macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.tertiary)
-                    Text(message.sender).macFont(.callout, weight: .semibold)
+                    Text(message.senderEmail.map { message.ownAddresses.contains($0.lowercased()) } == true ? String(localized: "You") : message.sender)
+                        .macFont(.callout, weight: .semibold)
                     Spacer()
+                    if !message.attachments.isEmpty {
+                        Image(systemName: "paperclip").macFont(.caption).foregroundStyle(CorresPalette.tertiary)
+                            .help(message.attachments.map(\.filename).joined(separator: ", "))
+                    }
                     Text(MacDates.short(message.receivedAt)).macFont(.caption).foregroundStyle(CorresPalette.secondary)
                 }
                 .contentShape(Rectangle())
@@ -499,6 +586,12 @@ struct ReadingPane: View {
                     .macFont(.body).foregroundStyle(CorresPalette.ink)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                // Its own files: only the latest message's used to show.
+                if !message.attachments.isEmpty {
+                    FlowRow(spacing: 8) {
+                        ForEach(message.attachments) { file in MacAttachmentChip(file: file, thread: message) }
+                    }
+                }
             } else {
                 Text(MailDigest.preview(body: message.body, html: message.htmlBody) ?? message.excerpt)
                     .macFont(.callout).foregroundStyle(CorresPalette.secondary)
@@ -625,6 +718,26 @@ struct ReadingPane: View {
 
     // MARK: Loading
 
+    @ViewBuilder
+    private var loadingLine: some View {
+        if services.threadActions.contentFailures.contains(thread.id) {
+            HStack(spacing: 8) {
+                Image(systemName: NetworkWatch.shared.isOnline ? "exclamationmark.circle" : "wifi.slash")
+                Text(NetworkWatch.shared.isOnline ? "Couldn't load the full email. This is only its preview."
+                                                  : "You're offline. This is only the email's preview.")
+                Button { Task { await services.threadActions.loadContent(for: thread) } } label: { Text("Try Again").macTextSize() }
+                    .buttonStyle(.link)
+            }
+            .macFont(.callout)
+            .foregroundStyle(CorresPalette.secondary)
+        } else {
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Loading the full email…").macFont(.callout).foregroundStyle(CorresPalette.secondary)
+            }
+        }
+    }
+
     private var html: String {
         // Blank for the moment the HTML is read from storage, rather than
         // the plain text flashing first.
@@ -650,15 +763,18 @@ struct ReadingPane: View {
         showingTranslation = false
         draftingIntent = nil
         bodyHeight = 1
+        showingDetails = false
+        // Loading starts at once; marking read waits its beat beside it.
+        // It used to come first, so an unread email's body waited 0.6s
+        // and a round trip to the server before it began to load.
+        async let content: Void = services.threadActions.loadContent(for: thread)
+        async let history: Void = services.threadActions.loadHistory(for: thread)
         if thread.isUnread && CorresSettings.markReadOnOpen {
             // A beat later, so arrowing quickly through the list doesn't
             // mark everything read on the way past, as in Mail.
             try? await Task.sleep(for: .milliseconds(600))
-            guard !Task.isCancelled else { return }
-            await services.threadActions.setUnread(false, for: thread)
+            if !Task.isCancelled { await services.threadActions.setUnread(false, for: thread) }
         }
-        async let content: Void = services.threadActions.loadContent(for: thread)
-        async let history: Void = services.threadActions.loadHistory(for: thread)
         _ = await (content, history)
         let current = services.store.thread(thread.id) ?? thread
         invitation = await InvitationCard.find(in: current)
