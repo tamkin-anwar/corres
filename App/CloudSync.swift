@@ -118,8 +118,10 @@ final class CloudSync {
             try? await Task.sleep(for: .seconds(60))
             CloudSync.shared.remoteArrived()
         }
+        // Every write to UserDefaults posts this, several in a row during
+        // a sync: they're looked at once, on the next turn.
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
-            Task { @MainActor in CloudSync.shared.pushSettings() }
+            MainActor.assumeIsolated { CloudSync.shared.schedulePush() }
         }
         cloud.synchronize()
         Task { await pull() }
@@ -168,13 +170,21 @@ final class CloudSync {
         saveMarks()
     }
 
+    private var pushScheduled = false
+
+    private func schedulePush() {
+        guard !pushScheduled else { return }
+        pushScheduled = true
+        Task { @MainActor in
+            pushScheduled = false
+            pushSettings()
+        }
+    }
+
     private func pushSettings() {
         guard !isApplying else { return }
-        // Only what's saved on this device: `object(forKey:)` also returns a
-        // value given at launch (`-corres.tabsAtBottom YES` in a screenshot
-        // run), which would otherwise go to every device.
-        let saved = Bundle.main.bundleIdentifier.flatMap { defaults.persistentDomain(forName: $0) } ?? [:]
         var changed = false
+        let saved = Self.savedValues(Self.syncedSettings, in: defaults)
         for key in Self.syncedSettings {
             let local = saved[key]
             let remote = cloud.object(forKey: "setting." + key)
@@ -349,6 +359,28 @@ final class CloudSync {
 
     private func load<T: Decodable>(_ key: String) -> T? {
         cloud.data(forKey: key).flatMap { try? JSONDecoder().decode(T.self, from: $0) }
+    }
+
+    /// Only what's saved on this device: `object(forKey:)` also returns a
+    /// value given at launch (`-corres.tabsAtBottom YES` in a screenshot
+    /// run), which would otherwise go to every device. Read key by key:
+    /// copying the whole saved domain (it holds large bookkeeping too)
+    /// after every write was work on the main thread each sync.
+    static func savedValues(_ keys: [String], in defaults: UserDefaults) -> [String: Any] {
+        let launchValues = defaults.volatileDomain(forName: UserDefaults.argumentDomain)
+        let registered = defaults.volatileDomain(forName: UserDefaults.registrationDomain)
+        var hidden: [String: Any]?
+        var values: [String: Any] = [:]
+        for key in keys {
+            if launchValues[key] == nil && registered[key] == nil {
+                values[key] = defaults.object(forKey: key)
+            } else {
+                // Given at launch or registered: what's saved hides behind it.
+                if hidden == nil { hidden = Bundle.main.bundleIdentifier.flatMap { defaults.persistentDomain(forName: $0) } ?? [:] }
+                values[key] = hidden?[key]
+            }
+        }
+        return values
     }
 
     private static func same(_ a: Any?, _ b: Any?) -> Bool {

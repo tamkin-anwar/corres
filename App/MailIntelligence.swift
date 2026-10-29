@@ -212,8 +212,12 @@ final class MailIntelligence {
     /// after a sync has filled in bodies.
     /// With `includeRead` (summaries shown in the list), recent read mail
     /// is readied too, so the top of the list reads as summaries.
-    func prewarm(_ threads: [Correspondence], includeRead: Bool = false) async {
+    /// `revision`: the store's `contentRevision` the threads were read at.
+    /// The same mail as the last finished pass has nothing new to ready,
+    /// and this follows every 20-second check.
+    func prewarm(_ threads: [Correspondence], includeRead: Bool = false, revision: Int? = nil) async {
         guard isAvailable, !isPrewarming else { return }
+        if let revision, revision == prewarmedRevision, includeRead == prewarmedIncludingRead { return }
         isPrewarming = true
         defer { isPrewarming = false }
         let recent = Date.now.addingTimeInterval(-3 * 86_400)
@@ -226,7 +230,11 @@ final class MailIntelligence {
             guard !Task.isCancelled else { return }
             await prepareInsight(for: thread)
         }
+        prewarmedRevision = revision
+        prewarmedIncludingRead = includeRead
     }
+    @ObservationIgnored private var prewarmedRevision: Int?
+    @ObservationIgnored private var prewarmedIncludingRead = false
 
     /// Drops saved summaries for an account that's been removed.
     func forget(account: String) {
@@ -688,6 +696,9 @@ final class MailIntelligence {
             if toSave.count > Self.cacheLimit {
                 let keep = toSave.sorted { $0.value.createdAt > $1.value.createdAt }.prefix(Self.cacheLimit)
                 toSave = Dictionary(keep.map { ($0.key, $0.value) }, uniquingKeysWith: { first, _ in first })
+                // Kept to the limit in memory too, once well past it: only
+                // the saved copy was trimmed, so a long session grew.
+                if insights.count > Self.cacheLimit * 5 / 4 { insights = toSave }
             }
             guard let data = try? JSONEncoder().encode(toSave) else { return }
             try? data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])

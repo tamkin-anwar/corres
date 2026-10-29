@@ -35,22 +35,40 @@ enum WidgetBridge {
         pendingUpdate = Task {
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
-            let threads = currentThreads()
-            let badge = BadgeInputs.current(threads)
-            let handled = WidgetHandoff.pendingHandledIDs()
-            let built = await Task.detached(priority: .utility) {
-                build(from: threads, now: .now, badge: badge, handled: handled)
-            }.value
-            guard !Task.isCancelled else { return }
-            apply(built)
+            await buildInBackground(from: currentThreads(), priority: .utility)
         }
     }
 
     /// Right away, for callers that need it done before they return
-    /// (background refresh, a changed setting).
+    /// (a changed setting, leaving the app).
     static func update(from threads: [Correspondence]) {
         pendingUpdate?.cancel()
+        generation &+= 1
         apply(build(from: threads, now: .now, badge: BadgeInputs.current(threads), handled: WidgetHandoff.pendingHandledIDs()))
+    }
+
+    /// Now, but sorted off the main thread, for callers that can wait for
+    /// it (a push, the lock changing at launch). The same sorts on the main
+    /// thread took tens of milliseconds on a big mailbox.
+    static func updateInBackground(from threads: [Correspondence]) async {
+        pendingUpdate?.cancel()
+        await buildInBackground(from: threads, priority: .userInitiated)
+    }
+
+    /// Whichever update started last is the one shown: an older one that
+    /// finishes after it is dropped.
+    private static var generation = 0
+
+    private static func buildInBackground(from threads: [Correspondence], priority: TaskPriority) async {
+        generation &+= 1
+        let started = generation
+        let badge = BadgeInputs.current(threads)
+        let handled = WidgetHandoff.pendingHandledIDs()
+        let built = await Task.detached(priority: priority) {
+            build(from: threads, now: .now, badge: badge, handled: handled)
+        }.value
+        guard !Task.isCancelled, started == generation else { return }
+        apply(built)
     }
 
     /// What the badge counts, gathered on the main actor (your lessons and

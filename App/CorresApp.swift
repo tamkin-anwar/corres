@@ -85,16 +85,19 @@ struct CorresApp: App {
                     // it runs alongside triage rather than after it.
                     // Then ready summaries for what's likely to be opened
                     // next, once their bodies are here (Corres Pro).
+                    // Almost every 20-second check finds nothing, so each step
+                    // reloads the lists only when it saved something; the
+                    // last reload costs next to nothing when nothing changed.
                     Task {
-                        await appDelegate.sync.backfillContent()
-                        await appDelegate.store.refresh()
+                        if await appDelegate.sync.backfillContent() { await appDelegate.store.refresh() }
                         // Then the rest of the mailbox, for Search.
                         let accounts = appDelegate.auth.accounts.map(\.email)
                         if await appDelegate.sync.indexOlderMail(accounts: accounts) { await appDelegate.store.refresh() }
                         await appDelegate.sync.verifyInboxes(accounts: accounts)
                         await appDelegate.store.refresh()
                         if appDelegate.entitlements.isPro && CorresSettings.summaries {
-                            await appDelegate.mailIntelligence.prewarm(appDelegate.store.threads, includeRead: false)
+                            await appDelegate.mailIntelligence.prewarm(appDelegate.store.threads, includeRead: false,
+                                                                       revision: appDelegate.store.contentRevision)
                         }
                     }
                 }
@@ -146,7 +149,7 @@ struct CorresApp: App {
                 .onChange(of: WidgetBridge.locks(connected: !appDelegate.auth.accounts.isEmpty,
                                                  entitlements: appDelegate.entitlements), initial: true) { _, locked in
                     WidgetBridge.isLocked = locked
-                    WidgetBridge.update(from: appDelegate.store.threads)
+                    Task { await WidgetBridge.updateInBackground(from: appDelegate.store.threads) }
                     WatchBridge.shared.scheduleUpdate { [store = appDelegate.store] in store.threads }
                 }
         }
@@ -174,9 +177,11 @@ struct CorresApp: App {
     }
 }
 
-/// Shows each batch a sync saves, at most one reload each half second: the
-/// first batch at once, the last one always, the ones between folded
-/// together.
+/// Shows each batch a sync saves: the first batch at once, the last one
+/// always, the ones between folded together. At most one reload each half
+/// second while the first screenful fills in, then each two seconds: a
+/// first sync saves a hundred batches, and each reload rebuilds the lists
+/// on the main thread, which made scrolling stall through it.
 @MainActor
 private enum SyncBatchRefresh {
     private static var running: Task<Void, Never>?
@@ -185,10 +190,12 @@ private enum SyncBatchRefresh {
     static func schedule(_ store: MailStore) {
         guard running == nil else { again = true; return }
         running = Task {
+            var reloads = 0
             repeat {
                 again = false
                 await store.refresh()
-                try? await Task.sleep(for: .milliseconds(500))
+                reloads += 1
+                try? await Task.sleep(for: .milliseconds(reloads < 3 ? 500 : 2_000))
             } while again
             running = nil
         }
