@@ -225,6 +225,9 @@ struct UpdateMailDraftIntent: AppIntent {
 @available(iOS 18.0, macOS 15.0, *)
 @AppIntent(schema: .mail.saveDraft)
 struct SaveMailDraftIntent: AppIntent {
+    /// Reads or changes your mail: the iPhone must be unlocked first, as
+    /// for Reply and Archive on a notification.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
     @Parameter var target: CorresMailDraft
 
     @MainActor
@@ -244,6 +247,9 @@ struct SaveMailDraftIntent: AppIntent {
 @available(iOS 18.0, macOS 15.0, *)
 @AppIntent(schema: .mail.sendDraft)
 struct SendMailDraftIntent: AppIntent {
+    /// Reads or changes your mail: the iPhone must be unlocked first, as
+    /// for Reply and Archive on a notification.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
     @Parameter var target: CorresMailDraft
     @Parameter var sendLaterDate: Date?
 
@@ -290,6 +296,9 @@ struct SendMailDraftIntent: AppIntent {
 @available(iOS 18.0, macOS 15.0, *)
 @AppIntent(schema: .mail.deleteDraft)
 struct DeleteMailDraftIntent: DeleteIntent {
+    /// Changes your mail: unlocked on this device first (Apple's delete
+    /// draft action asks for at least this).
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
     @Parameter var entities: [CorresMailDraft]
 
     @MainActor

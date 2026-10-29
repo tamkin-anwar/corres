@@ -3,6 +3,9 @@ import CoreTransferable
 import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Your mail, as Siri and Apple Intelligence understand mail: messages they
 /// can find, open, archive or delete in Corres by name ("archive the email
@@ -117,11 +120,13 @@ struct CorresMailMessage: AppEntity {
     var isRead: Bool
     private let senderName: String
 
-    init(_ thread: Correspondence) {
+    /// `withBody` false leaves the email's words out (see
+    /// `IntentMail.deviceUnlocked`).
+    init(_ thread: Correspondence, withBody: Bool = true) {
         id = thread.id.entityKey
         senderName = thread.sender
         subject = thread.subject
-        body = thread.body.isEmpty ? thread.excerpt : thread.body
+        body = withBody ? (thread.body.isEmpty ? thread.excerpt : thread.body) : nil
         account = CorresMailAccount(email: thread.id.account)
         mailbox = CorresMailbox(id: thread.id.account + "|" + (thread.attention == .needsYou ? "needsYou" : thread.attention == .waiting ? "waiting" : "mail"))
         sender = IntentPeople.person(name: thread.sender, email: thread.senderEmail ?? "", isMe: thread.isFromAccountOwner)
@@ -186,7 +191,7 @@ struct CorresMailMessageQuery: EntityStringQuery {
         return identifiers.compactMap { identifier in
             let parts = identifier.split(separator: "|", maxSplits: 1).map(String.init)
             guard parts.count == 2, let thread = store.thread(ThreadID(account: parts[0], providerID: parts[1])) else { return nil }
-            return CorresMailMessage(thread)
+            return CorresMailMessage(thread, withBody: IntentMail.deviceUnlocked)
         }
     }
 
@@ -195,7 +200,8 @@ struct CorresMailMessageQuery: EntityStringQuery {
     func entities(matching string: String) async throws -> [CorresMailMessage] {
         guard let store = Organizer.shared.store else { return [] }
         if store.state != .loaded { await store.load() }
-        return MailQuery.filter(store.searchableThreads, search: string).prefix(20).map(CorresMailMessage.init)
+        let withBody = IntentMail.deviceUnlocked
+        return MailQuery.filter(store.searchableThreads, search: string).prefix(20).map { CorresMailMessage($0, withBody: withBody) }
     }
 
     /// What needs you first, then the newest.
@@ -205,7 +211,8 @@ struct CorresMailMessageQuery: EntityStringQuery {
         if store.state != .loaded { await store.load() }
         let needsYou = MailQuery.prioritized(store.threads, attention: .needsYou)
         let rest = MailQuery.filter(store.threads).filter { $0.attention != .needsYou }
-        return (needsYou + rest).prefix(20).map(CorresMailMessage.init)
+        let withBody = IntentMail.deviceUnlocked
+        return (needsYou + rest).prefix(20).map { CorresMailMessage($0, withBody: withBody) }
     }
 }
 
@@ -217,6 +224,18 @@ struct CorresMailMessageQuery: EntityStringQuery {
 /// send the change with, and said it was done.
 @MainActor
 enum IntentMail {
+    /// False while the iPhone is locked. Siri can look for an email then
+    /// (to say which one it means), but the email's words stay out of what
+    /// it's handed until the iPhone is unlocked, and every action that
+    /// reads or changes mail asks for that first (`authenticationPolicy`).
+    static var deviceUnlocked: Bool {
+        #if os(iOS)
+        UIApplication.shared.isProtectedDataAvailable
+        #else
+        true
+        #endif
+    }
+
     static func store() async -> MailStore? {
         guard let store = Organizer.shared.store else { return nil }
         if store.state != .loaded { await store.load() }
@@ -233,6 +252,9 @@ enum IntentMail {
 @available(iOS 18.0, macOS 15.0, *)
 @AppIntent(schema: .mail.archiveMail)
 struct ArchiveMailIntent: AppIntent {
+    /// Reads or changes your mail: the iPhone must be unlocked first, as
+    /// for Reply and Archive on a notification.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
     @Parameter var entities: [CorresMailMessage]
 
     @MainActor
@@ -251,6 +273,9 @@ struct ArchiveMailIntent: AppIntent {
 @available(iOS 18.0, macOS 15.0, *)
 @AppIntent(schema: .mail.deleteMail)
 struct DeleteMailIntent: AppIntent {
+    /// Reads or changes your mail: the iPhone must be unlocked first, as
+    /// for Reply and Archive on a notification.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
     @Parameter var entities: [CorresMailMessage]
 
     @MainActor
@@ -325,6 +350,9 @@ struct ForwardMailIntent: AppIntent {
 @available(iOS 18.0, macOS 15.0, *)
 @AppIntent(schema: .mail.updateMail)
 struct UpdateMailIntent: AppIntent {
+    /// Reads or changes your mail: the iPhone must be unlocked first, as
+    /// for Reply and Archive on a notification.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
     @Parameter var target: [CorresMailMessage]
     @Parameter var isRead: Bool?
     @Parameter var isFlagged: Bool?
@@ -445,6 +473,9 @@ struct SearchMailIntent: AppIntent {
 struct RemindAboutMailIntent: AppIntent {
     static let title: LocalizedStringResource = "Remind Me About an Email"
     static let description = IntentDescription("Adds the email to Reminders, with a link that opens it in Corres.")
+    /// Reads or changes your mail: the iPhone must be unlocked first, as
+    /// for Reply and Archive on a notification.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
 
     @Parameter(title: "Email") var target: CorresMailMessage
     @Parameter(title: "When") var date: Date?
