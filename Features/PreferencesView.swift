@@ -1246,7 +1246,6 @@ private struct ReadingBarSettingsView: View {
             }
         }
         .environment(\.editMode, .constant(.active))
-        .id(raw)
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
         .navigationTitle("Email Toolbar")
@@ -1337,7 +1336,6 @@ private struct RowMenuSettingsView: View {
             }
         }
         .environment(\.editMode, .constant(.active))
-        .id(topRaw + "|" + listRaw)
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
         .navigationTitle("Press and Hold")
