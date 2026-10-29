@@ -740,6 +740,7 @@ struct CorresShell: View {
                             onOpenMail: { show(.mail) })
             } else {
                 CorrespondenceList(store: store, sync: sync, auth: auth, threadActions: threadActions,
+                                   labelDirectory: labelDirectory, unsubscribeService: unsubscribeService,
                                    destination: destination, accountFilter: accountFilter,
                                    isActive: isActive, needsYouLocked: requiresPro,
                                    onUnlockPro: { showingPaywall = true }, showingScreener: $showingScreener,

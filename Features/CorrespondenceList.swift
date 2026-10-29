@@ -219,6 +219,9 @@ struct CorrespondenceList: View {
     /// Optional for the same reason as `sync`/`auth`: nil only for the
     /// offline preview-render script, which never exercises swipe actions.
     var threadActions: ThreadActionService?
+    /// For the press-and-hold menu's Move To and Unsubscribe.
+    var labelDirectory: LabelDirectory?
+    var unsubscribeService: UnsubscribeService?
     let destination: Destination
     /// nil shows every connected account's mail merged together (the
     /// unified view); a specific email filters down to just that account,
@@ -480,10 +483,12 @@ struct CorrespondenceList: View {
     }
 
     @Environment(AppRouter.self) private var router
-    @Environment(\.openWindow) private var openWindow
-    @Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
     @AppStorage(CorresSettings.confirmTrashKey) private var confirmTrash = false
     @State private var confirmingTrash: Correspondence?
+    // Settings → Customize → Press and Hold.
+    @AppStorage(CorresSettings.rowMenuTopKey) private var rowMenuTopRaw = ""
+    @AppStorage(CorresSettings.rowMenuListKey) private var rowMenuListRaw = ""
+    @State private var rowMenuRequests = RowMenuRequests()
     @AppStorage(CorresSettings.showAvatarsKey) private var showAvatarsInList = true
     @State private var isSelecting = false
     @State private var rowFrames = RowFrames()
@@ -657,6 +662,7 @@ struct CorrespondenceList: View {
                 SnoozeSheet(kind: thread.mailKind) { date in Task { await store.snooze(thread.id, until: date) } }
             }
             .categoryMoveDialog($categoryChoice, threadActions: threadActions)
+            .rowMenuDialogs(rowMenuRequests, store: store, unsubscribeService: unsubscribeService)
             .searchable(text: $search, isPresented: searchOpening, prompt: "Search, or ask a question")
             // Outside the search it shrinks to a button beside the bottom tabs.
             .modifier(MinimizedSearch(isOn: tabsOnBottom && Self.hasBottomSearch))
@@ -1506,6 +1512,8 @@ struct CorrespondenceList: View {
         let orderedIDs = rows.ids
         // Read here, on the main actor; the guide's closure isn't.
         let separatorInset: CGFloat = showAvatarsInList ? 77 : 25
+        let menuLayout = CorresSettings.rowMenu(top: rowMenuTopRaw, list: rowMenuListRaw)
+        let previewWidth = min(max(listWidth - 32, 280), 440)
         return ForEach(threads) { thread in
             PremiumSwipeRow(
                 leadingShort: isSelecting ? nil : leadingVisual(for: leadingShortAction, thread: thread),
@@ -1543,7 +1551,11 @@ struct CorrespondenceList: View {
                         .hidingDisclosureIndicator()
                 }
             }
-            .contextMenu { if !isSelecting { rowMenu(for: thread) } }
+            .contextMenu {
+                if !isSelecting { rowMenu(for: thread, layout: menuLayout) }
+            } preview: {
+                RowMenuPreview(thread: thread, showsReason: kind != .mail, width: previewWidth)
+            }
             // iPad: drag a conversation into Notes, Reminders or a message.
             .modifier(ConversationDragging(thread: thread, enabled: sizeClass == .regular && !isSelecting))
             .disabled(store.pending.contains(thread.id))
@@ -1603,61 +1615,23 @@ struct CorrespondenceList: View {
         }
     }
 
-    /// "Wrong call?": the correction path for every sort Corres makes.
-    /// Moving a thread is the person's own decision and sticks; later
+    /// Press and hold (Settings → Customize → Press and Hold). Its Move To
+    /// is also the "Wrong call?" correction for every sort Corres makes:
+    /// moving a thread is the person's own decision and sticks; later
     /// automatic passes never move it back (see ADR 002).
-    @ViewBuilder
-    private func rowMenu(for thread: Correspondence) -> some View {
-        // iPad: beside your mail, in a window of its own.
-        if supportsMultipleWindows && sizeClass == .regular {
-            Button {
-                openWindow(id: ConversationWindow.id, value: thread.id)
-            } label: {
-                Label("Open in New Window", systemImage: "macwindow.badge.plus")
-            }
-        }
-        // Mail's "Select": starts Select with this conversation checked.
-        Button {
-            isSelecting = true
-            selected = [thread.id]
-        } label: {
-            Label("Select", systemImage: "checkmark.circle")
-        }
-        Section("Move To") {
-            AttentionChoices(current: thread.attention) { attention in
-                Task { await threadActions?.setAttention(attention, for: thread) }
-            }
-        }
-        CategoryMenuItems(thread: thread) { categoryChoice = $0 }
-        Button {
-            snoozeTarget = thread
-        } label: {
-            Label("Snooze…", systemImage: "clock")
-        }
-        if let email = thread.senderEmail, !thread.isFromAccountOwner {
-                let isVIP = InboxClassifier.isVIP(email)
-                Button {
-                    Task { await store.setVIP(email, account: thread.id.account, isVIP: !isVIP) }
-                } label: {
-                    Label(isVIP ? "Remove from VIPs" : "Add \(thread.sender) to VIPs", systemImage: isVIP ? "star.slash" : "star")
-                }
-            }
-
-        Button {
-            Task { await threadActions?.toggleFlagged(!thread.isFlagged, for: [thread]) }
-        } label: {
-            Label(thread.isFlagged ? "Unflag" : "Flag", systemImage: thread.isFlagged ? "flag.slash" : "flag")
-        }
-        Button {
-            Task { await threadActions?.toggleUnread(!thread.isUnread, for: [thread]) }
-        } label: {
-            Label(thread.isUnread ? "Mark as Read" : "Mark as Unread", systemImage: thread.isUnread ? "envelope.open" : "envelope.badge")
-        }
-        Button {
-            Task { await threadActions?.archive(thread) }
-        } label: {
-            Label("Archive", systemImage: "archivebox")
-        }
+    private func rowMenu(for thread: Correspondence, layout: RowMenuLayout) -> some View {
+        RowMenu(thread: thread, layout: layout, store: store, threadActions: threadActions,
+                labelDirectory: labelDirectory, unsubscribeService: unsubscribeService, requests: rowMenuRequests,
+                onTrash: { thread in
+                    // Settings → Reading → Ask before moving to Trash, as a swipe asks.
+                    if confirmTrash { confirmingTrash = thread } else { Task { await threadActions?.trash(thread) } }
+                },
+                onSnooze: { snoozeTarget = $0 },
+                onCategory: { categoryChoice = $0 },
+                onSelect: {
+                    isSelecting = true
+                    selected = [thread.id]
+                })
     }
 
     /// Mail is the everything view, so it keeps going past what the first

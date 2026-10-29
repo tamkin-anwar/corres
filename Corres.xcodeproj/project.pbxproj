@@ -449,6 +449,9 @@
 		F625508A82C52BE6FB95ED41 /* Core/MailAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108ED416F4376B4F5F96A1DE /* Core/MailAuthentication.swift */; };
 		74163C2E55042C507E86D5F4 /* Core/MailAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108ED416F4376B4F5F96A1DE /* Core/MailAuthentication.swift */; };
 		86DC4DB2B8D2D74DEDBFCF2B /* Core/MailAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108ED416F4376B4F5F96A1DE /* Core/MailAuthentication.swift */; };
+		1CEC0389A1F0C87181FB6AF9 /* Core/RowMenuLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A607C0DDAF491A2E8473C1B6 /* Core/RowMenuLayout.swift */; };
+		FB553ADF0ACE0B798E0E286C /* Core/RowMenuLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A607C0DDAF491A2E8473C1B6 /* Core/RowMenuLayout.swift */; };
+		CDC52C0DBAE6437B251EF278 /* Features/RowMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C407FEC6F98CD4581AC569 /* Features/RowMenu.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -890,6 +893,8 @@
 		059E2C067356EE947366FFDB /* Core/ListExclusion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ListExclusion.swift; sourceTree = SOURCE_ROOT; };
 		34B6F976E8C053BA9BB11B3D /* Core/SendSafety.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/SendSafety.swift; sourceTree = SOURCE_ROOT; };
 		108ED416F4376B4F5F96A1DE /* Core/MailAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/MailAuthentication.swift; sourceTree = SOURCE_ROOT; };
+		A607C0DDAF491A2E8473C1B6 /* Core/RowMenuLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/RowMenuLayout.swift; sourceTree = SOURCE_ROOT; };
+		34C407FEC6F98CD4581AC569 /* Features/RowMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RowMenu.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1187,6 +1192,8 @@
 				059E2C067356EE947366FFDB /* Core/ListExclusion.swift */,
 				34B6F976E8C053BA9BB11B3D /* Core/SendSafety.swift */,
 				108ED416F4376B4F5F96A1DE /* Core/MailAuthentication.swift */,
+				A607C0DDAF491A2E8473C1B6 /* Core/RowMenuLayout.swift */,
+				34C407FEC6F98CD4581AC569 /* Features/RowMenu.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1675,6 +1682,7 @@
 				15E36A14687EDFB7F41DBC9C /* Core/SendSafety.swift in Sources */,
 				EBA4C43461A514968318CAFB /* Features/PaywallView.swift in Sources */,
 				F625508A82C52BE6FB95ED41 /* Core/MailAuthentication.swift in Sources */,
+				FB553ADF0ACE0B798E0E286C /* Core/RowMenuLayout.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1838,6 +1846,8 @@
 				59308FAE1166C14E00EE81F8 /* Core/ListExclusion.swift in Sources */,
 				713E1D4D8EA1BFEAD0D9EEEC /* Core/SendSafety.swift in Sources */,
 				D76C8AC48468A2E3844A0AA6 /* Core/MailAuthentication.swift in Sources */,
+				1CEC0389A1F0C87181FB6AF9 /* Core/RowMenuLayout.swift in Sources */,
+				CDC52C0DBAE6437B251EF278 /* Features/RowMenu.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

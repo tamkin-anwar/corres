@@ -1115,8 +1115,9 @@ private struct CustomizeSettingsView: View {
                 NavigationLink { ListSettingsView(store: store) } label: { Label("Lists", systemImage: "list.bullet") }
                 NavigationLink { SwipeSettingsView() } label: { Label("Swipes", systemImage: "hand.draw") }
                 NavigationLink { ReadingBarSettingsView() } label: { Label("Email Toolbar", systemImage: "ellipsis.rectangle") }
+                NavigationLink { RowMenuSettingsView() } label: { Label("Press and Hold", systemImage: "hand.tap") }
             } footer: {
-                Text("Where the tabs sit, how your lists look, what each swipe does, and the actions under an email.")
+                Text("Where the tabs sit, how your lists look, what each swipe does, the actions under an email, and the menu when you press and hold one.")
             }
         }
         .scrollContentBackground(.hidden)
@@ -1251,6 +1252,127 @@ private struct ReadingBarSettingsView: View {
         .navigationTitle("Email Toolbar")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: raw)
+    }
+}
+
+/// Settings → Press and Hold: the menu on an email in a list, in order, as
+/// Gmail and Spark let you choose theirs. Up to four icons in a row along
+/// the top, then a short list; everything else is a tap away in the email.
+private struct RowMenuSettingsView: View {
+    @AppStorage(CorresSettings.rowMenuTopKey) private var topRaw = ""
+    @AppStorage(CorresSettings.rowMenuListKey) private var listRaw = ""
+    private var layout: RowMenuLayout { CorresSettings.rowMenu(top: topRaw, list: listRaw) }
+    private var groups: [String] {
+        var seen = Set<String>()
+        return layout.unused.map(\.group).filter { seen.insert($0).inserted }
+    }
+
+    /// Both together, so an action moved from one to the other shows once.
+    private func save(_ layout: RowMenuLayout) {
+        topRaw = layout.topRaw
+        listRaw = layout.listRaw
+    }
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(layout.top) { action in
+                    Label(action.title, systemImage: action.systemImage)
+                }
+                .onMove { from, to in
+                    var updated = layout
+                    updated.top.move(fromOffsets: from, toOffset: to)
+                    save(updated)
+                }
+                .onDelete { offsets in
+                    var updated = layout
+                    updated.top.remove(atOffsets: offsets)
+                    save(updated)
+                }
+            } header: {
+                Text("Top Row")
+            } footer: {
+                Text("Press and hold an email in a list to see these. Up to \(RowMenuLayout.topLimit), as a row of icons.")
+            }
+            Section {
+                ForEach(layout.list) { action in
+                    Label(action.title, systemImage: action.systemImage)
+                }
+                .onMove { from, to in
+                    var updated = layout
+                    updated.list.move(fromOffsets: from, toOffset: to)
+                    save(updated)
+                }
+                .onDelete { offsets in
+                    var updated = layout
+                    updated.list.remove(atOffsets: offsets)
+                    save(updated)
+                }
+            } header: {
+                Text("In the Menu")
+            } footer: {
+                Text("Up to \(RowMenuLayout.listLimit), in this order. Move To holds Needs You, Waiting, Handled, the categories and your labels or folders. Report Spam and Block Sender show in red, apart from the rest.")
+            }
+            ForEach(groups, id: \.self) { group in
+                Section {
+                    ForEach(layout.unused.filter { $0.group == group }) { action in
+                        addRow(action)
+                    }
+                } header: {
+                    Text(group == groups.first ? String(localized: "Not in the Menu · \(group)") : group)
+                } footer: {
+                    if group == groups.last {
+                        Text(layout.topIsFull && layout.listIsFull
+                             ? "The menu is full. Remove one to add another."
+                             : "Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu.")
+                    }
+                }
+            }
+            Section {
+                Button("Reset to Default") {
+                    topRaw = ""
+                    listRaw = ""
+                }
+                .disabled(layout == .standard)
+            }
+        }
+        .environment(\.editMode, .constant(.active))
+        .id(topRaw + "|" + listRaw)
+        .scrollContentBackground(.hidden)
+        .background(CorresPalette.canvas)
+        .navigationTitle("Press and Hold")
+        .navigationBarTitleDisplayMode(.inline)
+        .sensoryFeedback(.selection, trigger: topRaw + listRaw)
+    }
+
+    private func addRow(_ action: RowMenuAction) -> some View {
+        let toTop = layout.canAdd(action, toTop: true)
+        let toList = layout.canAdd(action, toTop: false)
+        return Menu {
+            Button {
+                var updated = layout
+                updated.add(action, toTop: true)
+                save(updated)
+            } label: {
+                Label("Add to Top Row", systemImage: "rectangle.grid.1x2")
+            }
+            .disabled(!toTop)
+            Button {
+                var updated = layout
+                updated.add(action, toTop: false)
+                save(updated)
+            } label: {
+                Label("Add to Menu", systemImage: "list.bullet")
+            }
+            .disabled(!toList)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "plus.circle.fill").foregroundStyle(toTop || toList ? .green : CorresPalette.tertiary)
+                Label(action.title, systemImage: action.systemImage).foregroundStyle(CorresPalette.ink)
+            }
+        }
+        .disabled(!toTop && !toList)
+        .accessibilityLabel("Add \(action.title)")
     }
 }
 

@@ -15,15 +15,26 @@ struct CategoryMenuItems: View {
     let choose: (CategoryChoice) -> Void
 
     var body: some View {
-        let current = InboxCategory.of(thread, override: SenderLessons.category(for: thread), context: CategoryContextCache.latest)
         Menu {
-            ForEach(InboxCategory.allCases.filter { $0 != current }, id: \.self) { category in
-                Button { choose(CategoryChoice(thread: thread, category: category)) } label: {
-                    Label(category.title, systemImage: category.systemImage)
-                }
-            }
+            CategoryChoices(thread: thread, choose: choose)
         } label: {
             Label("Move to Category", systemImage: "tray.2")
+        }
+    }
+}
+
+/// The categories themselves, for a menu that already has its own "Move
+/// To" (press and hold on a row), so it doesn't nest a second level.
+struct CategoryChoices: View {
+    let thread: Correspondence
+    let choose: (CategoryChoice) -> Void
+
+    var body: some View {
+        let current = InboxCategory.of(thread, override: SenderLessons.category(for: thread), context: CategoryContextCache.latest)
+        ForEach(InboxCategory.allCases.filter { $0 != current }, id: \.self) { category in
+            Button { choose(CategoryChoice(thread: thread, category: category)) } label: {
+                Label(category.title, systemImage: category.systemImage)
+            }
         }
     }
 }

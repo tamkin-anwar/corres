@@ -3810,3 +3810,18 @@
 "Send Again" = "Enviar de novo";
 /* No comment provided by engineer. */
 "Ends %@" = "Termina em %@";
+
+/* Settings → Customize → Press and Hold, and the press-and-hold menu on a mail row. */
+"Mark as Read or Unread" = "Marcar como lido ou não lido";
+"Add to VIPs" = "Adicionar aos VIPs";
+"Press and Hold" = "Manter pressionado";
+"Where the tabs sit, how your lists look, what each swipe does, the actions under an email, and the menu when you press and hold one." = "Onde ficam as abas, como suas listas aparecem, o que cada deslize faz, as ações abaixo de um e-mail e o menu que aparece ao mantê-lo pressionado.";
+"Top Row" = "Linha superior";
+"Press and hold an email in a list to see these. Up to %lld, as a row of icons." = "Mantenha um e-mail pressionado em uma lista para vê-las. Até %lld, como uma linha de ícones.";
+"In the Menu" = "No menu";
+"Up to %lld, in this order. Move To holds Needs You, Waiting, Handled, the categories and your labels or folders. Report Spam and Block Sender show in red, apart from the rest." = "Até %lld, nesta ordem. Mover para inclui Precisa de Você, Aguardando, Resolvido, as categorias e suas etiquetas ou pastas. Denunciar como spam e Bloquear remetente aparecem em vermelho, separados do resto.";
+"Not in the Menu · %@" = "Fora do menu · %@";
+"The menu is full. Remove one to add another." = "O menu está cheio. Remova uma para adicionar outra.";
+"Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "Toque em uma para adicioná-la à linha superior ou ao menu. Uma ação que não se aplica a um e-mail, como Descadastrar quando ele não vem de uma lista de e-mails, fica fora do menu dele.";
+"Add to Top Row" = "Adicionar à linha superior";
+"Add to Menu" = "Adicionar ao menu";

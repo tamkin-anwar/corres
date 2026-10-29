@@ -3810,3 +3810,18 @@
 "Send Again" = "আবার পাঠান";
 /* No comment provided by engineer. */
 "Ends %@" = "শেষ হবে %@";
+
+/* Settings → Customize → Press and Hold, and the press-and-hold menu on a mail row. */
+"Mark as Read or Unread" = "পঠিত বা অপঠিত চিহ্নিত করুন";
+"Add to VIPs" = "VIP-তে যোগ করুন";
+"Press and Hold" = "চেপে ধরে রাখা";
+"Where the tabs sit, how your lists look, what each swipe does, the actions under an email, and the menu when you press and hold one." = "ট্যাব কোথায় থাকে, তালিকা কেমন দেখায়, প্রতিটি সোয়াইপ কী করে, ইমেইলের নিচের কাজগুলো, আর কোনো ইমেইল চেপে ধরে রাখলে যে মেনু আসে।";
+"Top Row" = "উপরের সারি";
+"Press and hold an email in a list to see these. Up to %lld, as a row of icons." = "তালিকায় কোনো ইমেইল চেপে ধরে রাখলে এগুলো দেখবেন। সর্বোচ্চ %lldটি, এক সারি আইকন হিসেবে।";
+"In the Menu" = "মেনুতে";
+"Up to %lld, in this order. Move To holds Needs You, Waiting, Handled, the categories and your labels or folders. Report Spam and Block Sender show in red, apart from the rest." = "সর্বোচ্চ %lldটি, এই ক্রমে। “সরান”-এ আছে আপনার করণীয়, অপেক্ষায়, সম্পন্ন, বিভাগগুলো আর আপনার লেবেল বা ফোল্ডার। “স্প্যাম হিসেবে জানান” আর “প্রেরককে ব্লক করুন” লাল রঙে, বাকিগুলো থেকে আলাদা দেখায়।";
+"Not in the Menu · %@" = "মেনুতে নেই · %@";
+"The menu is full. Remove one to add another." = "মেনু পূর্ণ। আরেকটি যোগ করতে একটি সরান।";
+"Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "উপরের সারিতে বা মেনুতে যোগ করতে একটিতে ট্যাপ করুন। যে কাজ কোনো ইমেইলে খাটে না, যেমন মেইলিং লিস্ট থেকে না এলে আনসাবস্ক্রাইব, সেটি ওই ইমেইলের মেনুতে থাকে না।";
+"Add to Top Row" = "উপরের সারিতে যোগ করুন";
+"Add to Menu" = "মেনুতে যোগ করুন";

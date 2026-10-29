@@ -3810,3 +3810,18 @@
 "Send Again" = "다시 보내기";
 /* No comment provided by engineer. */
 "Ends %@" = "%@ 종료";
+
+/* Settings → Customize → Press and Hold, and the press-and-hold menu on a mail row. */
+"Mark as Read or Unread" = "읽음 또는 읽지 않음으로 표시";
+"Add to VIPs" = "VIP에 추가";
+"Press and Hold" = "길게 누르기";
+"Where the tabs sit, how your lists look, what each swipe does, the actions under an email, and the menu when you press and hold one." = "탭의 위치, 목록의 모양, 각 스와이프의 동작, 이메일 아래의 동작, 이메일을 길게 누를 때 나오는 메뉴.";
+"Top Row" = "맨 위 줄";
+"Press and hold an email in a list to see these. Up to %lld, as a row of icons." = "목록에서 이메일을 길게 누르면 보입니다. 최대 %lld개, 아이콘 한 줄로 표시됩니다.";
+"In the Menu" = "메뉴에 표시";
+"Up to %lld, in this order. Move To holds Needs You, Waiting, Handled, the categories and your labels or folders. Report Spam and Block Sender show in red, apart from the rest." = "최대 %lld개, 이 순서대로 표시됩니다. '이동'에는 나에게 필요, 대기 중, 처리됨, 카테고리, 레이블 또는 폴더가 있습니다. '스팸으로 신고'와 '보낸 사람 차단'은 빨간색으로 따로 표시됩니다.";
+"Not in the Menu · %@" = "메뉴에 없음 · %@";
+"The menu is full. Remove one to add another." = "메뉴가 가득 찼습니다. 다른 것을 추가하려면 하나를 제거하세요.";
+"Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "탭하여 맨 위 줄이나 메뉴에 추가하세요. 메일링 리스트가 아닌 이메일의 '수신 거부'처럼 이메일에 해당하지 않는 동작은 그 메뉴에 표시되지 않습니다.";
+"Add to Top Row" = "맨 위 줄에 추가";
+"Add to Menu" = "메뉴에 추가";

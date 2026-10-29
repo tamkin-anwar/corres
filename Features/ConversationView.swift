@@ -1326,7 +1326,7 @@ struct ConversationView: View {
         MailDigest.readableText(body: thread.body, html: thread.htmlBody)
     }
 
-    private static func share(_ thread: Correspondence) {
+    static func share(_ thread: Correspondence) {
         let text = "\(thread.subject)\nFrom: \(thread.sender)\(thread.senderEmail.map { " <\($0)>" } ?? "")\n\n\(plainText(of: thread))"
         let sheet = UIActivityViewController(activityItems: [text], applicationActivities: nil)
         guard let top = topViewController() else { return }

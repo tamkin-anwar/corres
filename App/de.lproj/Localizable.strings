@@ -3810,3 +3810,18 @@
 "Send Again" = "Erneut senden";
 /* No comment provided by engineer. */
 "Ends %@" = "Endet am %@";
+
+/* Settings → Customize → Press and Hold, and the press-and-hold menu on a mail row. */
+"Mark as Read or Unread" = "Als gelesen oder ungelesen markieren";
+"Add to VIPs" = "Zu VIPs hinzufügen";
+"Press and Hold" = "Lange drücken";
+"Where the tabs sit, how your lists look, what each swipe does, the actions under an email, and the menu when you press and hold one." = "Wo die Tabs stehen, wie deine Listen aussehen, was jedes Wischen tut, die Aktionen unter einer E-Mail und das Menü, wenn du lange auf eine drückst.";
+"Top Row" = "Obere Reihe";
+"Press and hold an email in a list to see these. Up to %lld, as a row of icons." = "Drück in einer Liste lange auf eine E-Mail, um sie zu sehen. Bis zu %lld, als Reihe von Symbolen.";
+"In the Menu" = "Im Menü";
+"Up to %lld, in this order. Move To holds Needs You, Waiting, Handled, the categories and your labels or folders. Report Spam and Block Sender show in red, apart from the rest." = "Bis zu %lld, in dieser Reihenfolge. „Bewegen nach“ enthält Braucht dich, Wartet, Erledigt, die Kategorien und deine Labels oder Ordner. „Als Spam melden“ und „Absender blockieren“ stehen in Rot, getrennt vom Rest.";
+"Not in the Menu · %@" = "Nicht im Menü · %@";
+"The menu is full. Remove one to add another." = "Das Menü ist voll. Entferne eine, um eine andere hinzuzufügen.";
+"Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "Tippe auf eine, um sie zur oberen Reihe oder zum Menü hinzuzufügen. Eine Aktion, die zu einer E-Mail nicht passt, wie „Abmelden“ bei einer E-Mail ohne Verteiler, fehlt in ihrem Menü.";
+"Add to Top Row" = "Zur oberen Reihe hinzufügen";
+"Add to Menu" = "Zum Menü hinzufügen";

@@ -311,6 +311,15 @@ enum CorresSettings {
         actions.isEmpty ? "-" : actions.map(\.rawValue).joined(separator: ",")
     }
 
+    /// Settings → Customize → Press and Hold: the menu on an email in a
+    /// list, saved as `RowMenuLayout` raw strings ("" is the default).
+    static let rowMenuTopKey = "corres.rowMenu.top"
+    static let rowMenuListKey = "corres.rowMenu.list"
+    static func rowMenu(top: String, list: String) -> RowMenuLayout { RowMenuLayout(topRaw: top, listRaw: list) }
+    static var rowMenu: RowMenuLayout {
+        rowMenu(top: defaults.string(forKey: rowMenuTopKey) ?? "", list: defaults.string(forKey: rowMenuListKey) ?? "")
+    }
+
     static let followUpDaysKey = "corres.followUpDays"
     static let followUpChoices = [1, 2, 3, 5, 7]
     static var followUpDays: Int { defaults.object(forKey: followUpDaysKey) as? Int ?? 3 }

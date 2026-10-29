@@ -43,7 +43,8 @@ final class CloudSync {
     static let syncedSettings: [String] = [
         CorresSettings.vipsKey, CorresSettings.domainRulesKey, CorresSettings.sensitivityKey,
         CorresSettings.screenNewSendersKey, CorresSettings.newSenderModeKey, CorresSettings.followUpDaysKey, CorresSettings.morningHourKey,
-        CorresSettings.laterTodayEveningKey, CorresSettings.readingBarKey, CorresSettings.undoSendKey,
+        CorresSettings.laterTodayEveningKey, CorresSettings.readingBarKey,
+        CorresSettings.rowMenuTopKey, CorresSettings.rowMenuListKey, CorresSettings.undoSendKey,
         CorresSettings.defaultReplyKey, CorresSettings.remoteImagesKey, CorresSettings.confirmTrashKey,
         CorresSettings.markReadOnOpenKey, CorresSettings.openLinksKey, CorresSettings.summariesKey,
         CorresSettings.keyDetailsKey, CorresSettings.previewLinesKey, CorresSettings.tabsAtBottomKey, CorresSettings.tabsPinnedKey, CorresSettings.showAvatarsKey,
