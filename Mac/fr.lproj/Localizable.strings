@@ -2931,6 +2931,10 @@
 "Move To" = "Déplacer vers";
 "Add to VIPs" = "Ajouter aux VIP";
 
+/* Ask Before Moving to Trash, synced from the iPhone. */
+"Move this conversation to Trash?" = "Mettre cette conversation à la corbeille ?";
+"Move %lld conversations to Trash?" = "Mettre %lld conversations à la corbeille ?";
+
 /* Format > Add Link (Command-K) while writing. */
 "Add Link…" = "Ajouter un lien…";
 "Add Link" = "Ajouter un lien";

@@ -2931,6 +2931,10 @@
 "Move To" = "সরান";
 "Add to VIPs" = "VIP-তে যোগ করুন";
 
+/* Ask Before Moving to Trash, synced from the iPhone. */
+"Move this conversation to Trash?" = "এই কথোপকথনটি ট্র্যাশে সরাবেন?";
+"Move %lld conversations to Trash?" = "%lldটি কথোপকথন ট্র্যাশে সরাবেন?";
+
 /* Format > Add Link (Command-K) while writing. */
 "Add Link…" = "লিংক যোগ করুন…";
 "Add Link" = "লিংক যোগ করুন";

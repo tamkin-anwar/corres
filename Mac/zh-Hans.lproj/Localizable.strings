@@ -2931,6 +2931,10 @@
 "Move To" = "移到";
 "Add to VIPs" = "添加到 VIP";
 
+/* Ask Before Moving to Trash, synced from the iPhone. */
+"Move this conversation to Trash?" = "将此对话移到废纸篓？";
+"Move %lld conversations to Trash?" = "将 %lld 个对话移到废纸篓？";
+
 /* Format > Add Link (Command-K) while writing. */
 "Add Link…" = "添加链接…";
 "Add Link" = "添加链接";

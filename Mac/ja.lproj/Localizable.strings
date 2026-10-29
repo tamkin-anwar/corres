@@ -2931,6 +2931,10 @@
 "Move To" = "移動";
 "Add to VIPs" = "VIPに追加";
 
+/* Ask Before Moving to Trash, synced from the iPhone. */
+"Move this conversation to Trash?" = "この会話をゴミ箱に入れますか？";
+"Move %lld conversations to Trash?" = "%lld件の会話をゴミ箱に入れますか？";
+
 /* Format > Add Link (Command-K) while writing. */
 "Add Link…" = "リンクを追加…";
 "Add Link" = "リンクを追加";
