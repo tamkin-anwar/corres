@@ -99,6 +99,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         CorresTips.start()
         CrashCollector.shared.start()
+        #if DEBUG
+        // `-exportCorpus`: the same export as Settings > Developer, run at
+        // launch, for when the Simulator won't take taps.
+        if ProcessInfo.processInfo.arguments.contains("-exportCorpus") {
+            Task {
+                // Accounts load just after launch.
+                for _ in 0..<60 where auth.accounts.isEmpty { try? await Task.sleep(for: .seconds(1)) }
+                await Self.exportCorpus(accounts: auth.accounts.map(\.email))
+            }
+        }
+        #endif
         // Every launch, as Apple asks, so a new or restored iPhone (or a
         // changed token) keeps getting new-mail pushes.
         pushService.registerIfEnabled()
@@ -516,3 +527,29 @@ private final class BackgroundCompletion: @unchecked Sendable {
         task.setTaskCompleted(success: success)
     }
 }
+
+#if DEBUG
+extension AppDelegate {
+    /// Each account's recent mail as JSON in Documents/corpus, then a
+    /// status.txt beside it saying what was saved, so the export can be
+    /// followed from the Mac without the screen. One account failing
+    /// doesn't stop the others.
+    static func exportCorpus(accounts: [String]) async {
+        let folder = URL.documentsDirectory.appending(path: "corpus")
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        var lines: [String] = []
+        for account in accounts {
+            do {
+                let (items, missing) = try await MailClient().exportCorpus(account: account, limit: 3000)
+                try JSONEncoder().encode(items).write(to: folder.appending(path: "\(account).json"))
+                lines.append("\(account): saved \(items.count), missing \(missing)")
+            } catch {
+                lines.append("\(account): failed, \(error)")
+            }
+            try? (lines.joined(separator: "\n") + "\n").write(to: folder.appending(path: "status.txt"), atomically: true, encoding: .utf8)
+        }
+        lines.append("DONE")
+        try? (lines.joined(separator: "\n") + "\n").write(to: folder.appending(path: "status.txt"), atomically: true, encoding: .utf8)
+    }
+}
+#endif
