@@ -423,3 +423,33 @@ extension MailRepository {
         try await send(draft, sentAt: sentAt, realThreadID: realThreadID, sentCopy: nil)
     }
 }
+
+// MARK: - Logging errors
+
+public extension Error {
+    /// What went wrong, safe for a public log line: the error's type, its
+    /// case, its domain and code, and any numbers it carries (an HTTP
+    /// status), never its text, which can quote an address, a subject or a
+    /// server's reply about them. Log the full error beside it as `.private`.
+    var logKind: String {
+        let error = self as NSError
+        var parts = [String(describing: type(of: self))]
+        let mirror = Mirror(reflecting: self)
+        if mirror.displayStyle == .enum {
+            // The case's name: from the mirror when it carries values, and
+            // otherwise from its description, unless that's custom text.
+            if let label = mirror.children.first?.label {
+                parts[0] += "." + label
+            } else if !(type(of: self) is CustomStringConvertible.Type) {
+                parts[0] += "." + String(describing: self)
+            }
+            let numbers = mirror.children.flatMap { child in
+                Mirror(reflecting: child.value).children.compactMap { $0.value as? Int }.map(String.init)
+                    + [child.value as? Int].compactMap { $0 }.map(String.init)
+            }
+            if !numbers.isEmpty { parts.append(numbers.joined(separator: ",")) }
+        }
+        parts.append("\(error.domain) \(error.code)")
+        return parts.joined(separator: " ")
+    }
+}

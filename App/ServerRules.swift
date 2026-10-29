@@ -108,7 +108,7 @@ final class ServerRules {
                 else { try await gmail.deleteFilter(id: id, account: account) }
             } catch {
                 failed.insert(id)
-                Self.log.error("Couldn't remove a rule from a removed account: \(String(describing: error), privacy: .public)")
+                Self.log.error("Couldn't remove a rule from a removed account: \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
             }
         }
         // Ones that couldn't be removed stay recorded, so they aren't lost.

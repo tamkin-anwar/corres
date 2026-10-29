@@ -359,7 +359,7 @@ final class GmailSyncService {
             return false
         } catch {
             Logger(subsystem: "studio.anwarcreative.corres", category: "sync")
-                .error("Sync failed (\(MailAccounts.provider(for: account).title, privacy: .public)): \(String(describing: error), privacy: .public)")
+                .error("Sync failed (\(MailAccounts.provider(for: account).title, privacy: .public)): \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
             // Google turned down a token it had issued (revoked, or expired
             // early): forget it, so the next pass gets a fresh one instead
             // of failing the same way until the cached one runs out.
@@ -865,7 +865,7 @@ final class GmailSyncService {
                     if let key { UserDefaults.standard.removeObject(forKey: key) }
                 } catch {
                     Logger(subsystem: "studio.anwarcreative.corres", category: "sync")
-                        .error("Saving the sync cursor failed: \(String(describing: error), privacy: .public)")
+                        .error("Saving the sync cursor failed: \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
                 }
             }
         }

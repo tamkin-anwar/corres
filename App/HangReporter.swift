@@ -275,7 +275,9 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
     /// look at. The error only, never the email.
     static func failure(_ what: String, _ error: Error) {
         let entry = "\(Date().formatted(.iso8601)) \(what): \(String(describing: error))"
-        log.error("\(entry, privacy: .public)")
+        // Only the kind of error is public in the system log; its text can
+        // quote an address or a subject, so it's private there.
+        log.error("\(what, privacy: .public): \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
         note("failed: \(what)")
         shared.queue.async {
             guard let directory else { return }
