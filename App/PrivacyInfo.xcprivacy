@@ -4,10 +4,22 @@
 <key>NSPrivacyTracking</key><false/>
 <key>NSPrivacyTrackingDomains</key><array/>
 <!-- New-mail notifications (optional): the push relay (Server/push-relay)
-     stores the connected accounts' email addresses and this device's
-     notification token, only to tell the device a mailbox changed. Matches
-     "What our servers see" in the privacy policy. Email content never
-     leaves the device. -->
+     stores the connected accounts' email addresses (Email Address) and this
+     device's notification token, App Attest key or DeviceCheck token hash
+     (Device ID), only to tell the device a mailbox changed. The account's
+     sign-in ID token is checked there and not kept.
+     Instant Notifications for iCloud and other IMAP mail (optional, per
+     account): the app-specific password, sealed on the device to the
+     watcher's key and opened only by Server/icloud-watcher, with the mail
+     server and user name, kept while the switch is on (Other Data Types:
+     Apple's list has no type for a sign-in credential, and it isn't
+     content the person made, so not Other User Content).
+     Not declared: sender domains sent to the logo relay (Server/logo-relay)
+     are kept only in that server's memory as a cache of logos by domain,
+     never with who asked or any record of the request, so they aren't
+     linked to anyone and aren't data the developer can look at later.
+     Matches "What our servers see" in the privacy policy. Email content
+     never leaves the device. -->
 <key>NSPrivacyCollectedDataTypes</key><array>
 <dict>
 <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeEmailAddress</string>
@@ -17,6 +29,12 @@
 </dict>
 <dict>
 <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeDeviceID</string>
+<key>NSPrivacyCollectedDataTypeLinked</key><true/>
+<key>NSPrivacyCollectedDataTypeTracking</key><false/>
+<key>NSPrivacyCollectedDataTypePurposes</key><array><string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string></array>
+</dict>
+<dict>
+<key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeOtherDataTypes</string>
 <key>NSPrivacyCollectedDataTypeLinked</key><true/>
 <key>NSPrivacyCollectedDataTypeTracking</key><false/>
 <key>NSPrivacyCollectedDataTypePurposes</key><array><string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string></array>

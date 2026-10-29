@@ -186,9 +186,11 @@ Pieces, in build order:
   worker's memory; deleted the moment the switch goes off, the account is
   removed, or the login fails three times (the person revoked it).
 - **Disclosure**: one paragraph in the privacy policy and on the support
-  page; App Privacy label unchanged (credentials aren't "collected data"
-  that's linked to identity beyond the email address already declared, but
-  re-check the wording before submitting).
+  page. App Privacy: re-checked 2026-10-28. The sealed password, server
+  and user name are kept on our servers and opened there, so they count as
+  collected: declared in `App/PrivacyInfo.xcprivacy` as Other Data Types,
+  linked, App Functionality (Apple has no type for a credential). The App
+  Store Connect answers need the same.
 
 ### Progress
 
