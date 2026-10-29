@@ -489,7 +489,7 @@ enum Gist {
     }
 
     private static func sameLabel(_ a: String, _ b: String) -> Bool {
-        let groups: [Set<String>] = [["where", "location", "address", "site", "work location", "venue"],
+        let groups: [Set<String>] = [["where", "location", "address", "work location", "venue"],
                                      ["confirmation", "confirmation number", "booking reference", "reference number"]]
         let x = a.lowercased(), y = b.lowercased()
         return x == y || groups.contains { $0.contains(x) && $0.contains(y) }

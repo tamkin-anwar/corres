@@ -5,7 +5,7 @@ import Testing
 /// The In short card over a varied set of made-up emails: what each one
 /// says, and that it says nothing rather than something wrong.
 struct InShortTests {
-    static let now = Date(timeIntervalSince1970: 1_793_000_000) // Oct 26, 2026
+    static let now = Date(timeIntervalSince1970: 1_793_016_000) // Oct 26, 2026, midday in the Americas
 
     struct Fixture: CustomTestStringConvertible {
         var name: String
@@ -33,7 +33,7 @@ struct InShortTests {
                               looksAutomated: fixture.bulk, hasEvent: false, labelIds: fixture.labels)
         return InShort.make(subject: fixture.subject, sender: fixture.sender, senderEmail: fixture.email, whole: whole,
                             cleaned: cleaned, blocks: blocks, html: fixture.html, kind: kind, isBulk: fixture.bulk,
-                            isPromotion: fixture.promotion, receivedAt: now.addingTimeInterval(-3_600), now: now)
+                            isPromotion: fixture.promotion, receivedAt: now.addingTimeInterval(-60), now: now)
     }
 
     @Test(arguments: fixtures) func says(_ fixture: Fixture) {
@@ -46,6 +46,35 @@ struct InShortTests {
             #expect(line.isEmpty, "\(fixture.name) should say nothing: \(card.lines)")
         }
         for words in fixture.notSays { #expect(!line.localizedCaseInsensitiveContains(words), "\(fixture.name): \(card.lines)") }
+    }
+
+    /// A job offer's placement, as label and value, the start date in the
+    /// headline rather than twice.
+    @Test func jobOfferDetails() throws {
+        let fixture = try #require(Self.fixtures.first { $0.name == "job offer, as Amazon writes it" })
+        let card = Self.card(fixture)
+        #expect(card.details.map(\.label) == ["Site", "Address"])
+        #expect(card.details.map(\.value) == ["PSP1", "1010 West Fourth Street, Beaumont, CA"])
+    }
+
+    /// A sale's end date from the schema.org offer, said as ended once
+    /// it's past.
+    @Test func saleThatEnded() throws {
+        let fixture = try #require(Self.fixtures.first { $0.name == "sale with schema.org offer" })
+        let later = Self.now.addingTimeInterval(30 * 86_400)
+        #expect(Self.card(fixture, now: later).headline?.contains("Ended") == true)
+    }
+
+    /// "Tonight" is only said the day the email came.
+    @Test func endsTonightOnlyThatDay() {
+        let fixture = Fixture(name: "ends tonight", subject: "40% off ends tonight", email: "deals@store.example",
+                              body: "Shop now", bulk: true, promotion: true)
+        #expect(Self.card(fixture).headline == "40% off. Ends tonight.")
+        let whole = MailDigest.readableText(body: fixture.body, html: nil)
+        let late = InShort.make(subject: fixture.subject, sender: "", senderEmail: fixture.email, whole: whole, cleaned: whole,
+                                html: nil, kind: .newsletter, isBulk: true, isPromotion: true,
+                                receivedAt: Self.now.addingTimeInterval(-3 * 86_400), now: Self.now)
+        #expect(late.headline == "40% off.")
     }
 
     /// Every quoted sentence is the email's own, word for word.
