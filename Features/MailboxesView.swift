@@ -256,7 +256,7 @@ struct MailboxesView: View {
                 ForEach(shown) { mailbox in
                     if isEditing { editRow(mailbox) } else { row(mailbox) }
                 }
-                .onMove { from, to in move(within: mailboxes, from: from, to: to) }
+                .onMove { from, to in move(within: mailboxes, shown: shown, from: from, to: to) }
             } header: {
                 if let header { Text(header) }
             }
@@ -306,10 +306,11 @@ struct MailboxesView: View {
     }
 
     /// Reorders one section and saves it, keeping every other section's
-    /// saved order as it was.
-    private func move(within mailboxes: [Mailbox], from: IndexSet, to: Int) {
-        var ids = mailboxes.map(\.id)
-        ids.move(fromOffsets: from, toOffset: to)
+    /// saved order as it was. The offsets are the rows on screen, which
+    /// leave out hidden mailboxes; read against the whole section they
+    /// moved the wrong one.
+    private func move(within mailboxes: [Mailbox], shown: [Mailbox], from: IndexSet, to: Int) {
+        let ids = ShownOrder.move(mailboxes.map(\.id), shown: shown.map(\.id), from: from, to: to)
         let others = order.filter { !ids.contains($0) }
         orderRaw = (others + ids).joined(separator: "\n")
     }

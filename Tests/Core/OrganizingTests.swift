@@ -70,3 +70,24 @@ struct OrganizingTests {
         #expect(PurchaseStage.problem < PurchaseStage.onTheWay)
     }
 }
+
+struct ShownOrderTests {
+    @Test func movesAmongEverythingWhenNothingIsHidden() {
+        let all = ["a", "b", "c", "d"]
+        // Drag "a" below "c", as onMove reports it: offset 0 to 3.
+        #expect(ShownOrder.move(all, shown: all, from: [0], to: 3) == ["b", "c", "a", "d"])
+        #expect(ShownOrder.move(all, shown: all, from: [3], to: 0) == ["d", "a", "b", "c"])
+    }
+
+    @Test func readsTheOffsetsAgainstTheRowsOnScreen() {
+        // "b" is hidden, so a, c and d are on screen; "d" (row 2) goes to the top.
+        let moved = ShownOrder.move(["a", "b", "c", "d"], shown: ["a", "c", "d"], from: [2], to: 0)
+        // "d" leads the shown ones, and "b" keeps its slot.
+        #expect(moved == ["d", "b", "a", "c"])
+    }
+
+    @Test func movesSeveralAndKeepsHiddenOnesInPlace() {
+        let moved = ShownOrder.move(["h1", "a", "b", "h2", "c"], shown: ["a", "b", "c"], from: [0, 1], to: 3)
+        #expect(moved == ["h1", "c", "a", "h2", "b"])
+    }
+}

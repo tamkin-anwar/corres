@@ -116,6 +116,23 @@ public struct SavedSearch: Codable, Hashable, Identifiable, Sendable {
     }
 }
 
+/// Reordering a list where only some of it shows (Mailboxes, with some
+/// hidden): the drag's offsets count the rows on screen, so they're read
+/// against those, and the hidden ones keep their places among the rest.
+public enum ShownOrder {
+    /// `all` with the `shown` ones moved as the drag says (`from` and `to`
+    /// are offsets into `shown`, as `onMove` gives them).
+    public static func move<ID: Equatable>(_ all: [ID], shown: [ID], from: IndexSet, to: Int) -> [ID] {
+        let moving = from.sorted().filter { $0 < shown.count }.map { shown[$0] }
+        var reordered = shown.enumerated().filter { !from.contains($0.offset) }.map(\.element)
+        let target = min(to - from.filter { $0 < to }.count, reordered.count)
+        reordered.insert(contentsOf: moving, at: max(0, target))
+        // The shown ones take the shown slots, in their new order.
+        var next = reordered.makeIterator()
+        return all.map { id in shown.contains(id) ? (next.next() ?? id) : id }
+    }
+}
+
 public enum MuteRule {
     /// Whether a new email in a muted conversation should bring it back, as
     /// Gmail does: when it's written to you and you alone, or you've been
