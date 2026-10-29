@@ -1,0 +1,15 @@
+Hi,
+
+Here's the link to the doc: https://example.com/a/very/long/path/that/keeps/going/and/going/without/any/spaces/at/all/so/it/must/wrap/properly
+Call me on +44 20 7946 0958 or write to me@example.com.
+
+We'll meet at 221B Baker Street, London NW1 6XE, next Tuesday at 3pm.
+
+Thanks,
+Alex
+
+On Mon, 26 Oct 2026 at 09:12, Sam <sam@example.com> wrote:
+> Can we meet next week?
+> Let me know what works.
+
+END MARKER

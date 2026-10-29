@@ -26,6 +26,11 @@ struct HTMLMessageBody: PlatformViewRepresentable {
     /// it doesn't jump when it does.
     var expectedHeight: CGFloat?
     var blockRemoteImages = true
+    /// A forward (its subject says so, `MailSubject.isForward`): what it
+    /// carries is the point of it, so it's never folded away as history.
+    /// Outlook's forward starts with the same "From: … Sent: …" block as
+    /// its replies, and nothing in it says "forwarded".
+    var isForward = false
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     /// Read so a change of text size in Settings redraws the email.
@@ -172,7 +177,9 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         webView.pageZoom = kind == .plain ? 1 : CGFloat(CorresSettings.textScale)
         #endif
         let page = Self.wrap(processed, kind: kind, dark: dark, textSize: textSize,
-                             load: coordinator.loadGeneration, lateStyles: lateStyles, blockRemote: blockRemoteImages)
+                             load: coordinator.loadGeneration, lateStyles: lateStyles, blockRemote: blockRemoteImages,
+                             forward: isForward)
+        coordinator.lastPage = page
         // The rewrite above only catches `<img src>`. With images off,
         // WebKit itself refuses every remote load too (srcset, CSS url(),
         // background=, posters, `//` sources), so nothing reaches a sender.
@@ -323,6 +330,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
           if (tag === 'IMG') {
             const src = element.getAttribute('src') || '';
             if (src.startsWith(blockedPixel)) continue;           // not shown
+            if (element.hasAttribute('data-corres-broken') || /^cid:/i.test(src)) continue; // couldn't load, not shown
             if (/\.jpe?g(\?|#|$)|^data:image\/jpe?g/i.test(src)) continue; // photos are never transparent
             const width = element.naturalWidth || Number(element.getAttribute('width')) || element.offsetWidth;
             const height = element.naturalHeight || Number(element.getAttribute('height')) || element.offsetHeight;
@@ -379,6 +387,10 @@ struct HTMLMessageBody: PlatformViewRepresentable {
                 const border = parse(style.getPropertyValue('border-' + side + '-color'));
                 if (border && border.a > 0.05 && hsl(border).l >= 0.7) {
                   changes.push([element, 'border-' + side + '-color', darkBackground(border)]);
+                } else if (border && border.a > 0.05 && hsl(border).l < 0.3) {
+                  // Outlook's black table lines would vanish on the dark page.
+                  const { h, s, l } = hsl(border);
+                  changes.push([element, 'border-' + side + '-color', css(h, s, 0.5 - l * 0.5, border.a)]);
                 }
               }
             }
@@ -449,6 +461,134 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         return best;
       }
 
+      // MARK: Readable text in Dark mode
+      //
+      // A last check once the page is dark: text whose colour came out too
+      // close to what's behind it (light text in a light box an email
+      // forgot to darken, light text on a yellow banner) gets dark or light
+      // text instead, whichever reads. Text over a picture is left alone,
+      // there's no telling what's under it, and so is text a sender hid on
+      // purpose (a preheader squeezed to nothing).
+      function luminance(c) {
+        const f = v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+      }
+      function contrast(a, b) {
+        const x = luminance(a), y = luminance(b);
+        return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+      }
+      function over(top, under) {
+        const a = top.a;
+        return { r: top.r * a + under.r * (1 - a), g: top.g * a + under.g * (1 - a), b: top.b * a + under.b * (1 - a), a: 1 };
+      }
+      function hasOwnText(element) {
+        for (const node of element.childNodes) {
+          if (node.nodeType === Node.TEXT_NODE && node.data.trim()) return true;
+        }
+        return false;
+      }
+      function keepTextReadable() {
+        const meta = document.querySelector('meta[name="corres-dark"]');
+        if (!meta || meta.content !== '1') return;
+        // Designed mail kept on its white card is as its sender made it.
+        if (root.classList.contains('designed') && !root.classList.contains('own-dark')
+            && !document.documentElement.classList.contains('corres-dark')) return;
+        const elements = root.getElementsByTagName('*');
+        if (elements.length > 8000) return;
+        // Corres's dark page (CorresPalette.canvas), under whatever the email put on it.
+        let page = { r: 10 / 255, g: 10 / 255, b: 12 / 255, a: 1 };
+        for (const element of [document.documentElement, document.body]) {
+          const background = parse(getComputedStyle(element).backgroundColor);
+          if (background && background.a > 0.05) page = over(background, page);
+        }
+        const white = { r: 1, g: 1, b: 1, a: 1 }, black = { r: 0, g: 0, b: 0, a: 1 };
+        const changes = [];
+        (function visit(element, behind, inLink) {
+          const style = getComputedStyle(element);
+          if (style.backgroundImage && style.backgroundImage !== 'none') return;
+          if ((style.overflow === 'hidden' || style.maxHeight === '0px') && element.offsetHeight <= 1) return;
+          if (style.opacity === '0' || parseFloat(style.fontSize) < 6) return;
+          const background = parse(style.backgroundColor);
+          if (background && background.a > 0.05) behind = over(background, behind);
+          inLink = inLink || element.tagName === 'A';
+          if (hasOwnText(element)) {
+            const color = parse(style.color);
+            if (color && color.a > 0.3 && contrast(over(color, behind), behind) < 2.5) {
+              const light = contrast(white, behind) >= contrast(black, behind);
+              changes.push([element, inLink ? (light ? '#8FB4E8' : '#2F5D9E') : (light ? '#F2F3F5' : '#141312')]);
+            }
+          }
+          for (const child of element.children) visit(child, behind, inLink);
+        })(root, page, false);
+        for (const [element, value] of changes) element.style.setProperty('color', value, 'important');
+      }
+
+      // MARK: Pictures that can't be shown
+      //
+      // A picture that fails to load (a broken address, or an inline
+      // picture the message didn't carry) showed as an empty framed box the
+      // size its sender gave it. Like Mail, it's taken out instead, and one
+      // with words of its own (its alt text, often the only label on a
+      // linked button) shows those words. A picture held back while images
+      // are off keeps its space, empty, so nothing jumps when they're shown.
+      const remoteOff = (document.querySelector('meta[name="corres-remote"]') || {}).content === 'off';
+      function settleBroken(img) {
+        if (!img.isConnected || img.hasAttribute('data-corres-broken')) return;
+        const src = img.currentSrc || img.getAttribute('src') || '';
+        if (!src.trim() || src.startsWith(blockedPixel)) return;
+        img.setAttribute('data-corres-broken', '');
+        if (remoteOff && /^(https?:)?\/\//i.test(src)) {
+          img.style.setProperty('visibility', 'hidden', 'important');
+          return;
+        }
+        const alt = (img.getAttribute('alt') || '').trim();
+        if (alt) {
+          const label = document.createElement('span');
+          label.className = 'corres-alt';
+          label.textContent = alt;
+          img.replaceWith(label);
+        } else {
+          img.style.setProperty('display', 'none', 'important');
+        }
+      }
+      // Pictures that failed before this script ran. A loaded picture with
+      // no size of its own (some SVGs) also reads 0 wide, so those wait
+      // for their own error instead.
+      function settleAlreadyBroken() {
+        for (const img of Array.from(root.getElementsByTagName('img'))) {
+          const src = img.getAttribute('src') || '';
+          if (img.complete && img.naturalWidth === 0 && !/svg/i.test(src)) settleBroken(img);
+        }
+      }
+
+      // MARK: Picture proportions
+      //
+      // Outlook sizes a picture by both width and height, in inches
+      // (`width:6.5in;height:2.17in`). Narrowed to fit the screen
+      // (`max-width: 100%`), it kept its full height and came out squashed.
+      // Its height follows its width instead. A design shrunk to fit as a
+      // whole (`measure`) isn't narrowed this way and keeps its sizes.
+      function keepProportions(img) {
+        if (!img.style.height || img.style.height === 'auto') return;
+        const width = Number(img.getAttribute('width')) || img.naturalWidth;
+        const height = Number(img.getAttribute('height')) || img.naturalHeight;
+        if (!width || !height || !img.offsetWidth || !img.offsetHeight || img.offsetWidth >= width - 1) return;
+        const shown = img.offsetWidth / img.offsetHeight, meant = width / height;
+        if (Math.abs(shown - meant) / meant > 0.03) img.style.setProperty('height', 'auto', 'important');
+      }
+
+      // A picture held back keeps the shape its sender gave it. Its
+      // stand-in is a 1x1 pixel, and with `height: auto` the pixel's
+      // square shape won over the sender's width and height, turning a
+      // 600x200 banner into a 600x600 blank.
+      function holdShapes() {
+        for (const img of root.getElementsByTagName('img')) {
+          if (!(img.getAttribute('src') || '').startsWith(blockedPixel)) continue;
+          const width = Number(img.getAttribute('width')), height = Number(img.getAttribute('height'));
+          if (width > 3 && height > 0) img.style.setProperty('aspect-ratio', width + ' / ' + height);
+        }
+      }
+
       // MARK: Wide tables in mail from people
       //
       // A pasted spreadsheet or a wide signature table made the sizing
@@ -497,6 +637,8 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         return /forwarded message|begin forwarded|weitergeleitete nachricht|message transféré|subject:\s*(fw|fwd)\b/i.test(start);
       }
       function findQuote() {
+        const forward = document.querySelector('meta[name="corres-forward"]');
+        if (forward && forward.content === '1') return null;
         const header = root.querySelector(quoteHeaders.join(','));
         const container = Array.from(root.querySelectorAll(quoteContainers.join(',')))
           .find(node => !node.parentElement.closest(quoteContainers.join(',')) && !textAfter(node));
@@ -570,14 +712,24 @@ struct HTMLMessageBody: PlatformViewRepresentable {
       function adoptAll() { root.querySelectorAll('a[x-apple-data-detectors-type="misc"]').forEach(adoptMisc); }
       new MutationObserver(adoptAll).observe(root, { childList: true, subtree: true });
       adoptAll();
+      settleAlreadyBroken();
+      holdShapes();
       foldQuote();
       containWideTables();
       darken();
+      keepTextReadable();
       fitMargins();
+      Array.from(root.getElementsByTagName('img')).forEach(keepProportions);
       window.corresMeasure = measure;
       new ResizeObserver(schedule).observe(root);
-      document.addEventListener('load', schedule, true);
-      document.addEventListener('error', schedule, true);
+      document.addEventListener('load', event => {
+        if (event.target.tagName === 'IMG') keepProportions(event.target);
+        schedule();
+      }, true);
+      document.addEventListener('error', event => {
+        if (event.target.tagName === 'IMG') settleBroken(event.target);
+        schedule();
+      }, true);
       window.addEventListener('resize', schedule);
       if (document.fonts) document.fonts.ready.then(schedule);
       measure();
@@ -596,9 +748,6 @@ struct HTMLMessageBody: PlatformViewRepresentable {
     })();
     """#
 
-    /// How many `<img>` tags in `html` point at a remote http(s) URL, so a
-    /// caller can show a "N images blocked" banner without needing its own
-    /// WKWebView instance to find out.
     /// What the reading view needs to know about a message's HTML, worked
     /// out once per message: each of these scans the whole body, and the
     /// view asks on every redraw (the web view reporting its height, a
@@ -632,10 +781,24 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         return value
     }
 
+    /// Counts everything from the network that stays off with images, not
+    /// only `<img src="https://…">`: an email drawn with CSS backgrounds,
+    /// `background=` cells, `srcset`, unquoted or `//` addresses, or its
+    /// own style sheet had all of that held back with no Show Images
+    /// offered, so it just looked incomplete.
     static func remoteImageCount(in html: String) -> Int {
-        guard let regex = remoteImgSrcRegex else { return 0 }
+        guard let regex = remoteContentRegex else { return 0 }
         return regex.numberOfMatches(in: html, range: NSRange(html.startIndex..., in: html))
     }
+
+    private static let remoteContentRegex = try? NSRegularExpression(pattern: [
+        #"<img\b[^>]*?\bsrc\s*=\s*["']?\s*(https?:)?//"#,
+        #"\bsrcset\s*=\s*["'][^"']*?(https?:)?//"#,
+        #"\b(background|poster)\s*=\s*["']?\s*(https?:)?//"#,
+        #"url\(\s*["']?\s*(https?:)?//"#,
+        #"@import\s+(url\(\s*)?["']?\s*(https?:)?//"#,
+        #"<link\b(?=[^>]*stylesheet)[^>]*\bhref\s*=\s*["']?\s*(https?:)?//"#
+    ].joined(separator: "|"), options: [.caseInsensitive])
 
     /// How many of those remote images are tracking pixels: an image
     /// declared 0–2px in either dimension (the defining shape of an open
@@ -677,9 +840,8 @@ struct HTMLMessageBody: PlatformViewRepresentable {
     }
 
     /// Compiled once, not per call: NSRegularExpression pattern compilation
-    /// is real, non-trivial work, and both call sites above could otherwise
-    /// run it on every SwiftUI re-render (`remoteImageCount` is called
-    /// directly from ConversationView's body).
+    /// is real, non-trivial work, and the call site above could otherwise
+    /// run it on every SwiftUI re-render.
     private static let remoteImgSrcRegex = try? NSRegularExpression(
         pattern: #"(<img\b[^>]*\bsrc\s*=\s*)(["'])https?://[^"']*\2"#, options: [.caseInsensitive])
     private static let transparentPixelDataURI = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
@@ -704,9 +866,15 @@ struct HTMLMessageBody: PlatformViewRepresentable {
     private static let embeddedRefreshMetaRegex = try? NSRegularExpression(
         pattern: #"<meta\b[^>]*\bhttp-equiv\s*=\s*["']?refresh\b[^>]*>"#, options: [.caseInsensitive])
 
+    /// A sender's own Content Security Policy can only narrow what loads,
+    /// and once images are shown it could still refuse them (or their
+    /// fonts and styles). Corres sets the page's policy itself (`wrap`).
+    private static let embeddedPolicyMetaRegex = try? NSRegularExpression(
+        pattern: #"<meta\b[^>]*\bhttp-equiv\s*=\s*["']?content-security-policy[^>]*>"#, options: [.caseInsensitive])
+
     private static func strippingEmbeddedViewportMeta(_ html: String) -> String {
         var html = html
-        for regex in [embeddedViewportMetaRegex, embeddedRefreshMetaRegex].compactMap({ $0 }) {
+        for regex in [embeddedViewportMetaRegex, embeddedRefreshMetaRegex, embeddedPolicyMetaRegex].compactMap({ $0 }) {
             let range = NSRange(html.startIndex..., in: html)
             html = regex.stringByReplacingMatches(in: html, options: [], range: range, withTemplate: "")
         }
@@ -841,7 +1009,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
     }
 
     private static func wrap(_ html: String, kind: BodyKind, dark: Bool, textSize: CGFloat, load: Int = 0,
-                             lateStyles: [String] = [], blockRemote: Bool = false) -> String {
+                             lateStyles: [String] = [], blockRemote: Bool = false, forward: Bool = false) -> String {
         let adaptiveRules = """
             :root { color-scheme: light dark; }
             @media (prefers-color-scheme: dark) { body { color: #F2F3F5 !important; } a { color: #8FB4E8; } }
@@ -861,7 +1029,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         }
         return wrapAdaptive(html, load: load, dark: dark, textSize: textSize, styles: styles, lateStyles: lateStyles,
                             rootClass: kind == .plain ? "plain" : kind == .designed ? "designed" : "designed own-dark",
-                            blockRemote: blockRemote)
+                            blockRemote: blockRemote, forward: forward)
     }
 
     /// While an email's images are off, the page's own Content Security
@@ -876,7 +1044,8 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         + "font-src data:; media-src data: cid:"
 
     private static func wrapAdaptive(_ html: String, load: Int, dark: Bool, textSize: CGFloat, styles: String,
-                                     lateStyles: [String] = [], rootClass: String, blockRemote: Bool = false) -> String {
+                                     lateStyles: [String] = [], rootClass: String, blockRemote: Bool = false,
+                                     forward: Bool = false) -> String {
         let size = max(12, min(textSize, 40))
         let late = lateStyles.compactMap { $0.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) }
             .joined(separator: " ").replacingOccurrences(of: "\"", with: "%22").replacingOccurrences(of: "&", with: "&amp;")
@@ -888,6 +1057,8 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         <meta name="corres-dark" content="\(dark ? 1 : 0)">
         <meta name="corres-text-scale" content="\(String(format: "%.3f", size / 17))">
         <meta name="corres-styles" content="\(late)">
+        <meta name="corres-remote" content="\(blockRemote ? "off" : "on")">
+        <meta name="corres-forward" content="\(forward ? 1 : 0)">
         <style>
         body { font: -apple-system-body; font-size: \(String(format: "%.1f", size))px; line-height: 1.5; color: #141312 !important;
                margin: 0; padding: 0; -webkit-text-size-adjust: 100%;
@@ -929,6 +1100,11 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         .corres-fold a[aria-expanded="true"] { background: rgba(128, 128, 128, 0.28) !important; }
         pre { white-space: pre-wrap; }
         img { max-width: 100%; height: auto; }
+        /* An inline picture the message didn't carry: never an empty
+           frame, even before the sizing script names it (`settleBroken`). */
+        #corres-root img[src^="cid:" i] { display: none !important; }
+        /* A picture that couldn't load, by its own words (`sizingScript`). */
+        .corres-alt { font-size: 0.85em; opacity: 0.7; }
         /* Measured, not viewport-sized: emails that make their wrapper
            "full screen" (height: 100%, min-height: 100vh) grew every time
            the view grew to fit them, leaving an endless blank tail below
@@ -948,6 +1124,8 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         var lastBlockRemoteImages: Bool?
         var lastDark: Bool?
         var lastTextSize: CGFloat?
+        /// The page last handed to WebKit, to load again if its process ends.
+        var lastPage: String?
         init(_ parent: HTMLMessageBody) { self.parent = parent }
 
         /// A generation counter, bumped every time a fresh load starts
@@ -1118,6 +1296,16 @@ struct HTMLMessageBody: PlatformViewRepresentable {
                 guard generation == self.loadGeneration else { return }
                 webView.setShown(true, animated: true)
             }
+        }
+
+        /// The system ends a web view's page process when memory runs short
+        /// (a long email left open in the background, a big photo opened
+        /// elsewhere), and the view then shows nothing at all: the email
+        /// came back blank. It's loaded again, at the size it had.
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            guard let page = lastPage else { return }
+            print("HTMLMessageBody: web content process ended, loading the email again")
+            webView.loadHTMLString(page, baseURL: HTMLMessageBody.placeholderBaseURL)
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {

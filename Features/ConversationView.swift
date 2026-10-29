@@ -138,7 +138,8 @@ struct ConversationView: View {
                             // render the body edge to edge for this reason.
                             HTMLMessageBody(html: html, height: $htmlHeight, heightKey: MessageHeights.key(thread),
                                             expectedHeight: MessageHeights.expected(for: thread),
-                                            blockRemoteImages: !(showRemoteImages || thread.imagesTrusted || loadsImages))
+                                            blockRemoteImages: !(showRemoteImages || thread.imagesTrusted || loadsImages),
+                                            isForward: MailSubject.isForward(thread.subject))
                                 .frame(height: htmlHeight)
                         } else {
                             // Plain-text mail reads like the rest: tappable
@@ -146,7 +147,7 @@ struct ConversationView: View {
                             // its quoted history folded.
                             HTMLMessageBody(html: HTMLMessageBody.page(forPlainText: thread.body), height: $htmlHeight,
                                             heightKey: MessageHeights.key(thread), expectedHeight: MessageHeights.expected(for: thread),
-                                            blockRemoteImages: false)
+                                            blockRemoteImages: false, isForward: MailSubject.isForward(thread.subject))
                                 .frame(height: htmlHeight)
                         }
                         if !thread.isBodyLoaded {

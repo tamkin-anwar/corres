@@ -1,0 +1,26 @@
+<!DOCTYPE html><html><head>
+<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">
+<style>
+:root { color-scheme: light dark; supported-color-schemes: light dark; }
+.card { background:#ffffff; color:#1a1a1a; }
+.note { background:#f7f3e8; }
+@media (prefers-color-scheme: dark) {
+  .card { background:#1c1c1e !important; color:#f2f2f2 !important; }
+  .dark-hide { display:none !important; }
+  .dark-show { display:block !important; }
+}
+.dark-show { display:none; }
+</style></head><body>
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table class="card" width="100%" style="max-width:600px"><tr><td style="padding:24px;font:16px -apple-system,Helvetica,sans-serif">
+<h2 style="margin:0 0 12px">A dark-mode-aware email</h2>
+<p>This card switches to dark itself in Dark mode.</p>
+<p class="dark-hide" style="color:#555">(light logo would be here)</p>
+<p class="dark-show" style="color:#aaa">(dark logo would be here)</p>
+</td></tr></table>
+<table class="note" width="100%" style="max-width:600px"><tr><td style="padding:24px;font:16px -apple-system,Helvetica,sans-serif">
+This note box has a light background the sender forgot to darken. Its text has no colour of its own, so it must still be readable, not light on light.
+</td></tr></table>
+<table width="100%" style="max-width:600px;background:#ffd400"><tr><td style="padding:24px;font:16px -apple-system,Helvetica,sans-serif">Yellow banner: text must stay dark on yellow.</td></tr></table>
+<p style="font:16px -apple-system,Helvetica,sans-serif"><b>END MARKER</b></p>
+</td></tr></table></body></html>

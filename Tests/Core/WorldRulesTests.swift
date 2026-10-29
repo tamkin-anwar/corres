@@ -206,6 +206,12 @@ struct WorldRulesTests {
         #expect(MailSubject.forward("RV: Factura") == "Fwd: Factura")
         #expect(MailSubject.forward("Re: Plans") == "Fwd: Re: Plans")
         #expect(MailSubject.forward("WG: AW: Angebot") == "Fwd: AW: Angebot")
+        // A forward's body is the point of it: never folded as history.
+        #expect(MailSubject.isForward("FW: Your offer from Amazon"))
+        #expect(MailSubject.isForward("WG: AW: Angebot"))
+        #expect(MailSubject.isForward("転送: 会議"))
+        #expect(!MailSubject.isForward("Re: Fwd: Plans"))
+        #expect(!MailSubject.isForward("Forward planning for Q3"))
         #expect(MailSubject.reply("返信: 会議の件") == "Re: 会議の件")
         #expect(MailSubject.reply("답장: 회의") == "Re: 회의")
         #expect(MailSubject.reply("Odp: Spotkanie") == "Re: Spotkanie")

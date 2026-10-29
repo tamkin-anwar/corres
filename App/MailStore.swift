@@ -439,8 +439,9 @@ final class MailStore {
     /// swiping on an inbox the size of a real one. Removed with the rest
     /// of the sample mail.
     /// Launch with `-renderTestEmails <folder>` to add each .html file in
-    /// it as a sample email (images allowed), for checking how real email
-    /// HTML renders. Removed with the rest of the sample mail.
+    /// it as a sample email (images allowed, unless its name has
+    /// "images-off" in it), for checking how real email HTML renders.
+    /// Removed with the rest of the sample mail.
     private func loadRenderTestEmails() async {
         let arguments = ProcessInfo.processInfo.arguments
         guard let flag = arguments.firstIndex(of: "-renderTestEmails"), flag + 1 < arguments.count else { return }
@@ -456,7 +457,7 @@ final class MailStore {
                 return Correspondence(id: ThreadID(account: "sample", providerID: "render-\(name)"), sender: "Render test",
                                       organization: "Corres", subject: name, excerpt: "Rendering test: \(name)",
                                       body: isText ? content : name, htmlBody: isText ? nil : content, receivedAt: .now.addingTimeInterval(Double(-index) * 60), dueAt: nil,
-                                      reason: "", attention: .quiet, imagesTrusted: true)
+                                      reason: "", attention: .quiet, imagesTrusted: !name.contains("images-off"))
             }
         _ = try? await repository.upsert(emails, isInitialSync: true)
         allThreads = (try? await repository.threads()) ?? allThreads

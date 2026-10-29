@@ -117,7 +117,7 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
             }
             let shouldPing = lock.withLock { state -> Bool in
                 if state.awaiting {
-                    let waited = DispatchTime.now().uptimeNanoseconds - state.lastPong.uptimeNanoseconds
+                    let waited = Self.nanoseconds(from: state.lastPong)
                     if waited >= 250_000_000, state.stallStart == nil { state.stallStart = state.lastPong }
                     return false
                 }
@@ -136,7 +136,7 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         let finished = lock.withLock { state -> (UInt64, [String])? in
             defer { state.awaiting = false; state.lastPong = now; state.stallStart = nil }
             guard let start = state.stallStart else { return nil }
-            return ((now.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000, state.breadcrumbs)
+            return (Self.nanoseconds(from: start, to: now) / 1_000_000, state.breadcrumbs)
         }
         guard let (milliseconds, crumbs) = finished else { return }
         Self.log.error("Main thread stalled for \(milliseconds) ms")
@@ -183,7 +183,7 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
 
     @MainActor static func finish(_ name: String) {
         guard let started = name == "launch" ? launchedAt : marks.removeValue(forKey: name) else { return }
-        let ms = (DispatchTime.now().uptimeNanoseconds - started.uptimeNanoseconds) / 1_000_000
+        let ms = nanoseconds(from: started) / 1_000_000
         log.info("\(name, privacy: .public): \(ms) ms")
         timings.append("\(Date().formatted(.iso8601.time(includingFractionalSeconds: false))) \(name) \(ms) ms")
         if timings.count > 80 { timings.removeFirst(timings.count - 80) }
@@ -203,7 +203,7 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
     /// with the timings so a slow open says where the time went.
     @MainActor static func lap(_ label: String) {
         guard let started = marks["open"] else { return }
-        let ms = (DispatchTime.now().uptimeNanoseconds - started.uptimeNanoseconds) / 1_000_000
+        let ms = nanoseconds(from: started) / 1_000_000
         timings.append("\(Date().formatted(.iso8601.time(includingFractionalSeconds: false))) open: \(label) at \(ms) ms")
     }
 
@@ -211,7 +211,7 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
     /// launch says where the time went.
     @MainActor static func step(_ name: String) {
         guard !launchMeasured else { return }
-        let ms = (DispatchTime.now().uptimeNanoseconds - launchedAt.uptimeNanoseconds) / 1_000_000
+        let ms = nanoseconds(from: launchedAt) / 1_000_000
         timings.append("\(Date().formatted(.iso8601.time(includingFractionalSeconds: false))) launch: \(name) at \(ms) ms")
     }
 
@@ -250,6 +250,15 @@ final class HangReporter: NSObject, MXMetricManagerSubscriber, @unchecked Sendab
         return withUnsafeBytes(of: &system.machine) { buffer in
             String(decoding: buffer.prefix { $0 != 0 }, as: UTF8.self)
         }
+    }
+
+    /// The time between two moments, never below zero. A plain subtraction
+    /// of unsigned nanoseconds traps when the start is the later of the two
+    /// (a launch time worked out from the wall clock, or a pong landing on
+    /// the main thread just after the watcher read the time), and that trap
+    /// ended Corres at launch.
+    static func nanoseconds(from start: DispatchTime, to end: DispatchTime = .now()) -> UInt64 {
+        end.uptimeNanoseconds > start.uptimeNanoseconds ? end.uptimeNanoseconds - start.uptimeNanoseconds : 0
     }
 
     /// When this process started, so launch is timed from the tap, not
