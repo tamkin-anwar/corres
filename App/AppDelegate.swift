@@ -223,18 +223,25 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
     private func handleBackgroundRefresh(_ task: BGAppRefreshTask) {
         Self.scheduleBackgroundRefresh()
+        let completion = BackgroundCompletion(task)
         let work = Task {
             if store.state != .loaded { await store.load() }
             // Launched for this: the accounts may still be on their way.
             await auth.waitUntilRestored()
+            // Out of time: nothing more starts, above all no send, which
+            // iOS could suspend halfway.
+            guard !Task.isCancelled else { return }
             // iCloud has no push for apps: this is when its new mail is
             // found and notified while Corres is closed.
             let icloud = auth.accounts.map(\.email).filter { MailAccounts.provider(for: $0).usesIMAP }
             if !icloud.isEmpty { _ = await syncAndNotify(accounts: icloud) }
+            guard !Task.isCancelled else { return }
             await ScheduledSends.shared.sendDue(store: store, outbox: outbox)
+            guard !Task.isCancelled else { return }
             // Sends that failed for want of a connection try again here too,
             // not only when Corres is next opened.
             await outbox.retryFailedQuietly()
+            guard !Task.isCancelled else { return }
             await FollowUps.shared.check(store: store)
             // Keeps the Watch and its face from showing as out of date when
             // nothing has changed (sent again only once an hour has passed).
@@ -242,21 +249,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             // Twice a day at most, as at launch: every background refresh
             // used to renew each Gmail watch and re-register with the relay.
             await pushService.renewWatchIfDue(accounts: auth.accounts.map(\.email))
-            task.setTaskCompleted(success: true)
+            completion.finish(success: true)
         }
         // Ignoring the expiration handler damages this task's standing
         // with iOS's own scheduling model; an ungracefully-killed task
         // gets future requests deprioritized. Made outside the main actor:
         // iOS calls it on a queue of its own.
-        task.expirationHandler = Self.expirationHandler(cancelling: work, task: task)
+        task.expirationHandler = Self.expirationHandler(cancelling: work, completion: completion)
     }
 
     nonisolated private static func expirationHandler(cancelling work: Task<Void, Never>,
-                                                      task: BGAppRefreshTask) -> @Sendable () -> Void {
-        nonisolated(unsafe) let task = task
-        return {
+                                                      completion: BackgroundCompletion) -> @Sendable () -> Void {
+        {
             work.cancel()
-            task.setTaskCompleted(success: false)
+            completion.finish(success: false)
         }
     }
 
@@ -329,7 +335,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // Posted first, then everything else: what the push is for mustn't
         // wait behind sends, reminders and renewals inside iOS's time limit.
         pushService.notifyAboutNewMail(toNotify)
-        WidgetBridge.update(from: store.threads)
+        await WidgetBridge.updateInBackground(from: store.threads)
         // The Watch too: woken in the background, Corres never reached the
         // views that usually send it.
         WatchBridge.shared.update(from: store.threads)
@@ -493,5 +499,20 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         default:
             break
         }
+    }
+}
+
+/// Tells iOS a background task is done, exactly once: the work finishing
+/// and the time running out can happen together, on different threads,
+/// and the first to arrive is the answer.
+private final class BackgroundCompletion: @unchecked Sendable {
+    private let task: BGTask
+    private let done = LockedValue(false)
+
+    init(_ task: BGTask) { self.task = task }
+
+    func finish(success: Bool) {
+        guard done.set(true) else { return }
+        task.setTaskCompleted(success: success)
     }
 }

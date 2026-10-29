@@ -407,14 +407,16 @@ final class MacServices {
     /// IDLE, a newly added account): the same as on the iPhone.
     func afterSync() {
         Task { await FollowUps.shared.check(store: store) }
+        // Almost every check finds nothing, so each step reloads the lists
+        // only when it saved something; the last reload costs next to
+        // nothing when nothing changed.
         Task {
-            await sync.backfillContent()
-            await store.refresh()
+            if await sync.backfillContent() { await store.refresh() }
             if await sync.indexOlderMail(accounts: auth.accounts.map(\.email)) { await store.refresh() }
             await sync.verifyInboxes(accounts: auth.accounts.map(\.email))
             await store.refresh()
             if !requiresPro && CorresSettings.summaries {
-                await intelligence.prewarm(store.threads, includeRead: false)
+                await intelligence.prewarm(store.threads, includeRead: false, revision: store.contentRevision)
             }
         }
     }
@@ -433,7 +435,7 @@ final class MacServices {
         observe({ [unowned self] in WidgetBridge.locks(connected: !auth.accounts.isEmpty, entitlements: entitlements) },
                 initial: true) { [unowned self] locked in
             WidgetBridge.isLocked = locked
-            WidgetBridge.update(from: store.threads)
+            Task { await WidgetBridge.updateInBackground(from: store.threads) }
         }
         // At most one reload each half second: a first sync saves a hundred
         // batches, and each reload redraws the lists.
@@ -578,9 +580,11 @@ private final class Observer<Value: Equatable> {
     }
 }
 
-/// Shows each batch a sync saves, at most one reload each half second: the
-/// first batch at once, the last one always, the ones between folded
-/// together.
+/// Shows each batch a sync saves: the first batch at once, the last one
+/// always, the ones between folded together. At most one reload each half
+/// second while the first screenful fills in, then each two seconds: a
+/// first sync saves a hundred batches, and each reload rebuilds the lists
+/// on the main thread, which made scrolling stall through it.
 @MainActor
 private enum SyncBatchRefresh {
     private static var running: Task<Void, Never>?
@@ -589,10 +593,12 @@ private enum SyncBatchRefresh {
     static func schedule(_ store: MailStore) {
         guard running == nil else { again = true; return }
         running = Task {
+            var reloads = 0
             repeat {
                 again = false
                 await store.refresh()
-                try? await Task.sleep(for: .milliseconds(500))
+                reloads += 1
+                try? await Task.sleep(for: .milliseconds(reloads < 3 ? 500 : 2_000))
             } while again
             running = nil
         }

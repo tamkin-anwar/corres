@@ -150,6 +150,9 @@ final class ScheduledSends {
                 hold(item, because: thread.sender)
                 continue
             }
+            // Background time ran out: the rest wait for the next chance,
+            // rather than starting a send iOS could suspend halfway.
+            if Task.isCancelled { break }
             remove(item.id)
             await outbox.sendNow(item.draft, replyingTo: thread, asEarlierAttempt: item.fromShareSheet == true)
         }

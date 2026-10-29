@@ -25,7 +25,7 @@ final class GmailSyncService {
     /// What the providers' own search found for it, shown even when the
     /// words are only in a part of the message not on the device.
     private(set) var serverMatches: Set<ThreadID> = []
-    private var searchGeneration = 0
+    @ObservationIgnored private var searchGeneration = 0
     /// Bumped whenever a sync pass pulls in data, from any entry point.
     /// `CorresApp` observes it to run on-device triage after *every* sync
     /// (pull-to-refresh, connecting an account), not just the launch and
@@ -36,7 +36,10 @@ final class GmailSyncService {
     /// work over the whole mailbox (iCloud marks, people, triage) follows
     /// this, not every 20-second check that found nothing.
     private(set) var lastChange: Date?
-    private var changedAccounts: Set<String> = []
+    // Bookkeeping below is marked @ObservationIgnored: nothing on screen
+    // reads it, and each write would otherwise tell every view watching
+    // this service that it changed, on every 20-second check.
+    @ObservationIgnored private var changedAccounts: Set<String> = []
     var errorMessage: String?
 
     /// Each account's last good sync, and what's wrong when it isn't
@@ -197,8 +200,8 @@ final class GmailSyncService {
     /// which dropped the push and made Sync Now say the server didn't
     /// answer. Unstructured, so leaving the app mid-command doesn't cancel
     /// a sync halfway through a server exchange.
-    private var running: [String: Task<Bool, Never>] = [:]
-    private var wantsAnotherPass: Set<String> = []
+    @ObservationIgnored private var running: [String: Task<Bool, Never>] = [:]
+    @ObservationIgnored private var wantsAnotherPass: Set<String> = []
 
     private func sync(account: String) async -> Bool {
         #if DEBUG
@@ -352,9 +355,9 @@ final class GmailSyncService {
             }
             setMissedMessages(missed.after(failed: stillMissing, tried: tried, now: .now), for: account)
             if !isFullListing { await backfillSentIfNeeded(account: account, removal: removal) }
-            else { defaults.set(true, forKey: Self.sentBackfillKey(for: account)) }
+            else if !defaults.bool(forKey: Self.sentBackfillKey(for: account)) { defaults.set(true, forKey: Self.sentBackfillKey(for: account)) }
             await repairSentPlaceholders(account: account, removal: removal)
-            errorMessage = nil
+            if errorMessage != nil { errorMessage = nil }
             health[account] = AccountHealth(lastSuccess: .now, problem: nil)
             return true
         } catch is AccountRemoved {
@@ -442,14 +445,17 @@ final class GmailSyncService {
     /// synced message did before metadata-first sync existed. Anything
     /// older loads the moment it's opened (`ThreadActionService.loadContent`).
     /// Runs in the foreground after a sync, never inside a silent-push window.
-    func backfillContent() async {
+    /// Returns whether any bodies were saved.
+    @discardableResult
+    func backfillContent() async -> Bool {
         // Every sync asks for this; one at a time, or two close syncs
         // fetched the same bodies twice.
-        guard !isBackfilling else { return }
+        guard !isBackfilling else { return false }
         isBackfilling = true
         defer { isBackfilling = false }
-        guard let pending = try? await repository.threadsAwaitingContent(limit: Self.backfillLimit) else { return }
+        guard let pending = try? await repository.threadsAwaitingContent(limit: Self.backfillLimit), !pending.isEmpty else { return false }
         let now = Date.now
+        var saved = false
         for (account, accountThreads) in Dictionary(grouping: pending, by: \.id.account) {
             let removal = removalCount(account)
             // One the server no longer has (deleted, or moved elsewhere)
@@ -461,16 +467,20 @@ final class GmailSyncService {
             for chunk in ids.chunked(into: GmailAPIClient.batchSize) {
                 guard let fetched = try? await client.fetchFull(ids: chunk, account: account), isCurrent(account, removal) else { break }
                 for id in chunk { backfillTried[account + "|" + id] = now }
-                if (try? await repository.applyLoadedContent(fetched.items)) ?? 0 > 0 { syncProgress += 1 }
+                if (try? await repository.applyLoadedContent(fetched.items)) ?? 0 > 0 {
+                    syncProgress += 1
+                    saved = true
+                }
             }
         }
         if backfillTried.count > 2_000 { backfillTried = backfillTried.filter { now.timeIntervalSince($0.value) <= Self.backfillRetry } }
+        return saved
     }
 
     private static let backfillLimit = 200
     private static let backfillRetry: TimeInterval = 30 * 60
-    private var isBackfilling = false
-    private var backfillTried: [String: Date] = [:]
+    @ObservationIgnored private var isBackfilling = false
+    @ObservationIgnored private var backfillTried: [String: Date] = [:]
 
     /// Every few hours, each account's Inbox as the server has it now (the
     /// newest 500 conversations) is compared with what's here: read state
@@ -478,11 +488,19 @@ final class GmailSyncService {
     /// change feed didn't report (older mail, Outlook's 60-day window, an
     /// IMAP server's newest-500 window) removed. A check, not a re-sync:
     /// metadata only, and only between the newest and oldest it listed.
-    func verifyInboxes(accounts: [String]) async {
+    /// Returns whether a check finished, which may have changed the mail.
+    @discardableResult
+    func verifyInboxes(accounts: [String]) async -> Bool {
+        var checked = false
         for account in accounts where account != "sample" {
             let key = "corres.inboxVerified.\(account.lowercased())"
             let last = defaults.object(forKey: key) as? Date ?? .distantPast
-            guard Date.now.timeIntervalSince(last) > Self.verifyInterval, running[account] == nil else { continue }
+            // One check per account at a time: the next 20-second check
+            // could start another while a slow one was still listing, and
+            // two would decide removals from listings of different moments.
+            guard Date.now.timeIntervalSince(last) > Self.verifyInterval, running[account] == nil,
+                  verifying.insert(account).inserted else { continue }
+            defer { verifying.remove(account) }
             let removal = removalCount(account)
             var listed: [Correspondence] = []
             var token: String?
@@ -503,11 +521,15 @@ final class GmailSyncService {
                 try await confirmAgainstInbox(account: account, listed: listed, removal: removal)
                 defaults.set(Date.now, forKey: key)
                 syncProgress += 1
+                checked = true
             } catch {
                 continue
             }
         }
+        return checked
     }
+
+    @ObservationIgnored private var verifying: Set<String> = []
 
     /// Read state from the listing, then each conversation that looks gone
     /// asked about by its newest message before anything changes: moved
@@ -651,7 +673,7 @@ final class GmailSyncService {
 
     /// How many times each account has been removed this launch. Work for
     /// an account notes it when it starts, and stops once it changes.
-    private var removals: [String: Int] = [:]
+    @ObservationIgnored private var removals: [String: Int] = [:]
     private struct AccountRemoved: Error {}
 
     private func removalCount(_ account: String) -> Int { removals[account, default: 0] }
@@ -763,7 +785,7 @@ final class GmailSyncService {
 
     private static let placeholderRetry: TimeInterval = 5 * 60
     private static let placeholderGiveUp: TimeInterval = 7 * 86_400
-    private var placeholderTried: [ThreadID: Date] = [:]
+    @ObservationIgnored private var placeholderTried: [ThreadID: Date] = [:]
 
     private func backfillSentIfNeeded(account: String, removal: Int) async {
         guard !defaults.bool(forKey: Self.sentBackfillKey(for: account)),
@@ -798,13 +820,15 @@ final class GmailSyncService {
 
     /// A nil token after a load means Gmail has nothing older: remembered,
     /// so scrolling to the bottom again doesn't re-scan the whole Inbox.
+    /// Written only when it changed, like the cursor below.
     private func setOlderInboxPageToken(_ token: String?, for account: String) {
+        let tokenKey = Self.olderTokenKey(for: account), exhaustedKey = Self.olderExhaustedKey(for: account)
         if let token {
-            defaults.set(token, forKey: Self.olderTokenKey(for: account))
-            defaults.set(false, forKey: Self.olderExhaustedKey(for: account))
+            if defaults.string(forKey: tokenKey) != token { defaults.set(token, forKey: tokenKey) }
+            if defaults.object(forKey: exhaustedKey) as? Bool != false { defaults.set(false, forKey: exhaustedKey) }
         } else {
-            defaults.removeObject(forKey: Self.olderTokenKey(for: account))
-            defaults.set(true, forKey: Self.olderExhaustedKey(for: account))
+            if defaults.object(forKey: tokenKey) != nil { defaults.removeObject(forKey: tokenKey) }
+            if defaults.object(forKey: exhaustedKey) as? Bool != true { defaults.set(true, forKey: exhaustedKey) }
         }
     }
 
@@ -828,7 +852,12 @@ final class GmailSyncService {
 
     private func setHistoryCursor(_ value: String, for account: String) {
         guard MailAccounts.provider(for: account).usesIMAP else {
-            defaults.set(value, forKey: Self.cursorKey(for: account))
+            // Only when it moved: every write tells the whole app settings
+            // changed (iCloud settings, rules), and a check that found
+            // nothing gives back the same cursor every 20 seconds.
+            if defaults.string(forKey: Self.cursorKey(for: account)) != value {
+                defaults.set(value, forKey: Self.cursorKey(for: account))
+            }
             return
         }
         // A pass that changed nothing gives back the same cursor.
@@ -846,8 +875,8 @@ final class GmailSyncService {
     /// changed, instead of rewriting UserDefaults every 20 seconds.
     /// Gmail's and Outlook's are small and stay in UserDefaults. What was
     /// last read or written is kept here, so only a launch reads the file.
-    private var fileCursors: [String: String] = [:]
-    private var fileCursorsRead: Set<String> = []
+    @ObservationIgnored private var fileCursors: [String: String] = [:]
+    @ObservationIgnored private var fileCursorsRead: Set<String> = []
 
     private enum CursorFiles {
         /// One at a time, in order: a later cursor never lands before an

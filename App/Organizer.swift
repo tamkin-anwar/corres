@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 
 /// Your rules, templates, saved searches and muted conversations: kept on
 /// this device, followed to your others through iCloud (CloudSync syncs
@@ -17,7 +18,9 @@ final class Organizer {
     static let searchesKey = "corres.savedSearches"
     static let mutedKey = "corres.muted"
     /// Per conversation, the newest message already looked at. On this
-    /// device only: each device decides for itself what it has seen.
+    /// device only: each device decides for itself what it has seen. Kept
+    /// in UserDefaults by earlier builds (`seenKey`), now in a file of its
+    /// own (`SeenFile`).
     private static let seenKey = "corres.organized"
     private static let maxSeen = 4_000
 
@@ -36,10 +39,28 @@ final class Organizer {
 
     private init() {
         reload()
-        seen = (UserDefaults.standard.dictionary(forKey: Self.seenKey) as? [String: String]) ?? [:]
+        seen = SeenFile.read() ?? {
+            // Kept in UserDefaults by an earlier build: moved to its file, once.
+            let old = (UserDefaults.standard.dictionary(forKey: Self.seenKey) as? [String: String]) ?? [:]
+            if !old.isEmpty { SeenFile.write(old, thenRemoveDefault: Self.seenKey) }
+            return old
+        }()
         // A change from another device lands in UserDefaults (CloudSync).
+        // Every write to UserDefaults posts this, several in a row during a
+        // sync: they're looked at once, on the next turn.
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
-            Task { @MainActor in Organizer.shared.reloadIfChanged() }
+            MainActor.assumeIsolated { Organizer.shared.scheduleReload() }
+        }
+    }
+
+    @ObservationIgnored private var reloadScheduled = false
+
+    private func scheduleReload() {
+        guard !reloadScheduled else { return }
+        reloadScheduled = true
+        Task { @MainActor in
+            reloadScheduled = false
+            reloadIfChanged()
         }
     }
 
@@ -104,22 +125,48 @@ final class Organizer {
     // MARK: Stored
 
     private func reload() {
+        storedData = Self.storedData()
         rules = Self.decode([MailRule].self, Self.rulesKey) ?? []
         templates = Self.decode([MailTemplate].self, Self.templatesKey) ?? []
         savedSearches = Self.decode([SavedSearch].self, Self.searchesKey) ?? []
         muted = Self.decode([String: Date].self, Self.mutedKey) ?? [:]
     }
 
+    /// Only the lists whose saved bytes changed are decoded again: any
+    /// write to UserDefaults lands here, and almost none are these four.
     private func reloadIfChanged() {
-        let fresh = (Self.decode([MailRule].self, Self.rulesKey) ?? [], Self.decode([MailTemplate].self, Self.templatesKey) ?? [],
-                     Self.decode([SavedSearch].self, Self.searchesKey) ?? [], Self.decode([String: Date].self, Self.mutedKey) ?? [:])
-        if fresh.0 != rules {
-            rules = fresh.0
-            ServerRules.shared.schedule()
+        let data = Self.storedData()
+        guard data != storedData else { return }
+        let before = storedData
+        storedData = data
+        if data[Self.rulesKey] != before[Self.rulesKey] {
+            let fresh = Self.decode([MailRule].self, Self.rulesKey) ?? []
+            if fresh != rules {
+                rules = fresh
+                ServerRules.shared.schedule()
+            }
         }
-        if fresh.1 != templates { templates = fresh.1 }
-        if fresh.2 != savedSearches { savedSearches = fresh.2 }
-        if fresh.3 != muted { muted = fresh.3 }
+        if data[Self.templatesKey] != before[Self.templatesKey] {
+            let fresh = Self.decode([MailTemplate].self, Self.templatesKey) ?? []
+            if fresh != templates { templates = fresh }
+        }
+        if data[Self.searchesKey] != before[Self.searchesKey] {
+            let fresh = Self.decode([SavedSearch].self, Self.searchesKey) ?? []
+            if fresh != savedSearches { savedSearches = fresh }
+        }
+        if data[Self.mutedKey] != before[Self.mutedKey] {
+            let fresh = Self.decode([String: Date].self, Self.mutedKey) ?? [:]
+            if fresh != muted { muted = fresh }
+        }
+    }
+
+    /// The four lists as saved, last looked at.
+    @ObservationIgnored private var storedData: [String: Data] = [:]
+
+    private static func storedData() -> [String: Data] {
+        var data: [String: Data] = [:]
+        for key in [rulesKey, templatesKey, searchesKey, mutedKey] { data[key] = UserDefaults.standard.data(forKey: key) }
+        return data
     }
 
     private static func decode<T: Decodable>(_ type: T.Type, _ key: String) -> T? {
@@ -244,10 +291,22 @@ final class Organizer {
     /// each rule that matches does what it says. The first time ever, it
     /// only notes what's already here, so turning Corres on never sweeps
     /// through a whole mailbox.
+    /// A call while a pass runs is taken by one more pass after it: the
+    /// lists now call this only when the mail changed, so a dropped call
+    /// would leave the new mail unlooked at until more arrived.
     func organize(store: MailStore, actions: ThreadActionService) async {
-        guard !isOrganizing, store.state == .loaded else { return }
+        guard store.state == .loaded else { return }
+        guard !isOrganizing else { organizeAgain = true; return }
         isOrganizing = true
         defer { isOrganizing = false }
+        repeat {
+            organizeAgain = false
+            await organizeOnce(store: store, actions: actions)
+        } while organizeAgain
+    }
+    @ObservationIgnored private var organizeAgain = false
+
+    private func organizeOnce(store: MailStore, actions: ThreadActionService) async {
         let threads = store.threads.filter { $0.id.account != "sample" }
         if seen.isEmpty {
             for thread in threads { if let id = thread.latestMessageID { seen[Self.key(thread.id)] = id } }
@@ -315,6 +374,40 @@ final class Organizer {
                 seen = Dictionary(uniqueKeysWithValues: seen.prefix(limit).map { ($0.key, $0.value) })
             }
         }
-        UserDefaults.standard.set(seen, forKey: Self.seenKey)
+        SeenFile.write(seen)
+    }
+
+    /// Thousands of entries, saved again whenever new mail arrives: in
+    /// UserDefaults, each save copied all of it on the main thread and
+    /// told the whole app its settings had changed. Written off the main
+    /// thread, in order, whole or not at all. The app ending before one
+    /// lands is the same as before, when UserDefaults hadn't yet saved.
+    private enum SeenFile {
+        static let queue = DispatchQueue(label: "studio.anwarcreative.corres.organized", qos: .utility)
+        static var url: URL { URL.applicationSupportDirectory.appending(path: "organized.plist") }
+
+        /// Nil when there's no file yet.
+        static func read() -> [String: String]? {
+            queue.sync {
+                guard let data = try? Data(contentsOf: url) else { return nil }
+                return try? PropertyListDecoder().decode([String: String].self, from: data)
+            }
+        }
+
+        static func write(_ seen: [String: String], thenRemoveDefault key: String? = nil) {
+            queue.async {
+                let encoder = PropertyListEncoder()
+                encoder.outputFormat = .binary
+                guard let data = try? encoder.encode(seen) else { return }
+                try? FileManager.default.createDirectory(at: URL.applicationSupportDirectory, withIntermediateDirectories: true)
+                do {
+                    try data.write(to: url, options: .atomic)
+                    if let key { UserDefaults.standard.removeObject(forKey: key) }
+                } catch {
+                    Logger(subsystem: "studio.anwarcreative.corres", category: "organize")
+                        .error("Saving what's been organized failed: \(String(describing: error), privacy: .public)")
+                }
+            }
+        }
     }
 }

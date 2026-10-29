@@ -290,6 +290,8 @@ final class OutboxService {
         for failedSend in failedSends {
             // Discarded or retried by hand while an earlier one was going.
             guard failedSends.contains(where: { $0.id == failedSend.id }) else { continue }
+            // Background time ran out: the rest stay failed for next time.
+            if Task.isCancelled { break }
             failedSends.removeAll { $0.id == failedSend.id }
             await commit(failedSend.draft, thread: resolveThread(for: failedSend.draft), id: failedSend.id,
                          checkForExistingSendFirst: true, quietly: true)

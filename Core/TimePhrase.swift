@@ -9,9 +9,18 @@ import Foundation
 public enum TimePhrase {
     /// Default hour when a day is named without a time: early enough to be
     /// the first thing seen, the same default Gmail and Apple Mail use.
-    public nonisolated(unsafe) static var morningHour = 8
+    public static var morningHour: Int {
+        get { morningHourStore.value }
+        set { morningHourStore.set(newValue) }
+    }
     /// "Later today": three hours from now, or this evening at six.
-    public nonisolated(unsafe) static var laterTodayIsEvening = false
+    public static var laterTodayIsEvening: Bool {
+        get { laterTodayStore.value }
+        set { laterTodayStore.set(newValue) }
+    }
+    // Set on the main thread, read wherever a time is worked out.
+    private static let morningHourStore = LockedValue(8)
+    private static let laterTodayStore = LockedValue(false)
 
     /// `languages`: the reader's, most preferred first. A lone "9h" is
     /// nine o'clock to a French reader, as French writes the time, and

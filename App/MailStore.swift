@@ -231,10 +231,13 @@ final class MailStore {
 
     /// Address → the name its owner writes under, worked out once per
     /// change to the mail: rows ask it for every sent email on screen.
+    /// Keyed on `contentRevision`, not `revision`: hiding a row for Undo
+    /// changes no names, and redoing the whole mailbox at the first redraw
+    /// after each swipe was work inside the swipe's animation.
     var knownSenderNames: [String: String] {
-        if knownNamesRevision != revision {
+        if knownNamesRevision != contentRevision {
             knownNamesCache = Correspondence.knownSenderNames(allThreads)
-            knownNamesRevision = revision
+            knownNamesRevision = contentRevision
         }
         return knownNamesCache
     }
@@ -537,6 +540,10 @@ final class MailStore {
     func refresh() async {
         // So a stall report says what was running, never which mail.
         HangReporter.note("reload lists")
+        // The mail is still being read for the first time: that read brings
+        // everything saved so far, and this follows it with what changed
+        // since, rather than reading the whole mailbox again beside it.
+        if state == .loading, let firstLoad { await firstLoad.value }
         if isRefreshing {
             // Returns once a reload that started after this call is done,
             // so the caller still sees what it just changed.
@@ -545,6 +552,7 @@ final class MailStore {
             return
         }
         isRefreshing = true
+        var changed = false
         repeat {
             refreshAgain = false
             let waiting = refreshWaiters
@@ -552,19 +560,25 @@ final class MailStore {
             // Only what changed since the last read, once the whole mailbox
             // is here: reading all of it again took seconds on a phone.
             if state == .loaded, let changes = try? await repository.changes() {
-                apply(changes)
+                if apply(changes) { changed = true }
             } else {
                 allThreads = (try? await repository.threads()) ?? allThreads
+                changed = true
             }
             // Everyone who asked before this reload began now has it.
             waiting.forEach { $0.resume() }
         } while refreshAgain
         isRefreshing = false
+        // Nothing new (most 20-second checks): nothing for the rules to
+        // look at, and no reply to read ahead.
+        guard changed else { return }
         readRepliedContent()
         afterRefresh?()
     }
-    private func apply(_ changes: StoredChanges) {
-        guard !changes.updated.isEmpty || !changes.removed.isEmpty else { return }
+    /// Returns whether anything changed.
+    @discardableResult
+    private func apply(_ changes: StoredChanges) -> Bool {
+        guard !changes.updated.isEmpty || !changes.removed.isEmpty else { return false }
         var threads = allThreads
         var known = positions
         for item in changes.updated {
@@ -580,6 +594,7 @@ final class MailStore {
             threads.removeAll { gone.contains($0.id) }
         }
         allThreads = threads
+        return true
     }
 
     /// Told after each reload from storage, which is when new mail has

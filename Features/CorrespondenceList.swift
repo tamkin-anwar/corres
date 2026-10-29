@@ -1558,7 +1558,7 @@ struct CorrespondenceList: View {
             }
             // iPad: drag a conversation into Notes, Reminders or a message.
             .modifier(ConversationDragging(thread: thread, enabled: sizeClass == .regular && !isSelecting))
-            .disabled(store.pending.contains(thread.id))
+            .modifier(DisabledWhilePending(store: store, id: thread.id))
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.visible)
             .listRowSeparatorTint(CorresPalette.line)
@@ -1799,5 +1799,17 @@ private struct MinimizedSearch: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+/// A row turned off while its action is under way. Read here, in the row,
+/// rather than in the list: `pending` changes twice for every swipe, and
+/// the whole list redrew each time.
+private struct DisabledWhilePending: ViewModifier {
+    let store: MailStore
+    let id: ThreadID
+
+    func body(content: Content) -> some View {
+        content.disabled(store.pending.contains(id))
     }
 }

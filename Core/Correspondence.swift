@@ -320,7 +320,10 @@ public struct Correspondence: Identifiable, Hashable, Codable, Sendable {
                              senderName: sender, body: isBodyLoaded ? body : nil, html: htmlBody, imageOnly: htmlImageOnly == true)
         }
     }
-    private static let automatedMemo = Memo<String, Bool>()
+    /// Keyed per conversation, and the category context asks it of every
+    /// one, archived copies included (up to about 25,000 with three
+    /// accounts indexed): a limit below that cleared it on every pass.
+    private static let automatedMemo = Memo<String, Bool>(limit: 60_000)
 
     private static let automatedSenderMemo = Memo<String, Bool>()
 
@@ -982,16 +985,30 @@ public enum InboxClassifier {
 
     /// People whose mail always lands in Needs You (lowercased addresses),
     /// set from Settings → Sorting.
-    public nonisolated(unsafe) static var vipAddresses: Set<String> = []
+    /// Like the other settings here, kept behind a lock (`LockedValue`):
+    /// set on the main thread while a sync reads it saving mail.
+    public static var vipAddresses: Set<String> {
+        get { vipStore.value }
+        set { vipStore.set(newValue) }
+    }
+    private static let vipStore = LockedValue<Set<String>>([])
     /// Every address that is you: your connected accounts and the aliases
     /// they send as (lowercased). Mail from one of them to another is a
     /// note to yourself, not someone needing you.
-    public nonisolated(unsafe) static var ownAddresses: Set<String> = []
+    public static var ownAddresses: Set<String> {
+        get { ownStore.value }
+        set { ownStore.set(newValue) }
+    }
+    private static let ownStore = LockedValue<Set<String>>([])
 
     /// The Screener's company rules: a new sender from a domain here gets
     /// that decision on arrival instead of waiting in the Screener
     /// ("Allow everyone from amazon.com"). Keyed by lowercased domain.
-    public nonisolated(unsafe) static var domainDecisions: [String: SenderDecision] = [:]
+    public static var domainDecisions: [String: SenderDecision] {
+        get { domainStore.value }
+        set { domainStore.set(newValue) }
+    }
+    private static let domainStore = LockedValue<[String: SenderDecision]>([:])
 
     /// Free mail services, shared by unrelated people: never a company
     /// rule's domain.
@@ -1058,7 +1075,11 @@ public enum InboxClassifier {
         /// on-device model never moves it out.
         case inclusive
     }
-    public nonisolated(unsafe) static var sensitivity: Sensitivity = .balanced
+    public static var sensitivity: Sensitivity {
+        get { sensitivityStore.value }
+        set { sensitivityStore.set(newValue) }
+    }
+    private static let sensitivityStore = LockedValue<Sensitivity>(.balanced)
 
     public static func isVIP(_ senderEmail: String?) -> Bool {
         senderEmail.map { vipAddresses.contains($0.lowercased()) } ?? false
@@ -1257,7 +1278,12 @@ public enum NewSenderMode: String, CaseIterable, Sendable {
 }
 
 public enum MailQuery {
-    public nonisolated(unsafe) static var newSenderMode = NewSenderMode.inMail
+    /// Behind a lock, like `InboxClassifier`'s settings.
+    public static var newSenderMode: NewSenderMode {
+        get { newSenderModeStore.value }
+        set { newSenderModeStore.set(newValue) }
+    }
+    private static let newSenderModeStore = LockedValue<NewSenderMode>(.inMail)
 
     /// A first email's sender: waiting for your OK, or simply let in when
     /// every new sender is (so nothing piles up to review, and choosing a

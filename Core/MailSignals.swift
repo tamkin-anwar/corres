@@ -574,7 +574,13 @@ public enum MailSignals {
     /// Once that day is over there's nothing left to do: the email leaves
     /// Needs You by itself, the way Gmail's "Happening soon" cards drop off
     /// after the event. A missed payment is different, and stays overdue.
+    /// Kept per text: a Needs You row with a date asks this on every redraw.
     public static func isEvent(_ text: String) -> Bool {
+        eventMemo.value(text) { isEventUncached(text) }
+    }
+    private static let eventMemo = Memo<String, Bool>()
+
+    private static func isEventUncached(_ text: String) -> Bool {
         let lower = oneBengaliSpelling(text).lowercased()
         let event = [#"\b(appointments?|reservations?|check-?in|meeting|class(es)?|session|visit|interview|webinar|flight|booking|lesson|tour|consultation|exam|screening|event|concert|show(time)?|game|ceremony|termin|besprechung|sitzung|flug|reservierung|buchung|veranstaltung|rendez-vous|réunion|réservation|entretien|cita|reunión|vuelo|reserva|entrevista|consulta|reunião|voo|agendamento|evento|événement|অ্যাপয়েন্টমেন্ট|মিটিং|সভা|ফ্লাইট|বুকিং|সাক্ষাৎকার)\b"#, #"予約|会議|打ち合わせ|面接|フライト|搭乗|診察|예약|회의|미팅|면접|항공편|진료|预约|預約|会议|會議|面试|面試|航班|就诊|就診"#]
         let task = [#"\b(payment|pay (by|now|your)|bill|invoice|balance|amount due|past due|sign(ature)?|renew|expir|submit|application|form|zahlung|rechnung|bezahlen|unterschr\w*|paiement|facture|signer|pago|factura|firma|pagamento|fatura|boleto|assinatura|পেমেন্ট|বিল|স্বাক্ষর)\b"#, #"支払|請求|署名|결제|납부|청구|서명|付款|缴费|繳費|账单|帳單|签署|簽署"#]
