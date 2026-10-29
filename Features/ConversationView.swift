@@ -235,10 +235,12 @@ struct ConversationView: View {
                 }
                 // Write asks once the card has closed: asked while it was
                 // still up, Compose couldn't show and nothing happened.
+                // This view's own Compose, not the main window's: in an
+                // iPad conversation window that one isn't there to answer.
                 .sheet(item: $personCard, onDismiss: {
                     if let address = writeAfterPerson {
                         writeAfterPerson = nil
-                        router.pending = .composeTo(to: address, subject: "", body: "")
+                        composeDraft = Draft(kind: .new, to: address, subject: "", body: "")
                     }
                 }) { person in
                     PersonView(person: person, store: store, open: { currentID = $0 },
@@ -274,6 +276,9 @@ struct ConversationView: View {
                         Task {
                             isUnsubscribing = true
                             let outcome = await unsubscribeService.unsubscribe(from: thread, store: store)
+                            // Moved on to another email meanwhile: its line
+                            // isn't this one's to change.
+                            guard currentID == thread.id else { return }
                             isUnsubscribing = false
                             unsubscribeOpened = outcome == .opened
                         }
@@ -348,6 +353,8 @@ struct ConversationView: View {
         .onChange(of: currentID) {
             htmlHeight = 200
             showRemoteImages = false
+            isUnsubscribing = false
+            unsubscribeOpened = false
             calendarEvent = nil
             invitation = nil
             nextStep = nil
@@ -389,10 +396,14 @@ struct ConversationView: View {
             await loaded
             await conversation
             // The event this email is about, once its full text is here.
+            // Found for this email: kept only while it's the one showing.
             if let current = store.thread(currentID) {
-                calendarEvent = await Self.findEvent(in: current)
-                invitation = await InvitationCard.find(in: current)
+                let event = await Self.findEvent(in: current)
+                let found = await InvitationCard.find(in: current)
                 let aids = await ReadingAids.find(in: current)
+                guard !Task.isCancelled, current.id == currentID else { return }
+                calendarEvent = event
+                invitation = found
                 nextStep = aids.nextStep
                 glance = aids.glance
                 buriedAsk = aids.ask
