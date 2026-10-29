@@ -3226,6 +3226,9 @@
 "“%@” is waiting in Corres. It goes as soon as you're back online, or open Corres to try again." = "‘%@’이(가) Corres에서 대기 중입니다. 다시 온라인이 되면 바로 전송되며, Corres를 열어 다시 시도할 수도 있습니다.";
 "A change you made while offline couldn't be saved." = "오프라인 상태에서 한 변경 사항을 저장할 수 없습니다.";
 "Couldn't archive this conversation. Try again." = "이 대화를 보관할 수 없습니다. 다시 시도하세요.";
+"There's no Archive folder in this account." = "이 계정에는 보관 폴더가 없습니다.";
+"There's no Spam folder in this account." = "이 계정에는 스팸 폴더가 없습니다.";
+"There's no Trash folder in this account." = "이 계정에는 휴지통 폴더가 없습니다.";
 "Couldn't move this conversation to Trash. Try again." = "이 대화를 휴지통으로 옮길 수 없습니다. 다시 시도하세요.";
 "Couldn't report this conversation as spam. Try again." = "이 대화를 스팸으로 신고할 수 없습니다. 다시 시도하세요.";
 "Couldn't move this conversation. Try again." = "이 대화를 옮길 수 없습니다. 다시 시도하세요.";

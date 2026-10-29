@@ -3226,6 +3226,9 @@
 "“%@” is waiting in Corres. It goes as soon as you're back online, or open Corres to try again." = "“%@” está aguardando no Corres. Ele será enviado assim que você voltar a ficar online, ou abra o Corres para tentar de novo.";
 "A change you made while offline couldn't be saved." = "Não foi possível salvar uma alteração feita offline.";
 "Couldn't archive this conversation. Try again." = "Não foi possível arquivar esta conversa. Tente novamente.";
+"There's no Archive folder in this account." = "Esta conta não tem pasta de arquivo.";
+"There's no Spam folder in this account." = "Esta conta não tem pasta de spam.";
+"There's no Trash folder in this account." = "Esta conta não tem lixeira.";
 "Couldn't move this conversation to Trash. Try again." = "Não foi possível mover esta conversa para o Lixo. Tente novamente.";
 "Couldn't report this conversation as spam. Try again." = "Não foi possível denunciar esta conversa como spam. Tente novamente.";
 "Couldn't move this conversation. Try again." = "Não foi possível mover esta conversa. Tente novamente.";

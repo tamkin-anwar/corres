@@ -3226,6 +3226,9 @@
 "“%@” is waiting in Corres. It goes as soon as you're back online, or open Corres to try again." = "“%@” Corres-এ অপেক্ষা করছে। আবার অনলাইনে এলেই এটি যাবে, অথবা আবার চেষ্টা করতে Corres খুলুন।";
 "A change you made while offline couldn't be saved." = "অফলাইনে থাকার সময় করা একটি পরিবর্তন সংরক্ষণ করা যায়নি।";
 "Couldn't archive this conversation. Try again." = "এই কথোপকথন আর্কাইভ করা যায়নি। আবার চেষ্টা করুন।";
+"There's no Archive folder in this account." = "এই অ্যাকাউন্টে কোনো আর্কাইভ ফোল্ডার নেই।";
+"There's no Spam folder in this account." = "এই অ্যাকাউন্টে কোনো স্প্যাম ফোল্ডার নেই।";
+"There's no Trash folder in this account." = "এই অ্যাকাউন্টে কোনো ট্র্যাশ ফোল্ডার নেই।";
 "Couldn't move this conversation to Trash. Try again." = "এই কথোপকথন ট্র্যাশে সরানো যায়নি। আবার চেষ্টা করুন।";
 "Couldn't report this conversation as spam. Try again." = "এই কথোপকথন স্প্যাম হিসেবে রিপোর্ট করা যায়নি। আবার চেষ্টা করুন।";
 "Couldn't move this conversation. Try again." = "এই কথোপকথন সরানো যায়নি। আবার চেষ্টা করুন।";

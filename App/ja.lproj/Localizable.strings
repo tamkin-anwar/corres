@@ -3226,6 +3226,9 @@
 "“%@” is waiting in Corres. It goes as soon as you're back online, or open Corres to try again." = "「%@」はCorresで待機中です。オンラインに戻るとすぐに送信されます。Corresを開いてもう一度試すこともできます。";
 "A change you made while offline couldn't be saved." = "オフライン中に行った変更を保存できませんでした。";
 "Couldn't archive this conversation. Try again." = "このスレッドをアーカイブできませんでした。もう一度お試しください。";
+"There's no Archive folder in this account." = "このアカウントにはアーカイブフォルダがありません。";
+"There's no Spam folder in this account." = "このアカウントには迷惑メールフォルダがありません。";
+"There's no Trash folder in this account." = "このアカウントにはゴミ箱フォルダがありません。";
 "Couldn't move this conversation to Trash. Try again." = "このスレッドをゴミ箱に移動できませんでした。もう一度お試しください。";
 "Couldn't report this conversation as spam. Try again." = "このスレッドを迷惑メールとして報告できませんでした。もう一度お試しください。";
 "Couldn't move this conversation. Try again." = "このスレッドを移動できませんでした。もう一度お試しください。";
