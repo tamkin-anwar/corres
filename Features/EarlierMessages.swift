@@ -7,6 +7,8 @@ import SwiftUI
 struct EarlierMessages: View {
     let messages: [Correspondence]
     let account: String
+    /// Reply, Reply All or Forward to this message, not the latest.
+    var compose: ((Draft.Kind, Correspondence) -> Void)? = nil
     @State private var expanded: Set<String> = []
     @State private var showsAll = false
     @Environment(\.displayScale) private var displayScale
@@ -59,7 +61,9 @@ struct EarlierMessages: View {
 
     private func row(_ message: Correspondence) -> some View {
         let isOpen = expanded.contains(key(message))
-        let isMine = message.senderEmail?.lowercased() == account.lowercased()
+        // Any address of yours, not only this account's: mail sent as an
+        // alias read as someone else's.
+        let isMine = message.senderEmail.map { message.ownAddresses.contains($0.lowercased()) } ?? false
         // The open text sits outside the button, so its links can be tapped.
         return VStack(alignment: .leading, spacing: 8) {
             Button {
@@ -68,12 +72,17 @@ struct EarlierMessages: View {
                 }
             } label: {
                 HStack(spacing: 10) {
-                    CorrespondentAvatar(initials: isMine ? "Y" : message.initials, email: isMine ? nil : message.senderEmail,
+                    CorrespondentAvatar(initials: isMine ? String(String(localized: "You").prefix(1)) : message.initials, email: isMine ? nil : message.senderEmail,
                                         size: CGSize(width: 30, height: 30), companyLogo: message.showsCompanyLogo)
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(alignment: .firstTextBaseline) {
                             Text(isMine ? String(localized: "You") : message.sender).font(.subheadline.weight(.semibold)).lineLimit(1)
                             Spacer(minLength: 6)
+                            if !message.attachments.isEmpty {
+                                Image(systemName: "paperclip").font(.caption).foregroundStyle(CorresPalette.tertiary)
+                                    .accessibilityLabel(message.attachments.count == 1 ? String(localized: "1 attachment")
+                                                        : String(localized: "\(message.attachments.count) attachments"))
+                            }
                             Text(CorrespondenceRow.timestamp(message.receivedAt))
                                 .font(.caption).monospacedDigit().foregroundStyle(CorresPalette.tertiary)
                         }
@@ -97,9 +106,35 @@ struct EarlierMessages: View {
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .transformEnvironment(\.layoutDirection) { if rightToLeft { $0 = .rightToLeft } }
+                // Its own files: only the latest message's used to show,
+                // so an earlier one's attachment couldn't be opened.
+                if !message.attachments.isEmpty, let messageID = message.latestMessageID {
+                    VStack(spacing: 8) {
+                        ForEach(message.attachments) { file in
+                            AttachmentRow(attachment: file, messageID: messageID, account: message.id.account)
+                        }
+                    }
+                }
+                if let compose { actions(for: message, compose: compose) }
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
+    }
+
+    /// Answer this message itself, as Gmail offers under each one.
+    private func actions(for message: Correspondence, compose: @escaping (Draft.Kind, Correspondence) -> Void) -> some View {
+        HStack(spacing: 20) {
+            Button { compose(.reply, message) } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
+            if !message.replyAllCc.isEmpty {
+                Button { compose(.replyAll, message) } label: { Label("Reply All", systemImage: "arrowshape.turn.up.left.2") }
+            }
+            Button { compose(.forward, message) } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
+        }
+        .labelStyle(TightLabelStyle())
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(CorresPalette.accent)
+        .buttonStyle(.plain)
+        .frame(minHeight: 36)
     }
 
     /// Web addresses, email addresses and phone numbers as links, so they

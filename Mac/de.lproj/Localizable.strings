@@ -2940,3 +2940,15 @@
 "%@ a month, renewing automatically. Cancel anytime in Settings." = "%@ pro Monat, verlängert sich automatisch. Jederzeit in den Einstellungen kündbar.";
 "Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ kostenlos, dann %@ pro Jahr. Kündige vor Ende des Tests in den Einstellungen, dann zahlst du nichts.";
 "Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ kostenlos, dann %@ pro Monat. Kündige vor Ende des Tests in den Einstellungen, dann zahlst du nichts.";
+"you" = "dich";
+"Cc %@" = "Cc %@";
+"Bcc you" = "Bcc an dich";
+"Details" = "Details";
+"Show every address and the full date" = "Alle Adressen und das vollständige Datum zeigen";
+"Reply-To" = "Antwort an";
+"You aren't named in To or Cc. It was Bcc'd or forwarded to you." = "Du stehst nicht in An oder Cc. Die E-Mail kam per Bcc oder wurde an dich weitergeleitet.";
+"Verified as sent from %@" = "Bestätigt: gesendet von %@";
+"Couldn't load the full email. This is only its preview." = "Die vollständige E-Mail konnte nicht geladen werden. Das ist nur die Vorschau.";
+"You're offline. This is only the email's preview." = "Du bist offline. Das ist nur die Vorschau der E-Mail.";
+"Loading the full email…" = "Vollständige E-Mail wird geladen…";
+"You" = "Du";

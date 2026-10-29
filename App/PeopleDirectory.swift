@@ -75,6 +75,13 @@ final class PeopleDirectory {
         return combined
     }
 
+    /// The name someone goes by in your mail, when it's known: for an
+    /// address written without one (Gmail's To and Cc are kept bare).
+    func name(for email: String) -> String? {
+        guard let person = index.people[email.lowercased()], !person.name.isEmpty else { return nil }
+        return person.displayName
+    }
+
     func suggestions(for query: String, excluding: Set<String> = [], limit: Int = 6) -> [Person] {
         index.suggestions(for: query, excluding: excluding.union(hidden),
                           favored: Set(contacts.people.keys), limit: limit)
