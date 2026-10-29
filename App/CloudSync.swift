@@ -88,12 +88,6 @@ final class CloudSync {
     /// While settings from another device are being applied here, so they
     /// aren't recorded again as a change of this device's own.
     private(set) var isApplying = false
-    /// The conversations and senders a mark or decision from another
-    /// device is being applied to right now. Only those: applying takes a
-    /// while, and a move or pin you make meanwhile on anything else is
-    /// still yours and has to be recorded.
-    private var applyingThreads: Set<ThreadID> = []
-    private var applyingSenders: Set<String> = []
     private weak var store: MailStore?
     private static let log = Logger(subsystem: "studio.anwarcreative.corres", category: "cloud")
     private static let markChunk = 600
@@ -151,16 +145,21 @@ final class CloudSync {
         }
     }
 
+    /// Kept by account and sender: one sender allowed in one account and
+    /// blocked in another used to share a single entry, the later one
+    /// taking over both.
     func recordDecision(_ decision: SenderDecision, sender: String, account: String) {
-        guard !isApplying, !applyingSenders.contains(sender.lowercased()), account != "sample" else { return }
-        decisions[sender.lowercased()] = Decision(decision: decision.rawValue, account: account, at: .now)
-        let remote: [String: Decision] = load("decisions") ?? [:]
-        for (other, decision) in remote where (decisions[other]?.at ?? .distantPast) < decision.at { decisions[other] = decision }
+        guard !isApplying, account != "sample" else { return }
+        decisions[SyncMerge.decisionKey(account: account, sender: sender)] = Decision(decision: decision.rawValue, account: account, at: .now)
+        for (other, decision) in loadDecisions() where (decisions[other]?.at ?? .distantPast) < decision.at { decisions[other] = decision }
         save("decisions", decisions)
     }
 
+    /// What another device decided is applied here without coming back
+    /// through this (`MailStore`'s `recording: false`), so a move you make
+    /// here while it's being applied is still recorded as yours.
     private func update(_ id: ThreadID, _ change: (inout Mark) -> Void) {
-        guard !isApplying, !applyingThreads.contains(id), id.account != "sample" else { return }
+        guard !isApplying, id.account != "sample" else { return }
         let key = Self.key(id)
         var mark = marks[key] ?? Mark(at: .now)
         change(&mark)
@@ -239,7 +238,8 @@ final class CloudSync {
         for (key, mark) in remoteMarks where (marks[key]?.at ?? .distantPast) < mark.at { marks[key] = mark }
         // Newer here than in iCloud (a write that lost a race): sent again.
         let marksNewerHere = marks.contains { key, mark in (remoteMarks[key]?.at ?? .distantPast) < mark.at }
-        let remoteDecisions: [String: Decision] = load("decisions") ?? [:]
+        let remoteDecisions = loadDecisions()
+        decisions = Self.accountKeyed(decisions)
         for (sender, decision) in remoteDecisions where (decisions[sender]?.at ?? .distantPast) < decision.at { decisions[sender] = decision }
         let decisionsNewerHere = decisions.contains { sender, decision in (remoteDecisions[sender]?.at ?? .distantPast) < decision.at }
         isApplying = false
@@ -256,19 +256,17 @@ final class CloudSync {
         var changed = 0
         for thread in store.threadsIncludingHidden {
             guard let mark = marks[Self.key(thread.id)] else { continue }
-            applyingThreads.insert(thread.id)
-            defer { applyingThreads.remove(thread.id) }
             if let raw = mark.attention, let attention = Attention(rawValue: raw), thread.attention != attention,
-               mark.messageID == nil || mark.messageID == thread.latestMessageID {
-                await store.update(thread.id, to: attention); changed += 1
+               SyncMerge.moveApplies(madeOn: mark.messageID, latest: thread.latestMessageID) {
+                await store.update(thread.id, to: attention, recording: false); changed += 1
             }
             if let pinned = mark.pinned, thread.isPinned != pinned {
-                await store.setPinned(pinned, for: thread.id); changed += 1
+                await store.setPinned(pinned, for: thread.id, recording: false); changed += 1
             }
             if let until = mark.snoozedUntil, thread.snoozedUntil != until, until > .now {
-                await store.snooze(thread.id, until: until); changed += 1
+                await store.snooze(thread.id, until: until, recording: false); changed += 1
             } else if mark.snoozeCleared == true, thread.snoozedUntil != nil {
-                await store.snooze(thread.id, until: nil); changed += 1
+                await store.snooze(thread.id, until: nil, recording: false); changed += 1
             }
         }
         // Each sender's mail in the account the decision was made in, with
@@ -282,14 +280,11 @@ final class CloudSync {
             byAccountSender[thread.id.account.lowercased() + "|" + email.lowercased(), default: []]
                 .append((email, thread.id.account, thread.senderDecision))
         }
-        for (sender, decision) in decisions {
-            guard let wanted = SenderDecision(rawValue: decision.decision),
-                  let theirs = byAccountSender[decision.account.lowercased() + "|" + sender] else { continue }
+        for (key, decision) in decisions {
+            guard let wanted = SenderDecision(rawValue: decision.decision), let theirs = byAccountSender[key] else { continue }
             var seen = Set<String>()
             for mail in theirs where mail.decision != wanted && seen.insert(mail.email).inserted {
-                applyingSenders.insert(sender)
                 await store.approveOrBlock(wanted, sender: mail.email, account: mail.account); changed += 1
-                applyingSenders.remove(sender)
             }
         }
         if changed > 0 { Self.log.info("Applied \(changed) changes from your other devices") }
@@ -324,6 +319,16 @@ final class CloudSync {
         var index = chunks.count
         while cloud.object(forKey: "marks.\(index)") != nil { cloud.removeObject(forKey: "marks.\(index)"); index += 1 }
         cloud.synchronize()
+    }
+
+    /// Every device's decisions, older ones (kept by sender alone, and
+    /// still written so by an older Corres) moved under their account.
+    private func loadDecisions() -> [String: Decision] {
+        Self.accountKeyed(load("decisions") ?? [:])
+    }
+
+    private static func accountKeyed(_ decisions: [String: Decision]) -> [String: Decision] {
+        SyncMerge.accountKeyed(decisions, account: \.account, at: \.at)
     }
 
     private func loadMarks() -> [String: Mark] {

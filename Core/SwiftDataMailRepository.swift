@@ -924,3 +924,39 @@ public actor MessageContentReader {
         return (try? context.fetch(thread))?.first?.htmlBody
     }
 }
+
+/// The HTML of conversations opened lately, each kept with the message it
+/// was read for. A conversation is stored with its latest message's HTML,
+/// so once a reply arrives the copy here belongs to the message before it:
+/// it's no longer handed out (it would show under the reply's header), and
+/// the reader reads the new one. The oldest go once `limit` are kept.
+public struct OpenedContent: Sendable {
+    private struct Entry: Sendable {
+        let messageID: String?
+        let html: String?
+    }
+    private var entries: [ThreadID: Entry] = [:]
+    /// Oldest first.
+    public private(set) var ids: [ThreadID] = []
+    public let limit: Int
+
+    public init(limit: Int) { self.limit = limit }
+
+    /// Already read for this message, HTML or not.
+    public func isKnown(_ id: ThreadID, messageID: String?) -> Bool {
+        entries[id].map { $0.messageID == messageID } ?? false
+    }
+
+    /// The HTML read for this message; nil for another message's.
+    public func html(for id: ThreadID, messageID: String?) -> String? {
+        guard let entry = entries[id], entry.messageID == messageID else { return nil }
+        return entry.html
+    }
+
+    public mutating func remember(_ html: String?, for id: ThreadID, messageID: String?) {
+        ids.removeAll { $0 == id }
+        ids.append(id)
+        entries[id] = Entry(messageID: messageID, html: html)
+        if ids.count > limit { entries[ids.removeFirst()] = nil }
+    }
+}

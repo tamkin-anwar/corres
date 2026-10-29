@@ -32,6 +32,13 @@ public enum InboxCategory: String, Codable, CaseIterable, Sendable {
     public static let gmailLabels: Set<String> = ["CATEGORY_PERSONAL", "CATEGORY_PROMOTIONS", "CATEGORY_SOCIAL",
                                                   "CATEGORY_UPDATES", "CATEGORY_FORUMS"]
 
+    /// A conversation's labels with its category labels swapped for
+    /// `categories`, every other label (read, flagged, your own) as it is
+    /// now: a move, or its Undo, never puts back labels from before.
+    public static func labels(_ labels: [String], withCategories categories: [String]) -> [String] {
+        labels.filter { !gmailLabels.contains($0) } + categories.filter(gmailLabels.contains)
+    }
+
     /// What the rest of the mailbox says about senders: where most of each
     /// one's bulk mail sits, for the mail Gmail left without a category.
     /// Built once per list, from the mail on hand.

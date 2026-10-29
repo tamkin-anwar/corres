@@ -430,15 +430,19 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         // Archive and reply need the account back, or they're turned away.
         await auth.waitUntilRestored()
         let id = ThreadID(account: account, providerID: providerID)
+        // Archived a moment ago and still waiting out Undo: hidden from the
+        // lists, but known, so a reply still goes to its sender (as from
+        // the Watch) rather than becoming a draft with nobody to send to.
+        let known = { [store] in store.thread(id) ?? store.threadsIncludingHidden.first { $0.id == id } }
         // The notification extension can show an email before Corres has
         // stored it: fetched now, or a reply typed into it would be lost.
         // Bounded too: a long catch-up would use the action's time up, and
         // still not here, a reply is kept as a draft below.
-        if store.thread(id) == nil {
+        if known() == nil {
             _ = await waitBriefly(for: Task { [sync] in _ = await sync.syncAll(accounts: [account]) }, upTo: .seconds(10))
             await store.load()
         }
-        guard let thread = store.thread(id) else {
+        guard let thread = known() else {
             // Still not here: your words are kept as a draft to finish in
             // Corres, rather than vanishing.
             if action == PushNotificationService.replyAction, let typed, !typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -465,7 +469,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             var thread = thread
             if !thread.isBodyLoaded {
                 _ = await waitBriefly(for: Task { await threadActions.loadContent(for: thread) }, upTo: .seconds(8))
-                thread = store.thread(thread.id) ?? thread
+                thread = known() ?? thread
             }
             // As a reply written in Compose: your words, your signature,
             // then the email quoted; from the address it was sent to.
