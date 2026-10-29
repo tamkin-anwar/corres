@@ -2930,3 +2930,9 @@
 /* The message list's context menu. */
 "Move To" = "Déplacer vers";
 "Add to VIPs" = "Ajouter aux VIP";
+
+/* Format > Add Link (Command-K) while writing. */
+"Add Link…" = "Ajouter un lien…";
+"Add Link" = "Ajouter un lien";
+"Web or email address" = "Adresse web ou e-mail";
+"Add" = "Ajouter";

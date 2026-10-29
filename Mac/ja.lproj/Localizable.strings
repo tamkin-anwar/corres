@@ -2930,3 +2930,9 @@
 /* The message list's context menu. */
 "Move To" = "移動";
 "Add to VIPs" = "VIPに追加";
+
+/* Format > Add Link (Command-K) while writing. */
+"Add Link…" = "リンクを追加…";
+"Add Link" = "リンクを追加";
+"Web or email address" = "Webアドレスまたはメールアドレス";
+"Add" = "追加";

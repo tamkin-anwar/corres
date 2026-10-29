@@ -925,6 +925,8 @@ struct MacMainView: View {
                           cc: message.ccRecipients.isEmpty ? nil : message.ccRecipients.joined(separator: ", "),
                           subject: [String(localized: "(no subject)"), "(no subject)"].contains(message.subject) ? "" : message.subject, body: message.body)
         draft.gmailDraftID = serverID
+        // Written already, with whatever signature it has.
+        draft.signatureAdded = true
         // Opened meanwhile (a second double-click while this one fetched).
         if let open = MacComposeHandoff.window(for: serverID) { openWindow(value: open); return }
         if let answered {

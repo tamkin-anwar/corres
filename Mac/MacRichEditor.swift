@@ -10,6 +10,9 @@ struct MacRichEditor: NSViewRepresentable {
     @Binding var plain: String
     @Binding var html: String?
     var initialText: String
+    /// The formatting it had (an email opened again: Undo Send, Send
+    /// Later, a draft), laid back onto `initialText`.
+    var initialHTML: String?
     var focusOnAppear = false
     /// Lets Compose put text in where the cursor is (a template).
     var inserter: MacTextInserter?
@@ -36,9 +39,7 @@ struct MacRichEditor: NSViewRepresentable {
         context.coordinator.size = font.pointSize
         text.font = font
         text.typingAttributes = [.font: font, .foregroundColor: NSColor.labelColor]
-        text.string = initialText
-        text.textStorage?.addAttributes([.font: font, .foregroundColor: NSColor.labelColor],
-                                        range: NSRange(location: 0, length: (initialText as NSString).length))
+        text.textStorage?.setAttributedString(Self.attributed(initialText, html: initialHTML, font: font))
         scroll.drawsBackground = false
         context.coordinator.textView = text
         inserter?.textView = text
@@ -57,6 +58,27 @@ struct MacRichEditor: NSViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    /// `text` at the body's size, with its bold, italic, underline and
+    /// links from `html` (`RichBody.runs`): reopened, an email used to come
+    /// back as plain text, and went out again without them.
+    static func attributed(_ text: String, html: String?, font: NSFont) -> NSAttributedString {
+        let plainAttributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.labelColor]
+        guard let html, !html.isEmpty else { return NSAttributedString(string: text, attributes: plainAttributes) }
+        let result = NSMutableAttributedString()
+        for run in RichBody.runs(plain: text, html: html) {
+            var attributes = plainAttributes
+            var styled = font
+            if run.bold { styled = NSFontManager.shared.convert(styled, toHaveTrait: .boldFontMask) }
+            if run.italic { styled = NSFontManager.shared.convert(styled, toHaveTrait: .italicFontMask) }
+            attributes[.font] = styled
+            if run.underline { attributes[.underlineStyle] = NSUnderlineStyle.single.rawValue }
+            if run.strikethrough { attributes[.strikethroughStyle] = NSUnderlineStyle.single.rawValue }
+            if let link = run.link { attributes[.link] = link }
+            result.append(NSAttributedString(string: run.text, attributes: attributes))
+        }
+        return result
+    }
 
     @MainActor
     final class Coordinator: NSObject, NSTextViewDelegate {
@@ -131,6 +153,42 @@ final class MacTextInserter {
         textView.textStorage?.replaceCharacters(in: target, with: NSAttributedString(string: new, attributes: textView.typingAttributes))
         textView.didChangeText()
         return true
+    }
+
+    /// Add Link (⌘K): the chosen words link to `url`, or with nothing
+    /// chosen, the address goes in where the cursor is, linked. Undoable,
+    /// and the draft's HTML hears about it.
+    func link(_ url: URL) {
+        guard let textView, let storage = textView.textStorage else { return }
+        var range = textView.selectedRange()
+        if range.location == NSNotFound { range = NSRange(location: storage.length, length: 0) }
+        textView.window?.makeFirstResponder(textView)
+        if range.length == 0 {
+            let text = url.scheme == "mailto" ? String(url.absoluteString.dropFirst("mailto:".count)) : url.absoluteString
+            guard textView.shouldChangeText(in: range, replacementString: text) else { return }
+            var attributes = textView.typingAttributes
+            attributes[.link] = url
+            storage.replaceCharacters(in: range, with: NSAttributedString(string: text, attributes: attributes))
+            textView.didChangeText()
+            textView.setSelectedRange(NSRange(location: range.location + (text as NSString).length, length: 0))
+            // What's typed next isn't part of the link.
+            textView.typingAttributes[.link] = nil
+        } else {
+            guard textView.shouldChangeText(in: range, replacementString: nil) else { return }
+            storage.addAttribute(.link, value: url, range: range)
+            textView.didChangeText()
+        }
+    }
+
+    /// What's typed into Add Link, as a link: "corres.app" is a web
+    /// address, "ana@example.com" an email one. Nil for nothing usable.
+    static func linkURL(_ typed: String) -> URL? {
+        let text = typed.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, !text.contains(" ") else { return nil }
+        if let url = URL(string: text), let scheme = url.scheme?.lowercased(), ["http", "https", "mailto"].contains(scheme) { return url }
+        if text.contains("@"), !text.contains("/") { return URL(string: "mailto:" + text) }
+        guard text.contains(".") else { return nil }
+        return URL(string: "https://" + text)
     }
 
     /// Adds `text` at `offset` characters from the start (a signature

@@ -2930,3 +2930,9 @@
 /* The message list's context menu. */
 "Move To" = "সরান";
 "Add to VIPs" = "VIP-তে যোগ করুন";
+
+/* Format > Add Link (Command-K) while writing. */
+"Add Link…" = "লিংক যোগ করুন…";
+"Add Link" = "লিংক যোগ করুন";
+"Web or email address" = "ওয়েব বা ইমেইল ঠিকানা";
+"Add" = "যোগ করুন";

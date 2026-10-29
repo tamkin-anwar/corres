@@ -81,10 +81,18 @@ enum MacWindows {
 
 private struct MacActionsKey: FocusedValueKey { typealias Value = MacActions }
 
+/// A compose window in front: Format › Add Link (⌘K) asks it for a link.
+private struct MacAddLinkKey: FocusedValueKey { typealias Value = () -> Void }
+
 extension FocusedValues {
     var macActions: MacActions? {
         get { self[MacActionsKey.self] }
         set { self[MacActionsKey.self] = newValue }
+    }
+
+    var macAddLink: (() -> Void)? {
+        get { self[MacAddLinkKey.self] }
+        set { self[MacAddLinkKey.self] = newValue }
     }
 }
 
@@ -212,6 +220,7 @@ private extension Font.TextStyle {
 /// one: ⌘N, ⌘R, ⇧⌘R, ⇧⌘F, ⌃⌘A, ⌘⌫, ⇧⌘L, ⇧⌘U, ⇧⌘N, ⌘L, ⌘1 to ⌘4.
 struct MacCommands: Commands {
     @FocusedValue(\.macActions) private var actions
+    @FocusedValue(\.macAddLink) private var addLink
     @Environment(\.openWindow) private var openWindow
     @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
     @AppStorage(CorresSettings.macSenderPicturesKey) private var showsSenderPictures = true
@@ -257,8 +266,10 @@ struct MacCommands: Commands {
                 .disabled(noSelection)
         }
         CommandMenu("Mailbox") {
+            // ⌘K is Add Link while writing, as in Mail: from a compose
+            // window it brought the main window forward instead.
             Button("Go To or Do…") { inMain(.commandPalette) }
-                .keyboardShortcut("k", modifiers: .command)
+                .keyboardShortcut(addLink == nil ? KeyboardShortcut("k", modifiers: .command) : nil)
             Divider()
             // From any window, or none, without bringing one forward.
             Button("Get New Mail") { MacServices.shared.getNewMail() }
@@ -331,10 +342,15 @@ struct MacCommands: Commands {
 /// you're writing. Not SwiftUI's own Format menu, whose Bigger and Smaller
 /// took ⌘+ and ⌘- from View › Bigger and Smaller.
 struct MacFormatCommands: Commands {
+    @FocusedValue(\.macAddLink) private var addLink
+
     var body: some Commands {
         CommandMenu("Format") {
             Button("Show Fonts") { NSFontManager.shared.orderFrontFontPanel(nil) }
                 .keyboardShortcut("t", modifiers: .command)
+            Button("Add Link…") { addLink?() }
+                .keyboardShortcut(addLink == nil ? nil : KeyboardShortcut("k", modifiers: .command))
+                .disabled(addLink == nil)
             Divider()
             Button("Bold") { Self.toggle(.boldFontMask) }
                 .keyboardShortcut("b", modifiers: .command)
