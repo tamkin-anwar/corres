@@ -23,13 +23,18 @@ final class WatchBridge: NSObject {
         WCSession.default.activate()
     }
 
-    /// After the mail changes; a burst of changes sends once.
-    func scheduleUpdate(_ threads: @escaping @MainActor () -> [Correspondence]) {
+    private var isWatchReady: Bool {
         guard WCSession.isSupported(), WCSession.default.activationState == .activated,
               WCSession.default.isPaired, WCSession.default.isWatchAppInstalled else {
             Self.log.debug("Watch not ready: activated \(WCSession.default.activationState == .activated), paired \(WCSession.default.isPaired), installed \(WCSession.default.isWatchAppInstalled)")
-            return
+            return false
         }
+        return true
+    }
+
+    /// After the mail changes; a burst of changes sends once.
+    func scheduleUpdate(_ threads: @escaping @MainActor () -> [Correspondence]) {
+        guard isWatchReady else { return }
         pendingUpdate?.cancel()
         pendingUpdate = Task {
             try? await Task.sleep(for: .seconds(2))
@@ -38,11 +43,27 @@ final class WatchBridge: NSObject {
         }
     }
 
+    /// Straight away, for a push or background refresh: woken in the
+    /// background, Corres could be stopped before a delayed update ran.
+    /// Sends even unchanged mail once the last send is an hour old.
+    func update(from threads: [Correspondence]) {
+        guard isWatchReady else { return }
+        pendingUpdate?.cancel()
+        send(Self.snapshot(from: threads, locked: WidgetBridge.isLocked))
+    }
+
+    /// Unchanged mail is sent again after this long, so the Watch and its
+    /// face know the iPhone is still in touch and don't show "Updated 3 hr.
+    /// ago" over a Needs You that is simply quiet. Through the app's context
+    /// only, never the face's daily budget.
+    static let resendAfter: TimeInterval = 3600
+
     private func send(_ snapshot: WatchLink.Snapshot) {
-        guard snapshot.needsYou != lastSent?.needsYou || snapshot.waiting != lastSent?.waiting
-                || snapshot.needsYouCount != lastSent?.needsYouCount || snapshot.waitingCount != lastSent?.waitingCount
-                || snapshot.isLocked != lastSent?.isLocked,
-              let data = WatchLink.encode(snapshot) else { return }
+        let changed = snapshot.needsYou != lastSent?.needsYou || snapshot.waiting != lastSent?.waiting
+            || snapshot.needsYouCount != lastSent?.needsYouCount || snapshot.waitingCount != lastSent?.waitingCount
+            || snapshot.isLocked != lastSent?.isLocked
+        let isOld = lastSent.map { snapshot.updatedAt.timeIntervalSince($0.updatedAt) > Self.resendAfter } ?? true
+        guard changed || isOld, let data = WatchLink.encode(snapshot) else { return }
         do {
             try WCSession.default.updateApplicationContext([WatchLink.snapshotKey: data])
             lastSent = snapshot
