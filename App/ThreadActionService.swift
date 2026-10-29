@@ -476,8 +476,8 @@ final class ThreadActionService {
     /// conversation is asked for instead; when neither does in time, the
     /// thread joins `contentFailures`.
     func loadContent(for thread: Correspondence) async {
-        guard !thread.isBodyLoaded, thread.id.account != Self.sampleAccount,
-              let messageID = thread.latestMessageID else { return }
+        if thread.isBodyLoaded { return await loadMissingPictures(for: thread) }
+        guard thread.id.account != Self.sampleAccount, let messageID = thread.latestMessageID else { return }
         contentFailures.remove(thread.id)
         let account = thread.id.account, threadID = thread.id.providerID
         let client = client
@@ -515,6 +515,22 @@ final class ThreadActionService {
     }
 
     private struct MessageNotLoaded: Error {}
+
+    /// An email kept with pictures it couldn't fetch yet (offline, past a
+    /// background fill's allowance, or saved before Corres fetched the
+    /// ones Gmail sends apart) still says "cid:" where each one goes. It's
+    /// read again when opened, once a session, and kept with them.
+    @ObservationIgnored private var picturesTried: Set<String> = []
+
+    private func loadMissingPictures(for thread: Correspondence) async {
+        guard thread.id.account != Self.sampleAccount, let messageID = thread.latestMessageID,
+              let html = store.contents.html(for: thread.id, messageID: messageID) ?? thread.htmlBody else { return }
+        let missing = InlineImages.references(in: html).count
+        guard missing > 0, picturesTried.insert(thread.id.account + "|" + messageID).inserted,
+              let item = try? await client.fetchFull(ids: [messageID], account: thread.id.account).items.first,
+              let found = item.htmlBody, InlineImages.references(in: found).count < missing else { return }
+        await store.applyLoadedContent([item])
+    }
 
     /// Every message in a conversation, oldest first, keyed by thread and
     /// refreshed whenever a new message lands in it. In memory only: the
