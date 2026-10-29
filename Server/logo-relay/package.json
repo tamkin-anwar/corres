@@ -6,7 +6,7 @@
   "main": "index.js",
   "engines": { "node": ">=20" },
   "scripts": {
-    "deploy": "gcloud functions deploy corres-logos --gen2 --runtime=nodejs20 --region=us-central1 --source=. --entry-point=corresLogos --service-account=corres-logos@corres-509320.iam.gserviceaccount.com --trigger-http --allow-unauthenticated --memory=512Mi --max-instances=5"
+    "deploy": "gcloud functions deploy corres-logos --gen2 --runtime=nodejs20 --region=us-central1 --source=. --entry-point=corresLogos --service-account=corres-logos@corres-509320.iam.gserviceaccount.com --trigger-http --allow-unauthenticated --memory=512Mi --cpu=1 --concurrency=16 --max-instances=5"
   },
   "dependencies": {
     "@google-cloud/functions-framework": "^3.4.0",

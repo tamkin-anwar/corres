@@ -15,7 +15,7 @@ What is checked (`vmc.js`):
 
 Not checked: revocation (OCSP or CRL) and Certificate Transparency proofs.
 
-Concurrent requests for the same domain share one lookup. Nothing is logged or stored except an in-memory cache by domain. The app keeps logos on the device for a month and a "none" for a week (`App/BrandLogos.swift`), and Settings › Private by Design turns them off.
+Concurrent requests for the same domain share one lookup. Nothing is logged or stored except an in-memory cache by domain (the 5,000 most recently asked for, least recently used dropped first) and, for one minute, a count of calls per caller address: past 120 a minute that address gets 429 until the minute is up (the app asks again later). Each instance takes 16 requests at once (`--cpu=1 --concurrency=16` in the deploy script; Cloud Run needs a whole CPU for more than one), up to 5 instances. The app keeps logos on the device for a month and a "none" for a week (`App/BrandLogos.swift`), and Settings › Private by Design turns them off.
 
 Deploy from this directory (project `corres-509320`):
 
