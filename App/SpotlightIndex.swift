@@ -71,7 +71,7 @@ final class SpotlightIndex {
                 Self.log.info("Spotlight: \(pass.changed) indexed, \(pass.removed) removed, \(pass.indexed.count) in all")
             }
         } catch {
-            Self.log.error("Spotlight indexing failed: \(String(describing: error), privacy: .public)")
+            Self.log.error("Spotlight indexing failed: \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
         }
     }
 

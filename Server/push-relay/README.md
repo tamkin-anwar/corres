@@ -117,6 +117,7 @@ Set `PushNotificationService.relayBaseURL` and `.pubsubTopicName` (in `App/PushN
 - No message content ever passes through this service, in either direction. A push carries at most the account's address, a message id or `historyId`, and the `"New email"` key; never a subject, sender or body. The app fetches and displays the real content itself, on-device.
 - No Gmail OAuth token ever reaches this service. The app itself calls `users.watch` (it already holds the token for every other Gmail API call); this relay only needs to know which device token belongs to which email address to route Gmail's contentless ping.
 - Does not renew Gmail's watch subscription on its own. `users.watch` expires after 7 days; the app renews it at launch. An account that isn't opened for a week silently stops getting push until the next launch, a known, accepted gap, not a bug (see Docs/Architecture.md).
+- Does not keep the sign-in proof it checks. `/register` and `/register-graph` carry the account's OpenID ID token (Google for Gmail, Microsoft for Outlook) so the relay can tell the caller signed in to that address (see "Proof of the account" below); the token is checked and dropped, and only the address goes on the device record (`provenAccounts`).
 - Does not yet *require* proof that a call came from a genuine Corres install. It checks for that proof (App Attest, and DeviceCheck from Macs, below) and records the result, but in monitor mode it still accepts calls without it. Until enforcement is on, the format validation, the caps and the best-effort rate limits below remain the only barrier to a scripted caller.
 
 ## App Attest (monitor mode)
@@ -125,8 +126,8 @@ Set `PushNotificationService.relayBaseURL` and `.pubsubTopicName` (in `App/PushN
 
 How it works:
 
-1. Once per install, the app makes a key in the Secure Enclave (`DCAppAttestService.generateKey`), asks `POST /attest-challenge` for a one-time challenge (32 random bytes, good for five minutes, stored only as a hash in `attestChallenges`), and has Apple attest the key over `SHA256(challenge)`.
-2. `POST /attest` with `{ keyId, attestation, challenge }` verifies all of Apple's steps: the certificate chain up to the pinned Apple App Attestation Root CA, the nonce in the leaf's `1.2.840.113635.100.8.2` extension equal to `SHA256(authData || SHA256(challenge))`, `SHA256(public key) == keyId`, the RP ID hash equal to `SHA256("7GGTC43CG8.studio.anwarcreative.corres")` (or the Mac debug build's `.debug` App ID), counter 0, aaguid `appattest` (production) or `appattestdevelop`, credential id equal to the key id, and, for a key the app says comes from a Mac (`platform: "macOS"`, sent by the iPad app running on a Mac), the key's access policy (OID `1.2.840.113635.100.8.6`, Apple's macOS-only step). iPhone and iPad keys carry that extension too, with a policy of their own: checking it on every key refused every iPhone (each `/attest` from builds 35, 37 and 39 logged `rejected, mac-policy`, so no iPhone ever had an attested key and every call came in as `none`). The relay now records the policy (`accessPolicy`, a short hash, or `macos-full-security`) and the `platform` on the key, and logs both on `app attest /attest: ok`. The public key, a zero counter, the environment and Apple's receipt are kept in `attestKeys`, keyed by the key id. A key already on file is never replaced.
+1. Once per install, the app makes a key in the Secure Enclave (`DCAppAttestService.generateKey`), asks `POST /attest-challenge` for a one-time challenge, and has Apple attest the key over `SHA256(challenge)`. A challenge is 32 bytes: 12 random, its expiry (five minutes on), and a MAC over both, so issuing one writes nothing. The MAC key is `ATTEST_CHALLENGE_KEY` if set, otherwise derived (HKDF) from the APNs key every instance already has. A challenge is recorded by its hash in `attestChallenges` only when it's used, so it can't be used twice.
+2. `POST /attest` with `{ keyId, attestation, challenge }` verifies all of Apple's steps: the certificate chain up to the pinned Apple App Attestation Root CA, the nonce in the leaf's `1.2.840.113635.100.8.2` extension equal to `SHA256(authData || SHA256(challenge))`, `SHA256(public key) == keyId`, the RP ID hash equal to `SHA256("7GGTC43CG8.studio.anwarcreative.corres")` (or the Mac debug build's `.debug` App ID), counter 0, aaguid `appattest` (production) or `appattestdevelop`, credential id equal to the key id, and, for a key the app says comes from a Mac (`platform: "macOS"`, sent by the iPad app running on a Mac), the key's access policy (OID `1.2.840.113635.100.8.6`, Apple's macOS-only step). iPhone and iPad keys carry that extension too, with a policy of their own: checking it on every key refused every iPhone (each `/attest` from builds 35, 37 and 39 logged `rejected, mac-policy`, so no iPhone ever had an attested key and every call came in as `none`). The relay now records the policy (`accessPolicy`, a short hash, or `macos-full-security`) and the `platform` on the key, and logs both on `app attest /attest: ok`. The public key, a zero counter, the environment and Apple's receipt are kept in `attestKeys`, keyed by the key id. A key already on file is never replaced. Each key carries `expiresAt`, 60 days after it was last used (every signed call renews it), and a device that turns notifications off entirely (`/unregister` with no address) has its key deleted; either way the app sees `unknown-key` next time and attests a new key.
 3. Each later `register`/`unregister` gets a fresh challenge, puts it in the body as `attestChallenge`, and signs the exact body bytes: headers `Corres-Attest-Key` and `Corres-Attest-Assertion`. The relay checks the challenge (single use), the signature against the stored key over `SHA256(authenticatorData || SHA256(body))`, the RP ID, and that the counter went up, then stores the new counter.
 
 What each build sends:
@@ -138,11 +139,14 @@ The result for `/register-graph` and the iCloud routes goes on the Outlook subsc
 
 Monitor mode (the default): every checked call is logged on one line (`app attest /register: ok` or `app attest /register: allowed unattested, <reason>`), the device record gets `attested`, `attestReason`, `attestKeyId` and `attestCheckedAt`, and the call goes through either way. Reasons: `none` (no proof sent: an older build, the Simulator, a Mac without App Attest, or a key still being attested), `unknown-key`, `bad-challenge`, `bad-signature`, `replayed-counter`, `wrong-app`, `malformed`. The answer carries a `Corres-Attest-Result` header; on `unknown-key` the app makes and attests a new key. On the app side every failure (no support, no network, an Apple or relay error, Apple throttling) sends the call as before, so nobody loses notifications.
 
-One-time setup: let Firestore delete unused challenges on its own:
+One-time setup: let Firestore delete used challenges and keys nobody uses on its own:
 
 ```bash
 gcloud firestore fields ttls update expiresAt --collection-group=attestChallenges --enable-ttl
+gcloud firestore fields ttls update expiresAt --collection-group=attestKeys --enable-ttl
 ```
+
+Keys attested before `expiresAt` existed get it the next time they sign a call; one never used again stays until removed by hand.
 
 Turning enforcement on, once the logs and device records show every current build attesting (`attested: true` on the devices still in use):
 
@@ -201,6 +205,24 @@ The deployed relay (as of 2026-10-27) uses the second form: `DEVICECHECK_KEY_ID`
 
 `DEVICECHECK_DEVELOPMENT=0` (in the same deploy) stops trying the development server, so only TestFlight and App Store builds pass.
 
+## Proof of the account (monitor mode)
+
+App Attest says the call comes from a genuine Corres; it doesn't say the person signed in to the address they register. Without that, anyone could register someone else's Gmail or Outlook address with their own device and learn when that person gets mail. So:
+
+- `/register` (Gmail) carries `idToken`: the account's Google ID token, which the app gets with every access token refresh (the sign-in includes `openid email`). The relay checks its signature against Google's published keys (`https://www.googleapis.com/oauth2/v3/certs`), `aud` equal to Corres's client id (`211980968673-k961lt0jtath3ojt4r7ukb3j3jbn8ecl.apps.googleusercontent.com`, the one the iPhone, iPad and Mac apps share; `GOOGLE_CLIENT_IDS` to change it), the issuer, the expiry, `email_verified`, and `email` equal to the address.
+- `/register-graph` (Outlook) carries the Microsoft ID token the same way, checked against `https://login.microsoftonline.com/common/discovery/v2.0/keys`: `aud` equal to the Microsoft client id (`5385700b-0a2e-4849-acd9-679955cdd203`; `MICROSOFT_CLIENT_IDS`), the issuer naming the token's own tenant, the expiry, and the address equal to the token's `email` or `preferred_username`. Microsoft doesn't promise `preferred_username` is the mailbox's address, which is one reason this starts in monitor mode: watch for `wrong-address` before enforcing.
+- The checks live in `accountproof.js`. Nothing from the token is logged or stored; the device record gets `provenAccounts`, the addresses this device proved.
+
+Every call logs one line: `account proof /register: ok` or `account proof /register: allowed unproven, <reason>`, and the answer carries `Corres-Account-Proof-Result`. Reasons: `none` (no token: builds before this one, or the token couldn't be fetched), `malformed`, `unknown-signing-key`, `keys-unavailable`, `bad-signature`, `wrong-audience`, `wrong-issuer`, `expired`, `not-yet-valid`, `unverified-address`, `wrong-address`, `error`.
+
+Devices per address: at most `MAX_DEVICES_PER_ADDRESS` (default 10) devices can wake one address. A new device past that is refused (429), unless its call proves the account: then the devices that never proved it give the address up first, the quietest first. So a stranger can't fill an address's places to keep its owner out, even before enforcement.
+
+Turning enforcement on (separate from App Attest, so either can go first):
+
+1. A build that sends `idToken` is what testers have, and the logs show `account proof /register: ok` and `/register-graph: ok` for nearly every call.
+2. No `wrong-address` from Outlook accounts that are real (if there are, the Microsoft check needs another claim before enforcing).
+3. `ACCOUNT_PROOF_ENFORCE=1 npm run deploy` (with `APP_ATTEST_ENFORCE` as it is then). A plain `npm run deploy` goes back to monitor mode.
+
 ## Enforcement checklist
 
 Before `APP_ATTEST_ENFORCE=1 npm run deploy`:
@@ -216,9 +238,11 @@ Before `APP_ATTEST_ENFORCE=1 npm run deploy`:
 
 Caps (checked on every registration):
 - 50 accounts per device (`/register` and `/register-graph`; registering an account the device already has is always fine), 50 Outlook subscriptions per device, 10 iCloud accounts per device.
-- `ICLOUD_MAX_WATCHES` (default 2000) iCloud watches in all: past it, `/register-icloud` answers 503 for new watches. The count is an aggregation query, refreshed at most once a minute per instance. Set the same value on the watcher (its `npm run deploy` passes `ICLOUD_MAX_WATCHES` too), which holds back any watch past it.
+- At most `MAX_DEVICES_PER_ADDRESS` (default 10) devices per address on `/register` and `/register-graph` (see "Proof of the account").
+- `ICLOUD_MAX_WATCHES` (default 2000) iCloud watches that have signed in: past it, `/register-icloud` answers 503 for new watches. A watch counts once the watcher has signed in with it (it sets `loggedIn` on the record), so watches that never sign in can't take real ones' places. Those waiting for a first sign-in are capped apart, by `ICLOUD_MAX_PENDING_WATCHES` (default 500). The counts are aggregation queries, refreshed at most once a minute per instance. Set the same `ICLOUD_MAX_WATCHES` on the watcher (its `npm run deploy` passes it too), which holds back any watch past it.
+- Another IMAP server named in `/register-icloud` must be a public host name on port 993 that resolves to public addresses only. The watcher checks again each time it connects and connects to exactly the address it checked (the name still used for TLS), so a name that later points inside a network is refused then and its watches are deleted.
 
-Rate limits: `/attest-challenge` 60, `/register-graph` 60 and `/register-icloud` 30 calls a minute per caller address, answered with 429. They live in each instance's memory, so they only slow one busy caller; they are not a real limit. The caller's address is the last `X-Forwarded-For` entry (the one Google's front end adds).
+Rate limits: `/attest-challenge` 60 (issuing one writes nothing), `/register` 60, `/unregister` 60, `/register-graph` 60 and `/register-icloud` 30 calls a minute per caller address, answered with 429. They live in each instance's memory, so they only slow one busy caller; they are not a real limit. The caller's address is the last `X-Forwarded-For` entry (the one Google's front end adds).
 
 The real fix for flooding is Cloud Armor in front of the function: an external Application Load Balancer with a serverless NEG for `corres-push-relay`, a security policy with a rate-based ban rule, and ingress limited to the load balancer:
 

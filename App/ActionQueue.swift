@@ -146,7 +146,7 @@ final class ActionQueue {
                 nextRetry = min(nextRetry ?? .max, actions[at].attempts)
                 index = at + 1
             } catch {
-                Self.log.error("A waiting change was refused: \(String(describing: error), privacy: .public)")
+                Self.log.error("A waiting change was refused: \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
                 if let at = position() { actions.remove(at: at); save() }
                 await onRefused?(action, error)
             }

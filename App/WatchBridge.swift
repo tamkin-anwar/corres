@@ -71,7 +71,7 @@ final class WatchBridge: NSObject {
             updateFace(snapshot, data: data)
         } catch {
             // Not reachable yet; the next change tries again.
-            Self.log.error("Couldn't update the Watch: \(String(describing: error), privacy: .public)")
+            Self.log.error("Couldn't update the Watch: \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
         }
     }
 

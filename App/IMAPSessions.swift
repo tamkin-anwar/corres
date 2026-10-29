@@ -83,7 +83,7 @@ actor IMAPSessions {
         do {
             session = try await self.session(for: account)
         } catch {
-            Self.log.error("iCloud sign-in failed: \(String(describing: error), privacy: .public)")
+            Self.log.error("iCloud sign-in failed: \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
             if case IMAPConnection.ConnectionError.authenticationFailed = error {
                 Self.announceRejected(account)
                 throw GmailAPIClient.ClientError.notSignedIn
@@ -103,7 +103,7 @@ actor IMAPSessions {
             _ = try await session.folders()
             return try await body(session)
         } catch let error as IMAPConnection.ConnectionError {
-            Self.log.error("iCloud command failed: \(String(describing: error), privacy: .public)")
+            Self.log.error("iCloud command failed: \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
             switch error {
             case .disconnected, .timedOut, .notConnected:
                 sessions[account] = nil
@@ -129,7 +129,7 @@ actor IMAPSessions {
             // Anything else from the network layer (a write on a closed
             // connection): this session is spent, so the next call opens
             // a fresh one instead of failing forever.
-            Self.log.error("iCloud connection error: \(String(describing: error), privacy: .public)")
+            Self.log.error("iCloud connection error: \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
             sessions[account] = nil
             await session.connection.logout()
             throw GmailAPIClient.ClientError.badResponse(statusCode: 0)

@@ -63,7 +63,7 @@ final class MailIndexer {
                 } catch {
                     // Offline, signed out or rate-limited: this one waits
                     // for next time; the others carry on.
-                    Self.log.info("Index paused for a mailbox: \(String(describing: error), privacy: .public)")
+                    Self.log.info("Index paused for a mailbox: \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
                     streams.removeAll { $0 == stream }
                     continue
                 }

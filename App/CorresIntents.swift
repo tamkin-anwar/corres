@@ -21,6 +21,8 @@ enum CorresList: String, AppEnum {
 struct WhatNeedsMeIntent: AppIntent {
     static let title: LocalizedStringResource = "What Needs Me"
     static let description = IntentDescription("Hear what's in Needs You and who you're waiting on.")
+    /// It reads out who wrote and why: the iPhone must be unlocked first.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         guard let snapshot = WidgetSnapshot.load() else {

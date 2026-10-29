@@ -500,7 +500,7 @@ struct IMAPMailClient: Sendable {
                 }
                 return
             } catch {
-                IMAPSessions.log.error("Sent, but not filed in Sent: \(String(describing: error), privacy: .public)")
+                IMAPSessions.log.error("Sent, but not filed in Sent: \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
                 if attempt == 0 { try? await Task.sleep(for: .milliseconds(500)) }
             }
         }

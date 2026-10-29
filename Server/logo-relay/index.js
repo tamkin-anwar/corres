@@ -9,7 +9,9 @@
 // PNG and sent back. The company's server sees this function, never the
 // person reading.
 //
-// Nothing is logged or stored but an in-memory cache of logos by domain.
+// Nothing is logged or stored but an in-memory cache of logos by domain
+// (the 5,000 most recently asked for) and, for a minute, how many calls
+// each caller's address made (the rate limit below).
 const functions = require('@google-cloud/functions-framework');
 const dns = require('dns');
 const https = require('https');
@@ -23,9 +25,58 @@ const MAX_SVG = 64 * 1024;
 // intermediates. The largest seen is under 20 KB.
 const MAX_PEM = 128 * 1024;
 const FETCH_TIMEOUT_MS = 4000;
+// Least recently used first: a Map keeps insertion order, and a domain
+// asked for again is moved to the end, so the one dropped when it's full
+// is the one nobody has asked for the longest.
 const cache = new Map(); // domain -> { at, png|null }
+const CACHE_SIZE = 5000;
 const inflight = new Map(); // domain -> Promise<png|null>
 const DAY = 24 * 60 * 60 * 1000;
+
+function cached(domain) {
+  const hit = cache.get(domain);
+  if (!hit) return null;
+  cache.delete(domain);
+  cache.set(domain, hit);
+  return hit;
+}
+
+function remember(domain, png) {
+  cache.delete(domain);
+  cache.set(domain, { at: Date.now(), png });
+  while (cache.size > CACHE_SIZE) cache.delete(cache.keys().next().value);
+}
+
+// ---- Best-effort rate limit ------------------------------------------------
+// In memory, per instance: a brake on one busy caller, as the push relay
+// has. A new install asks for every sender's logo once, a few at a time,
+// so 120 a minute is far above a person's use; past it the app gets 429
+// and simply asks again later (it only remembers a 404 as "no logo"). The
+// caller's address is the last X-Forwarded-For entry, the one Google's
+// front end adds. Nothing is kept beyond the minute.
+const RATE_LIMIT = 120;
+const RATE_WINDOW_MS = 60_000;
+const rateWindows = new Map(); // ip -> { start, count }
+
+function clientIP(req) {
+  const forwarded = String(req.get('x-forwarded-for') || '').split(',').map((s) => s.trim()).filter(Boolean);
+  return forwarded.length ? forwarded[forwarded.length - 1] : (req.ip || 'unknown');
+}
+
+function rateLimited(req, now = Date.now()) {
+  if (rateWindows.size > 20_000) {
+    for (const [key, window] of rateWindows) if (now - window.start >= RATE_WINDOW_MS) rateWindows.delete(key);
+    if (rateWindows.size > 20_000) rateWindows.clear();
+  }
+  const ip = clientIP(req);
+  let window = rateWindows.get(ip);
+  if (!window || now - window.start >= RATE_WINDOW_MS) {
+    window = { start: now, count: 0 };
+    rateWindows.set(ip, window);
+  }
+  window.count += 1;
+  return window.count > RATE_LIMIT;
+}
 
 const resolver = new dns.promises.Resolver({ timeout: 2000, tries: 2 });
 
@@ -173,13 +224,12 @@ async function findLogo(domain) {
 }
 
 async function logoFor(domain) {
-  const hit = cache.get(domain);
+  const hit = cached(domain);
   if (hit && Date.now() - hit.at < (hit.png ? 7 * DAY : DAY)) return hit.png;
   // Many people opening the same company's mail at once share one lookup.
   if (inflight.has(domain)) return inflight.get(domain);
   const work = findLogo(domain).catch(() => null).then((png) => {
-    if (cache.size > 5000) cache.clear();
-    cache.set(domain, { at: Date.now(), png });
+    remember(domain, png);
     return png;
   }).finally(() => inflight.delete(domain));
   inflight.set(domain, work);
@@ -189,6 +239,7 @@ async function logoFor(domain) {
 functions.http('corresLogos', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).end();
+  if (rateLimited(req)) return res.status(429).set('Retry-After', '60').end();
   const raw = req.body && req.body.domain;
   if (typeof raw !== 'string') return res.status(400).end();
   const domain = raw.trim().toLowerCase();
@@ -199,4 +250,4 @@ functions.http('corresLogos', async (req, res) => {
   res.status(200).send(png);
 });
 
-module.exports = { parseBIMI, organizational, isPrivate, safeSVG, publicLookup, fetchPublic, logoFor };
+module.exports = { parseBIMI, organizational, isPrivate, safeSVG, publicLookup, fetchPublic, logoFor, rateLimited, cache, remember, cached };

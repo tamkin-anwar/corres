@@ -505,7 +505,7 @@ final class OutboxService {
             } catch {
                 // Why it failed, for Console: the banner only says it did.
                 Logger(subsystem: "studio.anwarcreative.corres", category: "outbox")
-                    .error("Send failed: \(String(describing: error), privacy: .public)")
+                    .error("Send failed: \(error.logKind, privacy: .public) \(String(describing: error), privacy: .private)")
                 markFailed(id, draft)
                 if !quietly {
                 Assistive.announce(String(localized: "Couldn't send \u{201C}\(draft.subject)\u{201D}. Retry or Discard."))
