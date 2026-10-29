@@ -29,9 +29,6 @@
 "%@ · not in All Inboxes" = "%@ · সব ইনবক্সে নেই";
 
 /* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "প্রতি %2$@ %1$@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
-
-/* No comment provided by engineer. */
 "%@ account" = "%@ অ্যাকাউন্ট";
 
 /* No comment provided by engineer. */
@@ -212,13 +209,10 @@
 "A one-sentence brief of your day, and what needs you first." = "এক বাক্যে আপনার দিনের সারসংক্ষেপ, আর প্রথমে কী করণীয়।";
 
 /* No comment provided by engineer. */
-"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "ছোট সোয়াইপে কাজটি সঙ্গে সঙ্গে হয়; আরও টানলে দ্বিতীয় কাজটি হয়। স্নুজ আর সরান কথোপকথনের ভেতরে এক ট্যাপ দূরে, অথবা সারি চেপে ধরে রাখলে।";
+"A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row." = "ছোট সোয়াইপে কাজটি সঙ্গে সঙ্গে হয়; আরও টানলে দ্বিতীয় কাজটি হয়। স্নুজ আর সরান কথোপকথনের ভেতরে এক ট্যাপ দূরে, অথবা সারি চেপে ধরে রাখলে।";
 
 /* No comment provided by engineer. */
 "A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "একটি ছোট রিলে Corres-কে জানায় যে আপনার মেইলবক্সে কিছু বদলেছে। এটি কখনো বিষয়, প্রেরক বা বার্তা দেখে না।";
-
-/* No comment provided by engineer. */
-"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "VIP-দের ইমেইল সবসময় আপনার করণীয়-তে আসে এবং সবসময় নোটিফিকেশন দেয়, আপনাকে শুধু কপি করা হলেও। কাউকে যোগ করতে তার ইমেইলের ⋯ মেনু ব্যবহার করুন, অথবা তালিকায় চেপে ধরে রাখুন। সরাতে সোয়াইপ করুন।";
 
 /* No comment provided by engineer. */
 "Aa" = "Aa";
@@ -758,9 +752,6 @@
 "Corres learns your greeting, sign-off and length once you've sent a few more emails." = "আরও কয়েকটি ইমেইল পাঠালে Corres আপনার সম্ভাষণ, বিদায় সম্ভাষণ আর দৈর্ঘ্য শিখে নেবে।";
 
 /* No comment provided by engineer. */
-"Corres never sees your account password" = "Corres কখনো আপনার অ্যাকাউন্টের পাসওয়ার্ড দেখে না";
-
-/* No comment provided by engineer. */
 "Corres never tells anyone you opened their email. Waiting is tracked from the conversation itself." = "আপনি কারো ইমেইল খুলেছেন তা Corres কখনো কাউকে জানায় না। অপেক্ষার হিসাব রাখা হয় কথোপকথন থেকেই।";
 
 /* No comment provided by engineer. */
@@ -1097,9 +1088,6 @@
 "Free" = "বিনামূল্যে";
 
 /* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি %3$@ %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";
-
-/* No comment provided by engineer. */
 "Free trial · first charge %@" = "বিনামূল্যে ট্রায়াল · প্রথম চার্জ %@";
 
 /* No comment provided by engineer. */
@@ -1146,9 +1134,6 @@
 
 /* No comment provided by engineer. */
 "Gmail and Outlook" = "Gmail ও Outlook";
-
-/* No comment provided by engineer. */
-"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail আর Outlook সাইন ইন করে Google ও Microsoft-এর নিজস্ব পেজে, আর Corres এমন একটি অনুমতি পায় যা আপনি যেকোনো সময় ফিরিয়ে নিতে পারেন। iCloud অ্যাপের জন্য আলাদা একটি পাসওয়ার্ড ব্যবহার করে, যা account.apple.com-এ বন্ধ করতে পারেন। দুটোই এই %@-এর কিচেইনে থাকে।";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail, Outlook, iCloud মেইল, Yahoo, AOL, Fastmail আর প্রায় যেকোনো ইমেইল। আপনার মেইল এই %@-এই সাজানো ও পড়া হয়।";
@@ -1439,9 +1424,6 @@
 "Mark as Unread" = "অপঠিত চিহ্নিত করুন";
 
 /* No comment provided by engineer. */
-"Mark Read/Unread" = "পঠিত/অপঠিত চিহ্নিত করুন";
-
-/* No comment provided by engineer. */
 "Mark Unread" = "অপঠিত চিহ্নিত করুন";
 
 /* No comment provided by engineer. */
@@ -1484,9 +1466,6 @@
 "Messages" = "বার্তা";
 
 /* No comment provided by engineer. */
-"month" = "মাস";
-
-/* No comment provided by engineer. */
 "Monthly" = "মাসিক";
 
 /* No comment provided by engineer. */
@@ -1527,9 +1506,6 @@
 
 /* No comment provided by engineer. */
 "Move this conversation to Trash?" = "এই কথোপকথনটি ট্র্যাশে সরাবেন?";
-
-/* No comment provided by engineer. */
-"Move to" = "সরান";
 
 /* No comment provided by engineer. */
 "Move To" = "সরান";
@@ -2567,9 +2543,6 @@
 "Sort By" = "সাজানোর ভিত্তি";
 
 /* No comment provided by engineer. */
-"Sort Into" = "যেখানে সাজাবেন";
-
-/* No comment provided by engineer. */
 "Sorting" = "সাজানো";
 
 /* No comment provided by engineer. */
@@ -2775,9 +2748,6 @@
 
 /* No comment provided by engineer. */
 "To" = "প্রাপক";
-
-/* No comment provided by engineer. */
-"To " = "প্রাপক ";
 
 /* No comment provided by engineer. */
 "To “%@”" = "“%@”-কে";
@@ -3066,9 +3036,6 @@
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "%@ যে বার্তা পাঠাবে তা লিখুন।";
-
-/* No comment provided by engineer. */
-"year" = "বছর";
 
 /* No comment provided by engineer. */
 "Yesterday" = "গতকাল";
@@ -3828,3 +3795,29 @@
 "Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "উপরের সারিতে বা মেনুতে যোগ করতে একটিতে ট্যাপ করুন। যে কাজ কোনো ইমেইলে খাটে না, যেমন মেইলিং লিস্ট থেকে না এলে আনসাবস্ক্রাইব, সেটি ওই ইমেইলের মেনুতে থাকে না।";
 "Add to Top Row" = "উপরের সারিতে যোগ করুন";
 "Add to Menu" = "মেনুতে যোগ করুন";
+
+/* Compose, opened from Send Later to edit: closing it keeps the email scheduled. */
+"Keep it scheduled?" = "নির্ধারিত সময়েই রাখবেন?";
+"Keep Scheduled" = "নির্ধারিত রাখুন";
+"It still sends at the time you picked, with your changes." = "আপনার পরিবর্তনসহ এটি বেছে নেওয়া সময়েই পাঠানো হবে।";
+
+/* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
+"Corres never sees your Google or Microsoft password" = "Corres কখনো আপনার Google বা Microsoft পাসওয়ার্ড দেখে না";
+"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "Gmail ও Outlook সাইন ইন করে Google ও Microsoft-এর নিজস্ব পেজে, আর Corres এমন একটি অনুমতি পায় যা আপনি যেকোনো সময় ফিরিয়ে নিতে পারেন। iCloud অ্যাপের জন্য আলাদা একটি পাসওয়ার্ড ব্যবহার করে, যা account.apple.com-এ বন্ধ করা যায়, আর অন্য ইমেইল আপনার দেওয়া পাসওয়ার্ড ব্যবহার করে। দুটোই এই %@-এর কিচেইনে থাকে। এগুলোর কোনোটির জন্য তাৎক্ষণিক নোটিফিকেশন চালু করলে তার পাসওয়ার্ডের একটি সিল করা কপি Corres-এর মেইল পর্যবেক্ষকের কাছে যায়, যা শুধু সেটিই খুলতে পারে। বন্ধ করলে কপিটি মুছে যায়।";
+
+/* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "VIP-দের ইমেইল সবসময় আপনার করণীয়-তে আসে এবং সবসময় নোটিফিকেশন দেয়, আপনাকে শুধু কপি করা হলেও। কাউকে যোগ করতে তার ইমেইলের ⋯ মেনু ব্যবহার করুন। তালিকা থেকেও যোগ করতে চাইলে সেটিংস > নিজের মতো সাজান > চেপে ধরে রাখা-তে VIP রাখুন। সরাতে সোয়াইপ করুন।";
+
+/* Whole sentences and words that were shown in English: sender badges, Compose placeholders, attachment names, signature names, invitation overlaps, paywall prices. */
+"Unsubscribed" = "আনসাবস্ক্রাইব করা";
+"Recipient" = "প্রাপক";
+"Optional" = "ঐচ্ছিক";
+"Photo %lld" = "ছবি %lld";
+"Video %lld" = "ভিডিও %lld";
+"Scan %lld" = "স্ক্যান %lld";
+"Signature %lld" = "স্বাক্ষর %lld";
+"another event" = "অন্য একটি ইভেন্ট";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "প্রতি বছর %@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "প্রতি মাস %@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি বছর %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি মাস %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";

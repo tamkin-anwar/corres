@@ -29,9 +29,6 @@
 "%@ · not in All Inboxes" = "%@ · 不在“所有收件箱”中";
 
 /* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@/%@，自动续订。可随时在“设置”中取消。";
-
-/* No comment provided by engineer. */
 "%@ account" = "%@ 账户";
 
 /* No comment provided by engineer. */
@@ -212,13 +209,10 @@
 "A one-sentence brief of your day, and what needs you first." = "一句话概括你的一天，以及最先需要你处理的事。";
 
 /* No comment provided by engineer. */
-"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "短扫立即执行；扫得更远则执行第二个操作。“稍后提醒”和“移到”在对话中轻点一下即可使用，也可按住某一行使用。";
+"A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row." = "短扫立即执行；扫得更远则执行第二个操作。“稍后提醒”和“移到”在对话中轻点一下即可使用，也可按住某一行使用。";
 
 /* No comment provided by engineer. */
 "A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "一个小型中继服务会告诉 Corres 你的邮箱有变化。它从不会看到主题、发件人或邮件内容。";
-
-/* No comment provided by engineer. */
-"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "VIP 的邮件总是进入“需要你”，并总会通知你，即使你只是被抄送。可从其邮件的⋯菜单添加，或在列表中按住添加。轻扫即可移除。";
 
 /* No comment provided by engineer. */
 "Aa" = "Aa";
@@ -758,9 +752,6 @@
 "Corres learns your greeting, sign-off and length once you've sent a few more emails." = "再发送几封邮件后，Corres 就会学会你的问候语、结束语和篇幅。";
 
 /* No comment provided by engineer. */
-"Corres never sees your account password" = "Corres 从不接触你的账户密码";
-
-/* No comment provided by engineer. */
 "Corres never tells anyone you opened their email. Waiting is tracked from the conversation itself." = "Corres 从不告诉任何人你打开了他们的邮件。“等待中”根据对话本身判断。";
 
 /* No comment provided by engineer. */
@@ -1097,9 +1088,6 @@
 "Free" = "免费";
 
 /* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/%@。在试用结束前于“设置”中取消即不会收费。";
-
-/* No comment provided by engineer. */
 "Free trial · first charge %@" = "免费试用 · 首次扣款 %@";
 
 /* No comment provided by engineer. */
@@ -1146,9 +1134,6 @@
 
 /* No comment provided by engineer. */
 "Gmail and Outlook" = "Gmail 和 Outlook";
-
-/* No comment provided by engineer. */
-"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail 和 Outlook 在 Google 和 Microsoft 自己的页面登录，Corres 获得的权限你随时可以收回。iCloud 使用 App 专用密码，你可以随时在 account.apple.com 停用。两者都保存在这台%@的钥匙串中。";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail、Outlook、iCloud 邮件、Yahoo、AOL、Fastmail 以及几乎所有其他邮箱。你的邮件在这台%@上分类和阅读。";
@@ -1439,9 +1424,6 @@
 "Mark as Unread" = "标记为未读";
 
 /* No comment provided by engineer. */
-"Mark Read/Unread" = "标记为已读/未读";
-
-/* No comment provided by engineer. */
 "Mark Unread" = "标为未读";
 
 /* No comment provided by engineer. */
@@ -1484,9 +1466,6 @@
 "Messages" = "邮件";
 
 /* No comment provided by engineer. */
-"month" = "月";
-
-/* No comment provided by engineer. */
 "Monthly" = "月付";
 
 /* No comment provided by engineer. */
@@ -1527,9 +1506,6 @@
 
 /* No comment provided by engineer. */
 "Move this conversation to Trash?" = "将此对话移到废纸篓？";
-
-/* No comment provided by engineer. */
-"Move to" = "移到";
 
 /* No comment provided by engineer. */
 "Move To" = "移到";
@@ -2567,9 +2543,6 @@
 "Sort By" = "排序方式";
 
 /* No comment provided by engineer. */
-"Sort Into" = "分类到";
-
-/* No comment provided by engineer. */
 "Sorting" = "分类";
 
 /* No comment provided by engineer. */
@@ -2775,9 +2748,6 @@
 
 /* No comment provided by engineer. */
 "To" = "收件人";
-
-/* No comment provided by engineer. */
-"To " = "发给 ";
 
 /* No comment provided by engineer. */
 "To “%@”" = "发给“%@”";
@@ -3066,9 +3036,6 @@
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "输入 %@ 应发送的消息。";
-
-/* No comment provided by engineer. */
-"year" = "年";
 
 /* No comment provided by engineer. */
 "Yesterday" = "昨天";
@@ -3828,3 +3795,29 @@
 "Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "轻点即可添加到顶部一行或菜单。不适用于某封邮件的操作（例如不是来自邮件列表时的“退订”）不会出现在它的菜单中。";
 "Add to Top Row" = "添加到顶部一行";
 "Add to Menu" = "添加到菜单";
+
+/* Compose, opened from Send Later to edit: closing it keeps the email scheduled. */
+"Keep it scheduled?" = "保持定时发送？";
+"Keep Scheduled" = "保持定时";
+"It still sends at the time you picked, with your changes." = "邮件仍会在你选定的时间发送，并包含你的修改。";
+
+/* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
+"Corres never sees your Google or Microsoft password" = "Corres 从不接触你的 Google 或 Microsoft 密码";
+"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "Gmail 和 Outlook 在 Google 和 Microsoft 自己的页面登录，Corres 获得的权限你随时可以收回。iCloud 使用 App 专用密码，你可以随时在 account.apple.com 停用；其他邮箱使用你输入的密码。两者都保存在这台%@的钥匙串中。如果你为其中一个帐户打开即时通知，它的密码会以封存的副本发送给 Corres 的邮件监视程序，只有它才能打开。关闭即时通知即可删除该副本。";
+
+/* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "VIP 的邮件总是进入“需要你”，并总会通知你，即使你只是被抄送。可从其邮件的⋯菜单添加。若也想在列表中添加，请在“设置”>“自定”>“按住”中加入 VIP。轻扫即可移除。";
+
+/* Whole sentences and words that were shown in English: sender badges, Compose placeholders, attachment names, signature names, invitation overlaps, paywall prices. */
+"Unsubscribed" = "已退订";
+"Recipient" = "收件人";
+"Optional" = "可选";
+"Photo %lld" = "照片 %lld";
+"Video %lld" = "视频 %lld";
+"Scan %lld" = "扫描 %lld";
+"Signature %lld" = "签名 %lld";
+"another event" = "另一个日程";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "%@/年，自动续订。可随时在“设置”中取消。";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "%@/月，自动续订。可随时在“设置”中取消。";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/年。在试用结束前于“设置”中取消即不会收费。";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/月。在试用结束前于“设置”中取消即不会收费。";

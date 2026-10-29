@@ -235,10 +235,12 @@ struct ConversationView: View {
                 }
                 // Write asks once the card has closed: asked while it was
                 // still up, Compose couldn't show and nothing happened.
+                // This view's own Compose, not the main window's: in an
+                // iPad conversation window that one isn't there to answer.
                 .sheet(item: $personCard, onDismiss: {
                     if let address = writeAfterPerson {
                         writeAfterPerson = nil
-                        router.pending = .composeTo(to: address, subject: "", body: "")
+                        composeDraft = Draft(kind: .new, to: address, subject: "", body: "")
                     }
                 }) { person in
                     PersonView(person: person, store: store, open: { currentID = $0 },
@@ -274,6 +276,9 @@ struct ConversationView: View {
                         Task {
                             isUnsubscribing = true
                             let outcome = await unsubscribeService.unsubscribe(from: thread, store: store)
+                            // Moved on to another email meanwhile: its line
+                            // isn't this one's to change.
+                            guard currentID == thread.id else { return }
                             isUnsubscribing = false
                             unsubscribeOpened = outcome == .opened
                         }
@@ -348,6 +353,8 @@ struct ConversationView: View {
         .onChange(of: currentID) {
             htmlHeight = 200
             showRemoteImages = false
+            isUnsubscribing = false
+            unsubscribeOpened = false
             calendarEvent = nil
             invitation = nil
             nextStep = nil
@@ -389,10 +396,14 @@ struct ConversationView: View {
             await loaded
             await conversation
             // The event this email is about, once its full text is here.
+            // Found for this email: kept only while it's the one showing.
             if let current = store.thread(currentID) {
-                calendarEvent = await Self.findEvent(in: current)
-                invitation = await InvitationCard.find(in: current)
+                let event = await Self.findEvent(in: current)
+                let found = await InvitationCard.find(in: current)
                 let aids = await ReadingAids.find(in: current)
+                guard !Task.isCancelled, current.id == currentID else { return }
+                calendarEvent = event
+                invitation = found
                 nextStep = aids.nextStep
                 glance = aids.glance
                 buriedAsk = aids.ask
@@ -515,7 +526,8 @@ struct ConversationView: View {
 
     private func headerContent(for thread: Correspondence) -> some View {
         HStack(spacing: 12) {
-            CorrespondentAvatar(initials: thread.isFromAccountOwner ? "Y" : thread.initials,
+            // You: the first letter of "You" in your language.
+            CorrespondentAvatar(initials: thread.isFromAccountOwner ? String(String(localized: "You").prefix(1)) : thread.initials,
                                 email: thread.isFromAccountOwner ? nil : thread.senderEmail, size: CGSize(width: 44, height: 44),
                                 companyLogo: thread.showsCompanyLogo)
             VStack(alignment: .leading, spacing: 2) {
@@ -536,8 +548,9 @@ struct ConversationView: View {
         // Something you sent: who it went to. Never "To you".
         if thread.isFromAccountOwner {
             let names = thread.recipientNames
-            let to = names.isEmpty ? String(localized: "Sent") : String(localized: "To ") + (names.count > 2 ? names.prefix(2).joined(separator: ", ") + " +\(names.count - 2)"
-                                                                          : names.joined(separator: ", "))
+            let list = names.count > 2 ? names.prefix(2).joined(separator: ", ") + " +\(names.count - 2)" : names.joined(separator: ", ")
+            // One sentence, so a language can put "To" after the names.
+            let to = names.isEmpty ? String(localized: "Sent") : String(localized: "To \(list)")
             return "\(to) · \(when)"
         }
         let to = (thread.toRecipients.isEmpty || thread.isDirectRecipient) ? String(localized: "To you") : String(localized: "Cc you")
@@ -1263,7 +1276,7 @@ struct ConversationView: View {
         if action == .moveTo {
             // Where Mail and Gmail move mail: out of the Inbox, into a
             // label. Corres's own sorting is a section of its own below; on
-            // its own it read as a broken "Move to".
+            // its own it read as a broken "Move To".
             Section {
                 Button { Task { await threadActions.archive(thread, animated: false) } } label: {
                     Label("Archive", systemImage: "archivebox")
@@ -1273,7 +1286,7 @@ struct ConversationView: View {
                 }
                 if !thread.isFromAccountOwner {
                     Button { Task { await threadActions.reportSpam(thread, animated: false) } } label: {
-                        Label("Spam", systemImage: "xmark.bin")
+                        Label("Report Spam", systemImage: "xmark.bin")
                     }
                 }
             }
@@ -1291,7 +1304,9 @@ struct ConversationView: View {
                     }
                 }
             }
-            Section("Sort Into") {
+            // Needs You, Waiting and Handled: part of Move To, as in the
+            // list's press-and-hold menu and Change, not a second name.
+            Section {
                 AttentionChoices(current: thread.attention) { attention in
                     Task { await threadActions.setAttention(attention, for: thread) }
                 }

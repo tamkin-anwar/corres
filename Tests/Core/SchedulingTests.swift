@@ -45,3 +45,17 @@ struct SchedulingTests {
         #expect(Scheduling.roundedUpToHalfHour(date(19, 10, 45), calendar: calendar) == date(19, 11))
     }
 }
+
+struct SendLaterTimeTests {
+    @Test func keepsAFutureTime() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let later = now.addingTimeInterval(3_600)
+        #expect(Scheduling.sendLaterTime(later, now: now) == later)
+    }
+
+    @Test func movesAPastTimeToAMinuteFromNow() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        #expect(Scheduling.sendLaterTime(now.addingTimeInterval(-600), now: now) == now.addingTimeInterval(60))
+        #expect(Scheduling.sendLaterTime(now.addingTimeInterval(30), now: now) == now.addingTimeInterval(60))
+    }
+}

@@ -66,7 +66,9 @@ final class ScheduledSends {
 
     // MARK: Scheduling
 
-    func schedule(_ draft: Draft, at date: Date) {
+    /// `announcing`: says so, with Undo. Not when an email opened to edit
+    /// goes back on the schedule unchanged in time.
+    func schedule(_ draft: Draft, at date: Date, announcing: Bool = true) {
         // A reply keeps its In-Reply-To and References from now: archived
         // or gone from here by the time it sends, it still threads.
         var draft = draft
@@ -84,7 +86,7 @@ final class ScheduledSends {
         AppDelegate.scheduleBackgroundRefresh()
         #endif
         rearm()
-        announce?(item)
+        if announcing { announce?(item) }
     }
 
     func reschedule(_ id: UUID, to date: Date) {

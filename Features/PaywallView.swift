@@ -277,11 +277,18 @@ struct PaywallView: View {
         if product.id == EntitlementStore.ProductID.lifetime {
             return String(localized: "One payment of \(product.displayPrice). No subscription.")
         }
-        let per = product.subscription?.subscriptionPeriod.unit == .year ? String(localized: "year") : String(localized: "month")
+        // Whole sentences for a year and a month, so each language says
+        // "a year" its own way rather than around an English word.
+        let price = product.displayPrice
+        let yearly = product.subscription?.subscriptionPeriod.unit == .year
         if let trial = trialText(product) {
-            return String(localized: "Free for \(trial), then \(product.displayPrice) a \(per). Cancel anytime in Settings before the trial ends and you won't be charged.")
+            return yearly
+                ? String(localized: "Free for \(trial), then \(price) a year. Cancel anytime in Settings before the trial ends and you won't be charged.")
+                : String(localized: "Free for \(trial), then \(price) a month. Cancel anytime in Settings before the trial ends and you won't be charged.")
         }
-        return String(localized: "\(product.displayPrice) a \(per), renewing automatically. Cancel anytime in Settings.")
+        return yearly
+            ? String(localized: "\(price) a year, renewing automatically. Cancel anytime in Settings.")
+            : String(localized: "\(price) a month, renewing automatically. Cancel anytime in Settings.")
     }
 
     private var footer: some View {

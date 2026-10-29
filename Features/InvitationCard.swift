@@ -189,7 +189,7 @@ struct InvitationCard: View {
         let end = invitation.end ?? start.addingTimeInterval(3_600)
         onCalendar = calendar.event(title: invitation.summary, start: start)
         overlaps = invitation.isAllDay ? [] : calendar.overlaps(start: start, end: end, excluding: invitation.summary)
-            .map { $0.title?.isEmpty == false ? $0.title! : "another event" }
+            .map { $0.title?.isEmpty == false ? $0.title! : String(localized: "another event") }
     }
 
     private var addedKey: String { "\(invitation.uid)@\(Int(invitation.start?.timeIntervalSince1970 ?? 0))" }

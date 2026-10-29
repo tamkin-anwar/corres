@@ -1121,9 +1121,6 @@
 "Move All from %@ to Trash" = "Tout placer de %@ dans la corbeille";
 
 /* No comment provided by engineer. */
-"Move to" = "Déplacer vers";
-
-/* No comment provided by engineer. */
 "Move to %@" = "Déplacer vers %@";
 
 /* No comment provided by engineer. */
@@ -2753,8 +2750,6 @@
 
 /* An invitation: Add to Calendar without access. */
 "Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corres n’a pas accès à votre calendrier. Vous pouvez l’autoriser dans Réglages Système > Confidentialité et sécurité > Calendriers.";
-/* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@ par %@, renouvelé automatiquement. Résiliez à tout moment dans Réglages.";
 
 /* No comment provided by engineer. */
 "%@ a month or %@ a year." = "%@ par mois ou %@ par an.";
@@ -2797,9 +2792,6 @@
 
 /* No comment provided by engineer. */
 "Family" = "Famille";
-
-/* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratuit pendant %@, puis %@ par %@. Résiliez dans Réglages avant la fin de l’essai et vous ne serez pas facturé.";
 
 /* No comment provided by engineer. */
 "Free trial · first charge %@" = "Essai gratuit · premier prélèvement le %@";
@@ -2910,9 +2902,6 @@
 "Yours for good · bought %@" = "À vous pour toujours · acheté le %@";
 
 /* No comment provided by engineer. */
-"month" = "mois";
-
-/* No comment provided by engineer. */
 "once" = "une fois";
 
 /* No comment provided by engineer. */
@@ -2923,9 +2912,6 @@
 
 /* No comment provided by engineer. */
 "soon" = "bientôt";
-
-/* No comment provided by engineer. */
-"year" = "an";
 
 /* The message list's context menu. */
 "Move To" = "Déplacer vers";
@@ -2947,3 +2933,10 @@
 
 /* The window's subtitle while a Focus shows one account only. */
 "Focus: %@" = "Concentration : %@";
+/* Words and whole sentences that were shown in English: the Unsubscribed badge, invitation overlaps, paywall prices. */
+"Unsubscribed" = "Désabonné";
+"another event" = "un autre événement";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "%@ par an, renouvelé automatiquement. Résiliez à tout moment dans Réglages.";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "%@ par mois, renouvelé automatiquement. Résiliez à tout moment dans Réglages.";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratuit pendant %@, puis %@ par an. Résiliez dans Réglages avant la fin de l’essai et vous ne serez pas facturé.";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratuit pendant %@, puis %@ par mois. Résiliez dans Réglages avant la fin de l’essai et vous ne serez pas facturé.";

@@ -10,7 +10,16 @@ struct ScheduledView: View {
     @State private var chosen: ScheduledSends.Item?
     @State private var changingTime: ScheduledSends.Item?
     @State private var newTime = Date.now
-    @State private var editing: Draft?
+    /// Opened to edit, with when it was to go: taken off the schedule
+    /// while it's in Compose (so it can't go mid-edit), and put back if
+    /// Compose closes without sending it.
+    @State private var editing: Editing?
+
+    struct Editing: Identifiable {
+        let draft: Draft
+        let sendAt: Date
+        var id: UUID { draft.id }
+    }
 
     var body: some View {
         List {
@@ -35,8 +44,10 @@ struct ScheduledView: View {
                             isPresented: Binding(get: { chosen != nil }, set: { if !$0 { chosen = nil } }),
                             titleVisibility: .visible, presenting: chosen) { item in
             Button("Send Now") { Task { await scheduled.sendNow(item.id, store: store, outbox: outbox) } }
-            Button("Change Time") { newTime = item.sendAt; changingTime = item }
-            Button("Edit") { editing = scheduled.remove(item.id) }
+            Button("Change Time") { newTime = Scheduling.sendLaterTime(item.sendAt); changingTime = item }
+            Button("Edit") {
+                if let draft = scheduled.remove(item.id) { editing = Editing(draft: draft, sendAt: item.sendAt) }
+            }
             Button("Move to Drafts") {
                 if let draft = scheduled.remove(item.id) {
                     outbox.shelve(draft, replyingTo: draft.threadID.flatMap { store.thread($0) })
@@ -56,7 +67,7 @@ struct ScheduledView: View {
                         ToolbarItem(placement: .cancellationAction) { Button("Cancel") { changingTime = nil } }
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Done") {
-                                scheduled.reschedule(item.id, to: newTime)
+                                scheduled.reschedule(item.id, to: Scheduling.sendLaterTime(newTime))
                                 scheduled.keepTime(store: store, outbox: outbox)
                                 changingTime = nil
                             }
@@ -65,9 +76,9 @@ struct ScheduledView: View {
                     }
             }
         }
-        .sheet(item: $editing) { draft in
-            ComposeView(store: store, outbox: outbox, auth: auth, draft: draft,
-                        sourceThread: draft.threadID.flatMap { store.thread($0) })
+        .sheet(item: $editing) { editing in
+            ComposeView(store: store, outbox: outbox, auth: auth, draft: editing.draft,
+                        sourceThread: editing.draft.threadID.flatMap { store.thread($0) }, scheduledFor: editing.sendAt)
         }
     }
 

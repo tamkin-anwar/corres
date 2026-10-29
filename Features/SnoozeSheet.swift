@@ -132,7 +132,7 @@ struct SnoozeSheet: View {
         if calendar.isDateInToday(date) { return String(localized: "Today, \(time)") }
         if calendar.isDateInTomorrow(date) { return String(localized: "Tomorrow, \(time)") }
         if let days = calendar.dateComponents([.day], from: .now, to: date).day, days < 6 {
-            return "\(date.formatted(.dateTime.weekday(.wide))), \(time)"
+            return String(localized: "\(date.formatted(.dateTime.weekday(.wide))), \(time)")
         }
         return String(localized: "\(date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())), \(time)")
     }

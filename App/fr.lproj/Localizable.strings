@@ -29,9 +29,6 @@
 "%@ · not in All Inboxes" = "%@ · absent de Toutes les boîtes";
 
 /* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@ par %@, renouvelé automatiquement. Résiliez à tout moment dans Réglages.";
-
-/* No comment provided by engineer. */
 "%@ account" = "Compte %@";
 
 /* No comment provided by engineer. */
@@ -212,13 +209,10 @@
 "A one-sentence brief of your day, and what needs you first." = "Votre journée en une phrase, et ce qui vous attend en premier.";
 
 /* No comment provided by engineer. */
-"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "Un balayage court agit tout de suite ; balayer plus loin déclenche la seconde action. Rappeler plus tard et Déplacer vers sont à un toucher dans une conversation, ou en maintenant une ligne appuyée.";
+"A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row." = "Un balayage court agit tout de suite ; balayer plus loin déclenche la seconde action. Rappeler plus tard et Déplacer vers sont à un toucher dans une conversation, ou en maintenant une ligne appuyée.";
 
 /* No comment provided by engineer. */
 "A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "Un petit relais signale à Corres que quelque chose a changé dans votre boîte. Il ne voit jamais d’objet, d’expéditeur ni de message.";
-
-/* No comment provided by engineer. */
-"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "Les e-mails d’un VIP arrivent toujours dans Pour vous et vous notifient toujours, même si vous êtes seulement en copie. Ajoutez quelqu’un depuis le menu ⋯ de son e-mail, ou en le maintenant appuyé dans une liste. Balayez pour retirer.";
 
 /* No comment provided by engineer. */
 "Aa" = "Aa";
@@ -758,9 +752,6 @@
 "Corres learns your greeting, sign-off and length once you've sent a few more emails." = "Corres apprend votre formule d’appel, votre formule de politesse et votre longueur après quelques e-mails envoyés de plus.";
 
 /* No comment provided by engineer. */
-"Corres never sees your account password" = "Corres ne voit jamais le mot de passe de votre compte";
-
-/* No comment provided by engineer. */
 "Corres never tells anyone you opened their email. Waiting is tracked from the conversation itself." = "Corres ne dit jamais à personne que vous avez ouvert son e-mail. En attente se déduit de la conversation elle-même.";
 
 /* No comment provided by engineer. */
@@ -1097,9 +1088,6 @@
 "Free" = "Gratuit";
 
 /* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratuit pendant %@, puis %@ par %@. Résiliez dans Réglages avant la fin de l’essai et vous ne serez pas facturé.";
-
-/* No comment provided by engineer. */
 "Free trial · first charge %@" = "Essai gratuit · premier prélèvement le %@";
 
 /* No comment provided by engineer. */
@@ -1146,9 +1134,6 @@
 
 /* No comment provided by engineer. */
 "Gmail and Outlook" = "Gmail et Outlook";
-
-/* No comment provided by engineer. */
-"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "Gmail et Outlook se connectent sur les pages de Google et de Microsoft, et Corres reçoit une autorisation que vous pouvez retirer à tout moment. iCloud utilise un mot de passe pour app que vous pouvez désactiver sur account.apple.com. Les deux restent dans le trousseau de votre %@.";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail et presque toutes les autres messageries. Vos e-mails sont triés et lus sur votre %@.";
@@ -1439,9 +1424,6 @@
 "Mark as Unread" = "Marquer comme non lu";
 
 /* No comment provided by engineer. */
-"Mark Read/Unread" = "Marquer lu/non lu";
-
-/* No comment provided by engineer. */
 "Mark Unread" = "Marquer comme non lu";
 
 /* No comment provided by engineer. */
@@ -1484,9 +1466,6 @@
 "Messages" = "Messages";
 
 /* No comment provided by engineer. */
-"month" = "mois";
-
-/* No comment provided by engineer. */
 "Monthly" = "Mensuel";
 
 /* No comment provided by engineer. */
@@ -1527,9 +1506,6 @@
 
 /* No comment provided by engineer. */
 "Move this conversation to Trash?" = "Mettre cette conversation à la corbeille ?";
-
-/* No comment provided by engineer. */
-"Move to" = "Déplacer vers";
 
 /* No comment provided by engineer. */
 "Move To" = "Déplacer vers";
@@ -2567,9 +2543,6 @@
 "Sort By" = "Trier par";
 
 /* No comment provided by engineer. */
-"Sort Into" = "Classer dans";
-
-/* No comment provided by engineer. */
 "Sorting" = "Tri";
 
 /* No comment provided by engineer. */
@@ -2775,9 +2748,6 @@
 
 /* No comment provided by engineer. */
 "To" = "À";
-
-/* No comment provided by engineer. */
-"To " = "À ";
 
 /* No comment provided by engineer. */
 "To “%@”" = "À « %@ »";
@@ -3066,9 +3036,6 @@
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "Écrivez le message que %@ doit envoyer.";
-
-/* No comment provided by engineer. */
-"year" = "an";
 
 /* No comment provided by engineer. */
 "Yesterday" = "Hier";
@@ -3828,3 +3795,29 @@
 "Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "Touchez-en une pour l’ajouter à la rangée du haut ou au menu. Une action qui ne s’applique pas à un e-mail, comme Se désabonner quand il ne vient pas d’une liste de diffusion, n’apparaît pas dans son menu.";
 "Add to Top Row" = "Ajouter à la rangée du haut";
 "Add to Menu" = "Ajouter au menu";
+
+/* Compose, opened from Send Later to edit: closing it keeps the email scheduled. */
+"Keep it scheduled?" = "Garder l’envoi programmé ?";
+"Keep Scheduled" = "Garder programmé";
+"It still sends at the time you picked, with your changes." = "Il part toujours à l’heure choisie, avec vos modifications.";
+
+/* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
+"Corres never sees your Google or Microsoft password" = "Corres ne voit jamais votre mot de passe Google ou Microsoft";
+"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "Gmail et Outlook se connectent sur les pages de Google et de Microsoft, et Corres reçoit une autorisation que vous pouvez retirer à tout moment. iCloud utilise un mot de passe pour app que vous pouvez désactiver sur account.apple.com, et les autres messageries utilisent le mot de passe que vous saisissez. Les deux restent dans le trousseau de votre %@. Si vous activez les notifications instantanées pour l’un d’eux, une copie scellée de son mot de passe est envoyée à l’outil de surveillance du courrier de Corres, le seul à pouvoir l’ouvrir. Les désactiver supprime cette copie.";
+
+/* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "Les e-mails d’un VIP arrivent toujours dans Pour vous et vous notifient toujours, même si vous êtes seulement en copie. Ajoutez quelqu’un depuis le menu ⋯ de son e-mail. Pour pouvoir le faire depuis une liste aussi, ajoutez VIP dans Réglages > Personnaliser > Maintenir appuyé. Balayez pour retirer.";
+
+/* Whole sentences and words that were shown in English: sender badges, Compose placeholders, attachment names, signature names, invitation overlaps, paywall prices. */
+"Unsubscribed" = "Désabonné";
+"Recipient" = "Destinataire";
+"Optional" = "Facultatif";
+"Photo %lld" = "Photo %lld";
+"Video %lld" = "Vidéo %lld";
+"Scan %lld" = "Scan %lld";
+"Signature %lld" = "Signature %lld";
+"another event" = "un autre événement";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "%@ par an, renouvelé automatiquement. Résiliez à tout moment dans Réglages.";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "%@ par mois, renouvelé automatiquement. Résiliez à tout moment dans Réglages.";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratuit pendant %@, puis %@ par an. Résiliez dans Réglages avant la fin de l’essai et vous ne serez pas facturé.";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratuit pendant %@, puis %@ par mois. Résiliez dans Réglages avant la fin de l’essai et vous ne serez pas facturé.";

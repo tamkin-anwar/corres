@@ -1121,9 +1121,6 @@
 "Move All from %@ to Trash" = "%@의 이메일 모두 휴지통으로 이동";
 
 /* No comment provided by engineer. */
-"Move to" = "이동";
-
-/* No comment provided by engineer. */
 "Move to %@" = "%@(으)로 이동";
 
 /* No comment provided by engineer. */
@@ -2753,8 +2750,6 @@
 
 /* An invitation: Add to Calendar without access. */
 "Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corres가 캘린더에 접근할 수 없습니다. 시스템 설정 > 개인정보 보호 및 보안 > 캘린더에서 허용할 수 있습니다.";
-/* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@/%@, 자동 갱신. 설정에서 언제든지 취소할 수 있습니다.";
 
 /* No comment provided by engineer. */
 "%@ a month or %@ a year." = "월 %@ 또는 연 %@.";
@@ -2797,9 +2792,6 @@
 
 /* No comment provided by engineer. */
 "Family" = "가족";
-
-/* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ 무료, 이후 %@/%@. 체험 기간이 끝나기 전에 설정에서 취소하면 요금이 청구되지 않습니다.";
 
 /* No comment provided by engineer. */
 "Free trial · first charge %@" = "무료 체험 · 첫 결제 %@";
@@ -2910,9 +2902,6 @@
 "Yours for good · bought %@" = "영구 소장 · %@ 구입";
 
 /* No comment provided by engineer. */
-"month" = "월";
-
-/* No comment provided by engineer. */
 "once" = "1회";
 
 /* No comment provided by engineer. */
@@ -2923,9 +2912,6 @@
 
 /* No comment provided by engineer. */
 "soon" = "곧";
-
-/* No comment provided by engineer. */
-"year" = "년";
 
 /* The message list's context menu. */
 "Move To" = "이동";
@@ -2947,3 +2933,10 @@
 
 /* The window's subtitle while a Focus shows one account only. */
 "Focus: %@" = "집중 모드: %@";
+/* Words and whole sentences that were shown in English: the Unsubscribed badge, invitation overlaps, paywall prices. */
+"Unsubscribed" = "구독 취소됨";
+"another event" = "다른 일정";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "연 %@, 자동 갱신. 설정에서 언제든지 취소할 수 있습니다.";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "월 %@, 자동 갱신. 설정에서 언제든지 취소할 수 있습니다.";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ 무료, 이후 연 %@. 체험 기간이 끝나기 전에 설정에서 취소하면 요금이 청구되지 않습니다.";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ 무료, 이후 월 %@. 체험 기간이 끝나기 전에 설정에서 취소하면 요금이 청구되지 않습니다.";

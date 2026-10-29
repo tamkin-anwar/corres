@@ -826,7 +826,7 @@ private struct SignaturesView: View {
             SignatureEditor(signature: signature, accounts: accounts) { edited in
                 var saved = edited
                 // Unnamed: "Signature", then "Signature 2", as Gmail numbers them.
-                if saved.name.isEmpty { saved.name = signatures.isEmpty ? "Signature" : "Signature \(signatures.count + 1)" }
+                if saved.name.isEmpty { saved.name = signatures.isEmpty ? String(localized: "Signature") : String(localized: "Signature \(signatures.count + 1)") }
                 var all = Signatures.all
                 if let index = all.firstIndex(where: { $0.id == saved.id }) { all[index] = saved } else { all.append(saved) }
                 let isFirst = Signatures.all.isEmpty
@@ -1246,7 +1246,6 @@ private struct ReadingBarSettingsView: View {
             }
         }
         .environment(\.editMode, .constant(.active))
-        .id(raw)
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
         .navigationTitle("Email Toolbar")
@@ -1337,7 +1336,6 @@ private struct RowMenuSettingsView: View {
             }
         }
         .environment(\.editMode, .constant(.active))
-        .id(topRaw + "|" + listRaw)
         .scrollContentBackground(.hidden)
         .background(CorresPalette.canvas)
         .navigationTitle("Press and Hold")
@@ -1404,7 +1402,7 @@ private struct SwipeSettingsView: View {
             } header: {
                 Label("Swipe right", systemImage: "arrow.right")
             } footer: {
-                Text("A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row.")
+                Text("A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row.")
             }
         }
         .scrollContentBackground(.hidden)
@@ -1546,8 +1544,11 @@ private struct PrivacyView: View {
                 .onChange(of: companyLogos) { _, on in if !on { BrandLogos.shared.forgetAll() } }
             }
             Section {
-                row("Corres never sees your account password", "key",
-                    "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this \(Device.name)'s Keychain.")
+                // Other email signs in with its real password, and Instant
+                // Notifications sends a sealed copy to the mail watcher
+                // (see the account's Notifications footer): both said.
+                row("Corres never sees your Google or Microsoft password", "key",
+                    "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this \(Device.name)'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy.")
                 row("Your mail is read on this \(Device.name)", Device.name == "iPad" ? "ipad" : "iphone",
                     "Sorting, summaries, suggested replies and rewrites happen on this \(Device.name) with Apple Intelligence. Your mail never goes to our servers or to an AI company.")
                 row("Trackers blocked", "shield.lefthalf.filled",

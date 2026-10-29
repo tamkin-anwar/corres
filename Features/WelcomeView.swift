@@ -4,10 +4,38 @@ struct WelcomeView: View {
     var scrolls = true
     let onExplore: () -> Void
     @AppStorage("corres.appearance") private var appearance = Appearance.system.rawValue
+    @Environment(\.dynamicTypeSize) private var typeSize
+    /// At the accessibility sizes the note under the button scrolls with
+    /// the rest, so the part that stays put is only the button.
+    private var noteScrolls: Bool { typeSize.isAccessibilitySize }
 
     var body: some View {
         Group {
-            if scrolls { ScrollView { content }.scrollBounceBehavior(.basedOnSize) } else { content }
+            if scrolls {
+                // Explore Corres stays on screen at every size, from iPhone
+                // SE to the largest text; what's above it scrolls. When it
+                // all fits, it sits in the middle of the space, as before.
+                GeometryReader { proxy in
+                    ScrollView {
+                        introduction(withNote: noteScrolls)
+                            .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    // What scrolls under it fades out rather than stopping
+                    // at a hard edge.
+                    actions(withNote: !noteScrolls)
+                        .background {
+                            LinearGradient(stops: [.init(color: CorresPalette.canvas.opacity(0), location: 0),
+                                                   .init(color: CorresPalette.canvas, location: 0.25)],
+                                           startPoint: .top, endPoint: .bottom)
+                                .ignoresSafeArea()
+                        }
+                }
+            } else {
+                content
+            }
         }
         .foregroundStyle(CorresPalette.ink)
         .background {
@@ -24,7 +52,16 @@ struct WelcomeView: View {
         .preferredColorScheme(Appearance(rawValue: appearance)?.colorScheme)
     }
 
+    /// All of it in one column, for the design render.
     var content: some View {
+        VStack(spacing: 0) {
+            introduction(withNote: false)
+            actions(withNote: true)
+        }
+        .frame(maxWidth: .infinity, minHeight: 700)
+    }
+
+    private func introduction(withNote: Bool) -> some View {
         VStack(spacing: 0) {
             Spacer(minLength: 72)
             CorrespondenceMark(glow: true)
@@ -47,18 +84,30 @@ struct WelcomeView: View {
                       "Sorting, summaries and drafts run on this \(Device.name). Your mail never goes to our servers or to an AI company.")
             }
             .padding(.top, 44)
+            if withNote { note.padding(.top, 32) }
             Spacer(minLength: 40)
-            VStack(spacing: 14) {
-                Button("Explore Corres", action: onExplore).buttonStyle(CorresButtonStyle())
-                Text("Start with sample mail. Connect Gmail, Outlook, iCloud or another email account anytime from Settings.")
-                    .font(.footnote).foregroundStyle(CorresPalette.tertiary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.bottom, 24)
         }
         .padding(.horizontal, 28)
         .frame(maxWidth: 480)
-        .frame(maxWidth: .infinity, minHeight: 700)
+    }
+
+    private func actions(withNote: Bool) -> some View {
+        VStack(spacing: 14) {
+            Button("Explore Corres", action: onExplore).buttonStyle(CorresButtonStyle())
+            if withNote { note }
+        }
+        .padding(.horizontal, 28)
+        .frame(maxWidth: 480)
+        .padding(.top, 28)
+        .padding(.bottom, 24)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var note: some View {
+        Text("Start with sample mail. Connect Gmail, Outlook, iCloud or another email account anytime from Settings.")
+            .font(.footnote).foregroundStyle(CorresPalette.tertiary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func point(_ icon: String, _ title: LocalizedStringKey, _ detail: LocalizedStringKey) -> some View {

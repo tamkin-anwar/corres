@@ -29,9 +29,6 @@
 "%@ · not in All Inboxes" = "%@ · 「すべての受信ボックス」に非表示";
 
 /* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@／%@、自動更新。「設定」でいつでもキャンセルできます。";
-
-/* No comment provided by engineer. */
 "%@ account" = "%@アカウント";
 
 /* No comment provided by engineer. */
@@ -212,13 +209,10 @@
 "A one-sentence brief of your day, and what needs you first." = "1日の概要をひと言で。最初に対応すべきことも。";
 
 /* No comment provided by engineer. */
-"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "短くスワイプするとすぐに実行され、さらにスワイプすると2つ目の操作になります。スヌーズと移動は、会話の中でワンタップ、または行を長押しして使えます。";
+"A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row." = "短くスワイプするとすぐに実行され、さらにスワイプすると2つ目の操作になります。スヌーズと移動は、会話の中でワンタップ、または行を長押しして使えます。";
 
 /* No comment provided by engineer. */
 "A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "小さな中継サーバが、メールボックスに変化があったことをCorresに知らせます。件名、差出人、本文を見ることはありません。";
-
-/* No comment provided by engineer. */
-"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "VIPからのメールは、CCで受け取っただけでも必ず「要対応」に入り、必ず通知されます。メールの⋯メニューから、またはリストで長押しして追加できます。スワイプで削除します。";
 
 /* No comment provided by engineer. */
 "Aa" = "Aa";
@@ -758,9 +752,6 @@
 "Corres learns your greeting, sign-off and length once you've sent a few more emails." = "あと数通メールを送ると、Corresはあなたの挨拶、結び、長さを覚えます。";
 
 /* No comment provided by engineer. */
-"Corres never sees your account password" = "Corresがアカウントのパスワードを見ることはありません";
-
-/* No comment provided by engineer. */
 "Corres never tells anyone you opened their email. Waiting is tracked from the conversation itself." = "Corresは、あなたがメールを開いたことを誰にも知らせません。返信待ちは会話そのものから判断します。";
 
 /* No comment provided by engineer. */
@@ -1097,9 +1088,6 @@
 "Free" = "無料";
 
 /* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@無料、その後は%@／%@。トライアル終了前に「設定」でキャンセルすれば料金はかかりません。";
-
-/* No comment provided by engineer. */
 "Free trial · first charge %@" = "無料トライアル · 初回請求 %@";
 
 /* No comment provided by engineer. */
@@ -1146,9 +1134,6 @@
 
 /* No comment provided by engineer. */
 "Gmail and Outlook" = "GmailとOutlook";
-
-/* No comment provided by engineer. */
-"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com. Both stay in this %@'s Keychain." = "GmailとOutlookはGoogleとMicrosoftのページでサインインし、Corresはいつでも取り消せる許可を受け取ります。iCloudはaccount.apple.comでいつでも無効にできるApp用パスワードを使います。どちらもこの%@のキーチェーンに保存されます。";
 
 /* No comment provided by engineer. */
 "Gmail, Outlook, iCloud Mail, Yahoo, AOL, Fastmail and almost any other email. Your mail is sorted and read on this %@." = "Gmail、Outlook、iCloudメール、Yahoo、AOL、Fastmailなど、ほとんどのメールに対応。メールはこの%@上で振り分けられ、読まれます。";
@@ -1439,9 +1424,6 @@
 "Mark as Unread" = "未開封にする";
 
 /* No comment provided by engineer. */
-"Mark Read/Unread" = "開封済み／未開封";
-
-/* No comment provided by engineer. */
 "Mark Unread" = "未開封にする";
 
 /* No comment provided by engineer. */
@@ -1484,9 +1466,6 @@
 "Messages" = "メッセージ";
 
 /* No comment provided by engineer. */
-"month" = "月";
-
-/* No comment provided by engineer. */
 "Monthly" = "月間";
 
 /* No comment provided by engineer. */
@@ -1527,9 +1506,6 @@
 
 /* No comment provided by engineer. */
 "Move this conversation to Trash?" = "この会話をゴミ箱に入れますか？";
-
-/* No comment provided by engineer. */
-"Move to" = "移動";
 
 /* No comment provided by engineer. */
 "Move To" = "移動";
@@ -2567,9 +2543,6 @@
 "Sort By" = "並べ替え";
 
 /* No comment provided by engineer. */
-"Sort Into" = "振り分け先";
-
-/* No comment provided by engineer. */
 "Sorting" = "振り分け";
 
 /* No comment provided by engineer. */
@@ -2775,9 +2748,6 @@
 
 /* No comment provided by engineer. */
 "To" = "宛先";
-
-/* No comment provided by engineer. */
-"To " = "宛先：";
 
 /* No comment provided by engineer. */
 "To “%@”" = "宛先「%@」";
@@ -3066,9 +3036,6 @@
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "%@が送るメッセージを入力してください。";
-
-/* No comment provided by engineer. */
-"year" = "年";
 
 /* No comment provided by engineer. */
 "Yesterday" = "昨日";
@@ -3828,3 +3795,29 @@
 "Tap one to add it to the top row or the menu. An action that doesn't apply to an email, like Unsubscribe when it isn't from a mailing list, is left out of its menu." = "タップすると上段かメニューに追加できます。メールに当てはまらないアクション（メーリングリスト以外のメールでの配信停止など）は、そのメールのメニューには表示されません。";
 "Add to Top Row" = "上段に追加";
 "Add to Menu" = "メニューに追加";
+
+/* Compose, opened from Send Later to edit: closing it keeps the email scheduled. */
+"Keep it scheduled?" = "予約したままにしますか？";
+"Keep Scheduled" = "予約したままにする";
+"It still sends at the time you picked, with your changes." = "変更を加えたうえで、選んだ時刻に送信されます。";
+
+/* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
+"Corres never sees your Google or Microsoft password" = "CorresがGoogleやMicrosoftのパスワードを見ることはありません";
+"Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "GmailとOutlookはGoogleとMicrosoftのページでサインインし、Corresはいつでも取り消せる許可を受け取ります。iCloudはaccount.apple.comでいつでも無効にできるApp用パスワードを使い、そのほかのメールは入力したパスワードを使います。どちらもこの%@のキーチェーンに保存されます。どちらかで即時通知をオンにすると、そのパスワードの封をしたコピーがCorresのメール監視機能に送られ、開けるのはその機能だけです。オフにするとコピーは削除されます。";
+
+/* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "VIPからのメールは、CCで受け取っただけでも必ず「要対応」に入り、必ず通知されます。メールの⋯メニューから追加できます。リストからも追加するには、「設定」>「カスタマイズ」>「長押し」でVIPを加えてください。スワイプで削除します。";
+
+/* Whole sentences and words that were shown in English: sender badges, Compose placeholders, attachment names, signature names, invitation overlaps, paywall prices. */
+"Unsubscribed" = "配信停止済み";
+"Recipient" = "宛先";
+"Optional" = "省略可";
+"Photo %lld" = "写真 %lld";
+"Video %lld" = "ビデオ %lld";
+"Scan %lld" = "スキャン %lld";
+"Signature %lld" = "署名 %lld";
+"another event" = "ほかの予定";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "%@／年、自動更新。「設定」でいつでもキャンセルできます。";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "%@／月、自動更新。「設定」でいつでもキャンセルできます。";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@無料、その後は%@／年。トライアル終了前に「設定」でキャンセルすれば料金はかかりません。";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@無料、その後は%@／月。トライアル終了前に「設定」でキャンセルすれば料金はかかりません。";

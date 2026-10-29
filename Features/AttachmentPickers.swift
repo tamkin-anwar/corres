@@ -99,13 +99,13 @@ enum AttachmentFiles {
         if let type, type.conforms(to: .image) {
             if type.conforms(to: .heic) || type.conforms(to: .heif) || type == UTType("public.heic"),
                let jpeg = UIImage(data: data)?.jpegData(compressionQuality: 0.85) {
-                return ("Photo \(number).jpg", "image/jpeg", jpeg)
+                return (name(.photo, number, "jpg"), "image/jpeg", jpeg)
             }
             let ext = type.preferredFilenameExtension ?? "jpg"
-            return ("Photo \(number).\(ext)", type.preferredMIMEType ?? "image/jpeg", data)
+            return (name(.photo, number, ext), type.preferredMIMEType ?? "image/jpeg", data)
         }
         let ext = type?.preferredFilenameExtension ?? "mov"
-        return ("Video \(number).\(ext)", type?.preferredMIMEType ?? "video/quicktime", data)
+        return (name(.video, number, ext), type?.preferredMIMEType ?? "video/quicktime", data)
     }
 
     /// A photo made smaller to fit under Gmail's 25 MB limit, the way Mail
@@ -124,9 +124,21 @@ enum AttachmentFiles {
         return resized.jpegData(compressionQuality: 0.8)
     }
 
+    enum Kind { case photo, video, scan }
+
+    /// "Photo 3.jpg", in the person's language ("写真 3.jpg").
+    static func name(_ kind: Kind, _ number: Int, _ ext: String) -> String {
+        let base = switch kind {
+        case .photo: String(localized: "Photo \(number)")
+        case .video: String(localized: "Video \(number)")
+        case .scan: String(localized: "Scan \(number)")
+        }
+        return "\(base).\(ext)"
+    }
+
     static func fromCamera(_ image: UIImage, number: Int) -> (filename: String, mimeType: String, data: Data)? {
         guard let jpeg = image.jpegData(compressionQuality: 0.85) else { return nil }
-        return ("Photo \(number).jpg", "image/jpeg", jpeg)
+        return (name(.photo, number, "jpg"), "image/jpeg", jpeg)
     }
 
     /// A file from Files, downloaded first if it's in iCloud Drive but not
