@@ -1465,6 +1465,7 @@ struct CorrespondenceList: View {
     }
 
     private func perform(_ action: PrimarySwipeAction, on thread: Correspondence) {
+        let thread = store.thread(thread.id) ?? thread
         switch action {
         case .archive: Task { await threadActions?.archive(thread) }
         case .trash:
@@ -1483,6 +1484,9 @@ struct CorrespondenceList: View {
     }
 
     private func perform(_ action: LeadingSwipeAction, on thread: Correspondence) {
+        // As it is now, not as it was when the row was drawn: read, flagged
+        // or pinned may have changed since (opened, synced, swiped before).
+        let thread = store.thread(thread.id) ?? thread
         switch action {
         case .pin: Task { await threadActions?.togglePinned(thread) }
         case .unread: Task { await threadActions?.toggleUnread(!thread.isUnread, for: [thread]) }

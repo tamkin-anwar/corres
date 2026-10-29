@@ -276,6 +276,13 @@ private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
         recognizer.isEnabled = isEnabled
         context.coordinator.allowsPositive = allowsPositive
         context.coordinator.allowsNegative = allowsNegative
+        // The row's newest callbacks: the actions close over the email as it
+        // was when the row was drawn, and the recognizer otherwise kept the
+        // first set, so a swipe acted on stale state (Mark as Read on mail
+        // already read again, a swipe that "did nothing").
+        context.coordinator.changed = changed
+        context.coordinator.ended = ended
+        context.coordinator.cancelled = cancelled
     }
 
     func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
@@ -285,13 +292,14 @@ private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
         // that first stretch, so fast swipes lost most of their distance.
         let current = recognizer.location(in: recognizer.view).x
         let translation = current - (context.coordinator.touchDownX ?? current)
+        let coordinator = context.coordinator
         switch recognizer.state {
         case .began, .changed:
-            changed(translation)
+            (coordinator.changed ?? changed)(translation)
         case .ended:
-            ended(translation, recognizer.velocity(in: recognizer.view).x)
+            (coordinator.ended ?? ended)(translation, recognizer.velocity(in: recognizer.view).x)
         case .cancelled, .failed:
-            cancelled()
+            (coordinator.cancelled ?? cancelled)()
         default:
             break
         }
@@ -301,6 +309,9 @@ private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
         var allowsPositive: Bool
         var allowsNegative: Bool
         var touchDownX: CGFloat?
+        var changed: ((CGFloat) -> Void)?
+        var ended: ((CGFloat, CGFloat) -> Void)?
+        var cancelled: (() -> Void)?
 
         init(allowsPositive: Bool, allowsNegative: Bool) {
             self.allowsPositive = allowsPositive
