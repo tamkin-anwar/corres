@@ -452,6 +452,7 @@
 		1CEC0389A1F0C87181FB6AF9 /* Core/RowMenuLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A607C0DDAF491A2E8473C1B6 /* Core/RowMenuLayout.swift */; };
 		FB553ADF0ACE0B798E0E286C /* Core/RowMenuLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A607C0DDAF491A2E8473C1B6 /* Core/RowMenuLayout.swift */; };
 		CDC52C0DBAE6437B251EF278 /* Features/RowMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C407FEC6F98CD4581AC569 /* Features/RowMenu.swift */; };
+		BEC1B7456094B53CB22C0444 /* App/NetworkWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8C0DEAB9F78E0A6CF069794 /* App/NetworkWatch.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1848,6 +1849,7 @@
 				D76C8AC48468A2E3844A0AA6 /* Core/MailAuthentication.swift in Sources */,
 				1CEC0389A1F0C87181FB6AF9 /* Core/RowMenuLayout.swift in Sources */,
 				CDC52C0DBAE6437B251EF278 /* Features/RowMenu.swift in Sources */,
+				BEC1B7456094B53CB22C0444 /* App/NetworkWatch.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

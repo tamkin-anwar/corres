@@ -16,6 +16,7 @@ struct ConversationRoute: Hashable {
 
 struct ConversationView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorSchemeForPage
     let store: MailStore
     let outbox: OutboxService
@@ -78,6 +79,7 @@ struct ConversationView: View {
     var body: some View {
         Group {
             if let thread = store.thread(currentID) {
+                ScrollViewReader { reader in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         Text(thread.subject)
@@ -94,7 +96,7 @@ struct ConversationView: View {
                         inShortCard(for: thread)
                             .padding(.horizontal, CorresSpace.page)
                         if let earlier = earlierMessages(in: thread), !earlier.isEmpty {
-                            EarlierMessages(messages: earlier, account: thread.id.account)
+                            EarlierMessages(messages: earlier, account: thread.id.account) { compose($0, from: $1) }
                                 .padding(.horizontal, CorresSpace.page)
                                 .transition(.opacity)
                         }
@@ -125,6 +127,11 @@ struct ConversationView: View {
                         if !knownLabels.isEmpty {
                             labelChips(knownLabels).padding(.horizontal, CorresSpace.page)
                         }
+                        // Above the email, so it's read first: below a
+                        // short preview it looked like the whole email.
+                        if !thread.isBodyLoaded, !store.needsStoredContent(thread.id) {
+                            loadingLine(for: thread).padding(.horizontal, CorresSpace.page)
+                        }
                         if store.needsStoredContent(thread.id) {
                             // The HTML is a moment away in storage: hold
                             // its place rather than flash the plain text.
@@ -149,34 +156,14 @@ struct ConversationView: View {
                                             blockRemoteImages: false)
                                 .frame(height: htmlHeight)
                         }
-                        if !thread.isBodyLoaded {
-                            if threadActions.contentFailures.contains(thread.id) {
-                                // Said, with a way to try again, rather
-                                // than loading forever.
-                                HStack(spacing: 8) {
-                                    Image(systemName: "exclamationmark.circle").foregroundStyle(CorresPalette.secondary)
-                                    Text("Couldn't load the full message.").font(.footnote).foregroundStyle(CorresPalette.secondary)
-                                    Button("Try Again") { Task { await threadActions.loadContent(for: thread) } }
-                                        .font(.footnote.weight(.semibold))
-                                }
-                                .padding(.horizontal, CorresSpace.page)
-                            } else {
-                                // Synced metadata-first: the preview is showing
-                                // while the full message loads (see `.task` below).
-                                HStack(spacing: 8) {
-                                    ProgressView().controlSize(.small)
-                                    Text("Loading the full email…").font(.footnote).foregroundStyle(CorresPalette.secondary)
-                                }
-                                .padding(.horizontal, CorresSpace.page)
-                            }
-                        }
                         if !thread.attachments.isEmpty, let messageID = thread.latestMessageID {
                             attachmentsList(thread.attachments, messageID: messageID, account: thread.id.account)
                                 .padding(.horizontal, CorresSpace.page)
+                                .id(Self.attachmentsAnchor)
                         }
                         let later = laterMessages(in: thread)
                         if !later.isEmpty {
-                            EarlierMessages(messages: later, account: thread.id.account)
+                            EarlierMessages(messages: later, account: thread.id.account) { compose($0, from: $1) }
                                 .padding(.horizontal, CorresSpace.page)
                                 .transition(.opacity)
                         }
@@ -191,6 +178,12 @@ struct ConversationView: View {
                 // a signature overlapping them).
                 .modifier(HardTopEdge())
                 .safeAreaInset(edge: .bottom) { bottomChrome(for: thread) }
+                .onChange(of: scrollTarget) { _, target in
+                    guard let target else { return }
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { reader.scrollTo(target, anchor: .top) }
+                    scrollTarget = nil
+                }
+                }
                 .background { keyboardCommands(for: thread) }
                 .sensoryFeedback(.selection, trigger: thread.isFlagged)
                 // The reading view owns the whole screen, like Apple Mail's:
@@ -353,6 +346,7 @@ struct ConversationView: View {
         .onChange(of: currentID) {
             htmlHeight = 200
             showRemoteImages = false
+            showingDetails = false
             isUnsubscribing = false
             unsubscribeOpened = false
             calendarEvent = nil
@@ -370,7 +364,16 @@ struct ConversationView: View {
             }
             onShow?(ConversationRoute(id: currentID, orderedIDs: orderedIDs))
         }
-        .onAppear { onShow?(ConversationRoute(id: currentID, orderedIDs: orderedIDs)) }
+        .onAppear {
+            NetworkWatch.shared.start()
+            onShow?(ConversationRoute(id: currentID, orderedIDs: orderedIDs))
+        }
+        // Couldn't load while offline: tried again the moment the
+        // connection is back, rather than waiting for a tap.
+        .onChange(of: NetworkWatch.shared.isOnline) { _, online in
+            guard online, threadActions.contentFailures.contains(currentID), let thread = store.thread(currentID) else { return }
+            Task { await threadActions.loadContent(for: thread) }
+        }
         // Opening a conversation is itself the signal that it's been seen,
         // the same behavior every real mail client already has.
         // Keyed on the latest message too, so a reply landing while the
@@ -503,13 +506,41 @@ struct ConversationView: View {
     @Environment(AppRouter.self) private var router
 
     private var currentIndex: Int? { orderedIDs.firstIndex(of: currentID) }
-    private var hasPrevious: Bool { (currentIndex ?? 0) > 0 }
-    private var hasNext: Bool { let i = currentIndex ?? orderedIDs.count - 1; return i < orderedIDs.count - 1 }
-    private func goToPrevious() { if let i = currentIndex, i > 0 { currentID = orderedIDs[i - 1] } }
-    private func goToNext() { if let i = currentIndex, i < orderedIDs.count - 1 { currentID = orderedIDs[i + 1] } }
+    private var hasPrevious: Bool { neighbour(-1) != nil }
+    private var hasNext: Bool { neighbour(1) != nil }
+    private func goToPrevious() { if let id = neighbour(-1) { currentID = id } }
+    private func goToNext() { if let id = neighbour(1) { currentID = id } }
+
+    /// The nearest conversation still here, up (-1) or down (1) the list it
+    /// was opened from. One archived meanwhile, here or on another device,
+    /// is stepped over: opened, it vanished and bounced straight back, so
+    /// Previous seemed to do nothing after archiving.
+    private func neighbour(_ step: Int) -> ThreadID? {
+        guard let index = currentIndex else { return nil }
+        var next = index + step
+        while orderedIDs.indices.contains(next) {
+            if store.thread(orderedIDs[next]) != nil { return orderedIDs[next] }
+            next += step
+        }
+        return nil
+    }
+
+    private func messageHeader(for thread: Correspondence) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            senderRow(for: thread)
+            // Under the name, where Mail and Gmail say who else it went to:
+            // the header used to name only the sender.
+            Group {
+                if let summary = recipientSummary(for: thread) { recipientsRow(summary) }
+                if showingDetails { MessageDetailsView(thread: thread, names: recipientName, write: write(to:)) }
+                if !thread.attachments.isEmpty { attachmentsLink(thread.attachments) }
+            }
+            .padding(.leading, 56)
+        }
+    }
 
     @ViewBuilder
-    private func messageHeader(for thread: Correspondence) -> some View {
+    private func senderRow(for thread: Correspondence) -> some View {
         if !thread.isFromAccountOwner, let email = thread.senderEmail {
             // Who they are in your mail: conversations, files, VIP, block.
             Button {
@@ -522,6 +553,86 @@ struct ConversationView: View {
         } else {
             headerContent(for: thread)
         }
+    }
+
+    /// "To you, Amazon": one tap opens every address, Reply-To and the
+    /// full date, as Mail's Details does.
+    private func recipientsRow(_ summary: String) -> some View {
+        Button {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { showingDetails.toggle() }
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(summary)
+                    .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Image(systemName: showingDetails ? "chevron.up" : "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(CorresPalette.tertiary)
+            }
+            .font(.subheadline)
+            .foregroundStyle(CorresPalette.secondary)
+            .frame(minHeight: 28, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(summary)
+        .accessibilityHint(showingDetails ? "Hides the details" : "Shows every address and the full date")
+    }
+
+    /// The attachments, named under the sender so they're seen before the
+    /// email is read; a tap scrolls down to them.
+    private func attachmentsLink(_ attachments: [MailAttachment]) -> some View {
+        Button {
+            scrollTarget = Self.attachmentsAnchor
+        } label: {
+            Label {
+                Text(attachments.count == 1 ? attachments[0].filename : String(localized: "\(attachments.count) attachments"))
+                    .lineLimit(1).truncationMode(.middle)
+            } icon: {
+                Image(systemName: "paperclip")
+            }
+            .labelStyle(TightLabelStyle())
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(CorresPalette.accent)
+            .frame(minHeight: 28, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(attachments.count == 1 ? String(localized: "Attachment: \(attachments[0].filename)")
+                                                   : String(localized: "\(attachments.count) attachments"))
+        .accessibilityHint("Scrolls to the attachments")
+    }
+
+    /// "To you, Amazon · Cc Sam Lee", the way Gmail's "to me" reads. Nil
+    /// when there's nothing to say (sample mail, which names nobody).
+    private func recipientSummary(for thread: Correspondence) -> String? {
+        func names(_ entries: [String]) -> String {
+            let all = entries.map { recipientName($0, in: thread).name }
+            return all.count > 3 ? all.prefix(2).joined(separator: ", ") + " +\(all.count - 2)" : all.joined(separator: ", ")
+        }
+        var parts: [String] = []
+        if !thread.toRecipients.isEmpty { parts.append(String(localized: "To \(names(thread.toRecipients))")) }
+        if !thread.ccRecipients.isEmpty { parts.append(String(localized: "Cc \(names(thread.ccRecipients))")) }
+        // Bcc'd, as Gmail's "bcc: me" says: otherwise it read as if the
+        // email went to the others and not to you.
+        if thread.reachedYouHidden, thread.id.account != "sample" { parts.append(String(localized: "Bcc you")) }
+        if parts.isEmpty { return thread.senderEmail == nil ? nil : String(localized: "Details") }
+        return parts.joined(separator: " \u{00B7} ")
+    }
+
+    /// A recipient as a name ("you" for any address of yours) and their
+    /// address. Gmail keeps To and Cc as bare addresses, so a name you
+    /// know them by is used, then one read from the address.
+    private func recipientName(_ entry: String, in thread: Correspondence) -> (name: String, email: String) {
+        let parsed = PeopleIndex.parse(entry)
+        let email = parsed?.email ?? Correspondence.bareAddress(entry)
+        if thread.ownAddresses.contains(email) { return (String(localized: "you", comment: "Among an email's recipients"), email) }
+        if let name = parsed?.name, !name.isEmpty { return (Person.readable(name), email) }
+        return (people?.name(for: email) ?? Person.name(forAddress: email), email)
+    }
+
+    private func write(to address: String) {
+        composeDraft = Draft(kind: .new, to: address, subject: "", body: "")
     }
 
     private func headerContent(for thread: Correspondence) -> some View {
@@ -543,18 +654,41 @@ struct ConversationView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// Their address and when it came. Who it went to is the line below.
     private func recipientLine(for thread: Correspondence) -> String {
-        let when = thread.receivedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
-        // Something you sent: who it went to. Never "To you".
-        if thread.isFromAccountOwner {
-            let names = thread.recipientNames
-            let list = names.count > 2 ? names.prefix(2).joined(separator: ", ") + " +\(names.count - 2)" : names.joined(separator: ", ")
-            // One sentence, so a language can put "To" after the names.
-            let to = names.isEmpty ? String(localized: "Sent") : String(localized: "To \(list)")
-            return "\(to) · \(when)"
+        let when = MessageDetailsView.headerDate(thread.receivedAt)
+        return thread.senderEmail.map { "\($0) · \(when)" } ?? when
+    }
+
+    /// The email isn't all here yet: says so above the preview showing in
+    /// its place, and when it couldn't load, why and a way to try again.
+    @ViewBuilder
+    private func loadingLine(for thread: Correspondence) -> some View {
+        if threadActions.contentFailures.contains(thread.id) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Image(systemName: NetworkWatch.shared.isOnline ? "exclamationmark.circle" : "wifi.slash")
+                Text(NetworkWatch.shared.isOnline ? "Couldn't load the full email. This is only its preview."
+                                                  : "You're offline. This is only the email's preview.")
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                Button("Try Again") { Task { await threadActions.loadContent(for: thread) } }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(CorresPalette.accent)
+                    .fixedSize()
+            }
+            .font(.footnote)
+            .foregroundStyle(CorresPalette.secondary)
+            .padding(12)
+            .corresCardFill(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        } else {
+            // Synced metadata-first: the preview is showing while the full
+            // message loads (see `.task` below).
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Loading the full email…").font(.footnote).foregroundStyle(CorresPalette.secondary)
+            }
+            .accessibilityElement(children: .combine)
         }
-        let to = (thread.toRecipients.isEmpty || thread.isDirectRecipient) ? String(localized: "To you") : String(localized: "Cc you")
-        return thread.senderEmail.map { "\($0) · \(when)" } ?? "\(to) · \(when)"
     }
 
     /// Opened from Trash or Spam (Mailboxes): says so, with the way back.
@@ -947,6 +1081,9 @@ struct ConversationView: View {
 
     private func attachmentsList(_ attachments: [MailAttachment], messageID: String, account: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
+            Text(attachments.count == 1 ? String(localized: "1 attachment") : String(localized: "\(attachments.count) attachments"))
+                .eyebrow(CorresPalette.secondary)
+                .accessibilityAddTraits(.isHeader)
             ForEach(attachments) { attachment in
                 AttachmentRow(attachment: attachment, messageID: messageID, account: account)
             }
@@ -975,7 +1112,9 @@ struct ConversationView: View {
             Task {
                 defer { preparingForward = false }
                 if !thread.isBodyLoaded { await threadActions.loadContent(for: thread) }
-                let source = store.thread(thread.id) ?? thread
+                // The stored copy only when it's this message: forwarding
+                // an earlier one sent the latest instead.
+                let source = store.thread(thread.id).flatMap { $0.latestMessageID == thread.latestMessageID ? $0 : nil } ?? thread
                 let (files, missing) = await source.attachmentsToForward()
                 if missing.isEmpty {
                     open(source, attachments: files)
@@ -1327,6 +1466,13 @@ struct ConversationView: View {
 
     @State private var confirmingBlock: Correspondence?
     @State private var personCard: PersonRef?
+    /// The header's details (every address, the full date) are open.
+    @State private var showingDetails = false
+    /// Where the page should scroll to next: the attachments, from the
+    /// paperclip under the sender.
+    @State private var scrollTarget: String?
+    static let attachmentsAnchor = "attachments"
+    @Environment(PeopleDirectory.self) private var people: PeopleDirectory?
     /// Write, tapped on the person card: Compose opens once it's closed.
     @State private var writeAfterPerson: String?
     /// Why Suggest Times had nothing to offer.
@@ -1460,7 +1606,7 @@ struct ConversationView: View {
 /// A tap downloads it on demand (never during sync, see
 /// `Correspondence.attachments`) and opens iOS's own QuickLook, as Mail
 /// does, with saving and sharing in its toolbar.
-private struct AttachmentRow: View {
+struct AttachmentRow: View {
     let attachment: MailAttachment
     let messageID: String
     let account: String
@@ -1612,6 +1758,99 @@ private struct AttachmentRow: View {
             previewURL = url
         } catch {
             downloadFailed = true
+        }
+    }
+}
+
+/// Everything the header shortens, as Mail's Details shows it: each
+/// address in full, Reply-To when replies go elsewhere, the whole date,
+/// and whether the sender's mail service vouched for it. Press and hold an
+/// address to copy it or write to it.
+struct MessageDetailsView: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    let thread: Correspondence
+    let names: (String, Correspondence) -> (name: String, email: String)
+    let write: (String) -> Void
+
+    /// "Mon, Oct 19 at 3:00 AM", with the year once it isn't this year's:
+    /// an email from 2023 read as if it came this October.
+    static func headerDate(_ date: Date) -> String {
+        Calendar.current.isDate(date, equalTo: .now, toGranularity: .year)
+            ? date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
+            : date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().year().hour().minute())
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let email = thread.senderEmail {
+                field("From", [thread.isFromAccountOwner ? email : "\(thread.sender) <\(email)>"])
+            }
+            // Only when it differs from the sender: that's when it matters.
+            let replyTo = thread.replyTo.filter { Correspondence.bareAddress($0) != thread.senderEmail?.lowercased() }
+            if !replyTo.isEmpty { field("Reply-To", replyTo) }
+            if !thread.toRecipients.isEmpty { field("To", thread.toRecipients) }
+            if !thread.ccRecipients.isEmpty { field("Cc", thread.ccRecipients) }
+            if thread.reachedYouHidden, thread.id.account != "sample" {
+                Text("You aren't named in To or Cc. It was Bcc'd or forwarded to you.")
+                    .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            labeled("Date") {
+                Text(thread.receivedAt.formatted(.dateTime.weekday(.wide).month(.wide).day().year().hour().minute()))
+                    .textSelection(.enabled)
+            }
+            // A pass only: a fail is common for small senders' honest mail,
+            // and Spam already warns about the rest.
+            if thread.fromDomainVerified == true, let domain = thread.senderEmail?.split(separator: "@").last {
+                Label(String(localized: "Verified as sent from \(String(domain))"), systemImage: "checkmark.seal")
+                    .labelStyle(TightLabelStyle())
+                    .font(.footnote).foregroundStyle(CorresPalette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .font(.subheadline)
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .corresCardFill(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .transition(.opacity)
+    }
+
+    private func field(_ title: LocalizedStringKey, _ entries: [String]) -> some View {
+        labeled(title) {
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(entries, id: \.self) { entry in
+                    let person = names(entry, thread)
+                    let shown = person.name.caseInsensitiveCompare(person.email) == .orderedSame || person.name.isEmpty
+                        ? person.email : "\(person.name) <\(person.email)>"
+                    Text(shown)
+                        .foregroundStyle(CorresPalette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .contextMenu {
+                            Button { UIPasteboard.general.string = person.email } label: {
+                                Label("Copy Address", systemImage: "doc.on.doc")
+                            }
+                            Button { write(person.email) } label: {
+                                Label("New Email", systemImage: "square.and.pencil")
+                            }
+                        }
+                }
+            }
+        }
+    }
+
+    /// The label above at the largest text sizes, beside otherwise.
+    @ViewBuilder
+    private func labeled(_ title: LocalizedStringKey, @ViewBuilder _ value: () -> some View) -> some View {
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).foregroundStyle(CorresPalette.secondary)
+                value()
+            }
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(title).foregroundStyle(CorresPalette.secondary).frame(width: 72, alignment: .leading)
+                value()
+            }
         }
     }
 }
