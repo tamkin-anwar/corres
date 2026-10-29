@@ -89,6 +89,10 @@ struct RowMenu: View {
         case .vip, .block: return fromSomeoneElse
         case .spam: return !thread.isFromAccountOwner
         case .unsubscribe: return unsubscribeService?.canUnsubscribe(thread) == true && !thread.senderUnsubscribed
+        // Only mail in Corres's own lists can be snoozed or pinned (an
+        // archived search result can't), as in the conversation. Asked
+        // here, as the menu opens, not each time a row is drawn.
+        case .snooze, .pin: return store.isInLists(thread.id)
         default: return true
         }
     }
