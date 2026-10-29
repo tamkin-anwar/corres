@@ -177,8 +177,10 @@ struct OutlookClient: Sendable {
         var items: [Correspondence] = []
         for id in ids {
             guard var message = fetched.found[id] else { continue }
-            if let html = message.body?.content, message.body?.contentType?.lowercased() == "html", html.contains("cid:") {
-                message.inlinedHTML = await inlineImages(in: html, messageID: id, account: account)
+            if let html = message.body?.content, message.body?.contentType?.lowercased() == "html",
+               let inlined = await inlineImages(in: html, messageID: id, account: account) {
+                message.inlinedHTML = inlined.html
+                message.inlineAttachmentIDs = inlined.shown
             }
             items.append(map(message, account: account, folders: folders, full: true))
         }
@@ -231,8 +233,9 @@ struct OutlookClient: Sendable {
 
     func fetchAttachmentData(messageId: String, attachmentId: String, account: String) async throws -> Data {
         let attachment: GraphAttachment = try await getJSON("\(Self.base)/me/messages/\(messageId)/attachments/\(attachmentId)", account: account)
-        guard let bytes = attachment.contentBytes, let data = Data(base64Encoded: bytes) else { throw ClientError.decodingFailed }
-        return data
+        if let bytes = attachment.contentBytes, let data = Data(base64Encoded: bytes) { return data }
+        // A forwarded email attached, or a file Graph didn't include.
+        return try await fetchRawAttachment(messageId: messageId, attachmentId: attachmentId, account: account)
     }
 
     #if DEBUG
@@ -733,7 +736,14 @@ struct OutlookClient: Sendable {
             guard let body = message.body?.content else { return message.bodyPreview ?? "" }
             return isHTML ? MailDigest.readableText(body: "", html: body) : body
         }()
-        let attachments = (message.attachments ?? []).filter { $0.isInline != true }.map {
+        // Hidden: the pictures the HTML shows. Without the list of them
+        // (it didn't come), as Graph marks them, but only when the HTML
+        // shows any picture at all.
+        let showsPictures = !(message.body?.content.map(InlineImages.references(in:)) ?? []).isEmpty
+        let attachments = (message.attachments ?? []).filter { attachment in
+            if let shown = message.inlineAttachmentIDs { return !shown.contains(attachment.id) }
+            return attachment.isInline != true || !(isHTML && showsPictures)
+        }.map {
             MailAttachment(id: $0.id, filename: $0.name ?? "Attachment", mimeType: $0.contentType ?? "application/octet-stream", sizeBytes: $0.size ?? 0)
         }
         return GmailAPIClient.build(
@@ -789,16 +799,41 @@ struct OutlookClient: Sendable {
     }
 
     /// Inline images (cid:) as data, so a signature logo or a pasted photo
-    /// shows in the email.
-    private func inlineImages(in html: String, messageID: String, account: String) async -> String {
-        guard let page: GraphPage<GraphAttachment> = try? await getJSON("\(Self.base)/me/messages/\(messageID)/attachments", account: account) else { return html }
-        var result = html
-        for attachment in page.value where attachment.isInline == true {
-            guard let cid = attachment.contentId, let bytes = attachment.contentBytes else { continue }
-            let type = attachment.contentType ?? "image/png"
-            result = result.replacingOccurrences(of: "cid:\(cid)", with: "data:\(type);base64,\(bytes)")
+    /// shows in the email, and which attachments those are, so they aren't
+    /// listed again underneath. Matched by what the HTML refers to, not by
+    /// Graph's `isInline`: Graph marks a picture the HTML shows as not
+    /// inline now and then, and marks every file Mail on an iPhone attaches
+    /// as inline, which hid those files altogether. One too large for
+    /// Graph to send with the list is fetched on its own. Nil when the
+    /// list couldn't be had.
+    private func inlineImages(in html: String, messageID: String, account: String) async -> (html: String, shown: Set<String>)? {
+        let references = InlineImages.references(in: html)
+        guard !references.isEmpty,
+              let page: GraphPage<GraphAttachment> = try? await getJSON("\(Self.base)/me/messages/\(messageID)/attachments", account: account)
+        else { return nil }
+        var images: [InlineImages.Image] = []
+        var shown = Set<String>()
+        for attachment in page.value
+        where InlineImages.isReferenced(contentID: attachment.contentId, filename: attachment.name, in: references) {
+            shown.insert(attachment.id)
+            var bytes = attachment.contentBytes
+            if bytes == nil, (attachment.size ?? 0) <= 6_000_000 {
+                bytes = try? await fetchRawAttachment(messageId: messageID, attachmentId: attachment.id, account: account).base64EncodedString()
+            }
+            guard let bytes else { continue }
+            images.append(InlineImages.Image(contentID: attachment.contentId, filename: attachment.name,
+                                             dataURI: InlineImages.dataURI(base64: bytes, mimeType: attachment.contentType, filename: attachment.name)))
         }
-        return result
+        return (InlineImages.resolving(html, with: images), shown)
+    }
+
+    /// An attachment's bytes as they are (`$value`): what Graph answers
+    /// for one it leaves `contentBytes` off, and the only form a forwarded
+    /// email (an item attachment) comes in.
+    private func fetchRawAttachment(messageId: String, attachmentId: String, account: String) async throws -> Data {
+        let (data, status) = try await get("\(Self.base)/me/messages/\(messageId)/attachments/\(attachmentId)/$value", account: account)
+        try Self.check(status, data)
+        return data
     }
 
     // MARK: HTTP
@@ -1103,6 +1138,8 @@ struct GraphMessage: Decodable, Sendable {
     let removed: Removed?
     /// The body with its inline images filled in, when there were any.
     var inlinedHTML: String?
+    /// The attachments that are those images.
+    var inlineAttachmentIDs: Set<String>?
 
     enum CodingKeys: String, CodingKey {
         case id, conversationId, subject, bodyPreview, body, from, sender, toRecipients, ccRecipients, replyTo, receivedDateTime,

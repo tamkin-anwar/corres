@@ -34,32 +34,126 @@ public enum MIMEParser {
         var result = ParsedMessage()
         let part = Part(raw)
         result.headers = part.headers.map { ($0.0, MIMEWords.decode($0.1)) }
-        walk(part, into: &result, depth: 0)
-        return result
-    }
-
-    private static func walk(_ part: Part, into result: inout ParsedMessage, depth: Int) {
-        guard depth < 20 else { return }
-        // No Content-Type means plain text (RFC 2045 §5.2).
-        let type = part.contentType.isEmpty ? "text/plain" : part.contentType
-        if type.hasPrefix("multipart/"), let boundary = part.parameter("boundary", of: "Content-Type") {
-            for child in part.children(boundary: boundary) { walk(child, into: &result, depth: depth + 1) }
-            return
+        let root = Node(part, depth: 0)
+        var shown = root.shown()
+        // Nothing shown by those rules (a forwarded message on its own, a
+        // body labelled as a file): the first text anywhere, as before.
+        if shown.isEmpty, let first = root.first(where: { $0.type == "text/html" }) ?? root.first(where: { $0.type == "text/plain" }) {
+            shown = [first]
         }
-        let disposition = part.header("Content-Disposition")?.lowercased() ?? ""
-        let filename = part.filename
-        let isAttachment = disposition.hasPrefix("attachment") || (filename != nil && !type.hasPrefix("text/"))
-            || (!type.hasPrefix("text/") && !type.hasPrefix("multipart/"))
-        if !isAttachment, type == "text/plain" || type.isEmpty, result.plainText == nil {
-            result.plainText = part.text
-        } else if !isAttachment, type == "text/html", result.html == nil {
-            result.html = part.text
-        } else if isAttachment || filename != nil {
+        let texts = shown.map { (isHTML: $0.type == "text/html", text: $0.part.text) }
+        if texts.contains(where: \.isHTML) {
+            result.html = joinedHTML(texts)
+            // The plain alternative, for search and summaries.
+            result.plainText = root.first { $0.type == "text/plain" && !$0.isAttachment }?.part.text
+        } else if !texts.isEmpty {
+            result.plainText = texts.map(\.text).joined(separator: "\n\n")
+        }
+        let shownIDs = Set(shown.map { ObjectIdentifier($0) })
+        root.forEachLeaf { node in
+            guard !shownIDs.contains(ObjectIdentifier(node)) else { return }
+            let type = node.type
+            // An alternative not shown (the plain text beside the HTML).
+            if (type == "text/plain" || type == "text/html"), !node.isAttachment { return }
+            let part = node.part
+            let disposition = part.header("Content-Disposition")?.lowercased() ?? ""
             let cid = part.header("Content-ID").map(cleanMessageID)
-            let name = filename ?? (type == "message/rfc822" ? "Message.eml" : "Attachment")
+            // An invitation's own calendar part is unnamed, and usually
+            // beside a named invite.ics: listed only when it's the only one.
+            if part.filename == nil, type == "text/calendar", hasNamedCalendar(root) { return }
+            let name = part.filename ?? (type == "message/rfc822" ? "Message.eml" : type == "text/calendar" ? "invite.ics" : "Attachment")
             result.attachments.append(Attachment(filename: name, mimeType: type.isEmpty ? "application/octet-stream" : type,
                                                  data: part.decodedBody, contentID: cid,
                                                  isInline: disposition.hasPrefix("inline") || (cid != nil && !disposition.hasPrefix("attachment"))))
+        }
+        return result
+    }
+
+    private static func hasNamedCalendar(_ root: Node) -> Bool {
+        var found = false
+        root.forEachLeaf { node in
+            if let name = node.part.filename,
+               node.type == "text/calendar" || node.type == "application/ics" || name.lowercased().hasSuffix(".ics") { found = true }
+        }
+        return found
+    }
+
+    /// The text parts in order as one HTML body: plain text between HTML
+    /// parts is set as text, and each part after the first goes inside the
+    /// first one's body, as Mail shows an email written around a file.
+    static func joinedHTML(_ texts: [(isHTML: Bool, text: String)]) -> String {
+        var result = ""
+        for piece in texts {
+            let html = piece.isHTML ? piece.text
+                : #"<div style="white-space: pre-wrap">"# + piece.text.replacingOccurrences(of: "&", with: "&amp;")
+                    .replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;") + "</div>"
+            if result.isEmpty {
+                result = html
+            } else if let close = result.range(of: "</body>", options: [.caseInsensitive, .backwards]) {
+                result.insert(contentsOf: html, at: close.lowerBound)
+            } else {
+                result += html
+            }
+        }
+        return result
+    }
+
+    /// A part and the parts inside it, read once.
+    final class Node {
+        let part: Part
+        let type: String
+        let children: [Node]
+
+        init(_ part: Part, depth: Int) {
+            self.part = part
+            // No Content-Type means plain text (RFC 2045 §5.2).
+            type = part.contentType.isEmpty ? "text/plain" : part.contentType
+            if depth < 20, type.hasPrefix("multipart/"), let boundary = part.parameter("boundary", of: "Content-Type") {
+                children = part.children(boundary: boundary).map { Node($0, depth: depth + 1) }
+            } else {
+                children = []
+            }
+        }
+
+        /// Sent as a file to save, not as part of the text.
+        var isAttachment: Bool {
+            (part.header("Content-Disposition")?.lowercased() ?? "").hasPrefix("attachment") || part.filename != nil
+        }
+
+        /// The text parts shown, as Mail and Thunderbird choose them (RFC
+        /// 2046): of alternatives, the last that can be shown, HTML before
+        /// plain text; of a multipart/related, its first part; of a
+        /// multipart/mixed, every part in turn. Only the first text part
+        /// used to count, so the rest of an email written around a file,
+        /// or a mailing list's footer, was left out.
+        func shown() -> [Node] {
+            if type.hasPrefix("multipart/") {
+                let options = children.map { $0.shown() }
+                switch type {
+                case "multipart/alternative":
+                    let usable = options.filter { !$0.isEmpty }
+                    return usable.last { $0.contains { $0.type == "text/html" } } ?? usable.last ?? []
+                case "multipart/related":
+                    return options.first { !$0.isEmpty } ?? []
+                default:
+                    return options.flatMap { $0 }
+                }
+            }
+            guard !isAttachment, type == "text/html" || type == "text/plain" else { return [] }
+            return [self]
+        }
+
+        func first(where matches: (Node) -> Bool) -> Node? {
+            if children.isEmpty { return matches(self) && !(part.header("Content-Disposition")?.lowercased() ?? "").hasPrefix("attachment") ? self : nil }
+            for child in children {
+                if let found = child.first(where: matches) { return found }
+            }
+            return nil
+        }
+
+        func forEachLeaf(_ body: (Node) -> Void) {
+            if children.isEmpty && !type.hasPrefix("multipart/") { body(self); return }
+            children.forEach { $0.forEachLeaf(body) }
         }
     }
 
@@ -141,9 +235,12 @@ public enum MIMEParser {
             }
         }
 
+        /// HTML that doesn't name its charset in its header names it in its
+        /// own `<meta>` tag, read as a browser reads it.
         var text: String {
             let data = decodedBody
-            let charset = parameter("charset", of: "Content-Type") ?? "utf-8"
+            let charset = parameter("charset", of: "Content-Type")
+                ?? (contentType == "text/html" ? Self.metaCharset(in: data) : nil) ?? "utf-8"
             if let encoding = Charset.encoding(named: charset), let s = String(data: data, encoding: encoding) {
                 return s
             }
@@ -183,6 +280,17 @@ public enum MIMEParser {
                 i += 1
             }
             return parts
+        }
+
+        private static let metaCharsetPattern = try? NSRegularExpression(
+            pattern: #"<meta[^>]{0,200}?charset\s*=\s*["']?\s*([A-Za-z0-9_\-:.]+)"#, options: .caseInsensitive)
+
+        static func metaCharset(in data: Data) -> String? {
+            let head = String(decoding: data.prefix(4096), as: UTF8.self)
+            guard let regex = metaCharsetPattern,
+                  let match = regex.firstMatch(in: head, range: NSRange(head.startIndex..., in: head)),
+                  let range = Range(match.range(at: 1), in: head) else { return nil }
+            return String(head[range])
         }
 
         static func splitParameters(_ value: String) -> [String] {
@@ -230,8 +338,12 @@ public enum MIMEParser {
             while i < bytes.count {
                 let b = bytes[i]
                 if b == UInt8(ascii: "=") {
-                    if i + 1 < bytes.count, bytes[i + 1] == 10 { i += 2; continue }            // soft break LF
-                    if i + 2 < bytes.count, bytes[i + 1] == 13, bytes[i + 2] == 10 { i += 3; continue } // soft break CRLF
+                    // Spaces a server added after the "=" of a soft break
+                    // don't stop it being one (RFC 2045 6.7).
+                    var end = i + 1
+                    while end < bytes.count, bytes[end] == 32 || bytes[end] == 9 { end += 1 }
+                    if end < bytes.count, bytes[end] == 10 { i = end + 1; continue }            // soft break LF
+                    if end + 1 < bytes.count, bytes[end] == 13, bytes[end + 1] == 10 { i = end + 2; continue } // soft break CRLF
                     if i + 2 < bytes.count, let h = hex(bytes[i + 1]), let l = hex(bytes[i + 2]) {
                         out.append(h << 4 | l); i += 3; continue
                     }

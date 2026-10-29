@@ -837,15 +837,22 @@ struct IMAPMailClient: Sendable {
         let senderEmail = m.from?.email ?? ""
         let sender = m.from?.name ?? senderEmail
         let (mailto, url) = GmailAPIClient.parseListUnsubscribe(m.listUnsubscribe ?? "")
-        var html = body?.html
-        if let h = html, let attachments = body?.attachments {
-            for a in attachments where a.contentID != nil {
-                html = (html ?? h).replacingOccurrences(of: "cid:\(a.contentID!)", with: "data:\(a.mimeType);base64,\(a.data.base64EncodedString())")
-            }
+        // The pictures the HTML shows in place, as data; only those are kept
+        // out of the attachments. Mail on an iPhone marks every file it
+        // attaches as inline, so going by that hid real attachments.
+        let references = body?.html.map(InlineImages.references(in:)) ?? []
+        func isShown(_ a: Postwright.Attachment) -> Bool {
+            InlineImages.isReferenced(contentID: a.contentID, filename: a.filename, in: references)
+        }
+        let html = body?.html.map { html in
+            InlineImages.resolving(html, with: (body?.attachments ?? []).filter(isShown).map {
+                InlineImages.Image(contentID: $0.contentID, filename: $0.filename,
+                                   dataURI: InlineImages.dataURI(base64: $0.data.base64EncodedString(), mimeType: $0.mimeType, filename: $0.filename))
+            })
         }
         let plain = body.map { $0.plainText ?? MailDigest.readableText(body: "", html: $0.html ?? "") } ?? ""
         let excerpt = String(plain.replacingPattern(#"\s+"#, with: " ").prefix(160))
-        let attachments = (body?.attachments ?? []).enumerated().filter { !$0.element.isInline }.map {
+        let attachments = (body?.attachments ?? []).enumerated().filter { !isShown($0.element) }.map {
             MailAttachment(id: String($0.offset), filename: $0.element.filename, mimeType: $0.element.mimeType, sizeBytes: $0.element.size)
         }
         return GmailAPIClient.build(
