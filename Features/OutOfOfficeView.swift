@@ -113,9 +113,21 @@ struct OutOfOfficeView: View {
         guard !account.isEmpty else { return }
         state = .loading
         message = nil
-        guard await auth.canManageSettings(account) else { state = .needsPermission; return }
+        // Another account's dates never carry over: each starts from the
+        // defaults and takes only what its own service says.
+        vacation = GmailAPIClient.Vacation(enableAutoReply: false)
+        start = .now
+        hasEnd = true
+        end = Calendar.current.date(byAdding: .day, value: 7, to: .now) ?? .now
+        let requested = account
+        guard await auth.canManageSettings(requested) else {
+            if account == requested { state = .needsPermission }
+            return
+        }
         do {
-            var loaded = try await client.vacation(account: account)
+            var loaded = try await client.vacation(account: requested)
+            // Switched to another account meanwhile: its own load shows it.
+            guard account == requested else { return }
             // Written on Gmail's website: shown as its words.
             if (loaded.responseBodyPlainText ?? "").isEmpty, let html = loaded.responseBodyHtml,
                let text = try? NSAttributedString(data: Data(html.utf8),
@@ -132,7 +144,7 @@ struct OutOfOfficeView: View {
             else if loaded.enableAutoReply { hasEnd = false }
             state = .ready
         } catch {
-            state = .failed
+            if account == requested { state = .failed }
         }
     }
 
