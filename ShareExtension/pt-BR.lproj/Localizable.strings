@@ -376,3 +376,6 @@
 "Saved to Drafts" = "Salvo em Rascunhos";
 "Couldn't Save" = "Não foi possível salvar";
 "Couldn't save. Try again." = "Não foi possível salvar. Tente novamente.";
+
+/* Save Draft with no connection. */
+"No connection. Corres will save it to Drafts the next time it opens." = "Sem conexão. O Corres vai salvá-lo em Rascunhos na próxima vez que for aberto.";

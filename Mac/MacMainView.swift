@@ -36,6 +36,10 @@ struct MacMainView: View {
     private var store: MailStore { services.store }
     private var actions: ThreadActionService { services.threadActions }
     private var accounts: [String] { services.auth.accounts.map(\.email) }
+    /// Drafts, not searching: each row is a draft, which can be continued
+    /// or deleted and nothing else. Its id is its conversation's, so any
+    /// other action reached the emails it answers.
+    private var isDraftsList: Bool { model.mailbox.remoteKind == .drafts && model.search.isEmpty }
     /// For the Message menu's Pin or Unpin.
     private var selectionIsPinned: Bool {
         let selected = model.selectedThreads(in: store)
@@ -108,7 +112,7 @@ struct MacMainView: View {
             }
         }
         .focusedSceneValue(\.macActions, MacActions(perform: { perform($0) }, selectionCount: model.selection.count,
-                                                     isPinned: selectionIsPinned, isMain: true))
+                                                     isPinned: selectionIsPinned, isMain: true, isDrafts: isDraftsList))
         .onChange(of: model.selection) { _, selection in if filtersUnread { keptRead.formUnion(selection) } }
         // The next few after the one you're on, and the top of a mailbox,
         // read ahead: arrowing down shows each at once.
@@ -125,6 +129,11 @@ struct MacMainView: View {
             if locked, model.mailbox.isAttentionList { model.mailbox = .primary }
         }
         .onChange(of: unreadOnly) { keptRead = [] }
+        // A Focus set to Show One Account limits every list to it while
+        // it's on, as on the iPhone; turning the Focus off brings every
+        // account back.
+        .onReceive(NotificationCenter.default.publisher(for: CorresFocusFilter.didChange)) { _ in applyFocusFilter() }
+        .onChange(of: accounts, initial: true) { applyFocusFilter() }
         // What follows a sync, the widgets, Spotlight and the Dock badge
         // are MacServices' own (`startObserving`), window or not.
         // A notification, a widget or a corres:// link asking for a place.
@@ -268,11 +277,22 @@ struct MacMainView: View {
     }
 
     private func subtitle(_ shown: MacMailboxModel.Visible) -> String {
+        // Said first, so mail from your other accounts isn't thought lost.
+        let focus = model.focusAccount.map { String(localized: "Focus: \(AccountPreferences.nickname(for: $0))") }
+        return [focus, countLine(shown)].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    private func countLine(_ shown: MacMailboxModel.Visible) -> String {
         let count = shown.count, unread = shown.unread
         if !model.search.isEmpty && services.sync.isSearchingRemote { return String(localized: "Searching your accounts…") }
         if services.isGettingNewMail { return String(localized: "Checking for mail…") }
         if count == 0 { return "" }
         return unread > 0 ? String(localized: "\(count) conversations, \(unread) unread") : String(localized: "\(count) conversations")
+    }
+
+    private func applyFocusFilter() {
+        let account = MacServices.focusAccount(among: accounts)
+        if model.focusAccount != account { model.focusAccount = account }
     }
 
     private var accountColors: [String: NSColor] {
@@ -391,7 +411,7 @@ struct MacMainView: View {
         // Still open after it left the list (answered, moved by a sync).
         let selected = model.selectedThreads(in: store)
         if selected.count == 1, let thread = selected.first {
-            if model.mailbox.remoteKind == .drafts, model.search.isEmpty {
+            if isDraftsList {
                 // A draft has its conversation's id, so the store would
                 // show the conversation it answers in its place.
                 draftDetail(thread)
@@ -473,7 +493,7 @@ struct MacMainView: View {
                 Button { perform(.archive) } label: { Label("Archive", systemImage: "archivebox") }
                     .help("Archive (⌃⌘A, or E)")
                     // A draft is deleted, not archived.
-                    .disabled(model.selection.isEmpty || model.mailbox.remoteKind == .drafts && model.search.isEmpty)
+                    .disabled(model.selection.isEmpty || isDraftsList)
             }
             ToolbarItem(id: "delete", placement: .primaryAction) {
                 Button { perform(.trash) } label: { Label("Delete", systemImage: "trash") }
@@ -485,19 +505,19 @@ struct MacMainView: View {
                         Button(attention.title) { perform(.move(attention)) }
                     }
                 } label: { Label("Move", systemImage: "arrow.right.circle") }
-                    .help("Needs You, Waiting or Handled").disabled(model.selection.isEmpty)
+                    .help("Needs You, Waiting or Handled").disabled(model.selection.isEmpty || isDraftsList)
             }
             ToolbarItem(id: "reply", placement: .primaryAction) {
                 Button { perform(.reply) } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
-                    .help("Reply (⌘R, or R)").disabled(model.selection.count != 1)
+                    .help("Reply (⌘R, or R)").disabled(model.selection.count != 1 || isDraftsList)
             }
             ToolbarItem(id: "replyAll", placement: .primaryAction) {
                 Button { perform(.replyAll) } label: { Label("Reply All", systemImage: "arrowshape.turn.up.left.2") }
-                    .help("Reply All (⇧⌘R, or A)").disabled(model.selection.count != 1)
+                    .help("Reply All (⇧⌘R, or A)").disabled(model.selection.count != 1 || isDraftsList)
             }
             ToolbarItem(id: "forward", placement: .primaryAction) {
                 Button { perform(.forward) } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
-                    .help("Forward (⇧⌘F, or F)").disabled(model.selection.count != 1)
+                    .help("Forward (⇧⌘F, or F)").disabled(model.selection.count != 1 || isDraftsList)
             }
             ToolbarItem(id: "snooze", placement: .primaryAction) {
                 Menu {
@@ -507,19 +527,19 @@ struct MacMainView: View {
                     Divider()
                     Button("Choose a Time…") { perform(.askSnooze) }
                 } label: { Label("Snooze", systemImage: "moon.zzz") }
-                    .help("Snooze (B)").disabled(model.selection.isEmpty)
+                    .help("Snooze (B)").disabled(model.selection.isEmpty || isDraftsList)
             }
             ToolbarItem(id: "flag", placement: .primaryAction) {
                 Button { perform(.toggleFlag) } label: { Label("Flag", systemImage: "flag") }
-                    .help("Flag (⇧⌘L, or S)").disabled(model.selection.isEmpty)
+                    .help("Flag (⇧⌘L, or S)").disabled(model.selection.isEmpty || isDraftsList)
             }
             ToolbarItem(id: "unread", placement: .primaryAction, showsByDefault: false) {
                 Button { perform(.toggleUnread) } label: { Label("Read/Unread", systemImage: "envelope.badge") }
-                    .help("Mark as Read or Unread (⇧⌘U, or U)").disabled(model.selection.isEmpty)
+                    .help("Mark as Read or Unread (⇧⌘U, or U)").disabled(model.selection.isEmpty || isDraftsList)
             }
             ToolbarItem(id: "print", placement: .primaryAction, showsByDefault: false) {
                 Button { perform(.print) } label: { Label("Print", systemImage: "printer") }
-                    .help("Print (⌘P)").disabled(model.selection.count != 1)
+                    .help("Print (⌘P)").disabled(model.selection.count != 1 || isDraftsList)
             }
             ToolbarItem(id: "saveSearch", placement: .primaryAction) {
                 // While searching: keep it as a mailbox in the sidebar.
@@ -709,6 +729,10 @@ struct MacMainView: View {
     /// swiped row that isn't selected).
     func perform(_ action: MacAction, on threads: [Correspondence]? = nil) {
         let selected = threads ?? model.selectedThreads(in: store)
+        // A draft is continued or deleted; a key (E, ⌃⌘A) or the command
+        // palette asking for anything else did nothing, or reached the
+        // conversation the draft answers.
+        if isDraftsList, !action.appliesToDrafts { return }
         switch action {
         case .compose:
             openWindow(value: ComposeRequest(kind: .new))
@@ -720,10 +744,12 @@ struct MacMainView: View {
             // In Drafts a row is a draft, but its id is its conversation's:
             // archiving or deleting that took the whole conversation, the
             // emails you were answering too. Delete discards the draft.
-            if model.mailbox.remoteKind == .drafts, model.search.isEmpty {
+            if isDraftsList {
                 if action == .trash { discardDrafts(selected) }
                 return
             }
+            // Settings → Ask Before Moving to Trash, synced from the iPhone.
+            if action == .trash, !MacTrashConfirmation.allows(selected.count) { return }
             let ids = Set(selected.map(\.id))
             if !model.selection.isDisjoint(with: ids) {
                 let next = model.neighbor(after: ids, in: visibleRows())
@@ -806,7 +832,13 @@ struct MacMainView: View {
         typealias Command = MacCommandPalette.Command
         var commands: [Command] = [Command(title: "New Message", detail: "⌘N", systemImage: "square.and.pencil") { perform(.compose) }]
         let selected = model.selectedThreads(in: store)
-        if !selected.isEmpty {
+        if !selected.isEmpty, isDraftsList {
+            // A draft: continued or deleted, nothing more.
+            if selected.count == 1 {
+                commands.append(Command(title: "Edit", detail: "⌘O", systemImage: "pencil") { perform(.openInWindow) })
+            }
+            commands.append(Command(title: "Delete", detail: nil, systemImage: "trash") { perform(.trash) })
+        } else if !selected.isEmpty {
             let what = selected.count == 1 ? String(localized: "this conversation") : String(localized: "\(selected.count) conversations")
             commands += [
                 Command(title: "Archive", detail: what, systemImage: "archivebox") { perform(.archive) },
@@ -887,7 +919,7 @@ struct MacMainView: View {
     private func open(_ thread: Correspondence) {
         // Searching from Drafts lists conversations, not drafts: one opened
         // as a draft became a reply to yourself with their words in it.
-        if model.mailbox.remoteKind == .drafts, model.search.isEmpty {
+        if isDraftsList {
             Task { await continueDraft(thread) }
         } else {
             openWindow(value: thread.id)
@@ -925,6 +957,8 @@ struct MacMainView: View {
                           cc: message.ccRecipients.isEmpty ? nil : message.ccRecipients.joined(separator: ", "),
                           subject: [String(localized: "(no subject)"), "(no subject)"].contains(message.subject) ? "" : message.subject, body: message.body)
         draft.gmailDraftID = serverID
+        // Written already, with whatever signature it has.
+        draft.signatureAdded = true
         // Opened meanwhile (a second double-click while this one fetched).
         if let open = MacComposeHandoff.window(for: serverID) { openWindow(value: open); return }
         if let answered {
@@ -985,18 +1019,28 @@ struct MacMainView: View {
 
     private func contextMenu(_ thread: Correspondence) -> NSMenu? {
         let menu = NSMenu()
+        // What every item acts on: the selection when the clicked row is in
+        // it (an unselected row is selected first, as in Mail), so a title
+        // (Mark as Read, Unflag) says what the action will do to all of them.
+        let chosen = model.selection.contains(thread.id) ? model.selectedThreads(in: store) : []
+        let threads = chosen.isEmpty ? [thread] : chosen
         func item(_ title: String, _ symbol: String, _ action: MacAction) {
-            let entry = ClosureMenuItem(title: title) { perform(action) }
+            let entry = ClosureMenuItem(title: title) { perform(action, on: threads) }
             entry.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
             menu.addItem(entry)
+        }
+        // A draft is continued or deleted; anything else reached the
+        // conversation it answers.
+        if isDraftsList {
+            if threads.count == 1 { item(String(localized: "Edit"), "pencil", .openInWindow) }
+            item(String(localized: "Delete"), "trash", .trash)
+            return menu
         }
         // A first email from someone: let them in, or not, for every
         // selected sender at once.
         if thread.senderDecision == .pending {
-            let chosen = model.selection.contains(thread.id)
-                ? model.selection.compactMap { services.store.thread($0) } : [thread]
             var seen = Set<String>()
-            let senders = chosen.filter { $0.senderDecision == .pending }.compactMap { pending -> (email: String, account: String)? in
+            let senders = threads.filter { $0.senderDecision == .pending }.compactMap { pending -> (email: String, account: String)? in
                 guard let email = pending.senderEmail, seen.insert("\(pending.id.account)|\(email)").inserted else { return nil }
                 return (email, pending.id.account)
             }
@@ -1014,52 +1058,70 @@ struct MacMainView: View {
         // Customize → Press and Hold), which follows you here: the top
         // row's actions first, then the list, in the same order.
         let layout = CorresSettings.rowMenu
-        let top = layout.top.filter { appliesOnMac($0, to: thread) }
-        let list = layout.list.filter { appliesOnMac($0, to: thread) && !$0.isDestructive }
-        let destructive = layout.list.filter { appliesOnMac($0, to: thread) && $0.isDestructive }
+        let top = layout.top.filter { appliesOnMac($0, to: threads) }
+        let list = layout.list.filter { appliesOnMac($0, to: threads) && !$0.isDestructive }
+        let destructive = layout.list.filter { appliesOnMac($0, to: threads) && $0.isDestructive }
         for group in [top, list, destructive] where !group.isEmpty {
-            for action in group { addRowMenuItem(action, for: thread, to: menu) }
+            for action in group { addRowMenuItem(action, for: threads, to: menu) }
             menu.addItem(.separator())
         }
-        item(String(localized: "Open in New Window"), "macwindow", .openInWindow)
+        if threads.count == 1 { item(String(localized: "Open in New Window"), "macwindow", .openInWindow) }
+        if menu.items.last?.isSeparatorItem == true { menu.removeItem(at: menu.items.count - 1) }
         return menu
     }
 
     /// Unsubscribe and Share need a confirmation or a sheet of their own,
     /// which this menu doesn't have on the Mac, so they're left out here.
-    private func appliesOnMac(_ action: RowMenuAction, to thread: Correspondence) -> Bool {
+    /// Replying, Add to Reminders and Block are for one conversation, as the
+    /// toolbar's Reply is.
+    private func appliesOnMac(_ action: RowMenuAction, to threads: [Correspondence]) -> Bool {
+        let fromOthers = threads.allSatisfy { $0.senderEmail != nil && !$0.isFromAccountOwner }
         switch action {
-        case .unsubscribe, .share: false
-        case .vip: thread.senderEmail != nil && !thread.isFromAccountOwner
+        case .unsubscribe, .share: return false
+        case .reply, .replyAll, .forward, .reminder: return threads.count == 1
+        case .vip: return fromOthers
         // A first email from someone already offers Block Sender above.
-        case .block: thread.senderEmail != nil && !thread.isFromAccountOwner && thread.senderDecision != .pending
-        case .spam: !thread.isFromAccountOwner
-        default: true
+        case .block:
+            return threads.count == 1 && fromOthers && threads[0].senderDecision != .pending
+        case .spam: return !threads.contains(where: \.isFromAccountOwner)
+        default: return true
         }
     }
 
-    private func addRowMenuItem(_ action: RowMenuAction, for thread: Correspondence, to menu: NSMenu) {
+    /// One item of the press-and-hold layout, for `threads`: its title
+    /// follows the same rule as what it does (`perform`), so with several
+    /// chosen, Mark as Read is offered only when every one is unread.
+    private func addRowMenuItem(_ action: RowMenuAction, for threads: [Correspondence], to menu: NSMenu) {
+        guard let thread = threads.first else { return }
         func entry(_ title: String, _ symbol: String, run: @escaping () -> Void) {
             let item = ClosureMenuItem(title: title, handler: run)
             item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
             menu.addItem(item)
         }
+        let ids = threads.map(\.id)
         switch action {
-        case .reply: entry(String(localized: "Reply"), action.systemImage) { perform(.reply) }
-        case .replyAll: entry(String(localized: "Reply All"), action.systemImage) { perform(.replyAll) }
-        case .forward: entry(String(localized: "Forward"), action.systemImage) { perform(.forward) }
-        case .archive: entry(String(localized: "Archive"), action.systemImage) { perform(.archive) }
-        case .trash: entry(String(localized: "Delete"), action.systemImage) { perform(.trash) }
+        case .reply: entry(String(localized: "Reply"), action.systemImage) { perform(.reply, on: threads) }
+        case .replyAll: entry(String(localized: "Reply All"), action.systemImage) { perform(.replyAll, on: threads) }
+        case .forward: entry(String(localized: "Forward"), action.systemImage) { perform(.forward, on: threads) }
+        case .archive: entry(String(localized: "Archive"), action.systemImage) { perform(.archive, on: threads) }
+        case .trash: entry(String(localized: "Delete"), action.systemImage) { perform(.trash, on: threads) }
         case .read:
-            entry(thread.isUnread ? String(localized: "Mark as Read") : String(localized: "Mark as Unread"),
-                  thread.isUnread ? "envelope.open" : "envelope.badge") { perform(.toggleUnread) }
-        case .flag: entry(thread.isFlagged ? String(localized: "Unflag") : String(localized: "Flag"), "flag") { perform(.toggleFlag) }
-        case .pin: entry(thread.isPinned ? String(localized: "Unpin") : String(localized: "Pin"), thread.isPinned ? "pin.slash" : "pin") { perform(.togglePin) }
+            let allUnread = threads.allSatisfy(\.isUnread)
+            entry(allUnread ? String(localized: "Mark as Read") : String(localized: "Mark as Unread"),
+                  allUnread ? "envelope.open" : "envelope.badge") { perform(.toggleUnread, on: threads) }
+        case .flag:
+            let allFlagged = threads.allSatisfy(\.isFlagged)
+            entry(allFlagged ? String(localized: "Unflag") : String(localized: "Flag"), "flag") { perform(.toggleFlag, on: threads) }
+        case .pin:
+            let allPinned = threads.allSatisfy(\.isPinned)
+            entry(allPinned ? String(localized: "Unpin") : String(localized: "Pin"), allPinned ? "pin.slash" : "pin") {
+                perform(.togglePin, on: threads)
+            }
         case .snooze:
-            if thread.isSnoozed(at: .now) {
-                entry(String(localized: "Unsnooze"), "moon.zzz") { perform(.snooze(nil)) }
+            if threads.allSatisfy({ $0.isSnoozed(at: .now) }) {
+                entry(String(localized: "Unsnooze"), "moon.zzz") { perform(.snooze(nil), on: threads) }
             } else {
-                entry(String(localized: "Snooze…"), "moon.zzz") { perform(.askSnooze) }
+                entry(String(localized: "Snooze…"), "moon.zzz") { perform(.askSnooze, on: threads) }
             }
         case .moveTo:
             // One level: Corres's own lists, then the account's labels or folders.
@@ -1067,16 +1129,18 @@ struct MacMainView: View {
             move.image = NSImage(systemSymbolName: action.systemImage, accessibilityDescription: nil)
             let places = NSMenu()
             for attention in Attention.choices {
-                let item = ClosureMenuItem(title: attention.title) { perform(.move(attention)) }
-                if thread.attention == attention { item.state = .on }
+                let item = ClosureMenuItem(title: attention.title) { perform(.move(attention), on: threads) }
+                if threads.allSatisfy({ $0.attention == attention }) { item.state = .on }
                 places.addItem(item)
             }
+            // Labels and folders belong to one account.
             let account = thread.id.account
-            let labels = services.labelDirectory.labels(for: account).filter { !$0.isCategory }
+            let labels = threads.allSatisfy({ $0.id.account == account })
+                ? services.labelDirectory.labels(for: account).filter { !$0.isCategory } : []
             if !labels.isEmpty { places.addItem(.separator()) }
             for label in labels {
                 let item = ClosureMenuItem(title: label.name) {
-                    drop(on: .label(account: account, id: label.id, name: label.name), [thread.id])
+                    drop(on: .label(account: account, id: label.id, name: label.name), ids)
                 }
                 item.image = NSImage(systemSymbolName: label.isFolder ? "folder" : "tag", accessibilityDescription: nil)
                 places.addItem(item)
@@ -1085,16 +1149,23 @@ struct MacMainView: View {
             menu.addItem(move)
         case .mute:
             // Out of your lists, and new replies stay quiet.
-            let isMuted = Organizer.shared.isMuted(thread.id)
-            entry(isMuted ? String(localized: "Unmute") : String(localized: "Mute"), isMuted ? "bell" : "bell.slash") {
-                if isMuted { Organizer.shared.unmute(thread.id) } else { Organizer.shared.mute(thread) }
+            let allMuted = threads.allSatisfy { Organizer.shared.isMuted($0.id) }
+            entry(allMuted ? String(localized: "Unmute") : String(localized: "Mute"), allMuted ? "bell" : "bell.slash") {
+                for thread in threads {
+                    if allMuted { Organizer.shared.unmute(thread.id) } else if !Organizer.shared.isMuted(thread.id) { Organizer.shared.mute(thread) }
+                }
             }
         case .vip:
             // A VIP's mail always lands in Needs You and always notifies.
-            guard let email = thread.senderEmail else { return }
-            let isVIP = InboxClassifier.isVIP(email)
-            entry(isVIP ? String(localized: "Remove from VIPs") : String(localized: "Add to VIPs"), isVIP ? "star.slash" : "star") {
-                Task { await services.store.setVIP(email, account: thread.id.account, isVIP: !isVIP) }
+            var seen = Set<String>()
+            let senders = threads.compactMap { thread -> (email: String, account: String)? in
+                guard let email = thread.senderEmail, seen.insert("\(thread.id.account)|\(email.lowercased())").inserted else { return nil }
+                return (email, thread.id.account)
+            }
+            guard !senders.isEmpty else { return }
+            let allVIP = senders.allSatisfy { InboxClassifier.isVIP($0.email) }
+            entry(allVIP ? String(localized: "Remove from VIPs") : String(localized: "Add to VIPs"), allVIP ? "star.slash" : "star") {
+                Task { for sender in senders { await services.store.setVIP(sender.email, account: sender.account, isVIP: !allVIP) } }
             }
         case .reminder:
             // When to be reminded, as Mail's Remind Me offers.
@@ -1102,13 +1173,13 @@ struct MacMainView: View {
             remind.image = NSImage(systemSymbolName: action.systemImage, accessibilityDescription: nil)
             let times = NSMenu()
             for choice in MailReminders.choices(for: thread) {
-                times.addItem(ClosureMenuItem(title: choice.title) { perform(.remind(choice.date), on: [thread]) })
+                times.addItem(ClosureMenuItem(title: choice.title) { perform(.remind(choice.date), on: threads) })
             }
             remind.submenu = times
             menu.addItem(remind)
         case .spam:
             entry(String(localized: "Report Spam"), action.systemImage) {
-                drop(on: .server(MacRemoteMailboxes.Kind.spam.rawValue), [thread.id])
+                drop(on: .server(MacRemoteMailboxes.Kind.spam.rawValue), ids)
             }
         case .block:
             guard let email = thread.senderEmail else { return }
@@ -1147,6 +1218,24 @@ struct MacMainView: View {
 
 /// What the mail's Undo is registered against in the window's undo manager.
 final class MailUndoTarget {}
+
+/// Settings → Ask Before Moving to Trash, set on the iPhone or iPad and
+/// synced here: ⌘⌫, the Delete key, #, the toolbar and the right-click
+/// menu ask first, as the iPhone does.
+@MainActor
+enum MacTrashConfirmation {
+    /// True when it should go ahead: the setting is off, or you said so.
+    static func allows(_ count: Int) -> Bool {
+        guard CorresSettings.confirmTrash, count > 0 else { return true }
+        let alert = NSAlert()
+        alert.messageText = count == 1 ? String(localized: "Move this conversation to Trash?")
+            : String(localized: "Move \(count) conversations to Trash?")
+        alert.addButton(withTitle: String(localized: "Move to Trash"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
+        alert.buttons.first?.hasDestructiveAction = true
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+}
 
 /// Undo Send, in any window: the pill while an email waits to go, and
 /// Edit › Undo (⌘Z) taking it back.

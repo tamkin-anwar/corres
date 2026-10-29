@@ -376,3 +376,6 @@
 "Saved to Drafts" = "Guardado en Borradores";
 "Couldn't Save" = "No se pudo guardar";
 "Couldn't save. Try again." = "No se pudo guardar. Vuelve a intentarlo.";
+
+/* Save Draft with no connection. */
+"No connection. Corres will save it to Drafts the next time it opens." = "Sin conexión. Corres lo guardará en Borradores la próxima vez que se abra.";

@@ -166,7 +166,8 @@ private struct MacConversationWindow: View {
             ReadingPane(thread: thread, services: services) { kind in
                 openWindow(value: ComposeRequest(kind: kind, thread: thread.id))
             }
-            .focusedSceneValue(\.macActions, MacActions(perform: { perform($0, on: thread) }, isPinned: thread.isPinned))
+            .focusedSceneValue(\.macActions, MacActions(perform: { perform($0, on: thread) }, isPinned: thread.isPinned,
+                                                         canOpenInWindow: false))
             .sheet(isPresented: $snoozing) {
                 MacSnoozeSheet { date in
                     snoozing = false
@@ -227,6 +228,8 @@ private struct MacConversationWindow: View {
         case .reply, .replyAll, .forward:
             openWindow(value: ComposeRequest(kind: action == .reply ? .reply : action == .replyAll ? .replyAll : .forward, thread: thread.id))
         case .archive, .trash:
+            // Settings → Ask Before Moving to Trash, as in the main window.
+            if action == .trash, !MacTrashConfirmation.allows(1) { return }
             // Gone from your mail, so the window goes too; Undo is in the
             // main window. With that closed, this window stays, saying it
             // moved, with Undo, until it's done (`isGone`).

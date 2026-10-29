@@ -36,6 +36,8 @@ struct MacComposeView: View {
     @State private var loaded = false
     /// What the body starts with (a reply's quote and signature).
     @State private var initialBody = ""
+    /// Its formatting, when it had any (`MacRichEditor.initialHTML`).
+    @State private var initialHTML: String?
     @State private var attachmentError: String?
     @State private var inserter = MacTextInserter()
     /// The signature in the body now, to swap or take out.
@@ -50,6 +52,9 @@ struct MacComposeView: View {
     /// The save to Drafts waiting for a pause in typing.
     @State private var saveTask: Task<Void, Never>?
     @State private var confirmDelete = false
+    /// Format › Add Link (⌘K): the address being typed.
+    @State private var addingLink = false
+    @State private var linkText = ""
     /// Sent with the main window closed: the email waiting out Undo Send.
     @State private var sendingID: UUID?
     @State private var sendUndo = MailUndoTarget()
@@ -66,7 +71,7 @@ struct MacComposeView: View {
             fields
             Divider()
             if loaded {
-                MacRichEditor(plain: $draft.body, html: $draft.bodyHTML, initialText: initialBody,
+                MacRichEditor(plain: $draft.body, html: $draft.bodyHTML, initialText: initialBody, initialHTML: initialHTML,
                               focusOnAppear: focus == .body, inserter: inserter)
             } else {
                 Spacer()
@@ -138,6 +143,12 @@ struct MacComposeView: View {
             Button("Send") { send(confirmed: true) }
             Button("Cancel", role: .cancel) {}
         }
+        .alert("Add Link", isPresented: $addingLink) {
+            TextField("Web or email address", text: $linkText)
+            Button("Add") { if let url = MacTextInserter.linkURL(linkText) { inserter.link(url) } }
+            Button("Cancel", role: .cancel) {}
+        }
+        .focusedSceneValue(\.macAddLink, { linkText = ""; addingLink = true })
         .alert("Couldn't Attach", isPresented: Binding(get: { attachmentError != nil }, set: { if !$0 { attachmentError = nil } })) {
             Button("OK", role: .cancel) {}
         } message: { Text(attachmentError ?? "") }
@@ -196,6 +207,8 @@ struct MacComposeView: View {
         guard let opened else { return false }
         return value.to != opened.to || (value.cc ?? "") != (opened.cc ?? "") || (value.bcc ?? "") != (opened.bcc ?? "")
             || value.subject != opened.subject || value.body != opened.body
+            // Bold, a link: the words the same, the formatting not.
+            || value.bodyHTML != opened.bodyHTML
             || value.attachments.map(\.id) != opened.attachments.map(\.id)
             || (value.fromAccount ?? "") != (opened.fromAccount ?? "") || value.fromAddress != opened.fromAddress
     }
@@ -526,9 +539,20 @@ struct MacComposeView: View {
             fromAccount = whole.fromAccount ?? accounts.first ?? ""
             draft.fromAccount = fromAccount.isEmpty ? nil : fromAccount
             let signature = CorresSettings.signature(for: fromAccount, reply: whole.kind != .new)
-            signatureText = !signature.isEmpty && whole.body.contains(signature) ? signature : ""
+            // A fresh email (a reply, forward or new one from Siri) gets the
+            // signature, as on the iPhone (`ComposeView`): not a saved draft,
+            // nor one that has been in Compose before (put aside, scheduled,
+            // undone), which has the one it was written with.
+            if whole.gmailDraftID == nil, whole.signatureAdded != true {
+                draft.body = Draft.adding(signature: signature, to: draft.body)
+                // Its formatting kept for the words it had, the signature plain.
+                if let html = draft.bodyHTML { draft.bodyHTML = RichBody.html(RichBody.runs(plain: draft.body, html: html)) }
+            }
+            draft.signatureAdded = true
+            signatureText = !signature.isEmpty && draft.body.contains(signature) ? signature : ""
             showsCc = !(whole.cc ?? "").isEmpty || !(whole.bcc ?? "").isEmpty
-            initialBody = whole.body
+            initialBody = draft.body
+            initialHTML = draft.bodyHTML
             focus = .body
             opened = draft
             loaded = true
@@ -554,6 +578,8 @@ struct MacComposeView: View {
         if request.serverDraftID == nil {
             draft.body = Draft.adding(signature: signature, to: draft.body)
         }
+        // Opened again later (Undo Send, Send Later), it isn't signed twice.
+        draft.signatureAdded = true
         signatureText = !signature.isEmpty && draft.body.contains(signature) ? signature : ""
         showsCc = !(draft.cc ?? "").isEmpty || !(draft.bcc ?? "").isEmpty
         initialBody = draft.body

@@ -2930,3 +2930,20 @@
 /* The message list's context menu. */
 "Move To" = "移動";
 "Add to VIPs" = "VIPに追加";
+
+/* Ask Before Moving to Trash, synced from the iPhone. */
+"Move this conversation to Trash?" = "この会話をゴミ箱に入れますか？";
+"Move %lld conversations to Trash?" = "%lld件の会話をゴミ箱に入れますか？";
+
+/* Earlier messages in a conversation, opened to their full text. */
+"Collapses this message" = "このメッセージを折りたたみます";
+"Shows the full message" = "メッセージ全体を表示します";
+
+/* Format > Add Link (Command-K) while writing. */
+"Add Link…" = "リンクを追加…";
+"Add Link" = "リンクを追加";
+"Web or email address" = "Webアドレスまたはメールアドレス";
+"Add" = "追加";
+
+/* The window's subtitle while a Focus shows one account only. */
+"Focus: %@" = "集中モード：%@";

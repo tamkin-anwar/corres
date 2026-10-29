@@ -120,10 +120,27 @@ final class MacServices {
         store.readEarly()
     }
 
-    /// The buttons on a new-mail notification, as on the iPhone.
+    /// The buttons on a new-mail notification, as on the iPhone
+    /// (`AppDelegate.handleNotificationAction`).
     private func notificationAction(_ action: String, id: ThreadID, typed: String?) async {
         if store.state != .loaded { await store.load() }
-        guard let thread = store.thread(id) else { return }
+        // Archive and reply need the account back, or they're turned away:
+        // a notification clicked as Corres launches came before it was.
+        await auth.waitUntilRestored()
+        // Notified before Corres had stored it: fetched now, for a few
+        // seconds at most, or a reply typed into it would be lost.
+        if store.thread(id) == nil {
+            _ = await Self.waitBriefly(for: Task { [sync] in _ = await sync.syncAll(accounts: [id.account]) }, upTo: .seconds(10))
+            await store.load()
+        }
+        guard var thread = store.thread(id) else {
+            // Still not here (deleted, or moved elsewhere): your words are
+            // kept as a draft to finish in Corres, rather than vanishing.
+            if action == PushNotificationService.replyAction, let typed, !typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                outbox.shelve(Draft(kind: .new, fromAccount: id.account, to: "", subject: "", body: typed), replyingTo: nil)
+            }
+            return
+        }
         switch action {
         case PushNotificationService.archiveAction:
             await threadActions.archive(thread)
@@ -133,6 +150,13 @@ final class MacServices {
         case PushNotificationService.replyAction:
             let text = (typed ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return }
+            // The email it quotes, often not read here yet: without it the
+            // reply went out quoting nothing. Bounded, so a slow connection
+            // doesn't hold the reply back.
+            if !thread.isBodyLoaded {
+                _ = await Self.waitBriefly(for: Task { [threadActions] in await threadActions.loadContent(for: thread) }, upTo: .seconds(8))
+                thread = store.thread(thread.id) ?? thread
+            }
             var draft = thread.draft(kind: .reply)
             draft.body = Draft.adding(signature: CorresSettings.signature(for: id.account, reply: true), to: text + draft.body)
             if let address = SendAsDirectory.shared.address(for: id.account, answering: thread), !address.isPrimary {
@@ -144,6 +168,29 @@ final class MacServices {
         default:
             break
         }
+    }
+
+    /// Waits for `task` up to `limit`: what it returned, or nil if it's
+    /// still going (it carries on). The iPhone's `waitBriefly`.
+    private static func waitBriefly<T: Sendable>(for task: Task<T, Never>, upTo limit: Duration) async -> T? {
+        let timer = Task<T?, Never> {
+            try? await Task.sleep(for: limit)
+            return nil
+        }
+        let result = await withCheckedContinuation { (continuation: CheckedContinuation<T?, Never>) in
+            let once = OnceBox()
+            Task { let value = await task.value; if once.claim() { continuation.resume(returning: value) } }
+            Task { let value = await timer.value; if once.claim() { continuation.resume(returning: value) } }
+        }
+        timer.cancel()
+        return result
+    }
+
+    /// True the first time it's claimed.
+    private final class OnceBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var claimed = false
+        func claim() -> Bool { lock.withLock { defer { claimed = true }; return !claimed } }
     }
 
     /// Once per launch: open the mailbox, restore accounts, first sync.
@@ -324,12 +371,21 @@ final class MacServices {
         // Only while Corres isn't the app in front: when you're looking
         // at the list, the new row is the notice.
         guard !NSApplication.shared.isActive else { return }
+        // During a Focus limited to one account, only that account notifies.
+        let focus = Self.focusAccount(among: auth.accounts.map(\.email))
         let toNotify = fresh.compactMap { store.thread($0.id) }.filter { thread in
-            thread.isScreenedOut
+            guard focus.map({ $0 == thread.id.account }) ?? true else { return false }
+            return thread.isScreenedOut
                 ? PushNotificationService.NewSenderAlerts.includes(thread) && AccountPreferences.level(for: thread.id.account) != nil
                 : AccountPreferences.level(for: thread.id.account)?.includes(thread) == true
         }
         pushService.notifyAboutNewMail(toNotify)
+    }
+
+    /// The account a Focus's Show One Account limits Corres to, while it's
+    /// one still connected here (removed since, it limits nothing).
+    static func focusAccount(among accounts: [String]) -> String? {
+        CorresFocusFilter.activeAccount.flatMap { accounts.contains($0) ? $0 : nil }
     }
 
     /// What follows a sync that brought or changed something: each goes

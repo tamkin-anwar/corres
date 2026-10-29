@@ -123,6 +123,8 @@ final class ScheduledSends {
     /// background refresh and from each push that wakes Corres.
     func sendDue(store: MailStore, outbox: OutboxService, now: Date = .now) async {
         adoptShared(now: now)
+        // Saved as a draft in the Share sheet with no connection.
+        await outbox.saveSharedDrafts()
         guard items.contains(where: { !$0.heldBecauseReplied && $0.sendAt <= now }) else { keepTime(store: store, outbox: outbox); return }
         // On a cold launch: the conversation a reply belongs to, and the
         // account it goes from, both have to be back first.

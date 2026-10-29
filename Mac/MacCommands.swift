@@ -7,6 +7,16 @@ enum MacAction: Equatable {
     case archive, trash, move(Attention), toggleFlag, togglePin, toggleUnread, snooze(Date?), askSnooze
     case getMail, show(MacMailbox), next, previous, openInWindow, undo, commandPalette, print, shortcuts, search
     case toggleUnreadOnly, remind(Date?), sendDiagnostics
+
+    /// What a draft in Drafts allows: continuing it (Open), deleting it,
+    /// and what doesn't touch mail at all.
+    var appliesToDrafts: Bool {
+        switch self {
+        case .reply, .replyAll, .forward, .archive, .move, .toggleFlag, .togglePin, .toggleUnread,
+             .snooze, .askSnooze, .remind, .print: false
+        default: true
+        }
+    }
 }
 
 /// The front window's actions, for the menu bar.
@@ -19,6 +29,12 @@ struct MacActions {
     /// The main window's: Go To or Do, the mailboxes and the rest of its
     /// own act here, not by way of `MacWindows.perform`.
     var isMain = false
+    /// Drafts: only Delete and Open in New Window (which continues the
+    /// draft) apply.
+    var isDrafts = false
+    /// A conversation's own window is already one: Open in New Window
+    /// has nothing to open there.
+    var canOpenInWindow = true
 }
 
 /// The main window, opened from outside it: a notification clicked, or a
@@ -81,10 +97,18 @@ enum MacWindows {
 
 private struct MacActionsKey: FocusedValueKey { typealias Value = MacActions }
 
+/// A compose window in front: Format › Add Link (⌘K) asks it for a link.
+private struct MacAddLinkKey: FocusedValueKey { typealias Value = () -> Void }
+
 extension FocusedValues {
     var macActions: MacActions? {
         get { self[MacActionsKey.self] }
         set { self[MacActionsKey.self] = newValue }
+    }
+
+    var macAddLink: (() -> Void)? {
+        get { self[MacAddLinkKey.self] }
+        set { self[MacAddLinkKey.self] = newValue }
     }
 }
 
@@ -212,12 +236,15 @@ private extension Font.TextStyle {
 /// one: ⌘N, ⌘R, ⇧⌘R, ⇧⌘F, ⌃⌘A, ⌘⌫, ⇧⌘L, ⇧⌘U, ⇧⌘N, ⌘L, ⌘1 to ⌘4.
 struct MacCommands: Commands {
     @FocusedValue(\.macActions) private var actions
+    @FocusedValue(\.macAddLink) private var addLink
     @Environment(\.openWindow) private var openWindow
     @AppStorage(CorresSettings.textScaleKey) private var textScale = 1.0
     @AppStorage(CorresSettings.macSenderPicturesKey) private var showsSenderPictures = true
 
     /// Nothing to act on: no window with mail in front, or nothing chosen.
     private var noSelection: Bool { (actions?.selectionCount ?? 0) == 0 }
+    /// A draft chosen in Drafts (`MacAction.appliesToDrafts`).
+    private var isDrafts: Bool { actions?.isDrafts == true }
 
     var body: some Commands {
         let _ = MacWindows.openWindow = openWindow
@@ -254,11 +281,13 @@ struct MacCommands: Commands {
         CommandGroup(replacing: .printItem) {
             Button("Print…") { actions?.perform(.print) }
                 .keyboardShortcut("p", modifiers: .command)
-                .disabled(noSelection)
+                .disabled(noSelection || isDrafts)
         }
         CommandMenu("Mailbox") {
+            // ⌘K is Add Link while writing, as in Mail: from a compose
+            // window it brought the main window forward instead.
             Button("Go To or Do…") { inMain(.commandPalette) }
-                .keyboardShortcut("k", modifiers: .command)
+                .keyboardShortcut(addLink == nil ? KeyboardShortcut("k", modifiers: .command) : nil)
             Divider()
             // From any window, or none, without bringing one forward.
             Button("Get New Mail") { MacServices.shared.getNewMail() }
@@ -276,11 +305,14 @@ struct MacCommands: Commands {
         }
         CommandMenu("Message") {
             Group {
-                Button("Reply") { actions?.perform(.reply) }.keyboardShortcut("r", modifiers: .command)
-                Button("Reply All") { actions?.perform(.replyAll) }.keyboardShortcut("r", modifiers: [.command, .shift])
-                Button("Forward") { actions?.perform(.forward) }.keyboardShortcut("f", modifiers: [.command, .shift])
-                Divider()
-                Button("Archive") { actions?.perform(.archive) }.keyboardShortcut("a", modifiers: [.command, .control])
+                Group {
+                    Button("Reply") { actions?.perform(.reply) }.keyboardShortcut("r", modifiers: .command)
+                    Button("Reply All") { actions?.perform(.replyAll) }.keyboardShortcut("r", modifiers: [.command, .shift])
+                    Button("Forward") { actions?.perform(.forward) }.keyboardShortcut("f", modifiers: [.command, .shift])
+                    Divider()
+                    Button("Archive") { actions?.perform(.archive) }.keyboardShortcut("a", modifiers: [.command, .control])
+                }
+                .disabled(isDrafts)
                 // ⌘⌫ in a text field (search, a reply) deletes to the start of
                 // the line there, as everywhere on the Mac, not the conversation.
                 Button("Delete") {
@@ -291,30 +323,35 @@ struct MacCommands: Commands {
                     }
                 }
                 .keyboardShortcut(.delete, modifiers: .command)
-                Divider()
-                Button("Move to Needs You") { actions?.perform(.move(.needsYou)) }
-                    .keyboardShortcut("1", modifiers: [.command, .control])
-                Button("Move to Waiting") { actions?.perform(.move(.waiting)) }
-                    .keyboardShortcut("2", modifiers: [.command, .control])
-                Button("Mark as Handled") { actions?.perform(.move(.handled)) }
-                    .keyboardShortcut("3", modifiers: [.command, .control])
-                Divider()
-                Menu("Snooze") {
-                    ForEach(SnoozeOption.allCases, id: \.self) { option in
-                        Button(option.title) { actions?.perform(.snooze(option.date())) }
-                    }
+                Group {
                     Divider()
-                    Button("Choose a Time…") { actions?.perform(.askSnooze) }
+                    Button("Move to Needs You") { actions?.perform(.move(.needsYou)) }
+                        .keyboardShortcut("1", modifiers: [.command, .control])
+                    Button("Move to Waiting") { actions?.perform(.move(.waiting)) }
+                        .keyboardShortcut("2", modifiers: [.command, .control])
+                    Button("Mark as Handled") { actions?.perform(.move(.handled)) }
+                        .keyboardShortcut("3", modifiers: [.command, .control])
+                    Divider()
+                    Menu("Snooze") {
+                        ForEach(SnoozeOption.allCases, id: \.self) { option in
+                            Button(option.title) { actions?.perform(.snooze(option.date())) }
+                        }
+                        Divider()
+                        Button("Choose a Time…") { actions?.perform(.askSnooze) }
+                    }
+                    Button("Flag") { actions?.perform(.toggleFlag) }.keyboardShortcut("l", modifiers: [.command, .shift])
+                    Button(actions?.isPinned == true ? LocalizedStringKey("Unpin") : "Pin") { actions?.perform(.togglePin) }
+                    Button("Mark as Read or Unread") { actions?.perform(.toggleUnread) }.keyboardShortcut("u", modifiers: [.command, .shift])
+                    Divider()
+                    Menu("Add to Reminders") {
+                        Button("Tomorrow Morning") { actions?.perform(.remind(MailReminders.tomorrowMorning())) }
+                        Button("No Date") { actions?.perform(.remind(nil)) }
+                    }
                 }
-                Button("Flag") { actions?.perform(.toggleFlag) }.keyboardShortcut("l", modifiers: [.command, .shift])
-                Button(actions?.isPinned == true ? LocalizedStringKey("Unpin") : "Pin") { actions?.perform(.togglePin) }
-                Button("Mark as Read or Unread") { actions?.perform(.toggleUnread) }.keyboardShortcut("u", modifiers: [.command, .shift])
-                Divider()
-                Menu("Add to Reminders") {
-                    Button("Tomorrow Morning") { actions?.perform(.remind(MailReminders.tomorrowMorning())) }
-                    Button("No Date") { actions?.perform(.remind(nil)) }
-                }
+                .disabled(isDrafts)
+                // In a conversation's own window there's nothing more to open.
                 Button("Open in New Window") { actions?.perform(.openInWindow) }.keyboardShortcut("o", modifiers: .command)
+                    .disabled(actions?.canOpenInWindow == false)
             }
             .disabled(noSelection)
         }
@@ -331,10 +368,15 @@ struct MacCommands: Commands {
 /// you're writing. Not SwiftUI's own Format menu, whose Bigger and Smaller
 /// took ⌘+ and ⌘- from View › Bigger and Smaller.
 struct MacFormatCommands: Commands {
+    @FocusedValue(\.macAddLink) private var addLink
+
     var body: some Commands {
         CommandMenu("Format") {
             Button("Show Fonts") { NSFontManager.shared.orderFrontFontPanel(nil) }
                 .keyboardShortcut("t", modifiers: .command)
+            Button("Add Link…") { addLink?() }
+                .keyboardShortcut(addLink == nil ? nil : KeyboardShortcut("k", modifiers: .command))
+                .disabled(addLink == nil)
             Divider()
             Button("Bold") { Self.toggle(.boldFontMask) }
                 .keyboardShortcut("b", modifiers: .command)

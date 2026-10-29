@@ -29,6 +29,16 @@ final class NotificationService: UNNotificationServiceExtension, @unchecked Send
         let quiet: Bool
     }
 
+    /// What a Gmail push turned out to be.
+    private enum GmailOutcome: Sendable {
+        case mail(Filled)
+        /// Not new mail (a read, an archive), or mail already shown.
+        case nothingNew
+        /// Gmail couldn't be asked, or the email couldn't be read: there
+        /// may well be new mail, so the relay's plain alert shows.
+        case failed
+    }
+
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         let content = (request.content.mutableCopy() as? UNMutableNotificationContent) ?? UNMutableNotificationContent()
         lock.withLock {
@@ -37,8 +47,12 @@ final class NotificationService: UNNotificationServiceExtension, @unchecked Send
         }
         if let account = content.userInfo["account"] as? String, let history = content.userInfo["gmailHistory"] as? String {
             task = Task { [self] in
-                let found = await Self.newGmail(account: account, history: history)
-                if let found { finish(found) } else { stayQuiet() }
+                switch await Self.newGmail(account: account, history: history) {
+                case .mail(let filled): finish(filled)
+                case .nothingNew: stayQuiet()
+                // Silent here, the email was never notified at all.
+                case .failed: finish(nil)
+                }
             }
             return
         }
@@ -100,25 +114,31 @@ final class NotificationService: UNNotificationServiceExtension, @unchecked Send
 
     /// What's new in the Inbox since the last Gmail push this device saw:
     /// the newest of it, filled in like any other email.
-    private static func newGmail(account: String, history: String) async -> Filled? {
+    private static func newGmail(account: String, history: String) async -> GmailOutcome {
         guard let since = NotifyPolicy.gmailCursor(for: account) else {
-            // The first push only sets where to look from.
+            // Nowhere to look from. Corres sets it when it starts watching
+            // Gmail (`PushNotificationService`), so this is only a device
+            // that registered before it did: this push sets it.
             NotifyPolicy.setGmailCursor(history, for: account)
-            return nil
+            return .nothingNew
         }
         // Moved on before asking Gmail, not after: two pushes close
         // together each run this, and both read the same starting point,
         // found the same email and showed it twice. Now the second asks
         // from where the first left off.
         advanceGmailCursor(to: history, for: account)
-        guard let found = try? await GmailAPIClient().newInboxMessageIDs(since: since, account: account) else { return nil }
+        guard let found = try? await GmailAPIClient().newInboxMessageIDs(since: since, account: account) else { return .failed }
         advanceGmailCursor(to: found.historyId ?? history, for: account)
         let fresh = found.ids.filter { !NotifyPolicy.wasShown($0) }
         // Gmail ids grow with time: the last is the newest.
-        guard let newest = fresh.max() else { return nil }
-        // Claimed before it's fetched, so another push can't show it too.
+        guard let newest = fresh.max() else { return .nothingNew }
+        // Marked shown only once it's on its way to the screen: marked
+        // first, a fetch that failed left them shown and never notified,
+        // by this or by Corres's own sync. The cursor, moved on above,
+        // already keeps a second push from finding them.
+        guard let filled = await fill(account: account, messageID: newest) else { return .failed }
         for id in fresh { NotifyPolicy.markShown(id) }
-        return await fill(account: account, messageID: newest)
+        return .mail(filled)
     }
 
     /// Only forward: a push that was slower to arrive mustn't send the

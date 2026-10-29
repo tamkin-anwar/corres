@@ -199,12 +199,18 @@ final class PushNotificationService {
                                                                                "alerts": alerts ? "1" : "0"])
                             return true
                         }
-                        _ = try await self.client.watch(topicName: Self.pubsubTopicName, account: account)
+                        let watchedFrom = try await self.client.watch(topicName: Self.pubsubTopicName, account: account)
                         guard let deviceTokenHex else { return false }
                         // Visible Gmail pushes only where the extension can stay
                         // silent about changes that aren't new mail.
                         let alerts = await MainActor.run {
                             NotifyPolicy.gmailAlerts && Self.showsPushAlerts && AccountPreferences.level(for: account) != nil
+                        }
+                        // Where the extension looks from: set here, the first
+                        // push after installing finds its email, rather than
+                        // only setting this and staying silent about it.
+                        if alerts, let watchedFrom, NotifyPolicy.gmailCursor(for: account) == nil {
+                            NotifyPolicy.setGmailCursor(watchedFrom, for: account)
                         }
                         try await self.post(path: "register", body: ["emailAddress": account, "deviceToken": deviceTokenHex,
                                                                      "gmailAlerts": alerts ? "1" : "0"])

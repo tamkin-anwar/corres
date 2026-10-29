@@ -2930,3 +2930,20 @@
 /* The message list's context menu. */
 "Move To" = "Déplacer vers";
 "Add to VIPs" = "Ajouter aux VIP";
+
+/* Ask Before Moving to Trash, synced from the iPhone. */
+"Move this conversation to Trash?" = "Mettre cette conversation à la corbeille ?";
+"Move %lld conversations to Trash?" = "Mettre %lld conversations à la corbeille ?";
+
+/* Earlier messages in a conversation, opened to their full text. */
+"Collapses this message" = "Replie ce message";
+"Shows the full message" = "Affiche le message complet";
+
+/* Format > Add Link (Command-K) while writing. */
+"Add Link…" = "Ajouter un lien…";
+"Add Link" = "Ajouter un lien";
+"Web or email address" = "Adresse web ou e-mail";
+"Add" = "Ajouter";
+
+/* The window's subtitle while a Focus shows one account only. */
+"Focus: %@" = "Concentration : %@";

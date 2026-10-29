@@ -2930,3 +2930,20 @@
 /* The message list's context menu. */
 "Move To" = "সরান";
 "Add to VIPs" = "VIP-তে যোগ করুন";
+
+/* Ask Before Moving to Trash, synced from the iPhone. */
+"Move this conversation to Trash?" = "এই কথোপকথনটি ট্র্যাশে সরাবেন?";
+"Move %lld conversations to Trash?" = "%lldটি কথোপকথন ট্র্যাশে সরাবেন?";
+
+/* Earlier messages in a conversation, opened to their full text. */
+"Collapses this message" = "এই বার্তাটি গুটিয়ে রাখে";
+"Shows the full message" = "পুরো বার্তাটি দেখায়";
+
+/* Format > Add Link (Command-K) while writing. */
+"Add Link…" = "লিংক যোগ করুন…";
+"Add Link" = "লিংক যোগ করুন";
+"Web or email address" = "ওয়েব বা ইমেইল ঠিকানা";
+"Add" = "যোগ করুন";
+
+/* The window's subtitle while a Focus shows one account only. */
+"Focus: %@" = "ফোকাস: %@";

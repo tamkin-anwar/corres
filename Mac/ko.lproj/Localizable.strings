@@ -2930,3 +2930,20 @@
 /* The message list's context menu. */
 "Move To" = "이동";
 "Add to VIPs" = "VIP에 추가";
+
+/* Ask Before Moving to Trash, synced from the iPhone. */
+"Move this conversation to Trash?" = "이 대화를 휴지통으로 이동하겠습니까?";
+"Move %lld conversations to Trash?" = "대화 %lld개를 휴지통으로 이동하겠습니까?";
+
+/* Earlier messages in a conversation, opened to their full text. */
+"Collapses this message" = "이 메시지를 접습니다";
+"Shows the full message" = "전체 메시지를 표시합니다";
+
+/* Format > Add Link (Command-K) while writing. */
+"Add Link…" = "링크 추가…";
+"Add Link" = "링크 추가";
+"Web or email address" = "웹 또는 이메일 주소";
+"Add" = "추가";
+
+/* The window's subtitle while a Focus shows one account only. */
+"Focus: %@" = "집중 모드: %@";

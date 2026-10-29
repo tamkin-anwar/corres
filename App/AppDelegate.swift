@@ -236,6 +236,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             // not only when Corres is next opened.
             await outbox.retryFailedQuietly()
             await FollowUps.shared.check(store: store)
+            // Keeps the Watch and its face from showing as out of date when
+            // nothing has changed (sent again only once an hour has passed).
+            WatchBridge.shared.update(from: store.threads)
             // Twice a day at most, as at launch: every background refresh
             // used to renew each Gmail watch and re-register with the relay.
             await pushService.renewWatchIfDue(accounts: auth.accounts.map(\.email))
@@ -327,6 +330,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // wait behind sends, reminders and renewals inside iOS's time limit.
         pushService.notifyAboutNewMail(toNotify)
         WidgetBridge.update(from: store.threads)
+        // The Watch too: woken in the background, Corres never reached the
+        // views that usually send it.
+        WatchBridge.shared.update(from: store.threads)
         // A push is also a chance to send what's scheduled, to see whether
         // a follow-up reminder is due, and to keep push itself alive (Gmail
         // lapses after 7 days, Outlook after about 3).

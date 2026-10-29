@@ -15,6 +15,8 @@ struct ReadingPane: View {
     @State private var bodyHeight: CGFloat = 1
     @State private var showImages = false
     @State private var showEarlier = false
+    /// Earlier messages opened to their full text, by message id.
+    @State private var openEarlier: Set<String> = []
     @State private var invitation: Invitation?
     @State private var personCard: PersonRef?
     @State private var aids = ReadingAids()
@@ -463,21 +465,56 @@ struct ReadingPane: View {
             .foregroundStyle(CorresPalette.accent)
             if showEarlier {
                 ForEach(earlier) { message in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(message.sender).macFont(.callout, weight: .semibold)
-                            Spacer()
-                            Text(MacDates.short(message.receivedAt)).macFont(.caption).foregroundStyle(CorresPalette.secondary)
-                        }
-                        Text(MailDigest.preview(body: message.body, html: message.htmlBody) ?? message.excerpt)
-                            .macFont(.callout).foregroundStyle(CorresPalette.secondary)
-                            .lineLimit(4).textSelection(.enabled)
-                    }
-                    .padding(10)
-                    .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 8))
+                    earlierMessage(message)
                 }
             }
         }
+    }
+
+    /// One earlier message: a few lines, or, clicked, all of its own words
+    /// without the history it quotes, as on the iPhone (`EarlierMessages`).
+    private func earlierMessage(_ message: Correspondence) -> some View {
+        let key = message.latestMessageID ?? message.id.providerID
+        let isOpen = openEarlier.contains(key)
+        // The text sits outside the button, so it can be selected.
+        return VStack(alignment: .leading, spacing: 4) {
+            Button {
+                withAnimation(.snappy) {
+                    if isOpen { openEarlier.remove(key) } else { openEarlier.insert(key) }
+                }
+            } label: {
+                HStack {
+                    Image(systemName: isOpen ? "chevron.down" : "chevron.right")
+                        .macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.tertiary)
+                    Text(message.sender).macFont(.callout, weight: .semibold)
+                    Spacer()
+                    Text(MacDates.short(message.receivedAt)).macFont(.caption).foregroundStyle(CorresPalette.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(isOpen ? "Collapses this message" : "Shows the full message")
+            if isOpen {
+                Text(Self.ownWords(of: message))
+                    .macFont(.body).foregroundStyle(CorresPalette.ink)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text(MailDigest.preview(body: message.body, html: message.htmlBody) ?? message.excerpt)
+                    .macFont(.callout).foregroundStyle(CorresPalette.secondary)
+                    .lineLimit(4).textSelection(.enabled)
+            }
+        }
+        .padding(10)
+        .background(CorresPalette.surface, in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    /// The message's own words, in full: without the quoted history every
+    /// reply repeats, in any language (`QuoteDetector.ownPart`).
+    private static func ownWords(of message: Correspondence) -> String {
+        let text = MailDigest.readableText(body: message.body, html: message.htmlBody)
+        let own = QuoteDetector.ownPart(of: text).trimmingCharacters(in: .whitespacesAndNewlines)
+        return own.isEmpty ? message.excerpt : own
     }
 
     // MARK: Images and attachments
@@ -606,6 +643,7 @@ struct ReadingPane: View {
         // Hidden again on screen, so hidden again on paper.
         MacPrinter.imagesShown.remove(thread.id)
         showEarlier = false
+        openEarlier = []
         invitation = nil
         aids = ReadingAids()
         foreignLanguage = nil

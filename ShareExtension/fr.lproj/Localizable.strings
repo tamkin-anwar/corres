@@ -376,3 +376,6 @@
 "Saved to Drafts" = "Enregistré dans Brouillons";
 "Couldn't Save" = "Enregistrement impossible";
 "Couldn't save. Try again." = "Enregistrement impossible. Réessayez.";
+
+/* Save Draft with no connection. */
+"No connection. Corres will save it to Drafts the next time it opens." = "Pas de connexion. Corres l’enregistrera dans les brouillons à sa prochaine ouverture.";

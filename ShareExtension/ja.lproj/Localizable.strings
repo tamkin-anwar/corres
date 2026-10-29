@@ -376,3 +376,6 @@
 "Saved to Drafts" = "下書きに保存しました";
 "Couldn't Save" = "保存できませんでした";
 "Couldn't save. Try again." = "保存できませんでした。もう一度お試しください。";
+
+/* Save Draft with no connection. */
+"No connection. Corres will save it to Drafts the next time it opens." = "接続されていません。Corresを次に開いたときに下書きに保存します。";
