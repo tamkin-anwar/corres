@@ -29,9 +29,6 @@
 "%@ · not in All Inboxes" = "%@ · nicht in „Alle Eingänge“";
 
 /* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@ pro %@, verlängert sich automatisch. Jederzeit in den Einstellungen kündbar.";
-
-/* No comment provided by engineer. */
 "%@ account" = "%@-Account";
 
 /* No comment provided by engineer. */
@@ -1091,9 +1088,6 @@
 "Free" = "Kostenlos";
 
 /* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ kostenlos, dann %@ pro %@. Kündige vor Ende des Tests in den Einstellungen, dann zahlst du nichts.";
-
-/* No comment provided by engineer. */
 "Free trial · first charge %@" = "Kostenloser Test · erste Abbuchung %@";
 
 /* No comment provided by engineer. */
@@ -1470,9 +1464,6 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Nachrichten";
-
-/* No comment provided by engineer. */
-"month" = "Monat";
 
 /* No comment provided by engineer. */
 "Monthly" = "Monatlich";
@@ -2759,9 +2750,6 @@
 "To" = "An";
 
 /* No comment provided by engineer. */
-"To " = "An ";
-
-/* No comment provided by engineer. */
 "To “%@”" = "An „%@“";
 
 /* No comment provided by engineer. */
@@ -3048,9 +3036,6 @@
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "Schreibe die Nachricht, die %@ senden soll.";
-
-/* No comment provided by engineer. */
-"year" = "Jahr";
 
 /* No comment provided by engineer. */
 "Yesterday" = "Gestern";
@@ -3819,3 +3804,17 @@
 
 /* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
 "A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "E-Mails von VIPs landen immer in „Braucht dich“ und lösen immer eine Mitteilung aus, auch wenn du nur in Kopie bist. Füge jemanden über das ⋯-Menü in der E-Mail hinzu. Um das auch in einer Liste zu können, nimm VIP unter Einstellungen > Anpassen > Lange drücken auf. Zum Entfernen streichen.";
+
+/* Whole sentences and words that were shown in English: sender badges, Compose placeholders, attachment names, signature names, invitation overlaps, paywall prices. */
+"Unsubscribed" = "Abgemeldet";
+"Recipient" = "Empfänger";
+"Optional" = "Optional";
+"Photo %lld" = "Foto %lld";
+"Video %lld" = "Video %lld";
+"Scan %lld" = "Scan %lld";
+"Signature %lld" = "Signatur %lld";
+"another event" = "einen anderen Termin";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "%@ pro Jahr, verlängert sich automatisch. Jederzeit in den Einstellungen kündbar.";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "%@ pro Monat, verlängert sich automatisch. Jederzeit in den Einstellungen kündbar.";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ kostenlos, dann %@ pro Jahr. Kündige vor Ende des Tests in den Einstellungen, dann zahlst du nichts.";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ kostenlos, dann %@ pro Monat. Kündige vor Ende des Tests in den Einstellungen, dann zahlst du nichts.";

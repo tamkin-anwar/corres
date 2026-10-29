@@ -29,9 +29,6 @@
 "%@ · not in All Inboxes" = "%@ · 「すべての受信ボックス」に非表示";
 
 /* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@／%@、自動更新。「設定」でいつでもキャンセルできます。";
-
-/* No comment provided by engineer. */
 "%@ account" = "%@アカウント";
 
 /* No comment provided by engineer. */
@@ -1091,9 +1088,6 @@
 "Free" = "無料";
 
 /* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@無料、その後は%@／%@。トライアル終了前に「設定」でキャンセルすれば料金はかかりません。";
-
-/* No comment provided by engineer. */
 "Free trial · first charge %@" = "無料トライアル · 初回請求 %@";
 
 /* No comment provided by engineer. */
@@ -1470,9 +1464,6 @@
 
 /* No comment provided by engineer. */
 "Messages" = "メッセージ";
-
-/* No comment provided by engineer. */
-"month" = "月";
 
 /* No comment provided by engineer. */
 "Monthly" = "月間";
@@ -2759,9 +2750,6 @@
 "To" = "宛先";
 
 /* No comment provided by engineer. */
-"To " = "宛先：";
-
-/* No comment provided by engineer. */
 "To “%@”" = "宛先「%@」";
 
 /* No comment provided by engineer. */
@@ -3048,9 +3036,6 @@
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "%@が送るメッセージを入力してください。";
-
-/* No comment provided by engineer. */
-"year" = "年";
 
 /* No comment provided by engineer. */
 "Yesterday" = "昨日";
@@ -3819,3 +3804,17 @@
 
 /* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
 "A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "VIPからのメールは、CCで受け取っただけでも必ず「要対応」に入り、必ず通知されます。メールの⋯メニューから追加できます。リストからも追加するには、「設定」>「カスタマイズ」>「長押し」でVIPを加えてください。スワイプで削除します。";
+
+/* Whole sentences and words that were shown in English: sender badges, Compose placeholders, attachment names, signature names, invitation overlaps, paywall prices. */
+"Unsubscribed" = "配信停止済み";
+"Recipient" = "宛先";
+"Optional" = "省略可";
+"Photo %lld" = "写真 %lld";
+"Video %lld" = "ビデオ %lld";
+"Scan %lld" = "スキャン %lld";
+"Signature %lld" = "署名 %lld";
+"another event" = "ほかの予定";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "%@／年、自動更新。「設定」でいつでもキャンセルできます。";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "%@／月、自動更新。「設定」でいつでもキャンセルできます。";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@無料、その後は%@／年。トライアル終了前に「設定」でキャンセルすれば料金はかかりません。";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@無料、その後は%@／月。トライアル終了前に「設定」でキャンセルすれば料金はかかりません。";

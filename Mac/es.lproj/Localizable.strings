@@ -2750,8 +2750,6 @@
 
 /* An invitation: Add to Calendar without access. */
 "Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corres no tiene acceso a tu calendario. Puedes permitirlo en Ajustes del Sistema > Privacidad y seguridad > Calendarios.";
-/* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@ al %@, con renovación automática. Cancela cuando quieras en Ajustes.";
 
 /* No comment provided by engineer. */
 "%@ a month or %@ a year." = "%@ al mes o %@ al año.";
@@ -2794,9 +2792,6 @@
 
 /* No comment provided by engineer. */
 "Family" = "Familia";
-
-/* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratis durante %@, luego %@ al %@. Cancela cuando quieras en Ajustes antes de que termine la prueba y no se te cobrará.";
 
 /* No comment provided by engineer. */
 "Free trial · first charge %@" = "Prueba gratuita · primer cargo el %@";
@@ -2907,9 +2902,6 @@
 "Yours for good · bought %@" = "Tuyo para siempre · comprado el %@";
 
 /* No comment provided by engineer. */
-"month" = "mes";
-
-/* No comment provided by engineer. */
 "once" = "una vez";
 
 /* No comment provided by engineer. */
@@ -2921,9 +2913,14 @@
 /* No comment provided by engineer. */
 "soon" = "pronto";
 
-/* No comment provided by engineer. */
-"year" = "año";
-
 /* The message list's context menu. */
 "Move To" = "Mover a";
 "Add to VIPs" = "Añadir a los VIP";
+
+/* Words and whole sentences that were shown in English: the Unsubscribed badge, invitation overlaps, paywall prices. */
+"Unsubscribed" = "Baja hecha";
+"another event" = "otro evento";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "%@ al año, con renovación automática. Cancela cuando quieras en Ajustes.";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "%@ al mes, con renovación automática. Cancela cuando quieras en Ajustes.";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratis durante %@, luego %@ al año. Cancela cuando quieras en Ajustes antes de que termine la prueba y no se te cobrará.";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratis durante %@, luego %@ al mes. Cancela cuando quieras en Ajustes antes de que termine la prueba y no se te cobrará.";

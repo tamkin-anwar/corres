@@ -427,9 +427,9 @@ struct SendersView: View {
     }
 
     private func badge(_ sender: SenderSummary) -> (text: String, color: Color)? {
-        if sender.decision == .blocked { return ("Blocked", CorresPalette.alert) }
-        if sender.decision == .pending { return ("New", CorresPalette.accent) }
-        if sender.isUnsubscribed { return ("Unsubscribed", CorresPalette.tertiary) }
+        if sender.decision == .blocked { return (String(localized: "Blocked"), CorresPalette.alert) }
+        if sender.decision == .pending { return (String(localized: "New"), CorresPalette.accent) }
+        if sender.isUnsubscribed { return (String(localized: "Unsubscribed"), CorresPalette.tertiary) }
         return nil
     }
 

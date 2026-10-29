@@ -378,7 +378,7 @@ struct ComposeView: View {
             }
             .fullScreenCover(isPresented: $showingScanner) {
                 DocumentScanner { pdf in
-                    addAttachment(filename: "Scan \(scanNumber).pdf", mimeType: "application/pdf", data: pdf)
+                    addAttachment(filename: AttachmentFiles.name(.scan, scanNumber, "pdf"), mimeType: "application/pdf", data: pdf)
                 }
                 .ignoresSafeArea()
             }
@@ -978,7 +978,7 @@ struct ComposeView: View {
                 // Backspace in an empty field, which is how Mail removes
                 // the last recipient. The first picks it, the second
                 // removes it, so one stray press never loses anyone.
-                AddressTextField(text: typing, placeholder: finished.isEmpty ? (field == .to ? "Recipient" : "Optional") : "",
+                AddressTextField(text: typing, placeholder: finished.isEmpty ? (field == .to ? String(localized: "Recipient") : String(localized: "Optional")) : "",
                                  isFocused: addressFocus == field,
                                  onFocus: { focused in
                                      if focused { addressFocus = field } else if addressFocus == field { addressFocus = nil }
@@ -1174,11 +1174,13 @@ struct ComposeView: View {
         draft.attachments.append(PendingAttachment(filename: filename, mimeType: mimeType, data: data))
     }
 
-    /// "Photo 3": counts the photos already attached, so names don't repeat.
+    /// "Photo 3": counts the pictures and videos already attached, so
+    /// names don't repeat. By kind, not by name, since the name is in the
+    /// person's language.
     private var photoNumber: Int {
-        draft.attachments.filter { $0.filename.hasPrefix("Photo ") || $0.filename.hasPrefix("Video ") }.count + 1
+        draft.attachments.filter { $0.mimeType.hasPrefix("image/") || $0.mimeType.hasPrefix("video/") }.count + 1
     }
-    private var scanNumber: Int { draft.attachments.filter { $0.filename.hasPrefix("Scan ") }.count + 1 }
+    private var scanNumber: Int { draft.attachments.filter { $0.mimeType == "application/pdf" }.count + 1 }
 
     /// In the order picked. iPhone photos go as JPEG (see `AttachmentFiles`).
     private func addPhotos(_ items: [PhotosPickerItem]) async {

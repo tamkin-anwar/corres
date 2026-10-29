@@ -29,9 +29,6 @@
 "%@ · not in All Inboxes" = "%@ · 不在“所有收件箱”中";
 
 /* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@/%@，自动续订。可随时在“设置”中取消。";
-
-/* No comment provided by engineer. */
 "%@ account" = "%@ 账户";
 
 /* No comment provided by engineer. */
@@ -1091,9 +1088,6 @@
 "Free" = "免费";
 
 /* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/%@。在试用结束前于“设置”中取消即不会收费。";
-
-/* No comment provided by engineer. */
 "Free trial · first charge %@" = "免费试用 · 首次扣款 %@";
 
 /* No comment provided by engineer. */
@@ -1470,9 +1464,6 @@
 
 /* No comment provided by engineer. */
 "Messages" = "邮件";
-
-/* No comment provided by engineer. */
-"month" = "月";
 
 /* No comment provided by engineer. */
 "Monthly" = "月付";
@@ -2759,9 +2750,6 @@
 "To" = "收件人";
 
 /* No comment provided by engineer. */
-"To " = "发给 ";
-
-/* No comment provided by engineer. */
 "To “%@”" = "发给“%@”";
 
 /* No comment provided by engineer. */
@@ -3048,9 +3036,6 @@
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "输入 %@ 应发送的消息。";
-
-/* No comment provided by engineer. */
-"year" = "年";
 
 /* No comment provided by engineer. */
 "Yesterday" = "昨天";
@@ -3819,3 +3804,17 @@
 
 /* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
 "A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "VIP 的邮件总是进入“需要你”，并总会通知你，即使你只是被抄送。可从其邮件的⋯菜单添加。若也想在列表中添加，请在“设置”>“自定”>“按住”中加入 VIP。轻扫即可移除。";
+
+/* Whole sentences and words that were shown in English: sender badges, Compose placeholders, attachment names, signature names, invitation overlaps, paywall prices. */
+"Unsubscribed" = "已退订";
+"Recipient" = "收件人";
+"Optional" = "可选";
+"Photo %lld" = "照片 %lld";
+"Video %lld" = "视频 %lld";
+"Scan %lld" = "扫描 %lld";
+"Signature %lld" = "签名 %lld";
+"another event" = "另一个日程";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "%@/年，自动续订。可随时在“设置”中取消。";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "%@/月，自动续订。可随时在“设置”中取消。";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/年。在试用结束前于“设置”中取消即不会收费。";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/月。在试用结束前于“设置”中取消即不会收费。";

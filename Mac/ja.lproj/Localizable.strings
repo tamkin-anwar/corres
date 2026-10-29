@@ -2750,8 +2750,6 @@
 
 /* An invitation: Add to Calendar without access. */
 "Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corresはカレンダーにアクセスできません。「システム設定」>「プライバシーとセキュリティ」>「カレンダー」で許可できます。";
-/* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@／%@、自動更新。「設定」でいつでもキャンセルできます。";
 
 /* No comment provided by engineer. */
 "%@ a month or %@ a year." = "月額%@または年額%@。";
@@ -2794,9 +2792,6 @@
 
 /* No comment provided by engineer. */
 "Family" = "ファミリー";
-
-/* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@無料、その後は%@／%@。トライアル終了前に「設定」でキャンセルすれば料金はかかりません。";
 
 /* No comment provided by engineer. */
 "Free trial · first charge %@" = "無料トライアル · 初回請求 %@";
@@ -2907,9 +2902,6 @@
 "Yours for good · bought %@" = "ずっと使えます · %@に購入";
 
 /* No comment provided by engineer. */
-"month" = "月";
-
-/* No comment provided by engineer. */
 "once" = "1回";
 
 /* No comment provided by engineer. */
@@ -2921,9 +2913,14 @@
 /* No comment provided by engineer. */
 "soon" = "まもなく";
 
-/* No comment provided by engineer. */
-"year" = "年";
-
 /* The message list's context menu. */
 "Move To" = "移動";
 "Add to VIPs" = "VIPに追加";
+
+/* Words and whole sentences that were shown in English: the Unsubscribed badge, invitation overlaps, paywall prices. */
+"Unsubscribed" = "配信停止済み";
+"another event" = "ほかの予定";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "%@／年、自動更新。「設定」でいつでもキャンセルできます。";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "%@／月、自動更新。「設定」でいつでもキャンセルできます。";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@無料、その後は%@／年。トライアル終了前に「設定」でキャンセルすれば料金はかかりません。";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@無料、その後は%@／月。トライアル終了前に「設定」でキャンセルすれば料金はかかりません。";

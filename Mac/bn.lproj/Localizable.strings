@@ -2750,8 +2750,6 @@
 
 /* An invitation: Add to Calendar without access. */
 "Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corres-এর আপনার ক্যালেন্ডারে অ্যাক্সেস নেই। সিস্টেম সেটিংস > গোপনীয়তা ও নিরাপত্তা > ক্যালেন্ডারে অনুমতি দিতে পারেন।";
-/* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "প্রতি %2$@ %1$@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
 
 /* No comment provided by engineer. */
 "%@ a month or %@ a year." = "মাসে %@ বা বছরে %@।";
@@ -2794,9 +2792,6 @@
 
 /* No comment provided by engineer. */
 "Family" = "পরিবার";
-
-/* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি %3$@ %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";
 
 /* No comment provided by engineer. */
 "Free trial · first charge %@" = "বিনামূল্যে ট্রায়াল · প্রথম চার্জ %@";
@@ -2907,9 +2902,6 @@
 "Yours for good · bought %@" = "চিরকালের জন্য আপনার · কেনা হয়েছে %@";
 
 /* No comment provided by engineer. */
-"month" = "মাস";
-
-/* No comment provided by engineer. */
 "once" = "একবার";
 
 /* No comment provided by engineer. */
@@ -2921,9 +2913,14 @@
 /* No comment provided by engineer. */
 "soon" = "শিগগির";
 
-/* No comment provided by engineer. */
-"year" = "বছর";
-
 /* The message list's context menu. */
 "Move To" = "সরান";
 "Add to VIPs" = "VIP-তে যোগ করুন";
+
+/* Words and whole sentences that were shown in English: the Unsubscribed badge, invitation overlaps, paywall prices. */
+"Unsubscribed" = "আনসাবস্ক্রাইব করা";
+"another event" = "অন্য একটি ইভেন্ট";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "প্রতি বছর %@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "প্রতি মাস %@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি বছর %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি মাস %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";

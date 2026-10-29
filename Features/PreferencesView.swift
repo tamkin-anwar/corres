@@ -826,7 +826,7 @@ private struct SignaturesView: View {
             SignatureEditor(signature: signature, accounts: accounts) { edited in
                 var saved = edited
                 // Unnamed: "Signature", then "Signature 2", as Gmail numbers them.
-                if saved.name.isEmpty { saved.name = signatures.isEmpty ? "Signature" : "Signature \(signatures.count + 1)" }
+                if saved.name.isEmpty { saved.name = signatures.isEmpty ? String(localized: "Signature") : String(localized: "Signature \(signatures.count + 1)") }
                 var all = Signatures.all
                 if let index = all.firstIndex(where: { $0.id == saved.id }) { all[index] = saved } else { all.append(saved) }
                 let isFirst = Signatures.all.isEmpty

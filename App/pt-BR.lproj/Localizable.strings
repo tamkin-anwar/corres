@@ -29,9 +29,6 @@
 "%@ · not in All Inboxes" = "%@ · fora de Todas as caixas";
 
 /* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@ por %@, com renovação automática. Cancele quando quiser nos Ajustes.";
-
-/* No comment provided by engineer. */
 "%@ account" = "Conta %@";
 
 /* No comment provided by engineer. */
@@ -1091,9 +1088,6 @@
 "Free" = "Grátis";
 
 /* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "Grátis por %@, depois %@ por %@. Cancele nos Ajustes antes do fim do teste e você não será cobrado.";
-
-/* No comment provided by engineer. */
 "Free trial · first charge %@" = "Teste gratuito · primeira cobrança em %@";
 
 /* No comment provided by engineer. */
@@ -1470,9 +1464,6 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Mensagens";
-
-/* No comment provided by engineer. */
-"month" = "mês";
 
 /* No comment provided by engineer. */
 "Monthly" = "Mensal";
@@ -2759,9 +2750,6 @@
 "To" = "Para";
 
 /* No comment provided by engineer. */
-"To " = "Para ";
-
-/* No comment provided by engineer. */
 "To “%@”" = "Para “%@”";
 
 /* No comment provided by engineer. */
@@ -3048,9 +3036,6 @@
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "Escreva a mensagem que %@ deve enviar.";
-
-/* No comment provided by engineer. */
-"year" = "ano";
 
 /* No comment provided by engineer. */
 "Yesterday" = "Ontem";
@@ -3819,3 +3804,17 @@
 
 /* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
 "A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "O e-mail de um VIP sempre chega em Precisa de Você e sempre notifica, mesmo quando você só está em cópia. Adicione alguém pelo menu ⋯ no e-mail da pessoa. Para fazer isso também em uma lista, coloque VIP em Ajustes > Personalizar > Manter pressionado. Deslize para remover.";
+
+/* Whole sentences and words that were shown in English: sender badges, Compose placeholders, attachment names, signature names, invitation overlaps, paywall prices. */
+"Unsubscribed" = "Inscrição cancelada";
+"Recipient" = "Destinatário";
+"Optional" = "Opcional";
+"Photo %lld" = "Foto %lld";
+"Video %lld" = "Vídeo %lld";
+"Scan %lld" = "Digitalização %lld";
+"Signature %lld" = "Assinatura %lld";
+"another event" = "outro evento";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "%@ por ano, com renovação automática. Cancele quando quiser nos Ajustes.";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "%@ por mês, com renovação automática. Cancele quando quiser nos Ajustes.";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "Grátis por %@, depois %@ por ano. Cancele nos Ajustes antes do fim do teste e você não será cobrado.";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "Grátis por %@, depois %@ por mês. Cancele nos Ajustes antes do fim do teste e você não será cobrado.";

@@ -526,7 +526,8 @@ struct ConversationView: View {
 
     private func headerContent(for thread: Correspondence) -> some View {
         HStack(spacing: 12) {
-            CorrespondentAvatar(initials: thread.isFromAccountOwner ? "Y" : thread.initials,
+            // You: the first letter of "You" in your language.
+            CorrespondentAvatar(initials: thread.isFromAccountOwner ? String(String(localized: "You").prefix(1)) : thread.initials,
                                 email: thread.isFromAccountOwner ? nil : thread.senderEmail, size: CGSize(width: 44, height: 44),
                                 companyLogo: thread.showsCompanyLogo)
             VStack(alignment: .leading, spacing: 2) {
@@ -547,8 +548,9 @@ struct ConversationView: View {
         // Something you sent: who it went to. Never "To you".
         if thread.isFromAccountOwner {
             let names = thread.recipientNames
-            let to = names.isEmpty ? String(localized: "Sent") : String(localized: "To ") + (names.count > 2 ? names.prefix(2).joined(separator: ", ") + " +\(names.count - 2)"
-                                                                          : names.joined(separator: ", "))
+            let list = names.count > 2 ? names.prefix(2).joined(separator: ", ") + " +\(names.count - 2)" : names.joined(separator: ", ")
+            // One sentence, so a language can put "To" after the names.
+            let to = names.isEmpty ? String(localized: "Sent") : String(localized: "To \(list)")
             return "\(to) · \(when)"
         }
         let to = (thread.toRecipients.isEmpty || thread.isDirectRecipient) ? String(localized: "To you") : String(localized: "Cc you")

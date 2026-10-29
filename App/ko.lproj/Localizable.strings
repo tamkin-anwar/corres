@@ -29,9 +29,6 @@
 "%@ · not in All Inboxes" = "%@ · '모든 받은 편지함'에 없음";
 
 /* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@/%@, 자동 갱신. 설정에서 언제든지 취소할 수 있습니다.";
-
-/* No comment provided by engineer. */
 "%@ account" = "%@ 계정";
 
 /* No comment provided by engineer. */
@@ -1091,9 +1088,6 @@
 "Free" = "무료";
 
 /* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ 무료, 이후 %@/%@. 체험 기간이 끝나기 전에 설정에서 취소하면 요금이 청구되지 않습니다.";
-
-/* No comment provided by engineer. */
 "Free trial · first charge %@" = "무료 체험 · 첫 결제 %@";
 
 /* No comment provided by engineer. */
@@ -1470,9 +1464,6 @@
 
 /* No comment provided by engineer. */
 "Messages" = "메시지";
-
-/* No comment provided by engineer. */
-"month" = "월";
 
 /* No comment provided by engineer. */
 "Monthly" = "월간";
@@ -2759,9 +2750,6 @@
 "To" = "받는 사람";
 
 /* No comment provided by engineer. */
-"To " = "받는 사람: ";
-
-/* No comment provided by engineer. */
 "To “%@”" = "받는 사람 '%@'";
 
 /* No comment provided by engineer. */
@@ -3048,9 +3036,6 @@
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "%@이(가) 보낼 메시지를 작성하세요.";
-
-/* No comment provided by engineer. */
-"year" = "년";
 
 /* No comment provided by engineer. */
 "Yesterday" = "어제";
@@ -3819,3 +3804,17 @@
 
 /* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
 "A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "VIP의 이메일은 참조로만 받았더라도 항상 '나에게 필요'로 들어오고 항상 알림을 보냅니다. 이메일의 ⋯ 메뉴에서 추가하세요. 목록에서도 추가하려면 설정 > 사용자화 > 길게 누르기에 VIP를 넣으세요. 쓸어넘겨 제거합니다.";
+
+/* Whole sentences and words that were shown in English: sender badges, Compose placeholders, attachment names, signature names, invitation overlaps, paywall prices. */
+"Unsubscribed" = "구독 취소됨";
+"Recipient" = "받는 사람";
+"Optional" = "선택 사항";
+"Photo %lld" = "사진 %lld";
+"Video %lld" = "비디오 %lld";
+"Scan %lld" = "스캔 %lld";
+"Signature %lld" = "서명 %lld";
+"another event" = "다른 일정";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "연 %@, 자동 갱신. 설정에서 언제든지 취소할 수 있습니다.";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "월 %@, 자동 갱신. 설정에서 언제든지 취소할 수 있습니다.";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ 무료, 이후 연 %@. 체험 기간이 끝나기 전에 설정에서 취소하면 요금이 청구되지 않습니다.";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ 무료, 이후 월 %@. 체험 기간이 끝나기 전에 설정에서 취소하면 요금이 청구되지 않습니다.";

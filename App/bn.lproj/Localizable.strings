@@ -29,9 +29,6 @@
 "%@ · not in All Inboxes" = "%@ · সব ইনবক্সে নেই";
 
 /* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "প্রতি %2$@ %1$@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
-
-/* No comment provided by engineer. */
 "%@ account" = "%@ অ্যাকাউন্ট";
 
 /* No comment provided by engineer. */
@@ -1091,9 +1088,6 @@
 "Free" = "বিনামূল্যে";
 
 /* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি %3$@ %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";
-
-/* No comment provided by engineer. */
 "Free trial · first charge %@" = "বিনামূল্যে ট্রায়াল · প্রথম চার্জ %@";
 
 /* No comment provided by engineer. */
@@ -1470,9 +1464,6 @@
 
 /* No comment provided by engineer. */
 "Messages" = "বার্তা";
-
-/* No comment provided by engineer. */
-"month" = "মাস";
 
 /* No comment provided by engineer. */
 "Monthly" = "মাসিক";
@@ -2759,9 +2750,6 @@
 "To" = "প্রাপক";
 
 /* No comment provided by engineer. */
-"To " = "প্রাপক ";
-
-/* No comment provided by engineer. */
 "To “%@”" = "“%@”-কে";
 
 /* No comment provided by engineer. */
@@ -3048,9 +3036,6 @@
 
 /* No comment provided by engineer. */
 "Write the message %@ should send." = "%@ যে বার্তা পাঠাবে তা লিখুন।";
-
-/* No comment provided by engineer. */
-"year" = "বছর";
 
 /* No comment provided by engineer. */
 "Yesterday" = "গতকাল";
@@ -3819,3 +3804,17 @@
 
 /* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
 "A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "VIP-দের ইমেইল সবসময় আপনার করণীয়-তে আসে এবং সবসময় নোটিফিকেশন দেয়, আপনাকে শুধু কপি করা হলেও। কাউকে যোগ করতে তার ইমেইলের ⋯ মেনু ব্যবহার করুন। তালিকা থেকেও যোগ করতে চাইলে সেটিংস > নিজের মতো সাজান > চেপে ধরে রাখা-তে VIP রাখুন। সরাতে সোয়াইপ করুন।";
+
+/* Whole sentences and words that were shown in English: sender badges, Compose placeholders, attachment names, signature names, invitation overlaps, paywall prices. */
+"Unsubscribed" = "আনসাবস্ক্রাইব করা";
+"Recipient" = "প্রাপক";
+"Optional" = "ঐচ্ছিক";
+"Photo %lld" = "ছবি %lld";
+"Video %lld" = "ভিডিও %lld";
+"Scan %lld" = "স্ক্যান %lld";
+"Signature %lld" = "স্বাক্ষর %lld";
+"another event" = "অন্য একটি ইভেন্ট";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "প্রতি বছর %@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "প্রতি মাস %@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি বছর %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি মাস %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";

@@ -2750,8 +2750,6 @@
 
 /* An invitation: Add to Calendar without access. */
 "Corres doesn't have access to your calendar. You can allow it in System Settings > Privacy & Security > Calendars." = "Corres 无权访问你的日历。你可以在“系统设置”>“隐私与安全性”>“日历”中允许。";
-/* No comment provided by engineer. */
-"%@ a %@, renewing automatically. Cancel anytime in Settings." = "%@/%@，自动续订。可随时在“设置”中取消。";
 
 /* No comment provided by engineer. */
 "%@ a month or %@ a year." = "每月 %@ 或每年 %@。";
@@ -2794,9 +2792,6 @@
 
 /* No comment provided by engineer. */
 "Family" = "家人共享";
-
-/* No comment provided by engineer. */
-"Free for %@, then %@ a %@. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/%@。在试用结束前于“设置”中取消即不会收费。";
 
 /* No comment provided by engineer. */
 "Free trial · first charge %@" = "免费试用 · 首次扣款 %@";
@@ -2907,9 +2902,6 @@
 "Yours for good · bought %@" = "永久拥有 · 购买于 %@";
 
 /* No comment provided by engineer. */
-"month" = "月";
-
-/* No comment provided by engineer. */
 "once" = "一次";
 
 /* No comment provided by engineer. */
@@ -2921,9 +2913,14 @@
 /* No comment provided by engineer. */
 "soon" = "即将";
 
-/* No comment provided by engineer. */
-"year" = "年";
-
 /* The message list's context menu. */
 "Move To" = "移到";
 "Add to VIPs" = "添加到 VIP";
+
+/* Words and whole sentences that were shown in English: the Unsubscribed badge, invitation overlaps, paywall prices. */
+"Unsubscribed" = "已退订";
+"another event" = "另一个日程";
+"%@ a year, renewing automatically. Cancel anytime in Settings." = "%@/年，自动续订。可随时在“设置”中取消。";
+"%@ a month, renewing automatically. Cancel anytime in Settings." = "%@/月，自动续订。可随时在“设置”中取消。";
+"Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/年。在试用结束前于“设置”中取消即不会收费。";
+"Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/月。在试用结束前于“设置”中取消即不会收费。";
