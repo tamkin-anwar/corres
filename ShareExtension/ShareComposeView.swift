@@ -54,7 +54,7 @@ struct ShareComposeView: View {
             .confirmationDialog("", isPresented: $confirmingCancel, titleVisibility: .hidden) {
                 Button("Delete Draft", role: .destructive) { close(false) }
                 Button("Save Draft") {
-                    Task { if await composer.saveDraft() { finish(after: 0.6) } }
+                    Task { if await composer.saveDraft() { finish(after: composer.phase == .draftKept ? 2.2 : 0.6) } }
                 }
             }
             .alert("Send without a subject?", isPresented: $confirmingNoSubject) {
@@ -402,6 +402,10 @@ struct ShareComposeView: View {
         case .saved:
             badge("Saved to Drafts") {
                 Image(systemName: "checkmark.circle.fill").font(.system(size: 40)).foregroundStyle(CorresPalette.accent)
+            }
+        case .draftKept:
+            badge("No connection. Corres will save it to Drafts the next time it opens.") {
+                Image(systemName: "clock.arrow.circlepath").font(.system(size: 36)).foregroundStyle(CorresPalette.accent)
             }
         case .unsaved:
             Color.clear.alert("Couldn't Save", isPresented: .constant(true)) {

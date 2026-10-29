@@ -376,3 +376,6 @@
 "Saved to Drafts" = "已存储到草稿";
 "Couldn't Save" = "无法存储";
 "Couldn't save. Try again." = "无法存储。请再试一次。";
+
+/* Save Draft with no connection. */
+"No connection. Corres will save it to Drafts the next time it opens." = "未连接网络。下次打开 Corres 时会将其存入草稿。";

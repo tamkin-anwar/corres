@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import Postwright
 
 /// The email being written in the Share sheet, and sending it: straight to
 /// Gmail as the account you pick, the way Mail and Gmail's own share
@@ -20,6 +21,8 @@ final class ShareComposer {
         case mayHaveSent
         /// Save Draft: saved, or not.
         case saved, unsaved
+        /// Save Draft with no connection: kept for Corres to save.
+        case draftKept
     }
 
     let snapshot: ShareSnapshot?
@@ -274,7 +277,7 @@ final class ShareComposer {
             let full = raw(draft), bare = raw(draft, withAttachments: false)
             try await client.send(attachments: draft.attachments, threadId: nil, account: account) { $0 ? full : bare }
             phase = .sent
-        } catch let error as URLError where Self.neverReachedGmail(error) || Self.mayHaveGone(error) {
+        } catch where Self.neverReachedServer(error) || (error as? URLError).map(Self.mayHaveGone) == true {
             // Never reached the server, or the connection dropped before
             // its answer came back (it may have gone): either way Corres
             // sends it as soon as it can, asking the server first (the same
@@ -301,11 +304,21 @@ final class ShareComposer {
         let draft = draft()
         phase = .sending
         let full = raw(draft), bare = raw(draft, withAttachments: false)
-        let saved = (try? await client.saveDraft(attachments: draft.attachments, threadId: nil, existingID: nil, account: account,
-                                                 compose: { $0 ? full : bare })) != nil
-        // Not saved is said, not just back to editing as if nothing happened.
-        phase = saved ? .saved : .unsaved
-        return saved
+        do {
+            _ = try await client.saveDraft(attachments: draft.attachments, threadId: nil, existingID: nil, account: account,
+                                           compose: { $0 ? full : bare })
+            phase = .saved
+            return true
+        } catch where Self.neverReachedServer(error) && (try? ShareOutbox.addDraft(draft)) != nil {
+            // Offline: kept on this device, and Corres saves it to Drafts
+            // the next time it runs with a connection.
+            phase = .draftKept
+            return true
+        } catch {
+            // Not saved is said, not just back to editing as if nothing happened.
+            phase = .unsaved
+            return false
+        }
     }
 
     func retry() { phase = .editing }
@@ -318,5 +331,29 @@ final class ShareComposer {
     private static func neverReachedGmail(_ error: URLError) -> Bool {
         [.notConnectedToInternet, .dataNotAllowed, .internationalRoamingOff, .cannotFindHost,
          .cannotConnectToHost, .dnsLookupFailed, .callIsActive].contains(error.code)
+    }
+
+    /// The email never reached the mail server whole, so it can go (or be
+    /// saved) later: no connection to Gmail or Outlook, and for iCloud and
+    /// other IMAP accounts, Postwright's connection failing or timing out
+    /// before the end of the message (an SMTP server takes nothing it
+    /// hasn't had the end of, RFC 5321 4.1.1.10). Those aren't URLErrors,
+    /// so offline iCloud mail read as "didn't accept it" and wasn't queued.
+    static func neverReachedServer(_ error: Error) -> Bool {
+        if let error = error as? URLError { return neverReachedGmail(error) }
+        switch error {
+        case SMTPClient.SMTPError.disconnected, SMTPClient.SMTPError.timedOut,
+             IMAPConnection.ConnectionError.disconnected, IMAPConnection.ConnectionError.timedOut,
+             IMAPConnection.ConnectionError.notConnected:
+            return true
+        // How an IMAP session says it couldn't connect (`IMAPSessions.with`).
+        case GmailAPIClient.ClientError.badResponse(let status) where status == 0:
+            return true
+        default:
+            // Couldn't open the connection at all (offline, no route, the
+            // name not found): the networking layer's own errors.
+            let domain = (error as NSError).domain
+            return domain == NSPOSIXErrorDomain || domain.hasPrefix("NIO")
+        }
     }
 }

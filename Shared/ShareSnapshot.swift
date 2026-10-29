@@ -53,16 +53,35 @@ struct ShareSnapshot: Codable {
 /// handed to the app, which sends them the next time it runs, in the
 /// foreground or the background, like anything scheduled.
 enum ShareOutbox {
-    private static var folder: URL? {
+    private static var folder: URL? { folder(named: "share-outbox") }
+    /// Save Draft with no connection: kept here for Corres to save to the
+    /// account's Drafts (`OutboxService.saveSharedDrafts`).
+    private static var draftsFolder: URL? { folder(named: "share-drafts") }
+
+    private static func folder(named name: String) -> URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: ShareSnapshot.appGroup)?
-            .appending(path: "share-outbox", directoryHint: .isDirectory)
+            .appending(path: name, directoryHint: .isDirectory)
     }
 
     static func add(_ draft: Draft) throws {
+        try write(draft, to: folder)
+    }
+
+    static func addDraft(_ draft: Draft) throws {
+        try write(draft, to: draftsFolder)
+    }
+
+    private static func write(_ draft: Draft, to folder: URL?) throws {
         guard let folder else { throw CocoaError(.fileNoSuchFile) }
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         try JSONEncoder().encode(draft).write(to: folder.appending(path: "\(draft.id.uuidString).json"),
                                               options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+    }
+
+    /// Drafts waiting to be saved, removed as they're handed over (as
+    /// `takeAll`); one that still can't be saved is put back with `addDraft`.
+    static func takeDrafts() -> [Draft] {
+        take(from: draftsFolder)
     }
 
     /// Everything waiting, removed from the queue as it's handed over.
@@ -71,6 +90,10 @@ enum ShareOutbox {
     /// is set aside as ".unreadable" instead of deleted, so an email you
     /// wrote is never thrown away unseen.
     static func takeAll() -> [Draft] {
+        take(from: folder)
+    }
+
+    private static func take(from folder: URL?) -> [Draft] {
         guard let folder,
               let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil) else { return [] }
         return files.filter { $0.pathExtension == "json" }.compactMap { file in

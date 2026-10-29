@@ -376,3 +376,6 @@
 "Saved to Drafts" = "খসড়ায় সংরক্ষিত";
 "Couldn't Save" = "সংরক্ষণ করা যায়নি";
 "Couldn't save. Try again." = "সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।";
+
+/* Save Draft with no connection. */
+"No connection. Corres will save it to Drafts the next time it opens." = "সংযোগ নেই। পরের বার Corres খুললে এটি খসড়ায় সংরক্ষণ করবে।";

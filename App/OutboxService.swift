@@ -114,6 +114,29 @@ final class OutboxService {
         }
     }
 
+    /// Drafts saved in the Share sheet with no connection
+    /// (`ShareOutbox.addDraft`): saved to their account's Drafts now. One
+    /// that still can't be (offline, or the account not back yet) is kept
+    /// for next time, never dropped.
+    func saveSharedDrafts() async {
+        let drafts = ShareOutbox.takeDrafts()
+        guard !drafts.isEmpty else { return }
+        await waitForAccounts()
+        for draft in drafts {
+            var saved = false
+            if let account = resolveSendingAccount(draft: draft, thread: nil), auth.isConnected(account) {
+                let from = fromHeader(draft, account: account)
+                saved = (try? await client.saveDraft(attachments: draft.attachments, threadId: nil, existingID: nil, account: account,
+                                                     compose: { withAttachments in
+                    GmailMessageComposer.compose(from: from, to: draft.to, cc: draft.cc, bcc: draft.bcc, subject: draft.subject,
+                                                 body: draft.body, inReplyTo: nil, messageID: Self.rfc822MessageID(for: draft.id),
+                                                 attachments: withAttachments ? draft.attachments : [])
+                })) != nil
+            }
+            if !saved { try? ShareOutbox.addDraft(draft) }
+        }
+    }
+
     /// Opened again from the pill: it's in Compose now, not on the shelf.
     func takeShelved() -> Draft? {
         defer { shelved = nil }
