@@ -13,9 +13,12 @@ const functions = require('@google-cloud/functions-framework');
 const { Firestore } = require('@google-cloud/firestore');
 const { KeyManagementServiceClient } = require('@google-cloud/kms');
 const crypto = require('crypto');
+const dns = require('dns');
 const http2 = require('http2');
+const net = require('net');
 const appAttest = require('./appattest');
 const deviceCheck = require('./devicecheck');
+const accountProof = require('./accountproof');
 
 const firestore = new Firestore();
 const devices = firestore.collection('devices');
@@ -60,6 +63,29 @@ const APP_ATTEST_NEW_KEYS = process.env.APP_ATTEST_NEW_KEYS !== '0';
 // entitlement. TestFlight and App Store builds always make production keys.
 const APP_ATTEST_DEVELOPMENT = process.env.APP_ATTEST_DEVELOPMENT !== '0';
 const CHALLENGE_LIFETIME_MS = 5 * 60_000;
+// An attested key nobody has used for this long is let go by Firestore's
+// TTL policy on `expiresAt` (see README); every signed call renews it. An
+// app whose key went answers `unknown-key` by attesting a new one.
+const ATTEST_KEY_LIFETIME_MS = 60 * 24 * 60 * 60 * 1000;
+function attestKeyExpiry() {
+  return Firestore.Timestamp.fromMillis(Date.now() + ATTEST_KEY_LIFETIME_MS);
+}
+
+// Proof of the account (see accountproof.js): /register carries the Gmail
+// account's Google ID token, /register-graph the Outlook account's
+// Microsoft one. Monitor mode until this is "1", like App Attest: every
+// call is checked and logged, and one without (or failing) the proof still
+// goes through. Enforced, it's refused with 401.
+const ACCOUNT_PROOF_ENFORCE = process.env.ACCOUNT_PROOF_ENFORCE === '1';
+// The client ids the tokens are issued to: the iPhone, iPad and Mac apps
+// share one of each.
+function listFrom(value, fallback) {
+  const list = String(value || '').split(',').map((s) => s.trim()).filter(Boolean);
+  return list.length ? list : fallback;
+}
+const GOOGLE_CLIENT_IDS = listFrom(process.env.GOOGLE_CLIENT_IDS,
+  ['211980968673-k961lt0jtath3ojt4r7ukb3j3jbn8ecl.apps.googleusercontent.com']);
+const MICROSOFT_CLIENT_IDS = listFrom(process.env.MICROSOFT_CLIENT_IDS, ['5385700b-0a2e-4849-acd9-679955cdd203']);
 
 // DeviceCheck (see devicecheck.js): the Mac's proof, since Macs can't use
 // App Attest. Set up when DEVICECHECK_KEY_ID and a key are configured
@@ -391,35 +417,69 @@ function keyDocID(keyId) {
   return Buffer.from(keyId, 'base64').toString('hex');
 }
 
-// 32 random bytes, good for one use within five minutes. Stored by its
-// hash, so the database never holds a usable challenge. Unused ones are
-// cleared by Firestore's TTL policy on `expiresAt` (see README). Each
-// register or unregister call takes one, so a phone with many accounts
-// asks for several at once; 60 a minute per address is far above that.
+// Challenges carry their own proof: 12 random bytes, when it expires
+// (seconds, 4 bytes) and a MAC over both (16 bytes), 32 bytes in all. So
+// handing one out writes nothing, and a flood of /attest-challenge calls
+// costs no database writes. The MAC key is shared by every instance:
+// ATTEST_CHALLENGE_KEY if set, otherwise derived from the APNs key the
+// relay already holds (HKDF, so the key itself is never used for this).
+const CHALLENGE_MAC_KEY = (() => {
+  if (process.env.ATTEST_CHALLENGE_KEY) return Buffer.from(process.env.ATTEST_CHALLENGE_KEY, 'utf8');
+  if (process.env.APNS_AUTH_KEY) {
+    return Buffer.from(crypto.hkdfSync('sha256', process.env.APNS_AUTH_KEY, 'corres-push-relay', 'attest-challenge', 32));
+  }
+  console.log('attest challenges: no shared key; challenges work on this instance only');
+  return crypto.randomBytes(32);
+})();
+
+function challengeMAC(head) {
+  return crypto.createHmac('sha256', CHALLENGE_MAC_KEY).update(head).digest().subarray(0, 16);
+}
+
+function issueChallenge(now = Date.now()) {
+  const head = Buffer.alloc(16);
+  crypto.randomBytes(12).copy(head, 0);
+  head.writeUInt32BE(Math.ceil((now + CHALLENGE_LIFETIME_MS) / 1000), 12);
+  return Buffer.concat([head, challengeMAC(head)]).toString('base64');
+}
+
+// When a challenge this relay issued expires (ms), or null for anything else.
+function challengeExpiry(challenge, now = Date.now()) {
+  if (typeof challenge !== 'string' || !CHALLENGE_PATTERN.test(challenge)) return null;
+  const bytes = Buffer.from(challenge, 'base64');
+  if (bytes.length !== 32) return null;
+  const head = bytes.subarray(0, 16);
+  if (!crypto.timingSafeEqual(bytes.subarray(16), challengeMAC(head))) return null;
+  const expiresAt = head.readUInt32BE(12) * 1000;
+  if (expiresAt <= now || expiresAt > now + CHALLENGE_LIFETIME_MS + 60_000) return null;
+  return expiresAt;
+}
+
+// Good for one use within five minutes. Each register or unregister call
+// takes one, so a phone with many accounts asks for several at once; 60 a
+// minute per address is far above that.
 async function handleAttestChallenge(req, res) {
   if (rateLimited(req, res, '/attest-challenge', 60)) return;
   if (req.body && req.body.purpose === 'attest' && !APP_ATTEST_NEW_KEYS) {
     res.status(503).send('New App Attest keys are paused');
     return;
   }
-  const challenge = crypto.randomBytes(32).toString('base64');
-  await attestChallenges.doc(hash(challenge)).set({
-    expiresAt: Firestore.Timestamp.fromMillis(Date.now() + CHALLENGE_LIFETIME_MS),
-  });
-  res.status(200).json({ challenge });
+  res.status(200).json({ challenge: issueChallenge() });
 }
 
-// True once for a challenge this relay issued and that hasn't expired;
-// it's deleted as it's used, so a second use always fails.
+// True once for a challenge this relay issued and that hasn't expired.
+// Its hash is recorded as it's used (until it would have expired; Firestore's
+// TTL policy on `expiresAt` clears it, see README), so a second use fails.
 async function consumeChallenge(challenge) {
-  if (typeof challenge !== 'string' || !CHALLENGE_PATTERN.test(challenge)) return false;
-  const ref = attestChallenges.doc(hash(challenge));
-  return firestore.runTransaction(async (transaction) => {
-    const doc = await transaction.get(ref);
-    if (!doc.exists) return false;
-    transaction.delete(ref);
-    return doc.data().expiresAt.toMillis() > Date.now();
-  });
+  const expiresAt = challengeExpiry(challenge);
+  if (!expiresAt) return false;
+  try {
+    await attestChallenges.doc(hash(challenge)).create({ expiresAt: Firestore.Timestamp.fromMillis(expiresAt) });
+    return true;
+  } catch (error) {
+    if (error && error.code === 6) return false; // ALREADY_EXISTS: used before
+    throw error;
+  }
 }
 
 // The app's new key, attested by Apple over one of our challenges. Once
@@ -468,6 +528,7 @@ async function handleAttest(req, res) {
       platform: platform === 'macOS' ? 'macOS' : 'iOS',
       accessPolicy: verified.accessPolicy,
       createdAt: Firestore.FieldValue.serverTimestamp(),
+      expiresAt: attestKeyExpiry(),
     });
     return true;
   });
@@ -510,7 +571,7 @@ async function checkAssertion(req) {
         appId: stored.appId,
         previousCounter: stored.counter,
       });
-      transaction.update(ref, { counter, lastUsedAt: Firestore.FieldValue.serverTimestamp() });
+      transaction.update(ref, { counter, lastUsedAt: Firestore.FieldValue.serverTimestamp(), expiresAt: attestKeyExpiry() });
     });
     return { attested: true, reason: null, keyId };
   } catch (error) {
@@ -582,6 +643,72 @@ function attestFields(result) {
   };
 }
 
+// Whether the caller proved it signed in to `emailAddress` (see
+// accountproof.js), logged on one line per call without the address or
+// the token. Enforced, a call without that proof gets 401 and null; in
+// monitor mode it goes through either way. `Corres-Account-Proof-Result`
+// says how it went.
+async function accountProofGate(req, res, route, provider, emailAddress) {
+  const token = req.body && req.body.idToken;
+  const result = await accountProof.check({
+    provider,
+    token: typeof token === 'string' ? token : null,
+    address: emailAddress,
+    audiences: provider === 'google' ? GOOGLE_CLIENT_IDS : MICROSOFT_CLIENT_IDS,
+  });
+  if (ACCOUNT_PROOF_ENFORCE && !result.verified) {
+    console.log(`account proof ${route}: rejected, ${result.reason}`);
+    res.status(401).set('Corres-Account-Proof-Result', result.reason).send('Sign-in proof for this account is required');
+    return null;
+  }
+  console.log(`account proof ${route}: ${result.verified ? 'ok' : `allowed unproven, ${result.reason}`}`);
+  res.set('Corres-Account-Proof-Result', result.verified ? 'ok' : result.reason);
+  return result;
+}
+
+// The most devices one address can wake. Each registration of a new
+// device past it is refused, unless it proves the account: then the
+// devices that never proved it, quietest first (or, if all did, the
+// quietest of all), give the address up to make room. So a stranger can't
+// fill an address's places to keep its owner out.
+const MAX_DEVICES_PER_ADDRESS = Number(process.env.MAX_DEVICES_PER_ADDRESS) || 10;
+
+async function roomForDevice(emailAddress, deviceToken, proven) {
+  const found = await devices.where('emailAddresses', 'array-contains', emailAddress).limit(100).get();
+  const others = found.docs.filter((doc) => doc.id !== deviceToken);
+  if (others.length < found.docs.length || others.length < MAX_DEVICES_PER_ADDRESS) return true;
+  if (!proven) return false;
+  const quietSince = (doc) => {
+    const at = doc.data().updatedAt;
+    return at && typeof at.toMillis === 'function' ? at.toMillis() : 0;
+  };
+  const unproven = (doc) => (Array.isArray(doc.data().provenAccounts) && doc.data().provenAccounts.includes(emailAddress) ? 0 : 1);
+  const order = [...others].sort((a, b) => (unproven(b) - unproven(a)) || (quietSince(a) - quietSince(b)));
+  const leaving = order.slice(0, others.length - MAX_DEVICES_PER_ADDRESS + 1);
+  console.log(`devices per address: made room for a proven device, ${leaving.length} let go`);
+  await Promise.all(leaving.map(async (doc) => {
+    await quietly(doc.ref.update({
+      emailAddresses: Firestore.FieldValue.arrayRemove(emailAddress),
+      alertAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
+      gmailAlertAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
+      provenAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
+    }));
+    const subscriptions = await graphSubscriptions.where('deviceToken', '==', doc.id).where('emailAddress', '==', emailAddress).get();
+    await Promise.all(subscriptions.docs.map((subscription) => quietly(subscription.ref.delete())));
+  }));
+  return true;
+}
+
+// What the device record keeps about the proof: the accounts this device
+// proved it signed in to (only the addresses, never a token).
+function proofFields(emailAddress, proof) {
+  return {
+    provenAccounts: proof.verified
+      ? Firestore.FieldValue.arrayUnion(emailAddress)
+      : Firestore.FieldValue.arrayRemove(emailAddress),
+  };
+}
+
 // One device can now be signed into more than one Gmail account at once
 // (Corres's own multi-account support), so a device token maps to a list of
 // email addresses, not a single one: `emailAddresses` (array-contains
@@ -601,8 +728,14 @@ async function handleRegister(req, res) {
   if (rateLimited(req, res, '/register', 60)) return;
   const attest = await appAttestGate(req, res, '/register');
   if (!attest) return;
+  const proof = await accountProofGate(req, res, '/register', 'google', emailAddress);
+  if (!proof) return;
   if (await atAccountCap(deviceToken, emailAddress)) {
     res.status(429).send('Too many accounts registered for this device');
+    return;
+  }
+  if (!(await roomForDevice(emailAddress, deviceToken, proof.verified))) {
+    res.status(429).send('Too many devices registered for this account');
     return;
   }
   // "gmailAlerts": "1" only from builds whose notification extension can
@@ -616,6 +749,7 @@ async function handleRegister(req, res) {
     updatedAt: Firestore.FieldValue.serverTimestamp(),
     expiresAt: deviceExpiry(),
     ...attestFields(attest),
+    ...proofFields(emailAddress, proof),
     ...environmentFrom(req.body),
   }, { merge: true });
   res.status(204).send();
@@ -654,12 +788,16 @@ async function handleUnregister(req, res) {
       emailAddresses: Firestore.FieldValue.arrayRemove(emailAddress),
       alertAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
       gmailAlertAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
+      provenAccounts: Firestore.FieldValue.arrayRemove(emailAddress),
       // The device is still there and still registering its other accounts.
       expiresAt: deviceExpiry(),
       ...attestFields(attest),
     }, { merge: true });
   } else {
     await devices.doc(deviceToken).delete();
+    // Notifications are off on this device: it won't call again until
+    // they're back on, and then it attests a new key (`unknown-key`).
+    if (attest.attested && attest.keyId) await quietly(attestKeys.doc(keyDocID(attest.keyId)).delete());
   }
   // And this device's Outlook subscription records (an id and a hashed
   // secret), for that account or for every account when notifications go off.
@@ -743,6 +881,8 @@ async function handleRegisterGraph(req, res) {
   if (rateLimited(req, res, '/register-graph', 60)) return;
   const attest = await appAttestGate(req, res, '/register-graph');
   if (!attest) return;
+  const proof = await accountProofGate(req, res, '/register-graph', 'microsoft', emailAddress);
+  if (!proof) return;
   const [held, atCap] = await Promise.all([
     graphSubscriptions.where('deviceToken', '==', deviceToken).get(),
     atAccountCap(deviceToken, emailAddress),
@@ -750,6 +890,10 @@ async function handleRegisterGraph(req, res) {
   const others = held.docs.filter((doc) => doc.data().emailAddress !== emailAddress);
   if (atCap || others.length >= MAX_GRAPH_SUBSCRIPTIONS_PER_DEVICE) {
     res.status(429).send('Too many accounts registered for this device');
+    return;
+  }
+  if (!(await roomForDevice(emailAddress, deviceToken, proof.verified))) {
+    res.status(429).send('Too many devices registered for this account');
     return;
   }
   // The device first, so a notice that arrives in between finds it.
@@ -763,6 +907,7 @@ async function handleRegisterGraph(req, res) {
     alertAccounts: alerts ? Firestore.FieldValue.arrayUnion(emailAddress) : Firestore.FieldValue.arrayRemove(emailAddress),
     updatedAt: Firestore.FieldValue.serverTimestamp(),
     expiresAt: deviceExpiry(),
+    ...proofFields(emailAddress, proof),
     ...environmentFrom(req.body),
   }, { merge: true });
   // `expiresAt` lets Firestore's TTL policy clear records nobody renews
@@ -911,15 +1056,52 @@ const SEALED_PATTERN = /^[A-Za-z0-9+/=]{300,700}$/;
 const ICLOUD_HOST = 'imap.mail.me.com';
 const ICLOUD_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
 
-// How many watches there are in all, counted at most once a minute per
-// instance (an aggregation query, one read per thousand records).
-let watchCount = { value: 0, at: 0 };
-async function icloudWatchCount() {
+// Watches still waiting for their first sign-in at the watcher. Counted
+// apart, so watches that never sign in (a made-up address, a wrong
+// password, a server that doesn't answer) can't use up the places of real
+// ones; and capped on their own, so they can't grow without end either.
+const MAX_ICLOUD_PENDING_WATCHES = Number(process.env.ICLOUD_MAX_PENDING_WATCHES) || 500;
+
+// How many watches have signed in (`loggedIn`, set by the watcher) and how
+// many haven't yet, counted at most once a minute per instance
+// (aggregation queries, one read per thousand records).
+let watchCount = { value: 0, pending: 0, at: 0 };
+async function icloudWatchCounts() {
   if (Date.now() - watchCount.at > 60_000) {
-    const snapshot = await icloudWatches.count().get();
-    watchCount = { value: snapshot.data().count, at: Date.now() };
+    const [live, all] = await Promise.all([
+      icloudWatches.where('loggedIn', '==', true).count().get(),
+      icloudWatches.count().get(),
+    ]);
+    const value = live.data().count;
+    watchCount = { value, pending: Math.max(0, all.data().count - value), at: Date.now() };
   }
-  return watchCount.value;
+  return watchCount;
+}
+
+// The same private ranges the logo relay and the watcher refuse.
+function isPrivateAddress(address) {
+  if (net.isIPv4(address)) {
+    const [a, b] = address.split('.').map(Number);
+    return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31)
+      || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || (a === 198 && (b === 18 || b === 19)) || a >= 224;
+  }
+  const lower = address.toLowerCase();
+  return lower === '::' || lower === '::1' || lower.startsWith('fc') || lower.startsWith('fd') || lower.startsWith('fe80')
+    || lower.startsWith('::ffff:') || lower.startsWith('64:ff9b:') || lower.startsWith('2002:') || lower.startsWith('ff');
+}
+
+// "private" when a host name answers with an address inside a network
+// (loopback, private, link-local, metadata), "unknown" when it doesn't
+// resolve at all, null when it's public or the lookup itself failed (the
+// watcher checks again each time it connects, so that's not the last word).
+async function hostProblem(host) {
+  try {
+    const addresses = await dns.promises.lookup(host, { all: true });
+    if (!addresses.length) return 'unknown';
+    return addresses.some(({ address }) => isPrivateAddress(address)) ? 'private' : null;
+  } catch (error) {
+    return error && (error.code === 'ENOTFOUND' || error.code === 'ENODATA') ? 'unknown' : null;
+  }
 }
 
 async function handleRegisterICloud(req, res) {
@@ -956,6 +1138,13 @@ async function handleRegisterICloud(req, res) {
     return;
   }
   if (rateLimited(req, res, '/register-icloud', 30)) return;
+  if (imapHost !== ICLOUD_HOST) {
+    const problem = await hostProblem(imapHost);
+    if (problem) {
+      res.status(400).send(problem === 'private' ? 'imapHost must be a public host name on port 993' : 'imapHost does not resolve');
+      return;
+    }
+  }
   const attest = await appAttestGate(req, res, '/register-icloud');
   if (!attest) return;
   const ref = icloudWatches.doc(watchID(emailAddress, deviceToken));
@@ -968,11 +1157,18 @@ async function handleRegisterICloud(req, res) {
     res.status(429).send('Too many iCloud accounts for this device');
     return;
   }
-  if (!current.exists && await icloudWatchCount() >= MAX_ICLOUD_WATCHES) {
-    console.log('icloud watches full');
-    res.status(503).send('Instant iCloud notifications are full right now');
-    return;
+  if (!current.exists) {
+    const counts = await icloudWatchCounts();
+    if (counts.value >= MAX_ICLOUD_WATCHES || counts.pending >= MAX_ICLOUD_PENDING_WATCHES) {
+      console.log(counts.value >= MAX_ICLOUD_WATCHES ? 'icloud watches full' : 'icloud watches waiting to sign in full');
+      res.status(503).send('Instant iCloud notifications are full right now');
+      return;
+    }
   }
+  // A watch that has signed in keeps saying so while it watches the same
+  // login, so renewing it doesn't move it back among the waiting ones.
+  const before = current.exists ? current.data() : null;
+  const sameLogin = before && before.loggedIn === true && before.imapHost === imapHost && before.username === username;
   await ref.set({
     emailAddress: address,
     imapHost,
@@ -982,12 +1178,14 @@ async function handleRegisterICloud(req, res) {
     sealedPassword,
     alerts: body.alerts !== '0',
     failures: 0,
+    loggedIn: Boolean(sameLogin),
+    ...(sameLogin && before.loggedInAt ? { loggedInAt: before.loggedInAt } : {}),
     updatedAt: Firestore.FieldValue.serverTimestamp(),
     expiresAt: deviceExpiry(),
     ...attestFields(attest),
     ...environmentFrom(body),
   });
-  if (!current.exists) watchCount.value += 1;
+  if (!current.exists) watchCount.pending += 1;
   res.status(204).send();
 }
 

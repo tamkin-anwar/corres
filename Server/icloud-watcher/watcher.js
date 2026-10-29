@@ -22,6 +22,8 @@
 const http = require('http');
 const http2 = require('http2');
 const crypto = require('crypto');
+const dns = require('dns');
+const net = require('net');
 const { Firestore } = require('@google-cloud/firestore');
 const { KeyManagementServiceClient } = require('@google-cloud/kms');
 const { ImapFlow } = require('imapflow');
@@ -210,6 +212,33 @@ let unseal = async (sealed) => {
 };
 let makeClient = (options) => new ImapFlow(options);
 
+// A server inside a network (loopback, private, link-local, the cloud's
+// metadata address) is never connected to, whatever name points there.
+// The same ranges the logo relay refuses.
+function isPrivate(address) {
+  if (net.isIPv4(address)) {
+    const [a, b] = address.split('.').map(Number);
+    return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31)
+      || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || (a === 198 && (b === 18 || b === 19)) || a >= 224;
+  }
+  const lower = address.toLowerCase();
+  return lower === '::' || lower === '::1' || lower.startsWith('fc') || lower.startsWith('fd') || lower.startsWith('fe80')
+    || lower.startsWith('::ffff:') || lower.startsWith('64:ff9b:') || lower.startsWith('2002:') || lower.startsWith('ff');
+}
+
+// The address a login's server name points to now, checked as public.
+// The connection is made to exactly this address (with the name kept for
+// TLS, so the certificate is still checked against it), so a name that
+// answers a public address to one lookup and a private one to the next
+// can't slip through. Throws `EPRIVATE` for a private one.
+let resolveHost = async (host) => {
+  const addresses = await dns.promises.lookup(host, { all: true });
+  if (!addresses.length || addresses.some(({ address }) => isPrivate(address))) {
+    throw Object.assign(new Error('private address'), { code: 'EPRIVATE' });
+  }
+  return addresses[0].address;
+};
+
 // The login a watch signs in as. Two records with the same login share
 // one connection; anything else (another server, another user) gets its own.
 function loginFor(data) {
@@ -259,7 +288,10 @@ async function withLoginSlot(work) {
 
 function clientFor(entry, password) {
   return makeClient({
-    host: entry.login.host, port: entry.login.port, secure: true,
+    // The checked address, and the name for TLS (SNI and the certificate
+    // check), given both ways ImapFlow passes it on to Node.
+    host: entry.address, servername: entry.login.host, tls: { servername: entry.login.host },
+    port: entry.login.port, secure: true,
     auth: { user: entry.login.username, pass: password },
     logger: false, maxIdleTime: 20 * 60 * 1000, emitLogs: false,
   });
@@ -269,6 +301,20 @@ async function connect(entry) {
   if (isStale(entry) || entry.client || entry.starting) return;
   entry.starting = true;
   try {
+    try {
+      entry.address = await resolveHost(entry.login.host);
+    } catch (error) {
+      if (error && error.code === 'EPRIVATE') {
+        // Never a server to watch: every watch naming it goes.
+        log('removed watches whose server is not public', hashed(entry.login.key));
+        await Promise.all([...entry.watches.keys()].map((id) => watches.doc(id).delete().catch(() => {})));
+        return;
+      }
+      // The name didn't resolve right now: tried again with the backoff.
+      schedule(entry);
+      return;
+    }
+    if (isStale(entry)) return;
     // Any of the login's devices' passwords will do; one that the server
     // turns away three times (revoked at account.apple.com) is deleted.
     for (const watch of [...entry.watches.values()]) {
@@ -367,9 +413,19 @@ function sealedWrongly(error) {
   return Boolean(error && error.code === 3);
 }
 
+// Signed in: trusted, and marked `loggedIn` once, which is what the relay
+// counts toward the most watches it takes (ICLOUD_MAX_WATCHES).
 function verified(watch) {
   watch.verifiedSealed = watch.data.sealedPassword;
-  if (watch.data.failures) watches.doc(watch.id).update({ failures: 0 }).catch(() => {});
+  const update = {};
+  if (watch.data.failures) update.failures = 0;
+  if (watch.data.loggedIn !== true) {
+    update.loggedIn = true;
+    update.loggedInAt = Firestore.FieldValue.serverTimestamp();
+  }
+  if (Object.keys(update).length === 0) return;
+  watch.data = { ...watch.data, failures: 0, loggedIn: true };
+  watches.doc(watch.id).update(update).catch(() => {});
 }
 
 // The login's other devices: trusted once their own password is shown to
@@ -545,9 +601,10 @@ if (require.main === module) start();
 
 // For tests: the pure parts, and seams for the IMAP client and unsealing.
 module.exports = {
-  loginFor, notifyTargets, upsertWatch, removeWatch, accounts, watchLogins, waiting,
+  loginFor, notifyTargets, upsertWatch, removeWatch, accounts, watchLogins, waiting, isPrivate,
   _setSeams(seams) {
     if (seams.unseal) unseal = seams.unseal;
     if (seams.makeClient) makeClient = seams.makeClient;
+    if (seams.resolveHost) resolveHost = seams.resolveHost;
   },
 };
