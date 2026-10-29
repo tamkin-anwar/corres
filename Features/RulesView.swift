@@ -172,9 +172,11 @@ struct RuleEditor: View {
                     Toggle("On", isOn: $rule.isEnabled)
                     if rule.isUsable {
                         Button {
+                            // Runs the rule as written, without saving it:
+                            // Cancel afterwards still leaves no new rule
+                            // (or the old one as it was). Save keeps it.
                             Task {
                                 isApplying = true
-                                Organizer.shared.save(rule)
                                 appliedCount = await Organizer.shared.applyToExisting(rule)
                                 isApplying = false
                             }
