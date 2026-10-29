@@ -172,7 +172,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
         webView.pageZoom = kind == .plain ? 1 : CGFloat(CorresSettings.textScale)
         #endif
         let page = Self.wrap(processed, kind: kind, dark: dark, textSize: textSize,
-                             load: coordinator.loadGeneration, lateStyles: lateStyles)
+                             load: coordinator.loadGeneration, lateStyles: lateStyles, blockRemote: blockRemoteImages)
         // The rewrite above only catches `<img src>`. With images off,
         // WebKit itself refuses every remote load too (srcset, CSS url(),
         // background=, posters, `//` sources), so nothing reaches a sender.
@@ -189,7 +189,9 @@ struct HTMLMessageBody: PlatformViewRepresentable {
             HangReporter.lap("handed to WebKit")
             return
         }
-        // Only the very first email waits for the rules to compile.
+        // Only the very first email waits for the rules to compile. If they
+        // never do, the page's own policy (`wrap`, `blockRemote`) still
+        // refuses every remote load.
         let generation = coordinator.loadGeneration
         Task { @MainActor [weak webView, weak coordinator] in
             let list = await RemoteContentBlocker.list()
@@ -839,7 +841,7 @@ struct HTMLMessageBody: PlatformViewRepresentable {
     }
 
     private static func wrap(_ html: String, kind: BodyKind, dark: Bool, textSize: CGFloat, load: Int = 0,
-                             lateStyles: [String] = []) -> String {
+                             lateStyles: [String] = [], blockRemote: Bool = false) -> String {
         let adaptiveRules = """
             :root { color-scheme: light dark; }
             @media (prefers-color-scheme: dark) { body { color: #F2F3F5 !important; } a { color: #8FB4E8; } }
@@ -858,16 +860,29 @@ struct HTMLMessageBody: PlatformViewRepresentable {
                 """
         }
         return wrapAdaptive(html, load: load, dark: dark, textSize: textSize, styles: styles, lateStyles: lateStyles,
-                            rootClass: kind == .plain ? "plain" : kind == .designed ? "designed" : "designed own-dark")
+                            rootClass: kind == .plain ? "plain" : kind == .designed ? "designed" : "designed own-dark",
+                            blockRemote: blockRemote)
     }
 
+    /// While an email's images are off, the page's own Content Security
+    /// Policy, a second lock beside `RemoteContentBlocker`: nothing loads
+    /// from the network (images, stylesheets, fonts, media, frames), only
+    /// what's inside the email itself (`data:` and `cid:`), with its own
+    /// inline styles. If the content rules ever fail to compile, this still
+    /// holds. It comes first in the page, before anything from the sender,
+    /// and a sender's own policy can only narrow it, never widen it. Show
+    /// Images loads the page again without it.
+    static let blockingPolicy = "default-src 'none'; img-src data: cid:; style-src 'unsafe-inline'; "
+        + "font-src data:; media-src data: cid:"
+
     private static func wrapAdaptive(_ html: String, load: Int, dark: Bool, textSize: CGFloat, styles: String,
-                                     lateStyles: [String] = [], rootClass: String) -> String {
+                                     lateStyles: [String] = [], rootClass: String, blockRemote: Bool = false) -> String {
         let size = max(12, min(textSize, 40))
         let late = lateStyles.compactMap { $0.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) }
             .joined(separator: " ").replacingOccurrences(of: "\"", with: "%22").replacingOccurrences(of: "&", with: "&amp;")
+        let policy = blockRemote ? "<meta http-equiv=\"Content-Security-Policy\" content=\"\(blockingPolicy)\">\n" : ""
         return """
-        <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+        <html><head>\(policy)<meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="referrer" content="no-referrer">
         <meta name="corres-load" content="\(load)">
         <meta name="corres-dark" content="\(dark ? 1 : 0)">

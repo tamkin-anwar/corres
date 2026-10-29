@@ -75,8 +75,16 @@ final class WKWebViewPool {
         available.append(webView)
     }
 
+    /// Every pooled view's cookies, cache and storage, in memory only and
+    /// gone when Corres quits: an email's images (once you show them) can't
+    /// leave a cookie that follows you from one email to the next launch,
+    /// and nothing an email loaded is written to disk. One store for the
+    /// pool, so its views share a web content process and image cache.
+    private let dataStore = WKWebsiteDataStore.nonPersistent()
+
     private func makeWebView() -> WKWebView {
         let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = dataStore
         configuration.defaultWebpagePreferences.allowsContentJavaScript = false
         // Addresses, phone numbers, dates, flights, tracking numbers and
         // bare web addresses in the text become tappable, found on this
