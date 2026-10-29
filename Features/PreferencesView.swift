@@ -34,7 +34,7 @@ struct PreferencesView: View {
     /// Never committed, never in TestFlight or the App Store.
     private var developerSection: some View {
         Section {
-            Button("Export Test Corpus (500 per account)") {
+            Button("Export Test Corpus (3,000 per account)") {
                 Task {
                     guard corpusStatus != "Exporting…" else { return }
                     corpusStatus = "Exporting…"
@@ -43,7 +43,7 @@ struct PreferencesView: View {
                     var total = 0, missing = 0
                     for account in auth.accounts.map(\.email) {
                         do {
-                            let (items, failed) = try await MailClient().exportCorpus(account: account, limit: 500)
+                            let (items, failed) = try await MailClient().exportCorpus(account: account, limit: 3000)
                             missing += failed
                             let data = try JSONEncoder().encode(items)
                             try data.write(to: folder.appending(path: "\(account).json"))
