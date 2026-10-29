@@ -2940,3 +2940,111 @@
 "%@ a month, renewing automatically. Cancel anytime in Settings." = "월 %@, 자동 갱신. 설정에서 언제든지 취소할 수 있습니다.";
 "Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ 무료, 이후 연 %@. 체험 기간이 끝나기 전에 설정에서 취소하면 요금이 청구되지 않습니다.";
 "Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ 무료, 이후 월 %@. 체험 기간이 끝나기 전에 설정에서 취소하면 요금이 청구되지 않습니다.";
+
+/* No comment provided by engineer. */
+"Job offer" = "채용 제안";
+
+/* No comment provided by engineer. */
+"Job alert" = "채용 알림";
+
+/* No comment provided by engineer. */
+"Appointment" = "예약";
+
+/* No comment provided by engineer. */
+"Sale" = "할인";
+
+/* No comment provided by engineer. */
+"Promotion" = "광고";
+
+/* No comment provided by engineer. */
+"Newsletter" = "뉴스레터";
+
+/* No comment provided by engineer. */
+"Security alert" = "보안 알림";
+
+/* No comment provided by engineer. */
+"Security code" = "인증 코드";
+
+/* No comment provided by engineer. */
+"Delivery" = "배송";
+
+/* No comment provided by engineer. */
+"Receipt" = "영수증";
+
+/* No comment provided by engineer. */
+"A job alert." = "채용 알림입니다.";
+
+/* No comment provided by engineer. */
+"A sale." = "할인 행사입니다.";
+
+/* No comment provided by engineer. */
+"A promotion." = "광고입니다.";
+
+/* No comment provided by engineer. */
+"A newsletter." = "뉴스레터입니다.";
+
+/* No comment provided by engineer. */
+"A security alert." = "보안 알림입니다.";
+
+/* No comment provided by engineer. */
+"A one-time code." = "일회용 코드입니다.";
+
+/* No comment provided by engineer. */
+"A delivery update." = "배송 안내입니다.";
+
+/* No comment provided by engineer. */
+"A receipt or bill." = "영수증 또는 청구서입니다.";
+
+/* No comment provided by engineer. */
+"A calendar invitation." = "캘린더 초대입니다.";
+
+/* No comment provided by engineer. */
+"An appointment reminder." = "예약 알림입니다.";
+
+/* No comment provided by engineer. */
+"Code %@." = "코드 %@.";
+
+/* No comment provided by engineer. */
+"Expires in %@." = "%@ 후 만료.";
+
+/* No comment provided by engineer. */
+"%@ at %@." = "%2$@의 %1$@.";
+
+/* No comment provided by engineer. */
+"%@." = "%@.";
+
+/* No comment provided by engineer. */
+"An offer to join %@." = "%@ 입사 제안.";
+
+/* No comment provided by engineer. */
+"An offer from %@." = "%@의 제안.";
+
+/* No comment provided by engineer. */
+"Starts %@." = "시작일: %@.";
+
+/* No comment provided by engineer. */
+"Listings from %@, not a reply from an employer." = "%@의 채용 공고입니다. 고용주의 답장이 아닙니다.";
+
+/* No comment provided by engineer. */
+"Ended %@." = "%@에 종료됨.";
+
+/* No comment provided by engineer. */
+"Ends %@." = "%@에 종료.";
+
+/* No comment provided by engineer. */
+"About %lld minutes to read." = "약 %lld분 분량.";
+
+/* No comment provided by engineer. */
+"Start date" = "시작일";
+
+/* No comment provided by engineer. */
+"Where" = "장소";
+
+/* No comment provided by engineer. */
+"Confirmation" = "확인 번호";
+
+/* No comment provided by engineer. */
+"Listed pay" = "게시된 급여";
+
+/* No comment provided by engineer. */
+"More jobs" = "다른 채용 공고";

@@ -341,7 +341,7 @@ enum Gist {
     static func jobAlertDetails(subject: String, text: String) -> [Glance.Fact] {
         var facts: [Glance.Fact] = []
         if let pay = text.patternRange(#"(?i)(from |up to )?\$\s?\d[\d,]*(\.\d+)?[kK]?(\s?[-–]\s?\$\s?\d[\d,]*(\.\d+)?[kK]?)?\s(a|an|per|/)\s?(year|yr|hour|hr|day|week|month)\b(?!\s+jobs)"#) {
-            facts.append(Glance.Fact(label: "Pay", value: String(text[pay])))
+            facts.append(Glance.Fact(label: "Listed pay", value: String(text[pay])))
         }
         if let more = capture(#"(?i)\b(\d{1,3}) more\b[^.]{0,60}\bjobs?\b"#, in: subject) {
             facts.append(Glance.Fact(label: "More jobs", value: more))
@@ -576,7 +576,13 @@ enum Gist {
             if happened { score += 2 }
             if sentence.contains(where: \.isNumber) { score += 1.5 }
             if shared > 0 { score += 1 }
-            if sentence.patternRange(#"(?i)^if\b"#) != nil { score -= allowConditional ? 1 : 3 }
+            // "If the tickets become available, you will receive…" isn't
+            // what happened; only a security alert's "if this wasn't you"
+            // is worth reading first.
+            if sentence.patternRange(#"(?i)^if\b"#) != nil {
+                guard allowConditional else { continue }
+                score -= 1
+            }
             if sentence.hasSuffix("?") { score -= 1 }
             if score >= 3, score > (best?.score ?? 0) { best = (sentence, score) }
             if position >= 8 { break }
@@ -623,7 +629,8 @@ enum Gist {
                 piece = String(piece[..<colon.lowerBound])
             }
             while let last = piece.last, ":;,–-".contains(last) { piece.removeLast() }
-            return piece.trimmingCharacters(in: .whitespaces)
+            // A space left before a full stop where a link was ("…2026 .").
+            return piece.replacingPattern(#"\s+([.,!?])"#, with: "$1").trimmingCharacters(in: .whitespaces)
         }.filter { !$0.isEmpty }
     }
 
@@ -665,7 +672,9 @@ enum Gist {
     static let instructionPattern = #"(?i)^(please )?(click|tap|view|shop|download|learn|see|read|visit|follow|sign in|log ?in|go to|check out|explore|discover|find out|get started|start|join|try|manage|enjoy|stay|boost|dive|deploy|unlock|connect|meet|introducing|to (make changes|change|update|unsubscribe|stop|manage|view|learn|access)|you can (also |now )?(view|see|manage|change|update|unsubscribe|reply|contact|find|learn|always|pay|access|download|log|sign)|you may (also )?(view|see|access|contact|download|reply)|if you (have|need|would like|wish|want) (any )?(questions|help|assistance|more)|feel free|do not hesitate|don'?t hesitate|for (more )?(information|details|help|questions))\b"#
     /// Opens by pointing at what came before, so it can't stand alone.
     /// A footnote's marker ("3 Free trial is for 7 days…") too.
-    static let leaningPattern = #"(?i)^(then|also|however|so|but|and|or|it|they|these|those|that)\b|^\S+(\s\S+)?\s+then\b|^(?-i:\d{1,2}\s+[A-Z][a-z])"#
+    /// And a forwarded copy's note about itself ("This is a copy of a
+    /// security alert sent to…"): the alert follows it.
+    static let leaningPattern = #"(?i)^(then|also|however|so|but|and|or|it|they|these|those|that)\b|^\S+(\s\S+)?\s+then\b|^(?-i:\d{1,2}\s+[A-Z][a-z])|^this is a copy of\b"#
 
     // MARK: Text
 

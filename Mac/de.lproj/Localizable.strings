@@ -2940,3 +2940,111 @@
 "%@ a month, renewing automatically. Cancel anytime in Settings." = "%@ pro Monat, verlängert sich automatisch. Jederzeit in den Einstellungen kündbar.";
 "Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ kostenlos, dann %@ pro Jahr. Kündige vor Ende des Tests in den Einstellungen, dann zahlst du nichts.";
 "Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%@ kostenlos, dann %@ pro Monat. Kündige vor Ende des Tests in den Einstellungen, dann zahlst du nichts.";
+
+/* No comment provided by engineer. */
+"Job offer" = "Jobangebot";
+
+/* No comment provided by engineer. */
+"Job alert" = "Jobalarm";
+
+/* No comment provided by engineer. */
+"Appointment" = "Termin";
+
+/* No comment provided by engineer. */
+"Sale" = "Rabattaktion";
+
+/* No comment provided by engineer. */
+"Promotion" = "Werbung";
+
+/* No comment provided by engineer. */
+"Newsletter" = "Newsletter";
+
+/* No comment provided by engineer. */
+"Security alert" = "Sicherheitswarnung";
+
+/* No comment provided by engineer. */
+"Security code" = "Sicherheitscode";
+
+/* No comment provided by engineer. */
+"Delivery" = "Lieferung";
+
+/* No comment provided by engineer. */
+"Receipt" = "Beleg";
+
+/* No comment provided by engineer. */
+"A job alert." = "Ein Jobalarm.";
+
+/* No comment provided by engineer. */
+"A sale." = "Eine Rabattaktion.";
+
+/* No comment provided by engineer. */
+"A promotion." = "Werbung.";
+
+/* No comment provided by engineer. */
+"A newsletter." = "Ein Newsletter.";
+
+/* No comment provided by engineer. */
+"A security alert." = "Eine Sicherheitswarnung.";
+
+/* No comment provided by engineer. */
+"A one-time code." = "Ein Einmalcode.";
+
+/* No comment provided by engineer. */
+"A delivery update." = "Ein Lieferstatus.";
+
+/* No comment provided by engineer. */
+"A receipt or bill." = "Ein Beleg oder eine Rechnung.";
+
+/* No comment provided by engineer. */
+"A calendar invitation." = "Eine Kalendereinladung.";
+
+/* No comment provided by engineer. */
+"An appointment reminder." = "Eine Terminerinnerung.";
+
+/* No comment provided by engineer. */
+"Code %@." = "Code %@.";
+
+/* No comment provided by engineer. */
+"Expires in %@." = "Läuft in %@ ab.";
+
+/* No comment provided by engineer. */
+"%@ at %@." = "%1$@ bei %2$@.";
+
+/* No comment provided by engineer. */
+"%@." = "%@.";
+
+/* No comment provided by engineer. */
+"An offer to join %@." = "Ein Angebot, bei %@ anzufangen.";
+
+/* No comment provided by engineer. */
+"An offer from %@." = "Ein Angebot von %@.";
+
+/* No comment provided by engineer. */
+"Starts %@." = "Beginn: %@.";
+
+/* No comment provided by engineer. */
+"Listings from %@, not a reply from an employer." = "Stellenanzeigen von %@, keine Antwort eines Arbeitgebers.";
+
+/* No comment provided by engineer. */
+"Ended %@." = "Beendet am %@.";
+
+/* No comment provided by engineer. */
+"Ends %@." = "Endet am %@.";
+
+/* No comment provided by engineer. */
+"About %lld minutes to read." = "Etwa %lld Minuten Lesezeit.";
+
+/* No comment provided by engineer. */
+"Start date" = "Startdatum";
+
+/* No comment provided by engineer. */
+"Where" = "Ort";
+
+/* No comment provided by engineer. */
+"Confirmation" = "Bestätigung";
+
+/* No comment provided by engineer. */
+"Listed pay" = "Angegebenes Gehalt";
+
+/* No comment provided by engineer. */
+"More jobs" = "Weitere Jobs";

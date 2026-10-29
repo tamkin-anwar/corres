@@ -3821,3 +3821,108 @@
 "%@ a month, renewing automatically. Cancel anytime in Settings." = "%@ al mes, con renovación automática. Cancela cuando quieras en Ajustes.";
 "Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratis durante %@, luego %@ al año. Cancela cuando quieras en Ajustes antes de que termine la prueba y no se te cobrará.";
 "Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "Gratis durante %@, luego %@ al mes. Cancela cuando quieras en Ajustes antes de que termine la prueba y no se te cobrará.";
+
+/* No comment provided by engineer. */
+"Job offer" = "Oferta de empleo";
+
+/* No comment provided by engineer. */
+"Job alert" = "Alerta de empleo";
+
+/* No comment provided by engineer. */
+"Appointment" = "Cita";
+
+/* No comment provided by engineer. */
+"Sale" = "Descuento";
+
+/* No comment provided by engineer. */
+"Promotion" = "Promoción";
+
+/* No comment provided by engineer. */
+"Newsletter" = "Boletín";
+
+/* No comment provided by engineer. */
+"Security alert" = "Alerta de seguridad";
+
+/* No comment provided by engineer. */
+"Security code" = "Código de seguridad";
+
+/* No comment provided by engineer. */
+"Receipt" = "Recibo";
+
+/* No comment provided by engineer. */
+"A job alert." = "Una alerta de empleo.";
+
+/* No comment provided by engineer. */
+"A sale." = "Una oferta con descuento.";
+
+/* No comment provided by engineer. */
+"A promotion." = "Una promoción.";
+
+/* No comment provided by engineer. */
+"A newsletter." = "Un boletín.";
+
+/* No comment provided by engineer. */
+"A security alert." = "Una alerta de seguridad.";
+
+/* No comment provided by engineer. */
+"A one-time code." = "Un código de un solo uso.";
+
+/* No comment provided by engineer. */
+"A delivery update." = "Una actualización de entrega.";
+
+/* No comment provided by engineer. */
+"A receipt or bill." = "Un recibo o una factura.";
+
+/* No comment provided by engineer. */
+"A calendar invitation." = "Una invitación de calendario.";
+
+/* No comment provided by engineer. */
+"An appointment reminder." = "Un recordatorio de cita.";
+
+/* No comment provided by engineer. */
+"Code %@." = "Código %@.";
+
+/* No comment provided by engineer. */
+"Expires in %@." = "Caduca en %@.";
+
+/* No comment provided by engineer. */
+"%@ at %@." = "%1$@ en %2$@.";
+
+/* No comment provided by engineer. */
+"%@." = "%@.";
+
+/* No comment provided by engineer. */
+"An offer to join %@." = "Una oferta para unirte a %@.";
+
+/* No comment provided by engineer. */
+"An offer from %@." = "Una oferta de %@.";
+
+/* No comment provided by engineer. */
+"Starts %@." = "Empieza el %@.";
+
+/* No comment provided by engineer. */
+"Listings from %@, not a reply from an employer." = "Ofertas de %@, no una respuesta de una empresa.";
+
+/* No comment provided by engineer. */
+"Ended %@." = "Terminó el %@.";
+
+/* No comment provided by engineer. */
+"Ends %@." = "Termina el %@.";
+
+/* No comment provided by engineer. */
+"About %lld minutes to read." = "Unos %lld minutos de lectura.";
+
+/* No comment provided by engineer. */
+"Start date" = "Fecha de inicio";
+
+/* No comment provided by engineer. */
+"Where" = "Dónde";
+
+/* No comment provided by engineer. */
+"Confirmation" = "Confirmación";
+
+/* No comment provided by engineer. */
+"Listed pay" = "Sueldo indicado";
+
+/* No comment provided by engineer. */
+"More jobs" = "Más empleos";

@@ -2940,3 +2940,111 @@
 "%@ a month, renewing automatically. Cancel anytime in Settings." = "প্রতি মাস %@, নিজে থেকে নবায়ন হয়। সেটিংসে যেকোনো সময় বাতিল করুন।";
 "Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি বছর %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";
 "Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "%1$@ বিনামূল্যে, তারপর প্রতি মাস %2$@। ট্রায়াল শেষ হওয়ার আগে সেটিংসে বাতিল করলে কোনো চার্জ লাগবে না।";
+
+/* No comment provided by engineer. */
+"Job offer" = "চাকরির অফার";
+
+/* No comment provided by engineer. */
+"Job alert" = "চাকরির বিজ্ঞপ্তি";
+
+/* No comment provided by engineer. */
+"Appointment" = "অ্যাপয়েন্টমেন্ট";
+
+/* No comment provided by engineer. */
+"Sale" = "ছাড়";
+
+/* No comment provided by engineer. */
+"Promotion" = "বিজ্ঞাপন";
+
+/* No comment provided by engineer. */
+"Newsletter" = "নিউজলেটার";
+
+/* No comment provided by engineer. */
+"Security alert" = "নিরাপত্তা সতর্কতা";
+
+/* No comment provided by engineer. */
+"Security code" = "নিরাপত্তা কোড";
+
+/* No comment provided by engineer. */
+"Delivery" = "ডেলিভারি";
+
+/* No comment provided by engineer. */
+"Receipt" = "রসিদ";
+
+/* No comment provided by engineer. */
+"A job alert." = "একটি চাকরির বিজ্ঞপ্তি।";
+
+/* No comment provided by engineer. */
+"A sale." = "একটি ছাড়ের অফার।";
+
+/* No comment provided by engineer. */
+"A promotion." = "একটি বিজ্ঞাপন।";
+
+/* No comment provided by engineer. */
+"A newsletter." = "একটি নিউজলেটার।";
+
+/* No comment provided by engineer. */
+"A security alert." = "একটি নিরাপত্তা সতর্কতা।";
+
+/* No comment provided by engineer. */
+"A one-time code." = "একটি এককালীন কোড।";
+
+/* No comment provided by engineer. */
+"A delivery update." = "ডেলিভারির একটি আপডেট।";
+
+/* No comment provided by engineer. */
+"A receipt or bill." = "একটি রসিদ বা বিল।";
+
+/* No comment provided by engineer. */
+"A calendar invitation." = "একটি ক্যালেন্ডার আমন্ত্রণ।";
+
+/* No comment provided by engineer. */
+"An appointment reminder." = "অ্যাপয়েন্টমেন্টের একটি রিমাইন্ডার।";
+
+/* No comment provided by engineer. */
+"Code %@." = "কোড %@।";
+
+/* No comment provided by engineer. */
+"Expires in %@." = "%@ পরে মেয়াদ শেষ।";
+
+/* No comment provided by engineer. */
+"%@ at %@." = "%2$@-এ %1$@।";
+
+/* No comment provided by engineer. */
+"%@." = "%@।";
+
+/* No comment provided by engineer. */
+"An offer to join %@." = "%@-এ যোগ দেওয়ার অফার।";
+
+/* No comment provided by engineer. */
+"An offer from %@." = "%@-এর কাছ থেকে একটি অফার।";
+
+/* No comment provided by engineer. */
+"Starts %@." = "শুরু %@।";
+
+/* No comment provided by engineer. */
+"Listings from %@, not a reply from an employer." = "%@-এর চাকরির তালিকা, কোনো নিয়োগকর্তার উত্তর নয়।";
+
+/* No comment provided by engineer. */
+"Ended %@." = "%@-এ শেষ হয়েছে।";
+
+/* No comment provided by engineer. */
+"Ends %@." = "%@-এ শেষ হবে।";
+
+/* No comment provided by engineer. */
+"About %lld minutes to read." = "পড়তে প্রায় %lld মিনিট লাগবে।";
+
+/* No comment provided by engineer. */
+"Start date" = "শুরুর তারিখ";
+
+/* No comment provided by engineer. */
+"Where" = "কোথায়";
+
+/* No comment provided by engineer. */
+"Confirmation" = "নিশ্চিতকরণ";
+
+/* No comment provided by engineer. */
+"Listed pay" = "উল্লেখিত বেতন";
+
+/* No comment provided by engineer. */
+"More jobs" = "আরও চাকরি";

@@ -3821,3 +3821,108 @@
 "%@ a month, renewing automatically. Cancel anytime in Settings." = "%@/月，自动续订。可随时在“设置”中取消。";
 "Free for %@, then %@ a year. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/年。在试用结束前于“设置”中取消即不会收费。";
 "Free for %@, then %@ a month. Cancel anytime in Settings before the trial ends and you won't be charged." = "免费%@，之后%@/月。在试用结束前于“设置”中取消即不会收费。";
+
+/* No comment provided by engineer. */
+"Job offer" = "录用通知";
+
+/* No comment provided by engineer. */
+"Job alert" = "职位提醒";
+
+/* No comment provided by engineer. */
+"Appointment" = "预约";
+
+/* No comment provided by engineer. */
+"Sale" = "促销";
+
+/* No comment provided by engineer. */
+"Promotion" = "广告";
+
+/* No comment provided by engineer. */
+"Newsletter" = "新闻简报";
+
+/* No comment provided by engineer. */
+"Security alert" = "安全提醒";
+
+/* No comment provided by engineer. */
+"Security code" = "验证码";
+
+/* No comment provided by engineer. */
+"Receipt" = "收据";
+
+/* No comment provided by engineer. */
+"A job alert." = "职位提醒。";
+
+/* No comment provided by engineer. */
+"A sale." = "促销。";
+
+/* No comment provided by engineer. */
+"A promotion." = "广告。";
+
+/* No comment provided by engineer. */
+"A newsletter." = "新闻简报。";
+
+/* No comment provided by engineer. */
+"A security alert." = "安全提醒。";
+
+/* No comment provided by engineer. */
+"A one-time code." = "一次性验证码。";
+
+/* No comment provided by engineer. */
+"A delivery update." = "配送更新。";
+
+/* No comment provided by engineer. */
+"A receipt or bill." = "收据或账单。";
+
+/* No comment provided by engineer. */
+"A calendar invitation." = "日历邀请。";
+
+/* No comment provided by engineer. */
+"An appointment reminder." = "预约提醒。";
+
+/* No comment provided by engineer. */
+"Code %@." = "代码 %@。";
+
+/* No comment provided by engineer. */
+"Expires in %@." = "%@后过期。";
+
+/* No comment provided by engineer. */
+"%@ at %@." = "%2$@ 的 %1$@。";
+
+/* No comment provided by engineer. */
+"%@." = "%@。";
+
+/* No comment provided by engineer. */
+"An offer to join %@." = "加入 %@ 的录用通知。";
+
+/* No comment provided by engineer. */
+"An offer from %@." = "来自 %@ 的录用通知。";
+
+/* No comment provided by engineer. */
+"Starts %@." = "开始日期：%@。";
+
+/* No comment provided by engineer. */
+"Listings from %@, not a reply from an employer." = "来自 %@ 的职位信息，不是雇主的回复。";
+
+/* No comment provided by engineer. */
+"Ended %@." = "已于 %@ 结束。";
+
+/* No comment provided by engineer. */
+"Ends %@." = "%@ 结束。";
+
+/* No comment provided by engineer. */
+"About %lld minutes to read." = "约 %lld 分钟读完。";
+
+/* No comment provided by engineer. */
+"Start date" = "开始日期";
+
+/* No comment provided by engineer. */
+"Where" = "地点";
+
+/* No comment provided by engineer. */
+"Confirmation" = "确认号";
+
+/* No comment provided by engineer. */
+"Listed pay" = "标明薪资";
+
+/* No comment provided by engineer. */
+"More jobs" = "更多职位";

@@ -441,7 +441,7 @@ extension Glance {
         "Start date": String(localized: "Start date"),
         "Where": String(localized: "Where"),
         "Confirmation": String(localized: "Confirmation"),
-        "Pay": String(localized: "Pay"),
+        "Listed pay": String(localized: "Listed pay"),
         "More jobs": String(localized: "More jobs"),
         "Book": String(localized: "Book"),
         "Pay": String(localized: "Pay"),

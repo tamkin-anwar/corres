@@ -54,6 +54,7 @@ struct InShortTests {
         let source = MailDigest.readableText(body: fixture.body, html: fixture.html, cellBreaks: true)
             .replacingOccurrences(of: "\n", with: " ").replacingOccurrences(of: "*", with: "")
             .split(whereSeparator: \.isWhitespace).joined(separator: " ")
+            .replacingOccurrences(of: #"\s+([.,!?])"#, with: "$1", options: .regularExpression)
         #expect(source.contains(quote), "\(fixture.name): \(quote)")
     }
 

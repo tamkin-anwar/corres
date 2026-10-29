@@ -216,9 +216,36 @@ struct ReadingPane: View {
     // MARK: Why it's here, and the summary
 
     private var statusCard: some View {
-        let insight = summariesOn ? intelligence.insight(for: thread) : nil
-        let preparing = summariesOn && insight?.summary == nil && intelligence.isPreparing(thread)
+        // Corres's own line from the email stands in for a written summary;
+        // a quoted sentence gives way to one (as on the iPhone).
+        let card = keyDetailsOn ? aids.card : nil
+        let hasHeadline = card?.headline != nil
+        let insight = summariesOn && !hasHeadline ? intelligence.insight(for: thread) : nil
+        let preparing = summariesOn && !hasHeadline && insight?.summary == nil && intelligence.isPreparing(thread)
+        let showsGist = insight?.summary == nil && !preparing && (card?.headline ?? card?.quote) != nil
+        let details = aids.glance == nil ? card?.details ?? [] : []
         return VStack(alignment: .leading, spacing: 10) {
+            if showsGist, let card {
+                let text = card.headline ?? card.quote.map { "\u{201C}\($0)\u{201D}" } ?? ""
+                Label(card.topic.title, systemImage: card.topic.symbol)
+                    .macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.accent)
+                Text(text).macFont(.body).foregroundStyle(CorresPalette.ink)
+                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel("\(card.topic.title): \(text)")
+            }
+            if !details.isEmpty {
+                FlowRow(spacing: 22) {
+                    ForEach(details, id: \.self) { fact in
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(Glance.display(fact.label)).macFont(.caption).foregroundStyle(CorresPalette.secondary)
+                            Text(fact.value).macFont(.body, weight: .semibold).foregroundStyle(CorresPalette.ink)
+                                .textSelection(.enabled)
+                        }
+                    }
+                }
+                .accessibilityElement(children: .combine)
+            }
+            if showsGist || !details.isEmpty { Divider() }
             if let insight, let summary = insight.summary {
                 Label("In short", systemImage: "sparkle")
                     .macFont(.caption, weight: .semibold).foregroundStyle(CorresPalette.accent)
@@ -430,15 +457,10 @@ struct ReadingPane: View {
         openWindow(value: ComposeRequest(kind: .reply, handoff: handoff))
     }
 
+    /// Where it's sorted and why, in the same words as on the iPhone
+    /// (`InShort.statusLine`): what the email is, not only how it was sent.
     private var statusLine: String {
-        let attention = thread.attention(at: .now)
-        let reason = thread.displayReason.trimmingCharacters(in: .whitespacesAndNewlines)
-        switch attention {
-        case .needsYou: return reason.isEmpty ? String(localized: "In Needs You") : String(localized: "In Needs You: ") + reason
-        case .waiting: return reason.isEmpty ? String(localized: "Waiting on a reply") : String(localized: "Waiting: ") + reason
-        case .handled: return String(localized: "Handled. It stays in Mail.")
-        case .quiet: return reason.isEmpty ? String(localized: "No action needed") : String(localized: "No action needed: ") + reason
-        }
+        InShort.statusLine(for: thread, topic: aids.card?.topic)
     }
 
     /// With Pro, or on sample mail before any account is connected, as on
