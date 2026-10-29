@@ -264,6 +264,12 @@ public enum MailSubject {
         "Fwd: " + subject.replacingPattern(forwardPrefixPattern, with: "").trimmingCharacters(in: .whitespaces)
     }
 
+    /// Whether the subject says this message is a forward ("Fwd:", "FW:",
+    /// "WG:", "TR:", "転送:"). A reply to one ("Re: Fwd:") is a reply.
+    public static func isForward(_ subject: String) -> Bool {
+        subject.patternRange(forwardPrefixPattern) != nil
+    }
+
     /// Whether two subjects are the same conversation's, prefixes aside.
     public static func sameConversation(_ a: String, _ b: String) -> Bool {
         base(a).caseInsensitiveCompare(base(b)) == .orderedSame

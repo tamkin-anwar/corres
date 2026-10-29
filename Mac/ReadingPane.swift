@@ -87,7 +87,8 @@ struct ReadingPane: View {
                 }
                 Divider().padding(.horizontal, 28)
                 HTMLMessageBody(html: html, height: $bodyHeight, heightKey: MessageHeights.key(thread),
-                                expectedHeight: MessageHeights.expected(for: thread), blockRemoteImages: !imagesAllowed)
+                                expectedHeight: MessageHeights.expected(for: thread), blockRemoteImages: !imagesAllowed,
+                                isForward: MailSubject.isForward(thread.subject))
                     .frame(height: bodyHeight)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
