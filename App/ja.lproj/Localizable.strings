@@ -212,13 +212,10 @@
 "A one-sentence brief of your day, and what needs you first." = "1日の概要をひと言で。最初に対応すべきことも。";
 
 /* No comment provided by engineer. */
-"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "短くスワイプするとすぐに実行され、さらにスワイプすると2つ目の操作になります。スヌーズと移動は、会話の中でワンタップ、または行を長押しして使えます。";
+"A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row." = "短くスワイプするとすぐに実行され、さらにスワイプすると2つ目の操作になります。スヌーズと移動は、会話の中でワンタップ、または行を長押しして使えます。";
 
 /* No comment provided by engineer. */
 "A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "小さな中継サーバが、メールボックスに変化があったことをCorresに知らせます。件名、差出人、本文を見ることはありません。";
-
-/* No comment provided by engineer. */
-"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "VIPからのメールは、CCで受け取っただけでも必ず「要対応」に入り、必ず通知されます。メールの⋯メニューから、またはリストで長押しして追加できます。スワイプで削除します。";
 
 /* No comment provided by engineer. */
 "Aa" = "Aa";
@@ -1433,9 +1430,6 @@
 "Mark as Unread" = "未開封にする";
 
 /* No comment provided by engineer. */
-"Mark Read/Unread" = "開封済み／未開封";
-
-/* No comment provided by engineer. */
 "Mark Unread" = "未開封にする";
 
 /* No comment provided by engineer. */
@@ -1521,9 +1515,6 @@
 
 /* No comment provided by engineer. */
 "Move this conversation to Trash?" = "この会話をゴミ箱に入れますか？";
-
-/* No comment provided by engineer. */
-"Move to" = "移動";
 
 /* No comment provided by engineer. */
 "Move To" = "移動";
@@ -2559,9 +2550,6 @@
 
 /* No comment provided by engineer. */
 "Sort By" = "並べ替え";
-
-/* No comment provided by engineer. */
-"Sort Into" = "振り分け先";
 
 /* No comment provided by engineer. */
 "Sorting" = "振り分け";
@@ -3828,3 +3816,6 @@
 /* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
 "Corres never sees your Google or Microsoft password" = "CorresがGoogleやMicrosoftのパスワードを見ることはありません";
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "GmailとOutlookはGoogleとMicrosoftのページでサインインし、Corresはいつでも取り消せる許可を受け取ります。iCloudはaccount.apple.comでいつでも無効にできるApp用パスワードを使い、そのほかのメールは入力したパスワードを使います。どちらもこの%@のキーチェーンに保存されます。どちらかで即時通知をオンにすると、そのパスワードの封をしたコピーがCorresのメール監視機能に送られ、開けるのはその機能だけです。オフにするとコピーは削除されます。";
+
+/* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "VIPからのメールは、CCで受け取っただけでも必ず「要対応」に入り、必ず通知されます。メールの⋯メニューから追加できます。リストからも追加するには、「設定」>「カスタマイズ」>「長押し」でVIPを加えてください。スワイプで削除します。";

@@ -278,7 +278,7 @@ struct SendersView: View {
             Text("A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone by right-clicking their email in a list. Right-click a VIP here to remove them.")
                 .fixedSize(horizontal: false, vertical: true)
             #else
-            Text("A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove.")
+            Text("A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove.")
             #endif
         }
     }

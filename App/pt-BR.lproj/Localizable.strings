@@ -212,13 +212,10 @@
 "A one-sentence brief of your day, and what needs you first." = "Um resumo do seu dia em uma frase, e o que precisa de você primeiro.";
 
 /* No comment provided by engineer. */
-"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "Um deslize curto age na hora; deslizar mais faz a segunda ação. Adiar e Mover para estão a um toque em uma conversa, ou mantendo uma linha pressionada.";
+"A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row." = "Um deslize curto age na hora; deslizar mais faz a segunda ação. Adiar e Mover para estão a um toque em uma conversa, ou mantendo uma linha pressionada.";
 
 /* No comment provided by engineer. */
 "A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "Um pequeno serviço de retransmissão avisa o Corres que algo mudou na sua caixa de correio. Ele nunca vê assunto, remetente nem mensagem.";
-
-/* No comment provided by engineer. */
-"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "O e-mail de um VIP sempre chega em Precisa de Você e sempre notifica, mesmo quando você só está em cópia. Adicione alguém pelo menu ⋯ no e-mail da pessoa ou mantendo pressionado em uma lista. Deslize para remover.";
 
 /* No comment provided by engineer. */
 "Aa" = "Aa";
@@ -1433,9 +1430,6 @@
 "Mark as Unread" = "Marcar como não lido";
 
 /* No comment provided by engineer. */
-"Mark Read/Unread" = "Marcar como lido/não lido";
-
-/* No comment provided by engineer. */
 "Mark Unread" = "Marcar como não lido";
 
 /* No comment provided by engineer. */
@@ -1521,9 +1515,6 @@
 
 /* No comment provided by engineer. */
 "Move this conversation to Trash?" = "Mover esta conversa para o Lixo?";
-
-/* No comment provided by engineer. */
-"Move to" = "Mover para";
 
 /* No comment provided by engineer. */
 "Move To" = "Mover para";
@@ -2559,9 +2550,6 @@
 
 /* No comment provided by engineer. */
 "Sort By" = "Ordenar por";
-
-/* No comment provided by engineer. */
-"Sort Into" = "Classificar em";
 
 /* No comment provided by engineer. */
 "Sorting" = "Classificação";
@@ -3828,3 +3816,6 @@
 /* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
 "Corres never sees your Google or Microsoft password" = "O Corres nunca vê sua senha do Google ou da Microsoft";
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "O Gmail e o Outlook iniciam sessão nas páginas do Google e da Microsoft, e o Corres recebe uma permissão que você pode revogar quando quiser. O iCloud usa uma senha de app específica que você pode desativar em account.apple.com, e os outros e-mails usam a senha que você digita. As duas ficam nas Chaves deste %@. Se você ativar as notificações instantâneas para uma delas, uma cópia lacrada da senha vai para o monitor de e-mails do Corres, o único que pode abri-la. Desativar apaga essa cópia.";
+
+/* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "O e-mail de um VIP sempre chega em Precisa de Você e sempre notifica, mesmo quando você só está em cópia. Adicione alguém pelo menu ⋯ no e-mail da pessoa. Para fazer isso também em uma lista, coloque VIP em Ajustes > Personalizar > Manter pressionado. Deslize para remover.";

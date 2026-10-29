@@ -53,7 +53,7 @@ enum LeadingSwipeAction: String, CaseIterable, Identifiable {
     var settingsTitle: String {
         switch self {
         case .pin: String(localized: "Pin")
-        case .unread: String(localized: "Mark Read/Unread")
+        case .unread: String(localized: "Mark as Read or Unread")
         case .flag: String(localized: "Flag")
         }
     }

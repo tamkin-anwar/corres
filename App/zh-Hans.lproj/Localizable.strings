@@ -212,13 +212,10 @@
 "A one-sentence brief of your day, and what needs you first." = "一句话概括你的一天，以及最先需要你处理的事。";
 
 /* No comment provided by engineer. */
-"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "短扫立即执行；扫得更远则执行第二个操作。“稍后提醒”和“移到”在对话中轻点一下即可使用，也可按住某一行使用。";
+"A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row." = "短扫立即执行；扫得更远则执行第二个操作。“稍后提醒”和“移到”在对话中轻点一下即可使用，也可按住某一行使用。";
 
 /* No comment provided by engineer. */
 "A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "一个小型中继服务会告诉 Corres 你的邮箱有变化。它从不会看到主题、发件人或邮件内容。";
-
-/* No comment provided by engineer. */
-"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "VIP 的邮件总是进入“需要你”，并总会通知你，即使你只是被抄送。可从其邮件的⋯菜单添加，或在列表中按住添加。轻扫即可移除。";
 
 /* No comment provided by engineer. */
 "Aa" = "Aa";
@@ -1433,9 +1430,6 @@
 "Mark as Unread" = "标记为未读";
 
 /* No comment provided by engineer. */
-"Mark Read/Unread" = "标记为已读/未读";
-
-/* No comment provided by engineer. */
 "Mark Unread" = "标为未读";
 
 /* No comment provided by engineer. */
@@ -1521,9 +1515,6 @@
 
 /* No comment provided by engineer. */
 "Move this conversation to Trash?" = "将此对话移到废纸篓？";
-
-/* No comment provided by engineer. */
-"Move to" = "移到";
 
 /* No comment provided by engineer. */
 "Move To" = "移到";
@@ -2559,9 +2550,6 @@
 
 /* No comment provided by engineer. */
 "Sort By" = "排序方式";
-
-/* No comment provided by engineer. */
-"Sort Into" = "分类到";
 
 /* No comment provided by engineer. */
 "Sorting" = "分类";
@@ -3828,3 +3816,6 @@
 /* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
 "Corres never sees your Google or Microsoft password" = "Corres 从不接触你的 Google 或 Microsoft 密码";
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "Gmail 和 Outlook 在 Google 和 Microsoft 自己的页面登录，Corres 获得的权限你随时可以收回。iCloud 使用 App 专用密码，你可以随时在 account.apple.com 停用；其他邮箱使用你输入的密码。两者都保存在这台%@的钥匙串中。如果你为其中一个帐户打开即时通知，它的密码会以封存的副本发送给 Corres 的邮件监视程序，只有它才能打开。关闭即时通知即可删除该副本。";
+
+/* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "VIP 的邮件总是进入“需要你”，并总会通知你，即使你只是被抄送。可从其邮件的⋯菜单添加。若也想在列表中添加，请在“设置”>“自定”>“按住”中加入 VIP。轻扫即可移除。";

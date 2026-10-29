@@ -212,13 +212,10 @@
 "A one-sentence brief of your day, and what needs you first." = "하루를 한 문장으로 요약하고, 가장 먼저 필요한 것을 알려줍니다.";
 
 /* No comment provided by engineer. */
-"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "짧게 쓸어넘기면 바로 실행되고, 더 길게 쓸어넘기면 두 번째 동작을 합니다. 다시 알림과 이동은 대화에서 한 번 탭하거나 행을 길게 눌러 사용할 수 있습니다.";
+"A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row." = "짧게 쓸어넘기면 바로 실행되고, 더 길게 쓸어넘기면 두 번째 동작을 합니다. 다시 알림과 이동은 대화에서 한 번 탭하거나 행을 길게 눌러 사용할 수 있습니다.";
 
 /* No comment provided by engineer. */
 "A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "작은 중계 서버가 메일함에 변화가 생겼다고 Corres에 알려줍니다. 제목, 보낸 사람, 내용은 전혀 보지 않습니다.";
-
-/* No comment provided by engineer. */
-"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "VIP의 이메일은 참조로만 받았더라도 항상 '나에게 필요'로 들어오고 항상 알림을 보냅니다. 이메일의 ⋯ 메뉴나 목록에서 길게 눌러 추가하세요. 쓸어넘겨 제거합니다.";
 
 /* No comment provided by engineer. */
 "Aa" = "Aa";
@@ -1433,9 +1430,6 @@
 "Mark as Unread" = "읽지 않음으로 표시";
 
 /* No comment provided by engineer. */
-"Mark Read/Unread" = "읽음/읽지 않음 표시";
-
-/* No comment provided by engineer. */
 "Mark Unread" = "읽지 않음으로 표시";
 
 /* No comment provided by engineer. */
@@ -1521,9 +1515,6 @@
 
 /* No comment provided by engineer. */
 "Move this conversation to Trash?" = "이 대화를 휴지통으로 이동하겠습니까?";
-
-/* No comment provided by engineer. */
-"Move to" = "이동";
 
 /* No comment provided by engineer. */
 "Move To" = "이동";
@@ -2559,9 +2550,6 @@
 
 /* No comment provided by engineer. */
 "Sort By" = "정렬 기준";
-
-/* No comment provided by engineer. */
-"Sort Into" = "분류 위치";
 
 /* No comment provided by engineer. */
 "Sorting" = "분류";
@@ -3828,3 +3816,6 @@
 /* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
 "Corres never sees your Google or Microsoft password" = "Corres는 Google이나 Microsoft 암호를 보지 않습니다";
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "Gmail과 Outlook은 Google과 Microsoft의 페이지에서 로그인하며, Corres는 언제든지 철회할 수 있는 권한을 받습니다. iCloud는 account.apple.com에서 언제든지 끌 수 있는 앱 전용 암호를 사용하고, 그 밖의 이메일은 입력한 암호를 사용합니다. 둘 다 이 %@의 키체인에 보관됩니다. 그중 하나에서 즉시 알림을 켜면 그 암호의 봉인된 사본이 Corres의 메일 감시 기능으로 전송되며, 이 사본은 메일 감시 기능만 열 수 있습니다. 즉시 알림을 끄면 사본이 삭제됩니다.";
+
+/* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "VIP의 이메일은 참조로만 받았더라도 항상 '나에게 필요'로 들어오고 항상 알림을 보냅니다. 이메일의 ⋯ 메뉴에서 추가하세요. 목록에서도 추가하려면 설정 > 사용자화 > 길게 누르기에 VIP를 넣으세요. 쓸어넘겨 제거합니다.";

@@ -212,13 +212,10 @@
 "A one-sentence brief of your day, and what needs you first." = "Ein Satz über deinen Tag, und was dich zuerst braucht.";
 
 /* No comment provided by engineer. */
-"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "Kurzes Streichen wirkt sofort, weiteres Streichen führt die zweite Aktion aus. „Später erinnern“ und „Bewegen nach“ sind in einer Konversation einen Tipp entfernt oder durch langes Drücken auf eine Zeile.";
+"A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row." = "Kurzes Streichen wirkt sofort, weiteres Streichen führt die zweite Aktion aus. „Später erinnern“ und „Bewegen nach“ sind in einer Konversation einen Tipp entfernt oder durch langes Drücken auf eine Zeile.";
 
 /* No comment provided by engineer. */
 "A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "Ein kleiner Relay-Dienst teilt Corres mit, dass sich in deinem Postfach etwas geändert hat. Er sieht nie einen Betreff, Absender oder Inhalt.";
-
-/* No comment provided by engineer. */
-"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "E-Mails von VIPs landen immer in „Braucht dich“ und lösen immer eine Mitteilung aus, auch wenn du nur in Kopie bist. Füge jemanden über das ⋯-Menü in der E-Mail hinzu oder durch langes Drücken in einer Liste. Zum Entfernen streichen.";
 
 /* No comment provided by engineer. */
 "Aa" = "Aa";
@@ -1433,9 +1430,6 @@
 "Mark as Unread" = "Als ungelesen markieren";
 
 /* No comment provided by engineer. */
-"Mark Read/Unread" = "Gelesen/Ungelesen";
-
-/* No comment provided by engineer. */
 "Mark Unread" = "Als ungelesen markieren";
 
 /* No comment provided by engineer. */
@@ -1521,9 +1515,6 @@
 
 /* No comment provided by engineer. */
 "Move this conversation to Trash?" = "Diese Konversation in den Papierkorb legen?";
-
-/* No comment provided by engineer. */
-"Move to" = "Bewegen nach";
 
 /* No comment provided by engineer. */
 "Move To" = "Bewegen nach";
@@ -2559,9 +2550,6 @@
 
 /* No comment provided by engineer. */
 "Sort By" = "Sortieren nach";
-
-/* No comment provided by engineer. */
-"Sort Into" = "Einsortieren in";
 
 /* No comment provided by engineer. */
 "Sorting" = "Sortierung";
@@ -3828,3 +3816,6 @@
 /* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
 "Corres never sees your Google or Microsoft password" = "Corres sieht nie dein Google- oder Microsoft-Passwort";
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "Gmail und Outlook melden sich auf den Seiten von Google und Microsoft an, und Corres erhält eine Berechtigung, die du jederzeit zurücknehmen kannst. iCloud nutzt ein App-spezifisches Passwort, das du auf account.apple.com jederzeit deaktivieren kannst, und andere E-Mail-Accounts nutzen das Passwort, das du eingibst. Beides bleibt im Schlüsselbund auf diesem %@. Schaltest du für einen davon Sofortige Mitteilungen ein, geht eine versiegelte Kopie seines Passworts an den Mail-Wächter von Corres, und nur er kann sie öffnen. Schaltest du sie aus, wird diese Kopie gelöscht.";
+
+/* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "E-Mails von VIPs landen immer in „Braucht dich“ und lösen immer eine Mitteilung aus, auch wenn du nur in Kopie bist. Füge jemanden über das ⋯-Menü in der E-Mail hinzu. Um das auch in einer Liste zu können, nimm VIP unter Einstellungen > Anpassen > Lange drücken auf. Zum Entfernen streichen.";

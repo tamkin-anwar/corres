@@ -1274,7 +1274,7 @@ struct ConversationView: View {
         if action == .moveTo {
             // Where Mail and Gmail move mail: out of the Inbox, into a
             // label. Corres's own sorting is a section of its own below; on
-            // its own it read as a broken "Move to".
+            // its own it read as a broken "Move To".
             Section {
                 Button { Task { await threadActions.archive(thread, animated: false) } } label: {
                     Label("Archive", systemImage: "archivebox")
@@ -1284,7 +1284,7 @@ struct ConversationView: View {
                 }
                 if !thread.isFromAccountOwner {
                     Button { Task { await threadActions.reportSpam(thread, animated: false) } } label: {
-                        Label("Spam", systemImage: "xmark.bin")
+                        Label("Report Spam", systemImage: "xmark.bin")
                     }
                 }
             }
@@ -1302,7 +1302,9 @@ struct ConversationView: View {
                     }
                 }
             }
-            Section("Sort Into") {
+            // Needs You, Waiting and Handled: part of Move To, as in the
+            // list's press-and-hold menu and Change, not a second name.
+            Section {
                 AttentionChoices(current: thread.attention) { attention in
                     Task { await threadActions.setAttention(attention, for: thread) }
                 }

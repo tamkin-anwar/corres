@@ -212,13 +212,10 @@
 "A one-sentence brief of your day, and what needs you first." = "এক বাক্যে আপনার দিনের সারসংক্ষেপ, আর প্রথমে কী করণীয়।";
 
 /* No comment provided by engineer. */
-"A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row." = "ছোট সোয়াইপে কাজটি সঙ্গে সঙ্গে হয়; আরও টানলে দ্বিতীয় কাজটি হয়। স্নুজ আর সরান কথোপকথনের ভেতরে এক ট্যাপ দূরে, অথবা সারি চেপে ধরে রাখলে।";
+"A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row." = "ছোট সোয়াইপে কাজটি সঙ্গে সঙ্গে হয়; আরও টানলে দ্বিতীয় কাজটি হয়। স্নুজ আর সরান কথোপকথনের ভেতরে এক ট্যাপ দূরে, অথবা সারি চেপে ধরে রাখলে।";
 
 /* No comment provided by engineer. */
 "A small relay tells Corres that something changed in your mailbox. It never sees a subject, sender or message." = "একটি ছোট রিলে Corres-কে জানায় যে আপনার মেইলবক্সে কিছু বদলেছে। এটি কখনো বিষয়, প্রেরক বা বার্তা দেখে না।";
-
-/* No comment provided by engineer. */
-"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email, or by pressing and holding it in a list. Swipe to remove." = "VIP-দের ইমেইল সবসময় আপনার করণীয়-তে আসে এবং সবসময় নোটিফিকেশন দেয়, আপনাকে শুধু কপি করা হলেও। কাউকে যোগ করতে তার ইমেইলের ⋯ মেনু ব্যবহার করুন, অথবা তালিকায় চেপে ধরে রাখুন। সরাতে সোয়াইপ করুন।";
 
 /* No comment provided by engineer. */
 "Aa" = "Aa";
@@ -1433,9 +1430,6 @@
 "Mark as Unread" = "অপঠিত চিহ্নিত করুন";
 
 /* No comment provided by engineer. */
-"Mark Read/Unread" = "পঠিত/অপঠিত চিহ্নিত করুন";
-
-/* No comment provided by engineer. */
 "Mark Unread" = "অপঠিত চিহ্নিত করুন";
 
 /* No comment provided by engineer. */
@@ -1521,9 +1515,6 @@
 
 /* No comment provided by engineer. */
 "Move this conversation to Trash?" = "এই কথোপকথনটি ট্র্যাশে সরাবেন?";
-
-/* No comment provided by engineer. */
-"Move to" = "সরান";
 
 /* No comment provided by engineer. */
 "Move To" = "সরান";
@@ -2559,9 +2550,6 @@
 
 /* No comment provided by engineer. */
 "Sort By" = "সাজানোর ভিত্তি";
-
-/* No comment provided by engineer. */
-"Sort Into" = "যেখানে সাজাবেন";
 
 /* No comment provided by engineer. */
 "Sorting" = "সাজানো";
@@ -3828,3 +3816,6 @@
 /* Settings → Private by Design: how each kind of account signs in, and what Instant Notifications keeps. */
 "Corres never sees your Google or Microsoft password" = "Corres কখনো আপনার Google বা Microsoft পাসওয়ার্ড দেখে না";
 "Gmail and Outlook sign in on Google's and Microsoft's own pages, and Corres gets a permission you can take back anytime. iCloud uses an app-specific password you can turn off at account.apple.com, and other email uses the password you enter. Both stay in this %@'s Keychain. If you turn on Instant Notifications for one of them, a sealed copy of its password goes to Corres's mail watcher, which only it can open. Turning it off deletes that copy." = "Gmail ও Outlook সাইন ইন করে Google ও Microsoft-এর নিজস্ব পেজে, আর Corres এমন একটি অনুমতি পায় যা আপনি যেকোনো সময় ফিরিয়ে নিতে পারেন। iCloud অ্যাপের জন্য আলাদা একটি পাসওয়ার্ড ব্যবহার করে, যা account.apple.com-এ বন্ধ করা যায়, আর অন্য ইমেইল আপনার দেওয়া পাসওয়ার্ড ব্যবহার করে। দুটোই এই %@-এর কিচেইনে থাকে। এগুলোর কোনোটির জন্য তাৎক্ষণিক নোটিফিকেশন চালু করলে তার পাসওয়ার্ডের একটি সিল করা কপি Corres-এর মেইল পর্যবেক্ষকের কাছে যায়, যা শুধু সেটিই খুলতে পারে। বন্ধ করলে কপিটি মুছে যায়।";
+
+/* Settings → Senders → VIPs: VIP isn't in the press-and-hold menu until it's added there. */
+"A VIP's email always lands in Needs You and always notifies, even when you're only copied. Add someone from the ⋯ menu in their email. To add them from a list too, put VIP in Settings > Customize > Press and Hold. Swipe to remove." = "VIP-দের ইমেইল সবসময় আপনার করণীয়-তে আসে এবং সবসময় নোটিফিকেশন দেয়, আপনাকে শুধু কপি করা হলেও। কাউকে যোগ করতে তার ইমেইলের ⋯ মেনু ব্যবহার করুন। তালিকা থেকেও যোগ করতে চাইলে সেটিংস > নিজের মতো সাজান > চেপে ধরে রাখা-তে VIP রাখুন। সরাতে সোয়াইপ করুন।";

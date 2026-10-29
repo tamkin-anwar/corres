@@ -252,7 +252,7 @@ enum CorresSettings {
             case .pin: String(localized: "Pin")
             case .replyAll: String(localized: "Reply All")
             case .forward: String(localized: "Forward")
-            case .moveTo: String(localized: "Move to")
+            case .moveTo: String(localized: "Move To")
             case .labels: String(localized: "Labels")
             case .spam: String(localized: "Report Spam")
             case .block: String(localized: "Block Sender")

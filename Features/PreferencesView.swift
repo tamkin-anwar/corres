@@ -1402,7 +1402,7 @@ private struct SwipeSettingsView: View {
             } header: {
                 Label("Swipe right", systemImage: "arrow.right")
             } footer: {
-                Text("A short swipe acts right away; swiping further does the second action. Snooze and Move to are one tap away in a conversation, or by pressing and holding a row.")
+                Text("A short swipe acts right away; swiping further does the second action. Snooze and Move To are one tap away in a conversation, or by pressing and holding a row.")
             }
         }
         .scrollContentBackground(.hidden)

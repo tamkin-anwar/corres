@@ -834,7 +834,7 @@ struct CorrespondenceList: View {
                     }
                 }
             } label: {
-                bulkLabel("arrow.up.and.down.text.horizontal", "Move to")
+                bulkLabel("arrow.up.and.down.text.horizontal", "Move To")
             }
             .disabled(chosen.isEmpty)
             bulkButton("archivebox", "Archive") { await threadActions?.archive(chosen) }
