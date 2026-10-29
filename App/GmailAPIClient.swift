@@ -239,8 +239,23 @@ struct GmailAPIClient {
 
     /// The complete message (body, HTML, attachment list), for filling in
     /// threads synced metadata-first, or loading one the moment it's opened.
+    /// Parts Gmail leaves out of `format=full` (a long text, the pictures
+    /// an Outlook email carries) are fetched before it's kept, so it reads
+    /// whole offline too. One whose text couldn't be had counts as failed.
     func fetchFull(ids: [String], account: String) async throws -> (items: [Correspondence], failedIDs: [String]) {
-        try await batchFetch(ids: ids, query: "format=full", account: account) { map($0, account: account, bodyLoaded: true) }
+        let fetched = try await batchFetch(ids: ids, query: "format=full", account: account) { $0 }
+        var imageBytes = Self.inlineImageLimit.perFetch
+        var items: [Correspondence] = []
+        var failed = fetched.failedIDs
+        for message in fetched.items {
+            let completed = await completing(message, account: account, imageBytes: &imageBytes)
+            guard completed.isWhole else {
+                failed.append(message.id)
+                continue
+            }
+            items.append(map(completed.message, account: account, bodyLoaded: true))
+        }
+        return (items, failed)
     }
 
     #if DEBUG
@@ -281,10 +296,14 @@ struct GmailAPIClient {
         try validate(response)
         struct ThreadResponse: Decodable { let messages: [GmailMessage]? }
         let decoded = try JSONDecoder().decode(ThreadResponse.self, from: data)
-        return (decoded.messages ?? [])
-            .filter { !($0.labelIds ?? []).contains("DRAFT") }
-            .map { map($0, account: account, bodyLoaded: true) }
-            .sorted { $0.receivedAt < $1.receivedAt }
+        var imageBytes = Self.inlineImageLimit.perFetch
+        var messages: [Correspondence] = []
+        // Newest first, so the message being read gets the pictures first.
+        for message in (decoded.messages ?? []).reversed() where !(message.labelIds ?? []).contains("DRAFT") {
+            let completed = await completing(message, account: account, imageBytes: &imageBytes)
+            messages.append(map(completed.message, account: account, bodyLoaded: completed.isWhole))
+        }
+        return messages.sorted { $0.receivedAt < $1.receivedAt }
     }
 
     /// Re-attempts specific message ids directly, independent of the
@@ -998,13 +1017,11 @@ struct GmailAPIClient {
         let organization = Self.organization(fromEmail: senderEmail)
         let receivedAt = message.internalDate.flatMap { Double($0) }.map { Date(timeIntervalSince1970: $0 / 1000) } ?? .now
         let isUnread = (message.labelIds ?? []).contains("UNREAD")
-        let plainText = Self.bodyPart(mimeType: "text/plain", from: message.payload)
-        let rawHTML = Self.bodyPart(mimeType: "text/html", from: message.payload)
-        let htmlBody = rawHTML.map { Self.inlineCIDImages(in: $0, from: message.payload) }
-        let body = plainText ?? message.snippet ?? ""
+        let content = Self.content(of: message.payload)
+        let htmlBody = content.html
+        let body = content.plain ?? message.snippet ?? ""
         let messageIdHeader = headers["message-id"]?.trimmingCharacters(in: CharacterSet(charactersIn: "<>"))
-        var attachments: [MailAttachment] = []
-        Self.collectAttachments(from: message.payload, into: &attachments)
+        let attachments = content.attachments
         // Who else was actually on this message: without this, "Reply All"
         // has no way to know who to include besides the sender, and would
         // silently behave exactly like a plain "Reply" (a real, reported
@@ -1085,25 +1102,41 @@ struct GmailAPIClient {
             waitingSince: attention == .waiting ? receivedAt : nil)
     }
 
-    /// A real attachment (something to download) versus an inline image
-    /// already rendered by `inlineCIDImages` are both MIME parts with a
-    /// `body.attachmentId`, distinguished by whether the part carries a
-    /// `Content-ID` header: an inline image always does (that's how the
-    /// HTML's `cid:` reference finds it) and a real attachment never does.
-    /// Filtering those out here is what stops every embedded logo/signature
-    /// image from also showing up as a downloadable attachment underneath.
-    private static func collectAttachments(from part: GmailMessagePart?, into result: inout [MailAttachment]) {
-        guard let part else { return }
-        let hasContentID = part.headers?.contains { $0.name.lowercased() == "content-id" } ?? false
-        if let filename = part.filename, !filename.isEmpty, !hasContentID,
-           let attachmentId = part.body?.attachmentId {
-            result.append(MailAttachment(id: attachmentId, filename: filename,
-                                          mimeType: part.mimeType ?? "application/octet-stream",
-                                          sizeBytes: part.body?.size ?? 0))
+    /// Every part that's a file to download, as Gmail lists them: not the
+    /// text being shown, and not a picture the HTML shows in place (a logo,
+    /// a signature). A part with a Content-ID the HTML never refers to is
+    /// still a file: Mail on an iPhone gives every attachment one, and
+    /// hiding those (as was done for any part with a Content-ID) lost the
+    /// PDF or photo altogether. A part with no name (an invitation's
+    /// calendar part, an unnamed picture) is listed under a made-up one.
+    private static func collectAttachments(from part: GmailMessagePart, path: [Int], shown: Set<[Int]>, references: [String],
+                                           named: inout [MailAttachment], unnamed: inout [MailAttachment]) {
+        let type = (part.mimeType ?? "").lowercased()
+        if let attachmentId = part.body?.attachmentId, !type.hasPrefix("multipart/"), !shown.contains(path),
+           !InlineImages.isReferenced(contentID: part.contentID, filename: part.filename, in: references) {
+            let mimeType = part.mimeType ?? "application/octet-stream"
+            if let filename = part.filename, !filename.isEmpty {
+                named.append(MailAttachment(id: attachmentId, filename: filename, mimeType: mimeType, sizeBytes: part.body?.size ?? 0))
+            } else if type != "text/plain", type != "text/html" {
+                // Unnamed text is an alternative that isn't shown (the
+                // plain text beside the HTML), not a file.
+                unnamed.append(MailAttachment(id: attachmentId, filename: fallbackName(for: type), mimeType: mimeType,
+                                              sizeBytes: part.body?.size ?? 0))
+            }
         }
-        for child in part.parts ?? [] {
-            collectAttachments(from: child, into: &result)
+        for (index, child) in (part.parts ?? []).enumerated() {
+            collectAttachments(from: child, path: path + [index], shown: shown, references: references, named: &named, unnamed: &unnamed)
         }
+    }
+
+    private static func fallbackName(for mimeType: String) -> String {
+        if mimeType.hasPrefix("text/calendar") || mimeType == "application/ics" { return "invite.ics" }
+        if mimeType == "message/rfc822" { return "Message.eml" }
+        if mimeType.hasPrefix("image/") {
+            let subtype = mimeType.dropFirst("image/".count)
+            return "Image." + (subtype == "jpeg" ? "jpg" : subtype.replacingOccurrences(of: "svg+xml", with: "svg"))
+        }
+        return "Attachment"
     }
 
     /// Attachment content is never included in `users.messages.get`'s
@@ -1111,13 +1144,19 @@ struct GmailAPIClient {
     /// dedicated endpoint for fetching the actual bytes, called on demand
     /// (a tap on the attachment) rather than as part of every sync.
     func fetchAttachmentData(messageId: String, attachmentId: String, account: String) async throws -> Data {
+        let data = try await fetchPartData(messageId: messageId, attachmentId: attachmentId, account: account)
+        guard let decoded = Data(base64URLEncoded: data) else { throw ClientError.decodingFailed }
+        return decoded
+    }
+
+    /// A part's bytes as Gmail sends them (base64url).
+    private func fetchPartData(messageId: String, attachmentId: String, account: String) async throws -> String {
         let token = try await accessToken(for: account)
+        await GmailQuotaGate.shared.reserve(GmailQuotaGate.unitsPerMessageFetch, for: account)
         let url = URL(string: "https://gmail.googleapis.com/gmail/v1/users/me/messages/\(messageId)/attachments/\(attachmentId)")!
         let (data, response) = try await authorizedRequest(url: url, token: token)
         try validate(response)
-        let attachment = try JSONDecoder().decode(AttachmentDataResponse.self, from: data)
-        guard let decoded = Data(base64URLEncoded: attachment.data) else { throw ClientError.decodingFailed }
-        return decoded
+        return try JSONDecoder().decode(AttachmentDataResponse.self, from: data).data
     }
 
     /// "Name" <email@domain.com> or a bare address.
@@ -1196,27 +1235,38 @@ struct GmailAPIClient {
     /// messages nest arbitrarily (plain/html alternatives, inline attachments).
     private static func bodyPart(mimeType: String, from part: GmailMessagePart?) -> String? {
         guard let part else { return nil }
-        if part.mimeType == mimeType, let data = part.body?.data {
-            let contentType = part.headers?.first { $0.name.lowercased() == "content-type" }?.value
-            return decodeBase64URL(data, charset: contentType.flatMap(charset(inContentType:)))
-        }
+        if part.mimeType == mimeType, part.body?.data != nil { return text(of: part) }
         for child in part.parts ?? [] {
             if let found = bodyPart(mimeType: mimeType, from: child) { return found }
         }
         return nil
     }
 
+    private static func text(of part: GmailMessagePart) -> String? {
+        guard let data = part.body?.data else { return nil }
+        return decodeBase64URL(data, charset: part.header("Content-Type").flatMap(charset(inContentType:)),
+                               isHTML: part.mimeType?.lowercased() == "text/html")
+    }
+
     /// Gmail hands back a part's bytes in the charset the sender wrote it
     /// in (Shift_JIS, GB2312, Windows-1252…), not converted to UTF-8.
     /// Read only as UTF-8, those bodies failed and the email showed just
-    /// its snippet; read as labelled, as IMAP mail already is.
-    private static func decodeBase64URL(_ value: String, charset: String?) -> String? {
+    /// its snippet; read as labelled, as IMAP mail already is. HTML that
+    /// doesn't say in its header says in its own `<meta>` tag, as a
+    /// browser reads it. Never nothing: bytes that fit no charset are read
+    /// as UTF-8 with the odd character replaced, as Gmail shows them, not
+    /// dropped along with the whole email.
+    private static func decodeBase64URL(_ value: String, charset: String?, isHTML: Bool = false) -> String? {
         guard let data = Data(base64URLEncoded: value) else { return nil }
-        if let charset, let encoding = Charset.encoding(named: charset), encoding != .utf8,
+        let declared = charset ?? (isHTML ? MessageLayout.metaCharset(in: data) : nil)
+        if let declared, let encoding = Charset.encoding(named: declared), encoding != .utf8,
            let text = String(data: data, encoding: encoding) {
             return text
         }
-        return String(data: data, encoding: .utf8) ?? String(data: data, encoding: .windowsCP1252)
+        if let text = String(data: data, encoding: .utf8) { return text }
+        // Labelled UTF-8 with a stray byte: the rest is still UTF-8.
+        if let declared, Charset.encoding(named: declared) == .utf8 { return String(decoding: data, as: UTF8.self) }
+        return String(data: data, encoding: .windowsCP1252) ?? String(decoding: data, as: UTF8.self)
     }
 
     /// The `charset` parameter of a Content-Type header value.
@@ -1230,37 +1280,110 @@ struct GmailAPIClient {
         return nil
     }
 
-    /// Many real emails (marketing templates, signatures) embed images as
-    /// MIME parts referenced via "cid:" in the HTML rather than a remote URL.
-    /// Every mainstream mail client resolves these locally; a browser
-    /// never sees a bare "cid:" scheme and cannot load it. Without this, any
-    /// inline-embedded image renders as a broken image, which was the
-    /// reported bug. Replaces each cid: reference with a self-contained
-    /// data: URI, so no network fetch is needed for these at all.
-    private static func inlineCIDImages(in html: String, from root: GmailMessagePart?) -> String {
-        var cidParts: [String: (mimeType: String, data: String)] = [:]
-        collectCIDParts(from: root, into: &cidParts)
-        guard !cidParts.isEmpty else { return html }
-        var result = html
-        for (cid, part) in cidParts {
-            guard let base64 = base64URLToStandardBase64(part.data) else { continue }
-            result = result.replacingOccurrences(of: "cid:\(cid)", with: "data:\(part.mimeType);base64,\(base64)")
+    /// The message's text parts (`MessageLayout`), and its HTML as sent,
+    /// before its pictures are put in.
+    private static func layout(of payload: GmailMessagePart) -> (pieces: [MessageLayout.Piece], texts: [(kind: MessageLayout.Kind, text: String)], html: String?) {
+        let pieces = MessageLayout.pieces(of: payload.outline)
+        let texts = pieces.compactMap { piece in
+            payload.part(at: piece.path).flatMap(text(of:)).map { (kind: piece.kind, text: $0) }
         }
-        return result
+        return (pieces, texts, MessageLayout.html(joining: texts))
     }
 
-    private static func collectCIDParts(from part: GmailMessagePart?, into map: inout [String: (mimeType: String, data: String)]) {
-        guard let part else { return }
-        if let contentID = part.headers?.first(where: { $0.name.lowercased() == "content-id" })?.value,
-           let data = part.body?.data, let mimeType = part.mimeType {
-            map[contentID.trimmingCharacters(in: CharacterSet(charactersIn: "<>"))] = (mimeType, data)
+    /// What a message shows: its HTML, with the pictures it carries put in
+    /// place as data: URIs (a web view can't load "cid:"), its text, and
+    /// its attachments. Pictures Gmail sends only as an id are fetched
+    /// first (`completing`); one still missing keeps its "cid:" reference.
+    private static func content(of payload: GmailMessagePart?) -> (html: String?, plain: String?, attachments: [MailAttachment]) {
+        guard let payload else { return (nil, nil, []) }
+        let (pieces, texts, sentHTML) = layout(of: payload)
+        let references = sentHTML.map(InlineImages.references(in:)) ?? []
+        var html = sentHTML
+        if let sentHTML, !references.isEmpty {
+            let images = payload.all.compactMap { part -> InlineImages.Image? in
+                guard (part.parts ?? []).isEmpty, let data = part.body?.data,
+                      InlineImages.isReferenced(contentID: part.contentID, filename: part.filename, in: references) else { return nil }
+                return InlineImages.Image(contentID: part.contentID, filename: part.filename,
+                                          dataURI: InlineImages.dataURI(base64: base64URLToStandardBase64(data),
+                                                                        mimeType: part.mimeType, filename: part.filename))
+            }
+            html = InlineImages.resolving(sentHTML, with: images)
         }
-        for child in part.parts ?? [] {
-            collectCIDParts(from: child, into: &map)
-        }
+        // The text for search, summaries and replies: the plain part, or
+        // the HTML read as text. Gmail's snippet (its first line or two)
+        // stood in when there was no plain part, as if it were the email.
+        let plain = sentHTML == nil ? MessageLayout.plain(joining: texts)
+            : bodyPart(mimeType: "text/plain", from: payload) ?? MailDigest.readableText(body: "", html: sentHTML)
+        var named: [MailAttachment] = []
+        var unnamed: [MailAttachment] = []
+        collectAttachments(from: payload, path: [], shown: Set(pieces.map(\.path)), references: references,
+                           named: &named, unnamed: &unnamed)
+        // An invitation's own calendar part is unnamed, usually beside a
+        // named invite.ics: listed only when it's the only one.
+        let hasCalendar = named.contains { AttachmentKind(filename: $0.filename, mimeType: $0.mimeType) == .calendar }
+        let extra = unnamed.filter { !hasCalendar || AttachmentKind(filename: $0.filename, mimeType: $0.mimeType) != .calendar }
+        return (html, plain, named + extra)
     }
 
-    private static func base64URLToStandardBase64(_ value: String) -> String? {
+    /// The parts `format=full` sent only as an id that the email needs to
+    /// be read: its text (a long one), then the pictures its HTML refers
+    /// to, within `imageBytes` (what's left of this fetch's allowance).
+    /// Not whole when its text couldn't be had: the caller doesn't save it
+    /// as loaded, so it's asked for again rather than showing part of it.
+    private func completing(_ message: GmailMessage, account: String, imageBytes: inout Int) async -> (message: GmailMessage, isWhole: Bool) {
+        guard var payload = message.payload else { return (message, true) }
+        var message = message
+        var isWhole = true
+        let missingText = Set(MessageLayout.pieces(of: payload.outline).compactMap { payload.part(at: $0.path) }
+            .filter(\.isOnlyAnID).compactMap(\.body?.attachmentId))
+        if !missingText.isEmpty {
+            let fetched = await fetchParts(Array(missingText), messageId: message.id, account: account)
+            isWhole = missingText.allSatisfy { fetched[$0] != nil }
+            payload = payload.filling(fetched)
+            message.payload = payload
+        }
+        guard let html = Self.layout(of: payload).html else { return (message, isWhole) }
+        let references = InlineImages.references(in: html)
+        guard !references.isEmpty else { return (message, isWhole) }
+        var allowance = min(Self.inlineImageLimit.perMessage, imageBytes)
+        var wanted: [String] = []
+        for part in payload.all where (part.parts ?? []).isEmpty && part.isOnlyAnID
+            && InlineImages.isReferenced(contentID: part.contentID, filename: part.filename, in: references) {
+            let size = part.body?.size ?? 0
+            guard let id = part.body?.attachmentId, wanted.count < Self.inlineImageLimit.parts, size <= allowance else { continue }
+            allowance -= size
+            imageBytes -= size
+            wanted.append(id)
+        }
+        guard !wanted.isEmpty else { return (message, isWhole) }
+        message.payload = payload.filling(await fetchParts(wanted, messageId: message.id, account: account))
+        return (message, isWhole)
+    }
+
+    /// How much of an email's pictures are fetched with it, and of a whole
+    /// fetch's (a background fill asks for fifty emails at once). What's
+    /// over waits until the email is opened (`ThreadActionService.loadContent`).
+    /// A logo or a signature picture is a few KB; a pasted photo, a few MB.
+    private static let inlineImageLimit = (perMessage: 6_000_000, perFetch: 15_000_000, parts: 24)
+
+    /// Parts by attachment id, four at a time. One that fails is left out
+    /// of the answer.
+    private func fetchParts(_ ids: [String], messageId: String, account: String) async -> [String: String] {
+        var fetched: [String: String] = [:]
+        for chunk in ids.chunked(into: 4) {
+            await withTaskGroup(of: (String, String?).self) { group in
+                for id in chunk {
+                    group.addTask { (id, try? await self.fetchPartData(messageId: messageId, attachmentId: id, account: account)) }
+                }
+                for await (id, data) in group {
+                    if let data { fetched[id] = data }
+                }
+            }
+        }
+        return fetched
+    }
+
+    private static func base64URLToStandardBase64(_ value: String) -> String {
         var base64 = value.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
         while base64.count % 4 != 0 { base64 += "=" }
         return base64
@@ -1340,18 +1463,50 @@ private struct GmailMessage: Decodable {
     let snippet: String?
     let internalDate: String?
     let labelIds: [String]?
-    let payload: GmailMessagePart?
+    var payload: GmailMessagePart?
 }
 
 private struct GmailMessagePart: Decodable {
     let mimeType: String?
     let filename: String?
     let headers: [Header]?
-    let body: Body?
-    let parts: [GmailMessagePart]?
+    var body: Body?
+    var parts: [GmailMessagePart]?
 
     struct Header: Decodable { let name: String; let value: String }
-    struct Body: Decodable { let data: String?; let attachmentId: String?; let size: Int? }
+    struct Body: Decodable { var data: String?; let attachmentId: String?; let size: Int? }
+
+    func header(_ name: String) -> String? {
+        headers?.first { $0.name.caseInsensitiveCompare(name) == .orderedSame }?.value
+    }
+
+    var contentID: String? { header("Content-ID") }
+
+    var outline: MIMEOutline {
+        MIMEOutline(mimeType: mimeType ?? "", disposition: header("Content-Disposition"), filename: filename,
+                    children: (parts ?? []).map(\.outline))
+    }
+
+    func part(at path: [Int]) -> GmailMessagePart? {
+        guard let first = path.first else { return self }
+        guard let parts, parts.indices.contains(first) else { return nil }
+        return parts[first].part(at: Array(path.dropFirst()))
+    }
+
+    /// This part and every part inside it, depth first.
+    var all: [GmailMessagePart] { [self] + (parts ?? []).flatMap(\.all) }
+
+    /// Only here as an id to ask for separately (`format=full` leaves out
+    /// anything with a file name, and large parts).
+    var isOnlyAnID: Bool { body?.data == nil && body?.attachmentId != nil }
+
+    /// With the bytes fetched separately put in place, by attachment id.
+    func filling(_ fetched: [String: String]) -> GmailMessagePart {
+        var copy = self
+        if let id = body?.attachmentId, body?.data == nil, let data = fetched[id] { copy.body?.data = data }
+        copy.parts = parts?.map { $0.filling(fetched) }
+        return copy
+    }
 }
 
 extension Array {

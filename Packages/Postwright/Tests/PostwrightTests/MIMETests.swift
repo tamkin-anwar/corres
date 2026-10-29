@@ -36,6 +36,11 @@ struct MIMETests {
         #expect(m.plainText == "Grüße aus Köln, and a soft break.\r\n")
     }
 
+    @Test func softBreakWithSpacesAfterIt() {
+        let m = parse("Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\nOne long=  \r\n line, a=\t\nnd more.\r\n")
+        #expect(m.plainText == "One long line, and more.\r\n")
+    }
+
     @Test func mixedWithAPDFAndAnInlineImage() {
         let pdf = Data("%PDF-1.4 fake".utf8).base64EncodedString()
         let png = Data([0x89, 0x50, 0x4E, 0x47]).base64EncodedString()
@@ -184,5 +189,157 @@ struct CharsetTests {
         #expect(MIMEWords.decode("=?ks_c_5601-1987?B?\(word)?=") == "똠방")
         #expect(Charset.encoding(named: "\"GB2312\"") != nil)
         #expect(Charset.encoding(named: "us-ascii") == .utf8)
+    }
+}
+
+/// Which parts are the email, read as Mail and Thunderbird read them.
+struct BodyLayoutTests {
+    func parse(_ text: String) -> ParsedMessage { MIMEParser.parse(Data(text.utf8)) }
+
+    func parse(_ text: String, body: Data) -> ParsedMessage {
+        var raw = Data(text.utf8)
+        raw.append(body)
+        return MIMEParser.parse(raw)
+    }
+
+    /// Mail on a Mac or iPhone, a file put in the middle of the text: the
+    /// text after it is a second HTML part, and the file is marked inline.
+    @Test func textOnBothSidesOfAFileIsAllShown() {
+        let pdf = Data("%PDF-1.4 fake".utf8).base64EncodedString()
+        let m = parse("""
+        Content-Type: multipart/alternative; boundary=alt\r
+        \r
+        --alt\r
+        Content-Type: text/plain; charset=utf-8\r
+        \r
+        Before. After.\r
+        --alt\r
+        Content-Type: multipart/mixed; boundary=mix\r
+        \r
+        --mix\r
+        Content-Type: text/html; charset=utf-8\r
+        \r
+        <html><body><div>Before the file.</div></body></html>\r
+        --mix\r
+        Content-Type: application/pdf; name="Plan.pdf"\r
+        Content-Disposition: inline; filename="Plan.pdf"\r
+        Content-Transfer-Encoding: base64\r
+        \r
+        \(pdf)\r
+        --mix\r
+        Content-Type: text/html; charset=utf-8\r
+        \r
+        <html><body><div>After the file. Thanks, Sam</div></body></html>\r
+        --mix--\r
+        --alt--\r
+
+        """)
+        #expect(m.html?.contains("Before the file.") == true)
+        #expect(m.html?.contains("After the file. Thanks, Sam") == true)
+        // The second part inside the first one's body.
+        #expect(m.html?.hasSuffix("</body></html>") == true)
+        #expect(m.plainText == "Before. After.")
+        #expect(m.attachments.map(\.filename) == ["Plan.pdf"])
+    }
+
+    @Test func aMailingListFooterIsShown() {
+        let m = parse("""
+        Content-Type: multipart/mixed; boundary=mix\r
+        \r
+        --mix\r
+        Content-Type: multipart/alternative; boundary=alt\r
+        \r
+        --alt\r
+        Content-Type: text/plain\r
+        \r
+        Meeting moved to 3pm.\r
+        --alt\r
+        Content-Type: text/html\r
+        \r
+        <p>Meeting moved to 3pm.</p>\r
+        --alt--\r
+        --mix\r
+        Content-Type: text/plain; charset=us-ascii\r
+        Content-Disposition: inline\r
+        \r
+        To unsubscribe, write to list-leave@example.org\r
+        --mix--\r
+
+        """)
+        #expect(m.html?.contains("<p>Meeting moved to 3pm.</p>") == true)
+        #expect(m.html?.contains("list-leave@example.org") == true)
+        #expect(m.attachments.isEmpty)
+    }
+
+    @Test func alternativesPreferTheLastThatCanBeShown() {
+        let m = parse("""
+        Content-Type: multipart/alternative; boundary=alt\r
+        \r
+        --alt\r
+        Content-Type: text/plain\r
+        \r
+        Plain\r
+        --alt\r
+        Content-Type: multipart/related; boundary=rel\r
+        \r
+        --rel\r
+        Content-Type: text/html\r
+        \r
+        <p>Rich <img src="cid:a@b"></p>\r
+        --rel\r
+        Content-Type: image/gif\r
+        Content-ID: <a@b>\r
+        Content-Transfer-Encoding: base64\r
+        \r
+        R0lGODlhAQABAAAAACw=\r
+        --rel--\r
+        --alt\r
+        Content-Type: text/calendar; method=REQUEST\r
+        \r
+        BEGIN:VCALENDAR\r
+        END:VCALENDAR\r
+        --alt--\r
+
+        """)
+        #expect(m.html == #"<p>Rich <img src="cid:a@b"></p>"#)
+        #expect(m.plainText == "Plain")
+        // The invitation's calendar part, unnamed, is still there to answer.
+        #expect(m.attachments.contains { $0.mimeType == "text/calendar" && $0.filename == "invite.ics" })
+    }
+
+    @Test func plainTextOnlyAroundAPhoto() {
+        let m = parse("""
+        Content-Type: multipart/mixed; boundary=mix\r
+        \r
+        --mix\r
+        Content-Type: text/plain\r
+        \r
+        Here's the photo:\r
+        --mix\r
+        Content-Type: image/jpeg; name="IMG_1.jpg"\r
+        Content-Disposition: inline; filename="IMG_1.jpg"\r
+        Content-ID: <photo1>\r
+        Content-Transfer-Encoding: base64\r
+        \r
+        /9j/4AAQ\r
+        --mix\r
+        Content-Type: text/plain\r
+        \r
+        Sent from my iPhone\r
+        --mix--\r
+
+        """)
+        #expect(m.html == nil)
+        #expect(m.plainText == "Here's the photo:\n\nSent from my iPhone")
+        #expect(m.attachments.map(\.filename) == ["IMG_1.jpg"])
+    }
+
+    @Test func htmlNamesItsCharsetInAMetaTag() {
+        let text = "日本語のメール"
+        let cp932 = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.dosJapanese.rawValue)))
+        var body = Data(#"<html><head><meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS"></head><body>"#.utf8)
+        body += text.data(using: cp932)!
+        body += Data("</body></html>".utf8)
+        #expect(parse("Content-Type: text/html\r\n\r\n", body: body).html?.contains(text) == true)
     }
 }
