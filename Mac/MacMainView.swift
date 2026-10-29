@@ -129,6 +129,11 @@ struct MacMainView: View {
             if locked, model.mailbox.isAttentionList { model.mailbox = .primary }
         }
         .onChange(of: unreadOnly) { keptRead = [] }
+        // A Focus set to Show One Account limits every list to it while
+        // it's on, as on the iPhone; turning the Focus off brings every
+        // account back.
+        .onReceive(NotificationCenter.default.publisher(for: CorresFocusFilter.didChange)) { _ in applyFocusFilter() }
+        .onChange(of: accounts, initial: true) { applyFocusFilter() }
         // What follows a sync, the widgets, Spotlight and the Dock badge
         // are MacServices' own (`startObserving`), window or not.
         // A notification, a widget or a corres:// link asking for a place.
@@ -272,11 +277,22 @@ struct MacMainView: View {
     }
 
     private func subtitle(_ shown: MacMailboxModel.Visible) -> String {
+        // Said first, so mail from your other accounts isn't thought lost.
+        let focus = model.focusAccount.map { String(localized: "Focus: \(AccountPreferences.nickname(for: $0))") }
+        return [focus, countLine(shown)].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    private func countLine(_ shown: MacMailboxModel.Visible) -> String {
         let count = shown.count, unread = shown.unread
         if !model.search.isEmpty && services.sync.isSearchingRemote { return String(localized: "Searching your accounts…") }
         if services.isGettingNewMail { return String(localized: "Checking for mail…") }
         if count == 0 { return "" }
         return unread > 0 ? String(localized: "\(count) conversations, \(unread) unread") : String(localized: "\(count) conversations")
+    }
+
+    private func applyFocusFilter() {
+        let account = MacServices.focusAccount(among: accounts)
+        if model.focusAccount != account { model.focusAccount = account }
     }
 
     private var accountColors: [String: NSColor] {

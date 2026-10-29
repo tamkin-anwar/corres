@@ -113,6 +113,9 @@ final class MacMailboxModel {
     }
     var search = ""
     var selection: Set<ThreadID> = []
+    /// A Focus set to Show One Account (`CorresFocusFilter`): every list
+    /// and search shows that account's mail only, as on the iPhone.
+    var focusAccount: String?
 
     private var cacheKey: CacheKey?
     /// The rows as built, hidden conversations still in where they're
@@ -149,6 +152,7 @@ final class MacMailboxModel {
         let search: String
         let minute: Int
         let accounts: [String]
+        let focusAccount: String?
         let serverMatches: Set<ThreadID>
         let searchFound: Int
     }
@@ -189,7 +193,7 @@ final class MacMailboxModel {
         // Mail on the server: as fetched, less anything just moved away.
         if query.isEmpty, let source = mailbox.remoteSource {
             let hidden = store.hiddenIDs
-            let rows = remote.items(source).filter { !hidden.contains($0.id) }.map(MacRow.thread)
+            let rows = remote.items(source).filter { !hidden.contains($0.id) && inFocus($0) }.map(MacRow.thread)
             // A page from the server, so comparing is cheap; setting the
             // same rows again would redraw the list each time.
             if rows != cachedRows { cachedRows = rows }
@@ -203,7 +207,7 @@ final class MacMailboxModel {
         let leavesOutAfter = query.isEmpty && !mailbox.isSavedSearch
         let key = CacheKey(revision: store.contentRevision, hidden: leavesOutAfter ? [] : store.hiddenFromLists,
                            mailbox: mailbox, search: query, minute: Int(Date.now.timeIntervalSince1970 / 60),
-                           accounts: accounts, serverMatches: serverMatches, searchFound: searchFound)
+                           accounts: accounts, focusAccount: focusAccount, serverMatches: serverMatches, searchFound: searchFound)
         // Snoozed lists every snoozed conversation, hidden ones included,
         // as it always has; only what's gone for good leaves it.
         let leaving = leavesOutAfter ? (mailbox == .snoozed ? store.removedIDs : store.hiddenFromLists) : []
@@ -298,7 +302,7 @@ final class MacMailboxModel {
     /// nil while a search's matches are still being found.
     private func build(store: MailStore, query: String, accounts: [String], serverMatches: Set<ThreadID>) -> [MacRow]? {
         // Hidden ones in: `rows` leaves them out after.
-        let threads = store.listedIncludingHidden
+        let threads = focusAccount == nil ? store.listedIncludingHidden : store.listedIncludingHidden.filter(inFocus)
         // Searching looks through everything, in every list, as Mail does.
         if !query.isEmpty {
             guard let matches = searchMatches(query, store: store, serverMatches: serverMatches) else { return nil }
@@ -350,6 +354,11 @@ final class MacMailboxModel {
         }
     }
 
+    /// In the account a Focus shows, or no Focus is limiting it.
+    private func inFocus(_ thread: Correspondence) -> Bool {
+        focusAccount.map { $0 == thread.id.account } ?? true
+    }
+
     /// What `query` finds, or nil while that's still being worked out.
     /// Hidden ones (waiting out Undo) are left out after, so a swipe
     /// doesn't search again.
@@ -358,7 +367,7 @@ final class MacMailboxModel {
                                          source: [store.contentRevision, Int(Date.now.timeIntervalSince1970 / 60)])
         guard let found = searcher.matches(for: request, in: { store.threadsIncludingHidden },
                                            onFound: { [weak self] in self?.searchFound &+= 1 }) else { return nil }
-        return ListExclusion.threads(found, leaving: store.hiddenFromLists)
+        return ListExclusion.threads(found, leaving: store.hiddenFromLists).filter(inFocus)
     }
 }
 

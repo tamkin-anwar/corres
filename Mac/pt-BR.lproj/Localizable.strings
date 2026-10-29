@@ -2935,8 +2935,15 @@
 "Move this conversation to Trash?" = "Mover esta conversa para o Lixo?";
 "Move %lld conversations to Trash?" = "Mover %lld conversas para o Lixo?";
 
+/* Earlier messages in a conversation, opened to their full text. */
+"Collapses this message" = "Recolhe esta mensagem";
+"Shows the full message" = "Mostra a mensagem completa";
+
 /* Format > Add Link (Command-K) while writing. */
 "Add Link…" = "Adicionar Link…";
 "Add Link" = "Adicionar Link";
 "Web or email address" = "Endereço web ou de e-mail";
 "Add" = "Adicionar";
+
+/* The window's subtitle while a Focus shows one account only. */
+"Focus: %@" = "Foco: %@";

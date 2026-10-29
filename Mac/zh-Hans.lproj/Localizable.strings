@@ -2935,8 +2935,15 @@
 "Move this conversation to Trash?" = "将此对话移到废纸篓？";
 "Move %lld conversations to Trash?" = "将 %lld 个对话移到废纸篓？";
 
+/* Earlier messages in a conversation, opened to their full text. */
+"Collapses this message" = "收起此邮件";
+"Shows the full message" = "显示完整邮件";
+
 /* Format > Add Link (Command-K) while writing. */
 "Add Link…" = "添加链接…";
 "Add Link" = "添加链接";
 "Web or email address" = "网址或电子邮件地址";
 "Add" = "添加";
+
+/* The window's subtitle while a Focus shows one account only. */
+"Focus: %@" = "专注模式：%@";
