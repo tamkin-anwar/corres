@@ -102,13 +102,23 @@ final class WatchBridge: NSObject {
             let words = WritingStyle.ownWords(in: thread.body.isEmpty ? thread.excerpt : thread.body)
             return WatchLink.Mail(key: thread.id.entityKey, sender: thread.isFromAccountOwner ? thread.counterpartName() : thread.sender,
                                   subject: thread.subject, reason: thread.displayReason,
-                                  preview: String(words.prefix(600)), receivedAt: thread.receivedAt, isUnread: thread.isUnread)
+                                  preview: Self.preview(words), receivedAt: thread.receivedAt, isUnread: thread.isUnread)
         }
         let allNeedsYou = MailQuery.prioritized(threads, attention: .needsYou)
         let allWaiting = MailQuery.prioritized(threads, attention: .waiting)
         return WatchLink.Snapshot(needsYou: allNeedsYou.prefix(25).map(mail), waiting: allWaiting.prefix(10).map(mail),
                                   isSample: isSample, updatedAt: now,
                                   needsYouCount: allNeedsYou.count, waitingCount: allWaiting.count)
+    }
+
+    /// The start of an email for the wrist, cut at a word and ending in
+    /// "…" when there's more, so the Watch can say the rest is on the
+    /// iPhone. Cut mid-word without a mark, it read as the whole email.
+    static func preview(_ words: String, limit: Int = 600) -> String {
+        guard words.count > limit else { return words }
+        let cut = words.prefix(limit)
+        let atWord = cut.lastIndex(where: \.isWhitespace).map { cut[..<$0] } ?? cut
+        return atWord.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters)) + "…"
     }
 
     /// What the Watch asked for.

@@ -99,6 +99,12 @@ struct MailDetailView: View {
                 Divider()
                 Text(mail.preview).font(.body)
                     .privacySensitive()
+                // Only the start comes to the Watch: said, so it isn't
+                // taken for the whole email.
+                if mail.preview.hasSuffix("…") {
+                    Label("The rest is on your iPhone", systemImage: "iphone")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
                 VStack(spacing: 6) {
                     Button { replying = true } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
                     Button {
